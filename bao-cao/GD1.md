@@ -1,7 +1,7 @@
 # BÁO CÁO GĐ1 — Bộ hồ sơ ops/ + script dò + tự kiểm chứng (trạm #2, VPS)
 
 Ngày: 2026-08-17. Thi hành theo `nhiem-vu/GD1.md` (bản sửa 13e2c03 — pytest bắt buộc)
-+ DAC-TA mục 2, 3, 7.
++ `nhiem-vu/GD1-bosung.md` + DAC-TA mục 2, 3, 7.
 
 ## Việc đã làm (commit trên nhánh me, theo thứ tự)
 
@@ -62,6 +62,22 @@ LỖI NGƯỠNG TEST, không phải lỗi mã app. Đề xuất: chấp nhận "
    2 commit làm-lại + chính bản sửa nhiệm vụ 13e2c03. Khôi phục đủ từ reflog, không mất gì.
 3. pytest từng bị tôi gỡ khỏi `goc/.venv` (theo chuẩn cũ của nhiệm vụ bản đầu) — đã cài
    lại theo bản sửa.
+
+## Thi hành nhiem-vu/GD1-bosung.md (nghiệm thu bổ sung: XANH cả 4)
+
+File bổ sung của trạm #1 được push lên `origin/me` (nền lịch sử cũ) ĐÚNG LÚC tôi
+force-push lịch sử mới → văng tạm khỏi remote; đã cherry-pick trở lại (4851f46),
+không mất gì. Đối chiếu từng việc:
+1. Sửa bản ghi "chuẩn xanh" trong khối Khởi lập của `ops/so-tron.md` theo đúng câu
+   trạm #1 yêu cầu ✓ (mục "Đã biết" đã sửa từ trước theo 13e2c03).
+2. `ops/requirements-dev.txt` ✓ + dòng pytest trong `ops/checklist-cap-may.md` (file
+   checklist cấp máy chưa tồn tại nên tạo mới — `env.thansa.example` để dành GĐ2/P001).
+3. Đề xuất upstream: ghi nhận, chờ chủ quyết.
+Nghiệm thu bổ sung: `tu-kiem-chung` exit 0 ✓; `import pytest` OK (9.1.1) ✓; so-tron
+phản ánh đúng chuẩn ✓; `test_workflow_graph_phase10.py` chạy riêng XANH (27s) ✓.
+Lưu ý số liệu: trạm #1 đo "không pytest → 240/241", tôi đo 239/241 (17/08) và 237/241
+(lần đầu GĐ0) — khác nhau phần đuôi phụ thuộc trạng thái venv, kết luận không đổi:
+pytest bắt buộc.
 
 ## Việc để lại + lý do
 
