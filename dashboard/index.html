@@ -7,7 +7,7 @@
        dưới); ở tab Safari thường iOS 10+ vẫn cho zoom bằng tay vì lý do accessibility, nên còn
        chặn thêm bằng touch-action trong style.css làm lớp thứ hai. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Javis OS</title>
+  <title>Thansa OS</title>
   <!-- Favicon = logo hiện tại (/brand-logo): mặc định theo logo.png, và tự đổi theo ảnh user tải lên. -->
   <link rel="icon" href="/brand-logo?v=5">
   <link rel="apple-touch-icon" href="/brand-logo?v=5">
@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Javis OS">
+  <meta name="apple-mobile-web-app-title" content="Thansa OS">
   <meta name="theme-color" content="#0e0e16">
   <!-- manifest.json khai icon PNG vuông 192/512 có sizes rõ ràng: đó là điều kiện để
        Chrome/Edge DESKTOP coi trang là cài được (icon "any" trên PNG bị coi là không hợp lệ
@@ -51,7 +51,7 @@
       </button>
       <!-- NHÓM TRÁI: thương hiệu + chọn brain + số liệu (bám trái) -->
       <div class="hud-top-left">
-        <div class="brand"><span class="brand-icon"><img src="/brand-logo" alt="" style="width:22px;height:22px;border-radius:5px;vertical-align:middle;object-fit:cover"></span> <span class="brand-text">JAVIS OS</span></div>
+        <div class="brand"><span class="brand-icon"><img src="/brand-logo" alt="" style="width:22px;height:22px;border-radius:5px;vertical-align:middle;object-fit:cover"></span> <span class="brand-text">THANSA OS</span></div>
         <!-- Select Brain: dời từ góc graph lên navbar -->
         <div class="orb-graph-ctl navbar-brain">
           <i data-ic="brain" class="brain-select-ico" data-ic-title="Bộ não đang chọn" data-i18n-title="top.brain_current"></i>
@@ -145,7 +145,7 @@
       <div class="noti-head">
         <div>
           <div class="noti-title" data-i18n="noti.label">Thông báo</div>
-          <div class="noti-sub" id="notificationSummary" data-i18n="noti.summary">Cập nhật mới và tin từ Javis OS</div>
+          <div class="noti-sub" id="notificationSummary" data-i18n="noti.summary">Cập nhật mới và tin từ Thansa OS</div>
         </div>
         <div class="noti-head-actions">
           <button class="noti-text-btn" id="notificationReadAll" type="button" data-i18n="noti.read_all">Đọc tất cả</button>
@@ -488,7 +488,7 @@
        x-effect="document.body.classList.toggle('rail-collapsed', $store.nav.collapsed)">
     <!-- ĐỈNH cố định -->
     <div class="rail-top">
-      <div class="rail-brand"><img src="/brand-logo" alt="Javis" style="width:30px;height:30px;border-radius:8px;display:block;object-fit:cover"></div>
+      <div class="rail-brand"><img src="/brand-logo" alt="Thansa" style="width:30px;height:30px;border-radius:8px;display:block;object-fit:cover"></div>
     </div>
     <!-- GIỮA cuộn được - gom theo nhóm; nhóm foot (Hệ thống) tự ghim xuống đáy -->
     <div class="rail-nav">
@@ -589,7 +589,7 @@
   <!-- Bộ cài đặt lần đầu (hiện khi chưa setup_done) -->
   <div class="modal-overlay" id="setupWizard">
     <div class="settings-modal" style="max-width:460px">
-      <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span data-i18n="wz.welcome">Chào mừng tới Javis</span></div>
+      <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span data-i18n="wz.welcome">Chào mừng tới Thansa</span></div>
       <div class="settings-body">
         <style>
         .wz-prov{display:flex;flex-direction:column;gap:8px;margin-top:6px}
@@ -606,7 +606,7 @@
         <div class="set-note"><span data-i18n="wz.intro">Vài bước nhanh để bắt đầu. Mọi thứ đổi lại được sau trong</span> <i data-ic="settings"></i> <span data-i18n="page.settings.label">Cài đặt</span>.</div>
         <div class="set-sec">
           <h4 data-i18n="wz.s1">1. Workspace</h4>
-          <label data-i18n="wz.ws_name">Tên hiển thị</label><input id="wzWsName" placeholder="Javis OS">
+          <label data-i18n="wz.ws_name">Tên hiển thị</label><input id="wzWsName" placeholder="Thansa OS">
         </div>
         <div class="set-sec">
           <h4><span data-i18n="wz.s2">2. Tài khoản admin</span> <span class="dim" data-i18n="wz.s2_rec">(khuyến nghị)</span></h4>
@@ -617,7 +617,7 @@
             <label><span data-i18n="wz.token">Mã thiết lập</span> <span class="dim" data-i18n="wz.token_sec">(bảo mật)</span></label>
             <input id="wzToken" placeholder="Dán MÃ THIẾT LẬP từ log server" data-i18n-ph="wz.token_ph">
             <div class="wz-tokhelp">
-              <b><i data-ic="circle-help"></i> <span data-i18n="wz.tok_q">Mã thiết lập là gì?</span></b> <span data-i18n="wz.tok_a">Javis đang chạy trên server công khai. Để chắc chính bạn (không phải người lạ vô tình mở link) là người tạo tài khoản admin, bạn dán một mã chỉ in ra log server - nơi duy nhất chủ máy xem được.</span>
+              <b><i data-ic="circle-help"></i> <span data-i18n="wz.tok_q">Mã thiết lập là gì?</span></b> <span data-i18n="wz.tok_a">Thansa đang chạy trên server công khai. Để chắc chính bạn (không phải người lạ vô tình mở link) là người tạo tài khoản admin, bạn dán một mã chỉ in ra log server - nơi duy nhất chủ máy xem được.</span>
               <br><b data-i18n="wz.tok_how">Cách lấy mã (Hostinger → App terminal):</b>
               <ol>
                 <li data-i18n="wz.tok_s1">Mở app → bấm App terminal (bạn sẽ vào BÊN TRONG container javis).</li>
@@ -641,12 +641,12 @@
             <label class="wz-card" data-prov="openai-oauth">
               <input type="radio" name="wzprov" value="openai-oauth">
               <div><b><i data-ic="message-circle"></i> <span data-i18n="wz.prov_gpt_name">ChatGPT (gói subscription)</span></b>
-                <div class="wz-pdesc" data-i18n="wz.prov_gpt">Đăng nhập ChatGPT Plus/Pro (qua Codex) → vẫn dùng được MCP của Javis. Hợp nếu bạn đã có gói ChatGPT.</div></div>
+                <div class="wz-pdesc" data-i18n="wz.prov_gpt">Đăng nhập ChatGPT Plus/Pro (qua Codex) → vẫn dùng được MCP của Thansa. Hợp nếu bạn đã có gói ChatGPT.</div></div>
             </label>
             <label class="wz-card" data-prov="openrouter">
               <input type="radio" name="wzprov" value="openrouter">
               <div><b><i data-ic="globe"></i> OpenRouter</b>
-                <div class="wz-pdesc" data-i18n="wz.prov_or">Nhiều model giá rẻ một chỗ, vẫn đủ MCP Javis + skill + đọc/ghi file brain. Chỉ cần API key - không cần đăng nhập.</div></div>
+                <div class="wz-pdesc" data-i18n="wz.prov_or">Nhiều model giá rẻ một chỗ, vẫn đủ MCP Thansa + skill + đọc/ghi file brain. Chỉ cần API key - không cần đăng nhập.</div></div>
             </label>
           </div>
           <div id="wzOrKey" style="display:none">
@@ -655,7 +655,7 @@
           </div>
           <div id="wzProvHint"></div>
         </div>
-        <div class="set-actions"><button class="s-btn" id="wzFinish" data-i18n="wz.start">Bắt đầu dùng Javis →</button></div>
+        <div class="set-actions"><button class="s-btn" id="wzFinish" data-i18n="wz.start">Bắt đầu dùng Thansa →</button></div>
         <div class="auth-err" id="wzErr"></div>
       </div>
     </div>
@@ -664,7 +664,7 @@
   <!-- Đăng nhập (chỉ hiện khi admin đã đặt mật khẩu & chưa đăng nhập) -->
   <div class="modal-overlay" id="authOverlay">
     <div class="folder-modal auth-modal">
-      <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span id="authTitle" data-i18n="auth.title">Đăng nhập Javis</span></div>
+      <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span id="authTitle" data-i18n="auth.title">Đăng nhập Thansa</span></div>
       <div class="auth-body">
         <input id="authUser" placeholder="Tài khoản" data-i18n-ph="common.account" autocomplete="username">
         <input id="authPass" type="password" placeholder="Mật khẩu" data-i18n-ph="common.password" autocomplete="current-password">

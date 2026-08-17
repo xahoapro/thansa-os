@@ -207,7 +207,7 @@
     if (state.tab === "mine") { veHomThu(list); return; }
 
     if (!state.items.length) {
-      list.innerHTML = '<div class="noti-empty">Chưa có thông báo.<br>Các bản cập nhật và tin từ Javis OS sẽ xuất hiện tại đây.</div>';
+      list.innerHTML = '<div class="noti-empty">Chưa có thông báo.<br>Các bản cập nhật và tin từ Thansa OS sẽ xuất hiện tại đây.</div>';
       return;
     }
     var limited = state.items.slice(0, MAX_ITEMS);
