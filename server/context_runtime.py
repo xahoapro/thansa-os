@@ -110,7 +110,7 @@ def _content_chars(content: Any) -> int:
 _SYSTEM_MARKERS = (
     ("memory_index_chars", "# === BỘ NHỚ DÀI HẠN"),
     ("agentic_contract_chars", "# === LỚP AGENTIC"),
-    ("capability_summary_chars", "# === NĂNG LỰC JAVIS"),
+    ("capability_summary_chars", "# === NĂNG LỰC THANSA"),
     ("skill_router_chars", "# === SKILL KHẢ DỤNG"),
     ("usage_hint_chars", "# === MỨC DÙNG HÔM NAY"),
     ("channel_contract_chars", "# === KÊNH HỘI THOẠI HIỆN TẠI"),

@@ -474,8 +474,8 @@ class AdaptiveContextCanary:
                 return AdaptiveContextPlan(
                     "reject", quota_reason, feature_status=status, compiler_report=report,
                     rejection_message=(
-                        localefmt.chu("Javis chưa gửi request vì biết trước là sẽ vượt hạn mức. ",
-                                      "Javis did not send the request because it would exceed the limit. ")
+                        localefmt.chu("Thansa chưa gửi request vì biết trước là sẽ vượt hạn mức. ",
+                                      "Thansa did not send the request because it would exceed the limit. ")
                         + model_limits.blocked_hint(provider, model, needed,
                                                     self._configured_providers())
                     ),
