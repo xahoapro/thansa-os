@@ -249,7 +249,7 @@ async def _req(method, url, headers, body=None, params=None):
             **winproc.kwargs_no_window())
         out, errb = await asyncio.wait_for(proc.communicate(stdin_data), timeout=55)
     except FileNotFoundError:
-        raise RuntimeError("máy chạy Javis thiếu 'curl' - cần cài curl để gọi Substack")
+        raise RuntimeError("máy chạy Thansa thiếu 'curl' - cần cài curl để gọi Substack")
     except Exception as e:
         raise RuntimeError(f"không gọi được Substack ({type(e).__name__})")
     text = out.decode("utf-8", "replace")
