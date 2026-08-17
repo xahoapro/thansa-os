@@ -923,9 +923,9 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
         _t = usage_store.summary().get("today", {}).get("total", {})
         if _t.get("in") or _t.get("out"):
             _c = f", ~${_t.get('cost', 0):.4f}" if _t.get("cost") else ""
-            base += (f"\n\n# === MỨC DÙNG HÔM NAY (Javis tự đo) ===\n"
+            base += (f"\n\n# === MỨC DÙNG HÔM NAY (Thansa tự đo) ===\n"
                      f"{_t.get('in', 0):,} token vào + {_t.get('out', 0):,} token ra qua "
-                     f"{_t.get('turns', 0)} lượt{_c}. Đây là token Javis TỰ ĐO, KHÔNG phải hạn mức gói "
+                     f"{_t.get('turns', 0)} lượt{_c}. Đây là token Thansa TỰ ĐO, KHÔNG phải hạn mức gói "
                      f"thuê bao (đa số nhà cung cấp không cho lấy hạn mức tài khoản qua API). Chi tiết "
                      f"từng nhà cung cấp ở panel 'Mức dùng' trên dashboard.")
     except Exception:
@@ -1117,7 +1117,7 @@ def log_conversation(brain: str, user_msg: str, javis_msg: str):
         f = conv / f"{now.strftime('%Y-%m-%d')}.md"
         u = _clip_for_log(_redact_secrets(user_msg))
         j = _clip_for_log(_redact_secrets(javis_msg))
-        entry = f"\n## {now.strftime('%H:%M')}\n**Bạn:** {u}\n\n**Javis:** {j}\n"
+        entry = f"\n## {now.strftime('%H:%M')}\n**Bạn:** {u}\n\n**Thansa:** {j}\n"
         with open(f, "a", encoding="utf-8") as fh:
             fh.write(entry)
     except Exception as e:
@@ -2553,7 +2553,7 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
         _CONTEXT_RUNTIME.revoke_capability_lease(
             runtime_trace, lease.lease_id, planned.get("error_code") or "planner_failed")
         text = ("Model không lập được tham số đúng hợp đồng cho hành động ghi này. "
-                "Javis đã dừng an toàn, chưa gọi tool và chưa thay đổi gì.")
+                "Thansa đã dừng an toàn, chưa gọi tool và chưa thay đổi gì.")
         _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "write_path.failed", {
             "stage": "argument_planner", "error_code": planned.get("error_code") or "unknown",
             "model_rounds": 1, "tool_calls": 0,
@@ -2570,7 +2570,7 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
     if not valid:
         _CONTEXT_RUNTIME.revoke_capability_lease(runtime_trace, lease.lease_id, error_code)
         text = ("Tham số model đề xuất không đạt JSON Schema của capability. "
-                "Javis chưa gọi tool và chưa thay đổi gì.")
+                "Thansa chưa gọi tool và chưa thay đổi gì.")
         _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "write_path.failed", {
             "stage": "argument_validation", "error_code": error_code,
             "model_rounds": 1, "tool_calls": 0,
@@ -2586,19 +2586,19 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
         runtime_trace, plan, args, session_id)
     status = registered.get("status")
     if status == "duplicate":
-        text = ("Hành động này đã được ghi nhận trước đó nên Javis KHÔNG chạy lại. "
+        text = ("Hành động này đã được ghi nhận trước đó nên Thansa KHÔNG chạy lại. "
                 f"Trạng thái hiện tại: {registered.get('invocation_status')}.")
     elif status == "locked":
         text = ("Đang có một hành động ghi khác trên cùng tài nguyên chưa kết thúc. "
-                "Javis dừng để tránh ghi chồng; bạn xử lý xong việc kia rồi nhắn lại.")
+                "Thansa dừng để tránh ghi chồng; bạn xử lý xong việc kia rồi nhắn lại.")
     elif status != "prepared":
-        text = ("Không ghi được ý định vào sổ nên Javis dừng trước khi gọi tool. "
+        text = ("Không ghi được ý định vào sổ nên Thansa dừng trước khi gọi tool. "
                 "Chưa có gì thay đổi.")
     elif not str(registered.get("confirmation_code") or "").strip():
         # Không có mã thì KHÔNG có cách nào duyệt: nút bấm sẽ chết và câu gõ tay cũng
         # vô nghĩa. Nói thẳng là hỏng còn hơn bày ra một lời đề xuất không duyệt được.
         status = "no_confirmation_code"
-        text = ("Javis không tạo được mã duyệt cho hành động ghi này nên đã dừng. "
+        text = ("Thansa không tạo được mã duyệt cho hành động ghi này nên đã dừng. "
                 "Chưa có gì thay đổi.")
     else:
         code = str(registered.get("confirmation_code")).strip()
@@ -2617,9 +2617,9 @@ async def _execute_write_proposal(plan, provider: str, api_key: str, model: str,
             ],
         }, ensure_ascii=False)
         text = (
-            f"Javis chuẩn bị chạy hành động ghi: {lease.capability_name}.\n"
+            f"Thansa chuẩn bị chạy hành động ghi: {lease.capability_name}.\n"
             f"Tham số: {summary}\n\n"
-            f"Việc này thay đổi dữ liệu thật và không tự hoàn tác được, nên Javis "
+            f"Việc này thay đổi dữ liệu thật và không tự hoàn tác được, nên Thansa "
             f"CHƯA chạy. Bạn bấm nút duyệt bên dưới, hoặc nhắn lại đúng câu: "
             f"XAC NHAN {code}\n"
             f"Không muốn nữa thì nhắn: huỷ\n"
@@ -2665,7 +2665,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
             runtime_trace, str(invocation.get("id") or ""),
             str(invocation.get("lease_id") or ""), "FAILED_VALIDATION",
             error_code="capability_changed_since_proposal")
-        text = ("Capability đã thay đổi kể từ lúc Javis đề xuất, nên hành động ghi bị "
+        text = ("Capability đã thay đổi kể từ lúc Thansa đề xuất, nên hành động ghi bị "
                 "huỷ để không chạy nhầm phiên bản cũ. Chưa có gì thay đổi.")
         await ws.send_text(json.dumps({
             "type": "response", "content": text, "engine": "javis-gateway",
@@ -2682,8 +2682,8 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
             runtime_trace, str(invocation.get("id") or ""),
             str(invocation.get("lease_id") or ""), "FAILED_FINAL",
             error_code="approved_arguments_unavailable")
-        text = ("Javis không còn giữ tham số đã được duyệt (tiến trình đã khởi động lại), "
-                "nên không chạy hành động ghi này. Bạn nhắn lại yêu cầu để Javis đề xuất mới.")
+        text = ("Thansa không còn giữ tham số đã được duyệt (tiến trình đã khởi động lại), "
+                "nên không chạy hành động ghi này. Bạn nhắn lại yêu cầu để Thansa đề xuất mới.")
         await ws.send_text(json.dumps({
             "type": "response", "content": text, "engine": "javis-gateway",
             "model": model, "session_id": session_id,
@@ -2704,7 +2704,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
             runtime_trace, str(invocation.get("id") or ""),
             str(invocation.get("lease_id") or ""), "FAILED_FINAL",
             error_code="write_route_unavailable")
-        text = "Không còn đường gọi tool ghi này, Javis dừng an toàn. Chưa có gì thay đổi."
+        text = "Không còn đường gọi tool ghi này, Thansa dừng an toàn. Chưa có gì thay đổi."
         await ws.send_text(json.dumps({
             "type": "response", "content": text, "engine": "javis-gateway",
             "model": model, "session_id": session_id,
@@ -2726,14 +2726,14 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
         reconciled = await canary.reconcile_unknown(
             runtime_trace, invocation, _brain_root(brain), profile)
         if reconciled.get("status") == "SUCCEEDED":
-            text = ("Kết nối bị gián đoạn giữa chừng nên Javis đã kiểm chứng lại bằng một "
-                    "lệnh đọc: hành động ĐÃ được thực hiện. Javis không chạy lại.")
+            text = ("Kết nối bị gián đoạn giữa chừng nên Thansa đã kiểm chứng lại bằng một "
+                    "lệnh đọc: hành động ĐÃ được thực hiện. Thansa không chạy lại.")
         elif reconciled.get("status") == "FAILED_FINAL":
-            text = ("Kết nối bị gián đoạn, Javis kiểm chứng lại bằng lệnh đọc và thấy hành "
-                    "động CHƯA được thực hiện. Bạn nhắn lại nếu muốn Javis làm lại.")
+            text = ("Kết nối bị gián đoạn, Thansa kiểm chứng lại bằng lệnh đọc và thấy hành "
+                    "động CHƯA được thực hiện. Bạn nhắn lại nếu muốn Thansa làm lại.")
         else:
-            text = ("Kết nối bị gián đoạn và Javis KHÔNG kiểm chứng được là hành động đã "
-                    "chạy hay chưa. Javis tuyệt đối không chạy lại để tránh làm hai lần. "
+            text = ("Kết nối bị gián đoạn và Thansa KHÔNG kiểm chứng được là hành động đã "
+                    "chạy hay chưa. Thansa tuyệt đối không chạy lại để tránh làm hai lần. "
                     "Bạn kiểm tra trực tiếp bên hệ thống đích rồi báo lại giúp mình.")
     elif status == "SUCCEEDED":
         evidence = outcome.get("evidence")
@@ -2744,7 +2744,7 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
         text = ("Tool báo lỗi rõ ràng nên hành động KHÔNG được thực hiện. "
                 f"Mã lỗi: {outcome.get('error_code')}.")
     else:
-        text = ("Javis dừng trước khi gọi tool vì ý định ghi không còn hợp lệ. "
+        text = ("Thansa dừng trước khi gọi tool vì ý định ghi không còn hợp lệ. "
                 f"Mã: {outcome.get('error_code')}.")
     _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "write_path.completed", {
         "status": status, "model_rounds": 0, "tool_calls": 1 if status != "REJECTED" else 0,
@@ -3075,7 +3075,7 @@ async def _execute_readonly_path(plan, provider: str, api_key: str, model: str,
         )
         final_text = (
             "Model không tạo được arguments đúng contract cho capability read-only. "
-            "Javis đã dừng an toàn, chưa gọi tool và không tự chuyển sang vòng agent cũ."
+            "Thansa đã dừng an toàn, chưa gọi tool và không tự chuyển sang vòng agent cũ."
         )
         _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "readonly_path.failed", {
             "stage": "argument_planner", "error_code": planned.get("error_code") or "unknown",
@@ -4283,10 +4283,10 @@ async def connect_relogin(request: Request):
     connect_health.forget(cid)
     return {"ok": True, "cleared": done,
             "message": (localefmt.chu(
-                "Đã xoá đăng nhập Google cũ. Nhờ Javis làm một việc bất kỳ với nguồn này, "
-                "trình duyệt trên máy chạy Javis sẽ mở để bạn cấp lại quyền.",
-                "The old Google sign-in was removed. Ask Javis to do anything with this source and "
-                "the browser on the machine running Javis will open so you can grant access again.")
+                "Đã xoá đăng nhập Google cũ. Nhờ Thansa làm một việc bất kỳ với nguồn này, "
+                "trình duyệt trên máy chạy Thansa sẽ mở để bạn cấp lại quyền.",
+                "The old Google sign-in was removed. Ask Thansa to do anything with this source and "
+                "the browser on the machine running Thansa will open so you can grant access again.")
                         if done else
                         localefmt.chu("Kết nối này không tự giữ token riêng, hoặc chưa từng đăng nhập.",
                                       "This connection keeps no token of its own, or was never signed in."))}
@@ -4412,8 +4412,8 @@ async def connect_oauth_callback(state: str = Query(""), code: str = Query("")):
         except Exception as e:
             print(f"[oauth label] {e}")
         html = ("<html><body style='font-family:sans-serif;background:#111;color:#eee;text-align:center;padding-top:80px'>"
-                + localefmt.chu("<h2>✓ Đã kết nối thành công</h2><p>Đóng tab này và quay lại Javis, bấm Làm mới ở trang Kết nối.</p>",
-                                "<h2>✓ Connected successfully</h2><p>Close this tab, go back to Javis and click Refresh on the Connections page.</p>")
+                + localefmt.chu("<h2>✓ Đã kết nối thành công</h2><p>Đóng tab này và quay lại Thansa, bấm Làm mới ở trang Kết nối.</p>",
+                                "<h2>✓ Connected successfully</h2><p>Close this tab, go back to Thansa and click Refresh on the Connections page.</p>")
                 + "</body></html>")
     else:
         html = (f"<html><body style='font-family:sans-serif;background:#111;color:#eee;text-align:center;padding-top:80px'>"
@@ -8313,8 +8313,8 @@ async def usage_ngan_sach(gia_goi_thang_usd: str = Form(""), ngan_sach_thang_usd
             "and cannot reach your phone."))
     if m["ngan_sach_thang_usd"] > 0 and not m.get("tu_phanh"):
         canh_bao.append(localefmt.chu(
-            "Tự phanh đang tắt, nên chạm trần Javis chỉ nhắc chứ không dừng tiêu tiền.",
-            "Auto-brake is off, so when the cap is hit Javis only reminds you and does not stop spending."))
+            "Tự phanh đang tắt, nên chạm trần Thansa chỉ nhắc chứ không dừng tiêu tiền.",
+            "Auto-brake is off, so when the cap is hit Thansa only reminds you and does not stop spending."))
 
     await _kiem_ngan_sach(nhac=False)     # đặt lại phanh ngay, đừng đợi vòng lặp nền
     return {"ok": True, "gia_goi_thang_usd": m["gia_goi_thang_usd"],
@@ -8367,7 +8367,7 @@ async def _kiem_ngan_sach(nhac: bool = True) -> dict:
             usage_saving.ghi_moc("ngan_sach", khoa, "", f"Nhắc ngân sách: {khoa}")
             if ns["muc_do"] == "het":
                 tin = (f"Ngân sách API tháng này đã hết: tiêu ${da:.2f} trên trần ${tran:.2f}.\n"
-                       + ("Javis đã tự chuyển việc nền sang đường không tốn tiền."
+                       + ("Thansa đã tự chuyển việc nền sang đường không tốn tiền."
                           if bat_phanh else
                           "Tự phanh đang tắt nên việc nền vẫn tiêu tiền như thường."))
             else:
@@ -10742,7 +10742,7 @@ def _javis_capability_summary(brain: str, skills=None) -> str:
         return ""
     if not any(c.values()):
         return ""
-    parts = ["\n\n# === NĂNG LỰC JAVIS HIỆN CÓ (đọc `Javis/index.md` để biết chi tiết + trigger) ==="]
+    parts = ["\n\n# === NĂNG LỰC THANSA HIỆN CÓ (đọc `Javis/index.md` để biết chi tiết + trigger) ==="]
     if c["agents"]:
         parts.append("Agents: " + ", ".join(a["name"] for a in c["agents"][:30]))
     if c["skills"]:
@@ -13386,7 +13386,7 @@ async def websocket_endpoint(ws: WebSocket):
 
             await ws.send_text(json.dumps({
                 "type": "status",
-                "content": localefmt.chu("Javis đang suy nghĩ...", "Javis is thinking...")
+                "content": localefmt.chu("Thansa đang suy nghĩ...", "Thansa is thinking...")
             }))
 
             # Dựng prompt cũ theo nhu cầu. Fast Path không đọc/nạp memory hoặc lịch sử cũ.
@@ -13581,8 +13581,8 @@ async def websocket_endpoint(ws: WebSocket):
                              "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                         await ws.send_text(json.dumps({
                             "type": "tool_call", "tool": "javis_nen_mach",
-                            "content": localefmt.chu("⚙ Mạch hội thoại đã dài, Javis mở mạch mới.",
-                                                     "⚙ The conversation thread got long, Javis started a new one.")}))
+                            "content": localefmt.chu("⚙ Mạch hội thoại đã dài, Thansa mở mạch mới.",
+                                                     "⚙ The conversation thread got long, Thansa started a new one.")}))
                     kcli.session_id = _k_mach or None
                     # Mạch mới thì mồi lại bằng transcript đã lưu, y như Codex/Gemini: không có
                     # bước này là mở mạch mới = mất sạch ngữ cảnh cuộc đang nói dở.
@@ -13741,10 +13741,10 @@ async def websocket_endpoint(ws: WebSocket):
                         "content": localefmt.chu(
                             "⚙ Mạch hội thoại đã dài "
                             f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
-                            "Javis mở mạch mới và mang theo tóm tắt.",
+                            "Thansa mở mạch mới và mang theo tóm tắt.",
                             "⚙ The conversation thread got long "
                             f"({int(_row0.get('last_input_tokens') or 0):,} tokens per turn), "
-                            "Javis started a new one and carried a summary over."),
+                            "Thansa started a new one and carried a summary over."),
                     }))
                 ccli.session_id = stored_codex_thread or None
                 if not ccli.is_available():
@@ -13820,8 +13820,8 @@ async def websocket_endpoint(ws: WebSocket):
                         await ws.send_text(json.dumps({
                             "type": "system",
                             "content": localefmt.chu(
-                                "Phiên Codex cũ không còn trên máy - Javis đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
-                                "The old Codex session is no longer on this machine - Javis is restoring "
+                                "Phiên Codex cũ không còn trên máy - Thansa đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
+                                "The old Codex session is no longer on this machine - Thansa is restoring "
                                 "the context from saved history.")
                         }))
                         ccli.session_id = None
@@ -14192,10 +14192,10 @@ async def websocket_endpoint(ws: WebSocket):
                         "content": localefmt.chu(
                             "⚙ Mạch hội thoại đã dài "
                             f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
-                            "Javis mở mạch mới.",
+                            "Thansa mở mạch mới.",
                             "⚙ The conversation thread got long "
                             f"({int(_row0.get('last_input_tokens') or 0):,} tokens per turn), "
-                            "Javis started a new one."),
+                            "Thansa started a new one."),
                     }))
                 sysprompt, _sub_plan = await _subscription_system_prompt(
                     "cli", cli.model or mcfg.get("claude_model") or "mặc định", kind)
@@ -16824,7 +16824,7 @@ def _limit_autoshrink_message(provider: str, model: str, hit: dict) -> str:
             return (f"{provider} đang chặn nhịp gọi, bảo chờ {cho:.0f} giây. "
                     f"Bạn hỏi lại sau chừng đó là được.{loi}")
         return (f"{provider} từ chối lượt này vì hạn mức, nhưng không nói rõ hạn mức nào nên "
-                f"Javis chưa biết phải làm gì để qua.{loi}")
+                f"Thansa chưa biết phải làm gì để qua.{loi}")
 
     dau = f"{provider} báo vượt {nhan}: hạn mức {limit:,}"
     if used:
@@ -16843,7 +16843,7 @@ def _limit_autoshrink_message(provider: str, model: str, hit: dict) -> str:
         khi_nao = f" khoảng {cho:.0f} giây nữa" if cho else " một lát"
         return (dau + f"Cửa sổ hiện tại đã đầy vì các lượt trước, hỏi lại{khi_nao} là được. "
                 "Rút gọn câu hỏi không giúp vì hạn mức này đếm theo thời gian.")
-    return (dau + "Javis đã tự rút gọn ngữ cảnh và thử lại một lần nhưng vẫn không vừa. "
+    return (dau + "Thansa đã tự rút gọn ngữ cảnh và thử lại một lần nhưng vẫn không vừa. "
             + model_limits.blocked_hint(provider, model, requested or limit,
                                         _configured_api_providers()))
 
@@ -17234,12 +17234,12 @@ async def runtime_preset_set(level: str = Form(...)):
             continue
         canh_bao.append(
             localefmt.chu(
-                f"Chưa có bảng hạn mức sẵn cho '{prov}', nên Javis biên soạn ngữ cảnh theo trần "
+                f"Chưa có bảng hạn mức sẵn cho '{prov}', nên Thansa biên soạn ngữ cảnh theo trần "
                 "mặc định (context_runtime.api_context). Vẫn tiết kiệm được ngay; sau lần đầu "
-                "nhà cung cấp báo vượt hạn mức, Javis dùng đúng con số thật của họ.",
-                f"There is no built-in limit table for '{prov}' yet, so Javis builds the context "
+                "nhà cung cấp báo vượt hạn mức, Thansa dùng đúng con số thật của họ.",
+                f"There is no built-in limit table for '{prov}' yet, so Thansa builds the context "
                 "under the default ceiling (context_runtime.api_context). It still saves right "
-                "away; the first time the provider reports a limit hit, Javis uses their real "
+                "away; the first time the provider reports a limit hit, Thansa uses their real "
                 "numbers."))
 
     da_bat, da_tat = [], []
@@ -18489,7 +18489,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         kcli.mode = "full"
         _apply_grok_hub(kcli, _brain_root(brain))
         if not kcli.is_available():
-            return ("⚠ Chưa cài Grok Build CLI trên máy chạy Javis. Cài một lần:\n"
+            return ("⚠ Chưa cài Grok Build CLI trên máy chạy Thansa. Cài một lần:\n"
                     f"`{grok_cli.lenh_cai()}`\n"
                     "Rồi đăng nhập ở thẻ Grok trên trang Models.")
         _hoi = text
@@ -18530,7 +18530,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         acli.mode = "full"
         _apply_antigravity_hub(acli, _brain_root(brain))
         if not acli.is_available():
-            return ("⚠ Chưa cài Antigravity CLI trên máy chạy Javis. Cài một lần:\n"
+            return ("⚠ Chưa cài Antigravity CLI trên máy chạy Thansa. Cài một lần:\n"
                     f"`{antigravity_cli.lenh_cai()}`\n"
                     "Rồi gõ `agy` một lần để đăng nhập Google.")
         _hoi = text
@@ -18846,7 +18846,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
 
 async def _tg_help_text(brain):
     return (
-        "🤖 Javis Telegram\n\n"
+        "🤖 Thansa Telegram\n\n"
         "Lệnh:\n"
         "/status - engine, model, vault, trạng thái\n"
         "/skills - liệt kê skill\n"
@@ -18863,9 +18863,9 @@ async def _tg_help_text(brain):
         "/memory - mục lục bộ nhớ dài hạn của brain\n"
         "/plan <việc> - chỉ lập kế hoạch, chưa làm gì ra ngoài\n"
         "/reset - hội thoại mới · /stop - dừng\n\n"
-        "Gửi tin thường để hỏi Javis. ChatGPT/Codex và OpenRouter đều dùng được MCP của Javis.\n"
+        "Gửi tin thường để hỏi Thansa. ChatGPT/Codex và OpenRouter đều dùng được MCP của Thansa.\n"
         "Gõ /tên-skill để gọi skill (cần engine Claude CLI).\n"
-        "Gửi file/ảnh vào đây để Javis đọc. File Javis tạo ra sẽ tự gửi lại cho bạn ở đây."
+        "Gửi file/ảnh vào đây để Thansa đọc. File Thansa tạo ra sẽ tự gửi lại cho bạn ở đây."
     )
 
 
@@ -19193,7 +19193,7 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
         prov, model, ghim = _tg_model_hieu_luc()
         busy = _tg_chat_busy(chat_key)
         bname = Path(_brain_root(brain)).name
-        return {"reply": ("📊 Trạng thái Javis\n"
+        return {"reply": ("📊 Trạng thái Thansa\n"
                           f"Provider: {prov}\n"
                           f"Model: {model}"
                           + (" (📌 ghim riêng cho Telegram)" if ghim else " (theo model chính)") + "\n"
@@ -19406,7 +19406,7 @@ def _zalo_ghi_cho(meta) -> str:
 
 
 def _zalo_cau_tu_choi(ma: str) -> str:
-    return ("Bạn chưa được cấp quyền dùng Javis này.\n"
+    return ("Bạn chưa được cấp quyền dùng Thansa này.\n"
             f"Mã ghép nối của bạn: {ma}\n"
             "Đưa mã này cho chủ máy để họ cho phép ở trang Kênh.")
 
@@ -19531,7 +19531,7 @@ async def zalo_bot_test():
             for cid in ids:
                 try:
                     r = await c.post(url, json={"chat_id": cid,
-                                                "text": "Javis Zalo đã kết nối. Nhắn câu hỏi bất kỳ nhé."})
+                                                "text": "Thansa Zalo đã kết nối. Nhắn câu hỏi bất kỳ nhé."})
                     d = r.json() if r.content else {}
                     if d.get("ok"):
                         sent += 1
@@ -19940,7 +19940,7 @@ async def telegram_test():
             for cid in ids:
                 try:
                     r = await c.post(f"https://api.telegram.org/bot{t['token']}/sendMessage",
-                                     json={"chat_id": cid, "text": "✅ Javis Telegram đã kết nối. Nhắn câu hỏi bất kỳ nhé."})
+                                     json={"chat_id": cid, "text": "✅ Thansa Telegram đã kết nối. Nhắn câu hỏi bất kỳ nhé."})
                     d = r.json()
                     if d.get("ok"):
                         sent += 1

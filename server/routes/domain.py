@@ -186,8 +186,8 @@ def _make_router() -> APIRouter:
             return JSONResponse({
                 "ok": False,
                 "error": localefmt.chu(
-                    "Hostinger quản lý HTTPS bằng Traefik. Hãy đặt DOMAIN_NAME trong Docker Manager rồi Redeploy; Javis không thể sửa route của hPanel từ bên trong container.",
-                    "Hostinger manages HTTPS with Traefik. Set DOMAIN_NAME in Docker Manager and Redeploy; Javis cannot change hPanel routes from inside the container."),
+                    "Hostinger quản lý HTTPS bằng Traefik. Hãy đặt DOMAIN_NAME trong Docker Manager rồi Redeploy; Thansa không thể sửa route của hPanel từ bên trong container.",
+                    "Hostinger manages HTTPS with Traefik. Set DOMAIN_NAME in Docker Manager and Redeploy; Thansa cannot change hPanel routes from inside the container."),
                 "hostinger": True,
                 "domain": custom,
                 "docs": "https://github.com/blogminhquy/javis-os/blob/main/docs/15-thuong-hieu-ten-mien.md",
