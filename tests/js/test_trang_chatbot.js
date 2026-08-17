@@ -133,7 +133,7 @@ check("giải thích khi nào dùng chế độ nào", noi("cb2.nguon_tl_h", "gi
 // Trang phải nói ĐÚNG việc Javis làm: nó không viết luật cho bot, nó chỉ khoá phạm vi brain.
 // Hứa nhiều hơn thế là dạy người dùng tin vào một rào không tồn tại.
 check("nói rõ Javis không thêm luật của mình vào Agent",
-  noi("cb2.nguon_agent_h", "Javis không thêm luật nào của"));
+  noi("cb2.nguon_agent_h", "Thansa không thêm luật nào của"));
 check("nói rõ rào duy nhất là chỉ đọc được brain này",
   CB.includes("cb.intro_chi_doc") && /chỉ đọc\b[\s\S]{0,40}brain này/.test(VI["cb.intro_chi_doc"] || ""));
 check("lựa chọn được gửi lên server", /nguon_tra_loi: giaTri\("cbNguon"\)/.test(CB));
