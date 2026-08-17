@@ -215,3 +215,63 @@
   dieu_kien_bo: >
     Upstream đưa tên trợ lý vào branding config (biến persona) thì bỏ patch, đặt
     qua cấu hình.
+
+- id: P008
+  ten: "Chuỗi sản phẩm hiển thị server + UI còn sót → Thansa (OS)"
+  y_dinh: >
+    Mọi chuỗi sản phẩm/trợ lý HIỂN THỊ còn sót dùng "Thansa (OS)": FastAPI title
+    (/docs), OAuth client_name, codex clientInfo title, nhãn Authenticator (totp
+    default + issuer fallback), X-Title OpenRouter, template ghi vào vault người
+    dùng (Memory index, Javis/README, AGENTS.md seed, Javis/index.md seed, .gitignore
+    header), thông điệp skill hệ thống, và ~100 chuỗi UI dashboard (console/usage/
+    branding/chatbots/code-term/mobile-chat/studio/index.html/voice-test/style.css).
+    GIỮ: tên kỹ thuật hiển thị trong hướng dẫn (JAVIS_*, container javis, stop-javis
+    .bat, lệnh `javis login`, đường dẫn Javis/), định danh "# Javis adaptive source
+    contract" (test_adaptive_context_phase8 bám — coi là contract id kỹ thuật),
+    git author "Javis Learn/Sync", User-Agent javis-os, tiền tố file javis-img.
+    Coupled test đồng bộ theo (cùng lớp ngoại lệ P007): test_engine_ngang_quyen
+    ("MCP Thansa"), test_muc_dung_moi ("lượt của Thansa"), test_trang_chatbot.js.
+    app.js thuộc P010; javisos.com trong console.js thuộc P009.
+  commit: "[me] P008: chuoi san pham hien thi server + UI con sot"
+  diem_neo:
+    - file: server/main.py
+      ky_hieu: "FastAPI(title="
+    - file: server/oauth_mcp.py
+      ky_hieu: '"client_name"'
+    - file: server/totp.py
+      ky_hieu: "def otpauth_uri"
+    - file: dashboard/studio.js
+      ky_hieu: "sysb"
+    - file: dashboard/usage.js
+      ky_hieu: "SRC_LABEL"
+  vung_theo_doi:
+    - "server/main.py: FastAPI title, template vault, thông điệp skill"
+    - server/oauth_mcp.py
+    - server/codex_models.py
+    - server/totp.py
+    - "server/engine.py: header X-Title"
+    - server/meta_tools.py
+    - server/git_brain.py
+    - dashboard/console.js
+    - dashboard/usage.js
+    - dashboard/index.html
+    - dashboard/studio.js
+    - dashboard/branding.js
+  anh_goc:
+    - file: server/main.py
+      doan: 'app = FastAPI(title="Javis OS")'
+    - file: server/oauth_mcp.py
+      doan: '"client_name": "Javis OS", "redirect_uris": [redirect_uri],'
+    - file: server/totp.py
+      doan: 'def otpauth_uri(secret: str, ten_dang_nhap: str, ten_workspace: str = "Javis OS") -> str:'
+    - file: dashboard/usage.js
+      doan: '  var SRC_LABEL = { manual: "Bạn gõ tay", javis: "Javis (tự chạy)" };'
+  kiem_chung: >
+    /docs hiện "Thansa OS"; grep '"Javis OS"' trong server/oauth_mcp.py,
+    server/codex_models.py, server/totp.py, server/engine.py = 0; grep 'Javis'
+    (đứng độc lập, không phải Javis/ hay JAVIS_) trong các chuỗi hiển thị
+    dashboard/*.js *.html *.css = 0 ngoài app.js (P010) và danh sách GIỮ khai
+    ở y_dinh; JS còn parse được (node --check), python còn parse (ast).
+  dieu_kien_bo: >
+    Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
+    dùng cấu hình chính thức.
