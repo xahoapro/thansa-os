@@ -73,12 +73,12 @@ check("Phien nhận extra_env và trộn vào env lúc mở shell",
 # ---- 4. Hướng dẫn agy nói thẳng chuyện ĐÚNG USER ----
 import antigravity_cli  # noqa: E402
 hd = antigravity_cli.login_huong_dan()
-check("hướng dẫn chỉ vào trang Code NGAY TRONG Javis", "NGAY TRONG Javis" in hd["ghi_chu"])
+check("hướng dẫn chỉ vào trang Code NGAY TRONG Javis", "NGAY TRONG Thansa" in hd["ghi_chu"])
 check("cảnh báo đăng nhập bằng user khác (root) là Javis không thấy",
       "root" in hd["ghi_chu"])
 src_a = (SERVER / "antigravity_cli.py").read_text(encoding="utf-8")
 check("auth_status lúc chưa đăng nhập cũng nói đúng bệnh đúng-user",
-      "ĐÚNG user đang chạy Javis" in src_a)
+      "ĐÚNG user đang chạy Thansa" in src_a)
 
 if _fails:
     print(f"\nFAIL {len(_fails)} muc: " + ", ".join(_fails))
