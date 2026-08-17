@@ -496,7 +496,7 @@ _luot = ui.luot_theo_ngay("today")
 _tong_moi = sum(x["turns"] for x in _luot)
 _tong_tat = sum(x["turns"] for x in ui.summary("today")["timeseries"])
 check("CANARY: lượt người dùng tự gõ KHÔNG được tính vào tiết kiệm", _tong_moi < _tong_tat)
-check("và lượt của Javis thì vẫn được tính", _tong_moi > 0)
+check("và lượt của Thansa thì vẫn được tính", _tong_moi > 0)
 
 # Người tự chỉnh tay từng đường (preset 'custom'): Javis không biết cấu hình đó tốn bao nhiêu
 # mỗi lượt. Báo "tiết kiệm 0" kèm du_du_lieu=True là nói "chế độ của anh chẳng đáng gì".
@@ -533,8 +533,8 @@ check("CANARY: thông báo tan sau khi hiện, không dính lại mãi",
       'state.toast = "";' in _USAGE and 'state.nsToast = "";' in _USAGE)
 check("số đang gõ dở trong form không bị xoá khi trang vẽ lại",
       "function nhoForm(" in _USAGE and "state.nsForm" in _USAGE)
-check("nói rõ chỉ đếm lượt của Javis",
-      "usage.tk.qua_luot" in _USAGE and "lượt của Javis" in _VI.get("usage.tk.qua_luot", ""))
+check("nói rõ chỉ đếm lượt của Thansa",
+      "usage.tk.qua_luot" in _USAGE and "lượt của Thansa" in _VI.get("usage.tk.qua_luot", ""))
 
 # Việc nền chạy bằng API key phải ghi mức dùng, không thì trần tiền không thấy chính khoản
 # chi mà nó sinh ra để chặn.
