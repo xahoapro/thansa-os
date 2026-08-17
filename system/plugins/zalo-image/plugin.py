@@ -59,7 +59,7 @@ def _ket_noi_zalo():
 
 def _check():
     if not shutil.which("npx"):
-        return ("Máy chạy Javis chưa có Node.js 20+ (lệnh npx) nên không gửi được ảnh Zalo. "
+        return ("Máy chạy Thansa chưa có Node.js 20+ (lệnh npx) nên không gửi được ảnh Zalo. "
                 "Cài tại nodejs.org rồi thử lại.")
     if not _ket_noi_zalo():
         return ("Chưa đấu tài khoản Zalo nào. Vào trang Kết nối, chọn 'Zalo Agent MCP', "
