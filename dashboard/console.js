@@ -3051,7 +3051,7 @@
         <div class="cgrid">
           <div class="gcard"><div class="gcard-top"><span class="gcard-name">Engine</span></div><div class="gcard-meta">${esc(eng)}</div></div>
           <div class="gcard"><div class="gcard-top"><span class="gcard-name">Model</span></div><div class="gcard-meta">${esc(curModel)}</div></div>
-          <div class="gcard"><div class="gcard-top"><span class="gcard-name">Workspace</span></div><div class="gcard-meta">${esc(s.workspace_name || "Javis OS")}</div></div>
+          <div class="gcard"><div class="gcard-top"><span class="gcard-name">Workspace</span></div><div class="gcard-meta">${esc(s.workspace_name || "Thansa OS")}</div></div>
           <div class="gcard"><div class="gcard-top"><span class="gcard-name">Telegram</span></div><div class="gcard-meta">${tg.enabled ? "● " + esc(window.t("settings.tag_on")) : "○ " + esc(window.t("settings.tag_off"))}${tg.chat_id ? " · " + esc(tg.chat_id) : ""}</div></div>
         </div>
       </div>
@@ -5707,7 +5707,7 @@
         <h3>Workspace</h3>
         <div class="gcard" style="max-width:560px">
           <label class="js-lbl">${esc(window.t("cs.ac_ws_name"))}</label>
-          <input class="js-input" id="acWs" value="${esc(s.workspace_name || "Javis OS")}">
+          <input class="js-input" id="acWs" value="${esc(s.workspace_name || "Thansa OS")}">
           <button class="gcard-btn" id="acWsSave">${esc(window.t("common.save"))}</button>
           <div class="gcard-meta" id="acWsStatus"></div>
         </div>
@@ -5795,7 +5795,7 @@
       wsStatus.textContent = window.t("settings.saving");
       const r = await saveSetting("general", { workspace_name: document.getElementById("acWs").value.trim() });
       wsStatus.innerHTML = r.ok ? OK_ICON + " " + esc(window.t("cs.ac_saved")) : WARN_ICON + " " + esc(window.t("cs.ac_err_dot"));
-      const wn = document.getElementById("workspaceName"); if (wn) wn.textContent = document.getElementById("acWs").value.trim() || "Javis OS";
+      const wn = document.getElementById("workspaceName"); if (wn) wn.textContent = document.getElementById("acWs").value.trim() || "Thansa OS";
     };
     const acStatus = document.getElementById("acStatus");
     // HAI đường, đừng gộp: /auth/setup là đường CÔNG KHAI cho lần đầu tạo admin và nó TỪ CHỐI
@@ -6561,7 +6561,7 @@
           <div class="settings-status-grid">
             <div><span>Engine</span><b>${esc(engine)}</b></div>
             <div><span>Model</span><b>${esc(currentModel)}</b></div>
-            <div><span>Workspace</span><b>${esc(s.workspace_name || "Javis OS")}</b></div>
+            <div><span>Workspace</span><b>${esc(s.workspace_name || "Thansa OS")}</b></div>
             <div><span>Telegram</span><b>${esc(telegram.enabled ? t("settings.on") : t("settings.off"))}</b></div>
           </div>
           <div class="settings-links">
