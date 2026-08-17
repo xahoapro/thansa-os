@@ -114,7 +114,7 @@ def promise_note(orchestration: str = "") -> str:
     Viết ở ngôi Javis, bằng lời nói, không bảng và không em dash (luật CLAUDE.md).
     """
     lines = [
-        "⚠ Javis tự kiểm: lượt vừa rồi mình có hứa sẽ báo lại, nhưng mình KHÔNG tạo việc nền "
+        "⚠ Thansa tự kiểm: lượt vừa rồi mình có hứa sẽ báo lại, nhưng mình KHÔNG tạo việc nền "
         "nào nên sẽ không có báo cáo nào tự về đây. Lượt trả lời của mình đóng lại ngay khi "
         "mình nói xong, không có ai đánh thức mình dậy để làm nốt.",
         "Bạn nhắn lại một câu là mình làm ngay trong lượt sau, hoặc bảo mình \"giao thành việc "

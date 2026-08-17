@@ -374,7 +374,7 @@ class ZaloBot(HangLuot):
                 self._da_bao_khuon_thoai = True
                 print(f"[zalo voice] không tìm ra đường dẫn file thoại trong payload: "
                       f"{str(msg)[:400]}", file=sys.stderr)
-            return stt.loi_thanh_dong("loi", "Zalo không kèm đường dẫn file ghi âm nên Javis "
+            return stt.loi_thanh_dong("loi", "Zalo không kèm đường dẫn file ghi âm nên Thansa "
                                              "không tải về nghe được")
         try:
             rr = await client.get(url, timeout=httpx.Timeout(180.0))
@@ -384,7 +384,7 @@ class ZaloBot(HangLuot):
             return stt.loi_thanh_dong("loi", f"không tải được file ghi âm ({type(e).__name__}: {e})")
         if len(data) > MAX_TAI_MB * 1024 * 1024:
             return stt.loi_thanh_dong("qua_lon", f"({len(data) // (1024 * 1024)}MB, "
-                                                 f"trần tải về của Javis là {MAX_TAI_MB}MB)")
+                                                 f"trần tải về của Thansa là {MAX_TAI_MB}MB)")
         ten = f"zalo_{msg.get('message_id') or int(time.time())}.ogg"
         try:
             kq = await self.stt_fn(data, ten)
@@ -416,14 +416,14 @@ class ZaloBot(HangLuot):
 
         url = _lay_url(msg, ("photo_url", "photo", "image_url", "url", "file_url"))
         if not url:
-            return _with_cap("[Người dùng gửi một ảnh qua Zalo nhưng Javis không lấy được "
+            return _with_cap("[Người dùng gửi một ảnh qua Zalo nhưng Thansa không lấy được "
                              "đường dẫn ảnh.]")
         try:
             rr = await client.get(url, timeout=httpx.Timeout(180.0))
             rr.raise_for_status()
             noi_dung = rr.content
             if len(noi_dung) > MAX_TAI_MB * 1024 * 1024:
-                return _with_cap(f"[Người dùng gửi một ảnh lớn hơn {MAX_TAI_MB}MB, Javis không "
+                return _with_cap(f"[Người dùng gửi một ảnh lớn hơn {MAX_TAI_MB}MB, Thansa không "
                                  "tải về.]")
             chat = str((msg.get("chat") or {}).get("id", ""))
             ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
@@ -614,7 +614,7 @@ class ZaloBot(HangLuot):
                         if meta["chat_type"] != "private":
                             await self._bao_su_kien(meta)
                         if self.chat_ids and chat not in self.chat_ids:
-                            await self._send(client, chat, "Bạn không có quyền dùng bot Javis này.")
+                            await self._send(client, chat, "Bạn không có quyền dùng bot Thansa này.")
                             continue
                         text = str(msg.get("text") or "").strip()
                         if not text:

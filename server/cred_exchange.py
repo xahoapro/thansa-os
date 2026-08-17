@@ -37,8 +37,8 @@ def _google_master_token(fields):
     try:
         import gpsoauth
     except ImportError:
-        return None, ("Máy chủ Javis thiếu thư viện gpsoauth. Chạy: pip install -r requirements.txt "
-                      "rồi khởi động lại Javis.")
+        return None, ("Máy chủ Thansa thiếu thư viện gpsoauth. Chạy: pip install -r requirements.txt "
+                      "rồi khởi động lại Thansa.")
 
     email = str(fields.get("google_email") or "").strip()
     # Google hiển thị App Password thành 4 nhóm 4 ký tự có dấu cách; người dùng hay copy cả cách.
@@ -55,7 +55,7 @@ def _google_master_token(fields):
             res = gpsoauth.exchange_token(email, otk, _ANDROID_ID)
         except Exception as e:
             return None, (f"Không gọi được máy chủ Google ({type(e).__name__}). Kiểm tra mạng của "
-                          "máy chạy Javis rồi thử lại.")
+                          "máy chạy Thansa rồi thử lại.")
         token = res.get("Token")
         if token:
             return token, ""
@@ -72,7 +72,7 @@ def _google_master_token(fields):
         res = gpsoauth.perform_master_login(email, pw, _ANDROID_ID)
     except Exception as e:
         return None, (f"Không gọi được máy chủ Google ({type(e).__name__}). Kiểm tra mạng của máy "
-                      "chạy Javis rồi thử lại.")
+                      "chạy Thansa rồi thử lại.")
 
     token = res.get("Token")
     if token:
@@ -83,7 +83,7 @@ def _google_master_token(fields):
         return None, ("Google từ chối đăng nhập. Ba khả năng: (1) sai email hoặc App Password, "
                       "tạo lại chuỗi mới ở myaccount.google.com/apppasswords; (2) Google đã siết "
                       "đường App Password với tài khoản này, dùng đường lui oauth_token theo hướng "
-                      "dẫn trong form (mở accounts.google.com/EmbeddedSetup); (3) Javis chạy trên "
+                      "dẫn trong form (mở accounts.google.com/EmbeddedSetup); (3) Thansa chạy trên "
                       "VPS bị Google chặn IP trung tâm dữ liệu, lấy token ở máy cá nhân rồi dán "
                       "vào ô Master token hoặc oauth_token.")
     if ma in ("NeedsBrowser", "DeviceManagementRequiredOrSyncDisabled"):
@@ -135,8 +135,8 @@ def run(connector, fields):
 
     fn = HANDLERS.get(str(ex.get("handler") or ""))
     if not fn:
-        return _bo_rac(fields), ("Bản Javis này chưa biết cách đổi credential cho connector đó. "
-                                 "Cập nhật Javis rồi thử lại.")
+        return _bo_rac(fields), ("Bản Thansa này chưa biết cách đổi credential cho connector đó. "
+                                 "Cập nhật Thansa rồi thử lại.")
 
     try:
         gia_tri, loi = fn({k: fields.get(k) for k in inputs})

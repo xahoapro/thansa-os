@@ -45,7 +45,7 @@ def classify_error(err: str) -> tuple[str, str]:
     if any(s in low for s in _AUTH_HINTS):
         return "auth", "Hết phiên đăng nhập - bấm Kết nối lại để đăng nhập lại."
     if any(s in low for s in _SPAWN_HINTS):
-        return "spawn", "Không khởi động được trình kết nối trên máy chạy Javis."
+        return "spawn", "Không khởi động được trình kết nối trên máy chạy Thansa."
     if any(s in low for s in _NET_HINTS):
         return "net", "Dịch vụ không phản hồi - có thể do mạng hoặc máy chủ dịch vụ."
     return "unknown", (err or "Lỗi không rõ").strip()[:160]
@@ -74,7 +74,7 @@ async def check_one(conn, pool=None) -> dict:
                 rec.update(kind="auth",
                            message="Thiếu quyền: " + ", ".join(oauth_mcp.short_scopes(missing))
                                    + " - bấm Kết nối lại và tick đủ mọi ô quyền. Google không"
-                                   " hiện ô tick nào (quyền cũ đã cấp) thì gỡ Javis tại"
+                                   " hiện ô tick nào (quyền cũ đã cấp) thì gỡ Thansa tại"
                                    " myaccount.google.com/permissions rồi kết nối lại.")
                 _state[conn["id"]] = rec
                 return rec
@@ -163,7 +163,7 @@ ENGINE_FIX = {
     "claude": "Vào trang Models để kết nối lại.",
     "codex": "Vào trang Models để kết nối lại ChatGPT.",
 }
-ENGINE_FIX_DEFAULT = "Vào trang Models để kết nối và sử dụng Javis."
+ENGINE_FIX_DEFAULT = "Vào trang Models để kết nối và sử dụng Thansa."
 
 
 def _set_engine(name, ok, message="", source="probe"):
@@ -180,7 +180,7 @@ def _set_engine(name, ok, message="", source="probe"):
             # và một việc phải làm. Tên engine để trong ngoặc cho ai cần đi tra, không đặt
             # lên đầu câu.
             coro = on_engine_down(
-                "⚠ Javis chưa dùng được: chưa kết nối được Model AI. "
+                "⚠ Thansa chưa dùng được: chưa kết nối được Model AI. "
                 + ENGINE_FIX.get(name, ENGINE_FIX_DEFAULT)
                 + f" (chi tiết: {name} - {message})")
             if asyncio.iscoroutine(coro):

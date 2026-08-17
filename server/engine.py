@@ -1290,7 +1290,7 @@ def _schedule_tool_allowed(messages, name, args):
 def _schedule_tool_blocked_result():
     return (
         "BỊ CHẶN: user chỉ đang hỏi hoặc thảo luận về việc đặt lịch, không yêu cầu đọc hay thay đổi "
-        "lịch tự động của Javis. Hãy trả lời trực tiếp câu hỏi; không liệt kê cron/reminder và không "
+        "lịch tự động của Thansa. Hãy trả lời trực tiếp câu hỏi; không liệt kê cron/reminder và không "
         "khẳng định đã tạo, sửa hoặc huỷ lịch."
     )
 
@@ -1427,7 +1427,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
             msgs.append({
                 "role": "system",
                 "content": (
-                    "Javis gateway đã thao tác lịch bằng dữ liệu thật. Xác nhận ngắn gọn kết quả sau, "
+                    "Thansa gateway đã thao tác lịch bằng dữ liệu thật. Xác nhận ngắn gọn kết quả sau, "
                     "không nói rằng thiếu tool:\n\n" + cancel_gate.get("result", "")
                 ),
             })
@@ -1436,7 +1436,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
             msgs.append({
                 "role": "system",
                 "content": (
-                    "Javis đã đọc kho lịch thật và không có lịch đang chạy để xoá. "
+                    "Thansa đã đọc kho lịch thật và không có lịch đang chạy để xoá. "
                     "Báo đúng kết quả này, không nói thiếu tool:\n\n"
                     + cancel_gate.get("list_result", "")
                 ),
@@ -1446,7 +1446,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
             msgs.append({
                 "role": "system",
                 "content": (
-                    "Javis đã đọc danh sách lịch thật nhưng có nhiều mục và chưa đủ chắc chắn để xoá. "
+                    "Thansa đã đọc danh sách lịch thật nhưng có nhiều mục và chưa đủ chắc chắn để xoá. "
                     "Hãy hỏi user chọn đúng tên hoặc ID trong danh sách dưới đây; KHÔNG nói thiếu tool "
                     "và KHÔNG xác nhận đã xoá:\n\n" + cancel_gate.get("list_result", "")
                 ),
@@ -1573,7 +1573,7 @@ async def _cc_tool_loop(url, headers, model, messages, mcp_tools, mcp_route, rea
             yield {
                 "type": "error",
                 "content": (
-                    f"{label} model '{model}' đã bỏ qua tool bắt buộc nên Javis không dùng câu trả lời "
+                    f"{label} model '{model}' đã bỏ qua tool bắt buộc nên Thansa không dùng câu trả lời "
                     "có nguy cơ bịa dữ liệu. Hãy chọn model có hỗ trợ tool/function calling."
                 ),
             }
@@ -1607,7 +1607,7 @@ def _het_vong_msg() -> str:
     n = _max_tool_rounds()
     return (f"\n\n⚠ Đã chạy hết {n} vòng gọi tool cho lượt này nên phải dừng, câu trả lời ở "
             f"trên có thể còn dở. Cách xử lý: chia nhỏ yêu cầu thành từng bước, hoặc nâng trần "
-            f"bằng biến môi trường JAVIS_MAX_TOOL_ROUNDS (tối đa 40) rồi khởi động lại Javis.")
+            f"bằng biến môi trường JAVIS_MAX_TOOL_ROUNDS (tối đa 40) rồi khởi động lại Thansa.")
 
 
 async def openai_chat_with_mcp(api_key, model, messages, reasoning, mcp_tools, mcp_route):

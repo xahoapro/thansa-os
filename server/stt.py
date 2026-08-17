@@ -27,7 +27,7 @@ STT_TIMEOUT = 120.0      # tin thoại dài vài phút vẫn phải kịp, mạn
 # Câu Javis nói khi chưa đấu key. Để ở đây (không rải trong từng kênh) vì mọi kênh nói CÙNG
 # một chuyện: thiếu đúng một thứ, và thứ đó nằm ở đúng một chỗ trong dashboard.
 _HD_THIEU_KEY = (
-    "[Người dùng vừa gửi TIN THOẠI. Javis chưa nghe được vì chưa đấu API key của Groq - "
+    "[Người dùng vừa gửi TIN THOẠI. Thansa chưa nghe được vì chưa đấu API key của Groq - "
     "đó là thứ chuyển giọng nói thành chữ. Hãy nói với họ: muốn ra lệnh bằng ghi âm thì vào "
     "trang Models trong dashboard, mục nhà cung cấp Groq (API), dán API key lấy ở "
     "console.groq.com rồi lưu lại; xong là gửi tin thoại dùng được ngay, không cần cài gì thêm. "
@@ -48,7 +48,7 @@ def khoi_thoai(nghe, kenh):
     thật (gửi tin, đăng bài, đặt lịch, tiêu tiền) là loại sai không rút lại được. Đọc lại
     câu nghe được TRƯỚC khi làm là chỗ duy nhất người dùng bắt lỗi được.
     """
-    dan = (MARK_THOAI + f" qua {kenh}. Javis đã nghe thành chữ (có thể nhầm vài từ) - câu ở "
+    dan = (MARK_THOAI + f" qua {kenh}. Thansa đã nghe thành chữ (có thể nhầm vài từ) - câu ở "
            "dưới. Cứ làm theo như user gõ tay. Nếu việc sắp làm có tác động RA NGOÀI (gửi "
            "tin, đăng bài, đặt lịch, tiêu tiền, sửa file) thì mở đầu bằng một dòng "
            "\"Mình nghe: ...\" rồi hỏi xác nhận trước khi làm.]")
@@ -66,12 +66,12 @@ def loi_thanh_dong(ly_do, chi_tiet=""):
     if ly_do == "thieu_key":
         return _HD_THIEU_KEY
     if ly_do == "qua_lon":
-        return ("[Người dùng gửi một tin thoại quá dài để Javis nghe " + chi_tiet + ". "
+        return ("[Người dùng gửi một tin thoại quá dài để Thansa nghe " + chi_tiet + ". "
                 "Nhờ họ thu ngắn lại hoặc gõ chữ.]")
     if ly_do == "khong_nghe_ro":
-        return ("[Người dùng gửi tin thoại nhưng Javis nghe không ra chữ nào (có thể im lặng "
+        return ("[Người dùng gửi tin thoại nhưng Thansa nghe không ra chữ nào (có thể im lặng "
                 "hoặc quá ồn). Nhờ họ thu lại gần micro hơn, hoặc gõ chữ.]")
-    return ("[Người dùng gửi tin thoại nhưng Javis nghe hỏng: " + (chi_tiet or "lỗi không rõ") +
+    return ("[Người dùng gửi tin thoại nhưng Thansa nghe hỏng: " + (chi_tiet or "lỗi không rõ") +
             ". Nhờ họ gõ chữ, và báo là chỗ nghe giọng đang trục trặc.]")
 
 
