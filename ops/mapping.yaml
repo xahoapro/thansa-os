@@ -136,3 +136,31 @@
   dieu_kien_bo: >
     Upstream thêm key i18n riêng cho tên thương hiệu (branding key) thì bỏ patch,
     điền giá trị qua cấu hình.
+
+- id: P005
+  ten: "Compose: image GHCR trỏ thansa-os"
+  y_dinh: >
+    Máy Docker kéo đúng ảnh bản Thansa: ghcr.io/xahoapro/thansa-os:latest (workflow
+    docker-publish của upstream dùng ${GITHUB_REPOSITORY,,} nên repo thansa-os tự đẩy
+    ảnh đúng tên). Không đổi gì khác trong compose.
+  commit: "[me] P005: compose image ghcr.io/xahoapro/thansa-os"
+  diem_neo:
+    - file: docker-compose.yml
+      ky_hieu: "ghcr.io/xahoapro/thansa-os"
+    - file: docker-compose.build.yml
+      ky_hieu: "ghcr.io/xahoapro/thansa-os"
+    - file: docker-compose.hostinger.yml
+      ky_hieu: "ghcr.io/xahoapro/thansa-os"
+  vung_theo_doi:
+    - docker-compose.yml
+    - docker-compose.build.yml
+    - docker-compose.hostinger.yml
+  anh_goc:
+    - file: docker-compose.yml
+      doan: "image: ghcr.io/blogminhquy/javis-os:latest"
+  kiem_chung: >
+    grep "image:.*javis-os" docker-compose*.yml = 0; 3 file compose trỏ
+    ghcr.io/xahoapro/thansa-os:latest.
+  dieu_kien_bo: >
+    Upstream tham số hoá image trong compose (biến env/override mẫu) thì bỏ patch,
+    đặt qua biến.
