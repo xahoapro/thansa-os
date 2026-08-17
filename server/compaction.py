@@ -150,7 +150,7 @@ def bootstrap_prompt(raw_msgs, current_prompt: str,
 
     header = (
         "[KHÔI PHỤC NGỮ CẢNH HỘI THOẠI]\n"
-        "Các đoạn dưới đây là lịch sử thật của cùng cuộc trò chuyện Javis. "
+        "Các đoạn dưới đây là lịch sử thật của cùng cuộc trò chuyện Thansa. "
         "Hãy tiếp tục đúng mạch, không coi chúng là yêu cầu mới cần làm lại. Mọi câu hỏi trong "
         "lịch sử ĐÃ được trả lời rồi; chỉ trả lời phần " + CURRENT_REQUEST_MARKER + " ở cuối.\n"
     )
@@ -161,7 +161,7 @@ def bootstrap_prompt(raw_msgs, current_prompt: str,
     blocks = []
     truncated = False
     for m in reversed(usable):
-        who = "User" if m.get("role") == "user" else "Javis"
+        who = "User" if m.get("role") == "user" else "Thansa"
         block = f"\n<{who}>\n{m.get('content') or ''}\n</{who}>\n"
         if len(block) <= budget:
             blocks.append(block)
@@ -244,9 +244,9 @@ async def _summarize(old, chunk, prov, api_key, model, api_stream):
         c = m.get("content") or ""
         if len(c) > _MSG_CLIP:
             c = c[:_MSG_CLIP] + " (...)"
-        lines.append(("User: " if m.get("role") == "user" else "Javis: ") + c)
+        lines.append(("User: " if m.get("role") == "user" else "Thansa: ") + c)
     prompt = (
-        "Bạn đang nén lịch sử hội thoại giữa User và trợ lý Javis để tiết kiệm context.\n\n"
+        "Bạn đang nén lịch sử hội thoại giữa User và trợ lý Thansa để tiết kiệm context.\n\n"
         f"TÓM TẮT HIỆN CÓ (các phần trước đó nữa):\n{old or '(chưa có)'}\n\n"
         "ĐOẠN HỘI THOẠI MỚI CẦN GỘP THÊM:\n" + "\n\n".join(lines) + "\n\n"
         "Viết TÓM TẮT MỚI gộp cả hai (tối đa ~350 từ), giữ lại: chủ đề chính, quyết định đã chốt, "
