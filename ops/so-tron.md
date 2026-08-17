@@ -35,3 +35,17 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
   đỏ do ngưỡng 80ms (số đo trong bao-cao/GD1.md). Máy nghiệm thu Windows vẫn kỳ vọng 241/241.
 - P002 (logo + favicon): DÙNG TẠM ảnh mặc định của upstream, chưa thay. Patch P002 để
   lại đến khi chủ cung cấp ảnh Thansa; GĐ2 làm các patch còn lại.
+
+## Vòng GĐ2 2026-08-17 — rebrand hiển thị (không phải vòng trộn upstream)
+
+- 4 patch [me] trên nền `0b8f2c0`: P001 (fallback tên + mặc định settings.json trong
+  server/config.py), P003 (chrome: title, brand topbar "THANSA OS", login, welcome/wizard,
+  thẻ cập nhật, thông báo, release-noti), P004 (i18n vi/en, 9 giá trị), P005 (3 compose
+  → ghcr.io/xahoapro/thansa-os:latest). so_patch = 4, tu-kiem-chung XANH cả 4 luật.
+- P002 (logo/favicon) HOÃN theo quyết định chủ 17/08 — dùng tạm ảnh upstream.
+- Hai chỗ suýt sót, bắt được nhờ smoke test + quét không phân biệt hoa thường:
+  `server/config.py` `_DEFAULT["workspace_name"]` (thắng mọi fallback vì ghi vào
+  settings.json) và `<span class="brand-text">JAVIS OS</span>` (viết HOA).
+- Chuỗi "Javis" ĐỂ LẠI có chủ đích (tên trợ lý ở bề mặt cài đặt/chat + kỹ thuật):
+  danh sách đầy đủ khai trong y_dinh của P003. Chờ chủ quyết vòng sau có đổi tên
+  trợ lý hay không. TUYỆT ĐỐI không đụng watermark image_gen (test bám chuỗi).
