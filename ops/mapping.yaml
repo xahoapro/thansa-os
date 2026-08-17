@@ -310,3 +310,30 @@
   dieu_kien_bo: >
     Khi có tên miền Thansa chính thức thì đặt lại BRAND_SOURCE (một commit [me] mới
     hoặc gộp vòng trộn); nếu upstream đưa brand ảnh vào cấu hình thì bỏ patch.
+
+- id: P010
+  ten: "app.js: 2 fallback workspaceName → Thansa OS (ngoại lệ có kiểm soát)"
+  y_dinh: >
+    Hai fallback tên workspace người dùng thấy trong app.js đổi "Javis OS" →
+    "Thansa OS". app.js là file spec dặn hạn chế đụng + bẫy encoding hỗn hợp,
+    nên sửa bằng thao tác BYTE (không qua editor), diff đúng 2 dòng, phần còn
+    lại byte-for-byte. Không đụng bất cứ gì khác trong app.js (mọi chuỗi
+    "Javis" hiển thị khác của app.js để vòng sau nếu chủ muốn — xem bao-cao).
+  commit: "[me] P010: app.js 2 fallback workspaceName Thansa OS"
+  diem_neo:
+    - file: dashboard/app.js
+      ky_hieu: 'wn.textContent = cfg.workspace_name ||'
+    - file: dashboard/app.js
+      ky_hieu: 'getElementById("setWsName")'
+  vung_theo_doi:
+    - dashboard/app.js
+  anh_goc:
+    - file: dashboard/app.js
+      doan: 'wn.textContent = cfg.workspace_name || "Javis OS";'
+    - file: dashboard/app.js
+      doan: 'document.getElementById("setWsName").value.trim() || "Javis OS"; });'
+  kiem_chung: >
+    node --check dashboard/app.js OK; git diff của patch đúng 2 dòng; mở dashboard
+    không lỗi console, #workspaceName hiện "Thansa OS" khi chưa cấu hình.
+  dieu_kien_bo: >
+    Upstream refactor app.js đưa fallback về settings/branding config thì bỏ patch.
