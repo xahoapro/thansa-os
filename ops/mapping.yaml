@@ -17,3 +17,42 @@
 #         doan: ...        # thì để danh sách rỗng
 #     kiem_chung: >        # cách chứng minh patch còn tác dụng (chống chết âm thầm)
 #     dieu_kien_bo: >      # khi nào nên bỏ patch dùng bản chính thức upstream
+
+- id: P001
+  ten: "Fallback tên hiển thị Thansa OS"
+  y_dinh: >
+    Máy mới chưa đặt workspace_name phải thấy "Thansa OS" ở mọi nơi đọc fallback:
+    sidebar, overview, account, 2FA issuer, settings mặc định. KHÔNG đổi tên biến
+    WORKSPACE_NAME hay key workspace_name.
+  commit: "[me] P001: fallback ten hien thi Thansa OS"
+  diem_neo:
+    - file: env.example
+      ky_hieu: "WORKSPACE_NAME="
+    - file: server/main.py
+      ky_hieu: 'os.getenv("WORKSPACE_NAME"'
+    - file: dashboard/console.js
+      ky_hieu: 'id="acWs"'
+    - file: server/config.py
+      ky_hieu: "_DEFAULT"
+  vung_theo_doi:
+    - env.example
+    - "server/main.py: các fallback workspace_name (otpauth_uri, settings general, /settings GET)"
+    - "server/config.py: dict _DEFAULT sinh settings.json lần đầu"
+    - dashboard/console.js
+  anh_goc:
+    - file: env.example
+      doan: "WORKSPACE_NAME=Javis OS"
+    - file: server/main.py
+      doan: '"workspace_name": s.get("workspace_name") or os.getenv("WORKSPACE_NAME", "Javis OS"),'
+    - file: dashboard/console.js
+      doan: 'const wn = document.getElementById("workspaceName"); if (wn) wn.textContent = document.getElementById("acWs").value.trim() || "Javis OS";'
+    - file: server/config.py
+      doan: '"workspace_name": "Javis OS",'
+  kiem_chung: >
+    grep '|| "Javis OS"' trong dashboard/console.js và server/main.py = 0;
+    env.example có WORKSPACE_NAME=Thansa OS; khởi động sạch (xoá settings.json) rồi
+    GET /settings trả "workspace_name":"Thansa OS"; máy chưa cấu hình mở dashboard
+    thấy "Thansa OS" ở sidebar/overview/account.
+  dieu_kien_bo: >
+    Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
+    dùng cấu hình chính thức.
