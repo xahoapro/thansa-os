@@ -81,7 +81,7 @@ check("CANARY: lỗi lạ không bị gán nhầm thành 'API chưa bật'", "ch
 msg_perm = mcp_hub.chan_doan_loi("The caller does not have permission")
 check("403 caller-no-permission -> nhận ra, không trả rỗng", bool(msg_perm))
 check("nói thẳng ĐÂY KHÔNG PHẢI Javis chặn (chống chẩn nhầm sang tầng quyền)",
-      "KHÔNG phải Javis chặn" in msg_perm or "không phải Javis chặn" in msg_perm.lower())
+      "KHÔNG phải Thansa chặn" in msg_perm or "không phải Thansa chặn" in msg_perm.lower())
 check("chỉ đúng thuốc: ghi danh Developer Preview", "workspace/preview" in msg_perm)
 check("nhắc ghi danh tính theo TỪNG tài khoản (đổi tài khoản là phải ghi danh lại)",
       "TỪNG tài khoản" in msg_perm)
@@ -104,7 +104,7 @@ src = Path(mcp_hub.__file__).read_text(encoding="utf-8")
 than_guard = src.split("def _guard(")[1].split("\n# =====")[0]
 check("_guard có gắn chẩn đoán vào kết quả lỗi của tool", "chan_doan_loi" in than_guard)
 check("_guard GIỮ nguyên văn lỗi gốc (chỉ gắn thêm, không thay thế)",
-      "[Javis chẩn đoán]" in than_guard and "{result}" in than_guard)
+      "[Thansa chẩn đoán]" in than_guard and "{result}" in than_guard)
 check("chỉ gắn khi thật sự là lỗi", 'startswith("ERROR:")' in than_guard)
 
 # ---- 5. validate_connection phải THẬT SỰ đi qua bộ dịch này ----

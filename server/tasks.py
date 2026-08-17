@@ -508,7 +508,7 @@ class TasksFeature:
     async def _specify(self, task: dict) -> tuple[dict, str]:
         cli = self._base_cli(task, [], "suggest", "specifier")
         prompt = f"""
-Bạn là specifier của hàng đợi AI Javis. Chuẩn hoá goal dưới đây thành một task có thể
+Bạn là specifier của hàng đợi AI Thansa. Chuẩn hoá goal dưới đây thành một task có thể
 chạy headless. Không thực thi task, không hỏi người dùng, không thêm mục tiêu ngoài phạm vi.
 
 Tiêu đề: {task.get('title', '')}
@@ -694,7 +694,7 @@ nói rõ đã được phép tự hành động; nếu không thì để auto đ
             pass
         acceptance = task.get("metadata", {}).get("acceptance") or []
         prompt = f"""
-Bạn là autonomous worker của Javis. Hãy hoàn thành đúng task được giao trong brain đã
+Bạn là autonomous worker của Thansa. Hãy hoàn thành đúng task được giao trong brain đã
 ghim. Tự kiểm tra kết quả trước khi kết thúc. Không mở rộng phạm vi và không hỏi trong
 chat vì đây là worker headless.
 

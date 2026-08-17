@@ -266,8 +266,8 @@ class _ApiAuxEngine:
         # sai. Nói rõ THIẾU GÌ và VÌ SAO thì câu báo về mới dẫn đúng tới việc cần làm.
         sysprompt += (
             "\n\n[Sự thật hệ thống - năng lực của phiên này] Bạn đang chạy bằng engine API "
-            f"'{self.provider}', KHÔNG phải Claude Code. Bạn có: các tool qua MCP Hub của Javis "
-            "(gồm tool đọc/ghi file trong vault và mọi MCP người dùng đã đấu vào Javis). "
+            f"'{self.provider}', KHÔNG phải Claude Code. Bạn có: các tool qua MCP Hub của Thansa "
+            "(gồm tool đọc/ghi file trong vault và mọi MCP người dùng đã đấu vào Thansa). "
             "Bạn KHÔNG có: lệnh máy (Bash), tự mở URL (WebFetch/WebSearch), và KHÔNG có các "
             "connector gắn thẳng vào TÀI KHOẢN Claude - Gmail, Google Drive, Google Calendar "
             "gọi bằng tool native `mcp__<tên>__*` chỉ tồn tại trên engine Claude Code. "
