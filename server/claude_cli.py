@@ -557,7 +557,7 @@ def mcp_open_auth_terminal():
         return {"ok": False, "error": "Claude CLI chưa cài"}
     try:
         if os.name == "nt":
-            subprocess.Popen('start "Javis - Xac thuc MCP (go /mcp)" cmd /k claude', shell=True)
+            subprocess.Popen('start "Thansa - Xac thuc MCP (go /mcp)" cmd /k claude', shell=True)
         else:
             for term in ("x-terminal-emulator", "gnome-terminal", "konsole", "xterm"):
                 if shutil.which(term):
@@ -835,7 +835,7 @@ def codex_mcp_open_login_terminal(name):
         return {"ok": False, "error": "Tên server không hợp lệ"}
     try:
         if os.name == "nt":
-            subprocess.Popen(f'start "Javis - Dang nhap MCP Codex" cmd /k codex mcp login {safe}',
+            subprocess.Popen(f'start "Thansa - Dang nhap MCP Codex" cmd /k codex mcp login {safe}',
                              shell=True)
         else:
             for term in ("x-terminal-emulator", "gnome-terminal", "konsole", "xterm"):
@@ -863,7 +863,7 @@ def codex_mcp_open_login_terminal(name):
 _SANDBOX_HONG = re.compile(r"bwrap:|Failed to make / slave", re.I)
 
 _NOTE_SANDBOX_HONG = (
-    "⚠ Javis tự kiểm: rào sandbox riêng của Codex (ChatGPT) KHÔNG khởi động được trong môi "
+    "⚠ Thansa tự kiểm: rào sandbox riêng của Codex (ChatGPT) KHÔNG khởi động được trong môi "
     "trường này, nên mọi lệnh đọc/ghi file của nó đều bị chặn ngay từ đầu. Đây là giới hạn của "
     "container chứ không phải lỗi của lượt chạy, và thử lại bao nhiêu lần cũng vậy. Hai lối ra: "
     "đặt biến môi trường JAVIS_CODEX_SANDBOX=off để Codex chạy không có rào riêng (chính "

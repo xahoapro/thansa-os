@@ -75,7 +75,7 @@ LOI_HET_CUA = (
     "có cả Gemini lẫn Claude, chỉ cần một API key.\n"
     "- **Google Gemini (API)** - vẫn đúng model Gemini, lấy key ở aistudio.google.com, "
     "trả tiền theo lượt gọi.\n"
-    "- **Antigravity CLI** - bản thay thế chính chủ của Google (binary `agy`). Javis chưa đấu "
+    "- **Antigravity CLI** - bản thay thế chính chủ của Google (binary `agy`). Thansa chưa đấu "
     "engine này; nhắn nếu bạn muốn thêm."
 )
 
@@ -159,7 +159,7 @@ def auth_status() -> dict:
     try:
         import gemini_oauth
         if gemini_oauth.connected():
-            return {"connected": True, "method": "oauth-personal (Javis)",
+            return {"connected": True, "method": "oauth-personal (Thansa)",
                     "email": gemini_oauth.email(), "error": ""}
     except Exception:
         pass
@@ -198,7 +198,7 @@ def login_huong_dan() -> dict:
         "cai": "npm install -g @google/gemini-cli",
         "dang_nhap": "gemini",
         "ghi_chu": ("Cách khác: chạy `gemini` trong terminal rồi chọn \"Login with Google\". "
-                    "Javis nhận ra cả tài khoản đăng nhập kiểu đó."),
+                    "Thansa nhận ra cả tài khoản đăng nhập kiểu đó."),
     }
 
 

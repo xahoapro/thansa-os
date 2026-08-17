@@ -153,7 +153,7 @@ def start(label=None):
     _sweep()
     argv = _npx_argv()
     if not argv:
-        return {"ok": False, "error": "Cần cài Node.js 20+ (lệnh npx) trên máy chạy Javis - tải tại nodejs.org"}
+        return {"ok": False, "error": "Cần cài Node.js 20+ (lệnh npx) trên máy chạy Thansa - tải tại nodejs.org"}
     sid = uuid.uuid4().hex[:10]
     slug = mcp_store._slugify(label or "zalo")
     # Kèm sid: 2 tài khoản đặt CÙNG tên gợi nhớ vẫn phải 2 home riêng (account active của

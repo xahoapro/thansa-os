@@ -401,8 +401,8 @@ def _loi_nhac_file(duong_dan: str, cau_hoi: str) -> str:
 
 
 _CANH_BAO_CHUA_DOC = (
-    "\n\n_(Lưu ý của Javis: bản `agy` trên máy này không mở file ngữ cảnh, nên lượt vừa rồi trả "
-    "lời mà chưa có system prompt và bộ nhớ của Javis. Muốn chuẩn thì nâng cấp `agy` lên bản mới "
+    "\n\n_(Lưu ý của Thansa: bản `agy` trên máy này không mở file ngữ cảnh, nên lượt vừa rồi trả "
+    "lời mà chưa có system prompt và bộ nhớ của Thansa. Muốn chuẩn thì nâng cấp `agy` lên bản mới "
     "(nhận prompt qua stdin), hoặc đổi bộ não khác ở trang Models.)_"
 )
 # Bơm stdin theo mẩu bao nhiêu byte. 4096 là kích thước một trang ống dẫn: đủ nhỏ để bên đọc
@@ -449,14 +449,14 @@ def _ghi_stdin(proc, s: str) -> None:
 
 
 _CANH_BAO_HONG_DAU = (
-    "\n\n_(Lưu ý của Javis: bản `agy` trên máy này làm hỏng dấu tiếng Việt khi nhận prompt dài "
+    "\n\n_(Lưu ý của Thansa: bản `agy` trên máy này làm hỏng dấu tiếng Việt khi nhận prompt dài "
     "(chữ biến thành `�`), và đổi đường gửi cũng không cứu được. Lỗi nằm trong chính CLI, "
-    "Javis không vá được - nâng cấp `agy` lên bản mới, hoặc đổi bộ não khác ở trang Models.)_"
+    "Thansa không vá được - nâng cấp `agy` lên bản mới, hoặc đổi bộ não khác ở trang Models.)_"
 )
 _CANH_BAO_DOC_HONG = (
-    "\n\n_(Lưu ý của Javis: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
+    "\n\n_(Lưu ý của Thansa: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
     "quyền hoặc sandbox chặn), nên lượt vừa rồi trả lời mà chưa có system prompt và bộ nhớ của "
-    "Javis. Nâng cấp `agy` lên bản nhận prompt qua stdin là hết hẳn đường vòng này.)_"
+    "Thansa. Nâng cấp `agy` lên bản nhận prompt qua stdin là hết hẳn đường vòng này.)_"
 )
 
 
@@ -615,10 +615,10 @@ def auth_status(bo_qua_cache: bool = False) -> dict:
         # "đã cài rồi mà Javis không nhận". Trang Code của dashboard mở shell bằng chính user
         # của Javis nên đăng nhập ở đó là chắc ăn nhất.
         d = {"connected": False, "method": "", "email": "",
-             "error": "Đã cài Antigravity CLI nhưng phiên của Javis chưa đăng nhập. Mở trang "
-                      "Code (Terminal) NGAY TRONG Javis, gõ `agy` rồi làm theo hướng dẫn - "
-                      "phải đăng nhập bằng ĐÚNG user đang chạy Javis; SSH bằng user khác "
-                      "(vd root) đăng nhập xong Javis vẫn không thấy."}
+             "error": "Đã cài Antigravity CLI nhưng phiên của Thansa chưa đăng nhập. Mở trang "
+                      "Code (Terminal) NGAY TRONG Thansa, gõ `agy` rồi làm theo hướng dẫn - "
+                      "phải đăng nhập bằng ĐÚNG user đang chạy Thansa; SSH bằng user khác "
+                      "(vd root) đăng nhập xong Thansa vẫn không thấy."}
     _AUTH_CACHE.update(ts=now, val=dict(d))
     return d
 
@@ -636,9 +636,9 @@ def login_huong_dan() -> dict:
     return {
         "cai": lenh_cai(),
         "dang_nhap": "agy",
-        "ghi_chu": ("Dùng trang Code (Terminal) NGAY TRONG Javis - nó mở shell bằng đúng user "
-                    "đang chạy Javis, đăng nhập ở đó là Javis nhận liền. (SSH bằng user khác, "
-                    "vd root, đăng nhập xong Javis vẫn không thấy - đây là lý do hay gặp nhất "
+        "ghi_chu": ("Dùng trang Code (Terminal) NGAY TRONG Thansa - nó mở shell bằng đúng user "
+                    "đang chạy Thansa, đăng nhập ở đó là Thansa nhận liền. (SSH bằng user khác, "
+                    "vd root, đăng nhập xong Thansa vẫn không thấy - đây là lý do hay gặp nhất "
                     "của cảnh 'cài rồi mà không nhận'.) Gõ `agy`: nó in ra một đường link, mở "
                     "link trên máy của bạn rồi đăng nhập Google là xong, chỉ phải làm một lần."),
     }
@@ -916,7 +916,7 @@ class AntigravityCLI:
         if not self.cli_path:
             yield {"type": "error",
                    "content": f"Không tìm thấy Antigravity CLI (`agy`). Cài một lần trên máy "
-                              f"chạy Javis:\n\n`{lenh_cai()}`\n\nRồi gõ `agy` một lần để đăng "
+                              f"chạy Thansa:\n\n`{lenh_cai()}`\n\nRồi gõ `agy` một lần để đăng "
                               f"nhập Google."}
             return
         full = (self.instructions.strip() + "\n\n" + prompt) if self.instructions else prompt
@@ -1019,7 +1019,7 @@ class AntigravityCLI:
                            cac_loi=[])
                 yield {"type": "error",
                        "content": f"Không ghi được file ngữ cảnh cho Antigravity CLI "
-                                  f"({type(e).__name__}: {e}). Prompt của Javis dài hơn trần "
+                                  f"({type(e).__name__}: {e}). Prompt của Thansa dài hơn trần "
                                   f"dòng lệnh của hệ điều hành nên phải đi qua file. Kiểm tra "
                                   f"quyền ghi của thư mục state, hoặc đổi bộ não khác ở trang "
                                   f"Models."}
@@ -1164,7 +1164,7 @@ class AntigravityCLI:
             if _la_loi_chua_dang_nhap(loi):
                 return [{"type": "error",
                          "content": "Antigravity CLI chưa đăng nhập. Mở terminal trên máy chạy "
-                                    "Javis, gõ `agy` rồi làm theo hướng dẫn (qua SSH thì nó in "
+                                    "Thansa, gõ `agy` rồi làm theo hướng dẫn (qua SSH thì nó in "
                                     "ra một link để mở trên máy bạn)."}]
             if not loi:
                 loi = f"Antigravity CLI thoát với mã {ev.get('_exit')}."
@@ -1211,7 +1211,7 @@ class AntigravityCLI:
             if _la_loi_chua_dang_nhap(tin):
                 return [{"type": "error",
                          "content": "Antigravity CLI chưa đăng nhập. Gõ `agy` một lần trên máy "
-                                    "chạy Javis."}]
+                                    "chạy Thansa."}]
             if str(ev.get("severity") or "error") == "warning":
                 return []
             return [{"type": "error", "content": tin[:1500]}]
@@ -1302,7 +1302,7 @@ def kiem_tra_nhanh(timeout: float = 60.0) -> dict:
         if _la_loi_chua_dang_nhap(_ra) or "select login method" in _ra.lower():
             return {"ok": False,
                     "error": "Chưa đăng nhập - CLI đang đứng ở màn chọn cách đăng nhập. Mở "
-                             "terminal trên máy chạy Javis, gõ `agy` rồi làm theo hướng dẫn."}
+                             "terminal trên máy chạy Thansa, gõ `agy` rồi làm theo hướng dẫn."}
         return {"ok": False, "error": "Antigravity CLI không trả lời kịp."}
     except Exception as e:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}
@@ -1310,7 +1310,7 @@ def kiem_tra_nhanh(timeout: float = 60.0) -> dict:
     if r.returncode != 0:
         loi = (r.stderr or out or "").strip()
         if _la_loi_chua_dang_nhap(loi):
-            return {"ok": False, "error": "Chưa đăng nhập. Gõ `agy` một lần trên máy chạy Javis."}
+            return {"ok": False, "error": "Chưa đăng nhập. Gõ `agy` một lần trên máy chạy Thansa."}
         return {"ok": False, "error": loi[:400] or f"Thoát mã {r.returncode}"}
     if not out:
         return {"ok": False,

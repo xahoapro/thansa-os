@@ -684,7 +684,7 @@ class LoopFeature:
             ), ""
         if goal == "product":
             base = (
-                "MỤC TIÊU: TỰ CẢI THIỆN JAVIS hữu dụng hơn với người dùng.\n"
+                "MỤC TIÊU: TỰ CẢI THIỆN THANSA hữu dụng hơn với người dùng.\n"
                 "Đọc log hội thoại gần đây (Memory/conversations) + các agent/workflow trong Javis/ + ghi chú phản hồi. "
                 "Nhận diện: người dùng hay vướng gì, yêu cầu lặp lại gì, thiếu agent/workflow/skill nào, chỗ nào gây khó. "
                 "KHÔNG sửa code server.\n"
@@ -696,7 +696,7 @@ class LoopFeature:
                     "hoặc ghi 1 note đề xuất cải tiến UX/tính năng vào '05 - Projects'. Báo cáo NGẮN: cải tiến gì, file nào, vì sao."
                 ), ""
             return base + (
-                "CHẾ ĐỘ ĐỀ XUẤT - chỉ đọc, không ghi. Liệt kê 3-5 cải tiến giá trị nhất để Javis hữu dụng hơn (mỗi cái 1 dòng + lý do)."
+                "CHẾ ĐỘ ĐỀ XUẤT - chỉ đọc, không ghi. Liệt kê 3-5 cải tiến giá trị nhất để Thansa hữu dụng hơn (mỗi cái 1 dòng + lý do)."
             ), ""
         if goal == "custom":
             objective = (loop.get("body") or "").strip() or "Cải thiện vault theo cách hữu ích nhất bạn thấy."

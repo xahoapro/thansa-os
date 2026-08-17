@@ -42,7 +42,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
     # Cặp key-value brain để chèn vào JSON body của curl (rỗng nếu không rõ brain → giữ hành vi cũ).
     # json.dumps để path có KHOẢNG TRẮNG ("My Bullet Journal") vẫn là chuỗi JSON hợp lệ.
     brain_kv = f'"brain":{json.dumps(brain_root)},' if brain_root else ""
-    platforms = ["local (file trên máy chạy Javis)", "dashboard web"]
+    platforms = ["local (file trên máy chạy Thansa)", "dashboard web"]
     if telegram_running or source == "telegram":
         platforms.append("Telegram bot")
     if source == "zalo":
@@ -50,7 +50,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
 
     lines = [
         "", "",
-        "# === KÊNH HỘI THOẠI HIỆN TẠI (gateway Javis tự chèn - dữ liệu thật, không phải đoán) ===",
+        "# === KÊNH HỘI THOẠI HIỆN TẠI (gateway Thansa tự chèn - dữ liệu thật, không phải đoán) ===",
         "- Khi user hỏi trạng thái HIỆN TẠI của cron, việc định kỳ, nhắc hẹn hoặc lịch thuốc: BẮT BUỘC "
         "gọi `javis_schedule` với `op=list` rồi mới trả lời. Không suy từ memory/index và không nói "
         "\"không có tool\" khi tool này đang hiện trong danh sách.",
@@ -64,7 +64,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         "`javis_connections`), và có kênh nào để BÁO kết quả chưa. Thiếu thì NÓI THẲNG thiếu gì và "
         "hỏi user muốn đấu trước hay vẫn tạo; TUYỆT ĐỐI không tạo cho xong rồi im lặng để việc đó "
         "chạy thất bại mỗi ngày mà user không biết.",
-        "- CHỈ gọi `javis_schedule` khi user ra lệnh rõ ràng đọc/tạo/sửa/xoá lịch tự động của Javis. "
+        "- CHỈ gọi `javis_schedule` khi user ra lệnh rõ ràng đọc/tạo/sửa/xoá lịch tự động của Thansa. "
         "Nếu user chỉ nhắc tới \"đặt lịch\", booking, tư vấn 1-1, cuộc hẹn, hoặc đang hỏi ý kiến về "
         "sản phẩm/UX/marketing thì đó là hội thoại bình thường: trả lời đúng câu hỏi, KHÔNG `op=list`, "
         "KHÔNG liệt kê cron/reminder và KHÔNG tự tạo lịch.",
@@ -84,7 +84,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         "và bảo user bật \"AI tự vận hành\" ở trang Việc, KHÔNG được rút gọn thành \"việc đang "
         "chạy, kết quả sẽ tự về\".",
         "- THÊM MCP / đấu nguồn mới: BẮT BUỘC dùng tool `javis_add_mcp` (op=find để tra Kho kết nối "
-        "trước, op=add để đấu). Chỉ đường này nguồn mới mới nằm trong kho của Javis và HIỆN ở khu "
+        "trước, op=add để đấu). Chỉ đường này nguồn mới mới nằm trong kho của Thansa và HIỆN ở khu "
         "'Đã kết nối' trang Kết nối cho người dùng thấy, đồng thời mọi bộ não dùng chung được. "
         "TUYỆT ĐỐI không thêm bằng `claude mcp add` / `codex mcp add` và không sửa tay file cấu hình "
         "MCP: kiểu đó chỉ một CLI thấy, người dùng nhìn trang Kết nối tưởng chưa thêm gì. Không thấy "
@@ -113,7 +113,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "## Gửi file cho user qua Telegram (2 cách)",
             "1. TỰ ĐỘNG (nên dùng - luôn về ĐÚNG người đang hỏi): file bạn tạo bằng tool Write trong "
             "lượt này, file có ĐƯỜNG DẪN TUYỆT ĐỐI trong câu trả lời cuối, HOẶC ảnh/tệp trong vault "
-            "nhúng dạng markdown ![](attachments/...) (vd ẢNH Javis vừa tạo) - đều được Javis tự đính "
+            "nhúng dạng markdown ![](attachments/...) (vd ẢNH Thansa vừa tạo) - đều được Thansa tự đính "
             f"kèm gửi qua Telegram ngay sau câu trả lời (tối đa {MAX_FILES_PER_TURN} file/lượt, mỗi file "
             f"dưới {MAX_FILE_MB}MB). Ảnh bạn vừa tạo: CHỈ cần nhúng ![](attachments/...) là đủ để user "
             "nhận, KHÔNG cần curl (curl dễ gửi nhầm cho chủ bot).",
@@ -127,7 +127,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "- KHÔNG nói \"mình đã gửi file\" khi chưa làm một trong hai cách trên.",
             "- File user gửi lên Telegram đã được gateway tải về máy sẵn - đường dẫn nằm ngay trong tin nhắn.",
             "",
-            "## Đặt nhắc hẹn (Javis TỰ thức dậy gửi sau - dùng khi user muốn được nhắc)",
+            "## Đặt nhắc hẹn (Thansa TỰ thức dậy gửi sau - dùng khi user muốn được nhắc)",
             "Khi user muốn được NHẮC vào lúc nào đó (\"30 phút nữa nhắc tôi...\", \"8h30 sáng mai nhắc...\", "
             "\"mỗi sáng 7h nhắc uống thuốc\", \"tối 9h báo doanh thu hôm nay\").",
             "- CÁCH NÊN DÙNG: gọi tool `javis_schedule` (op=create) - nó TỰ gắn đúng brain phiên này, "
@@ -146,7 +146,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "hằng tháng = \"0 9 1 * *\". Bạn tự đổi câu user thành cron. Có cron thì tự lặp, KHỎI cần repeat_min.",
             "- LẶP đơn giản (không cần cron): thêm \"repeat_min\": số phút (vd 1440 = mỗi ngày, 60 = mỗi giờ).",
             "- \"mode\":\"notify\" (mặc định) = tới giờ nhắn lại đúng câu nhắc. \"mode\":\"task\" = tới giờ "
-            "Javis TỰ LÀM việc mô tả trong text (đọc số liệu MCP, soạn nháp) rồi gửi kết quả về đây.",
+            "Thansa TỰ LÀM việc mô tả trong text (đọc số liệu MCP, soạn nháp) rồi gửi kết quả về đây.",
             "- \"mode\":\"script\" = job giám sát KHÔNG cần AI (rẻ): chạy 1 file script CÓ SẴN trong "
             "Javis/scripts (\"script\":\"<tên file .py/.sh/.ps1>\"), đẩy stdout về đây; stdout rỗng thì im lặng, "
             "exit khác 0 thì báo lỗi. Chỉ chạy file user đã tự bỏ vào folder đó - KHÔNG bịa lệnh tuỳ ý.",
@@ -200,7 +200,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             ".md KHÔNG gửi ra được qua kênh này. TUYỆT ĐỐI không nói \"mình đã gửi file\" - hãy "
             "nói thẳng là chưa gửi được qua Zalo, rồi đưa ĐƯỜNG DẪN trong brain để user tự mở, "
             "hoặc đề nghị tóm tắt nội dung ngay trong tin nhắn.",
-            "- ẢNH thì Javis tự đính kèm khi bạn nhúng `![](attachments/...)` như thường lệ, "
+            "- ẢNH thì Thansa tự đính kèm khi bạn nhúng `![](attachments/...)` như thường lệ, "
             "nhưng đây là đường đang thử nghiệm: gửi hỏng thì user sẽ thấy một dòng báo lỗi.",
             "- Ảnh user gửi lên đã được gateway tải về máy sẵn - đường dẫn nằm ngay trong tin nhắn.",
             "",
@@ -218,7 +218,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         # một đống ký tự gạch dọc.
         who = (meta.get("host") or "").strip()
         lines += [
-            "- Nguồn tin nhắn này: Javis CLI (user đang gõ trong terminal"
+            "- Nguồn tin nhắn này: Thansa CLI (user đang gõ trong terminal"
             + (f", máy {who}" if who else "") + ").",
             f"- Nền tảng đang kết nối: {', '.join(platforms)}.",
             "- Terminal KHÔNG render markdown: TUYỆT ĐỐI không dùng bảng, không nhúng ảnh "
@@ -235,7 +235,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
     else:
         web_sid = str(meta.get("session_id") or "").strip()
         lines += [
-            "- Nguồn tin nhắn này: Dashboard web Javis (user mở bằng trình duyệt, file hiện dạng đường dẫn).",
+            "- Nguồn tin nhắn này: Dashboard web Thansa (user mở bằng trình duyệt, file hiện dạng đường dẫn).",
             f"- Nền tảng đang kết nối: {', '.join(platforms)}.",
             "",
             "## Cách trình bày trong khung chat này (kênh ĐỌC, không phải kênh nghe)",
@@ -272,7 +272,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
                 "sẽ tự hiện ở đây, xem tiến độ ở trang Việc. Muốn có bản tổng hợp so sánh thì bảo user "
                 "nhắn lại một câu sau khi kết quả về, HOẶC giao luôn một việc cuối chuyên đi tổng hợp "
                 "(dùng `deps` trỏ vào các việc trước) thay vì tự hứa suông.",
-                "- Javis TỰ KIỂM lời hứa: cuối mỗi lượt server dò câu trả lời xem có hẹn báo lại "
+                "- Thansa TỰ KIỂM lời hứa: cuối mỗi lượt server dò câu trả lời xem có hẹn báo lại "
                 "không, rồi đối chiếu với việc nền thật đang có. Hứa mà không có việc nào thì "
                 "server tự dán một dòng đính chính ngay dưới câu của bạn cho user thấy. Nên câu "
                 "hẹn suông không giúp bạn thoát, chỉ làm câu trả lời trông tệ hơn.",
@@ -288,7 +288,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
                 f"`curl -s -X POST http://127.0.0.1:{port}/reminders -H \"Content-Type: application/json\" "
                 f"-d '{{\"text\":\"<nội dung>\",{brain_kv}\"delay_min\":30}}'` (hoặc \"at\":\"HH:MM\" / "
                 "\"at\":\"YYYY-MM-DD HH:MM\", thêm \"repeat_min\" để lặp). Giữ nguyên field \"brain\" để nhắc "
-                "thuộc đúng brain. Server tính giờ VN; tới giờ Javis tự gửi nhắc qua Telegram cho chủ bot.",
+                "thuộc đúng brain. Server tính giờ VN; tới giờ Thansa tự gửi nhắc qua Telegram cho chủ bot.",
             ]
     return "\n".join(lines) + "\n"
 
