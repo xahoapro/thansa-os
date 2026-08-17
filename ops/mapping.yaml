@@ -337,3 +337,34 @@
     không lỗi console, #workspaceName hiện "Thansa OS" khi chưa cấu hình.
   dieu_kien_bo: >
     Upstream refactor app.js đưa fallback về settings/branding config thì bỏ patch.
+
+- id: P011
+  ten: "Attribution footer Tradingauto.org + gợi ý image trỏ thansa-os"
+  y_dinh: >
+    Dòng tác giả ở footer sidebar đổi "by Minh Quý" (link javisos.com) thành
+    "by Tradingauto.org" (link https://tradingauto.org) theo lệnh chủ 17/08.
+    Kèm sửa 2 chuỗi HƯỚNG DẪN lùi bản Docker trong console.js đang trỏ image
+    upstream ghcr.io/blogminhquy/javis-os → ghcr.io/xahoapro/thansa-os (hướng dẫn
+    sai cho bản Thansa — cùng lớp hiển thị với P005). GIỮ: link tài liệu
+    github.com/blogminhquy/javis-os/docs (tài liệu thật của upstream), tên gói
+    pip javis-cli, docstring/comment nhắc Minh Quý.
+  commit: "[me] P011: footer by Tradingauto.org + goi y image thansa-os"
+  diem_neo:
+    - file: dashboard/index.html
+      ky_hieu: "rf-author"
+    - file: dashboard/console.js
+      ky_hieu: "Cách lùi bản Docker"
+  vung_theo_doi:
+    - "dashboard/index.html: khối rf-meta footer sidebar"
+    - "dashboard/console.js: khối cập nhật/lùi bản"
+  anh_goc:
+    - file: dashboard/index.html
+      doan: '<a class="rf-author" href="https://javisos.com" target="_blank" rel="noopener">by Minh Quý</a>'
+    - file: dashboard/console.js
+      doan: 'Hoặc pin image <code>ghcr.io/blogminhquy/javis-os:${esc(prev)}</code> rồi Redeploy.'
+  kiem_chung: >
+    Footer sidebar hiện "by Tradingauto.org", bấm mở https://tradingauto.org;
+    grep "by Minh" dashboard/ = 0; grep "ghcr.io/blogminhquy" dashboard/ = 0;
+    node --check console.js OK.
+  dieu_kien_bo: >
+    Upstream đưa attribution vào branding config thì bỏ patch, đặt qua cấu hình.
