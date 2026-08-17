@@ -127,7 +127,7 @@ def _mo_ta_card(c: dict) -> str:
     o = [f"- {c.get('name')} (card '{c.get('group') or c.get('name')}' trong Kho kết nối"
          + (f", nhóm {c.get('category')}" if c.get("category") else "") + ")"]
     if c.get("auth_type") == "oauth":
-        o.append("  Cần ĐĂNG NHẬP (OAuth) nên phải bấm ở trang Kết nối, Javis không đăng nhập hộ được.")
+        o.append("  Cần ĐĂNG NHẬP (OAuth) nên phải bấm ở trang Kết nối, Thansa không đăng nhập hộ được.")
     else:
         ten_o = ", ".join(f.get("label") or f.get("key") for f in (c.get("fields") or []))
         o.append("  Cần điền: " + (ten_o or "không rõ, xem tại trang Kết nối") + ".")
@@ -184,7 +184,7 @@ async def _them(args, ctx) -> str:
             return ("Chưa đấu gì cả. Dịch vụ này ĐÃ CÓ SẴN trong Kho kết nối, đấu bằng card của nó "
                     "chứ không tự khai:\n" + "\n".join(_mo_ta_card(c) for c in kho[:_FIND_MAX])
                     + "\nNói người dùng mở trang Kết nối, tìm card đó rồi bấm Kết nối. "
-                    "Javis không tự đăng nhập hộ được.")
+                    "Thansa không tự đăng nhập hộ được.")
         return ("ERROR: thiếu url (MCP chạy qua mạng) hoặc command (MCP chạy bằng lệnh trên máy). "
                 "Hỏi người dùng địa chỉ MCP, hoặc gọi op=find để tra xem Kho kết nối có sẵn dịch vụ này chưa.")
 
@@ -227,8 +227,8 @@ async def _them(args, ctx) -> str:
         mcp_hub.invalidate_cache()
         lenh = " ".join([command] + tham_so)
         return (f"Đã thêm '{ten}' vào trang Kết nối nhưng ĐỂ TẮT, vì nguồn này chạy bằng lệnh trên "
-                f"máy chủ Javis: `{lenh}`. Người dùng tự đọc lệnh, thấy ổn thì bật ở trang Kết nối "
-                f"(Javis không tự bật loại này). Mức quyền đang đặt: {perm}. " + _xem_o_dau(cid))
+                f"máy chủ Thansa: `{lenh}`. Người dùng tự đọc lệnh, thấy ổn thì bật ở trang Kết nối "
+                f"(Thansa không tự bật loại này). Mức quyền đang đặt: {perm}. " + _xem_o_dau(cid))
 
     val = await mcp_hub.validate_connection(cid)
     if not val.get("ok"):
@@ -265,7 +265,7 @@ async def _chay(args, ctx) -> str:
 def register(ctx):
     ctx.register_tool(
         "javis_add_mcp",
-        "Đấu thêm một MCP server vào kho Kết nối của Javis, để nó HIỆN ra trang Kết nối và MỌI bộ "
+        "Đấu thêm một MCP server vào kho Kết nối của Thansa, để nó HIỆN ra trang Kết nối và MỌI bộ "
         "não dùng chung. Dùng tool này mỗi khi người dùng bảo thêm/đấu/nối một MCP hay một nguồn "
         "dữ liệu; TUYỆT ĐỐI không dùng `claude mcp add` hay `codex mcp add` (rơi vào config riêng "
         "của một CLI, người dùng không thấy trên trang Kết nối). "
