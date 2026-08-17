@@ -124,11 +124,11 @@ for name, text in (("system prompt (CLAUDE.md)", CLAUDE_MD),
     check(f'{name} không còn nhãn "chat-only"', "chat-only" not in text.lower())
 
 check("nhãn kiểu của provider API là 'MCP Javis', không phải 'chat'",
-      '"MCP Javis"' in CONSOLE_JS and re.search(r'p\.kind === "cli" \? "MCP/skill" : "chat"', CONSOLE_JS) is None)
+      '"MCP Thansa"' in CONSOLE_JS and re.search(r'p\.kind === "cli" \? "MCP/skill" : "chat"', CONSOLE_JS) is None)
 _vi_i18n_api = (ROOT / "dashboard" / "i18n" / "vi.json").read_text(encoding="utf-8")
 check("dòng Main Model nói rõ provider API vẫn có MCP + skill + loop",
       't("models.main_api")' in CONSOLE_JS
-      and "Gọi API thẳng - MCP Javis + skill + loop" in _vi_i18n_api)
+      and "Gọi API thẳng - MCP Thansa + skill + loop" in _vi_i18n_api)
 
 # Gemini từng bị sót khỏi MCP_PROVIDERS nên trang Kết nối báo nhầm "chưa hỗ trợ gọi công cụ"
 # dù _api_stream_mcp đã phục vụ nó. Danh sách trên UI phải khớp danh sách thật ở server.
