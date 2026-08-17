@@ -280,3 +280,38 @@
   dieu_kien_bo: >
     Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
     dùng cấu hình chính thức.
+
+- id: P009
+  ten: "Brand nhúng ảnh: Thansa OS, bỏ javisos.com"
+  y_dinh: >
+    Ảnh bot tạo gắn nhãn Software "Thansa OS". CHƯA có tên miền Thansa nên BỎ chunk
+    Source (BRAND_SOURCE rỗng → không ghi chunk), không bịa domain. NGOẠI LỆ coupled
+    test được phép (ghi sổ trộn): 3 assertion trong tests/python/test_image_gen.py
+    đổi theo brand mới (Thansa OS có mặt, javisos.com vắng mặt). Câu mô tả hành vi
+    trong console.js đổi theo. Giữ: tiền tố file javis-img, User-Agent javis-os.
+  commit: "[me] P009: brand nhung anh Thansa OS, bo javisos.com"
+  diem_neo:
+    - file: server/image_gen.py
+      ky_hieu: "BRAND_SOFTWARE"
+    - file: server/image_gen.py
+      ky_hieu: "BRAND_SOURCE"
+    - file: tests/python/test_image_gen.py
+      ky_hieu: "gắn nhãn Thansa OS"
+  vung_theo_doi:
+    - server/image_gen.py
+    - tests/python/test_image_gen.py
+    - "dashboard/console.js: khối mô tả Content Credentials"
+  anh_goc:
+    - file: server/image_gen.py
+      doan: 'BRAND_SOFTWARE = "Javis OS"'
+    - file: server/image_gen.py
+      doan: 'BRAND_SOURCE = "https://javisos.com"'
+    - file: tests/python/test_image_gen.py
+      doan: 'check("ảnh lưu ra có gắn nhãn javisos.com", b"javisos.com" in _raw_luu and b"Javis OS" in _raw_luu)'
+  kiem_chung: >
+    tests/run.py image_gen XANH; grep javisos.com trong server/image_gen.py,
+    dashboard/console.js = 0 (còn lại chỉ ở index.html link tham khảo và
+    test_update.py fixture tự cấp — đã khai giữ).
+  dieu_kien_bo: >
+    Khi có tên miền Thansa chính thức thì đặt lại BRAND_SOURCE (một commit [me] mới
+    hoặc gộp vòng trộn); nếu upstream đưa brand ảnh vào cấu hình thì bỏ patch.
