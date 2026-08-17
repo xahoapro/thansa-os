@@ -49,3 +49,25 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 - Chuỗi "Javis" ĐỂ LẠI có chủ đích (tên trợ lý ở bề mặt cài đặt/chat + kỹ thuật):
   danh sách đầy đủ khai trong y_dinh của P003. Chờ chủ quyết vòng sau có đổi tên
   trợ lý hay không. TUYỆT ĐỐI không đụng watermark image_gen (test bám chuỗi).
+
+## Vòng GĐ2b 2026-08-17 — rebrand triệt để hiển thị + chat (P007–P010)
+
+- Quyết định chủ: BẤT CỨ chỗ nào hiển thị hoặc chat nói ra đều là "Thansa"; giữ internal.
+- P007 (42 file): persona CORE_CONTRACT "Bạn là Thansa", mọi tin bot nói (Zalo/Telegram/
+  STT/write-gate/lỗi runtime+orchestrator), cặp marker "# === NĂNG LỰC THANSA" đổi ĐỒNG BỘ
+  main.py + context_runtime.py, 2 tiêu đề cửa sổ Windows.
+- P008 (22 file): FastAPI title, OAuth client_name, codex title, nhãn Authenticator,
+  X-Title, template vault, ~117 chuỗi UI dashboard. GIỮ: tên kỹ thuật hiển thị trong
+  hướng dẫn (JAVIS_*, container javis, stop-javis.bat, lệnh javis login, path Javis/),
+  "# Javis adaptive source contract" (contract id — test phase8 bám, không đổi).
+- P009: BRAND_SOFTWARE="Thansa OS"; BỎ chunk Source (chưa có domain Thansa, không bịa).
+- P010: app.js đúng 2 dòng fallback, sửa bằng thao tác byte (bẫy encoding), diff 2 dòng.
+- NGOẠI LỆ TEST được phép (luật ưu tiên: test đồng bộ theo thay đổi brand có chủ đích,
+  KHÔNG sửa logic test nào — chỉ chuỗi kỳ vọng Javis→Thansa), khai đủ trong mapping:
+  fixture context_compiler_contract.json + test_image_gen (3 assertion) + 10 file test
+  bám chuỗi bot nói/UI: bao_viec_ve_chat_web, bot_noi_nhu_nguoi, cli_kenh, codex_context,
+  connect_health, engine_ngang_quyen, loi_ket_noi_google, muc_dung_moi, terminal_cmd_goc,
+  trang_chatbot.js.
+- Bài học quét: subagent grep bỏ sót readonly_orchestrator.py + chuỗi ghép nhiều dòng +
+  test coupling kiểu "máy chạy Javis" — lưới cuối phải là quét AST string-literal và
+  CHẠY full suite, đừng tin bản đồ grep.
