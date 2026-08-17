@@ -8430,8 +8430,8 @@ async def notifications_info():
         releases.append({
             "id": f"release:{rel.get('version')}",
             "kind": "update",
-            "title": f"Javis OS v{rel.get('version')}",
-            "summary": bullets[0] if bullets else "Bản cập nhật Javis OS mới.",
+            "title": f"Thansa OS v{rel.get('version')}",
+            "summary": bullets[0] if bullets else "Bản cập nhật Thansa OS mới.",
             "body": "\n".join(f"• {item}" for item in bullets[1:5]),
             "published_at": rel.get("date") or "",
             "priority": "high" if (is_current or (is_new and is_latest)) else "normal",
