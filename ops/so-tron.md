@@ -15,8 +15,14 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 
 ## Đã biết (không phải lỗi của bản Thansa)
 
+- `pytest` là DEV-DEPENDENCY BẮT BUỘC (chốt 17/08, nhiem-vu/GD1.md bản sửa sau nghiệm thu
+  độc lập của trạm #1): 5 test Python `import pytest` ngay đầu file, thiếu là lỗi cứng
+  `ModuleNotFoundError` chứ KHÔNG self-skip. Chuẩn "xanh" chính thức = CÓ pytest → 241/241.
+  pytest ghi ở `ops/requirements-dev.txt` (upstream không khai vì requirements.txt của họ
+  chỉ dành cho runtime). Đáng đề xuất upstream: bọc import bằng self-skip thật hoặc thêm
+  file requirements dev.
 - `test_chat_disconnect.py` NHẠY TIMING: chờ cứng `asyncio.sleep(0.08)` rồi đòi tin nhắn
-  assistant đã ghi xong — trên máy chậm/tải cao sẽ đỏ dù mã đúng (kiểm chứng 17/08: nâng
-  chờ 2s thì xanh). Test này chỉ THỰC chạy khi máy có pytest; chuẩn "xanh" chính thức của
-  Thansa = cấu hình upstream (KHÔNG pytest): 241/241. Không vá trong thansa-os (ngoài
-  phạm vi rebrand); nếu muốn thì đề xuất upstream đổi sleep cứng thành poll.
+  assistant đã ghi xong — chạy song song tải nặng có thể đỏ dù mã đúng (kiểm chứng 17/08:
+  chạy riêng thì xanh; nâng chờ 2s ở bản nháp cũng xanh). Flaky thì chạy riêng để xác nhận.
+  Không vá trong thansa-os (ngoài phạm vi rebrand); nếu muốn thì đề xuất upstream đổi
+  sleep cứng thành poll.
