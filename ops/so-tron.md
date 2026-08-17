@@ -80,3 +80,17 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
   sweep hiển thị/chat sạch, persona "Bạn là Thansa" — trạm #1 đã nghiệm thu độc lập
   (nhiem-vu/GD3.md mục tiền đề).
 - release ← me (ff-only), tag thansa-v1.0.
+
+## Vòng sau-v1.0 2026-08-17 — P011 + P012 (lệnh trực tiếp của chủ, chờ gộp phát hành v1.1)
+
+- P011: footer "by Tradingauto.org" (link tradingauto.org) + 2 gợi ý lùi bản Docker
+  trỏ đúng ghcr.io/xahoapro/thansa-os.
+- P012: mô tả hiển thị còn sót → Thansa: CLAUDE.md (persona system prompt đầy đủ),
+  SKILL.md 6 skill hệ thống, description/author plugin bundled, mcp-catalog.json,
+  substack.html in-app. Ruột kỹ thuật giữ nguyên theo chốt của chủ ("giữ nhưng ẩn").
+- Sự cố bắt được nhờ test: transform lỡ đổi literal đường dẫn "Javis" trong
+  javis-schedule/plugin.py (Path(vault)/"Javis"/"loops") → đã trả lại; bài học:
+  literal path một-từ không có dấu / cạnh nó, regex không tự phân biệt được —
+  phải chạy full suite sau MỌI đợt đổi chuỗi, và soi diff từng dòng file logic.
+- tests 241/241; tu-kiem-chung XANH; so_patch = 10; máy thử (/home/thansa/thansa-chay,
+  nhánh me) đã chạy bản này cho chủ nghiệm thu bằng mắt.
