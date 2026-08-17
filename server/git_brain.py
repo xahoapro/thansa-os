@@ -121,7 +121,7 @@ _GI_DONG = "# <<< hết khối của javis - viết luật riêng của bạn �
 # trước, mở lại cho chữ, rồi mới chặn lần nữa mấy thư mục không được vào kể cả khi là chữ.
 # Đảo thứ tự này là log thô (có thể chứa secret) lọt vào git dưới dạng .json.
 _GITIGNORE_BODY = (
-    ["# Javis chỉ đưa CHỮ vào git, không đưa media. Lý do dài nằm ở server/git_brain.py;",
+    ["# Thansa chỉ đưa CHỮ vào git, không đưa media. Lý do dài nằm ở server/git_brain.py;",
      "# nói gọn: git nhớ mãi mãi, nên một file video commit vào là nằm đó vĩnh viễn, xoá về",
      "# sau cũng không đòi lại được dung lượng. Media vẫn nằm nguyên trên đĩa, chỉ là không",
      "# đi vào lịch sử git.",
@@ -170,7 +170,7 @@ _GITIGNORE = "\n".join([_GI_MO] + _GITIGNORE_BODY + [_GI_DONG]) + "\n"
 # Mọi dòng mà các bản template TRƯỚC ĐÂY từng ghi ra. Dọn đúng những dòng này khi nâng cấp một
 # brain cũ, để chúng không nằm lẫn ngoài khối rồi phá thứ tự luật ở trên.
 _GITIGNORE_CU = {
-    "# Javis brain - KHÔNG commit: khoá, log thô (có thể chứa secret), nhật ký nền.",
+    "# Thansa brain - KHÔNG commit: khoá, log thô (có thể chứa secret), nhật ký nền.",
     "# Git chỉ version TRI THỨC ĐÃ CHƯNG CẤT (facts/wiki/skills/MEMORY.md) → undo sạch, an toàn.",
     ".javis-learn.lock", "Javis/learn-staging/", "Javis/learn-log/", "Javis/loop-log/",
     "Javis/skill-usage.json", "memory/conversations/", "Memory/conversations/", "*.tmp",

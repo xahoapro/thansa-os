@@ -118,9 +118,9 @@ for name, text in (("system prompt (CLAUDE.md)", CLAUDE_MD),
     check(f'{name} không còn nhãn "không MCP"', "không MCP" not in text)
 
 check("nhãn kiểu của provider API là 'MCP Javis', không phải 'chat'",
-      '"MCP Javis"' in CONSOLE_JS and re.search(r'p\.kind === "cli" \? "MCP/skill" : "chat"', CONSOLE_JS) is None)
+      '"MCP Thansa"' in CONSOLE_JS and re.search(r'p\.kind === "cli" \? "MCP/skill" : "chat"', CONSOLE_JS) is None)
 check("dòng Main Model nói rõ provider API vẫn có MCP + skill + loop",
-      "Gọi API thẳng - MCP Javis + skill + loop" in CONSOLE_JS)
+      "Gọi API thẳng - MCP Thansa + skill + loop" in CONSOLE_JS)
 
 # Gemini từng bị sót khỏi MCP_PROVIDERS nên trang Kết nối báo nhầm "chưa hỗ trợ gọi công cụ"
 # dù _api_stream_mcp đã phục vụ nó. Danh sách trên UI phải khớp danh sách thật ở server.

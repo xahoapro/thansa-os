@@ -500,7 +500,7 @@
       <table class="uz-tbl"><thead><tr><th>Nhà cung cấp / model</th><th style="text-align:right">Token vào</th><th style="text-align:right">Token ra</th><th style="text-align:right">Lượt</th><th style="text-align:right">Chi phí</th></tr></thead><tbody>${rows}</tbody></table>`;
 
     el.innerHTML = `<div class="uz-wrap">${cards}${chart}${table}
-      <div class="uz-note">Số liệu do Javis tự đo từ token vào/ra của mọi engine (Claude Code, ChatGPT/Codex, OpenRouter...), không phụ thuộc nhà cung cấp có lộ hạn mức hay không. Chi phí chỉ hiện khi nhà cung cấp trả về giá thật (vd Claude Code CLI); còn lại chỉ đếm token. Lưu 30 ngày gần nhất.</div>
+      <div class="uz-note">Số liệu do Thansa tự đo từ token vào/ra của mọi engine (Claude Code, ChatGPT/Codex, OpenRouter...), không phụ thuộc nhà cung cấp có lộ hạn mức hay không. Chi phí chỉ hiện khi nhà cung cấp trả về giá thật (vd Claude Code CLI); còn lại chỉ đếm token. Lưu 30 ngày gần nhất.</div>
     </div>`;
   }
 
@@ -797,7 +797,7 @@
     };
     const update = q("updVerUpdate");
     if (update) update.onclick = async () => {
-      if (!confirm("Cập nhật Javis lên bản mới nhất?\nApp sẽ tự khởi động lại; nếu lỗi hệ thống sẽ thử quay về bản cũ.")) return;
+      if (!confirm("Cập nhật Thansa lên bản mới nhất?\nApp sẽ tự khởi động lại; nếu lỗi hệ thống sẽ thử quay về bản cũ.")) return;
       const status = q("updVerStatus"), rollback = q("updVerRollback");
       const oldCur = root.dataset.currentVersion || "";
       update.disabled = true; if (rollback) { rollback.style.display = "none"; rollback.innerHTML = ""; }
@@ -1140,7 +1140,7 @@
       const n = items.length;
       fixEl.innerHTML = `<div class="fm-fix">${WARN_ICON}
         <b>${n} file .md còn dấu vết hỏng từ bản cũ.</b>
-        Bản Javis trước 0.33.4 lưu note qua trình sửa trực quan là làm hỏng khối thuộc tính
+        Bản Thansa trước 0.33.4 lưu note qua trình sửa trực quan là làm hỏng khối thuộc tính
         (<code>---</code> đầu note thành <code>* * *</code>) và dồn dấu gạch chéo vào chữ.
         Bản này đã bịt đường đó; mấy file lỡ hỏng thì chữa lại một lần là xong.
         <div class="fm-fix-list" id="fmFixList"></div>
@@ -1463,9 +1463,9 @@
       let d = { plugins: [] };
       try { d = await (await fetch(`/plugins?brain=${encodeURIComponent(fbrain())}`)).json(); } catch (e) {}
       if (myGen !== _renderGen) return;
-      const intro = `<p style="color:var(--text3);font-size:15px;max-width:720px;margin:0 0 12px">Plugin thêm <b>tool</b> (công cụ engine gọi được) và <b>hook</b> native cho Javis mà không sửa lõi - dùng được ở MỌI engine (Claude Code, Codex, API) qua hub, tôn trọng 3 mức quyền như tool khác.</p>`;
-      const gateBanner = (!d.user_gate) ? `<div style="margin-bottom:14px;padding:11px 13px;border:1px solid rgba(224,160,74,.5);border-radius:10px;background:rgba(224,160,74,.08);color:var(--warn-ink);font-size:13px;line-height:1.55"><b>${WARN_ICON} Plugin do bạn cài đang bị chặn.</b> Plugin toàn cục/brain chạy code Python thật trong server nên mặc định TẮT. Để bật: đặt biến môi trường <code>JAVIS_ENABLE_USER_PLUGINS=true</code> rồi khởi động lại Javis. Plugin có sẵn (bundled) vẫn chạy bình thường.</div>` : "";
-      const dirHint = `<p style="color:var(--text3);font-size:12.5px;margin:0 0 14px">Thả plugin TOÀN CỤC (dùng cho MỌI brain) vào <code>${esc(d.global_dir || "")}</code> · mỗi plugin gồm <code>plugin.yaml</code> + <code>plugin.py</code>. Hoặc bảo Javis trong khung chat: "tạo plugin ...".</p>`;
+      const intro = `<p style="color:var(--text3);font-size:15px;max-width:720px;margin:0 0 12px">Plugin thêm <b>tool</b> (công cụ engine gọi được) và <b>hook</b> native cho Thansa mà không sửa lõi - dùng được ở MỌI engine (Claude Code, Codex, API) qua hub, tôn trọng 3 mức quyền như tool khác.</p>`;
+      const gateBanner = (!d.user_gate) ? `<div style="margin-bottom:14px;padding:11px 13px;border:1px solid rgba(224,160,74,.5);border-radius:10px;background:rgba(224,160,74,.08);color:var(--warn-ink);font-size:13px;line-height:1.55"><b>${WARN_ICON} Plugin do bạn cài đang bị chặn.</b> Plugin toàn cục/brain chạy code Python thật trong server nên mặc định TẮT. Để bật: đặt biến môi trường <code>JAVIS_ENABLE_USER_PLUGINS=true</code> rồi khởi động lại Thansa. Plugin có sẵn (bundled) vẫn chạy bình thường.</div>` : "";
+      const dirHint = `<p style="color:var(--text3);font-size:12.5px;margin:0 0 14px">Thả plugin TOÀN CỤC (dùng cho MỌI brain) vào <code>${esc(d.global_dir || "")}</code> · mỗi plugin gồm <code>plugin.yaml</code> + <code>plugin.py</code>. Hoặc bảo Thansa trong khung chat: "tạo plugin ...".</p>`;
       const plugins = (d.plugins || []).slice();
       const order = { bundled: 0, user: 1, vault: 2 };
       plugins.sort((a, b) => (order[a.source] ?? 9) - (order[b.source] ?? 9) || (a.name || "").localeCompare(b.name || ""));
@@ -1486,7 +1486,7 @@
     const myGen = _renderGen;   // chống race: đổi trang → mọi loadLoops/loadLog dở tự bỏ
     let pollTimer = null;       // 1 chuỗi poll duy nhất (clearTimeout trước khi đặt lại)
     el.innerHTML = `<div class="cview-section"><div class="empty">Đang tải...</div></div>`;
-    const GNAME = { business: "Kinh doanh", brain: "Bộ não", product: "Cải thiện Javis", custom: "Tự định nghĩa" };
+    const GNAME = { business: "Kinh doanh", brain: "Bộ não", product: "Cải thiện Thansa", custom: "Tự định nghĩa" };
     const fmtT = ts => ts ? new Date(ts * 1000).toLocaleTimeString(LOC(), { hour: "2-digit", minute: "2-digit" }) : "-";
     // Giờ TRẦN (chỉ "07:00") không cho biết là hôm nay, mai hay tuần sau - nhìn thẻ việc vẫn
     // không biết bao giờ nó chạy. fmtWhen luôn nói rõ NGÀY khi không phải hôm nay.
@@ -1528,7 +1528,7 @@
             <button class="si-chip sel" data-kind="loop">${ic("repeat")} Việc lặp</button>
             <button class="si-chip" data-kind="reminder">${ic("alarm-clock")} Nhắc hẹn</button></div></div>
           <div class="si-field"><label>Tên</label><input id="lpName" placeholder="Ví dụ: Đọc email mỗi 2 tiếng"></div>
-          <div class="si-field"><label id="lpBodyLabel">Mô tả nhiệm vụ (mỗi vòng Javis làm đúng việc này)</label>
+          <div class="si-field"><label id="lpBodyLabel">Mô tả nhiệm vụ (mỗi vòng Thansa làm đúng việc này)</label>
             <textarea id="lpBody" placeholder="Ví dụ: Mỗi vòng đọc 1 source chưa xử lý trong 06 - Sources rồi đề xuất Wiki page nên tạo. Hoặc: đọc số đơn hôm nay qua MCP POS, nếu thấp thì soạn nháp 1 caption đẩy hàng vào 05 - Projects."></textarea></div>
           <div id="lpLoopFields">
             <div class="si-row" style="gap:14px;flex-wrap:wrap">
@@ -1550,7 +1550,7 @@
                 <button class="si-chip" data-mq="auto">Ghi file</button>
                 <button class="si-chip sel" data-mq="full">Toàn quyền</button></div></div>
             </div>
-            <div class="dim" style="font-size:12px;color:var(--text3);margin-top:4px">Nhắc một lần: "30 phút nữa", "8h30", "2026-07-20 09:00". Lặp theo giờ cố định: cron 5 trường (vd "0 7 * * *" = 7h sáng mỗi ngày). "Chỉ nhắc" = bắn tin nhắc bạn; "Tự làm rồi báo" = Javis chạy đúng việc này rồi báo kết quả.</div>
+            <div class="dim" style="font-size:12px;color:var(--text3);margin-top:4px">Nhắc một lần: "30 phút nữa", "8h30", "2026-07-20 09:00". Lặp theo giờ cố định: cron 5 trường (vd "0 7 * * *" = 7h sáng mỗi ngày). "Chỉ nhắc" = bắn tin nhắc bạn; "Tự làm rồi báo" = Thansa chạy đúng việc này rồi báo kết quả.</div>
             <div id="lpRemMqWarn" style="display:none;margin-top:6px;padding:10px 12px;border:1px solid rgba(224,102,74,.5);border-radius:8px;background:rgba(224,102,74,.08);color:var(--red);font-size:13px;line-height:1.5">
               <b>${WARN_ICON} TOÀN QUYỀN.</b> Tới giờ việc này chạy <b>một mình</b>, với đầy đủ quyền như lúc bạn đang ngồi chat: nó dùng được mọi công cụ đã đấu, nên tuỳ việc bạn giao mà nó có thể <b>gửi tin, đăng bài, đặt lịch, tạo đơn hoặc tiêu tiền thật</b>. Ở bước đó không có ai duyệt lại, và phần lớn những việc đó <b>không rút lại được</b>. Chỉ giao thứ bạn sẵn sàng để nó tự làm; muốn nó chỉ đọc rồi báo lại thì chọn <b>Chỉ đọc</b>.
             </div>
@@ -1592,8 +1592,8 @@
       if (q("#lpLoopNote")) q("#lpLoopNote").style.display = isRem ? "none" : "";
       if (isRem && q("#lpFullWarn")) q("#lpFullWarn").style.display = "none";
       q("#lpBodyLabel").textContent = isRem
-        ? "Nội dung nhắc (Javis sẽ nhắc hoặc làm đúng việc này)"
-        : "Mô tả nhiệm vụ (mỗi vòng Javis làm đúng việc này)";
+        ? "Nội dung nhắc (Thansa sẽ nhắc hoặc làm đúng việc này)"
+        : "Mô tả nhiệm vụ (mỗi vòng Thansa làm đúng việc này)";
     }
     el.querySelectorAll("#lpKind .si-chip").forEach(c => c.onclick = () => {
       // Đang SỬA (loop hay nhắc hẹn) → khoá loại: đổi loại giữa đường là ghi sang kho khác,
@@ -1734,7 +1734,7 @@
       const brainVal = el.querySelector("#lpBrain").value || fbrain();   // brain đích do user chọn
       const b = el.querySelector("#lpSave");
       if (!name) { msg.textContent = "Nhập tên"; return; }
-      if (!body) { msg.textContent = fkind === "reminder" ? "Nhập nội dung nhắc" : "Nhập mô tả nhiệm vụ (Javis cần biết mỗi vòng làm gì)"; return; }
+      if (!body) { msg.textContent = fkind === "reminder" ? "Nhập nội dung nhắc" : "Nhập mô tả nhiệm vụ (Thansa cần biết mỗi vòng làm gì)"; return; }
 
       // NHẮC HẸN → kho reminders. Tạo mới: POST /reminders. Đang sửa: POST /reminders/update.
       if (fkind === "reminder") {
@@ -2039,7 +2039,7 @@
           const e2 = document.createElement("div");
           e2.className = "empty"; e2.style.margin = "0 0 10px";
           e2.dataset.lp = "empty";
-          e2.innerHTML = `Chưa có việc nào ở brain này. Bấm <b>+ Thêm việc</b>, hoặc nói với Javis trong chat.`;
+          e2.innerHTML = `Chưa có việc nào ở brain này. Bấm <b>+ Thêm việc</b>, hoặc nói với Thansa trong chat.`;
           group.appendChild(e2);
         }
         loops.forEach(lp => { allLoops.push(lp); group.appendChild(loopCard(lp)); });
@@ -2054,7 +2054,7 @@
         box.appendChild(group);
       });
       if (!anyItem) {
-        box.innerHTML = `<div class="empty">Chưa có việc định kỳ hay nhắc hẹn nào. Bấm <b>+ Thêm việc</b>, hoặc nói với Javis trong chat (vd "tạo loop mỗi 2 tiếng đọc 1 source rồi đề xuất").</div>`;
+        box.innerHTML = `<div class="empty">Chưa có việc định kỳ hay nhắc hẹn nào. Bấm <b>+ Thêm việc</b>, hoặc nói với Thansa trong chat (vd "tạo loop mỗi 2 tiếng đọc 1 source rồi đề xuất").</div>`;
       }
       applyLpSearch();   // giữ nguyên bộ lọc tìm kiếm sau mỗi lần render lại danh sách
       // Bộ lọc nhật ký: mọi loop mọi brain (value = index vào allLoops → biết cả brain lẫn slug).
@@ -2112,7 +2112,7 @@
     const gitWarn = cfg.git_available ? "" : `<div class="dim" style="color:var(--text3);font-size:13px;margin-top:6px">ℹ Máy chưa có <code>git</code>: Tự học VẪN chạy bình thường, chỉ là chưa có hoàn tác 1-chạm/backup lên GitHub. Cài git để bật undo + sao lưu brain.</div>`;
 
     el.innerHTML = `<div class="cview-section">
-      <p style="color:var(--text3);font-size:15px;max-width:660px;margin:0 0 14px">Sau mỗi hội thoại, Javis tự rút <b>ký ức</b>, đúc <b>tri thức Wiki</b>, <b>kỹ năng</b> và <b>việc</b> - qua tiến trình học <b>chỉ-đọc, cô lập</b> (0 MCP, không xoá). Người ghi file là code tin cậy. Mặc định <b>bật sẵn + tự ghi</b>; nếu brain có git thì mỗi lần học còn được <b>git-commit để hoàn tác 1 chạm</b>.</p>
+      <p style="color:var(--text3);font-size:15px;max-width:660px;margin:0 0 14px">Sau mỗi hội thoại, Thansa tự rút <b>ký ức</b>, đúc <b>tri thức Wiki</b>, <b>kỹ năng</b> và <b>việc</b> - qua tiến trình học <b>chỉ-đọc, cô lập</b> (0 MCP, không xoá). Người ghi file là code tin cậy. Mặc định <b>bật sẵn + tự ghi</b>; nếu brain có git thì mỗi lần học còn được <b>git-commit để hoàn tác 1 chạm</b>.</p>
       <div class="si-grid">
         <div class="si-field"><label>Bật tự học</label>
           <button class="si-chip ${cfg.enabled ? "sel" : ""}" id="lnEnabled">${cfg.enabled ? "● Đang bật" : "○ Đang tắt"}</button>
@@ -2171,7 +2171,7 @@
         </div>
       </div>
 
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">Javis đã tự học gì (commit gần nhất)</h3><div id="lnReview">Đang tải...</div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">Thansa đã tự học gì (commit gần nhất)</h3><div id="lnReview">Đang tải...</div></div>
       <div class="si-log"><h3 style="font-size:15px;color:var(--text)">Nhật ký học</h3><div id="lnLog">Đang tải...</div></div>
     </div>`;
 
@@ -2590,7 +2590,7 @@
     // ghi là "Claude CLI". Mọi provider đều có MCP Javis, khác nhau ở chỗ chạy được lệnh máy.
     const _mainP = (m.providers || []).find(p => p.id === (m.main || {}).provider) || {};
     const eng = (_mainP.label || (m.main || {}).provider || "-")
-      + (_mainP.kind === "api" ? " (MCP Javis)" : _mainP.kind ? " (MCP Javis + lệnh máy)" : "");
+      + (_mainP.kind === "api" ? " (MCP Thansa)" : _mainP.kind ? " (MCP Thansa + lệnh máy)" : "");
     const curModel = (m.main || {}).model || "mặc định";
     const tg = s.telegram || {};
     const dash = s.dashboard || {};
@@ -2636,7 +2636,7 @@
         <h3>Khởi động cùng máy</h3>
         <div class="cgrid">
           <div class="gcard">
-            <div class="gcard-top"><span class="gcard-name">Tự bật Javis khi mở máy</span><span class="gcard-tag" id="ovAutoTag">…</span></div>
+            <div class="gcard-top"><span class="gcard-name">Tự bật Thansa khi mở máy</span><span class="gcard-tag" id="ovAutoTag">…</span></div>
             <div class="gcard-meta" id="ovAutoMeta">Đang kiểm tra…</div>
             <button class="gcard-btn" id="ovAutoToggle" style="display:none"></button>
             <div class="gcard-meta" id="ovAutoStatus" style="margin-top:8px"></div>
@@ -2739,7 +2739,7 @@
     if (verCheck) verCheck.onclick = ovLoadVersion;
     const verUpd = document.getElementById("ovVerUpdate");
     if (verUpd) verUpd.onclick = async () => {
-      if (!confirm("Cập nhật Javis lên bản mới nhất?\nApp sẽ tự khởi động lại. Nếu bản mới lỗi, hệ thống sẽ tự quay về bản cũ (bản git) hoặc hiện cách lùi (Docker).")) return;
+      if (!confirm("Cập nhật Thansa lên bản mới nhất?\nApp sẽ tự khởi động lại. Nếu bản mới lỗi, hệ thống sẽ tự quay về bản cũ (bản git) hoặc hiện cách lùi (Docker).")) return;
       const st = document.getElementById("ovVerStatus");
       const rb = document.getElementById("ovVerRollback");
       const oldCur = window._ovVerCur || "";
@@ -2819,8 +2819,8 @@
         on ? (j.ly_do ? "bật nhưng không chạy" : "bật") : "tắt";
       const meta = document.getElementById("ovAutoMeta");
       meta.innerHTML = on
-        ? "Javis tự chạy nền mỗi khi bạn đăng nhập Windows - không cần bật tay. Chạy ẩn, mở <code>localhost:7777</code> để dùng."
-        : "Bật để Javis tự khởi động mỗi khi mở máy. Chạy ẩn ở nền, không hiện cửa sổ.";
+        ? "Thansa tự chạy nền mỗi khi bạn đăng nhập Windows - không cần bật tay. Chạy ẩn, mở <code>localhost:7777</code> để dùng."
+        : "Bật để Thansa tự khởi động mỗi khi mở máy. Chạy ẩn ở nền, không hiện cửa sổ.";
       if (j.ly_do) meta.innerHTML += '<br><span class="dim">' + WARN_ICON + " " + esc(j.ly_do) + "</span>";
       const btn = document.getElementById("ovAutoToggle");
       btn.style.display = "";
@@ -2920,10 +2920,10 @@
       // vỡ (báo cáo 16/08: người mới cài "kết nối được nhưng không sử dụng được").
       // cli_found === false mới cảnh báo - undefined nghĩa là thẻ không thuộc diện kiểm.
       const cliWarn = (ten) => p.cli_found === false
-        ? `<div class="prov-note warn">${WARN_ICON} <b>Máy chạy Javis chưa có lệnh <code>${ten}</code></b>
+        ? `<div class="prov-note warn">${WARN_ICON} <b>Máy chạy Thansa chưa có lệnh <code>${ten}</code></b>
              - ${on ? "đăng nhập đã xong nhưng" : ""} chat bằng thẻ này sẽ lỗi cho tới khi cài.
-             Bản Docker: <b>cập nhật Javis lên bản mới nhất</b> là có sẵn. Bản cài tay: mở trang
-             Code &gt; Terminal chạy <code>${esc(p.cai_lenh || "")}</code> rồi khởi động lại Javis.</div>`
+             Bản Docker: <b>cập nhật Thansa lên bản mới nhất</b> là có sẵn. Bản cài tay: mở trang
+             Code &gt; Terminal chạy <code>${esc(p.cai_lenh || "")}</code> rồi khởi động lại Thansa.</div>`
         : "";
       if (p.kind === "oauth") {
         const st = on
@@ -2959,10 +2959,10 @@
             bản Google chỉ định thay cho Gemini CLI, và cho chọn <b>đúng dàn model của
             Antigravity IDE</b> - gồm cả model không phải của Google.</div>
           ${p.cli_found ? "" : `<div class="prov-steps">
-            <div>Chưa thấy CLI trên máy. Cài một lần trên máy chạy Javis:<br><code>${esc(p.cai_lenh || "")}</code></div>
+            <div>Chưa thấy CLI trên máy. Cài một lần trên máy chạy Thansa:<br><code>${esc(p.cai_lenh || "")}</code></div>
           </div>`}
           ${on ? "" : `<div class="prov-steps">
-            <div><b>Đăng nhập trong terminal của máy chạy Javis:</b> <code>${esc(dn.dang_nhap || "agy")}</code></div>
+            <div><b>Đăng nhập trong terminal của máy chạy Thansa:</b> <code>${esc(dn.dang_nhap || "agy")}</code></div>
             <div>${esc(dn.ghi_chu || "")}</div>
             <div>Xong rồi bấm <b>Kiểm tra lại</b> ở dưới.</div>
           </div>`}
@@ -2985,7 +2985,7 @@
           ${provHead(p, on, "MCP/skill", st)}
           <div class="prov-note warn"><b>Google đã ngắt đường này với tài khoản cá nhân từ 18/06/2026</b>
             - cả gói miễn phí, Google AI Pro lẫn Ultra. Đăng nhập vẫn xong nhưng lúc chat sẽ báo
-            <code>IneligibleTierError</code>. Chặn từ phía Google, không sửa được bên Javis.
+            <code>IneligibleTierError</code>. Chặn từ phía Google, không sửa được bên Thansa.
             Thẻ này giờ chỉ còn dùng được với <b>giấy phép Code Assist doanh nghiệp</b> hoặc khi
             chạy CLI bằng API key.</div>
           <div class="prov-steps">
@@ -3040,7 +3040,7 @@
       }
       const masked = (m[KEYFIELD[p.id]] || "").slice(-4);
       return `<div class="prov-card ${p.is_main ? "main" : ""}">
-        ${provHead(p, on, p.kind === "cli" ? "MCP/skill" : "MCP Javis", (on ? "● Đã kết nối" : "○ Chưa kết nối") + " · " + p.models.length + " model")}
+        ${provHead(p, on, p.kind === "cli" ? "MCP/skill" : "MCP Thansa", (on ? "● Đã kết nối" : "○ Chưa kết nối") + " · " + p.models.length + " model")}
         ${p.needs_key
           ? `<div class="prov-action"><input class="js-input" id="pk-${p.id}" type="password" placeholder="${on ? "Đổi key (•••" + esc(masked) + ")" : "Dán API key để kết nối"}"><button class="gcard-btn" data-pk="${p.id}">${on ? "Đổi key" : "Kết nối"}</button>${on ? `<button class="gcard-btn ghost" data-disc="${p.id}">Ngắt</button>` : ""}</div>`
           : `<div class="prov-note">Dùng đăng nhập Claude Code - không cần key</div>`}
@@ -3052,10 +3052,10 @@
         <h3>◆ Main Model <span style="opacity:.5">model chính cho hội thoại</span></h3>
         <div class="gcard current" style="max-width:540px">
           <div class="gcard-top"><span class="gcard-name">${esc(main.model || "-")}</span><span class="gcard-tag">${esc(mainP.label || main.provider || "")}</span></div>
-          <div class="gcard-meta">${mainP.id === "gemini-cli" ? "Qua Gemini CLI - MCP Javis + skill + loop + chạy lệnh máy (đăng nhập Google)"
-            : mainP.kind === "cli" ? "Qua Claude Code - MCP Javis + skill + loop + chạy lệnh máy"
-            : mainP.kind === "oauth" ? "Qua Codex - MCP Javis + skill + loop + chạy lệnh máy"
-            : mainP.kind === "api" ? "Gọi API thẳng - MCP Javis + skill + loop (không chạy lệnh máy)" : ""}</div>
+          <div class="gcard-meta">${mainP.id === "gemini-cli" ? "Qua Gemini CLI - MCP Thansa + skill + loop + chạy lệnh máy (đăng nhập Google)"
+            : mainP.kind === "cli" ? "Qua Claude Code - MCP Thansa + skill + loop + chạy lệnh máy"
+            : mainP.kind === "oauth" ? "Qua Codex - MCP Thansa + skill + loop + chạy lệnh máy"
+            : mainP.kind === "api" ? "Gọi API thẳng - MCP Thansa + skill + loop (không chạy lệnh máy)" : ""}</div>
           <button class="gcard-btn" id="mdChange">Đổi model ▾</button>
         </div>
       </div>
@@ -3142,7 +3142,7 @@
     if (gl) gl.onclick = () => startGeminiLogin(el);
     const glo = el.querySelector("[data-glogout]");
     if (glo) glo.onclick = async () => {
-      if (!confirm("Ngắt tài khoản Google khỏi Javis?")) return;
+      if (!confirm("Ngắt tài khoản Google khỏi Thansa?")) return;
       glo.disabled = true; glo.textContent = "Đang ngắt...";
       try { await fetch("/gemini-cli/logout", { method: "POST" }); } catch (e) {}
       _daHoiModel.delete("gemini-cli");
@@ -3409,7 +3409,7 @@
     try { d = await (await fetch("/oauth/openai/browser/start", { method: "POST" })).json(); }
     catch (e) { if (msg) msg.textContent = "Lỗi kết nối server."; return; }
     if (d.error) { if (msg) msg.textContent = "Lỗi: " + d.error; return; }
-    if (!d.authorize_url) { if (msg) msg.textContent = "Máy chủ chưa có chức năng này - khởi động lại Javis rồi tải lại trang (Ctrl+Shift+R)."; return; }
+    if (!d.authorize_url) { if (msg) msg.textContent = "Máy chủ chưa có chức năng này - khởi động lại Thansa rồi tải lại trang (Ctrl+Shift+R)."; return; }
     try { window.open(d.authorize_url, "_blank"); } catch (e) {}
     if (msg) msg.innerHTML =
       `Đã mở trang <a href="${esc(safeHref(d.authorize_url))}" target="_blank">đăng nhập ChatGPT</a>. `
@@ -3829,7 +3829,7 @@
         go.disabled = false; return;
       }
       m.querySelector(".conn-form").innerHTML = '<div class="conn-ok">' + CHECK_ICON + ' Đã kết nối: <b>' + esc(r.label || con.name) + '</b> (' + (r.tools || 0) + ' công cụ)'
-        + (isFirst ? '<div class="conn-hint">Sang trang Javis hỏi thử: "Hôm nay bán được bao nhiêu?"</div>' : "") + '</div>';
+        + (isFirst ? '<div class="conn-hint">Sang trang Thansa hỏi thử: "Hôm nay bán được bao nhiêu?"</div>' : "") + '</div>';
       go.style.display = "none";
       setTimeout(() => { closeConnModal(); renderConnect(el); }, 1600);
     };
@@ -3865,7 +3865,7 @@
         } else if (st.state === "done") {
           clearInterval(_connPoll); _connPoll = null;
           zone.innerHTML = '<div class="conn-ok">' + CHECK_ICON + ' Đã đăng nhập: <b>' + esc(st.label || "Zalo") + '</b>'
-            + (isFirst ? '<div class="conn-hint">Sang trang Javis nhắn thử: "Đọc tin nhắn Zalo mới nhất"</div>' : "") + '</div>';
+            + (isFirst ? '<div class="conn-hint">Sang trang Thansa nhắn thử: "Đọc tin nhắn Zalo mới nhất"</div>' : "") + '</div>';
           setTimeout(() => { closeConnModal(); renderConnect(el); }, 1800);
         } else if (st.state === "error") {
           clearInterval(_connPoll); _connPoll = null;
@@ -4068,7 +4068,7 @@
   }
   function openFullAck(el, c, con) {
     const text = (con && con.risk) ? con.risk
-      : "Mức này cho phép Javis thao tác THẬT ra ngoài qua kết nối này: tạo đơn, gửi tin, chạy quảng cáo, publish… Hành động có thể KHÔNG hoàn tác được.";
+      : "Mức này cho phép Thansa thao tác THẬT ra ngoài qua kết nối này: tạo đơn, gửi tin, chạy quảng cáo, publish… Hành động có thể KHÔNG hoàn tác được.";
     const m = connModal(mHead(WARN_ICON + " BẬT TOÀN QUYỀN")
       + '<div class="conn-form"><div class="conn-risk">' + esc(text) + '</div>'
       + '<label style="display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px"><input type="checkbox" id="ackChk"> Tôi hiểu rủi ro và tự chịu trách nhiệm</label></div>'
@@ -4121,8 +4121,8 @@
         // đụng được token, nên token cấp thiếu quyền là thiếu mãi. Đây là đường duy nhất bắt nó
         // hỏi lại quyền.
         if (!confirm('Xoá đăng nhập Google của "' + (c.label || "") + '"?\n\n'
-          + 'Kết nối giữ nguyên. Lần sau nhờ Javis làm việc với nguồn này, trình duyệt trên MÁY '
-          + 'CHẠY JAVIS sẽ mở để bạn cấp lại quyền - nhớ tick hết các ô.')) return;
+          + 'Kết nối giữ nguyên. Lần sau nhờ Thansa làm việc với nguồn này, trình duyệt trên MÁY '
+          + 'CHẠY THANSA sẽ mở để bạn cấp lại quyền - nhớ tick hết các ô.')) return;
         note.textContent = "Đang xoá…";
         const r = await postJson("/connect/relogin", { id: c.id });
         note.innerHTML = (r && r.ok ? CHECK_ICON : WARN_ICON) + " " + esc((r && (r.message || r.error)) || "Lỗi");
@@ -4182,11 +4182,11 @@
     const mainLabel = (provs.find(p => p.id === main.provider) || {}).label || main.provider || "-";
     let warn = "";
     if (main.provider === "openai-oauth") {
-      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>ChatGPT (gói subscription)</b> chạy qua <b>Codex CLI</b> - Javis tự đẩy kho Kết nối sang Codex qua hub, nên vẫn dùng được đầy đủ.</div></div>`;
+      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>ChatGPT (gói subscription)</b> chạy qua <b>Codex CLI</b> - Thansa tự đẩy kho Kết nối sang Codex qua hub, nên vẫn dùng được đầy đủ.</div></div>`;
     } else if (!MCP_PROVIDERS.includes(main.provider)) {
       warn = `<div class="gcard" style="border:1px solid var(--warn-ink);background:rgba(185,130,31,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${WARN_ICON} Main Model đang là <b>${esc(mainLabel)}</b> - chưa hỗ trợ gọi công cụ. Đổi ở trang <b>Models</b>.</div></div>`;
     } else if (main.provider !== "anthropic-cli") {
-      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>${esc(mainLabel)}</b> dùng được kho Kết nối qua <b>MCP Javis</b> (vòng gọi tool + hub), kèm tool file trong brain và skill - không phải chat suông.</div></div>`;
+      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>${esc(mainLabel)}</b> dùng được kho Kết nối qua <b>MCP Thansa</b> (vòng gọi tool + hub), kèm tool file trong brain và skill - không phải chat suông.</div></div>`;
     }
     const groups = {};
     conns.forEach(c => { const k = c.connector_id || "custom"; (groups[k] = groups[k] || []).push(c); });
@@ -4195,8 +4195,8 @@
     const cats = Array.from(new Set(cat.map(c => c.category || "Khác")));
     el.innerHTML = warn
       + '<div class="cview-section"><h3>◆ Đã kết nối <span style="opacity:.5">' + conns.length + ' tài khoản</span></h3>'
-      + '<div class="gcard-meta" style="max-width:740px">Một dịch vụ nối được NHIỀU tài khoản (nhiều shop, nhiều số Zalo…). Mọi bộ não - Claude Code, ChatGPT/Codex, OpenRouter, API - dùng chung kho này qua trung tâm kết nối của Javis, kèm phân quyền và nhật ký.'
-      + '<label style="margin-left:8px;cursor:pointer"><input type="checkbox" id="mcpStrict" ' + (d.strict ? "checked" : "") + '> Chỉ dùng kết nối của Javis (bỏ kết nối sẵn của máy)</label></div>'
+      + '<div class="gcard-meta" style="max-width:740px">Một dịch vụ nối được NHIỀU tài khoản (nhiều shop, nhiều số Zalo…). Mọi bộ não - Claude Code, ChatGPT/Codex, OpenRouter, API - dùng chung kho này qua trung tâm kết nối của Thansa, kèm phân quyền và nhật ký.'
+      + '<label style="margin-left:8px;cursor:pointer"><input type="checkbox" id="mcpStrict" ' + (d.strict ? "checked" : "") + '> Chỉ dùng kết nối của Thansa (bỏ kết nối sẵn của máy)</label></div>'
       + '<div class="prov-list" style="margin-top:12px">' + (connectedHtml || '<div class="mp-empty">Chưa đấu nguồn nào - chọn một dịch vụ trong Kho bên dưới để bắt đầu.</div>') + '</div></div>'
       + '<div class="cview-section"><h3>◆ Kho kết nối</h3>'
       + '<div class="cat-tools"><input class="js-input" id="catQ" placeholder="Tìm dịch vụ…" style="max-width:220px">'
@@ -4337,10 +4337,10 @@
       <div class="cview-section">
         <h3>${Icons.kenh("zalo", { size: "18px" })} Zalo</h3>
         <div class="gcard" style="max-width:560px">
-          <div class="gcard-meta" style="margin-bottom:8px">Bot Zalo <b>chính thức</b> để hỏi Javis
+          <div class="gcard-meta" style="margin-bottom:8px">Bot Zalo <b>chính thức</b> để hỏi Thansa
             từ điện thoại. Khác <b>Zalo Agent MCP</b> ở trang Kết nối: cái kia đăng nhập chính tài
-            khoản của bạn để Javis thao tác thay bạn, cái này là một danh tính riêng, an toàn, để
-            bạn nhắn cho Javis.</div>
+            khoản của bạn để Thansa thao tác thay bạn, cái này là một danh tính riêng, an toàn, để
+            bạn nhắn cho Thansa.</div>
           <label class="js-row"><span>Bật bot Zalo</span><input type="checkbox" id="zlEnabled" ${zl.enabled ? "checked" : ""}></label>
           <label class="js-lbl">Bot token ${zl.token_set ? '<span class="dim">(đã đặt)</span>' : ""}</label>
           <input class="js-input" id="zlToken" type="password" placeholder="${zl.token_set ? "Để trống nếu không đổi" : "Ví dụ: 123456789:abc-xyz"}">
@@ -4362,7 +4362,7 @@
       else if (!d.token_set) line = ic("circle", { cls: "ic-dim" }) + " Chưa có bot token.";
       else if (d.status === "polling") {
         const n = (d.chat_ids || []).length;
-        line = `${ic("circle", { cls: "ic-fill ic-ok" })} Bot đang nhận tin - ${n ? n + " chat ID được phép" : "MỌI NGƯỜI nhắn được (chưa giới hạn ID)"} - nhắn cho bot là Javis trả lời.`;
+        line = `${ic("circle", { cls: "ic-fill ic-ok" })} Bot đang nhận tin - ${n ? n + " chat ID được phép" : "MỌI NGƯỜI nhắn được (chưa giới hạn ID)"} - nhắn cho bot là Thansa trả lời.`;
       }
       else if (d.status === "conflict") line = ic("circle", { cls: "ic-fill ic-err" }) + " 409: " + esc(d.last_error || "token bị poll nơi khác hoặc còn webhook") + " - bot tự xoá webhook khi khởi động; nếu vẫn lỗi thì có nơi khác đang poll cùng token.";
       else if (d.status === "error") line = WARN_ICON + " Lỗi bot: " + esc(d.last_error || "");
@@ -4496,7 +4496,7 @@
       <div class="cview-section">
         <h3>Token API (cho CLI)</h3>
         <div class="gcard" style="max-width:560px">
-          <div class="gcard-meta">Token để <b>Javis CLI</b> (hoặc script) gọi được Javis từ máy khác. Không có token nào sẵn - chưa tạo thì không đường nào vào ngoài trình duyệt.</div>
+          <div class="gcard-meta">Token để <b>Thansa CLI</b> (hoặc script) gọi được Thansa từ máy khác. Không có token nào sẵn - chưa tạo thì không đường nào vào ngoài trình duyệt.</div>
           <label class="js-lbl">Tên token</label>
           <input class="js-input" id="tkName" placeholder="Ví dụ: laptop của bạn">
           <label class="js-lbl">Phạm vi</label>
@@ -4661,7 +4661,7 @@
         bao("Đã tạo bộ mã khôi phục mới.");
       };
       document.getElementById("tfaOff").onclick = async () => {
-        if (!confirm("Tắt xác thực 2 lớp? Từ đó chỉ còn mật khẩu bảo vệ Javis.")) return;
+        if (!confirm("Tắt xác thực 2 lớp? Từ đó chỉ còn mật khẩu bảo vệ Thansa.")) return;
         const fd = new FormData();
         fd.append("password", document.getElementById("tfaPw").value);
         fd.append("code", document.getElementById("tfaCode").value.trim());
@@ -4676,7 +4676,7 @@
     // .env), nên nói rõ ra thay vì để họ tự nhớ mình đã chọn gì mấy phút trước.
     head.innerHTML = a.totp_suggested
       ? ic("shield") + " <b>Bạn đã chọn bật 2 lớp lúc cài.</b> Bấm Bật để quét QR và hoàn tất."
-      : ic("shield") + " Chưa bật. Bật thì mật khẩu lộ ra ngoài cũng chưa đủ để vào được Javis.";
+      : ic("shield") + " Chưa bật. Bật thì mật khẩu lộ ra ngoài cũng chưa đủ để vào được Thansa.";
     body.innerHTML = `<div class="js-actions"><button class="gcard-btn" id="tfaOn">Bật xác thực 2 lớp</button></div>`;
     document.getElementById("tfaOn").onclick = async () => {
       const r = await (await fetch("/auth/2fa/start", { method: "POST" })).json();
@@ -4835,7 +4835,7 @@
         + (con <= 2 ? ` <b class="tfa-low">(sắp hết)</b>` : "")
         + ` <button class="s-btn-ghost" data-settings-go="account">Quản lý</button>`
       : `${ic("shield")} Xác thực 2 lớp: <b class="tfa-off">chưa bật</b>`
-        + ` - bật thì mật khẩu lộ ra ngoài cũng chưa đủ để vào được Javis.`
+        + ` - bật thì mật khẩu lộ ra ngoài cũng chưa đủ để vào được Thansa.`
         + ` <button class="s-btn" data-settings-go="account">Bật ngay</button>`;
   }
 
@@ -4964,10 +4964,10 @@
       </details>
 
       <details class="settings-group" id="setAutostartSec" style="display:none">
-        <summary><span><b>Khởi động cùng Windows</b><small>Tự chạy Javis ở nền khi đăng nhập</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
+        <summary><span><b>Khởi động cùng Windows</b><small>Tự chạy Thansa ở nền khi đăng nhập</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
         <div class="settings-group-body">
           <div class="settings-card compact">
-            <div class="settings-card-head"><b>Tự bật Javis</b><span class="gcard-tag" id="setAutoTag">…</span></div>
+            <div class="settings-card-head"><b>Tự bật Thansa</b><span class="gcard-tag" id="setAutoTag">…</span></div>
             <p id="setAutoMeta">Đang kiểm tra…</p>
             <button class="gcard-btn ghost" id="setAutoToggle" style="display:none"></button>
             <div class="gcard-meta" id="setAutoStatus"></div>
@@ -5054,7 +5054,7 @@
     // Gỡ dấu nguồn gốc AI: hỏi lại một lần khi BẬT (tắt thì cho về thẳng, vì về mặc định
     // an toàn thì không cần cản). Chỉ đổi ảnh tạo MỚI, ảnh cũ giữ nguyên.
     const setC2pa = async (strip) => {
-      if (strip && !confirm("Gỡ dấu nguồn gốc AI khỏi ảnh Javis tạo?\n\n"
+      if (strip && !confirm("Gỡ dấu nguồn gốc AI khỏi ảnh Thansa tạo?\n\n"
           + "Dấu này cho người xem biết ảnh do AI sinh ra. Gỡ đi thì Facebook thường "
           + "không gắn nhãn nữa, nhưng nghĩa vụ công bố nội dung AI vẫn thuộc về bạn "
           + "với tư cách người đăng.\n\nChỉ áp dụng cho ảnh tạo từ giờ trở đi.")) return;
@@ -5092,8 +5092,8 @@
       // trang Tổng quan lẫn trang Cài đặt, viết hai bản thì sớm muộn hai bản nói khác nhau.
       // Bản trước trang này bỏ qua hẳn cờ `stale`, nên cùng một máy hỏng mà hai trang nói khác nhau.
       document.getElementById("setAutoMeta").innerHTML = (on
-        ? "Javis tự chạy nền khi bạn đăng nhập Windows; mở <code>localhost:7777</code> để dùng."
-        : "Bật để Javis tự khởi động ở nền mỗi khi mở máy.")
+        ? "Thansa tự chạy nền khi bạn đăng nhập Windows; mở <code>localhost:7777</code> để dùng."
+        : "Bật để Thansa tự khởi động ở nền mỗi khi mở máy.")
         + (j.ly_do ? '<br><span class="dim">' + WARN_ICON + " " + esc(j.ly_do) + "</span>" : "");
       const button = document.getElementById("setAutoToggle");
       button.style.display = ""; button.disabled = false; button.textContent = on ? "Tắt tự khởi động" : "Bật tự khởi động";
@@ -5320,9 +5320,9 @@
             // Chữ nằm trong <span> để màn hẹp ẩn được, giữ lại icon. Để chữ trần thì không
             // có cách nào ẩn mà không mất luôn cả nút.
             '<button class="cp-ico-btn cp-min" type="button" id="cpMinBtn" ' +
-              'title="Thu nhỏ về màn Javis" aria-label="Thu nhỏ về màn Javis">' +
+              'title="Thu nhỏ về màn Thansa" aria-label="Thu nhỏ về màn Thansa">' +
               ic("chevron-left") + '<span>Thu nhỏ</span></button>' +
-            '<span class="cp-title">Trò chuyện với Javis</span>' +
+            '<span class="cp-title">Trò chuyện với Thansa</span>' +
             '<span class="cp-engine" id="cpEngine"></span>' +
           '</div>' +
           '<div class="chatpage-slot" id="chatPageSlot"></div>' +
@@ -6211,7 +6211,7 @@
     // không đáng chiếm chỗ trên thanh trạng thái.
     const [name, rec] = dead[0];
     b.title = `Chưa dùng được: ${name} - ${rec.message || "không phản hồi"}. `
-      + "Vào trang Models để kết nối và sử dụng Javis.";
+      + "Vào trang Models để kết nối và sử dụng Thansa.";
     b.hidden = false;
   }
 
