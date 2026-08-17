@@ -71,3 +71,12 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 - Bài học quét: subagent grep bỏ sót readonly_orchestrator.py + chuỗi ghép nhiều dòng +
   test coupling kiểu "máy chạy Javis" — lưới cuối phải là quét AST string-literal và
   CHẠY full suite, đừng tin bản đồ grep.
+
+## Phát hành thansa-v1.0 (người bấm: quang, 2026-08-17)
+
+- Nền upstream `0b8f2c0` (VERSION 0.35.10) + 8 patch [me] rebrand P001–P010
+  (P002 logo HOÃN sang v1.1, dùng tạm ảnh upstream; P006 = hồ sơ ops dạng chore).
+- Nghiệm thu trước phát hành: tests 241/241 (pytest), tu-kiem-chung XANH cả 4 luật,
+  sweep hiển thị/chat sạch, persona "Bạn là Thansa" — trạm #1 đã nghiệm thu độc lập
+  (nhiem-vu/GD3.md mục tiền đề).
+- release ← me (ff-only), tag thansa-v1.0.
