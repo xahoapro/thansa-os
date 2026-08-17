@@ -51,12 +51,15 @@ Dựng bộ máy hồ sơ + tự động hoá của Thansa OS để từ GĐ2 tr
 1. `bash ops/tu-kiem-chung.sh` → `exit 0`, in "XANH" cho cả 3 luật.
 2. `bash ops/do-hang-ngay.sh` chạy tay 1 lần → sinh `ops/ban-tin/2026-08-17.md` đúng định dạng mục 3 (có các dòng ĐỤNG VÙNG THEO DÕI / ẢNH GỐC LỆCH / BẢO MẬT / Không giao). Mapping rỗng nên "không giao" toàn bộ — hợp lệ.
 3. `python3 -c "import json; json.load(open('ops/moc-goc.json'))"` OK; `python3 -c "import yaml; yaml.safe_load(open('ops/mapping.yaml'))"` OK.
-4. `.venv/bin/python tests/run.py` (trong `goc/`) vẫn XANH theo cấu hình upstream (241/241 không pytest) — GĐ1 không đụng code nên không được làm đỏ thêm.
+4. `.venv/bin/python tests/run.py` (trong `goc/`) vẫn XANH **241/241 khi đã cài `pytest`** — GĐ1 không đụng code nên không được làm đỏ thêm. (Lưu ý: `test_chat_disconnect.py` nhạy timing, có thể flaky khi chạy song song tải nặng → chạy riêng để xác nhận.)
 5. Viết `bao-cao/GD1.md` (mục 9.4): việc đã làm; kết quả tự kiểm chứng + bản tin mẫu; vấn đề; việc để lại; đề xuất. Push `me` lên `origin`.
 
-## Chốt câu hỏi mở từ GĐ0
-- **Chuẩn "xanh" chính thức = cấu hình upstream (KHÔNG pytest): 241/241.** `pytest` là tuỳ chọn tăng độ phủ; **không** thêm vào `requirements.txt`.
-- `test_chat_disconnect.py` là test **nhạy timing** (không phải lỗi mã) → ghi vào `ops/so-tron.md` mục "đã biết", KHÔNG vá trong thansa-os (ngoài phạm vi rebrand). Nếu muốn, đề xuất lên upstream (poll thay `sleep` cứng).
+## Chốt câu hỏi mở từ GĐ0 (ĐÃ SỬA sau nghiệm thu độc lập)
+Trạm #1 chạy lại test độc lập và phát hiện báo cáo GĐ0 SAI ở điểm này — ghi lại sự thật để không lặp:
+- **`pytest` là DEV-DEPENDENCY BẮT BUỘC**, không phải tuỳ chọn. 5 test có `import pytest` **không self-skip** — thiếu pytest thì `test_workflow_graph_phase10.py` (và phase8/11/12) **lỗi cứng `ModuleNotFoundError`**. "241/241 không pytest" trong báo cáo GĐ0 là KHÔNG đúng (thực tế 240/241).
+- **Chuẩn "xanh" chính thức = CÓ pytest trong `.venv` → 241/241.** Trạm #1 đã cài `pytest` vào `goc/.venv` (phase10 chạy lại = XANH 39s).
+- **Việc GĐ1 phải làm thêm:** ghi `pytest` vào tài liệu môi trường (checklist cấp máy / `env.thansa.example` hoặc một `ops/requirements-dev.txt`) để pytest không "biến mất" lần nữa. Cân nhắc đề xuất lên upstream: bọc `import pytest` bằng self-skip thật, hoặc đưa pytest vào requirements dev.
+- `test_chat_disconnect.py` **nhạy timing** (chạy riêng = XANH; flaky khi tải nặng) → ghi `ops/so-tron.md` mục "đã biết", KHÔNG vá trong thansa-os (ngoài phạm vi rebrand); có thể đề xuất upstream (poll thay `sleep` cứng).
 
 ## Hạn chót
 Không gấp. Xong GĐ1 thì **báo để trạm #1 nghiệm thu** trước khi sang GĐ2 (rebrand P001–P006).
