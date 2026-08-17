@@ -164,3 +164,59 @@
   dieu_kien_bo: >
     Upstream tham số hoá image trong compose (biến env/override mẫu) thì bỏ patch,
     đặt qua biến.
+
+- id: P007
+  ten: "Danh tính trợ lý: bot nói/hiện ra là Thansa"
+  y_dinh: >
+    Mọi chuỗi CHAT-FACING ở server (persona CORE_CONTRACT, khối context bơm vào
+    prompt, tin bot gửi qua Zalo/Telegram/voice/STT, thông báo write-gate/lỗi trả
+    người dùng, tiêu đề cửa sổ Windows) dùng "Thansa" thay "Javis". GIỮ nguyên:
+    Javis/ (đường dẫn), JAVIS_* (env), javis_* (tool), comment/docstring. Cặp marker
+    "# === NĂNG LỰC THANSA" ở main.py và context_runtime.py phải đổi CÙNG NHAU.
+    NGOẠI LỆ coupled test (được phép, ghi sổ trộn): tests/fixtures/
+    context_compiler_contract.json đổi required/forbidden terms theo persona mới;
+    cùng lớp đó, 7 file test bám chuỗi bot nói được đồng bộ Javis→Thansa:
+    bao_viec_ve_chat_web, bot_noi_nhu_nguoi, cli_kenh, codex_context, connect_health,
+    loi_ket_noi_google, terminal_cmd_goc.
+  commit: "[me] P007: danh tinh tro ly Thansa (chat-facing server)"
+  diem_neo:
+    - file: server/context_compiler.py
+      ky_hieu: "CORE_CONTRACT"
+    - file: server/context_runtime.py
+      ky_hieu: "capability_summary_chars"
+    - file: server/stt.py
+      ky_hieu: "MARK_THOAI"
+    - file: tests/fixtures/context_compiler_contract.json
+      ky_hieu: '"required_terms"'
+  vung_theo_doi:
+    - server/context_compiler.py
+    - server/context_runtime.py
+    - server/channel_context.py
+    - server/stt.py
+    - server/zalo_bot.py
+    - server/telegram_bot.py
+    - "server/main.py: chuỗi thông báo người dùng + write-gate + khối context"
+    - server/compaction.py
+    - server/engine.py
+    - server/antigravity_cli.py
+    - server/readonly_orchestrator.py
+    - server/connect_health.py
+    - server/learn.py
+    - server/self_improve.py
+    - tests/fixtures/context_compiler_contract.json
+  anh_goc:
+    - file: server/context_compiler.py
+      doan: "Bạn là Javis, trợ lý agentic làm việc trong đúng brain và kênh của task hiện tại."
+    - file: server/context_runtime.py
+      doan: '("capability_summary_chars", "# === NĂNG LỰC JAVIS"),'
+    - file: server/zalo_bot.py
+      doan: 'await self._send(client, chat, "Bạn không có quyền dùng bot Javis này.")'
+    - file: tests/fixtures/context_compiler_contract.json
+      doan: '"Bạn là Javis",'
+  kiem_chung: >
+    tests/run.py context_compiler_phase4 XANH; hỏi bot "bạn là ai" → tự xưng Thansa;
+    grep -rn 'Bạn là Javis' server/ = 0; grep các mẫu chat "Javis (chưa|đã|không|nghe|
+    đang|tự)" trong server/*.py chỉ còn trong comment/docstring.
+  dieu_kien_bo: >
+    Upstream đưa tên trợ lý vào branding config (biến persona) thì bỏ patch, đặt
+    qua cấu hình.

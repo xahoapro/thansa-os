@@ -391,9 +391,9 @@ class FastPathCanary:
                 policy_version=policy.version,
                 rejection_message=localefmt.chu(
                     "Request này vượt ngân sách context đã xác minh của model hiện tại. "
-                    "Javis chưa gửi request; bạn hãy rút gọn nội dung hoặc đổi model/provider.",
+                    "Thansa chưa gửi request; bạn hãy rút gọn nội dung hoặc đổi model/provider.",
                     "This request exceeds the verified context budget of the current model. "
-                    "Javis did not send it; shorten the content or switch model/provider."
+                    "Thansa did not send it; shorten the content or switch model/provider."
                 ),
             )
         if report.get("path") != "fast" or report.get("preflight_decision") != "would_allow":
@@ -419,9 +419,9 @@ class FastPathCanary:
                 policy_version=policy.version,
                 rejection_message=localefmt.chu(
                     "Request này quá sát hard limit của model sau khi cộng biên an toàn. "
-                    "Javis chưa gửi request; bạn hãy rút gọn nội dung hoặc đổi model/provider.",
+                    "Thansa chưa gửi request; bạn hãy rút gọn nội dung hoặc đổi model/provider.",
                     "This request is too close to the model's hard limit once the safety margin is added. "
-                    "Javis did not send it; shorten the content or switch model/provider."
+                    "Thansa did not send it; shorten the content or switch model/provider."
                 ),
             )
         admission = self.runtime.admit_quota(
@@ -436,9 +436,9 @@ class FastPathCanary:
                 policy_version=policy.version,
                 rejection_message=localefmt.chu(
                     "Model hiện tại đã hết ngân sách token trong cửa sổ quota. "
-                    "Javis chưa gửi request; bạn chờ hết cửa sổ hoặc đổi model/provider.",
+                    "Thansa chưa gửi request; bạn chờ hết cửa sổ hoặc đổi model/provider.",
                     "The current model has used up its token budget for this quota window. "
-                    "Javis did not send the request; wait for the window to reset or switch model/provider."
+                    "Thansa did not send the request; wait for the window to reset or switch model/provider."
                 ),
             )
         rendered = compiled.capsule.rendered_request

@@ -624,8 +624,8 @@ def _loi_nhac_file(duong_dan: str, cau_hoi: str) -> str:
 
 
 _CANH_BAO_CHUA_DOC = (
-    "\n\n_(Lưu ý của Javis: bản `agy` trên máy này không mở file ngữ cảnh, nên lượt vừa rồi trả "
-    "lời mà chưa có system prompt và bộ nhớ của Javis. Muốn chuẩn thì nâng cấp `agy` lên bản mới "
+    "\n\n_(Lưu ý của Thansa: bản `agy` trên máy này không mở file ngữ cảnh, nên lượt vừa rồi trả "
+    "lời mà chưa có system prompt và bộ nhớ của Thansa. Muốn chuẩn thì nâng cấp `agy` lên bản mới "
     "(nhận prompt qua stdin), hoặc đổi bộ não khác ở trang Models.)_"
 )
 _CANH_BAO_CHUA_DOC_EN = (
@@ -677,9 +677,9 @@ def _ghi_stdin(proc, s: str) -> None:
 
 
 _CANH_BAO_HONG_DAU = (
-    "\n\n_(Lưu ý của Javis: bản `agy` trên máy này làm hỏng dấu tiếng Việt khi nhận prompt dài "
+    "\n\n_(Lưu ý của Thansa: bản `agy` trên máy này làm hỏng dấu tiếng Việt khi nhận prompt dài "
     "(chữ biến thành `�`), và đổi đường gửi cũng không cứu được. Lỗi nằm trong chính CLI, "
-    "Javis không vá được - nâng cấp `agy` lên bản mới, hoặc đổi bộ não khác ở trang Models.)_"
+    "Thansa không vá được - nâng cấp `agy` lên bản mới, hoặc đổi bộ não khác ở trang Models.)_"
 )
 _CANH_BAO_HONG_DAU_EN = (
     "\n\n_(Note from Javis: the `agy` version on this machine breaks Vietnamese diacritics in long prompts "
@@ -687,9 +687,9 @@ _CANH_BAO_HONG_DAU_EN = (
     "Javis cannot patch it - upgrade `agy`, or switch to another brain on the Models page.)_"
 )
 _CANH_BAO_DOC_HONG = (
-    "\n\n_(Lưu ý của Javis: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
+    "\n\n_(Lưu ý của Thansa: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
     "quyền hoặc sandbox chặn), nên lượt vừa rồi trả lời mà chưa có system prompt và bộ nhớ của "
-    "Javis. Nâng cấp `agy` lên bản nhận prompt qua stdin là hết hẳn đường vòng này.)_"
+    "Thansa. Nâng cấp `agy` lên bản nhận prompt qua stdin là hết hẳn đường vòng này.)_"
 )
 _CANH_BAO_DOC_HONG_EN = (
     "\n\n_(Note from Javis: `agy` tried to open the context file but could NOT read it (usually blocked by "
@@ -865,10 +865,10 @@ def auth_status(bo_qua_cache: bool = False) -> dict:
         # "đã cài rồi mà Javis không nhận". Trang Code của dashboard mở shell bằng chính user
         # của Javis nên đăng nhập ở đó là chắc ăn nhất.
         d = {"connected": False, "method": "", "email": "",
-             "error": "Đã cài Antigravity CLI nhưng phiên của Javis chưa đăng nhập. Mở trang "
-                      "Code (Terminal) NGAY TRONG Javis, gõ `agy` rồi làm theo hướng dẫn - "
-                      "phải đăng nhập bằng ĐÚNG user đang chạy Javis; SSH bằng user khác "
-                      "(vd root) đăng nhập xong Javis vẫn không thấy."}
+             "error": "Đã cài Antigravity CLI nhưng phiên của Thansa chưa đăng nhập. Mở trang "
+                      "Code (Terminal) NGAY TRONG Thansa, gõ `agy` rồi làm theo hướng dẫn - "
+                      "phải đăng nhập bằng ĐÚNG user đang chạy Thansa; SSH bằng user khác "
+                      "(vd root) đăng nhập xong Thansa vẫn không thấy."}
     _AUTH_CACHE.update(ts=now, val=dict(d))
     return _hien_auth(d)
 
@@ -966,17 +966,17 @@ def login_huong_dan() -> dict:
         "cai": lenh_cai(),
         "dang_nhap": "agy",
         "ghi_chu": localefmt.chu(
-            "Dùng trang Code (Terminal) NGAY TRONG Javis - nó mở shell bằng đúng user "
-            "đang chạy Javis, đăng nhập ở đó là Javis nhận liền. (SSH bằng user khác, "
-            "vd root, đăng nhập xong Javis vẫn không thấy - đây là lý do hay gặp nhất "
+            "Dùng trang Code (Terminal) NGAY TRONG Thansa - nó mở shell bằng đúng user "
+            "đang chạy Thansa, đăng nhập ở đó là Thansa nhận liền. (SSH bằng user khác, "
+            "vd root, đăng nhập xong Thansa vẫn không thấy - đây là lý do hay gặp nhất "
             "của cảnh 'cài rồi mà không nhận'.) Gõ `agy`: nó in ra một đường link. Mở "
             "link đó trên máy của bạn, đăng nhập Google xong trình duyệt nhảy sang một "
             "địa chỉ localhost báo không mở được - đó là bước ĐÚNG, copy nguyên địa "
             "chỉ trên thanh URL rồi dán ngược vào terminal và Enter. Chỉ phải làm một "
             "lần.",
-            "Use the Terminal page RIGHT IN Javis - it opens a shell as the same user "
-            "running Javis, so signing in there is picked up right away. (Signing in over SSH as another user, "
-            "e.g. root, still leaves Javis unable to see it - the most common reason "
+            "Use the Terminal page RIGHT IN Thansa - it opens a shell as the same user "
+            "running Thansa, so signing in there is picked up right away. (Signing in over SSH as another user, "
+            "e.g. root, still leaves Thansa unable to see it - the most common reason "
             "for 'installed but not recognized'.) Type `agy`: it prints a link. Open "
             "that link on your own machine; after the Google sign-in the browser jumps to a "
             "localhost address that fails to load - that is the CORRECT step, copy the whole "
@@ -985,10 +985,10 @@ def login_huong_dan() -> dict:
         "cuu_ho": localefmt.chu(
             "Nếu terminal không hiện chỗ dán (bản `agy` cũ): mở thêm một phiên terminal "
             "rồi chạy curl \"<địa chỉ localhost vừa copy>\" - cổng đó đang mở ngay "
-            "trên máy chạy Javis nên mã về đúng chỗ.",
+            "trên máy chạy Thansa nên mã về đúng chỗ.",
             "If the terminal shows no place to paste (older `agy`): open another terminal session "
             "and run curl \"<the localhost address you copied>\" - that port is open right "
-            "on the machine running Javis, so the code lands in the right place."),
+            "on the machine running Thansa, so the code lands in the right place."),
     }
 
 
@@ -1275,10 +1275,10 @@ class AntigravityCLI:
             yield {"type": "error",
                    "content": localefmt.chu(
                        f"Không tìm thấy Antigravity CLI (`agy`). Cài một lần trên máy "
-                       f"chạy Javis:\n\n`{lenh_cai()}`\n\nRồi gõ `agy` một lần để đăng "
+                       f"chạy Thansa:\n\n`{lenh_cai()}`\n\nRồi gõ `agy` một lần để đăng "
                        f"nhập Google.",
                        f"Antigravity CLI (`agy`) not found. Install it once on the machine "
-                       f"running Javis:\n\n`{lenh_cai()}`\n\nThen type `agy` once to sign "
+                       f"running Thansa:\n\n`{lenh_cai()}`\n\nThen type `agy` once to sign "
                        f"in to Google.")}
             return
         full = (self.instructions.strip() + "\n\n" + prompt) if self.instructions else prompt
@@ -1440,12 +1440,12 @@ class AntigravityCLI:
                 yield {"type": "error",
                        "content": localefmt.chu(
                            f"Không ghi được file ngữ cảnh cho Antigravity CLI "
-                           f"({type(e).__name__}: {e}). Prompt của Javis dài hơn trần "
+                           f"({type(e).__name__}: {e}). Prompt của Thansa dài hơn trần "
                            f"dòng lệnh của hệ điều hành nên phải đi qua file. Kiểm tra "
                            f"quyền ghi của thư mục state, hoặc đổi bộ não khác ở trang "
                            f"Models.",
                            f"Could not write the context file for Antigravity CLI "
-                           f"({type(e).__name__}: {e}). Javis's prompt is longer than the operating "
+                           f"({type(e).__name__}: {e}). Thansa's prompt is longer than the operating "
                            f"system's command-line limit, so it must go through a file. Check "
                            f"write permission on the state folder, or switch to another brain on the "
                            f"Models page.")}
@@ -1630,10 +1630,10 @@ class AntigravityCLI:
                 return [{"type": "error",
                          "content": localefmt.chu(
                              "Antigravity CLI chưa đăng nhập. Mở terminal trên máy chạy "
-                             "Javis, gõ `agy` rồi làm theo hướng dẫn (qua SSH thì nó in "
+                             "Thansa, gõ `agy` rồi làm theo hướng dẫn (qua SSH thì nó in "
                              "ra một link để mở trên máy bạn).",
                              "Antigravity CLI is not signed in. Open a terminal on the machine running "
-                             "Javis, type `agy` and follow the steps (over SSH it prints "
+                             "Thansa, type `agy` and follow the steps (over SSH it prints "
                              "a link to open on your own machine).")}]
             if not loi:
                 loi = localefmt.chu(f"Antigravity CLI thoát với mã {ev.get('_exit')}.",
@@ -1706,9 +1706,9 @@ class AntigravityCLI:
             if _la_loi_chua_dang_nhap(tin):
                 return [{"type": "error",
                          "content": localefmt.chu("Antigravity CLI chưa đăng nhập. Gõ `agy` một lần trên máy "
-                                                  "chạy Javis.",
+                                                  "chạy Thansa.",
                                                   "Antigravity CLI is not signed in. Type `agy` once on the machine "
-                                                  "running Javis.")}]
+                                                  "running Thansa.")}]
             if str(ev.get("severity") or "error") == "warning":
                 return []
             return [{"type": "error", "content": tin[:1500]}]
@@ -1835,9 +1835,9 @@ def kiem_tra_nhanh(timeout: float = 60.0) -> dict:
         if _la_loi_chua_dang_nhap(_ra) or "select login method" in _ra.lower():
             return {"ok": False,
                     "error": localefmt.chu("Chưa đăng nhập - CLI đang đứng ở màn chọn cách đăng nhập. Mở "
-                                           "terminal trên máy chạy Javis, gõ `agy` rồi làm theo hướng dẫn.",
+                                           "terminal trên máy chạy Thansa, gõ `agy` rồi làm theo hướng dẫn.",
                                            "Not signed in - the CLI is waiting at the sign-in method menu. Open a "
-                                           "terminal on the machine running Javis, type `agy` and follow the steps.")}
+                                           "terminal on the machine running Thansa, type `agy` and follow the steps.")}
         return {"ok": False, "error": localefmt.chu("Antigravity CLI không trả lời kịp.",
                                                     "Antigravity CLI did not answer in time.")}
     except Exception as e:
@@ -1846,8 +1846,8 @@ def kiem_tra_nhanh(timeout: float = 60.0) -> dict:
     if r.returncode != 0:
         loi = (r.stderr or out or "").strip()
         if _la_loi_chua_dang_nhap(loi):
-            return {"ok": False, "error": localefmt.chu("Chưa đăng nhập. Gõ `agy` một lần trên máy chạy Javis.",
-                                                        "Not signed in. Type `agy` once on the machine running Javis.")}
+            return {"ok": False, "error": localefmt.chu("Chưa đăng nhập. Gõ `agy` một lần trên máy chạy Thansa.",
+                                                        "Not signed in. Type `agy` once on the machine running Thansa.")}
         return {"ok": False, "error": loi[:400] or localefmt.chu(f"Thoát mã {r.returncode}",
                                                                  f"Exit code {r.returncode}")}
     if not out:
