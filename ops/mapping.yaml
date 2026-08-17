@@ -111,3 +111,28 @@
   dieu_kien_bo: >
     Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
     dùng cấu hình chính thức.
+
+- id: P004
+  ten: "i18n vi/en: nhãn hiển thị Thansa"
+  y_dinh: >
+    Nhãn trang và câu hint dùng "Javis" như TÊN sản phẩm/trợ lý trong 2 file i18n
+    hiển thị → "Thansa". KHÔNG đổi key i18n, không đổi file khác trong dashboard/i18n/.
+  commit: "[me] P004: i18n vi/en - nhan hien thi Thansa"
+  diem_neo:
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"page.home.label"'
+    - file: dashboard/i18n/en.json
+      ky_hieu: '"page.home.label"'
+  vung_theo_doi:
+    - dashboard/i18n/
+  anh_goc:
+    - file: dashboard/i18n/vi.json
+      doan: '"page.home.label": "Javis",'
+    - file: dashboard/i18n/en.json
+      doan: '"page.terminal.sub": "A real shell on the machine running Javis",'
+  kiem_chung: >
+    grep -i javis dashboard/i18n/vi.json dashboard/i18n/en.json = 0; hai file vẫn là
+    JSON hợp lệ; đổi ngôn ngữ vi/en trên dashboard: nhãn trang chủ hiện "Thansa".
+  dieu_kien_bo: >
+    Upstream thêm key i18n riêng cho tên thương hiệu (branding key) thì bỏ patch,
+    điền giá trị qua cấu hình.
