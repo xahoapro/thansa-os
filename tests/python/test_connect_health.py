@@ -24,7 +24,7 @@ def test_classify_spawn():
                 "process exited with code 1"):
         kind, msg = connect_health.classify_error(err)
         assert kind == "spawn", err
-        assert "máy chạy Javis" in msg
+        assert "máy chạy Thansa" in msg
 
 
 def test_classify_net():

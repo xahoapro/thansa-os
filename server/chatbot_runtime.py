@@ -84,7 +84,7 @@ _DA_BAO_NHOM: set = set()
 # gọi bot gần như luôn là chủ hoặc người của chủ đang thử, và thứ họ nhận được là một con bot
 # "hỏng". Một câu, một lần mỗi nhóm, là đủ để biến một lỗi không thể chẩn đoán thành một việc
 # bấm một nút là xong.
-CAU_NHOM_CHUA_BAT = ("Em chưa được bật cho nhóm này ạ. Chủ bot mở trang Chatbot của Javis, "
+CAU_NHOM_CHUA_BAT = ("Em chưa được bật cho nhóm này ạ. Chủ bot mở trang Chatbot của Thansa, "
                      "ở thẻ của em sẽ thấy nhóm này đang chờ, bấm **Cho phép** một cái là em "
                      "trả lời được ngay.")
 
@@ -428,7 +428,7 @@ def _chan_doan_nhom(bot_id: str, chat: str, meta: dict) -> str:
         return dong[0]
 
     if not _khop_nhom(cfg.get("groups") or [], chat):
-        dong.append("Nhóm này **chưa được bật** cho em. Chủ bot mở trang Chatbot của Javis, "
+        dong.append("Nhóm này **chưa được bật** cho em. Chủ bot mở trang Chatbot của Thansa, "
                     "thẻ của em sẽ thấy nhóm này đang chờ, bấm **Cho phép** một cái là xong.")
     else:
         dong.append("Nhóm này **đã được bật** cho em rồi ạ.")

@@ -153,7 +153,7 @@ check("nhánh token đặt sau nhánh cookie",
 # 3. Kênh cli đi tới tận hợp đồng đầu ra
 # ============================================================
 _khoi = channel_context.build_channel_block("cli", {"host": "macbook"})
-check("khối kênh nhận diện đúng nguồn", "Javis CLI" in _khoi)
+check("khối kênh nhận diện đúng nguồn", "Thansa CLI" in _khoi)
 check("có tên máy để Javis biết đang nói với ai", "macbook" in _khoi)
 check("CANARY: cấm bảng markdown trong terminal", "không dùng bảng" in _khoi.lower()
       or "TUYỆT ĐỐI không dùng bảng" in _khoi)

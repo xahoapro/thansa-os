@@ -60,8 +60,8 @@ BOT_COMMANDS = [
     {"command": "retry", "description": "Gửi lại câu hỏi gần nhất"},
     {"command": "stop", "description": "Dừng câu đang trả lời"},
     {"command": "reset", "description": "Bắt đầu hội thoại mới"},
-    {"command": "cli", "description": "Engine Claude Code (MCP Javis + lệnh máy)"},
-    {"command": "or", "description": "Engine OpenRouter (MCP Javis, không lệnh máy)"},
+    {"command": "cli", "description": "Engine Claude Code (MCP Thansa + lệnh máy)"},
+    {"command": "or", "description": "Engine OpenRouter (MCP Thansa, không lệnh máy)"},
 ]
 
 IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
@@ -624,7 +624,7 @@ class TelegramBot(HangLuot):
             name = f"photo_{msg.get('message_id')}.jpg"
             fsize = big.get("file_size") or 0
         elif media_khac:
-            return _with_cap("[Người dùng gửi video qua Telegram - Javis chưa xem được loại này. "
+            return _with_cap("[Người dùng gửi video qua Telegram - Thansa chưa xem được loại này. "
                              "Hãy lịch sự nhờ user gõ chữ, gửi tin thoại, hoặc gửi dạng file tài liệu.]")
         else:
             return None
@@ -677,7 +677,7 @@ class TelegramBot(HangLuot):
         if self.giau_trang_thai:
             giu = asyncio.create_task(self._giu_typing(client, chat))
         else:
-            status_mid = await self._send_status(client, chat, "🤔 Javis đang xử lý…")
+            status_mid = await self._send_status(client, chat, "🤔 Thansa đang xử lý…")
         _last = [0.0]
         t0 = time.monotonic()
         tools = []          # tên công cụ đã gọi trong lượt, giữ thứ tự, không trùng
@@ -796,7 +796,7 @@ class TelegramBot(HangLuot):
                         # chuyện phải biết kể cả (nhất là) khi nhóm đó chưa được cho phép.
                         await self._bao_su_kien(msg)
                         if self.chat_ids and chat not in self.chat_ids:
-                            await self._send(client, chat, "Bạn không có quyền dùng bot Javis này.")
+                            await self._send(client, chat, "Bạn không có quyền dùng bot Thansa này.")
                             continue
                         text = (msg.get("text") or "").strip()
                         if not text:

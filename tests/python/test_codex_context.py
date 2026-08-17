@@ -105,7 +105,7 @@ with tempfile.TemporaryDirectory(prefix="javis-codex-context-") as tmp:
         {"role": "assistant", "content": "Tôi đã ghi nhớ tên Sao Mai."},
     ]
     prompt = compaction.codex_bootstrap_prompt(history, "Tên dự án là gì?", max_chars=4000)
-    check("bootstrap: có lịch sử hai vai", "<User>" in prompt and "<Javis>" in prompt)
+    check("bootstrap: có lịch sử hai vai", "<User>" in prompt and "<Thansa>" in prompt)
     check("bootstrap: giữ yêu cầu hiện tại", prompt.endswith("Tên dự án là gì?"))
     check("bootstrap: không vượt trần khi current ngắn", len(prompt) <= 4000)
 

@@ -718,18 +718,18 @@ class LearnFeature:
                 '"priority":1..3,"confidence":0..3}]')
 
         return (
-            "BẠN LÀ VÒNG HỌC READ-ONLY của Javis. TUYỆT ĐỐI KHÔNG ghi/sửa/xoá file, KHÔNG gọi tool ghi. "
+            "BẠN LÀ VÒNG HỌC READ-ONLY của Thansa. TUYỆT ĐỐI KHÔNG ghi/sửa/xoá file, KHÔNG gọi tool ghi. "
             "Chỉ ĐỌC (Read/Glob/Grep) để dedup rồi TRẢ VỀ 1 KHỐI JSON DUY NHẤT (không văn xuôi ngoài JSON).\n\n"
             "PHÂN LOẠI ĐA-NHÃN (1 đoạn có thể sinh nhiều loại):\n"
             "• fact (Memory) = sự thật BỀN về CHÍNH user/doanh nghiệp này (bỏ tên riêng thì mất nghĩa).\n"
             "• wiki = KHÁI NIỆM/framework/quy trình TÁI DÙNG (đúng cả với người khác).\n"
-            "• skill = quy trình nhiều bước Javis VỪA TỰ LÀM, có công thức lặp lại.\n"
+            "• skill = quy trình nhiều bước Thansa VỪA TỰ LÀM, có công thức lặp lại.\n"
             + ("• agent = VAI chuyên môn user nhờ đi nhờ lại hoặc yêu cầu rõ (vd 'viết email "
                "chăm khách', 'biên tập bài'), đáng đóng thành một vai có system prompt riêng.\n"
                if caps.get("agent") else "")
             + ("• workflow = CHUỖI từ 2 bước trở lên, nhiều vai nối nhau, user đã làm/nhờ lặp lại "
                "theo đúng trình tự đó.\n" if caps.get("workflow") else "")
-            + "• task = VIỆC NỀN cụ thể đáng giao Javis tự làm sau (yêu cầu lặp lại / việc bỏ dở / câu hỏi mở).\n\n"
+            + "• task = VIỆC NỀN cụ thể đáng giao Thansa tự làm sau (yêu cầu lặp lại / việc bỏ dở / câu hỏi mở).\n\n"
             "PROVENANCE (bắt buộc, chống bịa): 'user'=user khẳng định; 'source'=trích nguồn có tên; "
             "'assistant'=CHÍNH JAVIS tự nói không nguồn. ⚠ Mục wiki provenance='assistant' sẽ BỊ LOẠI "
             "(đẩy sang cần-xác-minh) → chỉ đưa vào wiki thứ user/nguồn khẳng định.\n"
@@ -853,7 +853,7 @@ class LearnFeature:
         if not skills:
             return skills
         listing = "\n".join(f"- {s.get('slug')}: {s.get('name')} — {s.get('description','')}" for s in skills)
-        prompt = ("Một vòng học đề xuất tạo các SKILL sau (Javis tự quan sát từ việc đã làm). "
+        prompt = ("Một vòng học đề xuất tạo các SKILL sau (Thansa tự quan sát từ việc đã làm). "
                   "GIẢ ĐỊNH chúng SAI/thừa. Với mỗi slug, quyết định giữ hay bỏ.\n" + listing +
                   '\nCHỈ trả JSON: {"keep":["slug1",...]} - slug đáng giữ (quy trình thật, đủ cụ thể, không trùng skill có sẵn).')
         out = await self._spawn_readonly(brain, prompt, cfg, tag="learn")
@@ -976,7 +976,7 @@ class LearnFeature:
                     if not title or not body or int(w.get("density", 0)) < 2:
                         continue
                     if (w.get("provenance") == "assistant"):
-                        self._append_open_question(brain, wiki_dir, title, "provenance=assistant (Javis tự nói, cần xác minh)", written_paths, root)
+                        self._append_open_question(brain, wiki_dir, title, "provenance=assistant (Thansa tự nói, cần xác minh)", written_paths, root)
                         rep["blocked"].append(f"wiki '{title}': assistant-only → cần xác minh"); continue
                     if secret_hits(title + "\n" + body):
                         rep["blocked"].append(f"wiki '{title}': chứa secret"); continue

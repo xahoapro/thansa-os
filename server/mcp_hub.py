@@ -174,7 +174,7 @@ def _guard(ent, fn, mode):
         if str(result).startswith("ERROR:"):
             chan_doan = chan_doan_loi(str(result).split("ERROR:", 1)[1].strip(), conn["id"])
             if chan_doan:
-                return f"{result}\n\n[Javis chẩn đoán] {chan_doan}"
+                return f"{result}\n\n[Thansa chẩn đoán] {chan_doan}"
         return result
 
     return _call
@@ -336,7 +336,7 @@ def _connections_json(include_ambient=False, hidden=None):
             rec["tool_bi_an_do_quyen"] = sorted(h["tools"])[:15]
             rec["cach_mo"] = (f"Các tool này CÓ THẬT nhưng bị ẩn vì kết nối đang ở mức "
                               f"'{h.get('perm')}'. Muốn dùng thì bảo user tự nâng mức ở trang "
-                              "Kết nối - Javis KHÔNG tự nâng quyền.")
+                              "Kết nối - Thansa KHÔNG tự nâng quyền.")
         out.append(rec)
     # Connector đấu vào TÀI KHOẢN Claude (Drive/Gmail/lịch...): engine Claude đã có sẵn dưới dạng
     # tool native mcp__<server>__* → chỉ model gọi THẲNG, KHÔNG bọc qua javis_run_tool/hub.
@@ -383,7 +383,7 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
             "health": "healthy",
         }
 
-    add("javis_connections", "Liệt kê các nguồn dữ liệu (connector/tài khoản MCP) đang đấu vào Javis, "
+    add("javis_connections", "Liệt kê các nguồn dữ liệu (connector/tài khoản MCP) đang đấu vào Thansa, "
         "kèm mức quyền và các tool đang bị mức quyền ẩn (tool_bi_an_do_quyen). Gồm cả connector đấu "
         "vào TÀI KHOẢN Claude (Drive/Gmail/lịch...) - loại source='claude_account' gọi THẲNG qua "
         "tool native mcp__<tên>__*, KHÔNG qua javis_run_tool. Dùng khi cần biết đang có nguồn nào / "
@@ -1190,7 +1190,7 @@ def _extract_label(text, paths):
 # Nên "đăng nhập lại mà không thấy ô tick nào" là đúng cơ chế, không phải hỏng - đường duy
 # nhất để tick lại từ đầu là gỡ ứng dụng ở trang quyền của tài khoản Google.
 REVOKE_HINT = (" Đăng nhập lại mà Google không hiện ô tick quyền nào là bình thường: quyền đã"
-               " cấp thì nó cho qua thẳng. Muốn tick lại từ đầu thì gỡ Javis tại"
+               " cấp thì nó cho qua thẳng. Muốn tick lại từ đầu thì gỡ Thansa tại"
                " https://myaccount.google.com/permissions rồi Kết nối lại.")
 
 
@@ -1239,7 +1239,7 @@ def chan_doan_loi(err, conn_id=""):
         # calendar.events.freebusy) - nên phải nói rõ là đăng nhập LẠI sau khi cập nhật.
         return ("Tài khoản đã kết nối nhưng token chưa đủ phạm vi quyền cho tool này."
                 + _missing_scope_note(conn_id) +
-                " Bấm Đăng nhập lại và tick chọn đầy đủ các quyền. Nếu vừa cập nhật Javis thì"
+                " Bấm Đăng nhập lại và tick chọn đầy đủ các quyền. Nếu vừa cập nhật Thansa thì"
                 " BẮT BUỘC đăng nhập lại: token cũ chỉ mang những quyền xin ở bản trước, xoá"
                 " kết nối rồi tạo lại cũng không thêm được quyền mới." + REVOKE_HINT)
     if ("missing required authentication credential" in low or "unauthenticated" in low
@@ -1252,7 +1252,7 @@ def chan_doan_loi(err, conn_id=""):
     # phải ghi danh lại - đúng bẫy của người dùng khi chuyển từ gmail cá nhân sang mail tên miền.
     if "caller does not have permission" in low or "permission_denied" in low:
         return ("Google từ chối chính TÀI KHOẢN đang đăng nhập (403 PERMISSION_DENIED). Đây KHÔNG"
-                " phải Javis chặn: mức quyền của kết nối chặn thì Javis báo bằng tiếng Việt kèm chữ"
+                " phải Thansa chặn: mức quyền của kết nối chặn thì Thansa báo bằng tiếng Việt kèm chữ"
                 " 'bị chặn'. Với server MCP của Google, lỗi này thường do 1 trong 2: tài khoản đó"
                 " chưa ghi danh Google Workspace Developer Preview Program, hoặc project chưa bật"
                 " API MCP riêng. Ghi danh tính theo TỪNG tài khoản Google, nên vừa đổi sang tài"

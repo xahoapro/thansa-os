@@ -118,7 +118,7 @@ _CANH_BAO = {
         "trong brain đổi thật, không có bước duyệt.",
         "Bot gọi được các nguồn dữ liệu (MCP) bạn đã đấu, ở mức đọc và ghi. Mọi thứ trong "
         "những nguồn đó nằm trong tầm với của người đang chat với bot.",
-        "Javis vẫn CHẶN cứng nhóm thao tác RA NGOÀI ở mức này: không gửi đi, không thanh toán, "
+        "Thansa vẫn CHẶN cứng nhóm thao tác RA NGOÀI ở mức này: không gửi đi, không thanh toán, "
         "không đặt hay huỷ, không xoá, không công bố gì.",
         "Bot vẫn KHÔNG thấy brain khác, không chạy lệnh máy, không ra được ngoài máy.",
     ],
