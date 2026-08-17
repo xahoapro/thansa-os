@@ -582,7 +582,7 @@ def register(ctx) -> None:
             "ĐỦ ĐIỀU KIỆN MỚI TẠO: trước khi op=create, tự hỏi việc này tới giờ chạy có ĐỦ thứ "
             "cần không (nguồn dữ liệu đã đấu chưa, kênh báo kết quả đã có chưa). Thiếu thì NÓI "
             "THẲNG thiếu gì và hỏi user, KHÔNG tạo trước rồi im lặng để nó chạy thất bại mỗi ngày. "
-            "CHỈ GỌI khi user ra lệnh rõ ràng với lịch tự động của Javis; KHÔNG gọi chỉ vì câu có "
+            "CHỈ GỌI khi user ra lệnh rõ ràng với lịch tự động của Thansa; KHÔNG gọi chỉ vì câu có "
             "'đặt lịch', booking, tư vấn 1-1, cuộc hẹn, hoặc đang bàn về sản phẩm/UX/marketing. "
             "Trong các trường hợp đó phải trả lời hội thoại bình thường, không op=list/create/cancel. "
             "Tool TỰ CHỌN kho: lịch "

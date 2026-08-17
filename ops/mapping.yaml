@@ -368,3 +368,44 @@
     node --check console.js OK.
   dieu_kien_bo: >
     Upstream đưa attribution vào branding config thì bỏ patch, đặt qua cấu hình.
+
+- id: P012
+  ten: "Mô tả hiển thị còn sót: system prompt, skill hệ thống, plugin, catalog, docs in-app"
+  y_dinh: >
+    Lệnh chủ 17/08: nội bộ giữ nguyên nhưng mọi MÔ TẢ người dùng đọc được phải là
+    Thansa. Đổi: CLAUDE.md (system prompt persona đầy đủ — bot mô tả chính mình),
+    SKILL.md các skill hệ thống (hiện trong Studio), description/author của
+    system/plugins (trang Plugin), mô tả + guide + risk trong system/mcp-catalog.json
+    (trang Kết nối), dashboard/docs/substack.html (trang hướng dẫn in-app).
+    GIỮ (kỹ thuật): tool javis_*, slug javis-*, path Javis/, biến JAVIS_*, tên file
+    plugin.py chỉ đổi trong string literal (AST), comment/docstring giữ.
+  commit: "[me] P012: mo ta hien thi con sot - system prompt, skill, plugin, catalog"
+  diem_neo:
+    - file: CLAUDE.md
+      ky_hieu: "System Prompt"
+    - file: .claude/skills/javis-builder/SKILL.md
+      ky_hieu: "description:"
+    - file: system/mcp-catalog.json
+      ky_hieu: '"_doc"'
+    - file: system/plugins/javis-schedule/plugin.yaml
+      ky_hieu: "author:"
+  vung_theo_doi:
+    - CLAUDE.md
+    - .claude/skills/
+    - system/plugins/
+    - system/mcp-catalog.json
+    - dashboard/docs/substack.html
+  anh_goc:
+    - file: CLAUDE.md
+      doan: "Bạn là **Javis**, trợ lý AI cá nhân báo cáo **kinh doanh và cuộc sống**."
+    - file: system/plugins/javis-schedule/plugin.yaml
+      doan: "author: Javis (bundled)"
+    - file: system/mcp-catalog.json
+      doan: '"_doc": "Kho connector MCP mẫu của Javis OS.'
+  kiem_chung: >
+    grep 'Javis' (đứng độc lập) trong CLAUDE.md, .claude/skills/*/SKILL.md,
+    system/plugins/*/plugin.yaml, system/mcp-catalog.json, dashboard/docs = 0;
+    JSON/YAML/py parse sạch; Studio hiện mô tả skill/plugin "Thansa"; bot mô tả
+    bản thân là Thansa trên mọi engine (kể cả CLI đọc CLAUDE.md).
+  dieu_kien_bo: >
+    Upstream đưa persona/mô tả vào branding config thì bỏ patch, đặt qua cấu hình.
