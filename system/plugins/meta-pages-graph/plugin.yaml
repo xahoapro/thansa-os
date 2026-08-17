@@ -2,7 +2,7 @@ name: Facebook Trang (Graph API)
 slug: meta-pages-graph
 version: 1.0.0
 description: Quản lý Trang/Fanpage Facebook qua Graph API - liệt kê Trang, đọc bài và bình luận (chỉ đọc), đăng bài/ảnh/video/album, sửa chữ, xoá bài và trả lời bình luận (toàn quyền). Dùng token của kết nối "Facebook Trang (tự tạo app)".
-author: Javis (bundled)
+author: Thansa (bundled)
 enabled: true
 min_mode: full
 tools:
