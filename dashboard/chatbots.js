@@ -593,7 +593,7 @@
             'CHỈ tài liệu trong brain</option>' +
         '</select>' +
         '<div class="cb-hint"><b>Chuyên môn của Agent</b>: bot làm đúng theo quy định bạn viết ' +
-        'trong file Agent, tài liệu tra được là phần bổ sung. Javis không thêm luật nào của ' +
+        'trong file Agent, tài liệu tra được là phần bổ sung. Thansa không thêm luật nào của ' +
         'mình vào.<br>' +
         '<b>Chỉ tài liệu</b>: thêm một luật duy nhất là không tìm thấy tài liệu thì nói chưa ' +
         'có thông tin, không tự nói thêm. Hợp với bot đọc giá và chính sách, nơi một câu sai ' +
@@ -663,7 +663,7 @@
         '</div>' +
         '<div class="cb-hint cb-khong-nhom" id="cbKhongNhom" style="display:none">' +
           'Bot Zalo <b>chỉ trả lời tin nhắn riêng</b>. Gói bot cơ bản của Zalo không cho bot vào ' +
-          'nhóm, và Zalo cũng chưa có API gửi tài liệu nên file Javis tạo ra sẽ không gửi qua ' +
+          'nhóm, và Zalo cũng chưa có API gửi tài liệu nên file Thansa tạo ra sẽ không gửi qua ' +
           'kênh này được (ảnh thì đang thử).</div>' +
 
         '<div class="cb-form-acts">' +

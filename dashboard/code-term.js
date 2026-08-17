@@ -164,7 +164,7 @@
     return '<div class="code-empty">' + ic("lock", { cls: "ic-xl ic-dim" }) +
       "<div><b>Terminal đang tắt trên máy này.</b></div>" +
       '<div class="code-dim">Máy chủ đặt biến môi trường <code>JAVIS_TERMINAL=0</code>. ' +
-      "Bỏ biến đó rồi khởi động lại Javis là bật lại.</div></div>";
+      "Bỏ biến đó rồi khởi động lại Thansa là bật lại.</div></div>";
   }
 
   /** Dựng terminal NHIỀU TAB: mỗi tab là một phiên shell riêng ở server (trần số phiên do

@@ -101,7 +101,7 @@ check("giải thích khi nào dùng chế độ nào", /thiệt hại thật/.te
 // Trang phải nói ĐÚNG việc Javis làm: nó không viết luật cho bot, nó chỉ khoá phạm vi brain.
 // Hứa nhiều hơn thế là dạy người dùng tin vào một rào không tồn tại.
 check("nói rõ Javis không thêm luật của mình vào Agent",
-  /Javis không thêm luật nào của/.test(CB));
+  /Thansa không thêm luật nào của/.test(CB));
 check("nói rõ rào duy nhất là chỉ đọc được brain này",
   /chỉ đọc\b[\s\S]{0,40}brain này/.test(CB));
 check("lựa chọn được gửi lên server", /nguon_tra_loi: ngu/.test(CB));

@@ -113,7 +113,7 @@ from sessions import get_store   # kho phiên hội thoại (sqlite + fts5): lis
 import compaction   # nén hội thoại dài cho engine API (tóm tắt phần cũ thay vì cắt bỏ)
 from chat_runtime import ChatRuntime
 
-app = FastAPI(title="Javis OS")
+app = FastAPI(title="Thansa OS")
 _CHAT_RUNTIME = ChatRuntime()
 _CONTEXT_RUNTIME = context_runtime.get_runtime()
 _CAPABILITY_REGISTRY = capability_registry.get_registry()
@@ -254,10 +254,10 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 
 # Bộ nhớ dài hạn - lưu TRONG vault đang chọn để đi theo vault
 MEMORY_SEED = (
-    "# Bộ nhớ Javis - Index\n\n"
-    "> Chỉ mục bộ nhớ dài hạn của Javis. Mỗi dòng = 1 ký ức, trỏ tới file trong `facts/`.\n"
-    "> Nội dung file này được nạp vào đầu mỗi câu hỏi để Javis nhớ ngữ cảnh.\n\n"
-    "_(Chưa có ký ức nào. Javis sẽ học dần sau mỗi hội thoại.)_\n"
+    "# Bộ nhớ Thansa - Index\n\n"
+    "> Chỉ mục bộ nhớ dài hạn của Thansa. Mỗi dòng = 1 ký ức, trỏ tới file trong `facts/`.\n"
+    "> Nội dung file này được nạp vào đầu mỗi câu hỏi để Thansa nhớ ngữ cảnh.\n\n"
+    "_(Chưa có ký ức nào. Thansa sẽ học dần sau mỗi hội thoại.)_\n"
 )
 
 def _atomic_write_text(path, content: str, encoding: str = "utf-8"):
@@ -4093,7 +4093,7 @@ def _check_structure(root: Path):
     return items
 
 JAVIS_README = (
-    "# Javis\n\nLớp điều phối của Javis OS trong vault này.\n\n"
+    "# Thansa\n\nLớp điều phối của Thansa OS trong vault này.\n\n"
     "- `agents/` - các Agent (vai trò + skills + bộ nhớ riêng)\n"
     "- `workflows/` - quy trình nhiều agent (status active/off)\n"
     "- Skills dùng chung ở `skills/` (tự mirror sang `.claude/skills` cho Claude Code native)\n"
@@ -4114,12 +4114,12 @@ TASKINBOX_SEED = (
     "Việc thêm nhanh từ dashboard - kéo về đúng sổ khi rảnh.\n"
 )
 SCHEMA_SEED = (
-    "# AGENTS.md - Vault Schema (Javis)\n\n"
-    "> Vault này hoạt động với Javis OS. Cấu trúc:\n\n"
+    "# AGENTS.md - Vault Schema (Thansa)\n\n"
+    "> Vault này hoạt động với Thansa OS. Cấu trúc:\n\n"
     "- `01 - Daily Log/` → `04 - Future Log/` - bộ sổ bullet journal (nhật ký ngày/tuần/tháng/tương lai, chứa task `- [ ]`; khối dataview kéo việc từ đây)\n"
     "- `06 - Sources/` - ghi chú thô (source of truth)\n"
     "- `07 - Wiki/` - tri thức đã chưng cất, có `[[wikilink]]`\n"
-    "- `Memory/` - bộ nhớ dài hạn của Javis (facts + conversations)\n"
+    "- `Memory/` - bộ nhớ dài hạn của Thansa (facts + conversations)\n"
     "- `Javis/` - agents + workflows\n\n"
     "Nguyên lý: Sources → (ingest) → Wiki. Tri thức tích luỹ, không tái phát hiện.\n"
 )
@@ -4740,7 +4740,7 @@ async def save_skill(name: str = Form(...), description: str = Form(""), group: 
 @app.post("/skills/delete")
 async def delete_skill(slug: str = Form(...), brain: str = Form("brain")):
     if system_sync.is_system_skill(slug):
-        return JSONResponse({"error": "Skill hệ thống của Javis OS - không xoá được (đi theo "
+        return JSONResponse({"error": "Skill hệ thống của Thansa OS - không xoá được (đi theo "
                              "phiên bản app, xoá cũng tự cài lại khi cập nhật). Muốn ngừng dùng "
                              "thì TẮT skill (bỏ tích)."}, status_code=400)
     if not skill_router.valid_slug(slug):
@@ -6515,7 +6515,7 @@ def _workflow_agent_helpers(brain, tools):
             + "\n# Tự bồi đắp lúc dùng: nếu cuối nhiệm vụ rút ra được bài học TÁI DÙNG cho vai này "
               "(cách làm tốt hơn, lỗi cần tránh, ngữ cảnh riêng đã học được), KẾT THÚC câu trả lời "
               "bằng tối đa 2 dòng riêng, mỗi dòng đúng dạng `JAVIS_LESSON: <bài học một câu>`. "
-              "Javis tự ghi vào mục `## Bài học (tự học)` của file bộ nhớ trên (tự loại trùng, giữ "
+              "Thansa tự ghi vào mục `## Bài học (tự học)` của file bộ nhớ trên (tự loại trùng, giữ "
               f"{_BAI_HOC_TRAN} dòng mới nhất). KHÔNG tự sửa file bộ nhớ trực tiếp - phần ngoài mục "
               "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát JAVIS_LESSON, và đừng "
               "lặp lại bài học đã có trong bộ nhớ.\n"
@@ -7699,9 +7699,9 @@ def _render_javis_index(caps: dict) -> str:
     n_on_wf = sum(1 for w in caps["workflows"] if w["status"] == "active")
     plugins = caps.get("plugins", [])
     n_on_plugins = sum(1 for p in plugins if p.get("loaded"))
-    L = ["# Javis Index (tầng vận hành)", "",
-         "> Tự sinh từ file - ĐỪNG sửa tay. Chỉ mục mọi năng lực của Javis trong brain này để bất kỳ "
-         "AI/engine đọc 1 chỗ là hiểu Javis làm được gì. Song song `wiki/index.md` (tri thức).", "",
+    L = ["# Thansa Index (tầng vận hành)", "",
+         "> Tự sinh từ file - ĐỪNG sửa tay. Chỉ mục mọi năng lực của Thansa trong brain này để bất kỳ "
+         "AI/engine đọc 1 chỗ là hiểu Thansa làm được gì. Song song `wiki/index.md` (tri thức).", "",
          f"**Tổng quan:** {len(caps['agents'])} agents · {len(caps['skills'])} skills · "
          f"{len(caps['workflows'])} workflows ({n_on_wf} bật) · {len(caps['loops'])} loops ({n_on_loops} bật) · "
          f"{len(plugins)} plugins ({n_on_plugins} chạy)", ""]
