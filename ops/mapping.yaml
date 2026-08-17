@@ -56,3 +56,58 @@
   dieu_kien_bo: >
     Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
     dùng cấu hình chính thức.
+
+- id: P003
+  ten: "Chrome sản phẩm: title, login, welcome, thẻ cập nhật, thông báo"
+  y_dinh: >
+    Tab trình duyệt, sidebar (alt logo), màn đăng nhập, cửa sổ chào mừng/wizard,
+    thẻ "Cập nhật"/"Tổng quan", khung thông báo và thông báo bản phát hành đều hiện
+    "Thansa OS"/"Thansa". KHÔNG đổi tên trợ lý ở bề mặt cài đặt/chat (91, 341, 419,
+    501, 632, 643-644, 668, 688 trong index.html; 2822, 5071 console.js; FastAPI
+    title, vault template 3837/3859, skill-msg 4476 main.py — để lại, chờ chủ quyết
+    vòng sau), KHÔNG đụng comment kỹ thuật/định danh JS (JavisBackground,
+    JavisEditorCmds, JavisSessions).
+  commit: "[me] P003: chrome san pham - title, login, welcome, the cap nhat, thong bao"
+  diem_neo:
+    - file: dashboard/index.html
+      ky_hieu: "<title>"
+    - file: dashboard/index.html
+      ky_hieu: 'id="authTitle"'
+    - file: dashboard/index.html
+      ky_hieu: 'id="wzWsName"'
+    - file: dashboard/console.js
+      ky_hieu: "upd-name"
+    - file: dashboard/notifications.js
+      ky_hieu: "noti-empty"
+    - file: server/main.py
+      ky_hieu: '"id": f"release:'
+  vung_theo_doi:
+    - dashboard/index.html
+    - dashboard/console.js
+    - dashboard/notifications.js
+    - "server/main.py: khối dựng thông báo release"
+  anh_goc:
+    - file: dashboard/index.html
+      doan: "<title>Javis OS</title>"
+    - file: dashboard/index.html
+      doan: '<span class="brand-text">JAVIS OS</span>'
+    - file: dashboard/index.html
+      doan: '<meta name="apple-mobile-web-app-title" content="Javis OS">'
+    - file: dashboard/manifest.json
+      doan: '"name": "Javis OS",'
+    - file: dashboard/index.html
+      doan: '<div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span id="authTitle">Đăng nhập Javis</span></div>'
+    - file: dashboard/console.js
+      doan: '<div class="upd-title"><span class="upd-name">Javis OS</span><span class="gcard-tag" id="updVerTag">…</span></div>'
+    - file: server/main.py
+      doan: '"title": f"Javis OS v{rel.get(''version'')}",'
+  kiem_chung: >
+    grep -i "javis os" trong dashboard/index.html, dashboard/notifications.js = 0
+    (kiểm cả chữ HOA — brand topbar từng viết "JAVIS OS"); <title> = Thansa OS;
+    meta apple-mobile-web-app-title = "Thansa OS" (neo lại 18/08, upstream 0.36.1 thêm);
+    brand topbar hiện "THANSA OS"; màn đăng nhập hiện "Đăng nhập Thansa"; wizard
+    chào mừng hiện "Chào mừng tới Thansa"; thẻ cập nhật/tổng quan hiện "Thansa OS";
+    các chuỗi Javis còn lại trong index.html chỉ thuộc danh sách để-lại khai ở y_dinh.
+  dieu_kien_bo: >
+    Upstream đưa toàn bộ chuỗi hiển thị vào i18n/branding config thì bỏ patch,
+    dùng cấu hình chính thức.
