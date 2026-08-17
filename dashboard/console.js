@@ -4946,7 +4946,7 @@
           </div>
           <div class="settings-card">
             <div class="settings-card-head"><b>Dấu nguồn gốc ảnh AI</b><span class="gcard-tag">${stripC2pa ? "Đang gỡ" : "Đang giữ"}</span></div>
-            <p>Ảnh Javis tạo ra mang sẵn dấu nguồn gốc (Content Credentials) ghi rằng ảnh do AI sinh ra. Facebook đọc dấu này để gắn nhãn "Nội dung do AI tạo" lên bài. Gỡ dấu đi thì nhãn thường không hiện nữa, nhưng bạn vẫn phải tự chịu trách nhiệm công bố nội dung AI theo luật và điều khoản của nền tảng nơi bạn đăng. Nhãn tác giả javisos.com luôn được giữ dù bật hay tắt.</p>
+            <p>Ảnh Javis tạo ra mang sẵn dấu nguồn gốc (Content Credentials) ghi rằng ảnh do AI sinh ra. Facebook đọc dấu này để gắn nhãn "Nội dung do AI tạo" lên bài. Gỡ dấu đi thì nhãn thường không hiện nữa, nhưng bạn vẫn phải tự chịu trách nhiệm công bố nội dung AI theo luật và điều khoản của nền tảng nơi bạn đăng. Nhãn phần mềm Thansa OS luôn được giữ dù bật hay tắt.</p>
             <div class="js-actions">
               <button class="gcard-btn ${stripC2pa ? "ghost" : ""}" id="setC2paKeep">Giữ dấu</button>
               <button class="gcard-btn ${stripC2pa ? "" : "ghost"}" id="setC2paStrip">Gỡ dấu</button>
