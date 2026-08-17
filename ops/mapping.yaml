@@ -1,0 +1,19 @@
+# Mapping — "tôi đã sửa những gì, ở đâu, vì sao, và làm sao biết nó còn sống?"
+# (DAC-TA-THANSA-OS.md mục 2.2)
+#
+# Danh sách patch hiện RỖNG — GĐ2 thêm P001+. Mỗi patch một mục, BẮT BUỘC đủ 7 trường:
+#
+#   - id: P00x
+#     ten: "tên ngắn gọn"
+#     y_dinh: >            # bạn muốn gì — nền tảng quyết định giữ/bỏ/neo lại
+#     commit: "[me] ..."   # subject commit [me], khớp git log (tự kiểm chứng luật 1)
+#     diem_neo:            # chỗ đấu nối, neo bằng KÝ HIỆU (tên hàm/id DOM/key i18n/
+#       - file: ...        # chuỗi hằng). TUYỆT ĐỐI không neo số dòng
+#         ky_hieu: ...
+#     vung_theo_doi:       # upstream đụng đây → patch phải xem lại (đầu vào bộ dò)
+#       - duong/dan hoặc "duong/dan: ghi chú"
+#     anh_goc:             # ảnh chụp đoạn mã upstream NGAY TRƯỚC khi sửa (bắt ca
+#       - file: ...        # upstream viết lại đúng đoạn đã đè); file MỚI hoàn toàn
+#         doan: ...        # thì để danh sách rỗng
+#     kiem_chung: >        # cách chứng minh patch còn tác dụng (chống chết âm thầm)
+#     dieu_kien_bo: >      # khi nào nên bỏ patch dùng bản chính thức upstream
