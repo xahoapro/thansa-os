@@ -7,7 +7,9 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 
 - GĐ0: dựng khung trên nền upstream `0b8f2c0` (VERSION 0.35.10), 0 patch. 3 nhánh
   main/me/release, 2 worktree goc/thansa, repo private `xahoapro/thansa-os`.
-  `tests/run.py` trên bản gốc sạch: XANH 241/241 theo cấu hình upstream.
+  Chuẩn xanh = CÓ pytest → 241/241. Không pytest → 240/241
+  (`test_workflow_graph_phase10.py` lỗi `import pytest`). `test_chat_disconnect.py`
+  nhạy timing (bản ghi sửa theo nhiem-vu/GD1-bosung.md; chi tiết ở mục "Đã biết").
 - GĐ1: lập bộ hồ sơ ops/ (mốc gốc, mapping rỗng, sổ trộn) + bộ dò hằng ngày
   (`ops/do-hang-ngay.sh`) + tự kiểm chứng (`ops/tu-kiem-chung.sh`). Mapping sẽ có
   mục đầu tiên ở GĐ2 (P001–P006, rebrand).
