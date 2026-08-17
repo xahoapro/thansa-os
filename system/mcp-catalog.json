@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "_doc": "Kho connector MCP mẫu của Javis OS. Connector = MẪU (url/command + cách đăng nhập + phân loại tool). Tài khoản cụ thể user đấu = connection, lưu ở mcp_servers.json (xem server/mcp_store.py). status: ready | beta | soon. Đã xác minh chi tiết 2026-07-04 (research notes: docs/dev/2026-07-ke-hoach-ket-noi-hub.md).",
+  "_doc": "Kho connector MCP mẫu của Thansa OS. Connector = MẪU (url/command + cách đăng nhập + phân loại tool). Tài khoản cụ thể user đấu = connection, lưu ở mcp_servers.json (xem server/mcp_store.py). status: ready | beta | soon. Đã xác minh chi tiết 2026-07-04 (research notes: docs/dev/2026-07-ke-hoach-ket-noi-hub.md).",
   "connectors": [
     {
       "id": "composio",
       "name": "Composio",
       "icon": "puzzle",
       "category": "Kho ứng dụng",
-      "description": "Cổng đa ứng dụng của Composio: một kết nối mở ra hơn 500 app (Gmail, Notion, Google Sheets, GitHub, Linear, Slack...). Javis tìm tool, nối tài khoản từng app và chạy hành động qua Composio, không cần Javis viết connector riêng cho mỗi app. Dán API key (ck_...) là xong.",
+      "description": "Cổng đa ứng dụng của Composio: một kết nối mở ra hơn 500 app (Gmail, Notion, Google Sheets, GitHub, Linear, Slack...). Thansa tìm tool, nối tài khoản từng app và chạy hành động qua Composio, không cần Thansa viết connector riêng cho mỗi app. Dán API key (ck_...) là xong.",
       "status": "beta",
       "transport": "http",
       "url": "https://connect.composio.dev/mcp",
@@ -21,7 +21,7 @@
             "header": "x-consumer-api-key: {api_key}"
           }
         ],
-        "guide": "Làm 1 lần:\n1. Vào platform.composio.dev, đăng ký hoặc đăng nhập (có gói miễn phí).\n2. Tạo một MCP server (mục MCP) rồi copy API key dạng ck_... ở bước cấu hình client.\n3. Dán key vào đây, bấm Kết nối.\n\nSau khi đấu, muốn dùng app nào (Gmail, Notion, Sheets...) thì bảo Javis ngay trong chat, vd 'nối Notion qua Composio'. Composio đưa link đăng nhập app đó, bạn tự đăng nhập xong là dùng được.\n\nLƯU Ý: mọi hành động của app (kể cả đọc dữ liệu) đều chạy qua một tool chung của Composio, nên muốn Javis thật sự thao tác thì kết nối này cần mức Toàn quyền. Mức Chỉ đọc chỉ tìm và xem mô tả tool.",
+        "guide": "Làm 1 lần:\n1. Vào platform.composio.dev, đăng ký hoặc đăng nhập (có gói miễn phí).\n2. Tạo một MCP server (mục MCP) rồi copy API key dạng ck_... ở bước cấu hình client.\n3. Dán key vào đây, bấm Kết nối.\n\nSau khi đấu, muốn dùng app nào (Gmail, Notion, Sheets...) thì bảo Thansa ngay trong chat, vd 'nối Notion qua Composio'. Composio đưa link đăng nhập app đó, bạn tự đăng nhập xong là dùng được.\n\nLƯU Ý: mọi hành động của app (kể cả đọc dữ liệu) đều chạy qua một tool chung của Composio, nên muốn Thansa thật sự thao tác thì kết nối này cần mức Toàn quyền. Mức Chỉ đọc chỉ tìm và xem mô tả tool.",
         "guide_url": "https://docs.composio.dev/"
       },
       "tool_meta": {
@@ -30,7 +30,7 @@
         "danger": ["COMPOSIO_MULTI_EXECUTE_TOOL", "COMPOSIO_REMOTE_BASH_TOOL", "COMPOSIO_REMOTE_WORKBENCH"]
       },
       "default_perm": "readonly",
-      "risk": "Composio là cổng đa ứng dụng: mọi hành động lên app thật (đọc mail, gửi mail, sửa sheet, tạo issue...) đều chạy qua MỘT tool chung nên Javis KHÔNG tách được lệnh đọc với lệnh ghi bên trong.\n\nMức Chỉ đọc: chỉ tìm và xem mô tả tool, chưa chạy được hành động nào.\n\nMức Ghi nháp: thêm quyền nối app mới (Composio đưa link đăng nhập, bạn tự đăng nhập, Javis không thấy mật khẩu).\n\nMức Toàn quyền: Javis chạy được MỌI hành động của các app bạn đã nối qua Composio, kể cả gửi tin, sửa và xoá dữ liệu thật.\nChỉ nâng khi thật sự cần; phạm vi đúng bằng quyền bạn đã cấp cho từng app bên Composio."
+      "risk": "Composio là cổng đa ứng dụng: mọi hành động lên app thật (đọc mail, gửi mail, sửa sheet, tạo issue...) đều chạy qua MỘT tool chung nên Thansa KHÔNG tách được lệnh đọc với lệnh ghi bên trong.\n\nMức Chỉ đọc: chỉ tìm và xem mô tả tool, chưa chạy được hành động nào.\n\nMức Ghi nháp: thêm quyền nối app mới (Composio đưa link đăng nhập, bạn tự đăng nhập, Thansa không thấy mật khẩu).\n\nMức Toàn quyền: Thansa chạy được MỌI hành động của các app bạn đã nối qua Composio, kể cả gửi tin, sửa và xoá dữ liệu thật.\nChỉ nâng khi thật sự cần; phạm vi đúng bằng quyền bạn đã cấp cho từng app bên Composio."
     },
     {
       "id": "pancake-pos",
@@ -51,7 +51,7 @@
             "header": "Authorization: Bearer {api_key}"
           }
         ],
-        "guide": "Mở Pancake POS > Cấu hình cửa hàng > Ứng dụng & API > tạo API key, rồi dán vào đây.\n\nJavis sẽ tự kiểm tra và lấy tên cửa hàng.",
+        "guide": "Mở Pancake POS > Cấu hình cửa hàng > Ứng dụng & API > tạo API key, rồi dán vào đây.\n\nThansa sẽ tự kiểm tra và lấy tên cửa hàng.",
         "guide_url": "https://docs.pancake.biz/pos/st-f13/st-p2?lang=vi"
       },
       "validate": {
@@ -73,7 +73,7 @@
         "danger": ["pos_order", "pos_purchase", "pos_transaction", "pos_debt", "pos_e_invoice",
                    "pos_ads_manager", "pos_voucher", "pos_promotion"]
       },
-      "risk": "Mức Chỉ đọc (mặc định) chỉ xem đơn, doanh thu, tồn kho, khách hàng. An toàn.\n\nMức Toàn quyền cho phép Javis TẠO ĐƠN HÀNG, ghi GIAO DỊCH THU CHI, sửa CÔNG NỢ, xuất HOÁ ĐƠN ĐIỆN TỬ, chạy QUẢNG CÁO và tạo voucher/khuyến mãi.\n\nĐây là tiền thật và đơn thật của cửa hàng, nhiều thao tác không hoàn tác được. Chỉ nâng quyền khi bạn thật sự cần Javis thao tác thay mình.\n\nLoop chạy nền không bao giờ được tự tạo đơn hay tiêu tiền, kể cả khi kết nối đã ở mức Toàn quyền.",
+      "risk": "Mức Chỉ đọc (mặc định) chỉ xem đơn, doanh thu, tồn kho, khách hàng. An toàn.\n\nMức Toàn quyền cho phép Thansa TẠO ĐƠN HÀNG, ghi GIAO DỊCH THU CHI, sửa CÔNG NỢ, xuất HOÁ ĐƠN ĐIỆN TỬ, chạy QUẢNG CÁO và tạo voucher/khuyến mãi.\n\nĐây là tiền thật và đơn thật của cửa hàng, nhiều thao tác không hoàn tác được. Chỉ nâng quyền khi bạn thật sự cần Thansa thao tác thay mình.\n\nLoop chạy nền không bao giờ được tự tạo đơn hay tiêu tiền, kể cả khi kết nối đã ở mức Toàn quyền.",
       "default_perm": "readonly"
     },
     {
@@ -151,7 +151,7 @@
       "auth": {
         "type": "qr",
         "fields": [],
-        "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp 7 tool MCP của zalo-agent-cli. Không còn listener/webhook/luật Zalo riêng của Javis.",
+        "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp 7 tool MCP của zalo-agent-cli. Không còn listener/webhook/luật Zalo riêng của Thansa.",
         "guide_url": "https://github.com/blogminhquy/javis-os/blob/main/docs/12-zalo.md"
       },
       "tool_meta": {
@@ -213,7 +213,7 @@
         "write": ["create_page", "update_page", "patch_page", "add_section", "new_element", "new_page_skeleton", "layout", "ingest_html", "ingest_url", "upload_images"],
         "danger": ["publish_page"]
       },
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis TẠO và SỬA trang landing thật trong tài khoản của bạn, kể cả trang đang có.\n\nMức Toàn quyền thêm quyền ĐĂNG trang lên công khai. Trang đã đăng là người ngoài xem được ngay.\n\nCoi JWT như mật khẩu: nó vào thẳng tài khoản Webcake của bạn.",
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA trang landing thật trong tài khoản của bạn, kể cả trang đang có.\n\nMức Toàn quyền thêm quyền ĐĂNG trang lên công khai. Trang đã đăng là người ngoài xem được ngay.\n\nCoi JWT như mật khẩu: nó vào thẳng tài khoản Webcake của bạn.",
       "default_perm": "safe"
     },
     {
@@ -231,7 +231,7 @@
       "auth": {
         "type": "oauth",
         "fields": [],
-        "guide": "Bấm Kết nối rồi đăng nhập Webcake và cấp quyền. Javis tự đăng ký ứng dụng theo chuẩn OAuth nên bạn không phải tạo app hay dán JWT, và máy không cần cài Node.js.\n\nCách này đi qua máy chủ trung gian mcp.toolvn.io.vn, do tác giả công cụ Webcake Landing MCP vận hành và được Pancake dẫn link trong tài liệu.\n\nĐó không phải hạ tầng chính chủ Pancake, nghĩa là bạn uỷ quyền tài khoản Webcake cho máy chủ đó.\n\nMuốn token chỉ nằm trên máy mình thì chọn cách Chạy trên máy và dán JWT.",
+        "guide": "Bấm Kết nối rồi đăng nhập Webcake và cấp quyền. Thansa tự đăng ký ứng dụng theo chuẩn OAuth nên bạn không phải tạo app hay dán JWT, và máy không cần cài Node.js.\n\nCách này đi qua máy chủ trung gian mcp.toolvn.io.vn, do tác giả công cụ Webcake Landing MCP vận hành và được Pancake dẫn link trong tài liệu.\n\nĐó không phải hạ tầng chính chủ Pancake, nghĩa là bạn uỷ quyền tài khoản Webcake cho máy chủ đó.\n\nMuốn token chỉ nằm trên máy mình thì chọn cách Chạy trên máy và dán JWT.",
         "guide_url": "https://docs.pancake.biz/landing/st-f7/st-p3?lang=vi"
       },
       "validate": {
@@ -243,7 +243,7 @@
         "write": ["create_page", "update_page", "patch_page", "add_section", "new_element", "new_page_skeleton", "layout", "ingest_html", "ingest_url", "upload_images"],
         "danger": ["publish_page"]
       },
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis TẠO và SỬA trang landing thật trong tài khoản của bạn, kể cả trang đang có.\n\nMức Toàn quyền thêm quyền ĐĂNG trang lên công khai. Trang đã đăng là người ngoài xem được ngay.\n\nRiêng cách này: kết nối chạy qua máy chủ trung gian mcp.toolvn.io.vn của tác giả công cụ, nên quyền vào tài khoản Webcake của bạn được giữ ở máy chủ đó chứ không nằm trên máy bạn.\n\nCần chắc chắn token không rời máy thì dùng cách Chạy trên máy.",
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA trang landing thật trong tài khoản của bạn, kể cả trang đang có.\n\nMức Toàn quyền thêm quyền ĐĂNG trang lên công khai. Trang đã đăng là người ngoài xem được ngay.\n\nRiêng cách này: kết nối chạy qua máy chủ trung gian mcp.toolvn.io.vn của tác giả công cụ, nên quyền vào tài khoản Webcake của bạn được giữ ở máy chủ đó chứ không nằm trên máy bạn.\n\nCần chắc chắn token không rời máy thì dùng cách Chạy trên máy.",
       "default_perm": "safe"
     },
     {
@@ -251,7 +251,7 @@
       "name": "Botcake",
       "icon": "/static/logos/botcake.png",
       "category": "Nhắn tin",
-      "description": "Khách hàng, tag, flow và gửi tin từ chatbot Botcake (qua Public API - Javis tự dựng cầu nối, không cần cài gì thêm).",
+      "description": "Khách hàng, tag, flow và gửi tin từ chatbot Botcake (qua Public API - Thansa tự dựng cầu nối, không cần cài gì thêm).",
       "status": "beta",
       "transport": "internal",
       "internal": "botcake",
@@ -281,7 +281,7 @@
         "write": ["botcake_send_flow", "botcake_send_content", "botcake_keyword_create", "botcake_keyword_update", "botcake_customer_fields_set", "botcake_upload_media"],
         "danger": ["botcake_send_flow", "botcake_send_content"]
       },
-      "risk": "Mức Chỉ đọc (mặc định) chỉ xem khách hàng, tag và flow.\n\nMức Toàn quyền cho phép Javis GỬI TIN THẬT tới khách hàng qua chatbot, bằng flow có sẵn hoặc nội dung tự soạn. Tin đã gửi không rút lại được.\n\nChỉ cần xem dữ liệu thì giữ mức Chỉ đọc.",
+      "risk": "Mức Chỉ đọc (mặc định) chỉ xem khách hàng, tag và flow.\n\nMức Toàn quyền cho phép Thansa GỬI TIN THẬT tới khách hàng qua chatbot, bằng flow có sẵn hoặc nội dung tự soạn. Tin đã gửi không rút lại được.\n\nChỉ cần xem dữ liệu thì giữ mức Chỉ đọc.",
       "default_perm": "readonly"
     },
     {
@@ -331,7 +331,7 @@
           "*share*"
         ]
       },
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis TẠO và SỬA bảng tính thật trong Drive, kể cả ghi đè dữ liệu đang có.\n\nMức Toàn quyền thêm quyền CHIA SẺ bảng tính cho người khác. Chia sẻ là đẩy số liệu kinh doanh ra ngoài nên xếp mức nguy hiểm, giống việc chia sẻ ghi chú ở Google Keep.\n\nJavis chỉ đụng được thư mục Drive mà bạn đã share cho service account.",
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA bảng tính thật trong Drive, kể cả ghi đè dữ liệu đang có.\n\nMức Toàn quyền thêm quyền CHIA SẺ bảng tính cho người khác. Chia sẻ là đẩy số liệu kinh doanh ra ngoài nên xếp mức nguy hiểm, giống việc chia sẻ ghi chú ở Google Keep.\n\nThansa chỉ đụng được thư mục Drive mà bạn đã share cho service account.",
       "default_perm": "safe"
     },
     {
@@ -369,16 +369,16 @@
       "group": "google",
       "group_line": "Gộp Gmail, Lịch, Drive, Docs, Sheets vào MỘT kết nối. Cần máy có màn hình; VPS thì dùng thẻ Lịch và Gmail riêng.",
       "category": "Văn phòng",
-      "description": "Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Tasks... trong MỘT kết nối. Tạo OAuth client 1 lần, khoảng 10 phút, có hướng dẫn từng bước. Lần đầu gọi tool Google, trình duyệt TRÊN MÁY CHẠY JAVIS mở ra để bấm đồng ý, nên máy phải có màn hình.",
+      "description": "Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Tasks... trong MỘT kết nối. Tạo OAuth client 1 lần, khoảng 10 phút, có hướng dẫn từng bước. Lần đầu gọi tool Google, trình duyệt TRÊN MÁY CHẠY THANSA mở ra để bấm đồng ý, nên máy phải có màn hình.",
       "status": "beta",
       "transport": "stdio",
       "command": "uvx",
       "args": ["workspace-mcp", "--tool-tier", "core"],
       "_env_doc": "workspace-mcp nhận Client ID + Secret nên chạy luồng OAuth 'confidential', mà chỗ nó hứng kết quả đăng nhập là http://localhost:8000/oauth2callback - HTTP trần. Thư viện oauthlib mặc định NÉM InsecureTransportError với http, nên thiếu biến này là bấm đồng ý xong quay về vẫn lỗi, không tài nào đăng nhập xong - đúng kiểu bế tắc mà hướng dẫn không nói ra được. README upstream khai biến này 'required'; đây là hằng số kỹ thuật của package, không phải thứ bắt user gõ. An toàn vì callback chỉ chạy trên loopback của chính máy đó.",
       "env": { "OAUTHLIB_INSECURE_TRANSPORT": "1" },
-      "_needs_local_browser_doc": "workspace-mcp tự chạy OAuth với callback CỨNG http://localhost:8000/oauth2callback - chỉ sống khi trình duyệt và server Javis là CÙNG MỘT MÁY. Truy cập Javis qua domain public là Google redirect về localhost CỦA NGƯỜI DÙNG rồi chết ERR_CONNECTION_REFUSED (issue #112). Cờ này cho /connect/add chặn kèm lời giải thích (can_force) thay vì để user đâm vào ngõ cụt; VPS thì chỉ sang thẻ Lịch và Gmail riêng - hai thẻ đó đi qua OAuth của chính Javis nên chạy được sau proxy.",
+      "_needs_local_browser_doc": "workspace-mcp tự chạy OAuth với callback CỨNG http://localhost:8000/oauth2callback - chỉ sống khi trình duyệt và server Thansa là CÙNG MỘT MÁY. Truy cập Thansa qua domain public là Google redirect về localhost CỦA NGƯỜI DÙNG rồi chết ERR_CONNECTION_REFUSED (issue #112). Cờ này cho /connect/add chặn kèm lời giải thích (can_force) thay vì để user đâm vào ngõ cụt; VPS thì chỉ sang thẻ Lịch và Gmail riêng - hai thẻ đó đi qua OAuth của chính Thansa nên chạy được sau proxy.",
       "needs_local_browser": true,
-      "_cred_dir_doc": "workspace-mcp tự chạy luồng OAuth của nó và cache token ra đĩa, mặc định ~/.google_workspace_mcp/credentials - NGOÀI tầm với của Javis. Để mặc định thì mọi tài khoản dùng chung một kho và xoá kết nối trong Javis không dọn được gì: token thiếu quyền là thiếu vĩnh viễn, cài lại chục lần cũng đọc lại đúng file cũ. Trỏ mỗi connection vào một thư mục riêng để xoá kết nối là token đi theo, lần gọi tool sau server tự mở lại màn đăng nhập Google với đúng bộ quyền hiện hành.",
+      "_cred_dir_doc": "workspace-mcp tự chạy luồng OAuth của nó và cache token ra đĩa, mặc định ~/.google_workspace_mcp/credentials - NGOÀI tầm với của Thansa. Để mặc định thì mọi tài khoản dùng chung một kho và xoá kết nối trong Thansa không dọn được gì: token thiếu quyền là thiếu vĩnh viễn, cài lại chục lần cũng đọc lại đúng file cũ. Trỏ mỗi connection vào một thư mục riêng để xoá kết nối là token đi theo, lần gọi tool sau server tự mở lại màn đăng nhập Google với đúng bộ quyền hiện hành.",
       "cred_dir": { "env": "WORKSPACE_MCP_CREDENTIALS_DIR" },
       "auth": {
         "type": "apikey",
@@ -403,17 +403,17 @@
             "optional": true
           }
         ],
-        "guide": "Kết nối này chạy TRÊN MÁY CÀI JAVIS: lần đầu gọi tool Google, trình duyệt của chính máy đó\nmở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì dùng hai thẻ Lịch và Gmail riêng,\nhai thẻ đó đăng nhập gọn trong dashboard.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com tạo project mới, hoặc dùng lại project đã tạo cho thẻ Lịch/Gmail.\n2. Bật API cho từng dịch vụ muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API,\nGoogle Drive API, Google Docs API.\nMuốn Javis đụng tới Sheets, Slides, Forms, Danh bạ, Việc cần làm thì bật thêm Google Sheets API,\nGoogle Slides API, Google Forms API, People API, Google Tasks API.\nQuên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy bình thường.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả - khác thẻ Lịch/Gmail, thấy trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới (tự điền Client ID + Secret),\nhoặc copy tay hai giá trị đó.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu Javis gọi tool Google, trình duyệt trên máy chạy Javis mở ra. Gặp cảnh báo 'ứng dụng chưa\nđược xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô\nquyền: bỏ ô nào là đúng nhóm tool đó chết.",
+        "guide": "Kết nối này chạy TRÊN MÁY CÀI THANSA: lần đầu gọi tool Google, trình duyệt của chính máy đó\nmở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì dùng hai thẻ Lịch và Gmail riêng,\nhai thẻ đó đăng nhập gọn trong dashboard.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com tạo project mới, hoặc dùng lại project đã tạo cho thẻ Lịch/Gmail.\n2. Bật API cho từng dịch vụ muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API,\nGoogle Drive API, Google Docs API.\nMuốn Thansa đụng tới Sheets, Slides, Forms, Danh bạ, Việc cần làm thì bật thêm Google Sheets API,\nGoogle Slides API, Google Forms API, People API, Google Tasks API.\nQuên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy bình thường.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả - khác thẻ Lịch/Gmail, thấy trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới (tự điền Client ID + Secret),\nhoặc copy tay hai giá trị đó.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu Thansa gọi tool Google, trình duyệt trên máy chạy Thansa mở ra. Gặp cảnh báo 'ứng dụng chưa\nđược xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô\nquyền: bỏ ô nào là đúng nhóm tool đó chết.",
         "guide_url": "https://github.com/taylorwilsdon/google_workspace_mcp",
         "steps": [
-          { "text": "TRƯỚC KHI LÀM: kết nối chạy trên chính máy cài Javis, lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Javis trên VPS không màn hình thì bỏ thẻ này, dùng hai thẻ Google Calendar và Gmail riêng, hai thẻ đó đăng nhập gọn trong dashboard." },
+          { "text": "TRƯỚC KHI LÀM: kết nối chạy trên chính máy cài Thansa, lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Thansa trên VPS không màn hình thì bỏ thẻ này, dùng hai thẻ Google Calendar và Gmail riêng, hai thẻ đó đăng nhập gọn trong dashboard." },
           { "text": "Vào Google Cloud tạo một project mới, hoặc dùng lại project bạn đã tạo cho thẻ Lịch/Gmail.", "link": "https://console.cloud.google.com/projectcreate", "link_label": "Tạo project" },
-          { "text": "Bật API cho từng dịch vụ bạn muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API, Google Drive API, Google Docs API. Muốn Javis đụng tới Sheets, Slides, Forms, Danh bạ hay Việc cần làm thì bật thêm Google Sheets API, Google Slides API, Google Forms API, People API, Google Tasks API. Quên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy.", "link": "https://console.cloud.google.com/apis/library", "link_label": "Mở thư viện API" },
+          { "text": "Bật API cho từng dịch vụ bạn muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API, Google Drive API, Google Docs API. Muốn Thansa đụng tới Sheets, Slides, Forms, Danh bạ hay Việc cần làm thì bật thêm Google Sheets API, Google Slides API, Google Forms API, People API, Google Tasks API. Quên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy.", "link": "https://console.cloud.google.com/apis/library", "link_label": "Mở thư viện API" },
           { "text": "Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users. Bỏ bước này là Google chặn ngay lúc đăng nhập.", "link": "https://console.cloud.google.com/auth/audience", "link_label": "Mở màn hình đồng ý" },
           { "text": "Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app). Loại này KHÔNG phải khai URI chuyển hướng nào cả - khác thẻ Lịch/Gmail, nên thấy phần đó trống là đúng, đừng đi tìm.", "link": "https://console.cloud.google.com/apis/credentials/oauthclient", "link_label": "Tạo OAuth client" },
-          { "text": "Tải file JSON của client rồi kéo thả vào ô bên dưới, Javis tự điền Client ID + Secret. Hoặc copy tay hai giá trị đó vào hai ô." },
+          { "text": "Tải file JSON của client rồi kéo thả vào ô bên dưới, Thansa tự điền Client ID + Secret. Hoặc copy tay hai giá trị đó vào hai ô." },
           { "text": "Điền luôn ô email Google rồi bấm Kết nối. Bỏ trống ô email thì mỗi lần gọi tool, server lại hỏi ngược xem dùng tài khoản nào." },
-          { "text": "Lần đầu Javis gọi tool Google, trình duyệt trên máy chạy Javis mở ra. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền, bỏ ô nào là đúng nhóm tool đó chết." }
+          { "text": "Lần đầu Thansa gọi tool Google, trình duyệt trên máy chạy Thansa mở ra. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền, bỏ ô nào là đúng nhóm tool đó chết." }
         ]
       },
       "tool_meta": {
@@ -421,7 +421,7 @@
         "danger": ["*send*", "*delete*"]
       },
       "default_perm": "safe",
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis soạn nháp thư, tạo lịch, tạo tài liệu, và cả SỬA tài liệu có sẵn lẫn DI CHUYỂN file trong Drive.\nCác tool gộp (manage_event, manage_task...) cũng thuộc mức này, nên Javis sửa và xoá được từng sự kiện lịch hay việc cần làm lẻ.\n\nMức Toàn quyền thêm quyền GỬI EMAIL THẬT và XOÁ file, thư bằng tài khoản Google của bạn.\n\nChỉ cần đọc thì hạ xuống Chỉ đọc."
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa soạn nháp thư, tạo lịch, tạo tài liệu, và cả SỬA tài liệu có sẵn lẫn DI CHUYỂN file trong Drive.\nCác tool gộp (manage_event, manage_task...) cũng thuộc mức này, nên Thansa sửa và xoá được từng sự kiện lịch hay việc cần làm lẻ.\n\nMức Toàn quyền thêm quyền GỬI EMAIL THẬT và XOÁ file, thư bằng tài khoản Google của bạn.\n\nChỉ cần đọc thì hạ xuống Chỉ đọc."
     },
     {
       "id": "google-tasks",
@@ -438,9 +438,9 @@
       "args": ["workspace-mcp", "--tools", "tasks", "--tool-tier", "complete"],
       "_env_doc": "Cùng server workspace-mcp với connector google-workspace nên dính y hệt: thiếu biến này là oauthlib chặn callback http://localhost, bấm đồng ý xong vẫn không đăng nhập được. Xem _env_doc của google-workspace.",
       "env": { "OAUTHLIB_INSECURE_TRANSPORT": "1" },
-      "_needs_local_browser_doc": "workspace-mcp tự chạy OAuth với callback CỨNG http://localhost:8000/oauth2callback - chỉ sống khi trình duyệt và server Javis là CÙNG MỘT MÁY. Truy cập Javis qua domain public là Google redirect về localhost CỦA NGƯỜI DÙNG rồi chết ERR_CONNECTION_REFUSED (issue #112). Cờ này cho /connect/add chặn kèm lời giải thích (can_force) thay vì để user đâm vào ngõ cụt; VPS thì chỉ sang thẻ Lịch và Gmail riêng - hai thẻ đó đi qua OAuth của chính Javis nên chạy được sau proxy.",
+      "_needs_local_browser_doc": "workspace-mcp tự chạy OAuth với callback CỨNG http://localhost:8000/oauth2callback - chỉ sống khi trình duyệt và server Thansa là CÙNG MỘT MÁY. Truy cập Thansa qua domain public là Google redirect về localhost CỦA NGƯỜI DÙNG rồi chết ERR_CONNECTION_REFUSED (issue #112). Cờ này cho /connect/add chặn kèm lời giải thích (can_force) thay vì để user đâm vào ngõ cụt; VPS thì chỉ sang thẻ Lịch và Gmail riêng - hai thẻ đó đi qua OAuth của chính Thansa nên chạy được sau proxy.",
       "needs_local_browser": true,
-      "_cred_dir_doc": "workspace-mcp tự chạy luồng OAuth của nó và cache token ra đĩa, mặc định ~/.google_workspace_mcp/credentials - NGOÀI tầm với của Javis. Để mặc định thì mọi tài khoản dùng chung một kho và xoá kết nối trong Javis không dọn được gì: token thiếu quyền là thiếu vĩnh viễn, cài lại chục lần cũng đọc lại đúng file cũ. Trỏ mỗi connection vào một thư mục riêng để xoá kết nối là token đi theo, lần gọi tool sau server tự mở lại màn đăng nhập Google với đúng bộ quyền hiện hành.",
+      "_cred_dir_doc": "workspace-mcp tự chạy luồng OAuth của nó và cache token ra đĩa, mặc định ~/.google_workspace_mcp/credentials - NGOÀI tầm với của Thansa. Để mặc định thì mọi tài khoản dùng chung một kho và xoá kết nối trong Thansa không dọn được gì: token thiếu quyền là thiếu vĩnh viễn, cài lại chục lần cũng đọc lại đúng file cũ. Trỏ mỗi connection vào một thư mục riêng để xoá kết nối là token đi theo, lần gọi tool sau server tự mở lại màn đăng nhập Google với đúng bộ quyền hiện hành.",
       "cred_dir": { "env": "WORKSPACE_MCP_CREDENTIALS_DIR" },
       "auth": {
         "type": "apikey",
@@ -465,17 +465,17 @@
             "optional": true
           }
         ],
-        "guide": "Kết nối này chạy TRÊN MÁY CÀI JAVIS: lần đầu gọi tool Google Tasks, trình duyệt của chính\nmáy đó mở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì đường này không đi được.\n\nLàm 1 lần, khoảng 10 phút. Đã đấu Google Workspace rồi thì dùng lại đúng Client ID + Secret cũ,\nchỉ cần làm thêm bước 2:\n1. Vào console.cloud.google.com tạo project, hoặc dùng project sẵn có.\n2. Bật Google Tasks API cho project đó.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả, thấy phần đó trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới, hoặc copy tay Client ID + Secret.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu gọi tool, gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục,\nvì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền.",
+        "guide": "Kết nối này chạy TRÊN MÁY CÀI THANSA: lần đầu gọi tool Google Tasks, trình duyệt của chính\nmáy đó mở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì đường này không đi được.\n\nLàm 1 lần, khoảng 10 phút. Đã đấu Google Workspace rồi thì dùng lại đúng Client ID + Secret cũ,\nchỉ cần làm thêm bước 2:\n1. Vào console.cloud.google.com tạo project, hoặc dùng project sẵn có.\n2. Bật Google Tasks API cho project đó.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả, thấy phần đó trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới, hoặc copy tay Client ID + Secret.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu gọi tool, gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục,\nvì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền.",
         "guide_url": "https://github.com/taylorwilsdon/google_workspace_mcp",
         "steps": [
-          { "text": "TRƯỚC KHI LÀM, đọc dòng này: kết nối này chạy trên chính máy cài Javis, và lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Javis chạy trên VPS không màn hình thì đường này không đi được." },
+          { "text": "TRƯỚC KHI LÀM, đọc dòng này: kết nối này chạy trên chính máy cài Thansa, và lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Thansa chạy trên VPS không màn hình thì đường này không đi được." },
           { "text": "Đã đấu Google Workspace hoặc dịch vụ Google khác rồi thì DÙNG LẠI key của nó (nút bên dưới ô nhập), chỉ cần làm thêm bước bật API." },
           { "text": "Vào Google Cloud tạo project (hoặc dùng project sẵn có), bật Google Tasks API.", "link": "https://console.cloud.google.com/apis/library/tasks.googleapis.com", "link_label": "Bật Tasks API" },
           { "text": "Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users. Bỏ bước này là Google chặn ngay lúc đăng nhập.", "link": "https://console.cloud.google.com/auth/audience", "link_label": "Mở màn hình đồng ý" },
           { "text": "Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app). Loại này KHÔNG phải khai URI chuyển hướng nào cả, thấy phần đó trống là đúng.", "link": "https://console.cloud.google.com/apis/credentials/oauthclient", "link_label": "Tạo OAuth client" },
-          { "text": "Tải file JSON của client rồi kéo thả vào ô bên dưới, Javis tự điền Client ID + Secret. Hoặc copy tay hai giá trị đó vào hai ô." },
+          { "text": "Tải file JSON của client rồi kéo thả vào ô bên dưới, Thansa tự điền Client ID + Secret. Hoặc copy tay hai giá trị đó vào hai ô." },
           { "text": "Điền luôn ô email Google rồi bấm Kết nối. Bỏ trống ô email thì mỗi lần gọi tool, server lại hỏi ngược xem dùng tài khoản nào." },
-          { "text": "Lần đầu Javis gọi tool Google Tasks, trình duyệt trên máy chạy Javis mở ra. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền." }
+          { "text": "Lần đầu Thansa gọi tool Google Tasks, trình duyệt trên máy chạy Thansa mở ra. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền." }
         ]
       },
       "tool_meta": {
@@ -484,7 +484,7 @@
         "danger": ["manage_task_list"]
       },
       "default_perm": "safe",
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis TẠO và SỬA việc thật trong Google Tasks: thêm việc, đổi hạn, đánh dấu xong, kể cả xoá một việc lẻ (tool gộp manage_task có hành động delete).\n\nMức Toàn quyền thêm quyền TẠO, ĐỔI TÊN và XOÁ cả DANH SÁCH việc. Xoá danh sách là mất toàn bộ việc bên trong, không hoàn tác được.\n\nKết nối này chỉ xin quyền Google Tasks, không đọc được Gmail, Drive hay Lịch."
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA việc thật trong Google Tasks: thêm việc, đổi hạn, đánh dấu xong, kể cả xoá một việc lẻ (tool gộp manage_task có hành động delete).\n\nMức Toàn quyền thêm quyền TẠO, ĐỔI TÊN và XOÁ cả DANH SÁCH việc. Xoá danh sách là mất toàn bộ việc bên trong, không hoàn tác được.\n\nKết nối này chỉ xin quyền Google Tasks, không đọc được Gmail, Drive hay Lịch."
     },
     {
       "id": "meta-ads",
@@ -498,7 +498,7 @@
       "auth": {
         "type": "oauth",
         "fields": [],
-        "guide": "Kết nối Meta Ads MCP hiện CHƯA tự phục vụ được. Đây là giới hạn phía Meta, không phải lỗi máy bạn.\n\nMáy chủ mcp.facebook.com/ads của Meta chỉ chấp nhận vài ứng dụng được Meta cấp phép sẵn (trợ lý của ChatGPT, Claude, Perplexity...), và đã TẮT tự đăng ký ứng dụng (DCR).\n\nVì vậy Javis và cả các công cụ khác đều chưa nối trực tiếp được.\n\nMeta đang mở beta dần theo từng tài khoản, ưu tiên US và chi tiêu cao. Bạn có thể bấm Kết nối để thử xem tài khoản mình đã được mở chưa; nếu báo 'chưa mở đăng ký' thì chờ Meta mở thêm.\n\nCần số liệu quảng cáo Facebook ngay thì nhắn Javis để dựng nguồn khác, gọi thẳng Marketing API bằng app bạn tự tạo.",
+        "guide": "Kết nối Meta Ads MCP hiện CHƯA tự phục vụ được. Đây là giới hạn phía Meta, không phải lỗi máy bạn.\n\nMáy chủ mcp.facebook.com/ads của Meta chỉ chấp nhận vài ứng dụng được Meta cấp phép sẵn (trợ lý của ChatGPT, Claude, Perplexity...), và đã TẮT tự đăng ký ứng dụng (DCR).\n\nVì vậy Thansa và cả các công cụ khác đều chưa nối trực tiếp được.\n\nMeta đang mở beta dần theo từng tài khoản, ưu tiên US và chi tiêu cao. Bạn có thể bấm Kết nối để thử xem tài khoản mình đã được mở chưa; nếu báo 'chưa mở đăng ký' thì chờ Meta mở thêm.\n\nCần số liệu quảng cáo Facebook ngay thì nhắn Thansa để dựng nguồn khác, gọi thẳng Marketing API bằng app bạn tự tạo.",
         "guide_url": "https://www.facebook.com/business/help/1456422242197840"
       },
       "validate": {
@@ -512,14 +512,14 @@
         "danger": ["ads_create_*", "ads_update_entity", "ads_activate_entity"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Toàn quyền cho phép Javis tạo và sửa chiến dịch quảng cáo tiêu TIỀN THẬT trên tài khoản của bạn.\n\nChiến dịch tạo qua đây luôn ở trạng thái TẠM DỪNG, bạn phải tự bật trong Ads Manager.\n\nChỉ cần xem số liệu thì giữ mức Chỉ đọc."
+      "risk": "Mức Toàn quyền cho phép Thansa tạo và sửa chiến dịch quảng cáo tiêu TIỀN THẬT trên tài khoản của bạn.\n\nChiến dịch tạo qua đây luôn ở trạng thái TẠM DỪNG, bạn phải tự bật trong Ads Manager.\n\nChỉ cần xem số liệu thì giữ mức Chỉ đọc."
     },
     {
       "id": "meta-ads-graph",
       "name": "Meta Ads (tự tạo app - Graph API)",
       "icon": "/static/logos/meta-ads.webp",
       "category": "Quảng cáo",
-      "description": "Số liệu quảng cáo Facebook/Instagram gọi THẲNG Marketing API của Meta (KHÔNG qua MCP beta bị khoá). Bạn tạo 1 Facebook App, dán App ID + App Secret, Javis đọc tài khoản ads, chiến dịch và hiệu suất của bạn. CHỈ ĐỌC - không tạo/sửa chiến dịch, không tiêu tiền. Đây là cách các nền tảng như Composio dùng.",
+      "description": "Số liệu quảng cáo Facebook/Instagram gọi THẲNG Marketing API của Meta (KHÔNG qua MCP beta bị khoá). Bạn tạo 1 Facebook App, dán App ID + App Secret, Thansa đọc tài khoản ads, chiến dịch và hiệu suất của bạn. CHỈ ĐỌC - không tạo/sửa chiến dịch, không tiêu tiền. Đây là cách các nền tảng như Composio dùng.",
       "status": "beta",
       "transport": "http",
       "url": "",
@@ -533,7 +533,7 @@
           { "key": "client_id", "label": "App ID (Facebook)", "placeholder": "Ví dụ: 1122334455667788" },
           { "key": "client_secret", "label": "App Secret (Facebook)", "placeholder": "Ví dụ: a1b2c3d4e5f6..." }
         ],
-        "guide": "Làm 1 lần, khoảng 10 phút.\n\nTRƯỚC TIÊN nhìn cột trái trong trang app để biết bạn đang dùng giao diện nào - Meta đang chuyển dần nên mỗi người thấy một kiểu:\n- Thấy mục 'Sản phẩm' = giao diện CŨ.\n- Thấy mục 'Trường hợp sử dụng' = giao diện MỚI.\n\n1. Bấm 'Bước 1: Tạo App mới' bên dưới. Chọn trường hợp sử dụng 'Khác' (Other), loại 'Doanh nghiệp' (Business), đặt tên bất kỳ.\n2. Mở phần Đăng nhập bằng Facebook, tuỳ giao diện:\n   - Bản CŨ: 'Sản phẩm' > 'Thêm sản phẩm' > thêm 'Đăng nhập bằng Facebook' bản THƯỜNG (KHÔNG phải bản 'cho doanh nghiệp'), rồi bấm 'Cài đặt'.\n   - Bản MỚI: 'Trường hợp sử dụng' > mở 'Xác thực và yêu cầu dữ liệu từ người dùng qua phương thức Đăng nhập bằng Facebook' > 'Tùy chỉnh' > 'Cài đặt'. Mục này thường CÓ SẴN, bạn không phải thêm gì.\n3. Ô 'URI chuyển hướng OAuth hợp lệ' - làm KHÁC NHAU tuỳ nơi cài Javis:\n   - Cài trên MÁY CÁ NHÂN (địa chỉ localhost): BỎ QUA ô này, KHÔNG cần điền. Khi app ở Chế độ phát triển, Meta tự cho phép localhost nên ô này CỐ TÌNH không nhận.\n     Meta hiện chú thích 'bạn không cần phải thêm vào đây' là đúng, cứ đi tiếp bước sau. Nhớ dùng localhost chứ không phải 127.0.0.1.\n   - Cài trên VPS / TÊN MIỀN RIÊNG: BẮT BUỘC dán địa chỉ https ở nút 'Sao chép' bên dưới vào ô này rồi Lưu (vd https://javis.tenmiencuaban.com/connect/oauth/callback).\n     Ngoài localhost thì Meta không tự cho phép, thiếu bước này là đăng nhập sẽ bị từ chối.\n     Rồi thêm TÊN MIỀN trần (không https, không dấu /) vào 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > 'Miền ứng dụng', bấm 'Lưu thay đổi' - thiếu là báo 'Không thể tải URL'.\n4. Nếu hiện bảng 'Invalid Scopes: ads_read, business_management' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập.\nChỉ khi kết nối xong mà Javis không thấy tài khoản quảng cáo nào thì mới cần thêm quyền:\nbản MỚI 'Thêm trường hợp sử dụng' > trường hợp về quảng cáo (Marketing API) > 'Tùy chỉnh' > tab 'Quyền' > Thêm ads_read + business_management; bản CŨ 'Sản phẩm' > 'Thêm sản phẩm' > 'Marketing API'.\n5. GIỮ app ở Chế độ phát triển và bạn phải là Quản trị viên của cả app lẫn tài khoản quảng cáo. Khi đó tự cấp được quyền ads_read, KHÔNG cần App Review.\n6. 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy App ID + Khóa bí mật dán vào ô dưới rồi bấm Kết nối.\n\nLƯU Ý bảng 'Việc cần làm' của app có gợi ý 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng' - BỎ QUA cả hai, cách này không cần, làm chỉ mất thêm nhiều ngày chờ.\n\nToken sống khoảng 60 ngày, Javis tự gia hạn. Hết hạn thì Kết nối lại.",
+        "guide": "Làm 1 lần, khoảng 10 phút.\n\nTRƯỚC TIÊN nhìn cột trái trong trang app để biết bạn đang dùng giao diện nào - Meta đang chuyển dần nên mỗi người thấy một kiểu:\n- Thấy mục 'Sản phẩm' = giao diện CŨ.\n- Thấy mục 'Trường hợp sử dụng' = giao diện MỚI.\n\n1. Bấm 'Bước 1: Tạo App mới' bên dưới. Chọn trường hợp sử dụng 'Khác' (Other), loại 'Doanh nghiệp' (Business), đặt tên bất kỳ.\n2. Mở phần Đăng nhập bằng Facebook, tuỳ giao diện:\n   - Bản CŨ: 'Sản phẩm' > 'Thêm sản phẩm' > thêm 'Đăng nhập bằng Facebook' bản THƯỜNG (KHÔNG phải bản 'cho doanh nghiệp'), rồi bấm 'Cài đặt'.\n   - Bản MỚI: 'Trường hợp sử dụng' > mở 'Xác thực và yêu cầu dữ liệu từ người dùng qua phương thức Đăng nhập bằng Facebook' > 'Tùy chỉnh' > 'Cài đặt'. Mục này thường CÓ SẴN, bạn không phải thêm gì.\n3. Ô 'URI chuyển hướng OAuth hợp lệ' - làm KHÁC NHAU tuỳ nơi cài Thansa:\n   - Cài trên MÁY CÁ NHÂN (địa chỉ localhost): BỎ QUA ô này, KHÔNG cần điền. Khi app ở Chế độ phát triển, Meta tự cho phép localhost nên ô này CỐ TÌNH không nhận.\n     Meta hiện chú thích 'bạn không cần phải thêm vào đây' là đúng, cứ đi tiếp bước sau. Nhớ dùng localhost chứ không phải 127.0.0.1.\n   - Cài trên VPS / TÊN MIỀN RIÊNG: BẮT BUỘC dán địa chỉ https ở nút 'Sao chép' bên dưới vào ô này rồi Lưu (vd https://javis.tenmiencuaban.com/connect/oauth/callback).\n     Ngoài localhost thì Meta không tự cho phép, thiếu bước này là đăng nhập sẽ bị từ chối.\n     Rồi thêm TÊN MIỀN trần (không https, không dấu /) vào 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > 'Miền ứng dụng', bấm 'Lưu thay đổi' - thiếu là báo 'Không thể tải URL'.\n4. Nếu hiện bảng 'Invalid Scopes: ads_read, business_management' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập.\nChỉ khi kết nối xong mà Thansa không thấy tài khoản quảng cáo nào thì mới cần thêm quyền:\nbản MỚI 'Thêm trường hợp sử dụng' > trường hợp về quảng cáo (Marketing API) > 'Tùy chỉnh' > tab 'Quyền' > Thêm ads_read + business_management; bản CŨ 'Sản phẩm' > 'Thêm sản phẩm' > 'Marketing API'.\n5. GIỮ app ở Chế độ phát triển và bạn phải là Quản trị viên của cả app lẫn tài khoản quảng cáo. Khi đó tự cấp được quyền ads_read, KHÔNG cần App Review.\n6. 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy App ID + Khóa bí mật dán vào ô dưới rồi bấm Kết nối.\n\nLƯU Ý bảng 'Việc cần làm' của app có gợi ý 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng' - BỎ QUA cả hai, cách này không cần, làm chỉ mất thêm nhiều ngày chờ.\n\nToken sống khoảng 60 ngày, Thansa tự gia hạn. Hết hạn thì Kết nối lại.",
         "guide_url": "https://developers.facebook.com/docs/marketing-api/get-started/authorization",
         "steps": [
           {"text": "Tạo app Meta: chọn trường hợp sử dụng 'Khác' (Other), loại 'Doanh nghiệp' (Business), đặt tên bất kỳ.", "link": "https://developers.facebook.com/apps/creation/", "link_label": "Tạo App mới"},
@@ -544,9 +544,9 @@
           {"text": "Cài trên VPS/TÊN MIỀN RIÊNG thêm một bước nữa: 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > ô 'Miền ứng dụng' (App Domains) - dán tên miền ở ô ngay dưới đây (KHÔNG có https://, KHÔNG có dấu /) rồi kéo xuống cuối trang bấm 'Lưu thay đổi'. Thiếu bước này Facebook báo 'Không thể tải URL - Miền của URL này không được đưa vào miền của ứng dụng'. Cài localhost thì bỏ qua.", "copy": "domain"},
           {"text": "GIỮ app ở Chế độ phát triển (Development) và bạn là Quản trị viên của cả app lẫn tài khoản quảng cáo - như vậy tự cấp được quyền đọc số liệu, KHÔNG cần App Review."},
           {"text": "BỎ QUA 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng' trong bảng 'Việc cần làm'. Hai bước đó chỉ cần khi app phục vụ doanh nghiệp KHÁC; bạn tự dùng cho tài khoản của mình thì không cần, làm chỉ mất thêm nhiều ngày chờ."},
-          {"text": "Nếu hiện bảng 'Invalid Scopes: ads_read, business_management' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập. Chỉ khi xong mà Javis không thấy tài khoản quảng cáo nào mới cần thêm quyền: bản MỚI 'Thêm trường hợp sử dụng' > trường hợp về quảng cáo (Marketing API) > 'Tùy chỉnh' > tab 'Quyền'; bản CŨ 'Sản phẩm' > 'Thêm sản phẩm' > 'Marketing API'."},
+          {"text": "Nếu hiện bảng 'Invalid Scopes: ads_read, business_management' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập. Chỉ khi xong mà Thansa không thấy tài khoản quảng cáo nào mới cần thêm quyền: bản MỚI 'Thêm trường hợp sử dụng' > trường hợp về quảng cáo (Marketing API) > 'Tùy chỉnh' > tab 'Quyền'; bản CŨ 'Sản phẩm' > 'Thêm sản phẩm' > 'Marketing API'."},
           {"text": "Menu trái 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy 'ID ứng dụng' và 'Khóa bí mật của ứng dụng' (bấm Hiện), dán vào hai ô bên dưới rồi bấm 'Lưu & mở trang đăng nhập'."},
-          {"text": "Token sống khoảng 60 ngày, Javis tự gia hạn. Hết hẳn thì bấm Kết nối lại trên card."}
+          {"text": "Token sống khoảng 60 ngày, Thansa tự gia hạn. Hết hẳn thì bấm Kết nối lại trên card."}
         ],
         "setup": {
           "redirect": true,
@@ -581,18 +581,18 @@
           { "key": "client_id", "label": "App ID (Facebook)", "placeholder": "Ví dụ: 1122334455667788" },
           { "key": "client_secret", "label": "App Secret (Facebook)", "placeholder": "Ví dụ: a1b2c3d4e5f6..." }
         ],
-        "guide": "Làm 1 lần, khoảng 5 phút. Dùng lại được app bạn đã tạo cho Meta Ads.\n\nTRƯỚC TIÊN nhìn cột trái trang app để biết giao diện nào (Meta đang chuyển dần):\n- Thấy mục 'Sản phẩm' = bản CŨ.\n- Thấy mục 'Trường hợp sử dụng' = bản MỚI.\n\n1. Bấm 'Bước 1: Tạo App mới' bên dưới, chọn loại 'Doanh nghiệp' (Business), đặt tên bất kỳ.\n2. Mở phần Đăng nhập bằng Facebook:\n   - Bản CŨ: 'Sản phẩm' > 'Thêm sản phẩm' > 'Đăng nhập bằng Facebook' bản THƯỜNG (KHÔNG phải bản 'cho doanh nghiệp').\n   - Bản MỚI: 'Trường hợp sử dụng' > mở trường hợp có Đăng nhập bằng Facebook > 'Tùy chỉnh'. Thường đã có sẵn, không phải thêm gì.\n3. Ô 'URI chuyển hướng OAuth hợp lệ' - khác nhau tuỳ nơi cài Javis:\n   - Cài trên MÁY CÁ NHÂN (localhost): BỎ QUA, không cần và cũng không điền được. App ở Chế độ phát triển thì Meta tự cho phép localhost. Dùng localhost chứ không phải 127.0.0.1.\n   - Cài trên VPS / TÊN MIỀN RIÊNG: BẮT BUỘC dán địa chỉ https ở nút 'Sao chép' bên dưới vào ô này rồi Lưu.\n     Rồi thêm TÊN MIỀN trần (không https, không dấu /) vào 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > 'Miền ứng dụng', bấm 'Lưu thay đổi' - thiếu là báo 'Không thể tải URL'.\n4. GIỮ app ở Chế độ phát triển và bạn là Quản trị viên của cả app lẫn các Trang muốn quản lý. Khi đó tự cấp được quyền Trang, KHÔNG cần App Review.\n5. 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy App ID + Khóa bí mật dán vào ô dưới rồi bấm Kết nối.\n\nKhi Facebook hỏi quyền, nhớ TICK chọn các Trang.\n\nMUỐN THÊM TRANG SAU NÀY: bấm 'Kết nối lại' trên card.\nFacebook hiện lại màn 'Chọn nội dung bạn cho phép' - tick thêm Trang mới và GIỮ NGUYÊN các Trang cũ (bỏ tick Trang nào là mất quyền Trang đó).\nKhông phải xoá tài khoản đi làm lại từ đầu.\n\nNẾU lúc đăng nhập hiện bảng 'Invalid Scopes: pages_show_list, pages_read_engagement...': cứ bấm OK và ĐI TIẾP.\nĐây là cảnh báo CHỈ hiện cho người tạo app, KHÔNG chặn đăng nhập - app ở Chế độ phát triển mà bạn là Quản trị viên thì Facebook vẫn cấp đủ quyền.\nChỉ khi kết nối xong mà Javis không thấy Trang hoặc không đăng được thì mới cần thêm quyền: 'Thêm trường hợp sử dụng' > 'Quản lý mọi thứ trên Trang của bạn' > 'Tùy chỉnh' > tab 'Quyền'.\n\nLƯU Ý bảng 'Việc cần làm' gợi ý 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng' - BỎ QUA cả hai, cách này không cần.\n\nToken sống khoảng 60 ngày, Javis tự gia hạn. Hết hạn thì Kết nối lại.",
+        "guide": "Làm 1 lần, khoảng 5 phút. Dùng lại được app bạn đã tạo cho Meta Ads.\n\nTRƯỚC TIÊN nhìn cột trái trang app để biết giao diện nào (Meta đang chuyển dần):\n- Thấy mục 'Sản phẩm' = bản CŨ.\n- Thấy mục 'Trường hợp sử dụng' = bản MỚI.\n\n1. Bấm 'Bước 1: Tạo App mới' bên dưới, chọn loại 'Doanh nghiệp' (Business), đặt tên bất kỳ.\n2. Mở phần Đăng nhập bằng Facebook:\n   - Bản CŨ: 'Sản phẩm' > 'Thêm sản phẩm' > 'Đăng nhập bằng Facebook' bản THƯỜNG (KHÔNG phải bản 'cho doanh nghiệp').\n   - Bản MỚI: 'Trường hợp sử dụng' > mở trường hợp có Đăng nhập bằng Facebook > 'Tùy chỉnh'. Thường đã có sẵn, không phải thêm gì.\n3. Ô 'URI chuyển hướng OAuth hợp lệ' - khác nhau tuỳ nơi cài Thansa:\n   - Cài trên MÁY CÁ NHÂN (localhost): BỎ QUA, không cần và cũng không điền được. App ở Chế độ phát triển thì Meta tự cho phép localhost. Dùng localhost chứ không phải 127.0.0.1.\n   - Cài trên VPS / TÊN MIỀN RIÊNG: BẮT BUỘC dán địa chỉ https ở nút 'Sao chép' bên dưới vào ô này rồi Lưu.\n     Rồi thêm TÊN MIỀN trần (không https, không dấu /) vào 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > 'Miền ứng dụng', bấm 'Lưu thay đổi' - thiếu là báo 'Không thể tải URL'.\n4. GIỮ app ở Chế độ phát triển và bạn là Quản trị viên của cả app lẫn các Trang muốn quản lý. Khi đó tự cấp được quyền Trang, KHÔNG cần App Review.\n5. 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy App ID + Khóa bí mật dán vào ô dưới rồi bấm Kết nối.\n\nKhi Facebook hỏi quyền, nhớ TICK chọn các Trang.\n\nMUỐN THÊM TRANG SAU NÀY: bấm 'Kết nối lại' trên card.\nFacebook hiện lại màn 'Chọn nội dung bạn cho phép' - tick thêm Trang mới và GIỮ NGUYÊN các Trang cũ (bỏ tick Trang nào là mất quyền Trang đó).\nKhông phải xoá tài khoản đi làm lại từ đầu.\n\nNẾU lúc đăng nhập hiện bảng 'Invalid Scopes: pages_show_list, pages_read_engagement...': cứ bấm OK và ĐI TIẾP.\nĐây là cảnh báo CHỈ hiện cho người tạo app, KHÔNG chặn đăng nhập - app ở Chế độ phát triển mà bạn là Quản trị viên thì Facebook vẫn cấp đủ quyền.\nChỉ khi kết nối xong mà Thansa không thấy Trang hoặc không đăng được thì mới cần thêm quyền: 'Thêm trường hợp sử dụng' > 'Quản lý mọi thứ trên Trang của bạn' > 'Tùy chỉnh' > tab 'Quyền'.\n\nLƯU Ý bảng 'Việc cần làm' gợi ý 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng' - BỎ QUA cả hai, cách này không cần.\n\nToken sống khoảng 60 ngày, Thansa tự gia hạn. Hết hạn thì Kết nối lại.",
         "guide_url": "https://developers.facebook.com/docs/pages-api/getting-started",
         "steps": [
           {"text": "Đã tạo app cho Meta Ads rồi thì DÙNG LẠI app đó (vẫn phải làm bước bật quyền Trang bên dưới). Chưa có thì tạo app Meta, loại 'Doanh nghiệp' (Business).", "link": "https://developers.facebook.com/apps/creation/", "link_label": "Tạo App mới"},
           {"text": "Nhìn CỘT TRÁI trang app: thấy 'Sản phẩm' là bản CŨ, thấy 'Trường hợp sử dụng' là bản MỚI. Meta đang chuyển dần nên mỗi người thấy một kiểu.", "link": "https://developers.facebook.com/apps/", "link_label": "App của tôi"},
           {"text": "Mở phần Đăng nhập bằng Facebook. Bản CŨ: 'Sản phẩm' > 'Thêm sản phẩm' > 'Đăng nhập bằng Facebook' bản THƯỜNG (KHÔNG phải bản 'cho doanh nghiệp'). Bản MỚI: 'Trường hợp sử dụng' > mở trường hợp có Đăng nhập bằng Facebook > 'Tùy chỉnh'. Thường đã có sẵn."},
-          {"text": "Nếu hiện bảng 'Invalid Scopes: pages_show_list, pages_read_engagement...' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập. Chỉ khi xong mà Javis không thấy Trang hoặc không đăng được mới cần thêm quyền: 'Thêm trường hợp sử dụng' > 'Quản lý mọi thứ trên Trang của bạn' > 'Tùy chỉnh' > tab 'Quyền'."},
+          {"text": "Nếu hiện bảng 'Invalid Scopes: pages_show_list, pages_read_engagement...' thì cứ bấm OK và ĐI TIẾP - cảnh báo này chỉ hiện cho người tạo app, KHÔNG chặn đăng nhập. Chỉ khi xong mà Thansa không thấy Trang hoặc không đăng được mới cần thêm quyền: 'Thêm trường hợp sử dụng' > 'Quản lý mọi thứ trên Trang của bạn' > 'Tùy chỉnh' > tab 'Quyền'."},
           {"text": "Ô 'URI chuyển hướng OAuth hợp lệ': cài trên MÁY CÁ NHÂN (localhost) thì BỎ QUA, không điền được và cũng không cần. Cài trên VPS/TÊN MIỀN RIÊNG thì BẮT BUỘC bấm 'Sao chép' ở ô ngay dưới đây rồi dán NGUYÊN VĂN vào ô đó và Lưu - Facebook bắt khớp từng ký tự, lệch một chữ là báo 'URL bị chặn'.", "copy": "redirect"},
           {"text": "Cài trên VPS/TÊN MIỀN RIÊNG thêm một bước nữa: 'Cài đặt ứng dụng' > 'Thông tin cơ bản' > ô 'Miền ứng dụng' (App Domains) - dán tên miền ở ô ngay dưới đây (KHÔNG có https://, KHÔNG có dấu /) rồi kéo xuống cuối trang bấm 'Lưu thay đổi'. Thiếu bước này Facebook báo 'Không thể tải URL - Miền của URL này không được đưa vào miền của ứng dụng'. Cài localhost thì bỏ qua.", "copy": "domain"},
           {"text": "GIỮ app ở Chế độ phát triển (Development) và bạn là Quản trị viên của cả app lẫn các Trang muốn quản lý - như vậy tự cấp được quyền Trang, KHÔNG cần App Review. BỎ QUA 'Xác minh doanh nghiệp' và 'Xét duyệt ứng dụng'."},
           {"text": "Menu trái 'Cài đặt ứng dụng' > 'Thông tin cơ bản': copy 'ID ứng dụng' và 'Khóa bí mật của ứng dụng' (bấm Hiện), dán vào hai ô bên dưới rồi bấm 'Lưu & mở trang đăng nhập'."},
-          {"text": "Khi Facebook hỏi quyền, nhớ TICK chọn các Trang muốn cho Javis quản lý. Token sống khoảng 60 ngày, Javis tự gia hạn."},
+          {"text": "Khi Facebook hỏi quyền, nhớ TICK chọn các Trang muốn cho Thansa quản lý. Token sống khoảng 60 ngày, Thansa tự gia hạn."},
           {"text": "MUỐN THÊM TRANG SAU NÀY: bấm 'Kết nối lại' trên card, Facebook sẽ hiện lại màn 'Chọn nội dung bạn cho phép'. Tick THÊM Trang mới và GIỮ NGUYÊN các Trang cũ (bỏ tick là mất quyền Trang đó), rồi bấm Tiếp tục. Không cần xoá tài khoản đi kết nối lại từ đầu."}
         ],
         "setup": {
@@ -608,7 +608,7 @@
         "danger": ["fb_page_post", "fb_page_photo", "fb_page_album", "fb_page_video", "fb_page_edit", "fb_page_reply", "fb_page_delete"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Toàn quyền cho phép Javis ĐĂNG BÀI, TRẢ LỜI BÌNH LUẬN và XOÁ BÀI trên Trang của bạn. Hành động thật, công khai.\n\nXoá bài là KHÔNG HOÀN TÁC ĐƯỢC - Trang không có thùng rác, bài xoá rồi là mất hẳn.\n\nGiữ mức Chỉ đọc thì Javis chỉ xem Trang, bài và bình luận, không đăng, không sửa, không xoá.\n\nToken chỉ thao tác được trên Trang mà chính bạn là admin."
+      "risk": "Mức Toàn quyền cho phép Thansa ĐĂNG BÀI, TRẢ LỜI BÌNH LUẬN và XOÁ BÀI trên Trang của bạn. Hành động thật, công khai.\n\nXoá bài là KHÔNG HOÀN TÁC ĐƯỢC - Trang không có thùng rác, bài xoá rồi là mất hẳn.\n\nGiữ mức Chỉ đọc thì Thansa chỉ xem Trang, bài và bình luận, không đăng, không sửa, không xoá.\n\nToken chỉ thao tác được trên Trang mà chính bạn là admin."
     },
     {
       "id": "facebook-monitor",
@@ -624,7 +624,7 @@
         "fields": [
           { "key": "apify_token", "label": "Apify API token", "placeholder": "Ví dụ: apify_api_xxxxxxxx", "env": "APIFY_TOKEN" }
         ],
-        "guide": "Làm 1 lần:\n1. Vào apify.com đăng ký tài khoản (có gói free + trả theo lượng dùng).\n2. Vào Console > Settings > API & Integrations, copy 'Personal API token'.\n3. Dán vào ô dưới rồi bấm Kết nối.\n\nChi phí quét tính theo lượt, khoảng 2.6 USD cho 1000 bài với actor mặc định. Javis chỉ quét khi bạn hoặc loop yêu cầu.\n\nV1 hỗ trợ Trang và Nhóm CÔNG KHAI, không cần cookie. Nhóm KÍN sẽ bổ sung sau, cần thêm cookie của tài khoản là thành viên.",
+        "guide": "Làm 1 lần:\n1. Vào apify.com đăng ký tài khoản (có gói free + trả theo lượng dùng).\n2. Vào Console > Settings > API & Integrations, copy 'Personal API token'.\n3. Dán vào ô dưới rồi bấm Kết nối.\n\nChi phí quét tính theo lượt, khoảng 2.6 USD cho 1000 bài với actor mặc định. Thansa chỉ quét khi bạn hoặc loop yêu cầu.\n\nV1 hỗ trợ Trang và Nhóm CÔNG KHAI, không cần cookie. Nhóm KÍN sẽ bổ sung sau, cần thêm cookie của tài khoản là thành viên.",
         "guide_url": "https://console.apify.com/settings/integrations"
       },
       "tool_meta": {
@@ -698,7 +698,7 @@
             "optional": true
           }
         ],
-        "guide": "Cần trước: Git trên máy chạy Javis (uvx tải server từ GitHub).\n\nLàm 1 lần, khoảng 10 phút:\n1. Google Ads > tài khoản quản lý MCC > Công cụ > API Center: lấy developer token, mức Explorer đủ để đọc.\n2. Vào console.cloud.google.com, tạo project rồi bật Google Ads API. Nhớ Project ID để điền bên dưới.\n3. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n4. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n5. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n6. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Javis đọc Google Ads.\n\nJavis tự dựng file đăng nhập, KHÔNG cần cài Google Cloud CLI và không phải chạy lệnh nào.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Javis sẽ dùng luôn.",
+        "guide": "Cần trước: Git trên máy chạy Thansa (uvx tải server từ GitHub).\n\nLàm 1 lần, khoảng 10 phút:\n1. Google Ads > tài khoản quản lý MCC > Công cụ > API Center: lấy developer token, mức Explorer đủ để đọc.\n2. Vào console.cloud.google.com, tạo project rồi bật Google Ads API. Nhớ Project ID để điền bên dưới.\n3. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n4. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n5. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n6. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Thansa đọc Google Ads.\n\nThansa tự dựng file đăng nhập, KHÔNG cần cài Google Cloud CLI và không phải chạy lệnh nào.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Thansa sẽ dùng luôn.",
         "guide_url": "https://console.cloud.google.com/apis/credentials"
       },
       "validate": {
@@ -798,7 +798,7 @@
           { "text": "Quyền dữ liệu > Thêm hoặc bớt phạm vi: dán đủ 5 phạm vi Lịch (calendar, calendar.events, calendar.calendarlist.readonly, calendar.events.readonly, calendar.events.freebusy). Thiếu freebusy là tìm giờ trống báo thiếu quyền dù đăng nhập thành công.", "link": "https://console.cloud.google.com/auth/scopes", "link_label": "Mở trang Quyền dữ liệu" },
           { "text": "Tạo OAuth client loại 'Ứng dụng web', thêm địa chỉ dưới đây vào ô 'URI chuyển hướng được ủy quyền'.", "link": "https://console.cloud.google.com/apis/credentials/oauthclient", "link_label": "Tạo OAuth client", "copy": "redirect" },
           { "text": "Tải file JSON của client (hoặc copy Client ID + Secret), kéo thả file vào ô bên dưới rồi bấm Kết nối. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục." },
-          { "text": "ĐĂNG NHẬP LẠI MÀ GOOGLE KHÔNG HIỆN LẠI CÁC Ô TICK QUYỀN? Đó là cách Google hoạt động: quyền nào đã cấp rồi thì lần sau nó cho qua thẳng, không hỏi lại. Muốn thấy lại đầy đủ ô tick thì vào trang quyền của tài khoản Google, gỡ Javis ra khỏi danh sách ứng dụng, rồi quay lại bấm Kết nối - lần đó Google hỏi lại từ đầu.", "link": "https://myaccount.google.com/permissions", "link_label": "Gỡ quyền cũ ở Google" }
+          { "text": "ĐĂNG NHẬP LẠI MÀ GOOGLE KHÔNG HIỆN LẠI CÁC Ô TICK QUYỀN? Đó là cách Google hoạt động: quyền nào đã cấp rồi thì lần sau nó cho qua thẳng, không hỏi lại. Muốn thấy lại đầy đủ ô tick thì vào trang quyền của tài khoản Google, gỡ Thansa ra khỏi danh sách ứng dụng, rồi quay lại bấm Kết nối - lần đó Google hỏi lại từ đầu.", "link": "https://myaccount.google.com/permissions", "link_label": "Gỡ quyền cũ ở Google" }
         ],
         "setup": {
           "links": [
@@ -820,7 +820,7 @@
         "danger": ["delete_event"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Ghi nháp cho phép Javis TẠO và SỬA sự kiện thật trên lịch của bạn (tiện để nhờ \"nhắc tôi gọi nhà cung cấp thứ 5\").\n\nMức Toàn quyền thêm quyền XOÁ sự kiện.\n\nChỉ cần xem lịch thì giữ mức Chỉ đọc."
+      "risk": "Mức Ghi nháp cho phép Thansa TẠO và SỬA sự kiện thật trên lịch của bạn (tiện để nhờ \"nhắc tôi gọi nhà cung cấp thứ 5\").\n\nMức Toàn quyền thêm quyền XOÁ sự kiện.\n\nChỉ cần xem lịch thì giữ mức Chỉ đọc."
     },
     {
       "id": "gmail",
@@ -862,7 +862,7 @@
           { "text": "Quyền dữ liệu > Thêm hoặc bớt phạm vi: dán đủ 4 phạm vi Gmail (gmail.modify, gmail.readonly, gmail.compose, gmail.labels). Ba cái sau nằm trong gmail.modify nên không nới quyền, chỉ để khớp danh sách từng tool của Google chấp nhận.", "link": "https://console.cloud.google.com/auth/scopes", "link_label": "Mở trang Quyền dữ liệu" },
           { "text": "Tạo OAuth client loại 'Ứng dụng web', thêm địa chỉ dưới đây vào ô 'URI chuyển hướng được ủy quyền'.", "link": "https://console.cloud.google.com/apis/credentials/oauthclient", "link_label": "Tạo OAuth client", "copy": "redirect" },
           { "text": "Tải file JSON của client (hoặc copy Client ID + Secret), kéo thả file vào ô bên dưới rồi bấm Kết nối. Gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục." },
-          { "text": "ĐĂNG NHẬP LẠI MÀ GOOGLE KHÔNG HIỆN LẠI CÁC Ô TICK QUYỀN? Đó là cách Google hoạt động: quyền nào đã cấp rồi thì lần sau nó cho qua thẳng, không hỏi lại. Muốn thấy lại đầy đủ ô tick thì vào trang quyền của tài khoản Google, gỡ Javis ra khỏi danh sách ứng dụng, rồi quay lại bấm Kết nối - lần đó Google hỏi lại từ đầu.", "link": "https://myaccount.google.com/permissions", "link_label": "Gỡ quyền cũ ở Google" }
+          { "text": "ĐĂNG NHẬP LẠI MÀ GOOGLE KHÔNG HIỆN LẠI CÁC Ô TICK QUYỀN? Đó là cách Google hoạt động: quyền nào đã cấp rồi thì lần sau nó cho qua thẳng, không hỏi lại. Muốn thấy lại đầy đủ ô tick thì vào trang quyền của tài khoản Google, gỡ Thansa ra khỏi danh sách ứng dụng, rồi quay lại bấm Kết nối - lần đó Google hỏi lại từ đầu.", "link": "https://myaccount.google.com/permissions", "link_label": "Gỡ quyền cũ ở Google" }
         ],
         "setup": {
           "links": [
@@ -881,7 +881,7 @@
         "danger": []
       },
       "default_perm": "readonly",
-      "risk": "Mức Ghi nháp cho phép Javis SOẠN NHÁP thư và gắn, gỡ nhãn trong hộp thư của bạn.\n\nServer Gmail chính chủ không có tool gửi thẳng nên Javis không tự gửi được, luôn dừng ở bản nháp để bạn tự bấm gửi.\n\nChỉ cần đọc và tìm thư thì giữ mức Chỉ đọc."
+      "risk": "Mức Ghi nháp cho phép Thansa SOẠN NHÁP thư và gắn, gỡ nhãn trong hộp thư của bạn.\n\nServer Gmail chính chủ không có tool gửi thẳng nên Thansa không tự gửi được, luôn dừng ở bản nháp để bạn tự bấm gửi.\n\nChỉ cần đọc và tìm thư thì giữ mức Chỉ đọc."
     },
     {
       "id": "slack",
@@ -911,7 +911,7 @@
         "danger": ["*send*", "*post*", "*add_message*", "*create*", "*update*", "*archive*", "*upload*", "*invite*"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Toàn quyền cho phép Javis GỬI TIN NHẮN THẬT và tạo, sửa canvas bằng tài khoản Slack của bạn.\n\nChỉ cần đọc và tìm tin thì giữ mức Chỉ đọc.\n\nLưu ý: tên tool chính xác của Slack MCP chưa công bố nên phân loại quyền dựa trên heuristic, mọi tool có động từ hành động đều bị coi là GHI.\n\nNếu một công cụ đọc bị chặn nhầm ở mức Chỉ đọc, nâng quyền hoặc báo lại để chỉnh."
+      "risk": "Mức Toàn quyền cho phép Thansa GỬI TIN NHẮN THẬT và tạo, sửa canvas bằng tài khoản Slack của bạn.\n\nChỉ cần đọc và tìm tin thì giữ mức Chỉ đọc.\n\nLưu ý: tên tool chính xác của Slack MCP chưa công bố nên phân loại quyền dựa trên heuristic, mọi tool có động từ hành động đều bị coi là GHI.\n\nNếu một công cụ đọc bị chặn nhầm ở mức Chỉ đọc, nâng quyền hoặc báo lại để chỉnh."
     },
     {
       "id": "systeme-io",
@@ -940,7 +940,7 @@
         "danger": ["delete_*", "*_delete"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Ghi nháp cho phép Javis TẠO và SỬA liên hệ, tag, newsletter, phễu thật trên Systeme.io.\n\nMức Toàn quyền thêm quyền XOÁ.\n\nChỉ cần xem dữ liệu thì giữ mức Chỉ đọc.\n\nLưu ý: tên tool chính xác chưa công bố nên phân loại dựa trên heuristic, tool có động từ hành động bị coi là GHI và xoá là NGUY HIỂM. Nếu công cụ đọc bị chặn nhầm, báo lại để chỉnh."
+      "risk": "Mức Ghi nháp cho phép Thansa TẠO và SỬA liên hệ, tag, newsletter, phễu thật trên Systeme.io.\n\nMức Toàn quyền thêm quyền XOÁ.\n\nChỉ cần xem dữ liệu thì giữ mức Chỉ đọc.\n\nLưu ý: tên tool chính xác chưa công bố nên phân loại dựa trên heuristic, tool có động từ hành động bị coi là GHI và xoá là NGUY HIỂM. Nếu công cụ đọc bị chặn nhầm, báo lại để chỉnh."
     },
     {
       "id": "lark",
@@ -969,7 +969,7 @@
             "env": "APP_SECRET"
           }
         ],
-        "guide": "Cần trước: Node.js 18+ trên máy chạy Javis.\n\nLàm 1 lần:\n1. Vào open.larksuite.com/app > Create custom app.\n2. Ở 'Credentials & Basic Info' lấy App ID + App Secret.\n3. Vào 'Permissions & Scopes' cấp các quyền cần dùng (vd im:message, im:chat, docx:document, bitable:app, contact:user.id).\n4. Bấm 'Create version' để phát hành app. Có thể cần admin duyệt.\n5. Dán App ID + App Secret vào đây.\n\nJavis chỉ đọc và làm được đúng những quyền bạn đã cấp cho app.",
+        "guide": "Cần trước: Node.js 18+ trên máy chạy Thansa.\n\nLàm 1 lần:\n1. Vào open.larksuite.com/app > Create custom app.\n2. Ở 'Credentials & Basic Info' lấy App ID + App Secret.\n3. Vào 'Permissions & Scopes' cấp các quyền cần dùng (vd im:message, im:chat, docx:document, bitable:app, contact:user.id).\n4. Bấm 'Create version' để phát hành app. Có thể cần admin duyệt.\n5. Dán App ID + App Secret vào đây.\n\nThansa chỉ đọc và làm được đúng những quyền bạn đã cấp cho app.",
         "guide_url": "https://open.larksuite.com/document/uAjLw4CM/ukTMukTMukTM/mcp_integration/mcp_introduction"
       },
       "tool_meta": {
@@ -978,7 +978,7 @@
         "danger": ["im_v1_message_create", "drive_v1_permissionMember_create"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Ghi nháp cho phép Javis TẠO và SỬA bảng dữ liệu, tài liệu, nhóm chat thật trong Lark.\n\nMức Toàn quyền thêm quyền GỬI TIN NHẮN vào chat và CẤP QUYỀN truy cập file.\n\nChỉ cần xem và tìm thì giữ mức Chỉ đọc. Javis chỉ làm được đúng phạm vi quyền bạn cấp cho Lark app."
+      "risk": "Mức Ghi nháp cho phép Thansa TẠO và SỬA bảng dữ liệu, tài liệu, nhóm chat thật trong Lark.\n\nMức Toàn quyền thêm quyền GỬI TIN NHẮN vào chat và CẤP QUYỀN truy cập file.\n\nChỉ cần xem và tìm thì giữ mức Chỉ đọc. Thansa chỉ làm được đúng phạm vi quyền bạn cấp cho Lark app."
     },
     {
       "id": "higgsfield",
@@ -992,7 +992,7 @@
       "auth": {
         "type": "oauth",
         "fields": [],
-        "guide": "Bấm Kết nối rồi đăng nhập tài khoản Higgsfield và cấp quyền.\n\nJavis tự đăng ký ứng dụng theo chuẩn OAuth của Higgsfield, không cần tạo app hay dán key.\n\nCần có credit trong tài khoản Higgsfield để tạo ảnh hoặc video. Xong là Javis vẽ được ngay trong chat.",
+        "guide": "Bấm Kết nối rồi đăng nhập tài khoản Higgsfield và cấp quyền.\n\nThansa tự đăng ký ứng dụng theo chuẩn OAuth của Higgsfield, không cần tạo app hay dán key.\n\nCần có credit trong tài khoản Higgsfield để tạo ảnh hoặc video. Xong là Thansa vẽ được ngay trong chat.",
         "guide_url": "https://higgsfield.ai/mcp"
       },
       "tool_meta": {
@@ -1001,7 +1001,7 @@
         "danger": ["*delete*", "*cancel*", "*billing*", "*purchase*", "*subscription*"]
       },
       "default_perm": "safe",
-      "risk": "Higgsfield là công cụ TẠO nội dung: mỗi lần sinh hoặc chỉnh ảnh, video sẽ TIÊU CREDIT trả trước trong tài khoản Higgsfield của bạn.\n\nMặc định để mức Ghi nháp để Javis tạo được nội dung ngay, đồng thời chặn các thao tác xoá và thanh toán.\n\nMuốn Javis chỉ xem lịch sử và kết quả mà không tự tạo (đỡ tốn credit) thì hạ xuống Chỉ đọc. Muốn mở tất cả thì nâng Toàn quyền.\n\nTên tool chính xác của Higgsfield chưa công bố nên phân loại quyền dựa trên heuristic."
+      "risk": "Higgsfield là công cụ TẠO nội dung: mỗi lần sinh hoặc chỉnh ảnh, video sẽ TIÊU CREDIT trả trước trong tài khoản Higgsfield của bạn.\n\nMặc định để mức Ghi nháp để Thansa tạo được nội dung ngay, đồng thời chặn các thao tác xoá và thanh toán.\n\nMuốn Thansa chỉ xem lịch sử và kết quả mà không tự tạo (đỡ tốn credit) thì hạ xuống Chỉ đọc. Muốn mở tất cả thì nâng Toàn quyền.\n\nTên tool chính xác của Higgsfield chưa công bố nên phân loại quyền dựa trên heuristic."
     },
     {
       "id": "x-twitter",
@@ -1022,7 +1022,7 @@
             "header": "Authorization: Bearer {bearer_token}"
           }
         ],
-        "guide": "Làm 1 lần:\n1. Vào developer.x.com > Developer Portal > Projects & Apps.\n2. Chọn App có sẵn, hoặc Create Project/App nếu chưa có.\n3. Tab 'Keys and tokens' > mục 'Bearer Token' > Generate.\n4. Copy token dán vào đây.\n\nĐây là token App-only: đọc và tìm bài đăng, hồ sơ công khai.\n\nMuốn ĐĂNG bài hoặc thao tác theo tài khoản người dùng thì cần OAuth ngữ cảnh người dùng, hiện Javis chưa hỗ trợ. Báo em nếu cần bổ sung.",
+        "guide": "Làm 1 lần:\n1. Vào developer.x.com > Developer Portal > Projects & Apps.\n2. Chọn App có sẵn, hoặc Create Project/App nếu chưa có.\n3. Tab 'Keys and tokens' > mục 'Bearer Token' > Generate.\n4. Copy token dán vào đây.\n\nĐây là token App-only: đọc và tìm bài đăng, hồ sơ công khai.\n\nMuốn ĐĂNG bài hoặc thao tác theo tài khoản người dùng thì cần OAuth ngữ cảnh người dùng, hiện Thansa chưa hỗ trợ. Báo em nếu cần bổ sung.",
         "guide_url": "https://docs.x.com/tools/mcp"
       },
       "tool_meta": {
@@ -1038,7 +1038,7 @@
       "name": "Substack",
       "icon": "/static/logos/substack.svg",
       "category": "Marketing",
-      "description": "Soạn và ĐĂNG bài viết / newsletter trên Substack bằng lời: liệt kê nháp, tạo nháp, và đăng bài (tuỳ chọn gửi email cho người đăng ký). Javis tự bọc thẳng API Substack (chạy Python nội bộ, KHÔNG cần cài Node/npx), mỗi tài khoản 1 session token.",
+      "description": "Soạn và ĐĂNG bài viết / newsletter trên Substack bằng lời: liệt kê nháp, tạo nháp, và đăng bài (tuỳ chọn gửi email cho người đăng ký). Thansa tự bọc thẳng API Substack (chạy Python nội bộ, KHÔNG cần cài Node/npx), mỗi tài khoản 1 session token.",
       "status": "beta",
       "transport": "internal",
       "internal": "substack",
@@ -1074,7 +1074,7 @@
         "danger": ["substack_publish"]
       },
       "default_perm": "safe",
-      "risk": "Mức Ghi nháp (mặc định) cho phép Javis TẠO NHÁP bài viết trên Substack của bạn. Chưa đăng, chưa gửi ai.\n\nMuốn Javis ĐĂNG BÀI THẬT thì phải nâng kết nối này lên Toàn quyền. Khi đó Javis vẫn chỉ đăng khi bạn yêu cầu trực tiếp trong chat, loop chạy nền không bao giờ tự đăng.\n\nĐăng mặc định chỉ lên web, KHÔNG gửi email. Chỉ khi bạn nói rõ \"gửi email cho người đăng ký\" thì Javis mới bật cờ gửi mail, và việc đã gửi mail KHÔNG hoàn tác được.\n\nSession token cho toàn quyền tài khoản Substack nên giữ kín như mật khẩu. Hết hạn khi đăng xuất thì kết nối lại."
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO NHÁP bài viết trên Substack của bạn. Chưa đăng, chưa gửi ai.\n\nMuốn Thansa ĐĂNG BÀI THẬT thì phải nâng kết nối này lên Toàn quyền. Khi đó Thansa vẫn chỉ đăng khi bạn yêu cầu trực tiếp trong chat, loop chạy nền không bao giờ tự đăng.\n\nĐăng mặc định chỉ lên web, KHÔNG gửi email. Chỉ khi bạn nói rõ \"gửi email cho người đăng ký\" thì Thansa mới bật cờ gửi mail, và việc đã gửi mail KHÔNG hoàn tác được.\n\nSession token cho toàn quyền tài khoản Substack nên giữ kín như mật khẩu. Hết hạn khi đăng xuất thì kết nối lại."
     },
     {
       "id": "google-keep",
@@ -1083,7 +1083,7 @@
       "group": "google",
       "group_line": "Ghi chú Keep: tìm, tạo, ghim. Dùng token TOÀN QUYỀN tài khoản - cân nhắc kỹ.",
       "category": "Văn phòng",
-      "description": "Đọc và sửa ghi chú Google Keep: tìm note, tạo note và danh sách việc, gắn nhãn, ghim, lưu trữ. LƯU Ý: Keep không có API chính chủ nên phải dùng master token có TOÀN QUYỀN tài khoản Google, không phải OAuth giới hạn phạm vi như Gmail hay Lịch. Javis chỉ thao tác được ghi chú, nhưng token thì mở cả tài khoản nếu bị lộ.",
+      "description": "Đọc và sửa ghi chú Google Keep: tìm note, tạo note và danh sách việc, gắn nhãn, ghim, lưu trữ. LƯU Ý: Keep không có API chính chủ nên phải dùng master token có TOÀN QUYỀN tài khoản Google, không phải OAuth giới hạn phạm vi như Gmail hay Lịch. Thansa chỉ thao tác được ghi chú, nhưng token thì mở cả tài khoản nếu bị lộ.",
       "status": "beta",
       "transport": "stdio",
       "command": "uvx",
@@ -1101,7 +1101,7 @@
           },
           {
             "key": "app_password",
-            "label": "App Password 16 ký tự (Javis tự đổi thành token, KHÔNG lưu lại chuỗi này)",
+            "label": "App Password 16 ký tự (Thansa tự đổi thành token, KHÔNG lưu lại chuỗi này)",
             "placeholder": "Ví dụ: abcd efgh ijkl mnop",
             "optional": true
           },
@@ -1120,13 +1120,13 @@
           },
           {
             "key": "unsafe_mode",
-            "label": "Cho sửa MỌI note - gõ true nếu muốn (để trống = chỉ sửa note do Javis tạo)",
+            "label": "Cho sửa MỌI note - gõ true nếu muốn (để trống = chỉ sửa note do Thansa tạo)",
             "placeholder": "Để trống cho an toàn",
             "optional": true,
             "env": "UNSAFE_MODE"
           }
         ],
-        "guide": "Google Keep không có API chính chủ cho gmail thường, nên Javis phải đăng nhập bằng App Password rồi tự đổi thành token.\n\nCẢNH BÁO: token đổi ra có TOÀN QUYỀN tài khoản Google của bạn (Gmail, Drive, Photos...), tương đương mật khẩu.\n\nLàm 1 lần:\n1. Bật xác minh 2 bước cho tài khoản Google.\n2. Bấm nút bên dưới, tạo App Password rồi copy chuỗi 16 ký tự.\n3. Dán email + chuỗi đó vào ô dưới, bấm Kết nối.\n\nJavis đổi lấy token, lưu token, và KHÔNG lưu lại App Password. Copy cả dấu cách cũng được.\n\nNếu Google từ chối (hay gặp khi Javis chạy trên VPS), hãy tự lấy master token ở máy cá nhân rồi dán vào ô Master token.\n\nÔ unsafe_mode để trống thì Javis chỉ sửa được note do chính nó tạo. Gõ true thì Javis sửa được mọi note, kể cả note bạn viết tay.\n\nNếu báo 'Google từ chối đăng nhập' dù chuỗi đúng: Google đang siết dần đường App Password. Đường lui oauth_token:\n1. Bấm nút 'Mở trang lấy oauth_token' bên dưới trong TAB ẨN DANH, đăng nhập đúng tài khoản, bấm Tôi đồng ý.\n2. Ngay tab đó bấm F12 > Application > Cookies > accounts.google.com, tìm cookie tên oauth_token (giá trị bắt đầu oauth2_4/).\n3. Copy giá trị đó dán vào ô oauth_token rồi bấm Kết nối NGAY (cookie dùng một lần, hết hạn nhanh). Javis đổi lấy master token và không lưu cookie.",
+        "guide": "Google Keep không có API chính chủ cho gmail thường, nên Thansa phải đăng nhập bằng App Password rồi tự đổi thành token.\n\nCẢNH BÁO: token đổi ra có TOÀN QUYỀN tài khoản Google của bạn (Gmail, Drive, Photos...), tương đương mật khẩu.\n\nLàm 1 lần:\n1. Bật xác minh 2 bước cho tài khoản Google.\n2. Bấm nút bên dưới, tạo App Password rồi copy chuỗi 16 ký tự.\n3. Dán email + chuỗi đó vào ô dưới, bấm Kết nối.\n\nThansa đổi lấy token, lưu token, và KHÔNG lưu lại App Password. Copy cả dấu cách cũng được.\n\nNếu Google từ chối (hay gặp khi Thansa chạy trên VPS), hãy tự lấy master token ở máy cá nhân rồi dán vào ô Master token.\n\nÔ unsafe_mode để trống thì Thansa chỉ sửa được note do chính nó tạo. Gõ true thì Thansa sửa được mọi note, kể cả note bạn viết tay.\n\nNếu báo 'Google từ chối đăng nhập' dù chuỗi đúng: Google đang siết dần đường App Password. Đường lui oauth_token:\n1. Bấm nút 'Mở trang lấy oauth_token' bên dưới trong TAB ẨN DANH, đăng nhập đúng tài khoản, bấm Tôi đồng ý.\n2. Ngay tab đó bấm F12 > Application > Cookies > accounts.google.com, tìm cookie tên oauth_token (giá trị bắt đầu oauth2_4/).\n3. Copy giá trị đó dán vào ô oauth_token rồi bấm Kết nối NGAY (cookie dùng một lần, hết hạn nhanh). Thansa đổi lấy master token và không lưu cookie.",
         "exchange": { "handler": "google_master_token", "inputs": ["google_email", "app_password", "oauth_token"], "output": "master_token", "drop": ["app_password", "oauth_token"] },
         "setup": { "links": [{ "label": "Tạo App Password", "url": "https://myaccount.google.com/apppasswords" }, { "label": "Mở trang lấy oauth_token", "url": "https://accounts.google.com/EmbeddedSetup" }] },
         "guide_url": "https://github.com/feuerdev/keep-mcp",
@@ -1134,7 +1134,7 @@
           { "text": "CẢNH BÁO: Keep không có API chính chủ, phải dùng token TOÀN QUYỀN tài khoản Google (tương đương mật khẩu). Cân nhắc trước khi đấu." },
           { "text": "Bật xác minh 2 bước cho tài khoản Google (điều kiện để tạo App Password).", "link": "https://myaccount.google.com/security", "link_label": "Mở phần Bảo mật" },
           { "text": "Tạo App Password, copy chuỗi 16 ký tự (copy cả dấu cách cũng được).", "link": "https://myaccount.google.com/apppasswords", "link_label": "Tạo App Password" },
-          { "text": "Dán Email + App Password vào ô bên dưới rồi bấm Kết nối. Javis tự đổi thành token và KHÔNG lưu lại App Password." },
+          { "text": "Dán Email + App Password vào ô bên dưới rồi bấm Kết nối. Thansa tự đổi thành token và KHÔNG lưu lại App Password." },
           { "text": "Nếu Google từ chối App Password: mở trang EmbeddedSetup trong tab ẩn danh, đăng nhập, bấm Tôi đồng ý, rồi lấy cookie oauth_token (F12 > Application > Cookies, giá trị bắt đầu oauth2_4/) dán vào ô oauth_token và bấm Kết nối NGAY - cookie chỉ dùng một lần.", "link": "https://accounts.google.com/EmbeddedSetup", "link_label": "Mở EmbeddedSetup" }
         ]
       },
@@ -1151,19 +1151,19 @@
                    "add_note_collaborator", "remove_note_collaborator"]
       },
       "default_perm": "readonly",
-      "risk": "Kết nối này dùng Google MASTER TOKEN, loại token có TOÀN QUYỀN tài khoản Google (Gmail, Drive, Photos), không phải OAuth giới hạn phạm vi như Gmail hay Lịch.\n\nMức Ghi nháp cho Javis tạo và sửa note, ghim, lưu trữ, gắn nhãn thật trong Keep.\n\nMức Toàn quyền thêm quyền VỨT, XOÁ note và CHIA SẺ note cho người khác.\n\nNếu đã gõ true vào ô UNSAFE_MODE thì Javis đụng được cả note bạn viết tay, không riêng note nó tạo."
+      "risk": "Kết nối này dùng Google MASTER TOKEN, loại token có TOÀN QUYỀN tài khoản Google (Gmail, Drive, Photos), không phải OAuth giới hạn phạm vi như Gmail hay Lịch.\n\nMức Ghi nháp cho Thansa tạo và sửa note, ghim, lưu trữ, gắn nhãn thật trong Keep.\n\nMức Toàn quyền thêm quyền VỨT, XOÁ note và CHIA SẺ note cho người khác.\n\nNếu đã gõ true vào ô UNSAFE_MODE thì Thansa đụng được cả note bạn viết tay, không riêng note nó tạo."
     },
     {
       "id": "notebooklm",
       "name": "Google NotebookLM",
       "icon": "notebook",
-      "_group_doc": "CỐ Ý không nằm trong nhóm \"google\": nhóm đó là các connector đi chung MỘT key OAuth client (Javis dựng sẵn màn đăng nhập Google, chọn phạm vi từng dịch vụ). NotebookLM không có OAuth - nó mượn cookie phiên trình duyệt, cách đăng nhập khác hẳn và rủi ro khác hẳn. Xếp chung là hứa một trải nghiệm một-cửa mà nó không làm được.",
+      "_group_doc": "CỐ Ý không nằm trong nhóm \"google\": nhóm đó là các connector đi chung MỘT key OAuth client (Thansa dựng sẵn màn đăng nhập Google, chọn phạm vi từng dịch vụ). NotebookLM không có OAuth - nó mượn cookie phiên trình duyệt, cách đăng nhập khác hẳn và rủi ro khác hẳn. Xếp chung là hứa một trải nghiệm một-cửa mà nó không làm được.",
       "category": "Văn phòng",
       "description": "Đọc và thao tác notebook trên Google NotebookLM: liệt kê notebook, đọc nguồn, hỏi đáp ngay trong notebook, thêm nguồn, lưu ghi chú, tạo tóm tắt/audio ở Studio. LƯU Ý: NotebookLM chưa có API chính chủ nên phải mượn PHIÊN ĐĂNG NHẬP trình duyệt (cookie Google), không phải OAuth giới hạn phạm vi như Gmail hay Lịch.",
       "status": "beta",
       "transport": "stdio",
       "command": "uvx",
-      "_args_doc": "Tên package (notebooklm-py) KHÁC tên lệnh (notebooklm-mcp) nên bắt buộc `--from`, và phải kèm extra [mcp] vì fastmcp không nằm trong dependency lõi - thiếu nó thì lệnh chạy được nhưng chết ngay ở import. Đúng loại bẫy đã ghi ở connector google-keep. Server MCP là của CHÍNH thư viện (console script notebooklm-mcp, transport stdio), Javis không viết wrapper.",
+      "_args_doc": "Tên package (notebooklm-py) KHÁC tên lệnh (notebooklm-mcp) nên bắt buộc `--from`, và phải kèm extra [mcp] vì fastmcp không nằm trong dependency lõi - thiếu nó thì lệnh chạy được nhưng chết ngay ở import. Đúng loại bẫy đã ghi ở connector google-keep. Server MCP là của CHÍNH thư viện (console script notebooklm-mcp, transport stdio), Thansa không viết wrapper.",
       "args": ["--from", "notebooklm-py[mcp]", "notebooklm-mcp"],
       "requires": { "uv": true },
       "isolate_home": true,
@@ -1175,7 +1175,7 @@
             "placeholder": "Ví dụ: {\"cookies\":[{\"name\":\"SID\",\"value\":\"...\"}],\"origins\":[]}",
             "env": "NOTEBOOKLM_AUTH_JSON" }
         ],
-        "guide": "NotebookLM chưa có API chính thức, nên Javis phải mượn PHIÊN ĐĂNG NHẬP trình duyệt của bạn.\n\nCẢNH BÁO: chuỗi dán vào đây là cookie phiên Google, tương đương đang đăng nhập tài khoản Google, KHÔNG phải OAuth giới hạn phạm vi. Chỉ làm trên máy bạn tin tưởng.\n\nLàm 1 lần, TRÊN MÁY CÁ NHÂN có trình duyệt (không làm được trên VPS):\n1. Cài uv nếu chưa có.\n2. Chạy: uvx --from \"notebooklm-py[browser]\" notebooklm login\n   Trình duyệt mở ra, đăng nhập Google rồi vào notebooklm.google.com một lần.\n3. Mở file vừa sinh ra: ~/.notebooklm/profiles/default/storage_state.json (Windows: %USERPROFILE%\\.notebooklm\\profiles\\default\\storage_state.json). Copy TOÀN BỘ nội dung.\n4. Dán vào ô trên rồi bấm Kết nối.\n\nPhiên Google hết hạn thì chạy lại bước 2 và dán chuỗi mới. Muốn đấu nhiều tài khoản thì thêm kết nối nữa rồi dán phiên của tài khoản đó - mỗi kết nối tự có chỗ chứa phiên riêng.",
+        "guide": "NotebookLM chưa có API chính thức, nên Thansa phải mượn PHIÊN ĐĂNG NHẬP trình duyệt của bạn.\n\nCẢNH BÁO: chuỗi dán vào đây là cookie phiên Google, tương đương đang đăng nhập tài khoản Google, KHÔNG phải OAuth giới hạn phạm vi. Chỉ làm trên máy bạn tin tưởng.\n\nLàm 1 lần, TRÊN MÁY CÁ NHÂN có trình duyệt (không làm được trên VPS):\n1. Cài uv nếu chưa có.\n2. Chạy: uvx --from \"notebooklm-py[browser]\" notebooklm login\n   Trình duyệt mở ra, đăng nhập Google rồi vào notebooklm.google.com một lần.\n3. Mở file vừa sinh ra: ~/.notebooklm/profiles/default/storage_state.json (Windows: %USERPROFILE%\\.notebooklm\\profiles\\default\\storage_state.json). Copy TOÀN BỘ nội dung.\n4. Dán vào ô trên rồi bấm Kết nối.\n\nPhiên Google hết hạn thì chạy lại bước 2 và dán chuỗi mới. Muốn đấu nhiều tài khoản thì thêm kết nối nữa rồi dán phiên của tài khoản đó - mỗi kết nối tự có chỗ chứa phiên riêng.",
         "guide_url": "https://github.com/teng-lin/notebooklm-py#readme",
         "setup": {
           "links": [
@@ -1185,7 +1185,7 @@
         },
         "steps": [
           { "text": "CẢNH BÁO: đây là cookie phiên Google (tương đương đang đăng nhập), không phải OAuth giới hạn phạm vi. Cân nhắc trước khi đấu." },
-          { "text": "Cài uv trên máy chạy Javis - Javis dùng uvx để chạy server MCP của notebooklm-py.",
+          { "text": "Cài uv trên máy chạy Thansa - Thansa dùng uvx để chạy server MCP của notebooklm-py.",
             "link": "https://docs.astral.sh/uv/getting-started/installation/", "link_label": "Cài uv" },
           { "text": "Trên MÁY CÁ NHÂN có trình duyệt, chạy: uvx --from \"notebooklm-py[browser]\" notebooklm login rồi đăng nhập Google và mở NotebookLM một lần.",
             "link": "https://notebooklm.google.com/", "link_label": "Mở NotebookLM" },
@@ -1223,7 +1223,7 @@
           { "key": "base_url", "label": "Địa chỉ n8n của bạn", "placeholder": "Ví dụ: https://cong-ty.app.n8n.cloud", "url_base": true },
           { "key": "mcp_token", "label": "MCP Access Token", "placeholder": "Dán MCP Access Token từ n8n...", "header": "Authorization: Bearer {mcp_token}" }
         ],
-        "guide": "Làm 1 lần:\n1. Mở n8n của bạn, vào Settings > MCP Access.\n2. Sang tab Access Token, copy token NGAY lúc đó - lần sau quay lại chỉ còn thấy bản che, không copy được nữa.\n3. Dán địa chỉ n8n và token vào hai ô dưới đây.\n\nĐịa chỉ gõ kiểu nào cũng được (thiếu https://, thừa gạch chéo, hay dán nguyên URL đang mở) - Javis tự cắt về đúng tên miền.\n\nTạo token mới là n8n THU HỒI token cũ, nên mỗi lần tạo lại phải cập nhật ở đây.\n\nDùng được cả n8n cloud lẫn n8n tự dựng, miễn máy chạy Javis vào được địa chỉ đó.",
+        "guide": "Làm 1 lần:\n1. Mở n8n của bạn, vào Settings > MCP Access.\n2. Sang tab Access Token, copy token NGAY lúc đó - lần sau quay lại chỉ còn thấy bản che, không copy được nữa.\n3. Dán địa chỉ n8n và token vào hai ô dưới đây.\n\nĐịa chỉ gõ kiểu nào cũng được (thiếu https://, thừa gạch chéo, hay dán nguyên URL đang mở) - Thansa tự cắt về đúng tên miền.\n\nTạo token mới là n8n THU HỒI token cũ, nên mỗi lần tạo lại phải cập nhật ở đây.\n\nDùng được cả n8n cloud lẫn n8n tự dựng, miễn máy chạy Thansa vào được địa chỉ đó.",
         "guide_url": "https://docs.n8n.io/connect/connect-to-n8n-mcp-server/",
         "steps": [
           { "text": "Mở n8n của bạn rồi đăng nhập." },
@@ -1244,7 +1244,7 @@
                    "*activate*", "*deactivate*"]
       },
       "default_perm": "readonly",
-      "risk": "Mức Ghi nháp cho phép Javis TẠO và SỬA workflow thật trên n8n của bạn.\n\nMức Toàn quyền thêm quyền CHẠY workflow - đây là chỗ nguy hiểm nhất.\nMột workflow chạy lên có thể gửi mail, đăng bài, gọi API tính tiền, đẩy dữ liệu ra ngoài.\nJavis không nhìn được bên trong workflow làm gì, và chạy rồi thì không hoàn tác được.\n\nChỉ cần xem và soạn workflow thì giữ mức Chỉ đọc hoặc Ghi nháp.\n\nLưu ý: token này thấy MỌI workflow và cả danh sách credential mà tài khoản n8n của bạn thấy."
+      "risk": "Mức Ghi nháp cho phép Thansa TẠO và SỬA workflow thật trên n8n của bạn.\n\nMức Toàn quyền thêm quyền CHẠY workflow - đây là chỗ nguy hiểm nhất.\nMột workflow chạy lên có thể gửi mail, đăng bài, gọi API tính tiền, đẩy dữ liệu ra ngoài.\nThansa không nhìn được bên trong workflow làm gì, và chạy rồi thì không hoàn tác được.\n\nChỉ cần xem và soạn workflow thì giữ mức Chỉ đọc hoặc Ghi nháp.\n\nLưu ý: token này thấy MỌI workflow và cả danh sách credential mà tài khoản n8n của bạn thấy."
     }
   ]
 }
