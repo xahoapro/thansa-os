@@ -1,0 +1,8 @@
+# Dev-dependency cho máy PHÁT TRIỂN/NGHIỆM THU Thansa (không phải máy chạy app).
+# Cài vào .venv của worktree goc:  goc/.venv/bin/pip install -r ops/requirements-dev.txt
+#
+# pytest BẮT BUỘC để chạy đủ bộ test upstream: 5 test Python `import pytest` ngay đầu
+# file, thiếu là lỗi cứng ModuleNotFoundError (KHÔNG self-skip) — chốt tại
+# nhiem-vu/GD1.md (bản sửa 17/08/2026). Upstream không khai pytest trong
+# requirements.txt (file đó chỉ cho runtime app), nên phải nhớ bằng file này.
+pytest>=8,<9
