@@ -836,7 +836,7 @@
             if (rollback) {
               const prev = root.dataset.previousVersion || v.previous_version || "";
               rollback.style.display = "";
-              rollback.innerHTML = "<b>Cách lùi bản Docker:</b><br><code>docker compose pull && docker compose up -d</code>" + (prev ? `<br>Hoặc pin image <code>ghcr.io/blogminhquy/javis-os:${esc(prev)}</code> rồi Redeploy.` : "");
+              rollback.innerHTML = "<b>Cách lùi bản Docker:</b><br><code>docker compose pull && docker compose up -d</code>" + (prev ? `<br>Hoặc pin image <code>ghcr.io/xahoapro/thansa-os:${esc(prev)}</code> rồi Redeploy.` : "");
             }
             update.disabled = false; return;
           }
@@ -2806,7 +2806,7 @@
               rb.style.display = "";
               rb.innerHTML = "<b>Cách lùi về bản cũ (Docker):</b><br>Pin tag phiên bản cũ rồi kéo lại:"
                 + "<br><code>docker compose pull && docker compose up -d</code>"
-                + (prev ? "<br>Hoặc sửa image thành <code>ghcr.io/blogminhquy/javis-os:" + esc(prev) + "</code> rồi Redeploy." : "");
+                + (prev ? "<br>Hoặc sửa image thành <code>ghcr.io/xahoapro/thansa-os:" + esc(prev) + "</code> rồi Redeploy." : "");
             }
             verUpd.disabled = false; return;
           }
