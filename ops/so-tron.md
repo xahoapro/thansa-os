@@ -175,3 +175,21 @@ update.sh + systemd/docker thì không dính):
   marker giờ khớp CLAUDE.md ("của Thansa:"). so_patch = 14.
 - Bài học: overlay khớp-nguyên-text-node hợp cho chuỗi hoàn chỉnh; chuỗi ghép biến phải
   tách segment. Bot đọc source hiệu quả hơn regex để lọc code vs hiển thị.
+
+## Vòng Option B 2026-08-18 — dịch sẵn source thay overlay (P017, chốt của chủ)
+
+- Chủ chốt: dịch sẵn toàn bộ (rẻ + bảo trì đơn giản) thay overlay DOM. Nguyên nhân overlay
+  sót đã chẩn đoán: (1) hộp thoại native alert/confirm/prompt ngoài DOM; (2) chuỗi ghép
+  biến/nhiều dòng khó khớp text node; (3) attribute ngoài danh sách. Overlay đã vá 3 cái
+  đó nhưng vẫn có trần → chuyển kiến trúc.
+- P017: ops/build-en.py áp từ điển vào string literal (JS) + text node/attr (HTML), sinh
+  dashboard/en/. AN TOÀN: kiểm "khung code y hệt" (bỏ mọi literal rồi so byte) + node --check
+  mỗi file → chứng minh không đụng code. Server sinh en/ lúc khởi động (gitignore cục bộ,
+  KHÔNG commit, mọi máy tự có), phục vụ theo cookie thansa_lang=en; file chưa dịch rơi về
+  gốc + overlay. Client (dich-en.js + handler console.js) đặt cookie + reload khi đổi ngôn ngữ.
+- Bảo trì: mỗi vòng trộn build-en chạy lại lúc khởi động, chỉ chuỗi MỚI cần dịch.
+- 2 lỗi P017 đã vá: root() nhận request tùy chọn (test gọi trực tiếp); subprocess thêm
+  winproc.kwargs_no_window() theo quy ước test_windows_no_console.
+- Từ điển 2.474 → 2.580 cặp. tests 246/247 (chỉ chat_disconnect flaky). so_patch = 15.
+- Overlay (P015) GIỮ làm lưới cho file/chuỗi chưa migrate; hai lớp cùng chạy không xung đột
+  (overlay khớp key tiếng Việt, bản en/ đã là tiếng Anh nên overlay no-op).
