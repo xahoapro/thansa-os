@@ -102,3 +102,24 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 - P002 (logo/favicon) VẪN hoãn — chưa có ảnh Thansa.
 - Cổng phát hành: tests 241/241 + tu-kiem-chung XANH (so_patch=11) + chủ đã nghiệm thu
   bằng mắt trên máy thử.
+
+## Vòng 2026-08-18 (goc 0b8f2c0 → a1ad69a, upstream +13 commit, VERSION 0.35.10 → 0.37.1)
+
+- Giao với mapping: 9 patch dính vùng theo dõi (P001/P003/P007/P008/P009/P010/P011/
+  P012/P013); ẢNH GỐC không lệch; không cờ bảo mật.
+- Rebase 35 commit lên nền mới: 2 xung đột — P003 (upstream thêm meta viewport chặn
+  zoom cạnh <title> → lấy tính năng upstream + giữ title Thansa), P012 (catalog thêm
+  trường issue #112 → lấy nền upstream rồi chạy lại transform P012). rerere đã ghi.
+- NEO LẠI P003 (2 lần, amend + cherry-pick range): upstream 0.36.x thêm 2 bề mặt tên
+  app mới — meta apple-mobile-web-app-title (iOS) + dashboard/manifest.json (PWA
+  Android) → "Thansa OS"/"Thansa". Khai bổ sung anh_goc trong mapping.
+- Upstream thêm LICENSE MIT (74b14b4) → GỠ mục rủi ro "repo gốc không LICENSE" ở
+  DAC-TA mục 8.
+- File launcher mới "JAVIS OS.bat/.app", "Start/Stop JAVIS OS.command", bin/javis-*
+  (Windows/macOS): CHƯA đụng — thuộc giai đoạn máy Windows/macOS (spec 5.2), ghi nhận
+  chờ chủ quyết khi triển khai các máy đó.
+- Test mới upstream test_ignore_files bắt 2 log bộ dò chưa ignore → thêm
+  ops/ban-tin/*.log vào .git/info/exclude cục bộ.
+- tests/run.py: XANH 247/247 (upstream thêm 6 test). tu-kiem-chung XANH. kiem_chung
+  11 patch: XANH. so_patch = 11, mốc gốc a1ad69a (0.37.1).
+- CHƯA phát hành — chờ chủ chạy thử bản me trên máy thử rồi bấm (dự kiến v1.2).
