@@ -123,3 +123,18 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
 - tests/run.py: XANH 247/247 (upstream thêm 6 test). tu-kiem-chung XANH. kiem_chung
   11 patch: XANH. so_patch = 11, mốc gốc a1ad69a (0.37.1).
 - CHƯA phát hành — chờ chủ chạy thử bản me trên máy thử rồi bấm (dự kiến v1.2).
+
+## Đã biết (bổ sung 18/08) — restart máy thử phải kiểm PID giữ cổng
+
+Sự cố: sau khi cập nhật code máy thử, `pkill` theo pattern không khớp dòng lệnh thật
+(tiến trình cũ chạy bằng đường dẫn tương đối `../.venv/...`) → server CŨ vẫn chiếm
+cổng 7777, server mới bind thất bại âm thầm, curl vẫn HTTP 200 (vào server cũ) →
+chủ nghiệm thu trên CODE CŨ mà không ai biết (18/08, vụ changelog "vẫn còn Javis").
+
+Luật từ nay cho mọi lần cập nhật bản chạy thử/chạy tay (máy chạy thật dùng
+update.sh + systemd/docker thì không dính):
+1. Khởi động bằng ĐƯỜNG DẪN TUYỆT ĐỐI của venv.
+2. Kill bằng pattern đầy đủ "uvicorn main:app --host ... --port ...".
+3. Sau restart BẮT BUỘC xác minh: `ss -tlnp | grep <cổng>` — PID phải là tiến trình
+   mới; đừng tin HTTP 200 (server cũ cũng trả 200).
+4. Máy thử VPS: dùng sẵn `/home/thansa/thansa-chay/restart-thu.sh` (đã làm đủ 3 bước).
