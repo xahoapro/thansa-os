@@ -507,3 +507,32 @@
   dieu_kien_bo: >
     Upstream i18n hoá toàn bộ chuỗi (đưa hết vào hệ key/từ điển gốc) thì bỏ lớp
     phủ, đóng góp bản dịch vào en.json chính thức.
+
+- id: P016
+  ten: "app.js: chuỗi hiển thị + marker file-open → Thansa"
+  y_dinh: >
+    P010 cố ý chỉ đụng 2 dòng app.js (bẫy encoding) nên còn sót các chuỗi HIỂN THỊ
+    "Javis": "Javis đang suy nghĩ", "Bắt đầu dùng Javis →", "bảo vệ Javis", "Javis
+    đang đọc lại/làm việc", "chuẩn cho Javis", và marker "[FILE ĐANG MỞ trong trình
+    sửa của Javis:". Marker này CLAUDE.md (P012) đã đổi thành "của Thansa:" nên app.js
+    phải khớp. Sửa bằng thao tác BYTE (giữ encoding hỗn hợp). GIỮ: JavisBackground/
+    JavisSessions/JavisEditorCmds, javis.* localStorage, JAVIS_*.
+  commit: "[me] P016: app.js chuoi hien thi + marker file-open Thansa"
+  diem_neo:
+    - file: dashboard/app.js
+      ky_hieu: "Bắt đầu dùng Thansa"
+    - file: dashboard/app.js
+      ky_hieu: "trình sửa của Thansa"
+  vung_theo_doi:
+    - dashboard/app.js
+  anh_goc:
+    - file: dashboard/app.js
+      doan: 'showActivity("Javis đang suy nghĩ...");'
+    - file: dashboard/app.js
+      doan: '"[FILE ĐANG MỞ trong trình sửa của Javis:", "[File đính kèm"'
+  kiem_chung: >
+    grep -a "Javis" app.js chỉ còn định danh kỹ thuật (JavisBackground/Sessions/
+    EditorCmds, javis.*, JAVIS_*); marker file-open khớp CLAUDE.md ("của Thansa:");
+    node --check app.js OK; git diff app.js đúng các dòng hiển thị.
+  dieu_kien_bo: >
+    Upstream refactor app.js đưa chuỗi vào i18n/branding config thì bỏ patch.
