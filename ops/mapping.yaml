@@ -475,3 +475,35 @@
   dieu_kien_bo: >
     Upstream tách changelog thành dữ liệu có trường brand/tên sản phẩm riêng thì
     chuyển sang điền qua cấu hình, bỏ bộ lọc.
+
+- id: P015
+  ten: "Hoàn thiện ngôn ngữ Anh: lớp phủ dịch UI + từ điển"
+  y_dinh: >
+    Mục ngôn ngữ Anh trước đây thiếu (i18n gốc mới phủ 76 key, ~1130 chuỗi hiển thị
+    còn cứng trong code). Bổ sung bằng LỚP PHỦ dịch lúc hiển thị (dashboard/i18n/
+    dich-en.js) + từ điển exact-match (dashboard/i18n/en-goi.json, 1130 cặp
+    việt→anh). Chỉ chạy khi ui_lang=en; chỉ thay text node + attribute hiển thị
+    khớp nguyên chuỗi, không đụng HTML/code gốc → 0 cửa XSS, 0 xung đột vòng trộn
+    (chỉ thêm 1 dòng <script> trong index.html). Chuỗi upstream mới thêm chưa có
+    trong từ điển thì giữ tiếng Việt (đúng luật suy biến i18n gốc). Tài liệu EN
+    (docs/*.en.md) đi ở P016.
+  commit: "[me] P015: hoan thien ngon ngu Anh - lop phu dich UI + tu dien"
+  diem_neo:
+    - file: dashboard/i18n/dich-en.js
+      ky_hieu: "en-goi.json"
+    - file: dashboard/index.html
+      ky_hieu: "dich-en.js"
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "{"
+  vung_theo_doi:
+    - "dashboard/index.html: khối nạp script i18n"
+    - dashboard/i18n/
+  anh_goc:
+    - file: dashboard/index.html
+      doan: '<script src="/static/i18n/index.js?v=1"></script>'
+  kiem_chung: >
+    tests/run.py i18n XANH; đặt ui_lang=en mở dashboard: menu/nút/nhãn hiện tiếng
+    Anh; node --check dich-en.js OK; en-goi.json là JSON hợp lệ ~1130 cặp.
+  dieu_kien_bo: >
+    Upstream i18n hoá toàn bộ chuỗi (đưa hết vào hệ key/từ điển gốc) thì bỏ lớp
+    phủ, đóng góp bản dịch vào en.json chính thức.
