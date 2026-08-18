@@ -536,3 +536,41 @@
     node --check app.js OK; git diff app.js đúng các dòng hiển thị.
   dieu_kien_bo: >
     Upstream refactor app.js đưa chuỗi vào i18n/branding config thì bỏ patch.
+
+- id: P017
+  ten: "Bản dịch EN dựng sẵn (Option B): build-en.py + server phục vụ theo cookie"
+  y_dinh: >
+    Giao diện English phủ 100% (kể cả hộp thoại native, chuỗi ghép biến) bằng cách
+    DỊCH SẴN TRONG SOURCE thay vì overlay DOM. ops/build-en.py áp từ điển en-goi.json
+    vào string literal (JS) + text node/attribute (HTML), GIỮ NGUYÊN khung code (kiểm
+    chứng bất biến). Server sinh dashboard/en/ lúc khởi động (file sinh, KHÔNG commit,
+    gitignore cục bộ), phục vụ khi cookie thansa_lang=en, file chưa dịch rơi về bản gốc
+    + overlay. Client đặt cookie + reload khi đổi ngôn ngữ. Migrate DẦN từng file.
+    Mỗi vòng trộn: chạy lại build-en, chỉ chuỗi MỚI cần dịch (rẻ). Pilot: console.js
+    + index.html.
+  commit: "[me] P017: ban dich EN dung san (build-en.py + server cookie switch)"
+  diem_neo:
+    - file: ops/build-en.py
+      ky_hieu: "def dich_js"
+    - file: server/main.py
+      ky_hieu: "_sinh_ban_dich_en"
+    - file: server/main.py
+      ky_hieu: "thansa_lang"
+    - file: dashboard/console.js
+      ky_hieu: 'document.cookie = "thansa_lang='
+  vung_theo_doi:
+    - "server/main.py: middleware _phuc_vu_en, root(), startup _sinh_ban_dich_en"
+    - "dashboard/console.js: handler đổi ui_lang"
+    - ops/build-en.py
+    - dashboard/i18n/en-goi.json
+  anh_goc:
+    - file: dashboard/console.js
+      doan: 'await saveSetting("locale", { ui_lang: selUi.value });'
+    - file: server/main.py
+      doan: 'app.mount("/static", StaticFiles(directory=str(DASHBOARD_PATH)), name="static")'
+  kiem_chung: >
+    build-en.py --check khung code JS giống hệt; node --check en/console.js OK;
+    đặt cookie thansa_lang=en, GET / trả en/index.html (title Thansa OS, nav tiếng
+    Anh); GET /static/console.js?v= trả bản en. Bỏ cookie → bản gốc tiếng Việt.
+  dieu_kien_bo: >
+    Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó.
