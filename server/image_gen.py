@@ -112,7 +112,7 @@ def _attachments_dir(vault: Path) -> Path:
 
 
 BRAND_SOFTWARE = "Thansa OS"
-BRAND_SOURCE = ""  # chưa có tên miền Thansa - không bịa; rỗng thì bỏ chunk Source (nhiem-vu GD2b)
+BRAND_SOURCE = "https://tradingauto.org"
 
 
 def _strip_c2pa_on() -> bool:
