@@ -414,3 +414,27 @@
     bản thân là Thansa trên mọi engine (kể cả CLI đọc CLAUDE.md).
   dieu_kien_bo: >
     Upstream đưa persona/mô tả vào branding config thì bỏ patch, đặt qua cấu hình.
+
+- id: P013
+  ten: "BRAND_SOURCE ảnh = tradingauto.org"
+  y_dinh: >
+    Chủ chốt domain chính thức (17-18/08): ảnh bot tạo gắn lại chunk Source =
+    https://tradingauto.org (P009 từng để rỗng vì chưa có domain). Câu mô tả
+    Content Credentials trong console.js đổi theo.
+  commit: "[me] P013: BRAND_SOURCE anh tradingauto.org"
+  diem_neo:
+    - file: server/image_gen.py
+      ky_hieu: "BRAND_SOURCE"
+    - file: dashboard/console.js
+      ky_hieu: "tradingauto.org"
+  vung_theo_doi:
+    - server/image_gen.py
+    - "dashboard/console.js: khối mô tả Content Credentials"
+  anh_goc:
+    - file: server/image_gen.py
+      doan: 'BRAND_SOURCE = "https://javisos.com"'
+  kiem_chung: >
+    tests/run.py image_gen XANH; ảnh sinh ra chứa chuỗi tradingauto.org
+    (chunk Source) và "Thansa OS" (chunk Software).
+  dieu_kien_bo: >
+    Đổi domain thì sửa hằng này; upstream đưa brand ảnh vào config thì bỏ patch.
