@@ -5037,6 +5037,9 @@
         // THEO THIẾT BỊ (người dùng mở Javis từ nhiều máy), nên trải nghiệm phải tức thì và
         // không được phụ thuộc vào việc gọi mạng có thành công hay không.
         try { await JavisI18n.setLang(selUi.value); } catch (e) { /* noop */ }
+        // Đặt cookie để server biết phục vụ bản dịch dashboard/en/ (bản Thansa). Đổi ngôn ngữ
+        // giao diện thì tải lại để nạp đúng bộ file đã dịch sẵn.
+        document.cookie = "thansa_lang=" + (selUi.value === "en" ? "en" : "vi") + ";path=/;max-age=31536000;samesite=lax";
         await saveSetting("locale", { ui_lang: selUi.value });
         // Vẽ lại trang Cài đặt bằng từ điển mới - không thì phần khung (tiêu đề nhóm, thẻ,
         // nút) vẫn tiếng cũ tới lần mở sau, nhìn như đổi ngôn ngữ "không ăn".
