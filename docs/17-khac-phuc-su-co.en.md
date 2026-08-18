@@ -29,7 +29,7 @@ Many errors disappear after one of these, so try them before worrying:
 | Old chat images show gray square **Image Expired** | By design: `attachments/` and `inbox/` are cache zones, files older than 30 days (or exceeding 300MB) are cleaned. See "Images and old files disappear" below to learn how to keep them or disable cleanup. |
 | Voice / microphone won't enable | Browsers only grant microphone access over **HTTPS** (or localhost). Opening via `http://<ip>:7777` will always be blocked. Use `https://` URL (Hostinger `*.hstgr.cloud`, Cloudflare Tunnel, or custom domain with SSL). See [Branding & Custom Domain](15-thuong-hieu-ten-mien.md). |
 | Finished updating in app but **version didn't change** | Wait longer; if it still shows old version, check update log: `update.log` in state folder (`server/update.log` locally, `/data/state/update.log` on Docker), or `docker compose logs`. |
-| **`javis` reports 401** or "token invalid" | Token is wrong or revoked. Create a new one in **Account > API Tokens** then `javis login <address>` again. See [Javis CLI](24-cli-terminal.md). |
+| **`javis` reports 401** or "token invalid" | Token is wrong or revoked. Create a new one in **Account > API Tokens** then `javis login <address>` again. See [Thansa CLI](24-cli-terminal.md). |
 | **`javis task add` / `javis brain ls` report 403** | Your token is **chat-only** type. These commands need **full-access** token - create another one in Account > API Tokens. |
 | **`javis up` reports can't find Thansa installation** | That's correct: the CLI package doesn't include the server inside. Set `JAVIS_HOME` pointing to the Thansa folder, run commands from inside that folder, or `javis login <address>` to connect to a running Thansa elsewhere. |
 
