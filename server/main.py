@@ -8165,6 +8165,21 @@ async def autostart_post(enabled: str = Form(...)):
 
 
 # ---- Nhật ký cập nhật (changelog) -------------------------------------------
+# Bản Thansa: CHANGELOG/ANNOUNCEMENTS lấy từ upstream (file lẫn GitHub) nhắc "Javis" —
+# lọc thành "Thansa" LÚC HIỂN THỊ thay vì sửa file (CHANGELOG là file churn cao nhất
+# repo, sửa thẳng là mỗi vòng trộn xung đột). Trang Nhật ký là trang ĐỌC TIN nên chủ
+# chốt (18/08) quét SẠCH mọi dạng javis, kể cả token kỹ thuật trong lời kể
+# (javis_* → thansa_*, JAVIS_* → THANSA_*...) — tên THẬT trong code không đổi.
+# Ngoại lệ duy nhất: javisos.com là URL thật, giữ nguyên.
+_REBRAND_GIU = "\x00JVOS\x00"
+
+
+def _rebrand_hien_thi(s: str) -> str:
+    s = s.replace("javisos.com", _REBRAND_GIU)
+    s = s.replace("JAVIS", "THANSA").replace("Javis", "Thansa").replace("javis", "thansa")
+    return s.replace(_REBRAND_GIU, "javisos.com")
+
+
 _CL_VER_RE = re.compile(r"^##\s+\[?(\d+\.\d+\.\d+)\]?\s*[-:]?\s*(.*)$")
 _CL_SEC_RE = re.compile(r"^###\s+(.+?)\s*$")
 _CL_ITEM_RE = re.compile(r"^[-*]\s+(.+?)\s*$")
@@ -8174,7 +8189,7 @@ def _parse_changelog(md: str):
     """Parse CHANGELOG.md → [{version, date, sections:[{title, items:[...]}]}].
     Nhận khối '## [x.y.z] - ngày', mục '### Nhóm', dòng '- việc'."""
     releases, cur, sec = [], None, None
-    for line in (md or "").splitlines():
+    for line in _rebrand_hien_thi(md or "").splitlines():
         mv = _CL_VER_RE.match(line)
         if mv:
             cur = {"version": mv.group(1), "date": (mv.group(2) or "").strip(), "sections": []}
@@ -8214,7 +8229,7 @@ def _parse_announcements(raw: str):
         if not isinstance(row, dict):
             continue
         item_id = text(row.get("id"), 120)
-        title = text(row.get("title"), 180)
+        title = _rebrand_hien_thi(text(row.get("title"), 180))
         if not item_id or not title or not re.fullmatch(r"[\w.:-]+", item_id, flags=re.UNICODE):
             continue
         expires = text(row.get("expires_at"), 32)
@@ -8228,7 +8243,7 @@ def _parse_announcements(raw: str):
             priority = "normal"
         cta_in = row.get("cta") if isinstance(row.get("cta"), dict) else {}
         cta = {}
-        label = text(cta_in.get("label"), 80)
+        label = _rebrand_hien_thi(text(cta_in.get("label"), 80))
         action = text(cta_in.get("action"), 32).lower()
         url = text(cta_in.get("url"), 500)
         if label:
@@ -8241,8 +8256,8 @@ def _parse_announcements(raw: str):
             "id": item_id,
             "kind": kind,
             "title": title,
-            "summary": text(row.get("summary"), 500),
-            "body": text(row.get("body"), 3000),
+            "summary": _rebrand_hien_thi(text(row.get("summary"), 500)),
+            "body": _rebrand_hien_thi(text(row.get("body"), 3000)),
             "published_at": text(row.get("published_at"), 32),
             "expires_at": expires,
             "priority": priority,
