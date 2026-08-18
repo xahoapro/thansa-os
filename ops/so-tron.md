@@ -138,3 +138,22 @@ update.sh + systemd/docker thì không dính):
 3. Sau restart BẮT BUỘC xác minh: `ss -tlnp | grep <cổng>` — PID phải là tiến trình
    mới; đừng tin HTTP 200 (server cũ cũng trả 200).
 4. Máy thử VPS: dùng sẵn `/home/thansa/thansa-chay/restart-thu.sh` (đã làm đủ 3 bước).
+
+## Vòng ngôn ngữ Anh 2026-08-18 — P015 UI + docs EN (28/28)
+
+- Chủ báo mục tiếng Anh thiếu (i18n gốc chỉ phủ 76 key, ~1130 chuỗi hiển thị còn
+  cứng trong code). Không i18n-hoá từng chuỗi (diff diện rộng, xung đột mỗi vòng
+  trộn) mà làm LỚP PHỦ dịch lúc hiển thị: P015 = dashboard/i18n/dich-en.js (đọc
+  text node + attribute, thay khi khớp nguyên chuỗi, chỉ chạy ui_lang=en) +
+  en-goi.json (1130 cặp việt→anh). Diff: 1 file JS + 1 file JSON + 1 dòng <script>.
+- Tài liệu: docs/*.en.md cho cả 28 file (27 doc + README), commit dạng chore (file
+  mới, 0 xung đột như ops/). Header song ngữ mỗi file.
+- Cách làm: fan-out subagent HAIKU (rẻ, đúng ý chủ tiết kiệm token) — 6 lô UI + 7 lô
+  docs. Sự cố: đợt 1 (13 subagent) chết đồng loạt do GIỚI HẠN PHIÊN tài khoản (reset
+  5:10 UTC), nhưng 6 lô UI + 8 docs kịp ghi trước khi chết. Gộp UI (dich-1.json hỏng
+  JSON do haiku thoát chuỗi sai ở mảnh regex → phục hồi bằng regex chịu lỗi, giữ
+  190/191 cặp). Đợt 2 (quota mở lại) 5 subagent haiku dịch nốt 20 docs.
+- Bài học: (1) subagent dịch dùng haiku tiết kiệm; (2) haiku dễ tạo JSON hỏng với
+  chuỗi chứa code/regex — luôn có bước phục hồi khoan dung + validate; (3) giới hạn
+  phiên tài khoản làm chết cả loạt subagent, nên commit phần xong sớm kẻo mất.
+- so_patch = 13 (P015 là patch [me] thứ 13). Docs không cần mapping (additive).
