@@ -438,3 +438,40 @@
     (chunk Source) và "Thansa OS" (chunk Software).
   dieu_kien_bo: >
     Đổi domain thì sửa hằng này; upstream đưa brand ảnh vào config thì bỏ patch.
+
+- id: P014
+  ten: "Lọc rebrand lúc hiển thị: nhật ký cập nhật + thông báo cộng đồng"
+  y_dinh: >
+    Trang Nhật ký cập nhật + thông báo đọc CHANGELOG.md/ANNOUNCEMENTS.json từ
+    upstream (cả file cục bộ lẫn bản mới trên GitHub) nên luôn nhắc "Javis" sau
+    mỗi lần cập nhật (chủ phát hiện 18/08 trên máy thử). Sửa file gốc là chống lại
+    file churn cao nhất repo → thay bằng BỘ LỌC lúc hiển thị (_rebrand_hien_thi)
+    áp vào _parse_changelog (toàn văn md) + _parse_announcements (title/summary/
+    body/label). Chủ chốt 18/08 (lần 2): trang Nhật ký là trang ĐỌC TIN → quét SẠCH
+    mọi dạng javis kể cả token kỹ thuật trong lời kể (javis_*→thansa_*,
+    JAVIS_*→THANSA_*…); tên THẬT trong code/hệ thống không đổi — đánh đổi được
+    chấp nhận: lời kể cũ nhắc tên biến/file sẽ hiện tên rebrand, ai cần tên thật
+    xem tài liệu. Ngoại lệ: URL javisos.com giữ nguyên. id/url/kind không lọc.
+    Mọi bản cập nhật tương lai của upstream tự hiện Thansa, không cần đụng CHANGELOG.
+  commit: "[me] P014: loc rebrand luc hien thi nhat ky cap nhat + thong bao"
+  diem_neo:
+    - file: server/main.py
+      ky_hieu: "_rebrand_hien_thi"
+    - file: server/main.py
+      ky_hieu: "def _parse_changelog"
+    - file: server/main.py
+      ky_hieu: "def _parse_announcements"
+  vung_theo_doi:
+    - "server/main.py: khối Nhật ký cập nhật (_parse_changelog/_parse_announcements/changelog_index)"
+  anh_goc:
+    - file: server/main.py
+      doan: "    releases, cur, sec = [], None, None"
+    - file: server/main.py
+      doan: '            "summary": text(row.get("summary"), 500),'
+  kiem_chung: >
+    Mở trang Nhật ký cập nhật sau khi trộn nền upstream mới: các bullet nhắc tên
+    sản phẩm hiện "Thansa"; tests/run.py update + thong_bao_ban_da_cai XANH;
+    GET /changelog không còn chuỗi "Javis" đứng độc lập.
+  dieu_kien_bo: >
+    Upstream tách changelog thành dữ liệu có trường brand/tên sản phẩm riêng thì
+    chuyển sang điền qua cấu hình, bỏ bộ lọc.
