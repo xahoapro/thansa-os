@@ -157,3 +157,21 @@ update.sh + systemd/docker thì không dính):
   chuỗi chứa code/regex — luôn có bước phục hồi khoan dung + validate; (3) giới hạn
   phiên tài khoản làm chết cả loạt subagent, nên commit phần xong sớm kẻo mất.
 - so_patch = 13 (P015 là patch [me] thứ 13). Docs không cần mapping (additive).
+
+## Vòng quét vét cạn ngôn ngữ Anh 2026-08-18 (chủ báo còn nhiều tiếng Việt)
+
+- Vấn đề: lớp phủ P015 chỉ phủ chuỗi đã trích thủ công (~1130), còn sót nhiều chuỗi
+  ghép động/template mà regex bỏ qua → trang Kết nối và nhiều nơi còn tiếng Việt.
+- Cách làm (đúng đề xuất chủ "1 bot kiểm tra + 1 bot vá"): thả 11 bot HAIKU đọc thẳng
+  source dashboard (console.js chia 4, app.js, chatbots/index.html, usage/chat-render,
+  studio/dataview, sessions/voice/graph, editor/term/file/marks, các file nhỏ), mỗi bot
+  VỪA nhận diện chuỗi hiển thị (LLM phân biệt câu hiển thị vs code tốt hơn regex) VỪA
+  dịch, tách chuỗi ghép biến theo ${..}. Cộng 6 bot trước (catalog + UI sót).
+- Từ điển en-goi.json: 1130 → 1833 (catalog+UI sót) → 2457 cặp (quét vét cạn). Phục hồi
+  JSON khoan dung cho lô haiku hỏng; sửa Javis→Thansa trong mọi bản dịch; bỏ 19 key
+  nghi là mảnh code.
+- P016: vá app.js — P010 cố ý chỉ đụng 2 dòng nên còn 10 chuỗi hiển thị "Javis"
+  (marker file-open, "Bắt đầu dùng Javis", "Javis đang suy nghĩ"...). Sửa byte-an-toàn;
+  marker giờ khớp CLAUDE.md ("của Thansa:"). so_patch = 14.
+- Bài học: overlay khớp-nguyên-text-node hợp cho chuỗi hoàn chỉnh; chuỗi ghép biến phải
+  tách segment. Bot đọc source hiệu quả hơn regex để lọc code vs hiển thị.
