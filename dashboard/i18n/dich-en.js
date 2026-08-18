@@ -19,16 +19,27 @@
   try { lang = localStorage.getItem("javis.ui_lang") || ""; } catch (e) {}
   if (lang !== "en") return;
 
-  var TU = null;                 // Map chuỗi việt -> english
-  var ATTRS = ["title", "placeholder", "aria-label", "alt", "data-ic-title"];
-  var BO_QUA = { SCRIPT: 1, STYLE: 1, CODE: 1, PRE: 1 };
+  var TU = null;                 // Map chuỗi việt (nguyên) -> english
+  var TU_CHUAN = null;           // Map chuỗi việt (gộp khoảng trắng) -> english, bắt chuỗi nhiều dòng
+  var ATTRS = ["title", "placeholder", "aria-label", "alt", "data-ic-title", "value", "data-tip"];
+  var BO_QUA = { SCRIPT: 1, STYLE: 1, CODE: 1, PRE: 1, TEXTAREA: 1 };
+
+  // Gộp mọi chuỗi khoảng trắng (kể cả \n, thụt dòng của template) thành 1 dấu cách.
+  function chuan(s) { return s.replace(/\s+/g, " ").trim(); }
+
+  // Tra: khớp nguyên trước, rồi khớp theo bản gộp khoảng trắng.
+  function tra(s) {
+    var en = TU.get(s);
+    if (en !== undefined) return en;
+    return TU_CHUAN.get(chuan(s));
+  }
 
   function dichText(node) {
     var goc = node.nodeValue;
     if (!goc) return;
     var s = goc.trim();
     if (s.length < 2) return;
-    var en = TU.get(s);
+    var en = tra(s);
     if (en !== undefined && en !== s) {
       // giữ khoảng trắng bao quanh; dùng hàm thay thế để "$" trong en không bị hiểu là pattern
       node.nodeValue = goc.replace(s, function () { return en; });
@@ -40,7 +51,7 @@
       var a = ATTRS[i];
       if (!el.hasAttribute || !el.hasAttribute(a)) continue;
       var v = el.getAttribute(a);
-      var en = v && TU.get(v.trim());
+      var en = v && tra(v.trim());
       if (en !== undefined && en !== v) el.setAttribute(a, en);
     }
   }
@@ -66,8 +77,27 @@
     }
   }
 
+  // alert/confirm/prompt là HỘP THOẠI NATIVE của trình duyệt — KHÔNG nằm trong DOM nên
+  // TreeWalker/observer không với tới. Bọc để dịch tham số thông điệp trước khi hiện.
+  function bocHopThoai() {
+    ["alert", "confirm", "prompt"].forEach(function (ten) {
+      var goc = window[ten];
+      if (typeof goc !== "function") return;
+      window[ten] = function (msg) {
+        if (typeof msg === "string") {
+          var en = tra(msg.trim());
+          if (en !== undefined) msg = en;
+        }
+        return goc.call(window, msg, arguments[1]);
+      };
+    });
+  }
+
   function batDau(tuDien) {
     TU = new Map(Object.entries(tuDien));
+    TU_CHUAN = new Map();
+    Object.keys(tuDien).forEach(function (k) { TU_CHUAN.set(chuan(k), tuDien[k]); });
+    bocHopThoai();
     dichCay(document.body);
     var obs = new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) {
