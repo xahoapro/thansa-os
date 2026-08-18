@@ -17,6 +17,23 @@
   "use strict";
   var lang = "";
   try { lang = localStorage.getItem("javis.ui_lang") || ""; } catch (e) {}
+
+  // Đồng bộ cookie thansa_lang theo lựa chọn ngôn ngữ, để server phục vụ bản dịch sẵn
+  // dashboard/en/ (P017). Người dùng đã chọn EN từ trước (chỉ có localStorage, chưa có
+  // cookie) sẽ được nâng cấp: đặt cookie rồi tải lại MỘT lần để nạp bộ file đã dịch.
+  try {
+    var muon = (lang === "en") ? "en" : "vi";
+    var dangCo = (document.cookie.match(/(?:^|;\s*)thansa_lang=([^;]+)/) || [])[1] || "";
+    if (dangCo !== muon) {
+      document.cookie = "thansa_lang=" + muon + ";path=/;max-age=31536000;samesite=lax";
+      if (!sessionStorage.getItem("thansa_lang_reload")) {
+        sessionStorage.setItem("thansa_lang_reload", "1");
+        location.reload();
+        return;
+      }
+    }
+  } catch (e) {}
+
   if (lang !== "en") return;
 
   var TU = null;                 // Map chuỗi việt (nguyên) -> english
