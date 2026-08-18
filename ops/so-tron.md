@@ -94,3 +94,11 @@ Chỉ ghi thêm (append-only), KHÔNG sửa dòng cũ. Mỗi vòng trộn một 
   phải chạy full suite sau MỌI đợt đổi chuỗi, và soi diff từng dòng file logic.
 - tests 241/241; tu-kiem-chung XANH; so_patch = 10; máy thử (/home/thansa/thansa-chay,
   nhánh me) đã chạy bản này cho chủ nghiệm thu bằng mắt.
+
+## Phát hành thansa-v1.1 (người bấm: quang, 2026-08-18)
+
+- v1.0 + P011 (footer Tradingauto.org, gợi ý image), P012 (mô tả hiển thị: system
+  prompt/skill/plugin/catalog/docs in-app), P013 (BRAND_SOURCE = tradingauto.org).
+- P002 (logo/favicon) VẪN hoãn — chưa có ảnh Thansa.
+- Cổng phát hành: tests 241/241 + tu-kiem-chung XANH (so_patch=11) + chủ đã nghiệm thu
+  bằng mắt trên máy thử.
