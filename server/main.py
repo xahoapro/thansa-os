@@ -232,6 +232,24 @@ app.mount("/static", StaticFiles(directory=str(DASHBOARD_PATH)), name="static")
 
 
 @app.middleware("http")
+async def _phuc_vu_en(request: Request, call_next):
+    """Nếu chọn English và có bản dịch dashboard/en/<file> thì phục vụ nó thay bản gốc.
+    Chỉ chặn /static/*.js|css|html (GET); file chưa dịch rơi xuống mount gốc."""
+    p = request.url.path
+    if (request.method == "GET" and p.startswith("/static/")
+            and p.rsplit(".", 1)[-1] in ("js", "css", "html")
+            and request.cookies.get("thansa_lang") == "en"):
+        rel = p[len("/static/"):]
+        cand = DASHBOARD_PATH / "en" / rel
+        if ".." not in rel and cand.is_file():
+            resp = FileResponse(str(cand))
+            if request.query_params.get("v"):
+                resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            return resp
+    return await call_next(request)
+
+
+@app.middleware("http")
 async def _static_cache_headers(request: Request, call_next):
     """Asset tĩnh có ?v= (cache-bust theo VERSION, index.html tự gắn) → cho cache 1 năm immutable.
     Không có ?v= thì giữ nguyên (ETag/Last-Modified của StaticFiles vẫn lo revalidate).
@@ -611,9 +629,25 @@ for _p in (BRAINS_DIR, OBSIDIAN_VAULT_PATH):
         pass
 
 
+def _lang_en(request: Request) -> bool:
+    """Người dùng đã chọn giao diện English? (cookie do client đặt theo javis.ui_lang)."""
+    return request.cookies.get("thansa_lang") == "en"
+
+
+def _dashboard_file(rel: str, en: bool) -> Path:
+    """Trả file dashboard/en/<rel> nếu đã có bản dịch và đang chọn EN, không thì bản gốc.
+    Migrate dần: file nào có bản en/ thì tự được phục vụ, còn lại vẫn tiếng Việt + overlay."""
+    if en:
+        cand = DASHBOARD_PATH / "en" / rel
+        if cand.is_file():
+            return cand
+    return DASHBOARD_PATH / rel
+
+
 @app.get("/")
-async def root():
-    html = (DASHBOARD_PATH / "index.html").read_text(encoding="utf-8")
+async def root(request: Request = None):
+    en = _lang_en(request) if request is not None else False
+    html = _dashboard_file("index.html", en).read_text(encoding="utf-8")
     # Ép khoá cache của MỌI file .js/.css theo phiên bản app. Trước đây mỗi file có ?v=NN
     # gõ tay, và suốt hàng chục bản không ai nhớ tăng console.js?v=72 nên trình duyệt cứ
     # dùng console.js CŨ trong cache - máy chủ cập nhật thật mà giao diện đóng băng, mọi
@@ -13081,6 +13115,34 @@ async def telegram_send_file(payload: dict = Body(...)):
         except Exception:
             pass
     return {"ok": ok, "error": err}
+
+
+@app.on_event("startup")
+async def _sinh_ban_dich_en():
+    """Sinh bản dịch tiếng Anh của dashboard (dashboard/en/) từ ops/build-en.py + từ điển.
+    Bản Thansa: giao diện EN phục vụ file dịch sẵn (Option B), sinh lúc khởi động nên máy
+    nào chạy release cũng tự có, KHÔNG cần commit file sinh. Chỉ sinh file mới/cũ hơn nguồn."""
+    def _sinh():
+        import subprocess
+        build = Path(__file__).parent.parent / "ops" / "build-en.py"
+        dic = DASHBOARD_PATH / "i18n" / "en-goi.json"
+        endir = DASHBOARD_PATH / "en"
+        if not build.is_file() or not dic.is_file():
+            return
+        moc = max(build.stat().st_mtime, dic.stat().st_mtime)
+        for f in sorted(DASHBOARD_PATH.glob("*.js")) + sorted(DASHBOARD_PATH.glob("*.html")):
+            ra = endir / f.name
+            if ra.is_file() and ra.stat().st_mtime >= max(moc, f.stat().st_mtime):
+                continue  # đã mới hơn nguồn + script + từ điển → khỏi sinh lại
+            try:
+                subprocess.run([sys.executable, str(build), str(f), str(ra)],
+                               timeout=60, capture_output=True, **winproc.kwargs_no_window())
+            except Exception:
+                pass
+    try:
+        await asyncio.to_thread(_sinh)
+    except Exception:
+        pass
 
 
 @app.on_event("startup")
