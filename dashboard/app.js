@@ -328,7 +328,7 @@ function sendMessage(text) {
   // đính kèm một lần. Gửi lại mỗi lượt vì engine API dựng lại payload từ SQLite mỗi lần,
   // không giữ trạng thái "đang mở file nào" giữa các lượt.
   if (pinnedNote) {
-    outMsg = `[FILE ĐANG MỞ trong trình sửa của Javis: ${pinnedNote.abs}\n`
+    outMsg = `[FILE ĐANG MỞ trong trình sửa của Thansa: ${pinnedNote.abs}\n`
       + `Đây là file người dùng ĐANG LÀM VIỆC TRÊN ĐÓ - coi như đầu vào của cuộc trò chuyện này. `
       + `Đọc nó trước khi trả lời. Khi được yêu cầu sửa/viết thêm/dọn lại mà không nói rõ file nào `
       + `thì ghi thẳng vào chính file này.]\n\n${outMsg}`;
@@ -339,7 +339,7 @@ function sendMessage(text) {
   turns[sid] = { text: "", bubble: null, spoke: false, running: true };
   setSessionRunning(sid, true);
   setOrbState("thinking", "ĐANG SUY NGHĨ");
-  showActivity("Javis đang suy nghĩ...");   // hiện NGAY trong khung chat, không đợi server báo
+  showActivity("Thansa đang suy nghĩ...");   // hiện NGAY trong khung chat, không đợi server báo
   syncActiveUI();
   // Server đóng dấu model đang chạy cho phiên ngay từ tin đầu -> bar hiện "ghim" tại chỗ.
   try { if (window.JavisModelBar) window.JavisModelBar.noteStamped(sid); } catch (e) {}
@@ -470,7 +470,7 @@ function lastUserText() {
 // (hoặc 0 nếu tin lưu từ trước bản này chưa có mốc giờ, khi đó phần giờ được ẩn).
 // Khối ngữ cảnh do CHÍNH dashboard chèn vào ĐẦU tin trước khi gửi: file đang ghim trong trình
 // sửa, đường dẫn file đính kèm. Chúng là chỉ dẫn cho model, không phải câu người dùng gõ.
-const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Javis:", "[File đính kèm"];
+const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm"];
 
 // Gỡ mấy khối đó ra để lấy lại ĐÚNG câu người dùng đã gõ.
 //
@@ -1020,7 +1020,7 @@ async function checkVault() {
       const miss = d.items.filter(i => !i.present).map(i => i.label).join(", ");
       vbText.textContent = d.ok
         ? `Vault chạy được, nhưng thiếu: ${miss}.`
-        : `Cấu trúc vault chưa chuẩn cho Javis - thiếu: ${miss}.`;
+        : `Cấu trúc vault chưa chuẩn cho Thansa - thiếu: ${miss}.`;
       vaultBanner.classList.add("show");
     }
   } catch (e) {}
@@ -1474,7 +1474,7 @@ async function doReflect(auto) {
   reflecting = true;
   turnsSinceReflect = 0;
   if (!auto && learnBtn) { learnBtn.disabled = true; learnBtn.innerHTML = ic("brain") + " Đang học..."; }
-  if (memResult) memResult.innerHTML = auto ? ic("brain") + " Đang tự học nền..." : "Javis đang đọc lại hội thoại và rút ra ký ức...";
+  if (memResult) memResult.innerHTML = auto ? ic("brain") + " Đang tự học nền..." : "Thansa đang đọc lại hội thoại và rút ra ký ức...";
   try {
     const fd = new FormData();
     fd.append("brain", currentBrainPath());
@@ -1545,7 +1545,7 @@ function renderChips() {
     chip.className = "attach-chip pinned";
     chip.setAttribute("role", "button");
     chip.tabIndex = 0;
-    chip.title = `${pinnedNote.abs}\nJavis đang làm việc trên file này - bấm để mở lại trong trình sửa`;
+    chip.title = `${pinnedNote.abs}\nThansa đang làm việc trên file này - bấm để mở lại trong trình sửa`;
     chip.innerHTML = `<div class="chip-ico">${ic("file-text")}</div>`
       + `<div class="chip-info"><span class="chip-name">${escapeHtml(pinnedNote.name)}</span>`
       + `<span class="chip-meta">đang mở - bấm để sửa tiếp</span></div>`
@@ -2061,7 +2061,7 @@ async function initAuthGate() {
     if (_wizardMandatory) {
       const pass = document.getElementById("wzPass"); if (pass) pass.required = true;
       const tw = document.getElementById("wzTokenWrap"); if (tw) tw.style.display = "";
-      const note = document.getElementById("wzErr"); if (note) note.textContent = "Đặt tài khoản + mật khẩu (≥8 ký tự) + MÃ THIẾT LẬP để bảo vệ Javis trên server công khai.";
+      const note = document.getElementById("wzErr"); if (note) note.textContent = "Đặt tài khoản + mật khẩu (≥8 ký tự) + MÃ THIẾT LẬP để bảo vệ Thansa trên server công khai.";
     }
     wz.classList.add("open");
   } else {
@@ -2307,12 +2307,12 @@ if (document.getElementById("wzFinish")) {
     const pass = document.getElementById("wzPass").value;
     const prov = (document.querySelector('input[name="wzprov"]:checked') || {}).value || "anthropic-cli";
     const btn = document.getElementById("wzFinish"); btn.disabled = true; btn.textContent = "Đang lưu…";
-    if (_wizardMandatory && !pass) { err.textContent = "Bắt buộc đặt mật khẩu khi chạy trên server công khai."; btn.disabled = false; btn.textContent = "Bắt đầu dùng Javis →"; return; }
+    if (_wizardMandatory && !pass) { err.textContent = "Bắt buộc đặt mật khẩu khi chạy trên server công khai."; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; return; }
     try {
       if (pass) {
         const _tok = document.getElementById("wzToken");
         const d = await (await fetch("/auth/setup", { method: "POST", body: _fd({ username: user || "admin", password: pass, setup_token: _tok ? _tok.value.trim() : "" }) })).json();
-        if (!d.ok) { err.textContent = d.error || "Đặt mật khẩu lỗi"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Javis →"; return; }
+        if (!d.ok) { err.textContent = d.error || "Đặt mật khẩu lỗi"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; return; }
       }
       await fetch("/settings", { method: "POST", body: _fd({ section: "general", data: JSON.stringify({ workspace_name: ws, setup_done: true }) }) });
       const _PM = { "anthropic-cli": "sonnet", "openai-oauth": "gpt-5.5", "openrouter": "openai/gpt-4o-mini" };
@@ -2321,7 +2321,7 @@ if (document.getElementById("wzFinish")) {
       if (prov === "openrouter" && _ork && _ork.trim()) _mp.openrouter_key = _ork.trim();
       await fetch("/settings", { method: "POST", body: _fd({ section: "model", data: JSON.stringify(_mp) }) });
       location.reload();
-    } catch (e) { err.textContent = "Lỗi mạng"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Javis →"; }
+    } catch (e) { err.textContent = "Lỗi mạng"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; }
   });
 }
 
