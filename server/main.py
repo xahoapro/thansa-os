@@ -13858,10 +13858,14 @@ async def _sinh_ban_dich_en():
                                timeout=60, capture_output=True, **winproc.kwargs_no_window())
             except Exception:
                 pass
-    try:
-        await asyncio.to_thread(_sinh)
-    except Exception:
-        pass
+    # Sinh ở NỀN để không chặn server bind cổng (mỗi file spawn node --check ~1-2s).
+    # Trong lúc chưa sinh xong, file EN chưa có thì phục vụ bản gốc + overlay (không vỡ).
+    async def _chay():
+        try:
+            await asyncio.to_thread(_sinh)
+        except Exception:
+            pass
+    asyncio.create_task(_chay())
 
 
 @app.on_event("startup")
