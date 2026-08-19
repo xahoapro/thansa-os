@@ -20,17 +20,21 @@ from pathlib import Path
 
 OPS = Path(__file__).resolve().parent
 DICT = json.load(open(OPS.parent / "dashboard/i18n/en-goi.json", encoding="utf-8"))
+# Bản gộp khoảng trắng: bắt text node HTML nhiều dòng / thụt dòng khớp cùng một câu.
+_WS = re.compile(r"\s+")
+DICT_CHUAN = {_WS.sub(" ", k).strip(): v for k, v in DICT.items()}
 VN = re.compile(r'[ăâđêôơưàáảãạằắẳẵặầấẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ]', re.I)
 
 def tra(noi_dung):
-    """Dịch nội dung một mảnh: khớp nguyên (đã trim) rồi áp lại khoảng trắng bao quanh."""
+    """Dịch nội dung một mảnh: khớp nguyên (đã trim), rồi khớp theo bản gộp khoảng trắng."""
     s = noi_dung.strip()
     if not s or not VN.search(s):
         return None
     en = DICT.get(s)
     if en is None:
+        en = DICT_CHUAN.get(_WS.sub(" ", s))   # câu nhiều dòng → khớp bản 1 dòng
+    if en is None:
         return None
-    # giữ khoảng trắng đầu/cuối gốc
     dau = noi_dung[:len(noi_dung) - len(noi_dung.lstrip())]
     cuoi = noi_dung[len(noi_dung.rstrip()):]
     return dau + en + cuoi
