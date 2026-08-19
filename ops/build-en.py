@@ -230,11 +230,49 @@ def dich_html(src):
     src = re.sub(r'(>)([^<>{}]*[^\s<>{}][^<>{}]*)(?=<)', lambda m: (m.group(1) + (tra(m.group(2)) or m.group(2))) if VN.search(m.group(2)) else m.group(0), src)
     return src
 
+def _thu_thap(src, ra):
+    """Thu MỌI chuỗi hiển thị tiếng Việt CHƯA có trong từ điển (tra trả None), qua scanner
+    đúng. Dùng để biết còn thiếu gì cần dịch (không sinh file)."""
+    def _gom(q, body):
+        if not VN.search(body):
+            return body
+        if q == "`":
+            for seg in re.split(r'(\$\{[^{}]*\})', body):
+                if seg.startswith("${"):
+                    # đệ quy nông: gom string trong biểu thức
+                    for qq, bb in re.findall(r"""(['"])((?:\\.|(?!\1).)*)\1""", seg):
+                        p = unesc(bb, qq)
+                        if p and VN.search(p) and tra(p) is None:
+                            ra.add(p.strip())
+                    continue
+                for m in re.findall(r'(?:title|placeholder|aria-label|alt|value)=(["\'])(.*?)\1', seg):
+                    if VN.search(m[1]) and tra(m[1]) is None: ra.add(m[1].strip())
+                for m in re.findall(r'>([^<>{}]*[^\s<>{}][^<>{}]*)(?=<)', seg):
+                    if VN.search(m) and tra(m) is None: ra.add(m.strip())
+                s = seg.strip()
+                if "<" not in s and ">" not in s and VN.search(s) and tra(s) is None:
+                    ra.add(s)
+            return body
+        p = unesc(body, q)
+        if p and VN.search(p) and tra(p) is None:
+            ra.add(p.strip())
+        return body
+    _quet(src, _gom)
+
 def main():
     args = sys.argv[1:]
     if args and args[0] == "--check":
         a, b = Path(args[1]).read_text(encoding="utf-8"), Path(args[2]).read_text(encoding="utf-8")
         print("KHUNG CODE GIONG HET" if khung(a) == khung(b) else "!!! KHUNG LECH")
+        return
+    if args and args[0] == "--extract":
+        import json as _j, glob as _g
+        ra = set()
+        for f in sorted(_g.glob(str(OPS.parent / "dashboard" / "*.js"))):
+            if Path(f).name == "dich-en.js": continue
+            _thu_thap(Path(f).read_text(encoding="utf-8"), ra)
+        out = sorted({s for s in ra if s and 2 <= len(s) <= 300}, key=len)
+        print(_j.dumps(out, ensure_ascii=False, indent=1))
         return
     vao, ra = Path(args[0]), Path(args[1])
     src = vao.read_text(encoding="utf-8")
