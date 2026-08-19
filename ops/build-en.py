@@ -54,37 +54,154 @@ def unesc(s, quote):
     except Exception:
         return None
 
-# Tách chuỗi literal trong JS: bắt ' " ` cùng nội dung (tôn trọng \escape).
-LIT = re.compile(r"""(?P<q>['"`])(?P<body>(?:\\.|(?!(?P=q)).)*)(?P=q)""", re.S)
+def _dich_text_seg(seg):
+    """Segment TEXT trong template (thường là HTML): dịch attribute hiển thị + text node,
+    và nếu là text thuần (không thẻ) thì dịch cả segment."""
+    if not VN.search(seg):
+        return seg
+    # attribute hiển thị: title="..." placeholder='...' value="..."
+    def _attr(m):
+        ten, qa, val = m.group(1), m.group(2), m.group(3)
+        if not VN.search(val): return m.group(0)
+        en = tra(val)
+        return f'{ten}={qa}{en}{qa}' if en is not None else m.group(0)
+    seg = re.sub(r'\b(' + "|".join(ATTR_HIENTHI) + r')=(["\'])(.*?)\2', _attr, seg)
+    # text node giữa > <
+    def _txt(m):
+        if not VN.search(m.group(2)): return m.group(0)
+        en = tra(m.group(2))
+        return m.group(1) + en if en is not None else m.group(0)
+    seg = re.sub(r'(>)([^<>]*[^\s<>][^<>]*)(?=<)', _txt, seg)
+    # segment text thuần (không có thẻ) → dịch cả
+    if "<" not in seg and ">" not in seg:
+        en = tra(seg)
+        if en is not None: return en
+    return seg
+
+def _dong_ngoac(body, start):
+    """Tìm chỉ số NGAY SAU '}' đóng cho '${' bắt đầu tại start. Bỏ qua string/template/
+    regex/comment bên trong (không đếm ngoặc trong chúng). Trả len(body) nếu không cân."""
+    depth, j, n = 1, start + 2, len(body)
+    prev = ""
+    while j < n and depth:
+        c = body[j]; two = body[j:j+2]
+        if two == "//":
+            k = body.find("\n", j); j = n if k == -1 else k; continue
+        if two == "/*":
+            k = body.find("*/", j+2); j = n if k == -1 else k+2; continue
+        if c in "'\"`":
+            j += 1
+            while j < n:
+                if body[j] == "\\": j += 2; continue
+                if body[j] == c: break
+                if c == "`" and body[j:j+2] == "${":   # template lồng: nhảy qua cả ${...}
+                    j = _dong_ngoac(body, j); continue
+                j += 1
+            j += 1; prev = c; continue
+        if c == "/" and (prev == "" or prev in "(,=:[!&|?{};~^%*+-<>"):
+            j += 1; inclass = False
+            while j < n:
+                if body[j] == "\\": j += 2; continue
+                if body[j] == "[": inclass = True
+                elif body[j] == "]": inclass = False
+                elif body[j] == "/" and not inclass: break
+                elif body[j] == "\n": break
+                j += 1
+            j += 1; prev = "/"; continue
+        if c == "{": depth += 1
+        elif c == "}": depth -= 1
+        if not c.isspace(): prev = c
+        j += 1
+    return j
+
+def _dich_template(body):
+    """Đi qua template: đệ quy dịch string trong ${...} (biểu thức JS), dịch text/attr ngoài."""
+    out = []
+    i, n = 0, len(body)
+    while i < n:
+        if body[i:i+2] == "${":
+            j = _dong_ngoac(body, i)          # vị trí ngay sau '}' cân đối
+            expr = body[i+2:j-1]
+            out.append("${" + dich_js(expr) + "}")
+            i = j
+        else:
+            j = body.find("${", i)
+            j = n if j == -1 else j
+            out.append(_dich_text_seg(body[i:j]))
+            i = j
+    return "".join(out)
+
+def _dich_body(q, body):
+    """Dịch nội dung một literal (đã bóc nháy). q = loại nháy. Trả body mới (chưa kèm nháy)."""
+    if not VN.search(body):
+        return body
+    if q == "`":
+        return _dich_template(body)
+    plain = unesc(body, q)
+    if plain is None:
+        return body
+    en = tra(plain)
+    return esc(en, q) if en is not None else body
+
+def _quet(src, xu_ly):
+    """Scanner có trạng thái: đi qua JS, chỉ đưa NỘI DUNG string/template cho xu_ly(q, body).
+    Bỏ qua comment (// /* */) và regex literal (/.../).  xu_ly trả body mới.
+    Trả về source đã dựng lại. Đây là cách ĐÚNG (regex thuần lệch pha ở comment có dấu nháy)."""
+    out = []
+    i, n = 0, len(src)
+    # ký tự "có nghĩa" gần nhất, để phân biệt /regex/ với phép chia
+    prev = ""
+    def truoc_regex(p):
+        return p == "" or p in "(,=:[!&|?{};~^%*+-<>" or p in "\n\t "
+    while i < n:
+        c = src[i]
+        two = src[i:i+2]
+        if two == "//":
+            j = src.find("\n", i)
+            j = n if j == -1 else j
+            out.append(src[i:j]); i = j; continue
+        if two == "/*":
+            j = src.find("*/", i+2)
+            j = n if j == -1 else j+2
+            out.append(src[i:j]); i = j; continue
+        if c in "'\"`":
+            j = i + 1; body = []
+            while j < n:
+                if src[j] == "\\":
+                    body.append(src[j:j+2]); j += 2; continue
+                if src[j] == c:
+                    break
+                if c == "`" and src[j:j+2] == "${":
+                    # nhảy trọn ${...} (có thể chứa template lồng) để không nhầm backtick lồng
+                    k = _dong_ngoac(src, j)
+                    body.append(src[j:k]); j = k; continue
+                body.append(src[j]); j += 1
+            raw = "".join(body)
+            out.append(c + xu_ly(c, raw) + c)
+            i = j + 1; prev = c; continue
+        if c == "/" and truoc_regex(prev):
+            # regex literal: đi tới '/' đóng, tôn trọng \ và [class]
+            j = i + 1; trong_class = False
+            while j < n:
+                if src[j] == "\\": j += 2; continue
+                if src[j] == "[": trong_class = True
+                elif src[j] == "]": trong_class = False
+                elif src[j] == "/" and not trong_class: break
+                elif src[j] == "\n": break   # không phải regex
+                j += 1
+            out.append(src[i:j+1]); i = j + 1; prev = "/"; continue
+        out.append(c)
+        if not c.isspace():
+            prev = c
+        i += 1
+    return "".join(out)
 
 def dich_js(src):
-    def thay(m):
-        q = m.group("q"); body = m.group("body")
-        if not VN.search(body):
-            return m.group(0)
-        if q == "`":
-            # tách theo ${...}, dịch từng segment literal, giữ nguyên phần ${..}
-            parts = re.split(r'(\$\{[^{}]*\})', body)
-            ra = []
-            for p in parts:
-                if p.startswith("${"):
-                    ra.append(p); continue
-                en = tra(p)          # tra dùng bản trim; segment template giữ nguyên text nguồn
-                ra.append(esc(en, q) if en is not None else p)
-            return q + "".join(ra) + q
-        # ' hoặc "
-        plain = unesc(body, q)
-        if plain is None:
-            return m.group(0)
-        en = tra(plain)
-        if en is None:
-            return m.group(0)
-        return q + esc(en, q) + q
-    return LIT.sub(thay, src)
+    return _quet(src, _dich_body)
 
 def khung(src):
     """Bỏ nội dung mọi literal -> khung code, để so sánh bất biến cấu trúc."""
-    return LIT.sub(lambda m: m.group("q") + "\x00" + m.group("q"), src)
+    return _quet(src, lambda q, body: "\x00")
 
 ATTR_HIENTHI = ("title", "placeholder", "aria-label", "alt", "data-ic-title", "value", "data-tip")
 
@@ -121,16 +238,29 @@ def main():
         return
     vao, ra = Path(args[0]), Path(args[1])
     src = vao.read_text(encoding="utf-8")
+    la_js = vao.suffix.lower() == ".js"
     la_html = vao.suffix.lower() in (".html", ".htm")
-    out = dich_html(src) if la_html else dich_js(src)
-    # kiểm bất biến khung ngay (chỉ cho JS — HTML có transform text node hợp lệ)
-    if not la_html and khung(src) != khung(out):
-        print("!!! KHUNG LECH - KHONG GHI", file=sys.stderr); sys.exit(1)
+    out = dich_html(src) if la_html else dich_js(src) if la_js else src
+    # kiểm bất biến khung code ngoài-template (JS)
+    if la_js and khung(src) != khung(out):
+        out = src   # lệch khung → thà không dịch còn hơn hỏng code
+    # rào cứng: JS phải PARSE được. Hỏng → ghi BẢN GỐC (tính năng chạy, chỉ chưa dịch).
     ra.parent.mkdir(parents=True, exist_ok=True)
+    if la_js:
+        import subprocess, tempfile
+        tmp = Path(tempfile.gettempdir()) / ("_check_" + vao.name)
+        tmp.write_text(out, encoding="utf-8")
+        try:
+            r = subprocess.run(["node", "--check", str(tmp)], capture_output=True, timeout=30)
+            if r.returncode != 0:
+                out = src   # syntax hỏng → dùng bản gốc
+        except Exception:
+            pass
+        finally:
+            try: tmp.unlink()
+            except Exception: pass
     ra.write_text(out, encoding="utf-8")
-    # đếm literal đã dịch
-    n = sum(1 for m in LIT.finditer(src) if VN.search(m.group("body")))
-    print(f"{vao.name}: {n} literal co tieng Viet -> {ra}")
+    print(f"{vao.name}: da dich -> {ra}")
 
 if __name__ == "__main__":
     main()
