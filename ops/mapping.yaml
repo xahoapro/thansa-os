@@ -574,3 +574,28 @@
     Anh); GET /static/console.js?v= trả bản en. Bỏ cookie → bản gốc tiếng Việt.
   dieu_kien_bo: >
     Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó.
+
+- id: P018
+  ten: "Vá rebrand sót + hoàn thiện dịch mô tả provider/model + Zalo bot"
+  y_dinh: >
+    Sửa 1 chuỗi hiển thị sót rebrand trong console.js ("Ảnh Javis tạo ra" →
+    "Ảnh Thansa tạo ra", nằm trong đoạn mô tả dài nên P008/P012 bỏ qua). Kèm hoàn
+    thiện từ điển EN cho các mô tả provider/model + hướng dẫn Zalo bot là text node
+    HTML nhiều dòng (có <b>/<code> lồng) mà transform trước chưa khớp — nay khớp nhờ
+    DICT_CHUAN (gộp khoảng trắng).
+  commit: "[me] P018: va rebrand sot console.js + hoan thien dich mo ta provider/Zalo"
+  diem_neo:
+    - file: dashboard/console.js
+      ky_hieu: "Ảnh Thansa tạo ra"
+  vung_theo_doi:
+    - "dashboard/console.js: đoạn mô tả Content Credentials"
+    - dashboard/i18n/en-goi.json
+  anh_goc:
+    - file: dashboard/console.js
+      doan: "Ảnh Javis tạo ra mang sẵn dấu nguồn gốc"
+  kiem_chung: >
+    grep "Ảnh Javis tạo ra" console.js = 0; mở tab Models English: mô tả provider
+    (Gemini/OpenRouter/Claude...) + hướng dẫn Zalo bot hiện tiếng Anh trọn vẹn,
+    không lẫn tiếng Việt.
+  dieu_kien_bo: >
+    Upstream đưa mô tả provider vào i18n/branding config thì bỏ patch.
