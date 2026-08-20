@@ -624,3 +624,23 @@
     system/mcp-catalog.json + system/ucp-agent-profile.json = 0; JSON hợp lệ.
   dieu_kien_bo: >
     Upstream đưa brand vào cấu hình riêng thì bỏ.
+
+- id: P021
+  ten: "Neo lại rebrand: author plugin youtube-read (upstream 0.40)"
+  y_dinh: >
+    Vòng 0.39→0.40 thêm plugin bundled youtube-read với "author: Javis (bundled)"
+    (hiển thị trang Plugin). Neo lại: đổi thành "Thansa (bundled)" như các plugin
+    khác (P012). Description tiếng Việt dịch EN qua từ điển (overlay).
+  commit: "[me] P021: neo lai rebrand author plugin youtube-read"
+  diem_neo:
+    - file: system/plugins/youtube-read/plugin.yaml
+      ky_hieu: "author: Thansa (bundled)"
+  vung_theo_doi:
+    - system/plugins/youtube-read/plugin.yaml
+  anh_goc:
+    - file: system/plugins/youtube-read/plugin.yaml
+      doan: "author: Javis (bundled)"
+  kiem_chung: >
+    grep 'Javis (bundled)' system/plugins/youtube-read/plugin.yaml = 0.
+  dieu_kien_bo: >
+    Upstream đổi author qua cấu hình thì bỏ.
