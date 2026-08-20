@@ -51,12 +51,50 @@
     return TU_CHUAN.get(chuan(s));
   }
 
+  // Text node LAI TẠP: chuỗi ghép runtime (vd "tháng trước, real cash, ...") — phần giá trị
+  // động tiếng Việt lẫn với phần đã dịch sẵn, khớp NGUYÊN cả node thất bại. Thử tách theo
+  // dấu phẩy, dịch từng mẩu (ranh giới rõ, an toàn); chỉ đổi khi có ≥1 mẩu dịch được.
+  function dichLaiTap(s) {
+    if (s.indexOf(",") < 0) return undefined;
+    var manh = s.split(",");
+    var doi = false;
+    var ra = manh.map(function (p) {
+      var m = p.replace(/^\s+|\s+$/g, "");
+      if (!m) return p;
+      var e = tra(m);
+      if (e !== undefined && e !== m) { doi = true; return p.replace(m, function () { return e; }); }
+      return p;
+    });
+    return doi ? ra.join(",") : undefined;
+  }
+
+  // Chuỗi server GHÉP SỐ động (vd "Opus chiếm 62% token", "Có phiên phình to (753.7M token
+  // vào)"): overlay khớp-nguyên không được vì số đổi mỗi lần. Chuẩn hoá mọi con số thành ◆,
+  // tra template ("Opus chiếm ◆ token" → "Opus makes up ◆ of tokens"), rồi thay ◆ lại bằng
+  // số gốc theo thứ tự. Nhờ đó dịch được client-side, KHÔNG cần server rẽ nhánh ngôn ngữ.
+  var PH = "◆";                                   // ◆
+  // số (kèm $, %, đơn vị K/M/B) — PHẢI kết thúc bằng chữ số hoặc %/đơn vị, KHÔNG nuốt dấu
+  // câu cuối (".", ",") để "$12.34." → "$12.34" chứ không ăn cả dấu chấm.
+  var NUM_RE = /\$?\d(?:[\d.,]*\d)?\s?[%MKBmkbtT]?/g;
+  function dichSo(s) {
+    if (s.indexOf(PH) >= 0 || !/\d/.test(s)) return undefined;
+    var so = [];
+    var norm = s.replace(NUM_RE, function (m) { so.push(m); return PH; });
+    if (norm === s) return undefined;
+    var tmpl = tra(norm);
+    if (tmpl === undefined) return undefined;
+    var i = 0;
+    return tmpl.replace(/◆/g, function () { return i < so.length ? so[i++] : PH; });
+  }
+
   function dichText(node) {
     var goc = node.nodeValue;
     if (!goc) return;
     var s = goc.trim();
     if (s.length < 2) return;
     var en = tra(s);
+    if (en === undefined) en = dichSo(s);       // chuỗi ghép số động
+    if (en === undefined) en = dichLaiTap(s);   // node lai tạp: tách phẩy dịch từng mẩu
     if (en !== undefined && en !== s) {
       // giữ khoảng trắng bao quanh; dùng hàm thay thế để "$" trong en không bị hiểu là pattern
       node.nodeValue = goc.replace(s, function () { return en; });
