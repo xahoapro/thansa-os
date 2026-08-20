@@ -1,0 +1,25 @@
+{
+  "_doc": "Nhật ký cập nhật TỰ VIẾT của Thansa, SONG NGỮ (vi + en). Keyed theo version upstream. Client render theo ui_lang (dùng lang làm key, KHÔNG so sánh cứng 'en'/'vi' - hợp luật lang_bat_bien). Version nào có ở đây thì hiện bản tự viết; không có thì rơi về changelog gốc. MỖI LẦN trộn bản mới: thêm một khối {version: {vi:[...], en:[...]}} ở đây, viết tay cả hai ngôn ngữ để tránh lỗi dịch máy.",
+  "0.40.0": {
+    "vi": [
+      "Đọc và tóm tắt video YouTube ngay từ link - chạy trên mọi bộ não, kể cả engine API.",
+      "Nền cập nhật từ bản gốc: connector Shopify (tra sản phẩm/giá/tồn kho, dựng giỏ hàng) và Terminal mở được nhiều tab."
+    ],
+    "en": [
+      "Read and summarize YouTube videos straight from a link - works on every brain, including API engines.",
+      "Updated from upstream: Shopify connector (look up products/prices/inventory, build carts) and a multi-tab Terminal."
+    ]
+  },
+  "0.39.0": {
+    "vi": [
+      "Thêm connector Shopify theo chuẩn UCP: tra cứu cửa hàng công khai, không cần API key.",
+      "Terminal: mỗi tab một phiên shell riêng.",
+      "Việc chạy nền không còn bị cắt ở 5 phút - trần thời gian nâng lên 1 giờ."
+    ],
+    "en": [
+      "Added a Shopify connector (UCP standard): query public stores, no API key needed.",
+      "Terminal: each tab is its own shell session.",
+      "Background tasks are no longer cut off at 5 minutes - the time cap is now 1 hour."
+    ]
+  }
+}
