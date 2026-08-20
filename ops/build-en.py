@@ -203,6 +203,16 @@ def _quet(src, xu_ly):
 def dich_js(src):
     return _quet(src, _dich_body)
 
+def dich_css(src):
+    """CSS: dịch chuỗi content: "..." (pseudo-element ::before/::after) — overlay không với
+    tới được vì đây là nội dung do CSS sinh, không phải DOM text node."""
+    def _ct(m):
+        q, val = m.group(1), m.group(2)
+        if not VN.search(val): return m.group(0)
+        en = tra(val)
+        return f'content: {q}{esc(en, q)}{q}' if en is not None else m.group(0)
+    return re.sub(r'content:\s*(["\'])((?:\\.|(?!\1).)*)\1', _ct, src)
+
 def khung(src):
     """Bỏ nội dung mọi literal -> khung code, để so sánh bất biến cấu trúc."""
     return _quet(src, lambda q, body: "\x00")
@@ -282,7 +292,8 @@ def main():
     src = vao.read_text(encoding="utf-8")
     la_js = vao.suffix.lower() == ".js"
     la_html = vao.suffix.lower() in (".html", ".htm")
-    out = dich_html(src) if la_html else dich_js(src) if la_js else src
+    la_css = vao.suffix.lower() == ".css"
+    out = dich_html(src) if la_html else dich_js(src) if la_js else dich_css(src) if la_css else src
     # kiểm bất biến khung code ngoài-template (JS)
     if la_js and khung(src) != khung(out):
         out = src   # lệch khung → thà không dịch còn hơn hỏng code
