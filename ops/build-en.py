@@ -59,28 +59,25 @@ def unesc(s, quote):
         return None
 
 def _dich_text_seg(seg):
-    """Segment TEXT trong template (thường là HTML): dịch attribute hiển thị + text node,
-    và nếu là text thuần (không thẻ) thì dịch cả segment."""
+    """Đoạn HTML (segment template HOẶC literal có thẻ): tách theo thẻ, dịch từng mẩu TEXT
+    (kể cả text ở đầu/cuối, cạnh </div>), và dịch attribute hiển thị trong thẻ."""
     if not VN.search(seg):
         return seg
-    # attribute hiển thị: title="..." placeholder='...' value="..."
     def _attr(m):
         ten, qa, val = m.group(1), m.group(2), m.group(3)
         if not VN.search(val): return m.group(0)
         en = tra(val)
         return f'{ten}={qa}{en}{qa}' if en is not None else m.group(0)
-    seg = re.sub(r'\b(' + "|".join(ATTR_HIENTHI) + r')=(["\'])(.*?)\2', _attr, seg)
-    # text node giữa > <
-    def _txt(m):
-        if not VN.search(m.group(2)): return m.group(0)
-        en = tra(m.group(2))
-        return m.group(1) + en if en is not None else m.group(0)
-    seg = re.sub(r'(>)([^<>]*[^\s<>][^<>]*)(?=<)', _txt, seg)
-    # segment text thuần (không có thẻ) → dịch cả
-    if "<" not in seg and ">" not in seg:
-        en = tra(seg)
-        if en is not None: return en
-    return seg
+    out = []
+    for part in re.split(r'(<[^<>]*>)', seg):     # tách thẻ <...> khỏi text
+        if part.startswith("<") and part.endswith(">"):
+            out.append(re.sub(r'\b(' + "|".join(ATTR_HIENTHI) + r')=(["\'])(.*?)\2', _attr, part))
+        elif part.strip() and VN.search(part):
+            en = tra(part)
+            out.append(en if en is not None else part)
+        else:
+            out.append(part)
+    return "".join(out)
 
 def _dong_ngoac(body, start):
     """Tìm chỉ số NGAY SAU '}' đóng cho '${' bắt đầu tại start. Bỏ qua string/template/
@@ -144,6 +141,9 @@ def _dich_body(q, body):
     plain = unesc(body, q)
     if plain is None:
         return body
+    # literal dính thẻ HTML (vd "Tiền mặt tháng này</div>") → tách thẻ dịch từng mẩu text
+    if re.search(r'</?[a-zA-Z][^<>]*>', plain):
+        return esc(_dich_text_seg(plain), q)
     en = tra(plain)
     return esc(en, q) if en is not None else body
 
