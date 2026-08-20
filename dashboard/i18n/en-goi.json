@@ -2772,6 +2772,7 @@
  "Địa chỉ Substack (publication URL)": "Substack address (publication URL)",
  "Địa chỉ cửa hàng Shopify": "Shopify store address",
  "Địa chỉ n8n của bạn": "Your n8n address",
+ "Đọc lời thoại (phụ đề) của video YouTube từ link để tóm tắt. Chạy trên MỌI engine, kể cả engine API không có WebFetch. Chỉ đọc, không cần API key.": "Read a YouTube video's transcript (captions) from a link to summarize it. Works on EVERY engine, including API engines without WebFetch. Read-only, no API key needed.",
  "Đọc nó trước khi trả lời. Khi được yêu cầu sửa/viết thêm/dọn lại mà không nói rõ file nào": "Read it before answering. When asked to fix/add/clean up without specifying which file",
  "Đọc trả lời bằng giọng": "Read replies aloud",
  "Đọc tất cả": "Read all",
