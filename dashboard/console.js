@@ -779,6 +779,7 @@
   let _clData = null;              // {current, latest, update_available, total}
   const _clPages = new Map();      // offset -> releases[] đã tải
   const _clInflight = new Map();   // offset -> Promise đang bay (gộp hai người gọi cùng lúc)
+  let _clThansa = null;            // nhật ký tự viết song ngữ (changelog-thansa.json), render theo ui_lang
   const CL_PAGE_SIZE = 20;         // số phiên bản hiển thị mỗi trang
 
   function _clReset() {
@@ -828,7 +829,15 @@
     const cls = rel.is_current ? "cur" : (rel.installed ? "" : "new");
     const tag = rel.is_current ? `<span class="cl-tag cur">${window.t("cs.cl_current")}</span>`
       : (!rel.installed ? `<span class="cl-tag new">${window.t("cs.cl_new")}</span>` : "");
-    const secs = (rel.sections || []).map(s => {
+    // Nhật ký TỰ VIẾT song ngữ (changelog-thansa.json): version nào có ở đó thì hiện bản
+    // tự viết theo ngôn ngữ giao diện (dùng lang làm KEY, không so sánh cứng); không có thì
+    // rơi về changelog gốc. Tránh dịch máy sai cho phần mô tả cập nhật.
+    const _lang = (window.JavisI18n && JavisI18n.lang()) || "vi";
+    const _tw = _clThansa && _clThansa[rel.version];
+    const _twItems = _tw && (_tw[_lang] || _tw.vi);
+    const secs = _twItems
+      ? `<div class="cl-sec"><ul>${_twItems.map(it => `<li>${_clInline(it)}</li>`).join("")}</ul></div>`
+      : (rel.sections || []).map(s => {
       const items = (s.items || []).map(it => `<li>${_clInline(it)}</li>`).join("");
       return `<div class="cl-sec ${_clSecClass(s.title)}"><h4>${esc(s.title)}</h4><ul>${items}</ul></div>`;
     }).join("");
@@ -921,6 +930,10 @@
       // duy nhất có thể ăn bản cũ trong bộ nhớ đệm trình duyệt. Triệu chứng đúng như chủ repo
       // báo (2026-08-12): khung trên báo có bản mới, mà danh sách bên dưới không thấy bản đó đâu.
       await _clFetchPage(0);
+      if (_clThansa === null) {   // nạp nhật ký tự viết song ngữ một lần (render theo ui_lang)
+        try { _clThansa = await (await fetch("/static/changelog-thansa.json", { cache: "no-cache" })).json(); }
+        catch (e2) { _clThansa = {}; }
+      }
     } catch (e) {
       if (myGen !== _renderGen) return;
       const timeline = el.querySelector("#clTimeline");
