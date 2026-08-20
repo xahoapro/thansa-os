@@ -13132,7 +13132,8 @@ async def _sinh_ban_dich_en():
         if not build.is_file() or not dic.is_file():
             return
         moc = max(build.stat().st_mtime, dic.stat().st_mtime)
-        for f in sorted(DASHBOARD_PATH.glob("*.js")) + sorted(DASHBOARD_PATH.glob("*.html")):
+        for f in (sorted(DASHBOARD_PATH.glob("*.js")) + sorted(DASHBOARD_PATH.glob("*.html"))
+                  + sorted(DASHBOARD_PATH.glob("*.css"))):
             ra = endir / f.name
             if ra.is_file() and ra.stat().st_mtime >= max(moc, f.stat().st_mtime):
                 continue  # đã mới hơn nguồn + script + từ điển → khỏi sinh lại
