@@ -193,3 +193,18 @@ update.sh + systemd/docker thì không dính):
 - Từ điển 2.474 → 2.580 cặp. tests 246/247 (chỉ chat_disconnect flaky). so_patch = 15.
 - Overlay (P015) GIỮ làm lưới cho file/chuỗi chưa migrate; hai lớp cùng chạy không xung đột
   (overlay khớp key tiếng Việt, bản en/ đã là tiếng Anh nên overlay no-op).
+
+## Vòng 2026-08-20 (goc a1ad69a → 41cd1ab, upstream +3 commit, VERSION 0.37.1 → 0.39.0)
+
+- 3 commit: connector Shopify (MCP chuẩn UCP) + inject_args catalog; Terminal nhiều tab;
+  fork nền trần wall-clock 1 giờ (env chỉnh).
+- Rebase 69 commit lên nền mới: KHÔNG xung đột (rerere + thay đổi khác vùng). Mọi patch
+  [me] sống, kiem_chung nhanh XANH (title/persona/brand).
+- NEO LẠI (P020): Shopify catalog + ucp-agent-profile.json mang chuỗi hiển thị "Javis"
+  mới (P012 chỉ đổi nội dung cũ) → rebrand Javis→Thansa các chuỗi mới.
+- Dịch EN chuỗi mới: 3 client (terminal tabs) + 12 catalog (Shopify guide/risk). Dict
+  2934 → 2949. Phần lớn chuỗi terminal tái dùng chuỗi cũ đã có.
+- Test upstream mới: test_shopify_mcp, test_tran_wall_clock_nen, test_code_terminal.
+- so_patch = 17 (thêm P020), mốc gốc 41cd1ab (0.39.0).
+- Docs upstream đổi docs/09, docs/27 (+Shopify MCP, +terminal tabs) — docs/*.en.md
+  tương ứng cần cập nhật phần mới (để lại, ưu tiên thấp).
