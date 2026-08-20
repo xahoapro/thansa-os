@@ -131,7 +131,9 @@
   }
 
   function nap() {
-    fetch("/static/i18n/en-goi.json?v=1")
+    // Từ điển đổi thường xuyên → KHÔNG cache immutable (bỏ ?v cố định). no-cache buộc
+    // trình duyệt revalidate qua ETag/Last-Modified, luôn nhận bản mới khi từ điển thay đổi.
+    fetch("/static/i18n/en-goi.json", { cache: "no-cache" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) { if (d) batDau(d); })
       .catch(function () {});   // thiếu từ điển thì im lặng: UI còn tiếng Việt, không vỡ gì
