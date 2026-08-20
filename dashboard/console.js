@@ -584,6 +584,7 @@
   }
   // Phân trang nhật ký: giữ dữ liệu đã fetch, render 20 bản/trang - đỡ dài, đỡ nặng DOM.
   let _clData = null;              // cache /changelog để đổi trang không phải gọi lại mạng
+  let _clThansa = null;            // nhật ký tự viết song ngữ (changelog-thansa.json)
   const CL_PAGE_SIZE = 20;         // số phiên bản hiển thị mỗi trang
 
   // CHANGELOG.md là markdown, nhưng trang này in bằng esc() nên người dùng đọc thấy nguyên
@@ -606,7 +607,15 @@
     const cls = rel.is_current ? "cur" : (rel.installed ? "" : "new");
     const tag = rel.is_current ? `<span class="cl-tag cur">đang dùng</span>`
       : (!rel.installed ? `<span class="cl-tag new">bản mới</span>` : "");
-    const secs = (rel.sections || []).map(s => {
+    // Nhật ký TỰ VIẾT song ngữ (changelog-thansa.json): version nào có ở đó thì hiện bản
+    // tự viết theo ngôn ngữ giao diện (dùng lang làm KEY, không so sánh cứng); không có thì
+    // rơi về changelog gốc. Tránh dịch máy sai cho phần mô tả cập nhật.
+    const _lang = (window.JavisI18n && JavisI18n.lang && JavisI18n.lang()) || "vi";
+    const _tw = _clThansa && _clThansa[rel.version];
+    const _twItems = _tw && (_tw[_lang] || _tw.vi);
+    const secs = _twItems
+      ? `<div class="cl-sec"><ul>${_twItems.map(it => `<li>${_clInline(it)}</li>`).join("")}</ul></div>`
+      : (rel.sections || []).map(s => {
       const items = (s.items || []).map(it => `<li>${_clInline(it)}</li>`).join("");
       return `<div class="cl-sec ${_clSecClass(s.title)}"><h4>${esc(s.title)}</h4><ul>${items}</ul></div>`;
     }).join("");
@@ -686,6 +695,10 @@
       // khung trên báo có bản mới, mà danh sách bên dưới không thấy bản đó đâu.
       const r = await fetch("/changelog", { cache: "no-store" });
       d = await r.json();
+      if (_clThansa === null) {   // nạp nhật ký tự viết song ngữ một lần
+        try { _clThansa = await (await fetch("/static/changelog-thansa.json", { cache: "no-cache" })).json(); }
+        catch (e2) { _clThansa = {}; }
+      }
     } catch (e) {
       if (myGen !== _renderGen) return;
       const timeline = el.querySelector("#clTimeline");

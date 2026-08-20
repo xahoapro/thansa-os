@@ -644,3 +644,31 @@
     grep 'Javis (bundled)' system/plugins/youtube-read/plugin.yaml = 0.
   dieu_kien_bo: >
     Upstream đổi author qua cấu hình thì bỏ.
+
+- id: P022
+  ten: "Nhật ký cập nhật (changelog) song ngữ tự viết"
+  y_dinh: >
+    Changelog gốc là văn xuôi tiếng Việt đổi mỗi bản, dịch máy dễ sai. Thay bằng
+    NHẬT KÝ TỰ VIẾT song ngữ: dashboard/changelog-thansa.json keyed theo version
+    upstream, mỗi version có {vi:[...], en:[...]} viết tay. Client (_clRelHtml) render
+    theo ui_lang DÙNG LÀM KEY (rel[lang], không so sánh cứng 'en'/'vi' — hợp luật
+    test_lang_bat_bien); version chưa viết thì rơi về changelog gốc. Mỗi vòng trộn
+    thêm một khối cho version mới.
+  commit: "[me] P022: changelog song ngu tu viet (changelog-thansa.json + render theo ui_lang)"
+  diem_neo:
+    - file: dashboard/changelog-thansa.json
+      ky_hieu: '"0.40.0"'
+    - file: dashboard/console.js
+      ky_hieu: "_clThansa"
+  vung_theo_doi:
+    - dashboard/changelog-thansa.json
+    - "dashboard/console.js: _clRelHtml + napTimeline"
+  anh_goc:
+    - file: dashboard/console.js
+      doan: "const secs = (rel.sections || []).map(s => {"
+  kiem_chung: >
+    Trang Cập nhật: version có trong changelog-thansa.json hiện bản tự viết theo
+    ngôn ngữ giao diện (vi/en); version cũ rơi về changelog gốc. node --check
+    console.js OK; changelog-thansa.json JSON hợp lệ.
+  dieu_kien_bo: >
+    Upstream làm changelog song ngữ chính thức thì bỏ.
