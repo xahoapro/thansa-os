@@ -922,6 +922,7 @@
  "Google Workspace (Gmail, Lịch, Drive, Docs)": "Google Workspace (Gmail, Calendar, Drive, Docs)",
  "Google redirect về trang codeassist của họ": "Google redirects to their codeassist page",
  "Google đã ngắt đường này với tài khoản cá nhân từ 18/06/2026": "Google has discontinued this for personal accounts since 18/06/2026",
+ "Gói Claude Pro/Max chỉ được Anthropic tính cho việc dùng cá nhân thông thường của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm NGOÀI phạm vi đó và đã có người bị khoá tài khoản vì lý do này. Muốn chạy nền yên tâm thì đổi sang API key ở trang Models, hoặc trỏ 'model việc nền' sang một provider khác.": "Claude Pro/Max plans are only counted by Anthropic for ordinary personal use of Claude Code. Continuous background use (loops, reminders, Kanban tasks, chatbots), running on a VPS, or multiple people sharing one account all fall OUTSIDE that scope, and some accounts have been locked for this reason. For worry-free background use, switch to an API key on the Models page, or point the 'background-task model' to a different provider.",
  "Gói thuê bao": "Plan",
  "Gói đang đăng nhập": "Package logged in",
  "Gõ CHÍNH XÁC tên brain để xác nhận:": "Type brain name EXACTLY to confirm:",
