@@ -599,3 +599,28 @@
     không lẫn tiếng Việt.
   dieu_kien_bo: >
     Upstream đưa mô tả provider vào i18n/branding config thì bỏ patch.
+
+- id: P020
+  ten: "Neo lại rebrand: chuỗi hiển thị mới upstream 0.39 (Shopify/UCP)"
+  y_dinh: >
+    Vòng trộn 0.37.1→0.39.0 mang connector Shopify + ucp-agent-profile mới, chứa
+    chuỗi hiển thị "Javis OS"/"Javis" (guide/text/risk trên trang Kết nối + tờ khai
+    UCP phục vụ công khai). P012 chỉ đổi nội dung cũ nên chuỗi mới sót. Neo lại:
+    rebrand Javis→Thansa các chuỗi hiển thị mới, giữ javis_*/JAVIS_*/Javis/.
+  commit: "[me] P020: neo lai rebrand chuoi hien thi moi upstream 0.39 (Shopify/UCP)"
+  diem_neo:
+    - file: system/mcp-catalog.json
+      ky_hieu: "shopify"
+    - file: system/ucp-agent-profile.json
+      ky_hieu: '"_doc"'
+  vung_theo_doi:
+    - system/mcp-catalog.json
+    - system/ucp-agent-profile.json
+  anh_goc:
+    - file: system/ucp-agent-profile.json
+      doan: "Hồ sơ agent UCP của Javis OS"
+  kiem_chung: >
+    grep 'Javis' (đứng độc lập, không javis_*/JAVIS_*/Javis/) trong
+    system/mcp-catalog.json + system/ucp-agent-profile.json = 0; JSON hợp lệ.
+  dieu_kien_bo: >
+    Upstream đưa brand vào cấu hình riêng thì bỏ.
