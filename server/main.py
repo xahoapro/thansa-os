@@ -244,8 +244,10 @@ async def _phuc_vu_en(request: Request, call_next):
         cand = DASHBOARD_PATH / "en" / rel
         if ".." not in rel and cand.is_file():
             resp = FileResponse(str(cand))
-            if request.query_params.get("v"):
-                resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            # KHÔNG cache immutable: bản en/ được SINH LẠI khi từ điển đổi (không đổi ?v),
+            # nên phải revalidate qua ETag/Last-Modified để nhận bản dịch mới. no-cache =
+            # vẫn dùng lại nếu ETag khớp (chỉ 304), nhưng luôn kiểm nên không bị kẹt bản cũ.
+            resp.headers["Cache-Control"] = "no-cache"
             return resp
     return await call_next(request)
 
