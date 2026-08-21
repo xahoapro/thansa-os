@@ -73,6 +73,23 @@ def kiem_tra_so_patch(mapping) -> list[str]:
     return []
 
 
+def kiem_tra_neo_version(mapping) -> list[str]:
+    """Luật 5: file VERSION mang neo '<semver>-javis-<nền>' và phần nền PHẢI khớp goc_version.
+    Lệch neo = tag ảnh/so-changelog trỏ sai nền → bản phát hành nói dối về gốc của nó."""
+    vf = REPO / "VERSION"
+    if not vf.is_file():
+        return ["luật 5: không thấy file VERSION"]
+    v = vf.read_text(encoding="utf-8").strip()
+    moc = json.loads((OPS / "moc-goc.json").read_text(encoding="utf-8"))
+    goc = str(moc.get("goc_version", "")).strip()
+    if "-javis-" not in v:
+        return [f"luật 5: VERSION {v!r} chưa mang neo '-javis-<nền>' (cần dạng <semver>-javis-{goc})"]
+    neo = v.split("-javis-", 1)[1].strip()
+    if neo != goc:
+        return [f"luật 5: neo trong VERSION là '{neo}' nhưng goc_version là '{goc}' — lệch nền"]
+    return []
+
+
 def main() -> int:
     mapping = yaml.safe_load((OPS / "mapping.yaml").read_text(encoding="utf-8")) or []
     tat_ca = []
@@ -81,6 +98,7 @@ def main() -> int:
         ("luật 2 — điểm neo còn sống", kiem_tra_diem_neo(mapping)),
         ("luật 3 — mốc gốc đúng nền me đang đứng", kiem_tra_moc_goc(mapping)),
         ("luật 4 (bổ sung) — so_patch = số mục mapping", kiem_tra_so_patch(mapping)),
+        ("luật 5 (bổ sung) — neo javis trong VERSION khớp goc_version", kiem_tra_neo_version(mapping)),
     ]:
         print(f"  [{DO if loi else XANH}] {ten}")
         tat_ca += loi
