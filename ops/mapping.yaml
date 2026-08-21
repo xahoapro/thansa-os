@@ -672,3 +672,29 @@
     console.js OK; changelog-thansa.json JSON hợp lệ.
   dieu_kien_bo: >
     Upstream làm changelog song ngữ chính thức thì bỏ.
+
+- id: P023
+  ten: "Dịch trọn nhật ký cũ sang EN + bake rebrand hiển thị"
+  y_dinh: >
+    P022 mới viết tay 0.40/0.39; 471 version cũ vẫn rơi về changelog gốc (tiếng Việt).
+    Bổ sung {en:[...]} cho TOÀN BỘ 471 version (khớp đúng số item với vi), và BAKE
+    phép đổi thương hiệu hiển thị vào cả vi+en (JAVIS→THANSA, Javis→Thansa, javis→thansa;
+    giữ javisos.com) — vì file phục vụ static KHÔNG đi qua _rebrand_hien_thi ở
+    server/main.py như CHANGELOG.md upstream, nên phải bake sẵn để trang Nhật ký (trang
+    ĐỌC) sạch javis đúng như chủ chốt 18/08. Chỉ đổi DỮ LIỆU trong changelog-thansa.json,
+    không đụng code render (vẫn rel[lang], hợp test_lang_bat_bien).
+  commit: "[me] P023: dich tron nhat ky cu sang EN + bake rebrand (changelog-thansa.json)"
+  diem_neo:
+    - file: dashboard/changelog-thansa.json
+      ky_hieu: '"0.4.1"'
+  vung_theo_doi:
+    - dashboard/changelog-thansa.json
+  anh_goc:
+    - file: server/main.py
+      doan: "def _rebrand_hien_thi(s: str) -> str:"
+  kiem_chung: >
+    471 version đều có vi+en cùng số item; không còn 'Javis/javis' ngoài javisos.com
+    (6 chỗ giữ nguyên); node --check JSON hợp lệ; test_lang_bat_bien + test_ignore_files
+    + test_i18n xanh.
+  dieu_kien_bo: >
+    Upstream làm changelog song ngữ chính thức thì bỏ (cùng P022).
