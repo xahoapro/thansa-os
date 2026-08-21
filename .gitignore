@@ -208,3 +208,5 @@ server/notify_policy.json
 server/engine_down_notified.json
 server/client_errors.json
 server/client_errors.tmp
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
