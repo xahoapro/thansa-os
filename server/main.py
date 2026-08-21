@@ -5773,8 +5773,10 @@ async def delete_workflow(slug: str = Form(...), brain: str = Form("brain")):
 
 # ---- Xuất / Nhập năng lực (chia sẻ agent/skill/workflow qua file .zip) ----
 def _app_version() -> str:
+    # Version tem vào ?v= của asset tĩnh + hiển thị: dùng semver Thansa, CẮT neo '-javis-<nền>'
+    # để không lộ Javis trong mã nguồn trang. (Khoá cache đổi theo semver Thansa là đủ.)
     try:
-        return (PROJECT_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        return _ver_thansa((PROJECT_ROOT / "VERSION").read_text(encoding="utf-8").strip())
     except Exception:
         return ""
 
@@ -8237,8 +8239,25 @@ async def config():
 # ============================================
 # Phiên bản + cập nhật trong UI
 # ============================================
-GITHUB_REPO = "blogminhquy/javis-os"
+# Repo phát hành của Thansa: nút Update so VERSION + lấy CHANGELOG/ANNOUNCEMENTS từ đây.
+# Trỏ về fork (không phải upstream) để Thansa tự chủ nhịp phát hành; override được bằng env
+# cho ai chạy fork riêng. Đổi từ upstream sang fork đi kèm việc VERSION mang neo (xem dưới).
+GITHUB_REPO = os.getenv("THANSA_UPDATE_REPO", "xahoapro/thansa-os")
 _UPDATE_TASKS = set()   # giữ ref mạnh cho asyncio.create_task (tránh GC nuốt mất task)
+
+# Chuỗi VERSION mang NEO: "<semver-thansa>-javis-<phiên-bản-nền-javis>" (vd 1.2.0-javis-0.40.0).
+# - semver Thansa (phần đầu) lái việc so bản mới + là thứ HIỂN THỊ cho người dùng.
+# - phần nền javis là NEO nội bộ: giúp so với changelog (đánh số theo Javis) biết bản nào đã cài.
+# Bản cũ chưa mang neo (chỉ "0.40.0") vẫn chạy: _ver_thansa/_ver_javis đều trả về chính nó.
+def _ver_thansa(v: str) -> str:
+    """Phần semver Thansa để HIỂN THỊ + so bản mới. Cắt bỏ neo '-javis-...' (ẩn Javis khỏi UI)."""
+    return (v or "").split("-javis-", 1)[0].strip() or "0.0.0"
+
+
+def _ver_javis(v: str) -> str:
+    """Phần nền Javis (neo) để so với changelog đánh số theo Javis. Không có neo thì trả nguyên."""
+    s = (v or "").strip()
+    return s.split("-javis-", 1)[1].strip() if "-javis-" in s else (_ver_thansa(s))
 
 
 def _read_version() -> str:
@@ -8339,7 +8358,7 @@ async def version_info():
     except Exception as e:
         err = f"{type(e).__name__}: {e}"
     mode = _deploy_mode()
-    avail = _ver_newer(latest, cur)
+    avail = _ver_newer(latest, cur)   # so trên chuỗi ĐẦY ĐỦ; ver_tuple tự bỏ neo → so semver Thansa
     # docker: chỉ tự cập nhật tại chỗ được nếu Watchtower ĐANG chạy (ping thật). Không có →
     # frontend chuyển sang hướng dẫn REDEPLOY. native/windows: git pull tự lo.
     ly_do = await _watchtower_ly_do() if mode == "docker" else ""
@@ -8347,9 +8366,13 @@ async def version_info():
     st = _read_update_state()
     # self_update_off: mã lý do để UI nói ĐÚNG máy này thiếu gì thay vì một câu chung chung.
     # Rỗng khi tự cập nhật được - frontend chỉ đọc nó ở nhánh không có nút.
-    return {"current": cur, "latest": latest, "update_available": avail,
+    # HIỂN THỊ cắt neo javis: người dùng chỉ thấy semver Thansa (vd v1.2.0), không thấy nền Javis.
+    prev = st.get("previous_version")
+    return {"current": _ver_thansa(cur), "latest": _ver_thansa(latest) if latest else latest,
+            "update_available": avail,
             "mode": mode, "platform": _host_platform(), "can_self_update": can, "error": err,
-            "self_update_off": ly_do, "previous_version": st.get("previous_version")}
+            "self_update_off": ly_do,
+            "previous_version": _ver_thansa(prev) if prev else prev}
 
 
 @app.get("/update/status")
@@ -8434,8 +8457,8 @@ async def do_update():
             return JSONResponse({"ok": False,
                 "error": "Bản Docker cập nhật bằng REDEPLOY để kéo image mới: trên Hostinger bấm Redeploy trong Docker Manager; trên VPS chạy lệnh dưới. Nếu bản mới lỗi, pin tag phiên bản cũ rồi Redeploy để lùi.",
                 "manual": "docker compose up -d --pull always",
-                "current": cur, "latest": latest,
-                "previous_version": st.get("previous_version")}, status_code=400)
+                "current": _ver_thansa(cur), "latest": _ver_thansa(latest) if latest else latest,
+                "previous_version": _ver_thansa(st.get("previous_version")) if st.get("previous_version") else st.get("previous_version")}, status_code=400)
         token = os.getenv("WATCHTOWER_TOKEN", "")
         _write_update_state({"phase": "restarting", "old_version": cur, "target_version": latest,
                              "old_sha": None, "result": None, "error": None, "stashed": False,
@@ -8794,14 +8817,19 @@ async def changelog_index():
     except Exception as e:
         err = type(e).__name__
     merged = sorted(by_ver.values(), key=lambda r: _ver_tuple(r["version"]) or (0, 0, 0), reverse=True)
-    ct = _ver_tuple(cur) or (0, 0, 0)
+    # CHANGELOG đánh số theo NỀN JAVIS (vd 0.40.0), còn VERSION nay là semver Thansa mang neo.
+    # So "đã cài" phải dùng phần NEO javis, không phải semver Thansa, kẻo (1,2,0) > (0,40,0) làm
+    # mọi mục changelog bị đánh dấu đã cài sai bét.
+    ct = _ver_tuple(_ver_javis(cur)) or (0, 0, 0)
     for rel in merged:
         vt = _ver_tuple(rel["version"]) or (0, 0, 0)
         rel["installed"] = vt <= ct
         rel["is_current"] = (vt == ct)
     latest = merged[0]["version"] if merged else None
-    return {"current": cur, "latest": latest,
-            "update_available": bool(_ver_newer(latest, cur)),
+    # current HIỂN THỊ theo semver Thansa (cắt neo); "latest" ở đây là số nền Javis mới nhất trong
+    # changelog nên update_available so theo NEO javis (đồng bộ với cột installed ở trên).
+    return {"current": _ver_thansa(cur), "latest": latest,
+            "update_available": bool(_ver_newer(latest, _ver_javis(cur))),
             "releases": merged, "error": err}
 
 
