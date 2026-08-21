@@ -726,3 +726,43 @@
     và cảnh báo mức quyền hiện tiếng Anh ở giao diện EN.
   dieu_kien_bo: >
     Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó (cùng P015/P017).
+
+- id: P025
+  ten: "Version Thansa riêng + neo Javis (ẩn khỏi hiển thị)"
+  y_dinh: >
+    Tách version Thansa khỏi số Javis: file VERSION mang dạng "<semver-thansa>-javis-<nền>"
+    (vd 1.2.0-javis-0.40.0). semver Thansa lái việc so bản mới + là thứ HIỂN THỊ; phần
+    "-javis-<nền>" là NEO nội bộ, ẩn khỏi mọi chỗ người dùng thấy (UI trả v1.2.0, tag ảnh
+    1.2.0). Hai helper _ver_thansa (cắt neo, để hiện + so update) và _ver_javis (lấy nền, để
+    so trang Nhật ký vốn đánh số theo Javis - nếu không sẽ đánh dấu "đã cài" sai bét). Đổi
+    GITHUB_REPO sang fork (env THANSA_UPDATE_REPO) để nút Update so VERSION Thansa của fork,
+    không phải upstream. moc-goc.thansa_version=1.2.0, thêm RELEASES.md (sổ neo) và luật 5
+    tu-kiem-chung (neo VERSION == goc_version). Không đụng ver_tuple (đã tự bỏ đuôi chữ).
+  commit: "[me] P025: version Thansa rieng + neo Javis an khoi hien thi"
+  diem_neo:
+    - file: server/main.py
+      ky_hieu: "def _ver_thansa"
+    - file: server/main.py
+      ky_hieu: 'os.getenv("THANSA_UPDATE_REPO"'
+    - file: VERSION
+      ky_hieu: "-javis-"
+  vung_theo_doi:
+    - VERSION
+    - "server/main.py: GITHUB_REPO, _ver_thansa/_ver_javis, version_info, changelog_index, do_update"
+    - .github/workflows/docker-publish.yml
+    - ops/moc-goc.json
+    - RELEASES.md
+    - ops/tu-kiem-chung.py
+    - "tests/python/test_version_khop_changelog.py: canary so phần neo (không so semver Thansa)"
+  anh_goc:
+    - file: server/main.py
+      doan: 'GITHUB_REPO = "blogminhquy/javis-os"'
+    - file: .github/workflows/docker-publish.yml
+      doan: 'APP_VERSION=$(cat VERSION | tr -d'
+  kiem_chung: >
+    _ver_thansa("1.2.0-javis-0.40.0")=="1.2.0", _ver_javis(...)=="0.40.0"; /version trả
+    current="1.2.0" (không lộ javis); changelog installed so theo nền 0.40.0; tu-kiem-chung
+    luật 5 XANH; node/python OK; suite xanh (trừ chat_disconnect đã biết).
+  dieu_kien_bo: >
+    Upstream đổi cơ chế version/updater thì soát lại; hoặc khi bỏ hẳn nền Javis (không còn
+    trộn upstream) thì neo hết ý nghĩa, gộp VERSION về semver thuần.
