@@ -26,7 +26,8 @@ jobs:
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Read app version
-        run: echo "APP_VERSION=$(cat VERSION | tr -d ' \n\r')" >> "$GITHUB_ENV"
+        # Tag ảnh chỉ dùng semver Thansa; cắt neo "-javis-<nền>" để KHÔNG lộ Javis trên registry.
+        run: echo "APP_VERSION=$(cat VERSION | tr -d ' \n\r' | sed 's/-javis-.*//')" >> "$GITHUB_ENV"
 
       - uses: docker/setup-buildx-action@v3
 
