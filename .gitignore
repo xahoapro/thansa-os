@@ -165,3 +165,5 @@ server/.mcp_agy_*.json
 server/settings.json.bak*
 # File ngữ cảnh Antigravity CLI sinh ra mỗi lượt chạy (rác của máy đang chạy, không phải mã)
 server/.javis-agy/
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
