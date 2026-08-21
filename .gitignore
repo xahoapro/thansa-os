@@ -129,3 +129,6 @@ parse_ads*.ps1
 Thumbs.db
 desktop.ini
 server/stop-last.log
+
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
