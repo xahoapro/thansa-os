@@ -175,3 +175,5 @@ server/chatbot_reply_policy.sqlite3*
 server/reply_policy_cwd/
 # Tài khoản kênh của bot (token đã mã hoá) là dữ liệu chạy, không phải mã nguồn.
 server/channel_accounts.json
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
