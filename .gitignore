@@ -180,3 +180,5 @@ server/channel_accounts.json
 
 # Bộ đo tai nghe (tools/stt_bench): clip âm thanh và kết quả, không lên git
 server/stt_bench/
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
