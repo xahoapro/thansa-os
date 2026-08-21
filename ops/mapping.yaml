@@ -698,3 +698,31 @@
     + test_i18n xanh.
   dieu_kien_bo: >
     Upstream làm changelog song ngữ chính thức thì bỏ (cùng P022).
+
+- id: P024
+  ten: "Bổ sung từ điển EN: mô tả plugin bundled + trang Chatbot"
+  y_dinh: >
+    Giao diện EN còn lẫn Việt ở hai chỗ chưa phủ từ điển: (1) name/description của 11
+    plugin bundled (system/plugins/*/plugin.yaml) hiện qua overlay runtime; (2) cả trang
+    Chatbot (dashboard/chatbots.js) - các mô tả/hint dưới từng ô form bị <b> cắt thành
+    nhiều text node, thiếu mảnh nào thì nửa Anh nửa Việt; và 9 câu cảnh báo mức quyền do
+    server cấp (chatbot_store._CANH_BAO) render thành <li>. Bổ sung ~77 cặp việt→anh vào
+    en-goi.json (19 plugin + 9 cảnh báo + 49 mảnh text-node chatbots.js), dịch sao cho
+    build-en ghép per-literal lại đúng ngữ pháp. CHỈ thêm dữ liệu từ điển, không đụng code.
+  commit: "[me] P024: bo sung tu dien EN cho plugin + trang chatbot"
+  diem_neo:
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: '"Đặt việc định kỳ & nhắc hẹn"'
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: '"Hai rào giữ nguyên ở MỌI mức: bot không thấy brain khác, và không chạy được lệnh máy."'
+  vung_theo_doi:
+    - dashboard/i18n/en-goi.json
+  anh_goc:
+    - file: server/chatbot_store.py
+      doan: "_CANH_BAO = {"
+  kiem_chung: >
+    build-en.py --extract trên chatbots.js = 0 chuỗi thiếu; build-en dashboard/chatbots.js
+    khung code GIỐNG HỆT + node --check OK; en-goi.json JSON hợp lệ; plugin name/description
+    và cảnh báo mức quyền hiện tiếng Anh ở giao diện EN.
+  dieu_kien_bo: >
+    Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó (cùng P015/P017).
