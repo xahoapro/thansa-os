@@ -201,3 +201,5 @@ server/stt_bench/
 # Loop watchdog heartbeat and restart log (server/loop_watch.py): runtime state written to the default state dir server/.
 server/loop_beat.json
 server/loop_restarts.json
+# Bi mat Telegram (muc 5.3) - khong bao gio vao git
+ops/.telegram
