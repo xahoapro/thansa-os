@@ -1082,7 +1082,7 @@
     if (maLyDo === "watchtower_off") {
       // Short reason stays visible; the how-to folds into the (i) block (0.214.0).
       return window.t("cs.upd_wt_a") + " <b>" + window.t("cs.upd_wt_b") + "</b>" + infoBtn() + infoBody(window.t("cs.upd_wt_c")
-        + "<br><code>curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml</code>"
+        + "<br><code>curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml</code>"
         + "<br><code>docker compose up -d --pull always</code><br>"
         + window.t("cs.upd_wt_d")
         + "<br><code>docker compose --profile update up -d</code><br>"
@@ -2914,7 +2914,7 @@
 
       <div class="si-log" id="lnBackupBox">
         <h3 style="font-size:15px;color:var(--text)">⇅ ${esc(window.t("cs.bk_head"))}${infoBtn()}</h3>
-        ${infoBody(`<p style="margin:0 0 8px">${esc(window.t("cs.bk_p_a"))} <b>${esc(window.t("cs.bk_p_b"))}</b> ${esc(window.t("cs.bk_p_c"))} <b>${esc(window.t("cs.bk_p_d"))}</b>${esc(window.t("cs.bk_p_e"))} <code>.conflict-*</code> ${esc(window.t("cs.bk_p_f"))} <a href="https://github.com/blogminhquy/javis-os/blob/main/docs/18-sao-luu-github.md" target="_blank" style="color:var(--link-ink)">docs/18-sao-luu-github.md</a>.</p>
+        ${infoBody(`<p style="margin:0 0 8px">${esc(window.t("cs.bk_p_a"))} <b>${esc(window.t("cs.bk_p_b"))}</b> ${esc(window.t("cs.bk_p_c"))} <b>${esc(window.t("cs.bk_p_d"))}</b>${esc(window.t("cs.bk_p_e"))} <code>.conflict-*</code> ${esc(window.t("cs.bk_p_f"))} <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/18-sao-luu-github.md" target="_blank" style="color:var(--link-ink)">docs/18-sao-luu-github.md</a>.</p>
         <ol style="line-height:1.7;margin:0;padding-left:20px">
           <li>${esc(window.t("cs.bk_li1_a"))} <b>Private</b> ${esc(window.t("cs.bk_li1_b"))} <code>javis-brain-backup</code>.</li>
           <li>${esc(window.t("cs.bk_li2_a"))} <b>Fine-grained tokens</b> ${esc(window.t("cs.bk_li2_b"))} <b>Contents: Read and write</b> ${esc(window.t("cs.bk_li2_c"))} <code>github_pat_...</code>).</li>
@@ -6835,8 +6835,8 @@
           <div id="tkNew"></div>
           <div id="tkList" class="tk-list"></div>
           <div class="tk-docs">
-            <a href="https://github.com/blogminhquy/javis-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_cli"))} ↗</a>
-            <a href="https://github.com/blogminhquy/javis-os/blob/main/docs/14-bao-mat-tai-khoan.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_sec"))} ↗</a>
+            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_cli"))} ↗</a>
+            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/14-bao-mat-tai-khoan.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_sec"))} ↗</a>
           </div>
         </div>
       </div>`;
@@ -6864,7 +6864,7 @@
             <button class="gcard-btn ghost" id="tkHide">${esc(window.t("cs.ac_tk_hide"))}</button>
           </div>
           <div class="gcard-meta">${esc(window.t("cs.ac_tk_paste"))} <code>javis login ${esc(location.origin)} --token &lt;token&gt;</code></div>
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install javis-cli</code> · <a class="tk-doclink" href="https://github.com/blogminhquy/javis-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install javis-cli</code> · <a class="tk-doclink" href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
         </div>`;
       document.getElementById("tkCopy").onclick = () => {
         const c = document.getElementById("tkCopy");
