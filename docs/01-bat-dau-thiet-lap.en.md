@@ -134,7 +134,7 @@ This operation is safe: it only moves when the destination directory doesn't exi
 
 - Default is **Keep mark**: images carry a mark saying they were AI-generated. Facebook reads this mark to label "AI-generated content" on posts.
 - Click **Remove mark** and newly created images won't have the mark; the label on platforms usually won't show then. Images created before the change don't change.
-- Whether on or off, the author mark `javisos.com` is still kept, and you still must take responsibility for disclosing AI content per the law and terms of the platform where you post.
+- Whether on or off, the author mark `thansa.org` is still kept, and you still must take responsibility for disclosing AI content per the law and terms of the platform where you post.
 
 ### Group 3: Voice, branding & access
 
@@ -208,7 +208,7 @@ The running step shows ⏳, completed steps show ✅. While running, the status 
 Thansa has a built-in escape route, it doesn't leave you stuck at a broken version:
 
 - **Auto roll back:** if the new version fails the Health check step, Thansa rolls back to the old one. The progress bar shows "↩ New version broken, rolling back…", then "↩ New version broken, **rolled back**."
-- **Manual Docker roll back:** if after a while the version still hasn't changed, Thansa says "⚠ New version not up after a while - may be broken." then shows a **How to roll back Docker** block with the command `docker compose pull && docker compose up -d`, with a tip to pin image `ghcr.io/blogminhquy/javis-os:<old-version>` then Redeploy.
+- **Manual Docker roll back:** if after a while the version still hasn't changed, Thansa says "⚠ New version not up after a while - may be broken." then shows a **How to roll back Docker** block with the command `docker compose pull && docker compose up -d`, with a tip to pin image `ghcr.io/xahoapro/thansa-os:<old-version>` then Redeploy.
 - **Other error:** frame reports the specific error and reminds you to check the `update.log` file. If the server doesn't come back up after about 3 minutes, the frame says "Server not back after about 3 minutes - try reloading the page."
 
 Below the update frame is a version history: what's new in each version, paged, the currently installed version is marked.

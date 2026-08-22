@@ -766,3 +766,48 @@
   dieu_kien_bo: >
     Upstream đổi cơ chế version/updater thì soát lại; hoặc khi bỏ hẳn nền Javis (không còn
     trộn upstream) thì neo hết ý nghĩa, gộp VERSION về semver thuần.
+
+- id: P026
+  ten: "Bản quyền + link + tác giả sang Duy Quang / thansa.org"
+  y_dinh: >
+    Đổi BẢN QUYỀN, LINK và TÁC GIẢ trong file repo từ Javis/Minh Quý sang của chủ fork:
+    LICENSE THÊM dòng "Duy Quang (thansa.org)" nhưng GIỮ copyright gốc Nguyễn Minh Quý (luật
+    MIT bắt giữ). Domain javisos.com → thansa.org, minhquy.vn → tradingauto.org, tên "Minh
+    Quý"/"Nguyễn Minh Quý" → "Duy Quang", repo blogminhquy/javis-os → xahoapro/thansa-os.
+    Áp vào file BRANDING/link (README*, QUICKSTART*, DEPLOY, CONTRIBUTING, Dockerfile,
+    docker-compose*, docs người dùng, cli/pyproject, mcp-catalog, website landing, các link
+    tài liệu trong console.js/index.html/domain.py) + hàm _rebrand_hien_thi (changelog hiển
+    thị) + changelog-thansa.json. Dockerfile title Javis OS → Thansa OS; website Javis OS →
+    Thansa OS + gỡ ảnh/initials tác giả cũ. KHÔNG đụng: dữ liệu ví dụ trong test (minhquy.vn/
+    Minh Quý ở test_2fa/cred_dir/learn_gate), comment ví dụ (mcp_store), ops/mapping + bao-cao
+    + nhiem-vu + docs/superpowers/dev (lịch sử), CHANGELOG.md (rebrand lúc hiển thị), class css
+    ".bubble.javis" (định danh nội bộ). Tên SẢN PHẨM "Javis OS" trong README/docs để lại (rộng
+    hơn, chờ chủ quyết).
+  commit: "[me] P026: ban quyen + link + tac gia sang Duy Quang thansa.org"
+  diem_neo:
+    - file: LICENSE
+      ky_hieu: "Duy Quang (thansa.org)"
+    - file: server/main.py
+      ky_hieu: '.replace("javisos.com", "thansa.org")'
+    - file: Dockerfile
+      ky_hieu: 'image.title="Thansa OS"'
+  vung_theo_doi:
+    - "LICENSE (thêm copyright fork, giữ gốc MIT)"
+    - "server/main.py: _rebrand_hien_thi (javisos.com→thansa.org, Minh Quý→Duy Quang, repo)"
+    - "README*, QUICKSTART*, DEPLOY.md, CONTRIBUTING.md, Dockerfile, docker-compose*"
+    - "docs/01*, docs/12-zalo, docs/en/01, cli/pyproject.toml, system/mcp-catalog.json"
+    - "website/index.html; dashboard/console.js + index.html (link tài liệu); server/routes/domain.py"
+    - "dashboard/changelog-thansa.json; tests/python/test_zalo_mcp.py (guide_url coupled)"
+  anh_goc:
+    - file: LICENSE
+      doan: "Copyright (c) 2026 Nguyễn Minh Quý (blogminhquy)"
+    - file: server/main.py
+      doan: 's = s.replace("javisos.com", _REBRAND_GIU)'
+    - file: Dockerfile
+      doan: 'org.opencontainers.image.title="Javis OS"'
+  kiem_chung: >
+    LICENSE giữ dòng Nguyễn Minh Quý + thêm Duy Quang; grep javisos.com/minhquy.vn/
+    blogminhquy-javis-os trong file sản phẩm = 0; _rebrand_hien_thi đổi javisos.com→thansa.org
+    + Minh Quý→Duy Quang; JSON/py/node hợp lệ; test_update/image_gen/zalo_mcp/i18n + suite xanh.
+  dieu_kien_bo: >
+    Không bỏ (đây là bản quyền/thương hiệu của fork). Chỉ dọn khi tách hẳn khỏi nền Javis.
