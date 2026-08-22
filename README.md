@@ -247,7 +247,7 @@ flowchart LR
 Hostinger VPS → **Docker Manager → Compose → URL** → paste the Hostinger file and press **Deploy**:
 
 ```
-https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
 The **Environment** box needs only three fields: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, plus an optional `JAVIS_AUTO_UPDATE` (set it to `true` and Javis updates itself daily).
@@ -273,7 +273,7 @@ Details and troubleshooting: [DEPLOY.en.md](DEPLOY.en.md).
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
 mkdir javis && cd javis
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
@@ -289,7 +289,7 @@ Remote access without a domain: `docker compose --profile tunnel up -d`, then `d
 <summary><b>Option 3: Linux or macOS, no Docker</b></summary>
 
 ```bash
-git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
 chmod +x install.sh && ./install.sh
 ```
 
