@@ -47,7 +47,7 @@ kết nối đã đăng nhập từ trước tự chuyển sang mà không phả
 
 Nút **Hướng dẫn trên GitHub** trong thẻ Zalo luôn mở trang tài liệu này:
 
-<https://github.com/blogminhquy/javis-os/blob/main/docs/12-zalo.md>
+<https://github.com/xahoapro/thansa-os/blob/main/docs/12-zalo.md>
 
 ## Các tool MCP
 
