@@ -8305,14 +8305,17 @@ async def autostart_post(enabled: str = Form(...)):
 # repo, sửa thẳng là mỗi vòng trộn xung đột). Trang Nhật ký là trang ĐỌC TIN nên chủ
 # chốt (18/08) quét SẠCH mọi dạng javis, kể cả token kỹ thuật trong lời kể
 # (javis_* → thansa_*, JAVIS_* → THANSA_*...) — tên THẬT trong code không đổi.
-# Ngoại lệ duy nhất: javisos.com là URL thật, giữ nguyên.
-_REBRAND_GIU = "\x00JVOS\x00"
-
-
+# Đổi luôn thương hiệu/tác giả/link của Javis sang Thansa (P026): domain javisos.com →
+# thansa.org, minhquy.vn → tradingauto.org, tên tác giả Minh Quý → Duy Quang, repo →
+# xahoapro/thansa-os. Các phép đổi CỤ THỂ phải chạy TRƯỚC phép đổi chung "javis"→"thansa"
+# (nếu không "javisos.com" sẽ thành "thansaos.com").
 def _rebrand_hien_thi(s: str) -> str:
-    s = s.replace("javisos.com", _REBRAND_GIU)
+    s = s.replace("blogminhquy/javis-os", "xahoapro/thansa-os")
+    s = s.replace("javisos.com", "thansa.org").replace("minhquy.vn", "tradingauto.org")
+    s = (s.replace("Nguyễn Minh Quý", "Duy Quang")
+          .replace("Minh Quý", "Duy Quang").replace("Minh Quy", "Duy Quang"))
     s = s.replace("JAVIS", "THANSA").replace("Javis", "Thansa").replace("javis", "thansa")
-    return s.replace(_REBRAND_GIU, "javisos.com")
+    return s
 
 
 _CL_VER_RE = re.compile(r"^##\s+\[?(\d+\.\d+\.\d+)\]?\s*[-:]?\s*(.*)$")

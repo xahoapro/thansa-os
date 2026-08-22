@@ -134,7 +134,7 @@ It is safe: it only moves when the destination does not exist, it never overwrit
 
 - The default is **Keep the mark**: images carry a record that they were AI-generated. Facebook reads it and labels posts "AI-generated content".
 - Press **Strip the mark** and new images no longer carry it, so platforms usually stop showing the label. Images generated earlier are unchanged.
-- Either way the `javisos.com` author tag stays, and you remain responsible for disclosing AI content under the law and the terms of whatever platform you post to.
+- Either way the `thansa.org` author tag stays, and you remain responsible for disclosing AI content under the law and the terms of whatever platform you post to.
 
 ### Group 3: Voice, branding & access
 
@@ -208,7 +208,7 @@ The running step shows ⏳, finished steps show ✅. During the run the status l
 Javis keeps a way back and will not strand you on a broken build:
 
 - **Automatic rollback:** if the new build fails the health check, Javis returns to the old one. The progress bar shows "↩ New build failed, rolling back…", then "↩ New build failed, **rolled back automatically**."
-- **Manual rollback on Docker:** if the version still has not changed after a while, Javis reports "⚠ The new build has not come up - it may have failed." and shows a **How to roll back on Docker** block with `docker compose pull && docker compose up -d`, plus a hint to pin `ghcr.io/blogminhquy/javis-os:<old-version>` and Redeploy.
+- **Manual rollback on Docker:** if the version still has not changed after a while, Javis reports "⚠ The new build has not come up - it may have failed." and shows a **How to roll back on Docker** block with `docker compose pull && docker compose up -d`, plus a hint to pin `ghcr.io/xahoapro/thansa-os:<old-version>` and Redeploy.
 - **Other errors:** the panel names the specific error and points at `update.log`. If the server does not come back within roughly 3 minutes, the panel says "The server has not come back after about 3 minutes - try reloading the page."
 
 Below the update panel is the version changelog: what each release added, paginated, with the installed version marked.

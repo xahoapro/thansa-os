@@ -67,7 +67,7 @@ Bạn đấu các **kết nối** của riêng mình vào (bán hàng/POS, quả
 
 VPS Hostinger → **Docker Manager → Compose → URL** → dán **file Hostinger** rồi **Deploy**:
 ```
-https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 Ô **Environment** của mẫu mới chỉ còn 3 trường cần thiết: `DOMAIN_NAME`,
 `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. Các biến kỹ thuật về cổng, state,
@@ -94,7 +94,7 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 ```bash
 # Cần Docker (chưa có?  curl -fsSL https://get.docker.com | sh)
 mkdir javis && cd javis
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # đăng nhập Claude 1 lần
 docker compose up -d                                          # pull image + chạy
@@ -104,7 +104,7 @@ Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin (xem MÃ THIẾT L
 ### Cách 3 - Cài trực tiếp lên Linux/macOS (không Docker)
 
 ```bash
-git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
 chmod +x install.sh && ./install.sh
 ```
 Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv, đăng ký dịch vụ systemd tự chạy khi boot, in ra địa chỉ. Báo Claude chưa đăng nhập thì chạy 1 lần: `claude auth login --claudeai`.
@@ -341,6 +341,6 @@ Không tiện donate cũng không sao - dùng Javis, góp ý, hay gửi một Pu
 
 <div align="center">
 
-Made with ☕ by **[Minh Quý](https://minhquy.vn)** · Repo: `github.com/blogminhquy/javis-os`
+Made with ☕ by **[Duy Quang](https://tradingauto.org)** · Repo: `github.com/xahoapro/thansa-os`
 
 </div>
