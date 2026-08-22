@@ -70,7 +70,7 @@ You wire in **your own connections** (POS/sales, ads, calendar, email, Zalo, not
 
 Hostinger VPS → **Docker Manager → Compose → URL** → paste the **Hostinger file** and **Deploy**:
 ```
-https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 The **Environment** box on the current template needs only three fields: `DOMAIN_NAME`,
 `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. The technical variables for ports, state,
@@ -97,7 +97,7 @@ Deploy → wait 1-3 minutes for Traefik to issue the certificate → open `https
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
 mkdir javis && cd javis
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once
 docker compose up -d                                          # pull the image and run
@@ -107,7 +107,7 @@ Open `http://<vps-ip>:7777` → the admin-account screen (find the SETUP TOKEN i
 ### Option 3 - Install directly on Linux/macOS (no Docker)
 
 ```bash
-git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
 chmod +x install.sh && ./install.sh
 ```
 The script installs Python + Node + both CLI engines (Claude Code, Codex), creates a venv, registers a systemd service that starts at boot, and prints the address. If it reports Claude is not signed in, run this once: `claude auth login --claudeai`.
@@ -342,6 +342,6 @@ Can't donate? No worries - using Javis, sending feedback, or opening a Pull Requ
 
 <div align="center">
 
-Made with ☕ by **[Minh Quý](https://minhquy.vn)** · Repo: `github.com/blogminhquy/javis-os`
+Made with ☕ by **[Duy Quang](https://tradingauto.org)** · Repo: `github.com/xahoapro/thansa-os`
 
 </div>

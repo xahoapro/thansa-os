@@ -99,7 +99,7 @@
             "label": "URL hồ sơ agent UCP (nâng cao - không rõ thì để nguyên)",
             "placeholder": "Ví dụ: https://trang-cua-ban.com/ucp-agent-profile.json",
             "optional": true,
-            "default": "https://raw.githubusercontent.com/blogminhquy/javis-os/main/system/ucp-agent-profile.json"
+            "default": "https://raw.githubusercontent.com/xahoapro/thansa-os/main/system/ucp-agent-profile.json"
           }
         ],
         "guide": "Chỉ cần địa chỉ cửa hàng, KHÔNG cần API key và không cần bạn là chủ shop - endpoint này công khai.\n\n1. Lấy địa chỉ cửa hàng: tên miền riêng (vd shop-cua-ban.com) hoặc dạng ...myshopify.com đều được.\n2. Dán vào ô dưới rồi bấm Kết nối. Gõ kiểu nào cũng được (thiếu https://, thừa gạch chéo, dán nguyên URL đang mở) - Thansa tự cắt về đúng tên miền.\n\nÔ thứ hai đã điền sẵn, cứ để nguyên. Đó là hồ sơ khai báo Thansa biết làm gì, phía Shopify tải về để thoả thuận năng lực; mỗi lời gọi Thansa tự đính kèm, bạn không phải làm gì.\n\nLƯU Ý: cửa hàng phải bật kênh bán cho agent (Shopify bật sẵn cho phần lớn shop). Shop nào tắt thì Test sẽ báo không kết nối được - đó là thiết lập bên Shopify, không phải lỗi Thansa.",
@@ -152,7 +152,7 @@
         "type": "qr",
         "fields": [],
         "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp 7 tool MCP của zalo-agent-cli. Không còn listener/webhook/luật Zalo riêng của Thansa.",
-        "guide_url": "https://github.com/blogminhquy/javis-os/blob/main/docs/12-zalo.md"
+        "guide_url": "https://github.com/xahoapro/thansa-os/blob/main/docs/12-zalo.md"
       },
       "tool_meta": {
         "read": [
