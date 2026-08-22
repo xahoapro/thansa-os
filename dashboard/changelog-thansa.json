@@ -670,8 +670,8 @@
    "**CSS ép ảnh QR xuống 200px trong khi ảnh gốc 265px**, tức mỗi ô còn 3,77 pixel. Đây là thủ phạm nặng nhất: người dùng soi điện thoại vào MÀN HÌNH máy tính chứ không phải tờ giấy, nên cỡ mỗi ô quyết định tất cả. Nay để ảnh ra đúng cỡ server tính (8 pixel mỗi ô, hơn gấp đôi).",
    "**Tên workspace dài làm QR phình lại.** Tên nằm HAI chỗ trong chuỗi otpauth nên mỗi ký tự tốn gấp đôi; đo thật thì tên 48 ký tự đẩy QR lên phiên bản 11 (69 ô). Nay cắt tên ở 24 ký tự, nên đặt tên kiểu gì QR cũng giữ được 8 pixel mỗi ô.",
    "**Nền QR nay là trắng thật**, không còn trong suốt dựa vào màu nền của thẻ bọc - ai dùng tông tối trước đây sẽ thấy mã đen nằm trên nền tối.",
-   "**Tên trong app Authenticator lấy theo workspace và theo NGƯỜI.** Trước đây hiện \"Thansa OS: admin\" - đúng về kỹ thuật nhưng vô nghĩa khi nằm giữa chục tài khoản 2FA trên điện thoại. Nay lấy tên workspace thật cộng tên người dùng (`USER_NAME`), rơi về tên đăng nhập khi chưa đặt: \"Thansa OS: Minh Quý\".",
-   "**Nhãn GIỮ nguyên dấu tiếng Việt.** Bản đầu bóc sạch dấu (\"Minh Quý\" thành \"Minh Quy\") vì sợ app hiện chuỗi hỏng; nỗi sợ đó lỗi thời - Key Uri Format cho phép nhãn UTF-8 phần trăm-mã-hoá và các app phổ biến đọc đúng từ lâu. Chỉ còn bỏ ký tự điều khiển và dấu ':' (nó là dấu ngăn giữa tên workspace và tên tài khoản, lọt vào là vỡ nhãn). Đã đo: kể cả tên có dấu dài hết mức thì QR vẫn giữ 8 pixel mỗi ô.",
+   "**Tên trong app Authenticator lấy theo workspace và theo NGƯỜI.** Trước đây hiện \"Thansa OS: admin\" - đúng về kỹ thuật nhưng vô nghĩa khi nằm giữa chục tài khoản 2FA trên điện thoại. Nay lấy tên workspace thật cộng tên người dùng (`USER_NAME`), rơi về tên đăng nhập khi chưa đặt: \"Thansa OS: Duy Quang\".",
+   "**Nhãn GIỮ nguyên dấu tiếng Việt.** Bản đầu bóc sạch dấu (\"Duy Quang\" thành \"Duy Quang\") vì sợ app hiện chuỗi hỏng; nỗi sợ đó lỗi thời - Key Uri Format cho phép nhãn UTF-8 phần trăm-mã-hoá và các app phổ biến đọc đúng từ lâu. Chỉ còn bỏ ký tự điều khiển và dấu ':' (nó là dấu ngăn giữa tên workspace và tên tài khoản, lọt vào là vỡ nhãn). Đã đo: kể cả tên có dấu dài hết mức thì QR vẫn giữ 8 pixel mỗi ô.",
    "Thêm canary đo bằng SỐ chứ không đọc chữ: mỗi ô phải >= 7 pixel ở cỡ tự nhiên, viền phải 4 ô, nền không được trong suốt, và CSS không được ép ảnh về một cỡ pixel cố định. Vế cuối là cách âm thầm nhất để phá lại mọi thứ ở trên - server trả ảnh đúng cỡ, trình duyệt nén lại, và không test phía server nào thấy được."
   ],
   "en": [
@@ -681,8 +681,8 @@
    "**CSS squeezes the QR image down to 200px while the original is 265px**, so each square gets 3.77 pixels. This is the worst culprit: users scan with phone cameras at a COMPUTER SCREEN, not paper, so square size is everything. Now the image stays the size the server calculated (8 pixels per square, more than double).",
    "**Long workspace name bloats the QR.** The name appears in TWO places in the otpauth string so each character costs double; actual measurement shows a 48-character name pushes QR to version 11 (69 squares). Now capped at 24 characters so no matter how you name it, QR keeps 8 pixels per square.",
    "**QR background is now truly white**, not transparent relying on the card's background color - anyone using dark theme before will see black code on a dark background now.",
-   "**Name in Authenticator app uses workspace and USER.** Before: \"Thansa OS: admin\" - technically right but useless among a dozen 2FA accounts on your phone. Now: workspace name plus user name (`USER_NAME`), falls back to login name when no name is set: \"Thansa OS: Minh Quý\".",
-   "**Labels KEEP Vietnamese diacritics.** First version stripped them (\"Minh Quý\" became \"Minh Quy\") from fear of broken display; that fear is outdated - Key Uri Format allows percent-encoded UTF-8 labels and popular apps read them correctly long ago. Only removed control characters and ':' (it separates workspace and account name, leaks in and label breaks). Tested: even with diacritical marks at max length, QR stays 8 pixels per square.",
+   "**Name in Authenticator app uses workspace and USER.** Before: \"Thansa OS: admin\" - technically right but useless among a dozen 2FA accounts on your phone. Now: workspace name plus user name (`USER_NAME`), falls back to login name when no name is set: \"Thansa OS: Duy Quang\".",
+   "**Labels KEEP Vietnamese diacritics.** First version stripped them (\"Duy Quang\" became \"Duy Quang\") from fear of broken display; that fear is outdated - Key Uri Format allows percent-encoded UTF-8 labels and popular apps read them correctly long ago. Only removed control characters and ':' (it separates workspace and account name, leaks in and label breaks). Tested: even with diacritical marks at max length, QR stays 8 pixels per square.",
    "Added canary measured in NUMBERS not text: each square must be >= 7 pixels at natural size, border must be 4 squares, background can't be transparent, and CSS can't squeeze the image to a fixed pixel size. The last one is the most silent way to break everything above - server sends the right size, browser shrinks it, and no server-side test catches it."
   ]
  },
@@ -2526,11 +2526,11 @@
  },
  "0.9.275": {
   "vi": [
-   "**Đăng nhập lại bằng email khác mà mọi tool vẫn trả về tài khoản cũ (báo từ người dùng thật).** Người dùng xoá kết nối rồi đăng nhập lại bằng `hi@minhquy.vn`, nhưng tool Google vẫn báo tài khoản `blogminhquy@gmail.com`. Nguyên nhân nối tiếp đúng vụ 0.9.274: `workspace-mcp` cache token theo email, còn ô \"Email Google của bạn\" chỉ CHỌN dùng credential nào chứ không ép đăng nhập lại. Token cũ nằm nguyên trên đĩa nên nó cứ chọn đúng cái cũ. Nay đổi bất kỳ ô đăng nhập nào (email, Client ID, Client Secret) trên nguồn tự giữ token là Thansa vứt luôn kho token của tài khoản cũ, lần gọi tool sau bắt buộc đăng nhập lại. Nhập lại y hệt giá trị cũ, hoặc chỉ đổi tên gợi nhớ, thì KHÔNG đụng gì - không bắt ai đăng nhập lại vô cớ.",
+   "**Đăng nhập lại bằng email khác mà mọi tool vẫn trả về tài khoản cũ (báo từ người dùng thật).** Người dùng xoá kết nối rồi đăng nhập lại bằng `hi@tradingauto.org`, nhưng tool Google vẫn báo tài khoản `blogminhquy@gmail.com`. Nguyên nhân nối tiếp đúng vụ 0.9.274: `workspace-mcp` cache token theo email, còn ô \"Email Google của bạn\" chỉ CHỌN dùng credential nào chứ không ép đăng nhập lại. Token cũ nằm nguyên trên đĩa nên nó cứ chọn đúng cái cũ. Nay đổi bất kỳ ô đăng nhập nào (email, Client ID, Client Secret) trên nguồn tự giữ token là Thansa vứt luôn kho token của tài khoản cũ, lần gọi tool sau bắt buộc đăng nhập lại. Nhập lại y hệt giá trị cũ, hoặc chỉ đổi tên gợi nhớ, thì KHÔNG đụng gì - không bắt ai đăng nhập lại vô cớ.",
    "`test_cred_dir_rieng.py` thêm 7 phép thử, trong đó 4 phép chạy THẬT `update_connection` trên kho giả rồi soi thư mục token trên đĩa: nhập lại y hệt thì giữ, đổi tên thì giữ, đổi email thì vứt, đổi Client ID thì vứt. Đây là loại lỗi soi mã nguồn không thấy, phải chạy mới lộ."
   ],
   "en": [
-   "**Re-login with different email but all tools still return old account (reported by real user).** User disconnected then logged in as `hi@minhquy.vn`, but Google tool reported `blogminhquy@gmail.com`. Following 0.9.274: `workspace-mcp` caches tokens per email, but \"Your Google Email\" field only selects credential, doesn't force re-login. Old token sat on disk so it kept picking old one. Now changing any login field (email, Client ID, Client Secret) on token-holding source makes Thansa dump old account's token cache; next tool call forces re-login. Re-enter exact same values or just rename reminder then nothing happens — don't force re-login for no reason.",
+   "**Re-login with different email but all tools still return old account (reported by real user).** User disconnected then logged in as `hi@tradingauto.org`, but Google tool reported `blogminhquy@gmail.com`. Following 0.9.274: `workspace-mcp` caches tokens per email, but \"Your Google Email\" field only selects credential, doesn't force re-login. Old token sat on disk so it kept picking old one. Now changing any login field (email, Client ID, Client Secret) on token-holding source makes Thansa dump old account's token cache; next tool call forces re-login. Re-enter exact same values or just rename reminder then nothing happens — don't force re-login for no reason.",
    "`test_cred_dir_rieng.py` adds 7 tests, 4 actually run `update_connection` on mock cache then inspect token dir: re-enter exact value keeps it, rename keeps it, change email dumps it, change Client ID dumps it. This error type doesn't show in code review, needs runtime test."
   ]
  },
@@ -3414,26 +3414,26 @@
   "vi": [
    "**Công tắc \"Dấu nguồn gốc ảnh AI\"** ở Cài đặt, nhóm Giao diện & Brain. Ảnh sinh ra mang sẵn Content Credentials (C2PA) ghi rằng ảnh do AI tạo, và Facebook đọc dấu đó để gắn nhãn \"Nội dung do AI tạo\" lên bài. Công tắc cho chọn **Giữ dấu** (mặc định) hoặc **Gỡ dấu**.",
    "**Mặc định là GIỮ**, và có test khoá mặc định đó lại: bản fork nào cũng khởi đầu ở trạng thái an toàn, muốn gỡ thì chủ workspace phải tự bật. Lúc bật có hộp xác nhận nói rõ nghĩa vụ công bố nội dung AI vẫn thuộc về người đăng.",
-   "**Nhãn tác giả javisos.com luôn được giữ** ở cả hai chế độ. Gỡ dấu chỉ là gỡ, không đánh tráo nguồn gốc thành của người khác.",
+   "**Nhãn tác giả thansa.org luôn được giữ** ở cả hai chế độ. Gỡ dấu chỉ là gỡ, không đánh tráo nguồn gốc thành của người khác.",
    "Chỉ ảnh tạo từ lúc bật trở đi mới bị ảnh hưởng; ảnh đã tạo trước đó không đổi.",
    "`test_image_gen.py` thêm 8 case: gỡ đúng chunk caBX và không đụng phần còn lại, ảnh không có dấu thì trả nguyên xi, mặc định phải là False, và hai nhánh bật/tắt cho ra file khác nhau đúng như mong đợi."
   ],
   "en": [
    "**Switch \"Mark images as AI-generated\"** in Settings, Interface & Brain section. Generated images carry Content Credentials (C2PA) marking they're AI-made, and Facebook reads it to tag the post \"Made with AI\". Switch lets you **Keep marking** (default) or **Remove marking**.",
    "**Default is KEEP**, and a test pins the default itself: any fork starts in safe state, want to remove then workspace owner must flip it. Turning it on has a confirmation box saying you're still responsible for disclosing AI content.",
-   "**Author label javisos.com always kept** in both modes. Removing just removes, doesn't swap the source into someone else's.",
+   "**Author label thansa.org always kept** in both modes. Removing just removes, doesn't swap the source into someone else's.",
    "Only images made after turning it on are affected; old images don't change.",
    "`test_image_gen.py` added 8 cases: removes the caBX chunk right, leaves the rest alone, untagged images returned as-is, default must be False, and flip on/off produces different files as expected."
   ]
  },
  "0.9.214": {
   "vi": [
-   "**Gắn nhãn tác giả vào ảnh**: mọi ảnh sinh bằng `thansa_generate_image` nay được ghi sẵn metadata `Software = Thansa OS`, `Source = https://javisos.com` và thời điểm tạo, dưới dạng chunk tEXt chuẩn PNG. Ai mở file bằng công cụ xem metadata sẽ thấy ảnh do Thansa tạo.",
+   "**Gắn nhãn tác giả vào ảnh**: mọi ảnh sinh bằng `thansa_generate_image` nay được ghi sẵn metadata `Software = Thansa OS`, `Source = https://thansa.org` và thời điểm tạo, dưới dạng chunk tEXt chuẩn PNG. Ai mở file bằng công cụ xem metadata sẽ thấy ảnh do Thansa tạo.",
    "Việc gắn nhãn **chỉ THÊM chunk, không gỡ gì**: phần Content Credentials (C2PA) mà nhà cung cấp ảnh nhúng sẵn vẫn nằm nguyên trong file, pixel không bị đụng vào. File không phải PNG hợp lệ thì trả nguyên xi, không làm hỏng ảnh.",
    "`test_image_gen.py` thêm 8 case, trong đó có case khoá hành vi \"KHÔNG gỡ chunk C2PA có sẵn\" để sau này không ai lặng lẽ đổi thành gỡ nguồn gốc rồi ghi đè tên mình."
   ],
   "en": [
-   "**Tag author into image**: all images from `thansa_generate_image` now write metadata `Software = Thansa OS`, `Source = https://javisos.com` and make time as PNG chunk tEXt standard. Open file in metadata viewer and see Thansa made it.",
+   "**Tag author into image**: all images from `thansa_generate_image` now write metadata `Software = Thansa OS`, `Source = https://thansa.org` and make time as PNG chunk tEXt standard. Open file in metadata viewer and see Thansa made it.",
    "Author tag **ADDS chunk only, removes nothing**: Content Credentials (C2PA) from image source stays whole in file, pixel untouched. Bad PNG passes through unchanged, doesn't break image.",
    "`test_image_gen.py` adds 8 case, including case locking \"NEVER remove C2PA chunk if present\" so future no one silently strips source credit then writes own."
   ]
@@ -5229,13 +5229,13 @@
  "0.9.73": {
   "vi": [
    "**Icon nút thu/mở đổi sang kiểu \"panel sidebar\"**: thay mũi tên kép `«` bằng khung vuông chia hai với cột trái có các dòng nội dung (giống icon toggle sidebar quen thuộc). Icon tĩnh, bỏ hiệu ứng xoay 180° khi thu (kiểu panel không cần chỉ hướng, trạng thái đã có tooltip).",
-   "**Dời nút thu/mở nằm CẠNH dòng version thay vì phía trên**: `.rail-foot` đổi từ xếp dọc sang hàng ngang, nút ở trái kề số phiên bản + \"by Minh Quý\". Khi thu gọn vẫn ẩn version/tác giả, chỉ còn mỗi nút căn giữa.",
-   "**Link \"by Minh Quý\" trỏ về javisos.com** thay cho minhquy.vn."
+   "**Dời nút thu/mở nằm CẠNH dòng version thay vì phía trên**: `.rail-foot` đổi từ xếp dọc sang hàng ngang, nút ở trái kề số phiên bản + \"by Duy Quang\". Khi thu gọn vẫn ẩn version/tác giả, chỉ còn mỗi nút căn giữa.",
+   "**Link \"by Duy Quang\" trỏ về thansa.org** thay cho tradingauto.org."
   ],
   "en": [
    "**Collapse/expand button icon flips to \"panel sidebar\" style**: swap dual-arrow `«` for a box split in two with left column of content lines (like familiar sidebar toggle icon). Static icon, drop the 180° spin on collapse (panel style needs no arrow, state has tooltip).",
-   "**Move collapse/expand button sits BESIDE version line not above**: `.rail-foot` flips vert to horiz layout, button on left next to version + \"by Minh Quý\". Collapse still hides version/credit, button centers alone.",
-   "**\"by Minh Quý\" link points to javisos.com** not minhquy.vn."
+   "**Move collapse/expand button sits BESIDE version line not above**: `.rail-foot` flips vert to horiz layout, button on left next to version + \"by Duy Quang\". Collapse still hides version/credit, button centers alone.",
+   "**\"by Duy Quang\" link points to thansa.org** not tradingauto.org."
   ]
  },
  "0.9.72": {
@@ -6056,10 +6056,10 @@
  },
  "0.8.9": {
   "vi": [
-   "**Trang chủ giới thiệu** (`website/index.html`): landing page 1 file HTML/CSS/JS thuần, phong cách dark nebula đồng bộ dashboard - hero gõ chữ tự động, nền đồ thị hạt sao canvas, bảng so sánh chatbot vs Thansa, bento 8 tính năng, mockup Telegram có bong bóng chạy, timeline 3 bước deploy, section giới thiệu tác giả Nguyễn Minh Quý, FAQ accordion, nút copy lệnh. Mọi link tài liệu trỏ về GitHub; KHÔNG hiển thị số phiên bản trên trang. Dùng ảnh thật: screenshot đồ thị tri thức trong ô tính năng lớn (kiêm og:image khi share) + chân dung tác giả (fallback chữ MQ nếu ảnh lỗi)."
+   "**Trang chủ giới thiệu** (`website/index.html`): landing page 1 file HTML/CSS/JS thuần, phong cách dark nebula đồng bộ dashboard - hero gõ chữ tự động, nền đồ thị hạt sao canvas, bảng so sánh chatbot vs Thansa, bento 8 tính năng, mockup Telegram có bong bóng chạy, timeline 3 bước deploy, section giới thiệu tác giả Duy Quang, FAQ accordion, nút copy lệnh. Mọi link tài liệu trỏ về GitHub; KHÔNG hiển thị số phiên bản trên trang. Dùng ảnh thật: screenshot đồ thị tri thức trong ô tính năng lớn (kiêm og:image khi share) + chân dung tác giả (fallback chữ MQ nếu ảnh lỗi)."
   ],
   "en": [
-   "**Home page introduction** (`website/index.html`): single-file landing HTML/CSS/JS, dark nebula style matching dashboard - hero auto-types text, graph-particle starfield canvas, chatbot vs Thansa comparison table, 8-feature bento, Telegram mockup with floating bubbles, 3-step deploy timeline, intro of author Nguyễn Minh Quý, FAQ accordion, copy-command button. All doc links point to GitHub; NO version number shown on page. Uses real images: screenshots of knowledge graph in big feature box (also og:image for sharing) + author portrait (falls back to MQ letters if broken)."
+   "**Home page introduction** (`website/index.html`): single-file landing HTML/CSS/JS, dark nebula style matching dashboard - hero auto-types text, graph-particle starfield canvas, chatbot vs Thansa comparison table, 8-feature bento, Telegram mockup with floating bubbles, 3-step deploy timeline, intro of author Duy Quang, FAQ accordion, copy-command button. All doc links point to GitHub; NO version number shown on page. Uses real images: screenshots of knowledge graph in big feature box (also og:image for sharing) + author portrait (falls back to MQ letters if broken)."
   ]
  },
  "0.8.8": {
