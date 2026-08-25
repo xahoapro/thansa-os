@@ -840,3 +840,30 @@
     (grep THANSA_/thansa_/Thansa/ = 0 → JAVIS_*/javis_*/Javis/ không bị đổi nhầm); suite xanh.
   dieu_kien_bo: >
     Upstream đưa tên sản phẩm vào biến branding thì bỏ patch, đặt qua cấu hình (cùng P001/P003).
+
+- id: P028
+  ten: "Neo lại rebrand chuỗi hiển thị mới (vòng 0.43.2)"
+  y_dinh: >
+    Vòng trộn 0.40.0→0.43.2 (Antigravity đấu MCP hub 0.43.0) thêm chuỗi HIỂN THỊ mới nhắc
+    "Javis": trạng thái kết nối "tool của Javis đã đấu" / "chưa đấu được tool của Javis" trong
+    dashboard/console.js → đổi sang "tool của Thansa". Kèm dịch EN 2 chuỗi này. Các chỗ "Javis"
+    còn lại từ vòng này là COMMENT (nội bộ) hoặc định danh kỹ thuật (header X-Javis-Vault, MCP
+    config key `javis`) — GIỮ NGUYÊN. (199 mẩu UI mới khác chờ đợt dịch, chưa dịch thì suy biến
+    về tiếng Việt.)
+  commit: "[me] P028: neo lai rebrand chuoi hien thi moi (vong 0.43.2)"
+  diem_neo:
+    - file: dashboard/console.js
+      ky_hieu: "tool của Thansa đã đấu"
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "chưa đấu được tool của Thansa"
+  vung_theo_doi:
+    - "dashboard/console.js: nhãn trạng thái MCP của thẻ kết nối (upstream 0.43.0)"
+    - dashboard/i18n/en-goi.json
+  anh_goc:
+    - file: dashboard/console.js
+      doan: '? (r.mcp.ok ? " · tool của Javis đã đấu"'
+  kiem_chung: >
+    grep 'tool của Javis' dashboard/console.js chỉ còn trong COMMENT; en-goi có 2 cặp mới;
+    node --check console.js OK; suite 253/253 xanh.
+  dieu_kien_bo: >
+    Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003).
