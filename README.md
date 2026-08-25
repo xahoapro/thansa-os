@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="dashboard/logo.svg" width="88" alt="Javis OS logo">
+<img src="dashboard/logo.svg" width="88" alt="Thansa OS logo">
 
 # Javis OS
 
@@ -47,7 +47,7 @@ Run it on your laptop or a small VPS. Talk to it by voice. Plug in Claude, ChatG
 
 ## ⚡ Quick start
 
-**The easy way: let your own AI install it.** Give this repo link to Claude Code or Codex on your machine and say *"install Javis OS for me"*. It only needs to run one command:
+**The easy way: let your own AI install it.** Give this repo link to Claude Code or Codex on your machine and say *"install Thansa OS for me"*. It only needs to run one command:
 
 | Machine | One command installs everything |
 |---|---|
@@ -58,17 +58,17 @@ Run it on your laptop or a small VPS. Talk to it by voice. Plug in Claude, ChatG
 Then open **http://localhost:7777**. The installer sets up Python, the four subscription CLI brains (`claude`, `codex`, `agy`, `grok`) and a `.env`, then starts the server. You sign in to each brain **on the Models page of the dashboard**, no more typing commands.
 
 > [!NOTE]
-> Installed an extra CLI **after** Javis was already running? **Restart Javis.** A running process keeps the PATH it started with, so it cannot see a CLI installed later.
+> Installed an extra CLI **after** Thansa was already running? **Restart Thansa.** A running process keeps the PATH it started with, so it cannot see a CLI installed later.
 
 <p align="center">
-<img src="docs/assets/diagrams/install-terminal.svg" width="100%" alt="Animated terminal: the one-line installer sets up Python, the four subscription CLI brains and a .env, then reports that Javis is running at http://localhost:7777">
+<img src="docs/assets/diagrams/install-terminal.svg" width="100%" alt="Animated terminal: the one-line installer sets up Python, the four subscription CLI brains and a .env, then reports that Thansa is running at http://localhost:7777">
 </p>
 
 ---
 
-## 🤔 Why Javis?
+## 🤔 Why Thansa?
 
-Javis OS is **not** a chatbot. It is a **self-hosted agentic AI** that runs on your own machine or VPS: it reads and writes files, calls tools over MCP, runs skills, queues background work and schedules itself. All of that sits behind a **voice-controlled dashboard** with a **Second Brain** (memory + wiki) that accumulates knowledge over time.
+Thansa OS is **not** a chatbot. It is a **self-hosted agentic AI** that runs on your own machine or VPS: it reads and writes files, calls tools over MCP, runs skills, queues background work and schedules itself. All of that sits behind a **voice-controlled dashboard** with a **Second Brain** (memory + wiki) that accumulates knowledge over time.
 
 ### The lock-in nobody warns you about
 
@@ -83,9 +83,9 @@ All of it sits on the vendor's servers, in the vendor's format. Then a better mo
 
 So you stay. Not because the old model is still the best, but because leaving means starting from zero. And when the vendor raises prices, tightens limits, retires a model or locks your account, there is no plan B.
 
-### Javis turns it around: rent the model, own the brain
+### Thansa turns it around: rent the model, own the brain
 
-In Javis the model is a part you can swap. Everything you build up lives with you, as files you can open:
+In Thansa the model is a part you can swap. Everything you build up lives with you, as files you can open:
 
 | What you build up | Where it lives | Format |
 |---|---|---|
@@ -100,13 +100,13 @@ What that buys you:
 
 - **A new model comes out? Switch on the Models page and keep going.** It reads the same memory, runs the same skills, agents and workflows, and calls the same connections through the MCP Hub. Nothing to migrate, nothing to rebuild.
 - **Use several brains at once.** A strong model for the conversation, a cheaper one for background work, a local Ollama model for private notes, all working on the same brain.
-- **Readable without Javis.** Your brain is a folder of markdown. Open it in Obsidian or any editor. If Javis disappeared tomorrow, your knowledge would still be there, in plain text.
+- **Readable without Thansa.** Your brain is a folder of markdown. Open it in Obsidian or any editor. If Thansa disappeared tomorrow, your knowledge would still be there, in plain text.
 - **Versioned and portable.** Every learning pass is a git commit you can undo in one tap, and the whole brain can sync to your own private GitHub repo, shared between your laptop and your VPS.
-- **Your data stays on your hardware.** There is no Javis cloud in between. A request goes only to the model provider you picked for it, and with a local Ollama model it never leaves your machine.
+- **Your data stays on your hardware.** There is no Thansa cloud in between. A request goes only to the model provider you picked for it, and with a local Ollama model it never leaves your machine.
 
-### Javis next to an ordinary chatbot
+### Thansa next to an ordinary chatbot
 
-| | An ordinary chatbot | **Javis OS** |
+| | An ordinary chatbot | **Thansa OS** |
 |---|---|---|
 | **Brain** | Locked to one model, one stateless API call per message | **Swappable**: 12 providers, each with the full set of tools, MCP, skills and sessions, including models running on your own machine through Ollama |
 | **Memory** | Forgets after every session | **A living Second Brain** that remembers you and thickens with every conversation |
@@ -116,20 +116,20 @@ What that buys you:
 | **Your work** | Stays on the vendor's servers, in the vendor's format | **Plain files on your machine**: history, memory, skills, agents and workflows carry over to any new model |
 | **Deployment** | Someone else's cloud | **Self-hosted**: one-click Hostinger, Docker, or any VPS |
 
-> 💡 **The philosophy: capability lives in Javis, not in the model.** Every brain gets the same toolbox through one shared connection hub (the MCP Hub). Switching from Claude to Gemini costs you nothing except shell access, which only the CLI engines have.
+> 💡 **The philosophy: capability lives in Thansa, not in the model.** Every brain gets the same toolbox through one shared connection hub (the MCP Hub). Switching from Claude to Gemini costs you nothing except shell access, which only the CLI engines have.
 
 <p align="center">
-<img src="docs/assets/diagrams/chat-to-action.svg" width="100%" alt="Animated diagram: a chat message goes into Javis, which picks the smallest tool that finishes the job, from answering directly to queuing a task, creating an agent, a workflow, a reminder or a loop">
+<img src="docs/assets/diagrams/chat-to-action.svg" width="100%" alt="Animated diagram: a chat message goes into Thansa, which picks the smallest tool that finishes the job, from answering directly to queuing a task, creating an agent, a workflow, a reminder or a loop">
 </p>
 
 ---
 
 ## 🧠 12 brains, one toolkit
 
-Pick the brain on the **Models** page and change it whenever you like. Javis supports **12 providers** today.
+Pick the brain on the **Models** page and change it whenever you like. Thansa supports **12 providers** today.
 
 <p align="center">
-<img src="docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Animated diagram: the Javis core in the middle with its toolkit (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) around it, while the 12 brains take turns plugging in and every tool stays lit">
+<img src="docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Animated diagram: the Thansa core in the middle with its toolkit (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) around it, while the 12 brains take turns plugging in and every tool stays lit">
 </p>
 
 | Brain | How you pay | Shell, web, sub-agents |
@@ -138,15 +138,15 @@ Pick the brain on the **Models** page and change it whenever you like. Javis sup
 | **ChatGPT** (via Codex) | Your ChatGPT plan | ✅ |
 | **Grok Build** | Your SuperGrok or X Premium+ plan | ✅ |
 | **Antigravity CLI** | Your Google plan (same lineup as the Antigravity IDE, Claude included) | Shell ✅ |
-| **OpenRouter** | API key (hundreds of models behind one key) | via Javis tools |
-| **OpenAI API** · **Anthropic API** · **Google Gemini** · **Groq** | API key | via Javis tools |
-| **Ollama Cloud** · **Ollama on this machine** | API key, or free on your own hardware | via Javis tools |
-| **Any OpenAI-compatible endpoint** | Whatever that endpoint needs | via Javis tools |
+| **OpenRouter** | API key (hundreds of models behind one key) | via Thansa tools |
+| **OpenAI API** · **Anthropic API** · **Google Gemini** · **Groq** | API key | via Thansa tools |
+| **Ollama Cloud** · **Ollama on this machine** | API key, or free on your own hardware | via Thansa tools |
+| **Any OpenAI-compatible endpoint** | Whatever that endpoint needs | via Thansa tools |
 
 Every brain can call your connected MCP servers, read and write the brain, run skills, queue Kanban work, and create agents, workflows, loops and reminders. The CLI engines additionally run **shell commands**, **fetch and search the web**, and **spawn parallel sub-agents**.
 
 > [!WARNING]
-> **Read this before letting a subscription run background work.** Anthropic scopes Claude Pro/Max to **ordinary personal use** of Claude Code. Continuous background execution (loops, reminders, Kanban jobs, chatbots), running on a VPS, or several people sharing one account all fall outside that scope, and accounts **have been suspended** over it. Javis never reads your login token: it runs the real `claude` binary, but that does not make round-the-clock background use legitimate. To be safe, set Claude Code to run on an **API key** on the Models page, or point the **background-work model** at another provider. The same caution applies to the xAI plan. See `server/claude_auth.py`.
+> **Read this before letting a subscription run background work.** Anthropic scopes Claude Pro/Max to **ordinary personal use** of Claude Code. Continuous background execution (loops, reminders, Kanban jobs, chatbots), running on a VPS, or several people sharing one account all fall outside that scope, and accounts **have been suspended** over it. Thansa never reads your login token: it runs the real `claude` binary, but that does not make round-the-clock background use legitimate. To be safe, set Claude Code to run on an **API key** on the Models page, or point the **background-work model** at another provider. The same caution applies to the xAI plan. See `server/claude_auth.py`.
 
 ---
 
@@ -321,7 +321,7 @@ Dashboard:                             http://localhost:7777
 </details>
 
 <details>
-<summary><b>Several Javis instances on one VPS</b></summary>
+<summary><b>Several Thansa instances on one VPS</b></summary>
 
 Brains, settings and accounts stay fully separate per instance. Only three values differ between them: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
 
@@ -446,7 +446,7 @@ javis-os/
 
 | What | Languages today |
 |---|---|
-| **Javis's replies** | Any language: it answers in the language you write in, or one you pin in Settings |
+| **Thansa's replies** | Any language: it answers in the language you write in, or one you pin in Settings |
 | **Dashboard and server messages** | 🇬🇧 English · 🇻🇳 Tiếng Việt, per device: each browser gets its own language until you pick one |
 | **Connection store, plugins, a new brain's starter files** | 🇬🇧 English · 🇻🇳 Tiếng Việt |
 | **README and quick start** | 🇬🇧 English · 🇻🇳 Tiếng Việt · 🇨🇳 简体中文 · 🇪🇸 Español · 🇯🇵 日本語 · 🇮🇳 हिन्दी · 🇧🇷 Português · 🇰🇷 한국어 · 🇷🇺 Русский · 🇩🇪 Deutsch · 🇫🇷 Français · 🇮🇩 Bahasa Indonesia |
@@ -479,7 +479,7 @@ If Javis is useful to you, a ⭐ on the repo helps other people find it.
 ## 🙏 Credits
 
 - **Brains:** [Claude Code](https://claude.com/claude-code) and the [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview) (Anthropic), [Codex CLI](https://developers.openai.com/codex/cli) (OpenAI), [Grok Build](https://x.ai) (xAI), [Antigravity](https://antigravity.google) (Google), plus the APIs of [OpenRouter](https://openrouter.ai), OpenAI, [Google Gemini](https://ai.google.dev), Anthropic, [Groq](https://groq.com) and [Ollama](https://ollama.com).
-- **Tool standard:** [Model Context Protocol](https://modelcontextprotocol.io). The whole Javis connection store runs on it.
+- **Tool standard:** [Model Context Protocol](https://modelcontextprotocol.io). The whole Thansa connection store runs on it.
 - The Second Brain and digital Bullet Journal patterns.
 
 ## 📄 License
@@ -496,7 +496,7 @@ Javis OS is free and open source, and it is still one person writing the code an
 - 🏦 **MB Bank** (Vietnam): `6636966369`
 - 📱 **MoMo wallet** (Vietnam): `0372752740`
 
-Can't donate? Using Javis, sending feedback or opening a pull request counts as support too.
+Can't donate? Using Thansa, sending feedback or opening a pull request counts as support too.
 
 <div align="center">
 <br>

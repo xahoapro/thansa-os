@@ -1,4 +1,4 @@
-# Contributing to Javis OS
+# Contributing to Thansa OS
 
 ***English** · [Tiếng Việt](docs/i18n/vi/CONTRIBUTING.md)*
 
