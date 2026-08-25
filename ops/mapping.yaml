@@ -831,6 +831,7 @@
   vung_theo_doi:
     - "README.md, README.en.md, QUICKSTART.md, QUICKSTART.en.md, DEPLOY.md, CONTRIBUTING.md"
     - "docs/NN-*.md + docs/en/*.md (trừ docs/superpowers, docs/dev)"
+    - "tests/python/test_engine_ngang_quyen.py: cụm kiểm nội dung docs đổi Javis→Thansa (coupled)"
   anh_goc:
     - file: README.md
       doan: "# 🧠 Javis OS"
