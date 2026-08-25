@@ -252,3 +252,13 @@ Không trộn upstream (giữ nền 0.40.0). Loạt patch [me] thêm, so_patch 1
   Suite 253/253 xanh (chat_disconnect xanh lần này).
 - CÒN LẠI: 199 mẩu UI mới (upstream refactor dashboard nhiều) chờ dịch EN — build-en suy biến
   về tiếng Việt cho tới khi dịch, không vỡ.
+
+## Đổi quy trình 2026-08-25 — MỘT MÁY, bỏ hai trạm
+
+Chủ (Duy Quang) bỏ mô hình hai trạm. Nay một máy này làm trọn: giữ bản rebuild → trộn upstream
+Javis → rebrand Thansa → tự đẩy `main` cho user. KHÔNG còn "trạm #1 nghiệm thu" → chốt ws-disconnect
+kiểu chờ trạm #1 duyệt VÔ HIỆU (suite xanh trên chính máy phát hành là đủ). Cổng phát hành:
+build/suite xanh → `push origin me:main` (ff) → CI build image → user cập nhật.
+
+**Đã phát hành thansa 1.2.0 / nền Javis 0.43.2** (main = 03937f4, VERSION 1.2.0-javis-0.43.2,
+image GHCR :1.2.0). Xem RELEASES.md.
