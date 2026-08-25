@@ -2,8 +2,8 @@
 
 *[Tiếng Việt](../12-zalo.md) · **English***
 
-> **Javis touches Zalo in THREE places, do not mix them up.** This page covers the first:
-> signing in with **your own Zalo account** so Javis can act on your behalf. The other two
+> **Thansa touches Zalo in THREE places, do not mix them up.** This page covers the first:
+> signing in with **your own Zalo account** so Thansa can act on your behalf. The other two
 > use the official API, which is safe, but they only see what people send directly to the bot.
 >
 > | | Zalo Agent MCP (this page) | [Zalo Bot channel](26-zalo-bot-channel.md) | [Chatbot](25-chatbots.md) |
@@ -13,12 +13,12 @@
 > | Risk of account lockout | Yes | No | No |
 > | Can read old conversations | Yes | Only messages sent to the bot | Only messages sent to the bot |
 > | Can message someone who never contacted the bot | Yes | No | No |
-> | Used for | Javis working on your behalf | **You** messaging Javis | **Customers** messaging Javis |
+> | Used for | Thansa working on your behalf | **You** messaging Thansa | **Customers** messaging Thansa |
 >
 > Running all three at once is fine, they do not collide.
 
-Javis connects a personal Zalo account through the MCP of
-[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), Javis's own Zalo CLI. There is a single
+Thansa connects a personal Zalo account through the MCP of
+[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), Thansa's own Zalo CLI. There is a single
 MCP process: sign in by QR, read or search conversations and send messages through its tools.
 
 > `javis-zalo` uses the unofficial Zalo API via `zca-js`. Zalo does not support this way
@@ -27,13 +27,13 @@ MCP process: sign in by QR, read or search conversations and send messages throu
 
 ## What you need
 
-- Node.js 20 or newer on the machine or VPS running Javis, able to download from GitHub (first run).
+- Node.js 20 or newer on the machine or VPS running Thansa, able to download from GitHub (first run).
 - A phone already signed in to the Zalo account you want to connect.
-- Javis started and you able to sign in to the dashboard.
+- Thansa started and you able to sign in to the dashboard.
 
-Javis pins `javis-zalo` to a release tag (currently `v1.2.0`) and installs it straight from that
+Thansa pins `javis-zalo` to a release tag (currently `v1.2.0`) and installs it straight from that
 tag's tarball on GitHub, with no npm account or Git needed. Only the `zca-js` library underneath
-follows its official npm releases. Since 0.83.0 Javis runs this build instead of the third-party
+follows its official npm releases. Since 0.83.0 Thansa runs this build instead of the third-party
 `zalo-agent-cli` 1.6.2; connections signed in earlier switch over without a new QR scan.
 
 ## Connecting by QR
@@ -47,7 +47,7 @@ follows its official npm releases. Since 0.83.0 Javis runs this build instead of
 
 The **Guide on GitHub** button in the Zalo card always opens this documentation page:
 
-<https://github.com/blogminhquy/javis-os/blob/main/docs/en/12-zalo-agent-mcp.md>
+<https://github.com/xahoapro/thansa-os/blob/main/docs/en/12-zalo-agent-mcp.md>
 
 ## The MCP tools
 
@@ -142,7 +142,7 @@ Zalo pack.
 
 ## Sending images and files
 
-`zalo_send_message` above **only sends text**. To send an image (say one Javis just generated)
+`zalo_send_message` above **only sends text**. To send an image (say one Thansa just generated)
 or a file (a PDF report, a spreadsheet), use the `zalo_send_image` tool from the `javis.zalo`
 pack. It uses exactly the Zalo account you scanned the QR with.
 
@@ -156,14 +156,14 @@ to Nam over Zalo".
 Three things worth knowing:
 
 - **Only files inside the brain in use can be sent.** This is a deliberate safety rail: without
-  it, one cleverly worded chat message could make Javis send any file on the server outside, and
+  it, one cleverly worded chat message could make Thansa send any file on the server outside, and
   a Zalo message cannot be recalled.
 - **One send carries one kind**, either all images or all files, up to 10 files. Mixing them
-  makes Zalo display the wrong type, so Javis reports back instead of guessing.
-- **With several Zalo accounts attached, Javis asks** which one to send from. Sending from the
+  makes Zalo display the wrong type, so Thansa reports back instead of guessing.
+- **With several Zalo accounts attached, Thansa asks** which one to send from. Sending from the
   wrong account means sending under someone else's identity, so this is not a place to guess.
 
-Node.js 20+ is required on the machine running Javis, same as for the Zalo connection itself.
+Node.js 20+ is required on the machine running Thansa, same as for the Zalo connection itself.
 
 ## Tagging people, notes, reminders and polls
 
@@ -200,8 +200,8 @@ You can speak naturally:
 - "Send the Sales group: meeting at 9am tomorrow."
 
 When sending, state the name or `threadId` clearly, the content, and whether it is a person or a
-group. If the search returns several chats with the same name, Javis must ask back rather than
-guess. If exactly one result matches, Javis sends right away with `zalo_send_message`; no
+group. If the search returns several chats with the same name, Thansa must ask back rather than
+guess. If exactly one result matches, Thansa sends right away with `zalo_send_message`; no
 listener has to be enabled, the recipient does not have to message first, and nothing depends on
 a watch list.
 
@@ -223,8 +223,8 @@ The new flow dropped the `listen --webhook` sidecar, the `/hook/zalo` endpoint, 
 continuously" panel, the per-chat rules file and the two plugins `javis_zalo_rule` and
 `javis_zalo_send`. No listener process turns the MCP connector off and back on any more.
 
-Because of that, Javis does not forward Zalo messages to Telegram in the background. When you
-want to check messages, ask Javis; MCP can use `zalo_get_messages` for buffered messages or
+Because of that, Thansa does not forward Zalo messages to Telegram in the background. When you
+want to check messages, ask Thansa; MCP can use `zalo_get_messages` for buffered messages or
 `zalo_get_history` for history.
 
 ## Troubleshooting
@@ -245,4 +245,4 @@ want to check messages, ask Javis; MCP can use `zalo_get_messages` for buffered 
 
 - [The `javis-zalo` repository](https://github.com/blogminhquy/javis-zalo)
 - [zca-js](https://github.com/RFS-ADRENO/zca-js), the library that talks to Zalo underneath
-- [Connections and MCP permissions in Javis](09-connections-and-business-data.md)
+- [Connections and MCP permissions in Thansa](09-connections-and-business-data.md)
