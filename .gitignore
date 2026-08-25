@@ -167,3 +167,7 @@ server/settings.json.bak*
 server/.javis-agy/
 # Bi mat Telegram (muc 5.3) - khong bao gio vao git
 ops/.telegram
+
+# Secret kenh bao (ngoai git)
+.thansa-alert*
+*.thansa-alert*
