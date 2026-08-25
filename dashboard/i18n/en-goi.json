@@ -3025,5 +3025,7 @@
  ". Nhắn thử riêng cho": ". Message it privately first to test it",
  "nó trước, thấy ổn rồi mới bật.": "before enabling it.",
  "\" cho bot làm việc thật ra ngoài, do": "\" lets the bot do real actions outward,",
- "\" sẽ chạy ở mức TOÀN QUYỀN.": "\" will run at FULL-ACCESS level."
+ "\" sẽ chạy ở mức TOÀN QUYỀN.": "\" will run at FULL-ACCESS level.",
+ "· tool của Thansa đã đấu": "· Thansa tools connected",
+ "chưa đấu được tool của Thansa": "couldn't connect Thansa's tools"
 }

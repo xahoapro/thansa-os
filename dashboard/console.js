@@ -3193,9 +3193,9 @@
       // chuyện khác nhau, và suốt các bản 0.30-0.42 cái thứ hai luôn hỏng trong khi cái thứ
       // nhất vẫn xanh - nên thẻ này chỉ báo "Dùng được" là báo thiếu đúng chỗ đau.
       const mcpTxt = (r && r.mcp)
-        ? (r.mcp.ok ? " · tool của Javis đã đấu"
+        ? (r.mcp.ok ? " · tool của Thansa đã đấu"
            : (r.mcp.hub_bat === false ? " · trung tâm kết nối đang tắt"
-              : " · <b>chưa đấu được tool của Javis</b>"))
+              : " · <b>chưa đấu được tool của Thansa</b>"))
         : "";
       if (r && r.ok) {
         if (msg) msg.innerHTML = OK_ICON + " Dùng được." + mcpTxt;
