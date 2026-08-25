@@ -233,3 +233,22 @@ Không trộn upstream (giữ nền 0.40.0). Loạt patch [me] thêm, so_patch 1
   đường code test giống hệt v1.0). Chờ trạm #1 gửi version thư viện + nghiệm thu.
 - **Repo đã PUBLIC** → kênh update/CHANGELOG/ANNOUNCEMENTS chạy qua fork được.
 - Suite 250/250 sau mỗi patch. so_patch = 24, mốc gốc 5bcc6f4 (0.40.0), thansa_version 1.2.0.
+
+## Vòng 2026-08-25 (goc 5bcc6f4 → fac4746, upstream +7 commit, VERSION nền 0.40.0 → 0.43.2)
+
+- 7 commit upstream: YouTube phụ đề (6 client InnerTube + yt-dlp, 0.41-0.42), vá tự-tin-sai +
+  lệnh tự kiểm (0.42.0), đổi model giữa chừng KHÔNG mất mạch (0.42.1), Antigravity đấu MCP hub
+  Javis vào `agy` (0.43.0), Telegram hiện ở thanh bên + file dán đọc mọi engine (0.43.1),
+  dải việc nền + đồng hồ chờ phút/giờ (0.43.2).
+- Rebase 88 commit (24 patch [me] + ghi chú) lên nền mới. Xung đột giải 3 chỗ (rerere ghi lại):
+  P021 (youtube-read: giữ version/mô tả mới upstream + author Thansa), P025 (VERSION → neo
+  `1.2.0-javis-0.43.2`), P027 (4 docs 02/10/16/20: lấy bản upstream mới + áp lại regex rebrand).
+- NEO LẠI (P028): Antigravity 0.43.0 thêm nhãn trạng thái "tool của Javis" → "tool của Thansa"
+  (console.js) + dịch EN. Các "Javis" khác của vòng là comment/định danh kỹ thuật (X-Javis-Vault,
+  MCP key `javis`) — giữ.
+- VERSION neo `1.2.0-javis-0.43.2` (thansa_version giữ 1.2.0 vì 1.2.0 chưa phát hành, chỉ đổi nền).
+  moc-goc goc_commit fac4746, goc_version 0.43.2, so_patch 25. tu-kiem-chung 5/5 XANH.
+- Test upstream mới: test_doc_file_dinh_kem, test_doi_model_lien_mach, test_phien_telegram_hien_o_thanh_ben.
+  Suite 253/253 xanh (chat_disconnect xanh lần này).
+- CÒN LẠI: 199 mẩu UI mới (upstream refactor dashboard nhiều) chờ dịch EN — build-en suy biến
+  về tiếng Việt cho tới khi dịch, không vỡ.
