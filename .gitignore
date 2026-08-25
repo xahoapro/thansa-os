@@ -205,3 +205,7 @@ server/loop_beat.json
 server/loop_restarts.json
 # Bi mat Telegram (muc 5.3) - khong bao gio vao git
 ops/.telegram
+
+# Secret kenh bao (ngoai git)
+.thansa-alert*
+*.thansa-alert*
