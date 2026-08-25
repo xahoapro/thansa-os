@@ -208,3 +208,28 @@ update.sh + systemd/docker thì không dính):
 - so_patch = 17 (thêm P020), mốc gốc 41cd1ab (0.39.0).
 - Docs upstream đổi docs/09, docs/27 (+Shopify MCP, +terminal tabs) — docs/*.en.md
   tương ứng cần cập nhật phần mới (để lại, ưu tiên thấp).
+
+## Vòng 2026-08 fork-only (P022–P027) — song ngữ, version riêng, rebrand bản quyền/tên
+
+Không trộn upstream (giữ nền 0.40.0). Loạt patch [me] thêm, so_patch 19 → 24:
+
+- **P022–P024 (song ngữ + i18n vét cạn):** Nhật ký cập nhật TỰ VIẾT song ngữ
+  (`dashboard/changelog-thansa.json`, render theo `rel[lang]` — hợp luật lang_bat_bien);
+  dịch trọn 471 version cũ sang EN + bake rebrand hiển thị; bổ sung từ điển EN cho 11
+  plugin bundled + 9 cảnh báo mức quyền chatbot + 49 mẩu text-node `chatbots.js`
+  (build-en tách theo `<b>`). en-goi.json 2949 → 3027.
+- **P025 (version Thansa riêng + neo):** `VERSION` = `1.2.0-javis-0.40.0` — semver Thansa
+  lái update + HIỂN THỊ (`1.2.0`), đuôi `-javis-<nền>` là NEO nội bộ (ẩn khỏi UI/tag ảnh).
+  `_ver_thansa`/`_ver_javis`; changelog "đã cài" so theo NỀN javis. `GITHUB_REPO` →
+  `xahoapro/thansa-os` (env `THANSA_UPDATE_REPO`). `moc-goc.thansa_version` = 1.2.0.
+  Thêm `RELEASES.md` (sổ neo) + **tu-kiem-chung luật 5** (neo VERSION == goc_version).
+- **P026 (bản quyền + link + tác giả):** LICENSE GIỮ copyright Nguyễn Minh Quý (MIT) +
+  THÊM Duy Quang (thansa.org). javisos.com→thansa.org, minhquy.vn→tradingauto.org,
+  Minh Quý→Duy Quang, blogminhquy/javis-os→xahoapro/thansa-os. `_rebrand_hien_thi` +
+  changelog-thansa.json + website + link tài liệu. Giữ dữ liệu test/comment ví dụ.
+- **P027 (tên sản phẩm docs):** Javis OS→Thansa OS trong README*/docs bằng regex
+  `Javis(?![/A-Za-z_])` (giữ JAVIS_*/javis_*/Javis/ path). ~1261 chỗ, 37 file.
+- **ws-disconnect:** `bao-cao/BUG-ws-disconnect.md` — KHÔNG tái hiện trên VPS (45+ lần xanh,
+  đường code test giống hệt v1.0). Chờ trạm #1 gửi version thư viện + nghiệm thu.
+- **Repo đã PUBLIC** → kênh update/CHANGELOG/ANNOUNCEMENTS chạy qua fork được.
+- Suite 250/250 sau mỗi patch. so_patch = 24, mốc gốc 5bcc6f4 (0.40.0), thansa_version 1.2.0.
