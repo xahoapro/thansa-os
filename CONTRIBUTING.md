@@ -1,4 +1,4 @@
-# Đóng góp cho Javis OS
+# Đóng góp cho Thansa OS
 
 Cảm ơn bạn đã muốn đóng góp. Repo này nhận Pull Request từ **fork** - bạn không cần quyền
 ghi trực tiếp, chỉ cần fork về tài khoản của mình, code, rồi mở PR nhắm vào nhánh `main`.

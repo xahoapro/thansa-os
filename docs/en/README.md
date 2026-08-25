@@ -1,8 +1,8 @@
-# Javis OS documentation (English)
+# Thansa OS documentation (English)
 
 *[Tiếng Việt](../README.md) · **English***
 
-Javis OS was written in Vietnamese, and the user guides are being translated one page at a
+Thansa OS was written in Vietnamese, and the user guides are being translated one page at a
 time rather than all at once. This index says plainly what exists in English today and points
 at the Vietnamese original for everything else, so nothing is silently missing.
 
@@ -30,6 +30,6 @@ the labels themselves.
 ## Adding a language
 
 Translating documentation is step 6 of the language playbook, and it is deliberately last:
-Javis answers, routes and formats correctly in a new language long before its documentation is
+Thansa answers, routes and formats correctly in a new language long before its documentation is
 translated. The four required steps are in
 [docs/dev/them-mot-ngon-ngu.md](../dev/them-mot-ngon-ngu.md) (Vietnamese).

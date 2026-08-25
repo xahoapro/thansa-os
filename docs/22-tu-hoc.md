@@ -1,23 +1,23 @@
-# Tự học: Javis thông minh dần lên
+# Tự học: Thansa thông minh dần lên
 
-Mỗi lần bạn trò chuyện với Javis là một lần có thông tin đáng giữ trôi qua: một sự thật về công việc của bạn, một khái niệm vừa được giải thích, một quy trình vừa làm xong. Trang **Tự học** bật cái vòng lặp nhặt những thứ đó lại và ghi vào brain, để lần sau Javis không phải hỏi lại.
+Mỗi lần bạn trò chuyện với Thansa là một lần có thông tin đáng giữ trôi qua: một sự thật về công việc của bạn, một khái niệm vừa được giải thích, một quy trình vừa làm xong. Trang **Tự học** bật cái vòng lặp nhặt những thứ đó lại và ghi vào brain, để lần sau Thansa không phải hỏi lại.
 
 Trang này hướng dẫn bật tự học, chọn mức độ mạnh tay của nó, hiểu nó học được cái gì và chặn cái gì, và hoàn tác khi nó học sai.
 
 ## Tính năng này là gì
 
-Sau vài lượt chat, Javis mở một **tiến trình học riêng** để đọc lại đoạn hội thoại vừa rồi và rút ra tri thức. Tiến trình này bị khoá rất chặt:
+Sau vài lượt chat, Thansa mở một **tiến trình học riêng** để đọc lại đoạn hội thoại vừa rồi và rút ra tri thức. Tiến trình này bị khoá rất chặt:
 
 - **Chỉ đọc.** Nó chỉ được dùng `Read`, `Glob`, `Grep`, `LS`. Các công cụ `Bash`, `WebFetch`, `WebSearch`, `Task` bị chặn thẳng.
-- **Cô lập, không MCP.** Nó chạy với file cấu hình MCP rỗng ở chế độ nghiêm ngặt, nên không đụng được POS, quảng cáo, Zalo hay bất kỳ nguồn dữ liệu nào bạn đã đấu. Nếu không tạo được file MCP rỗng thì Javis từ chối chạy luôn, chứ không chạy tạm với MCP của máy.
+- **Cô lập, không MCP.** Nó chạy với file cấu hình MCP rỗng ở chế độ nghiêm ngặt, nên không đụng được POS, quảng cáo, Zalo hay bất kỳ nguồn dữ liệu nào bạn đã đấu. Nếu không tạo được file MCP rỗng thì Thansa từ chối chạy luôn, chứ không chạy tạm với MCP của máy.
 - **Ghim trong brain**, và có trần thời gian 240 giây cho mỗi lượt học.
-- **Nó KHÔNG ghi file.** Kết quả duy nhất nó trả về là một khối JSON mô tả "nên học gì". Người ghi file là code Python của Javis. Nhờ vậy không có chuyện model ghi đè nhầm `MEMORY.md`, ghi ra ngoài brain, hay xoá mất ghi chú của bạn.
+- **Nó KHÔNG ghi file.** Kết quả duy nhất nó trả về là một khối JSON mô tả "nên học gì". Người ghi file là code Python của Thansa. Nhờ vậy không có chuyện model ghi đè nhầm `MEMORY.md`, ghi ra ngoài brain, hay xoá mất ghi chú của bạn.
 
 Trước khi ghi, code còn quét thêm hai lớp: **quét lộ khoá bí mật** (API key, token Telegram, JWT, chuỗi kết nối cơ sở dữ liệu, dòng có nhãn "mật khẩu"/"password") và **quét câu chèn lệnh** kiểu "bỏ qua mọi chỉ dẫn trước đó". Cái nào dính là bị chặn, không ghi, và lý do được ghi vào nhật ký. Ngược chiều cũng vậy: nội dung hội thoại đưa cho tiến trình học đọc đã được vô hiệu hoá các câu mệnh lệnh, để một tin nhắn khách gửi vào không điều khiển được vòng học.
 
-Cuối cùng, Javis chỉ cho phép ghi vào đúng các thư mục `memory/`, `Memory/`, `Wiki/`, `skills/`, `.claude/skills/`, `Javis/` của brain. Đường dẫn nào lọt ra ngoài danh sách này sẽ bị khôi phục lại ngay.
+Cuối cùng, Thansa chỉ cho phép ghi vào đúng các thư mục `memory/`, `Memory/`, `Wiki/`, `skills/`, `.claude/skills/`, `Javis/` của brain. Đường dẫn nào lọt ra ngoài danh sách này sẽ bị khôi phục lại ngay.
 
-## Mở ở đâu trong Javis
+## Mở ở đâu trong Thansa
 
 Ở thanh điều hướng bên trái, mở nhóm **Bộ não**, rồi bấm **Tự học** (biểu tượng 🧠). Đầu trang hiện tiêu đề **Tự học** kèm dòng phụ "Rewire Memory · Wiki · Skill (an toàn, undo được)".
 
@@ -31,14 +31,14 @@ Trang làm việc trên **brain đang chọn**. Đổi brain ở đầu màn hì
 
 | Nhãn nút | Nghĩa |
 | --- | --- |
-| `● Đang bật` | Javis đang tự học sau mỗi vài lượt chat |
+| `● Đang bật` | Thansa đang tự học sau mỗi vài lượt chat |
 | `○ Đang tắt` | Không học gì cả, kể cả khi bạn chat rất nhiều |
 
-Lần đầu bấm bật, nút hiện "Đang git-init..." trong giây lát: Javis biến thư mục brain thành một kho git cục bộ. Việc này chỉ làm một lần và **không đẩy gì lên mạng**. Có git thì mỗi lần học là một commit, nên bạn xem lại được và hoàn tác được bằng một nút.
+Lần đầu bấm bật, nút hiện "Đang git-init..." trong giây lát: Thansa biến thư mục brain thành một kho git cục bộ. Việc này chỉ làm một lần và **không đẩy gì lên mạng**. Có git thì mỗi lần học là một commit, nên bạn xem lại được và hoàn tác được bằng một nút.
 
 Xong, dòng ghi chú ngay dưới nút đổi thành kết quả thật, ví dụ "Đã git-init brain → auto-write an toàn/undo được.". Nếu máy chưa cài git, dòng đó bắt đầu bằng "⚠ Chưa git được (thiếu git?)". Câu này còn nói "auto sẽ tự hạ dry-run", nhưng đó là chữ cũ: từ bản hiện tại, tự học **vẫn ghi file bình thường khi không có git**, chỉ mất khả năng hoàn tác một chạm và mất đường sao lưu. Xem mục "Máy chưa cài git thì sao" ở dưới.
 
-Bấm nút một lần nữa để tắt. Lúc tắt, Javis lưu ngay trạng thái tắt, không cần bấm Lưu cấu hình.
+Bấm nút một lần nữa để tắt. Lúc tắt, Thansa lưu ngay trạng thái tắt, không cần bấm Lưu cấu hình.
 
 ### Bước 2: Chọn chế độ ghi
 
@@ -50,7 +50,7 @@ Bấm nút một lần nữa để tắt. Lúc tắt, Javis lưu ngay trạng th
 | **Đề xuất** | "Như chạy thử, để bạn xem trước khi cho ghi." | Giống hệt Chạy thử về mặt file: liệt kê ra thứ nó định học, không ghi |
 | **Tự ghi** | "Ghi thẳng vào Memory/Wiki - git-commit + undo được." | Chế độ duy nhất thật sự ghi file. Có git thì kèm luôn một commit |
 
-**Mặc định của bản cài mới là Tự ghi.** Nếu bạn muốn quan sát vài ngày trước khi cho Javis động vào brain, chuyển sang Chạy thử rồi đọc Nhật ký học một thời gian.
+**Mặc định của bản cài mới là Tự ghi.** Nếu bạn muốn quan sát vài ngày trước khi cho Thansa động vào brain, chuyển sang Chạy thử rồi đọc Nhật ký học một thời gian.
 
 ### Bước 3: Chọn học cái gì
 
@@ -60,14 +60,14 @@ Bấm nút một lần nữa để tắt. Lúc tắt, Javis lưu ngay trạng th
 | --- | --- | --- |
 | **Ký ức (Memory)** | Bật | Sự thật bền vững về chính bạn và doanh nghiệp bạn, ghi thành file trong `memory/facts/` và thêm một dòng vào `MEMORY.md` |
 | **Tri thức (Wiki)** | Bật | Khái niệm, framework, quy trình tái dùng được, ghi thành note trong thư mục Wiki của brain |
-| **Kỹ năng (Skill)** | Bật | Quy trình nhiều bước Javis vừa tự làm và thấy lặp lại được, ghi thành `skills/<slug>/SKILL.md` |
+| **Kỹ năng (Skill)** | Bật | Quy trình nhiều bước Thansa vừa tự làm và thấy lặp lại được, ghi thành `skills/<slug>/SKILL.md` |
 | **Việc (Kanban)** | **Tắt** | Đề xuất việc nền, đẩy vào bảng ở trang **Việc** |
 
 Dòng gợi ý dưới bốn nút ghi: "Wiki/Skill nên bật sau khi đã quen với Ký ức (lộ trình Phase 2/3). Việc = học xong đề xuất task nền vào bảng Việc (Kanban) - chỉ tạo thật ở chế độ Tự ghi, và task luôn chờ bạn duyệt."
 
-Về công tắc **Việc**: nó mặc định tắt và Javis **chủ động tắt lại một lần** cho những máy đã bật từ trước. Lý do rất thực tế: khi soi bảng việc thật, gần như toàn bộ việc trong đó là do máy tự nghĩ ra, mà phần lớn worker nền không làm nổi (cần đăng nhập, cần gửi tin ra ngoài, cần chờ người khác duyệt, cần đụng mã nguồn ngoài brain). Kể từ đó, việc chỉ sinh ra khi bạn **bảo thẳng** trong chat. Công tắc vẫn còn ở đây cho ai muốn bật lại.
+Về công tắc **Việc**: nó mặc định tắt và Thansa **chủ động tắt lại một lần** cho những máy đã bật từ trước. Lý do rất thực tế: khi soi bảng việc thật, gần như toàn bộ việc trong đó là do máy tự nghĩ ra, mà phần lớn worker nền không làm nổi (cần đăng nhập, cần gửi tin ra ngoài, cần chờ người khác duyệt, cần đụng mã nguồn ngoài brain). Kể từ đó, việc chỉ sinh ra khi bạn **bảo thẳng** trong chat. Công tắc vẫn còn ở đây cho ai muốn bật lại.
 
-**Lộ trình bật dần được khuyên dùng:** bật riêng Ký ức trước, chạy vài ngày rồi mở `MEMORY.md` xem Javis nhớ đúng chưa. Ổn thì bật thêm Tri thức Wiki. Quen tay nữa mới bật Kỹ năng, vì skill sai làm lệch cả cách Javis xử lý về sau. Công tắc Việc để cuối cùng, và chỉ khi bạn thật sự muốn Javis tự đẻ việc nền.
+**Lộ trình bật dần được khuyên dùng:** bật riêng Ký ức trước, chạy vài ngày rồi mở `MEMORY.md` xem Thansa nhớ đúng chưa. Ổn thì bật thêm Tri thức Wiki. Quen tay nữa mới bật Kỹ năng, vì skill sai làm lệch cả cách Thansa xử lý về sau. Công tắc Việc để cuối cùng, và chỉ khi bạn thật sự muốn Thansa tự đẻ việc nền.
 
 ### Bước 4: Bật Curator nếu muốn dọn dẹp định kỳ
 
@@ -81,44 +81,44 @@ Chế độ ghi, bốn công tắc và Curator **chỉ có hiệu lực sau khi 
 
 ### Bước 6: Bấm Học ngay để thử một lượt
 
-Bấm **▶ Học ngay**. Javis tự lưu cấu hình hiện tại rồi chạy một lượt học trên brain đang chọn. Nút hiện "Đang học..." khoảng 2,5 giây rồi tự tải lại các khối bên dưới.
+Bấm **▶ Học ngay**. Thansa tự lưu cấu hình hiện tại rồi chạy một lượt học trên brain đang chọn. Nút hiện "Đang học..." khoảng 2,5 giây rồi tự tải lại các khối bên dưới.
 
 Lưu ý: **Học ngay vẫn tôn trọng chế độ ghi**. Đang ở Chạy thử thì bấm Học ngay cũng không tạo file, chỉ ra nhật ký.
 
-Nếu chưa có lượt chat nào đang chờ, Javis lấy phiên hội thoại mới nhất của brain đó để học. Hội thoại quá ngắn thì nó bỏ qua lặng lẽ, không tạo mục nhật ký nào, nên thấy Nhật ký học không có gì mới thì thường là brain đó chưa có nội dung đủ dài để học.
+Nếu chưa có lượt chat nào đang chờ, Thansa lấy phiên hội thoại mới nhất của brain đó để học. Hội thoại quá ngắn thì nó bỏ qua lặng lẽ, không tạo mục nhật ký nào, nên thấy Nhật ký học không có gì mới thì thường là brain đó chưa có nội dung đủ dài để học.
 
-## Javis học lúc nào (nhịp tự động)
+## Thansa học lúc nào (nhịp tự động)
 
-Bạn không phải bấm gì. Mỗi lượt chat xong, Javis phân loại lượt đó rồi cộng vào một hàng chờ theo brain:
+Bạn không phải bấm gì. Mỗi lượt chat xong, Thansa phân loại lượt đó rồi cộng vào một hàng chờ theo brain:
 
 - Lượt quá ngắn hoặc chỉ là chào hỏi, "ok", "cảm ơn" thì bị bỏ ngay, không tính.
 - Lượt có dấu hiệu **đặc tri thức** (câu hỏi "là gì", "gồm mấy bước", "công thức", "nguyên lý", "quy trình", "khái niệm", "cách làm") được đánh dấu riêng.
 - Bạn nói "ghi nhớ", "nhớ giúp", "lưu lại" thì lượt đó được đánh dấu **gấp**.
 
-Cứ khoảng 30 giây, Javis kiểm tra hàng chờ và bắn một mẻ học khi thoả một trong các điều kiện: đủ **3 lượt** tích luỹ, hoặc lượt gấp và đã trôi qua 30 giây, hoặc lượt đặc tri thức và đã **im 3 phút**, hoặc **im 10 phút** mà vẫn còn lượt chưa học.
+Cứ khoảng 30 giây, Thansa kiểm tra hàng chờ và bắn một mẻ học khi thoả một trong các điều kiện: đủ **3 lượt** tích luỹ, hoặc lượt gấp và đã trôi qua 30 giây, hoặc lượt đặc tri thức và đã **im 3 phút**, hoặc **im 10 phút** mà vẫn còn lượt chưa học.
 
 Mỗi mẻ học đọc tối đa 3 phiên hội thoại gần nhất, mỗi phiên lấy 12 tin cuối, tổng nội dung cắt ở khoảng 24.000 ký tự. Nghĩa là nó học từ đoạn **vừa xảy ra**, không đào lại toàn bộ lịch sử.
 
 Chỉ một mẻ học chạy tại một thời điểm. Tự học, Curator và các tiến trình ghi khác dùng chung một khoá trên brain nên không giẫm chân nhau.
 
-## Cửa lọc trước khi ghi (vì sao Javis học ít hơn bạn tưởng)
+## Cửa lọc trước khi ghi (vì sao Thansa học ít hơn bạn tưởng)
 
 Đây là phần hay gây thắc mắc: bạn thấy nhật ký ghi "đã học" nhưng file không xuất hiện. Lý do là mỗi loại đều có cửa lọc riêng.
 
 **Ký ức (facts):**
 - Độ tự tin phải từ 2 trở lên mới ghi.
 - **Chỉ thêm, không đè.** File ký ức đã tồn tại thì bỏ qua, trừ khi thông tin mới được đánh dấu là thay thế cái cũ. Khi đó file cũ được gắn `superseded_by` và thêm một dòng lịch sử, chứ vẫn không bị xoá.
-- Ghi xong, Javis tự chèn một dòng vào `MEMORY.md` trỏ tới file ký ức mới.
+- Ghi xong, Thansa tự chèn một dòng vào `MEMORY.md` trỏ tới file ký ức mới.
 
 **Tri thức Wiki:**
 - Mật độ (mức được giải thích có cấu trúc) phải từ 2 trở lên.
-- Điều gì **chính Javis tự nói mà không có nguồn** thì **không được vào Wiki**. Nó bị đẩy sang file `_open-questions.md` để bạn tự xác minh. Đây là rào chống Javis tự đầu độc bộ nhớ bằng chính lời mình.
+- Điều gì **chính Thansa tự nói mà không có nguồn** thì **không được vào Wiki**. Nó bị đẩy sang file `_open-questions.md` để bạn tự xác minh. Đây là rào chống Thansa tự đầu độc bộ nhớ bằng chính lời mình.
 - Trùng khái niệm với note đã có thì không tạo note mới, chỉ ghi một đề xuất bổ sung.
 - Mâu thuẫn với note cũ thì **không ghi đè**, mà thêm mục `## Mâu thuẫn` vào note cũ kèm quan điểm mới, và mở một câu hỏi cần xác minh.
-- Ghi xong, Javis thêm dòng vào `index.md` (mục "## Tự học") và một dòng vào `log.md` của Wiki.
+- Ghi xong, Thansa thêm dòng vào `index.md` (mục "## Tự học") và một dòng vào `log.md` của Wiki.
 
 **Kỹ năng:**
-- Trước khi ghi, Javis mở **một lượt kiểm tra thứ hai độc lập**, giả định các skill vừa đề xuất là sai hoặc thừa, và chỉ giữ lại cái được duyệt.
+- Trước khi ghi, Thansa mở **một lượt kiểm tra thứ hai độc lập**, giả định các skill vừa đề xuất là sai hoặc thừa, và chỉ giữ lại cái được duyệt.
 - `description` dài quá **150 ký tự** là bị chặn (bộ định tuyến cắt đúng ở đó nên phần dư mất im lặng), mở đầu bằng cụm sáo rỗng kiểu "Kích hoạt khi..." cũng bị chặn.
 - **Không bao giờ ghi đè skill đã có**, và **không hồi sinh skill bạn đã tắt**.
 
@@ -132,7 +132,7 @@ Mọi thứ bị chặn đều xuất hiện trong Nhật ký học ở phần *
 
 Tự học chạy bằng **model việc nền** chứ không phải model chính. Bạn chọn model đó ở trang **Models** (nhóm **Kết nối**), khối "◆ Model việc nền" có ghi rõ nó phục vụ "loop · việc Kanban · nhắc hẹn · tự học · tiêu hoá nguồn". Chọn model rẻ ở đó là tự học rẻ theo.
 
-Ngoài ra Javis tự đặt ba cái trần cứng, tính theo ngày và độc lập với nhịp gom lượt:
+Ngoài ra Thansa tự đặt ba cái trần cứng, tính theo ngày và độc lập với nhịp gom lượt:
 
 | Trần | Giá trị mặc định | Chạm trần thì sao |
 | --- | --- | --- |
@@ -140,7 +140,7 @@ Ngoài ra Javis tự đặt ba cái trần cứng, tính theo ngày và độc l
 | Số mẻ học mỗi ngày | 40 | Hạ về chạy thử |
 | Token ước tính mỗi ngày | 300.000 | Hạ về chạy thử |
 
-Khi bị hạ, Javis vẫn phân tích và vẫn ghi nhật ký "sẽ học gì", chỉ là không ghi file. Trạng thái trong nhật ký ghi rõ lý do, ví dụ "dry-run (đã chạm trần fork/ngày → hạ dry-run (backpressure))".
+Khi bị hạ, Thansa vẫn phân tích và vẫn ghi nhật ký "sẽ học gì", chỉ là không ghi file. Trạng thái trong nhật ký ghi rõ lý do, ví dụ "dry-run (đã chạm trần fork/ngày → hạ dry-run (backpressure))".
 
 Bấm **▶ Học ngay** cũng chịu đúng các trần này: phần phân tích luôn chạy, nhưng muốn ra file thì phải đang ở chế độ Tự ghi **và** chưa chạm trần nào.
 
@@ -196,15 +196,15 @@ Ngay dưới hàng nút là một dòng tóm tắt sức khoẻ bộ não, dạn
 | **Token ước tính** | Token tự học đã tiêu trong ngày (ước lượng thô), so với trần 300.000 |
 | **Commit học** | Số commit học tìm thấy trong lịch sử git của brain (đếm tối đa 50 commit gần nhất) |
 
-## Khối "Javis đã tự học gì (commit gần nhất)"
+## Khối "Thansa đã tự học gì (commit gần nhất)"
 
 Khối này liệt kê tối đa 12 commit học gần nhất của brain, mỗi dòng gồm tiêu đề commit, mã hash ngắn, thời điểm, và danh sách tối đa 6 file đã đổi.
 
-Tiêu đề commit có dạng `learn: +2 fact +1 wiki +0 skill (2026-07-29)` với mẻ học, và `curator: reindex memory (2026-07-29)` với vòng bảo trì. Chỉ hai loại tiền tố này được coi là "commit học", nên commit nền do Javis tạo lúc khởi tạo repo sẽ không lọt vào đây và cũng không bị nút Hoàn tác đụng tới.
+Tiêu đề commit có dạng `learn: +2 fact +1 wiki +0 skill (2026-07-29)` với mẻ học, và `curator: reindex memory (2026-07-29)` với vòng bảo trì. Chỉ hai loại tiền tố này được coi là "commit học", nên commit nền do Thansa tạo lúc khởi tạo repo sẽ không lọt vào đây và cũng không bị nút Hoàn tác đụng tới.
 
 Chưa có gì thì khối hiện "Chưa có commit học nào.". Nếu brain chưa phải kho git, khối hiện dòng cam "Brain chưa phải git repo - bật Tự học để git-init (mới xem/undo được commit)."
 
-**Hoàn tác:** bấm **↶ Hoàn tác lần học gần nhất**, xác nhận, Javis chạy `git revert` trên commit học cuối. Thành công thì hiện hộp thoại "Đã hoàn tác:" kèm tiêu đề commit. Ba lý do thất bại thường gặp:
+**Hoàn tác:** bấm **↶ Hoàn tác lần học gần nhất**, xác nhận, Thansa chạy `git revert` trên commit học cuối. Thành công thì hiện hộp thoại "Đã hoàn tác:" kèm tiêu đề commit. Ba lý do thất bại thường gặp:
 
 - "Brain chưa phải git repo"
 - "Không có commit học nào để undo"
@@ -233,20 +233,20 @@ Tự học **vẫn chạy và vẫn ghi file** bình thường. Ô Chế độ g
 Cái bạn mất khi không có git:
 
 - Nút **↶ Hoàn tác lần học gần nhất** không dùng được.
-- Khối "Javis đã tự học gì" trống, không xem lại được từng lần học đã đổi file nào.
+- Khối "Thansa đã tự học gì" trống, không xem lại được từng lần học đã đổi file nào.
 - Không đồng bộ brain lên GitHub được.
 
 Các rào an toàn còn lại giữ nguyên: tiến trình học vẫn chỉ đọc, vẫn quét khoá bí mật và câu chèn lệnh, ký ức vẫn chỉ-thêm-không-đè, và vẫn không ghi ra ngoài phạm vi thư mục cho phép.
 
-Cài git rồi thì tắt tự học và bật lại một lần để Javis git-init brain.
+Cài git rồi thì tắt tự học và bật lại một lần để Thansa git-init brain.
 
 ## Mẹo
 
-- **Muốn Javis nhớ chắc chắn một điều, nói thẳng "ghi nhớ ..." trong chat.** Câu có "ghi nhớ", "nhớ giúp", "lưu lại", "nhớ là" được đánh dấu gấp và học ở mẻ ngay sau đó thay vì phải chờ đủ 3 lượt.
-- **Kiểm tra Javis học đúng chưa bằng chính `MEMORY.md`.** Mở trang **Tệp tin**, vào `memory/MEMORY.md`. Mỗi dòng là một ký ức. Dòng nào sai thì sửa hoặc xoá thẳng ở đó, nhanh hơn hoàn tác cả một commit.
+- **Muốn Thansa nhớ chắc chắn một điều, nói thẳng "ghi nhớ ..." trong chat.** Câu có "ghi nhớ", "nhớ giúp", "lưu lại", "nhớ là" được đánh dấu gấp và học ở mẻ ngay sau đó thay vì phải chờ đủ 3 lượt.
+- **Kiểm tra Thansa học đúng chưa bằng chính `MEMORY.md`.** Mở trang **Tệp tin**, vào `memory/MEMORY.md`. Mỗi dòng là một ký ức. Dòng nào sai thì sửa hoặc xoá thẳng ở đó, nhanh hơn hoàn tác cả một commit.
 - **Giữ `MEMORY.md` gọn.** File này nạp vào mọi lượt chat. Chỉ số vượt khoảng 150 dòng là lúc nên gộp các ký ức vụn thành một ký ức lớn hơn.
-- **Muốn tri thức Wiki chất lượng, hãy nói ra nguồn.** Điều gì chỉ do Javis tự suy ra sẽ không được vào Wiki. Bạn khẳng định hoặc dẫn nguồn có tên thì nó mới được ghi.
-- **Chạy thử vài ngày trước khi mở Tự ghi** nếu brain của bạn đã có nhiều ghi chú viết tay và bạn muốn chắc chắn Javis không làm loạn cách đặt tên.
+- **Muốn tri thức Wiki chất lượng, hãy nói ra nguồn.** Điều gì chỉ do Thansa tự suy ra sẽ không được vào Wiki. Bạn khẳng định hoặc dẫn nguồn có tên thì nó mới được ghi.
+- **Chạy thử vài ngày trước khi mở Tự ghi** nếu brain của bạn đã có nhiều ghi chú viết tay và bạn muốn chắc chắn Thansa không làm loạn cách đặt tên.
 - **Đổi model việc nền sang model rẻ** ở trang **Models** nếu thấy tự học ăn nhiều hạn mức. Tự học không cần model mạnh nhất.
 
 ## Sự cố thường gặp
@@ -255,15 +255,15 @@ Cài git rồi thì tắt tự học và bật lại một lần để Javis git
 Kiểm tra theo thứ tự: chế độ ghi có đang là **Tự ghi** không (Chạy thử và Đề xuất đều không tạo file); các lượt chat có "đủ chất" không (chào hỏi, "ok", "cảm ơn" bị bỏ); đã đủ 3 lượt hoặc đã im 10 phút chưa; và dòng Chỉ số xem "Fork hôm nay" đã chạm 40 chưa. Nhật ký học luôn có câu trả lời chính xác.
 
 **Nhật ký ghi đã học nhưng không thấy file mới.**
-Đọc mục **Bị chặn** trong đúng mục nhật ký đó. Lý do hay gặp: ký ức trùng file đã có nên không đè, note Wiki bị loại vì Javis tự nói không có nguồn, note trùng khái niệm đã có, skill trùng tên hoặc `description` dài quá 150 ký tự.
+Đọc mục **Bị chặn** trong đúng mục nhật ký đó. Lý do hay gặp: ký ức trùng file đã có nên không đè, note Wiki bị loại vì Thansa tự nói không có nguồn, note trùng khái niệm đã có, skill trùng tên hoặc `description` dài quá 150 ký tự.
 
 **Bấm Học ngay không thấy gì đổi.**
 Nếu đang có một mẻ học hoặc vòng Curator chạy dở thì lượt mới bị từ chối. Chờ mẻ đang chạy xong (tối đa 240 giây) rồi bấm lại, hoặc bấm **■ Dừng** trước.
 
 **Bấm Hoàn tác báo "Các file học đang bị sửa dở".**
-Bạn đang sửa dở đúng file nằm trong commit học đó. Lưu lại hoặc hoàn tác chỉnh sửa của bạn trước, rồi bấm lại. Javis cố tình không revert đè lên chỉnh tay của bạn.
+Bạn đang sửa dở đúng file nằm trong commit học đó. Lưu lại hoặc hoàn tác chỉnh sửa của bạn trước, rồi bấm lại. Thansa cố tình không revert đè lên chỉnh tay của bạn.
 
-**Javis học vào nhầm brain.**
+**Thansa học vào nhầm brain.**
 Trang này làm việc trên brain đang chọn ở đầu màn hình. Đổi đúng brain rồi bấm Lưu cấu hình và Học ngay lại. Bản thân vòng học tự động thì học đúng brain của cuộc trò chuyện, không phụ thuộc brain bạn đang mở trên trang này.
 
 **Curator bật rồi mà không thấy chạy.**
