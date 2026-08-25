@@ -867,3 +867,26 @@
     node --check console.js OK; suite 253/253 xanh.
   dieu_kien_bo: >
     Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003).
+
+- id: P029
+  ten: "Dịch EN chuỗi UI mới (vòng 0.43.2)"
+  y_dinh: >
+    Vòng trộn 0.40.0→0.43.2 upstream refactor dashboard nhiều (Telegram sidebar, đổi model,
+    terminal, việc nền...) → 179 mẩu text-node UI mới chưa có bản dịch, giao diện EN suy biến
+    về tiếng Việt. Bổ sung 179 cặp việt→anh vào en-goi.json (build-en tra từng mẩu tách theo
+    thẻ). Giữ nguyên HTML/template `${...}`/token kỹ thuật/Thansa/tên dịch vụ trong bản dịch.
+    en-goi 3029 → 3208.
+  commit: "[me] P029: dich EN chuoi UI moi (vong 0.43.2)"
+  diem_neo:
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "Máy chủ không giải mã được"
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "Không đọc được danh sách token."
+  vung_theo_doi:
+    - dashboard/i18n/en-goi.json
+  anh_goc: []
+  kiem_chung: >
+    build-en --extract mẩu UI thiếu = 0; build-en dashboard/*.js khung code GIỐNG HỆT + node
+    --check OK; en-goi.json JSON hợp lệ ~3208 cặp; test_i18n xanh; suite 253/253.
+  dieu_kien_bo: >
+    Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó (cùng P015/P017).
