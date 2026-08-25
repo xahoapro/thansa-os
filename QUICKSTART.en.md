@@ -1,8 +1,8 @@
-# Javis OS - Quick start
+# Thansa OS - Quick start
 
 *[Tiếng Việt](QUICKSTART.md) · **English***
 
-Get Javis OS running in a few minutes. Full guides: [docs/](docs/README.md).
+Get Thansa OS running in a few minutes. Full guides: [docs/](docs/README.md).
 
 ## Option 1 - Hostinger VPS (Docker Manager, one click)
 

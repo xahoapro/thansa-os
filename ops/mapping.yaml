@@ -811,3 +811,31 @@
     + Minh Quý→Duy Quang; JSON/py/node hợp lệ; test_update/image_gen/zalo_mcp/i18n + suite xanh.
   dieu_kien_bo: >
     Không bỏ (đây là bản quyền/thương hiệu của fork). Chỉ dọn khi tách hẳn khỏi nền Javis.
+
+- id: P027
+  ten: "Tên sản phẩm Javis OS → Thansa OS trong README + docs"
+  y_dinh: >
+    Đổi tên SẢN PHẨM/trợ lý hiển thị "Javis"/"Javis OS" → "Thansa"/"Thansa OS" trong
+    README*, QUICKSTART*, DEPLOY.md, CONTRIBUTING.md và toàn bộ docs người dùng (docs/NN-*.md,
+    docs/en/*.md). Thay bằng regex `Javis(?![/A-Za-z_])` để CHỈ chạm tên hiển thị, GIỮ NGUYÊN
+    token kỹ thuật: `JAVIS_*` (env, viết HOA), `javis_*` (tool: javis_task/schedule/use_skill),
+    `Javis/...` (đường vault: Javis/loops, Javis/agents...), `javis.vbs`/`javis.bat`/`javis.service`,
+    `javis-cli`/`javis-os`. KHÔNG đụng docs/superpowers + docs/dev (lịch sử). ~1261 chỗ, 37 file.
+    Bổ sung cho P026 (bản quyền/link) để repo nhất quán thương hiệu Thansa.
+  commit: "[me] P027: ten san pham Javis OS -> Thansa OS trong README + docs"
+  diem_neo:
+    - file: README.md
+      ky_hieu: "# 🧠 Thansa OS"
+    - file: docs/16-cau-hinh-env.md
+      ky_hieu: "Thansa OS"
+  vung_theo_doi:
+    - "README.md, README.en.md, QUICKSTART.md, QUICKSTART.en.md, DEPLOY.md, CONTRIBUTING.md"
+    - "docs/NN-*.md + docs/en/*.md (trừ docs/superpowers, docs/dev)"
+  anh_goc:
+    - file: README.md
+      doan: "# 🧠 Javis OS"
+  kiem_chung: >
+    grep 'Javis OS' + 'Javis ' (prose) trong README/docs = 0; token kỹ thuật còn nguyên
+    (grep THANSA_/thansa_/Thansa/ = 0 → JAVIS_*/javis_*/Javis/ không bị đổi nhầm); suite xanh.
+  dieu_kien_bo: >
+    Upstream đưa tên sản phẩm vào biến branding thì bỏ patch, đặt qua cấu hình (cùng P001/P003).

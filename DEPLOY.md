@@ -1,12 +1,12 @@
-# Cài đặt Javis OS trên server / VPS
+# Cài đặt Thansa OS trên server / VPS
 
 ***Tiếng Việt** · [English](DEPLOY.en.md)*
 
-Javis OS là một AI agent cá nhân + Second Brain. "Bộ não" của nó là **Claude Code CLI**
+Thansa OS là một AI agent cá nhân + Second Brain. "Bộ não" của nó là **Claude Code CLI**
 (đăng nhập một lần, không cần API key). Có 3 cách chạy - chọn 1.
 
-> ⚠️ **An toàn:** Javis chạy Claude với toàn quyền trên máy. Khi chạy public (Docker/VPS/Hostinger),
-> Javis **tự bật bắt buộc đăng nhập** - mở app ra là màn **tạo tài khoản admin / đăng nhập**, không
+> ⚠️ **An toàn:** Thansa chạy Claude với toàn quyền trên máy. Khi chạy public (Docker/VPS/Hostinger),
+> Thansa **tự bật bắt buộc đăng nhập** - mở app ra là màn **tạo tài khoản admin / đăng nhập**, không
 > ai điều khiển được khi chưa đặt mật khẩu. (Chạy nội bộ muốn tắt: `JAVIS_REQUIRE_LOGIN=0`.)
 
 ---
@@ -56,7 +56,7 @@ Muốn build từ source thay vì pull: `curl -O .../docker-compose.build.yml` r
 
 Lệnh hằng ngày:
 ```bash
-docker compose logs -f     # xem Javis đang làm gì
+docker compose logs -f     # xem Thansa đang làm gì
 docker compose restart     # khởi động lại
 docker compose down        # tắt
 docker compose build --pull && docker compose up -d   # cập nhật
@@ -95,7 +95,7 @@ link riêng chạy HTTPS mà không cần mua tên miền. **Lưu ý (đã kiể
      (vd `javis.srv1782015.hstgr.cloud`), hoặc tên miền riêng đã trỏ DNS A về IP VPS.
    - `JAVIS_ADMIN_USER`: tên đăng nhập, mặc định `admin`.
    - `JAVIS_ADMIN_PASSWORD`: mật khẩu mạnh anh tự đặt; để trống thì lần đầu dùng MÃ THIẾT LẬP.
-   - `JAVIS_AUTO_UPDATE` (tuỳ chọn): đặt `true` thì Javis TỰ cập nhật mỗi ngày. Bỏ trống thì
+   - `JAVIS_AUTO_UPDATE` (tuỳ chọn): đặt `true` thì Thansa TỰ cập nhật mỗi ngày. Bỏ trống thì
      vẫn cập nhật được bằng nút **⬆ Cập nhật ngay** trong app - từ 0.55.56 stack Hostinger đã
      kèm sẵn Watchtower nên nút đó có ngay từ lần cài đầu.
 
@@ -115,10 +115,10 @@ link riêng chạy HTTPS mà không cần mua tên miền. **Lưu ý (đã kiể
 Không cần đặt `DOMAIN` lúc chạy nữa - bật Caddy một lần rồi khai báo tên miền trong giao diện.
 1. Bật Caddy (On-Demand TLS): `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d`
    *(cần Docker Compose v2.23.1+ - kiểm tra `docker compose version`)*
-2. Mở `http://<ip-vps>:7777` → **Cài đặt → Giọng nói, thương hiệu & truy cập → Tên miền & SSL** → nhập `javis.tencuaban.com` → **Lưu & kiểm tra**.
-3. Wizard hiện đúng bản ghi DNS cần tạo (A: `javis.tencuaban.com → <ip-vps>`) và có nút sao chép.
+2. Mở `http://<ip-vps>:7777` → **Cài đặt → Giọng nói, thương hiệu & truy cập → Tên miền & SSL** → nhập `thansa.tencuaban.com` → **Lưu & kiểm tra**.
+3. Wizard hiện đúng bản ghi DNS cần tạo (A: `thansa.tencuaban.com → <ip-vps>`) và có nút sao chép.
    Trỏ DNS xong, đợi lan.
-4. Mở `https://javis.tencuaban.com` → Caddy **tự xin + gia hạn** chứng chỉ ở lần mở đầu, cookie
+4. Mở `https://thansa.tencuaban.com` → Caddy **tự xin + gia hạn** chứng chỉ ở lần mở đầu, cookie
    Secure tự bật. Xong.
 
 > An toàn: Caddy hỏi backend (`/tls-check`) trước khi xin cert → **chỉ** cấp cho đúng tên miền bạn đã
@@ -129,9 +129,9 @@ Không cần đặt `DOMAIN` lúc chạy nữa - bật Caddy một lần rồi k
 
 ---
 
-## 🏢 Chạy NHIỀU bản Javis trên cùng một VPS (mỗi bản một link riêng)
+## 🏢 Chạy NHIỀU bản Thansa trên cùng một VPS (mỗi bản một link riêng)
 
-Một VPS chạy được bao nhiêu bản Javis cũng được - mỗi bản một tên miền phụ, một kho dữ liệu
+Một VPS chạy được bao nhiêu bản Thansa cũng được - mỗi bản một tên miền phụ, một kho dữ liệu
 riêng, không bản nào thấy brain hay tài khoản của bản nào.
 
 **Ba thứ phải KHÁC NHAU giữa các bản.** Trùng cái nào là hỏng đúng cái đó:
@@ -226,11 +226,11 @@ volume `claude-auth` - làm được nhưng tự chịu trách nhiệm, vì hai 
 
 ### 🌐 Truy cập từ xa (Hostinger / VPS bất kỳ) - Cloudflare Tunnel
 
-Mở giao diện Javis từ máy khác mà KHÔNG cần mở port / không cần tên miền:
+Mở giao diện Thansa từ máy khác mà KHÔNG cần mở port / không cần tên miền:
 
-1. **Đặt mật khẩu TRƯỚC (bắt buộc):** mở Javis (qua SSH tunnel ở bước 5) → Dashboard → **Tài khoản** → đặt mật khẩu admin. Javis chạy Claude toàn quyền trên máy → TUYỆT ĐỐI không phơi ra Internet khi chưa có mật khẩu. (Server cũng in cảnh báo nếu chạy public mà chưa đặt.)
+1. **Đặt mật khẩu TRƯỚC (bắt buộc):** mở Thansa (qua SSH tunnel ở bước 5) → Dashboard → **Tài khoản** → đặt mật khẩu admin. Thansa chạy Claude toàn quyền trên máy → TUYỆT ĐỐI không phơi ra Internet khi chưa có mật khẩu. (Server cũng in cảnh báo nếu chạy public mà chưa đặt.)
 2. Bật tunnel: `docker compose --profile tunnel up -d`
-3. Lấy URL: `docker compose logs tunnel | grep trycloudflare` → mở `https://<ngẫu-nhiên>.trycloudflare.com` trên trình duyệt bất kỳ, đăng nhập mật khẩu. Giờ xem & thao tác Javis từ xa.
+3. Lấy URL: `docker compose logs tunnel | grep trycloudflare` → mở `https://<ngẫu-nhiên>.trycloudflare.com` trên trình duyệt bất kỳ, đăng nhập mật khẩu. Giờ xem & thao tác Thansa từ xa.
 
 **URL cố định (tên miền riêng, kiểu `*.hstgr.cloud`):** tạo *named tunnel* ở Cloudflare Zero Trust (miễn phí) → lấy token → `TUNNEL_TOKEN=...` vào `.env` → đổi dòng `command` của service `tunnel` sang bản `run --token` (comment sẵn trong `docker-compose.yml`), trỏ tới `http://javis:7777`. Quick tunnel đổi URL mỗi lần restart; named tunnel cho URL ổn định.
 
@@ -265,7 +265,7 @@ Dừng bằng `stop-javis.bat`. Mở http://localhost:7777
 |---|---|---|
 | `JAVIS_HOST` | Địa chỉ nghe. `127.0.0.1` = chỉ máy này; `0.0.0.0` = mọi nơi (Docker tự đặt) | `127.0.0.1` |
 | `JAVIS_PORT` | Cổng | `7777` |
-| `JAVIS_STATE_DIR` | Nơi Javis ghi state (settings, sessions, loop config) | `server/` (Docker: `/data/state`) |
+| `JAVIS_STATE_DIR` | Nơi Thansa ghi state (settings, sessions, loop config) | `server/` (Docker: `/data/state`) |
 | `OBSIDIAN_VAULT_PATH` | Vault Second Brain chính | `vault/` trong repo (Docker: `/data/vault`) |
 | `BRAIN_PATH` | Thư mục brain | `brain/` trong repo (Docker: `/data/brain`) |
 | `CLAUDE_CWD` | Thư mục dự phòng của Claude CLI (chat chạy trong thư mục brain) | repo root |
@@ -274,7 +274,7 @@ Dừng bằng `stop-javis.bat`. Mở http://localhost:7777
 
 ## 🔄 Cập nhật khi có code mới
 
-> **Nhanh nhất - bấm ngay trong app:** mở **Cập nhật** (rail trái) → khung **Javis OS** hiện
+> **Nhanh nhất - bấm ngay trong app:** mở **Cập nhật** (rail trái) → khung **Thansa OS** hiện
 > phiên bản đang chạy + tự kiểm tra bản mới trên GitHub. Có bản mới → bấm **⬆ Cập nhật ngay**,
 > app tự kéo bản mới + khởi động lại (~20-40s), khỏi vào terminal.
 > - **Docker/VPS:** nút này chạy nhờ service **watchtower**, và từ 0.55.56 nó **đi kèm sẵn**
@@ -282,11 +282,11 @@ Dừng bằng `stop-javis.bat`. Mở http://localhost:7777
 >   Máy nào còn thiếu nút là đang chạy bằng file compose cũ (trước đó Watchtower nằm trong
 >   `profiles: ["update"]` nên `docker compose up -d` không bật nó). Lấy bản mới rồi dựng lại:
 >   ```bash
->   curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+>   curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 >   docker compose up -d --pull always
 >   ```
 >   Chưa muốn đổi file compose thì bật riêng cũng được: `docker compose --profile update up -d`.
->   Chỉ Watchtower được cấp quyền Docker (socket); app Javis KHÔNG → an toàn. Không có nó cũng
+>   Chỉ Watchtower được cấp quyền Docker (socket); app Thansa KHÔNG → an toàn. Không có nó cũng
 >   được, khung sẽ chỉ *báo có bản mới* + chỉ cách cập nhật tay.
 > - **Muốn TỰ cập nhật, khỏi bấm nút:** đặt `JAVIS_AUTO_UPDATE=true` trong `.env` (Hostinger: ô
 >   Environment) rồi dựng lại. Mặc định tắt vì tự cập nhật là app tự khởi động lại bất cứ lúc
@@ -319,7 +319,7 @@ Trên máy Windows của bạn, đẩy code lên GitHub: `git add -A && git comm
 
 ## Đăng nhập Claude là bước duy nhất bắt buộc
 
-"Bộ não" của Javis là Claude Code CLI. Token đăng nhập nằm trong `~/.claude`
+"Bộ não" của Thansa là Claude Code CLI. Token đăng nhập nằm trong `~/.claude`
 (Docker: volume `claude-auth`). Đăng nhập 1 lần → tồn tại qua mọi restart/update.
 Nếu đã đăng nhập trên máy khác, có thể copy thư mục `~/.claude` sang.
 
