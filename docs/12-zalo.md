@@ -2,8 +2,8 @@
 
 ***Tiếng Việt** · [English](en/12-zalo-agent-mcp.md)*
 
-> **Javis có BA chỗ dính tới Zalo, đừng lẫn.** Trang này nói về chỗ thứ nhất: đăng nhập
-> **chính tài khoản Zalo của bạn** để Javis thao tác thay bạn. Hai chỗ kia dùng API chính
+> **Thansa có BA chỗ dính tới Zalo, đừng lẫn.** Trang này nói về chỗ thứ nhất: đăng nhập
+> **chính tài khoản Zalo của bạn** để Thansa thao tác thay bạn. Hai chỗ kia dùng API chính
 > thức, an toàn, nhưng chỉ thấy được thứ người ta nhắn thẳng cho bot.
 >
 > | | Zalo Agent MCP (trang này) | [Kênh Zalo Bot](26-kenh-zalo-bot.md) | [Chatbot](25-chatbot.md) |
@@ -13,12 +13,12 @@
 > | Rủi ro khoá tài khoản | Có | Không | Không |
 > | Đọc được hội thoại cũ | Có | Chỉ tin gửi cho bot | Chỉ tin gửi cho bot |
 > | Nhắn cho người chưa quen bot | Được | Không | Không |
-> | Dùng để | Javis làm việc thay bạn | **Bạn** nhắn cho Javis | **Khách** nhắn cho Javis |
+> | Dùng để | Thansa làm việc thay bạn | **Bạn** nhắn cho Thansa | **Khách** nhắn cho Thansa |
 >
 > Dùng cả ba cùng lúc cũng được, chúng không đụng nhau.
 
-Javis kết nối Zalo cá nhân bằng MCP của
-[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), bản CLI Zalo riêng của Javis. Chỉ có
+Thansa kết nối Zalo cá nhân bằng MCP của
+[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), bản CLI Zalo riêng của Thansa. Chỉ có
 một tiến trình MCP: đăng nhập QR, đọc hoặc tìm hội thoại và gửi tin qua các tool của nó.
 
 > `javis-zalo` dùng API Zalo không chính thức qua `zca-js`. Zalo không hỗ trợ cách
@@ -27,13 +27,13 @@ một tiến trình MCP: đăng nhập QR, đọc hoặc tìm hội thoại và 
 
 ## Cần chuẩn bị
 
-- Node.js 20 trở lên trên máy hoặc VPS chạy Javis, và máy tải được từ GitHub (lần đầu).
+- Node.js 20 trở lên trên máy hoặc VPS chạy Thansa, và máy tải được từ GitHub (lần đầu).
 - Điện thoại đã đăng nhập tài khoản Zalo cần kết nối.
-- Javis đã được khởi động và bạn đăng nhập được dashboard.
+- Thansa đã được khởi động và bạn đăng nhập được dashboard.
 
-Javis ghim `javis-zalo` theo tag phát hành (hiện là `v1.2.0`) và cài thẳng từ tarball của tag
+Thansa ghim `javis-zalo` theo tag phát hành (hiện là `v1.2.0`) và cài thẳng từ tarball của tag
 đó trên GitHub, không cần tài khoản npm hay Git. Chỉ thư viện `zca-js` bên dưới đi theo bản chính
-thức trên npm. Từ 0.83.0 Javis thay `zalo-agent-cli` 1.6.2 của tác giả ngoài bằng bản riêng này;
+thức trên npm. Từ 0.83.0 Thansa thay `zalo-agent-cli` 1.6.2 của tác giả ngoài bằng bản riêng này;
 kết nối đã đăng nhập từ trước tự chuyển sang mà không phải quét QR lại.
 
 ## Kết nối bằng QR
@@ -139,7 +139,7 @@ nên xem được cả mọi ảnh khác trong brain, có cài gói Zalo hay kh�
 
 ## Gửi ảnh và file
 
-`zalo_send_message` ở trên **chỉ gửi được chữ**. Muốn gửi ảnh (ví dụ ảnh Javis vừa tạo) hay
+`zalo_send_message` ở trên **chỉ gửi được chữ**. Muốn gửi ảnh (ví dụ ảnh Thansa vừa tạo) hay
 file (báo cáo PDF, bảng tính) thì dùng tool `zalo_send_image` trong gói `javis.zalo`. Nó dùng
 đúng tài khoản Zalo bạn đã quét QR.
 
@@ -153,14 +153,14 @@ tháng 7 cho anh Nam qua Zalo”.
 Ba điều nên biết:
 
 - **Chỉ gửi được file nằm trong bộ não đang dùng.** Đây là rào an toàn cố ý: nếu không, một
-  câu chat khéo léo có thể khiến Javis gửi file bất kỳ trên máy chủ ra ngoài, mà tin nhắn Zalo
+  câu chat khéo léo có thể khiến Thansa gửi file bất kỳ trên máy chủ ra ngoài, mà tin nhắn Zalo
   thì không thu hồi được.
 - **Một lượt gửi cùng một loại**, hoặc toàn ảnh hoặc toàn file, tối đa 10 file. Trộn lẫn thì
-  Zalo hiển thị sai kiểu nên Javis sẽ báo lại thay vì tự đoán.
-- **Đấu nhiều tài khoản Zalo thì Javis hỏi lại** nên gửi bằng tài khoản nào. Gửi nhầm tài
+  Zalo hiển thị sai kiểu nên Thansa sẽ báo lại thay vì tự đoán.
+- **Đấu nhiều tài khoản Zalo thì Thansa hỏi lại** nên gửi bằng tài khoản nào. Gửi nhầm tài
   khoản là gửi dưới danh tính người khác, nên đây là chỗ không được đoán.
 
-Cần Node.js 20+ trên máy chạy Javis, giống như phần kết nối Zalo.
+Cần Node.js 20+ trên máy chạy Thansa, giống như phần kết nối Zalo.
 
 ## Tag người, ghi chú, nhắc hẹn và poll
 
@@ -199,8 +199,8 @@ Có thể nói tự nhiên:
 - “Gửi nhóm Kinh doanh: 9 giờ sáng mai họp nhé.”
 
 Khi gửi tin, nên nêu rõ tên hoặc `threadId`, nội dung và đó là cá nhân hay nhóm. Nếu kết
-quả tìm kiếm có nhiều cuộc chat trùng tên, Javis phải hỏi lại thay vì tự đoán.
-Nếu chỉ có một kết quả khớp chính xác, Javis gửi ngay bằng `zalo_send_message`; không cần
+quả tìm kiếm có nhiều cuộc chat trùng tên, Thansa phải hỏi lại thay vì tự đoán.
+Nếu chỉ có một kết quả khớp chính xác, Thansa gửi ngay bằng `zalo_send_message`; không cần
 bật listener, không cần người nhận nhắn trước và không phụ thuộc danh sách theo dõi.
 
 ## Phân quyền
@@ -220,8 +220,8 @@ Luồng mới đã bỏ sidecar `listen --webhook`, endpoint `/hook/zalo`, panel
 tục”, file luật theo từng cuộc chat và hai plugin `javis_zalo_rule`/`javis_zalo_send`.
 Không còn việc một tiến trình listener tự tắt rồi bật lại connector MCP.
 
-Do đó Javis không tự chuyển tiếp tin Zalo sang Telegram ở nền. Khi cần kiểm tra tin, hãy
-hỏi Javis; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặc
+Do đó Thansa không tự chuyển tiếp tin Zalo sang Telegram ở nền. Khi cần kiểm tra tin, hãy
+hỏi Thansa; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặc
 `zalo_get_history` cho lịch sử.
 
 ## Xử lý lỗi
@@ -241,4 +241,4 @@ hỏi Javis; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặc
 
 - [Repository `javis-zalo`](https://github.com/blogminhquy/javis-zalo)
 - [zca-js](https://github.com/RFS-ADRENO/zca-js), thư viện nói chuyện với Zalo bên dưới
-- [Kết nối và phân quyền MCP trong Javis](09-mcp-va-so-lieu.md)
+- [Kết nối và phân quyền MCP trong Thansa](09-mcp-va-so-lieu.md)
