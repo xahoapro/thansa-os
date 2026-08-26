@@ -1,16 +1,18 @@
 name: Build & Publish Docker image (GHCR)
 
-# Mỗi lần push lên main → build image Docker và đẩy lên GitHub Container Registry
-# (ghcr.io/xahoapro/thansa-os). Hostinger Docker Manager / VPS chỉ cần PULL image này.
+# TẠM TẮT build tự động (26/08 - chủ chưa dùng Docker): KHÔNG chạy khi push main nữa,
+# chỉ chạy TAY khi cần (tab Actions → workflow này → Run workflow). Ảnh không ai kéo thì
+# đừng tốn CI mỗi lần phát hành. BẬT LẠI: bỏ comment khối `push:` dưới đây.
+# on:
+#   push:
+#     branches: [main]
+#     # Chỉ bỏ qua build khi push THUẦN tài liệu (không ảnh hưởng image).
+#     # CLAUDE.md là system prompt nạp vào image → KHÔNG ignore, để sửa nó là build lại.
+#     paths-ignore:
+#       - "README.md"
+#       - "DEPLOY.md"
+#       - ".learn/**"
 on:
-  push:
-    branches: [main]
-    # Chỉ bỏ qua build khi push THUẦN tài liệu (không ảnh hưởng image).
-    # CLAUDE.md là system prompt nạp vào image → KHÔNG ignore, để sửa nó là build lại.
-    paths-ignore:
-      - "README.md"
-      - "DEPLOY.md"
-      - ".learn/**"
   workflow_dispatch:
 
 jobs:
