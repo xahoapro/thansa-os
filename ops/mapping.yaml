@@ -890,3 +890,25 @@
     --check OK; en-goi.json JSON hợp lệ ~3208 cặp; test_i18n xanh; suite 253/253.
   dieu_kien_bo: >
     Upstream i18n hoá toàn bộ (hệ key chính thức) thì bỏ, đóng góp bản dịch vào đó (cùng P015/P017).
+
+- id: P030
+  ten: "Tạm tắt build Docker tự động (chủ chưa dùng Docker)"
+  y_dinh: >
+    Chủ chốt 26/08 chưa dùng Docker → workflow docker-publish.yml KHÔNG build image tự động
+    mỗi lần push main nữa (ảnh không ai kéo, tốn CI). Bỏ trigger `push:`, chỉ giữ
+    `workflow_dispatch` (chạy tay khi cần). Khối `push:` cũ để lại dạng comment, bật lại bằng
+    cách bỏ comment. Kênh phát hành hiện tại là GIT (updater git pull main), độc lập Docker.
+  commit: "[me] P030: tam tat build docker tu dong (chua dung docker)"
+  diem_neo:
+    - file: .github/workflows/docker-publish.yml
+      ky_hieu: "TẠM TẮT build tự động"
+  vung_theo_doi:
+    - .github/workflows/docker-publish.yml
+  anh_goc:
+    - file: .github/workflows/docker-publish.yml
+      doan: "on:\n  push:\n    branches: [main]"
+  kiem_chung: >
+    docker-publish.yml YAML hợp lệ, trigger chỉ còn `workflow_dispatch` (không có `push`);
+    push main KHÔNG kích build image; chạy tay ở tab Actions vẫn được.
+  dieu_kien_bo: >
+    Chủ bắt đầu dùng Docker → bỏ patch (bật lại trigger push) để user Docker nhận image mới.
