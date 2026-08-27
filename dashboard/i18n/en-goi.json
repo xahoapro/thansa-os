@@ -3206,5 +3206,21 @@
  "· Fork hôm nay:": "· Forked today:",
  "· trung tâm kết nối đang tắt": "· connection hub is offline",
  "Đổi xong có hiệu lực ngay, không cần khởi động lại. Thấy Thansa": "Changes take effect immediately, no restart needed. See Thansa",
- "Không tìm thấy file phù hợp với “": "No file matches “"
+ "Không tìm thấy file phù hợp với “": "No file matches “",
+ "(video, file nặng, ảnh quá 10MB)": "(videos, heavy files, images over 10MB)",
+ "- git chỉ giữ chữ": "- git only keeps text",
+ "- ảnh đã đẩy lên nằm vĩnh viễn trong lịch sử repo, tắt sau cũng không lấy lại dung lượng; dùng nhiều máy chung repo thì": "- pushed images stay permanently in the repo history, turning it off later won't reclaim space; if several machines share the repo then",
+ ". Chúng vẫn nằm nguyên trên máy này; muốn có bản sao thì dùng Drive hoặc ổ ngoài.": ". They stay intact on this machine; for a backup use Drive or an external drive.",
+ ". Video và file nặng vẫn không bao giờ lên. Khi bật, Thansa": ". Videos and heavy files still never go up. When enabled, Thansa",
+ ";\n          chúng vẫn nằm nguyên trên máy này và dùng bình thường, chỉ là không đi vào lịch sử git. Riêng ẢNH nhỏ thì bật được bằng công tắc \"Đồng bộ cả ảnh\" bên dưới, sau khi đọc kỹ đánh đổi.": ";\n          they stay intact on this machine and work normally, just don't enter git history. Small IMAGES can be enabled with the \"Sync images too\" toggle below, after reading the trade-off carefully.",
+ "Bật \"Đồng bộ cả ảnh\" thì ảnh trong brain (jpg, png, gif, webp - mỗi ảnh tối đa 10MB) cũng lên repo và theo bạn sang máy khác. Cân nhắc trước khi bật:": "Enabling \"Sync images too\" means images in the brain (jpg, png, gif, webp - up to 10MB each) also go to the repo and follow you to other machines. Consider before enabling:",
+ "Chuỗi bước (Workflow)": "Step chain (Workflow)",
+ "Mặc định chỉ đồng bộ THÔNG TIN, không đồng bộ media.": "By default only syncs INFORMATION, not media.",
+ "Wiki/Skill nên bật sau khi đã quen với Ký ức (lộ trình Phase 2/3). Vai (Agent) / Chuỗi bước (Workflow) = học từ hội thoại ra agent/workflow mới trong Studio - chỉ tạo MỚI không ghi đè, workflow tạo ở trạng thái tắt, và có vòng kiểm chứng riêng nên mặc định tắt. Việc = học xong đề xuất task nền vào bảng Việc (Kanban) - chỉ tạo thật ở chế độ Tự ghi, và task luôn chờ bạn duyệt.": "Wiki/Skill should be enabled after you're comfortable with Memory (Phase 2/3 roadmap). Role (Agent) / Step chain (Workflow) = learn from conversations into new agents/workflows in Studio - only creates NEW without overwriting, workflows start disabled and have their own verification loop so off by default. Tasks = after learning, proposes background tasks to the Tasks board (Kanban) - only actually created in Auto-write mode, and tasks always wait for your approval.",
+ "bật trên mọi máy": "enable on every machine",
+ "chuỗi bước (workflow)": "step chain (workflow)",
+ "git nhớ mãi mãi": "git remembers forever",
+ "ngừng tự dọn ảnh cũ trong attachments": "stops auto-cleaning old images in attachments",
+ "Đồng bộ cả ảnh": "Sync images too",
+ "để ảnh đã backup không tự biến mất theo hạn dọn.": "so backed-up images don't vanish under the cleanup schedule."
 }
