@@ -43,7 +43,12 @@ def _tok(chars):
 # Nâng trần này KHÔNG bị cấm, nhưng phải là một quyết định CÓ Ý THỨC: mỗi 3.500 ký tự thêm
 # vào là khoảng 1.000 token nhân với mọi lượt chat của mọi model. Nếu thấy chạm trần, cân
 # nhắc chuyển phần đó thành skill (chỉ nạp khi cần) thay vì nhồi tiếp vào prompt lõi.
-CLAUDE_MD_MAX_CHARS = 30_000
+#
+# Thansa (27/08): nâng 30_000 → 31_000. Bản fork luôn dài hơn upstream ~1 ký tự mỗi lần rebrand
+# "Javis"→"Thansa" (×30+ chỗ trong CLAUDE.md) - thuế thương hiệu cố định, không cắt được. Cộng
+# nội dung tự-học Agent/Workflow upstream 0.44-0.47 thêm vào → 30.009 ký tự. Đây là quyết định
+# CÓ Ý THỨC theo đúng luật trên, KHÔNG phải bloat lén. Headroom ~1.000 ký tự cho vòng sau.
+CLAUDE_MD_MAX_CHARS = 31_000
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(

@@ -2120,12 +2120,13 @@
     ];
     const modeChips = MODES.map(([v, l]) => `<button class="si-chip ${cfg.mode === v ? "sel" : ""}" data-mode="${v}">${l}</button>`).join("");
     const modeDesc = (MODES.find(m => m[0] === cfg.mode) || MODES[0])[2];
-    const capRow = [["memory", "Ký ức (Memory)"], ["wiki", "Tri thức (Wiki)"], ["skill", "Kỹ năng (Skill)"], ["task", "Việc (Kanban)"]]
+    const capRow = [["memory", "Ký ức (Memory)"], ["wiki", "Tri thức (Wiki)"], ["skill", "Kỹ năng (Skill)"],
+                    ["agent", "Vai (Agent)"], ["workflow", "Chuỗi bước (Workflow)"], ["task", "Việc (Kanban)"]]
       .map(([k, l]) => `<button class="si-chip ${caps[k] ? "sel" : ""}" data-cap="${k}">${caps[k] ? "● " : "○ "}${l}</button>`).join("");
     const gitWarn = cfg.git_available ? "" : `<div class="dim" style="color:var(--text3);font-size:13px;margin-top:6px">ℹ Máy chưa có <code>git</code>: Tự học VẪN chạy bình thường, chỉ là chưa có hoàn tác 1-chạm/backup lên GitHub. Cài git để bật undo + sao lưu brain.</div>`;
 
     el.innerHTML = `<div class="cview-section">
-      <p style="color:var(--text3);font-size:15px;max-width:660px;margin:0 0 14px">Sau mỗi hội thoại, Thansa tự rút <b>ký ức</b>, đúc <b>tri thức Wiki</b>, <b>kỹ năng</b> và <b>việc</b> - qua tiến trình học <b>chỉ-đọc, cô lập</b> (0 MCP, không xoá). Người ghi file là code tin cậy. Mặc định <b>bật sẵn + tự ghi</b>; nếu brain có git thì mỗi lần học còn được <b>git-commit để hoàn tác 1 chạm</b>.</p>
+      <p style="color:var(--text3);font-size:15px;max-width:660px;margin:0 0 14px">Sau mỗi hội thoại, Thansa tự rút <b>ký ức</b>, đúc <b>tri thức Wiki</b>, <b>kỹ năng</b>, <b>vai (agent)</b>, <b>chuỗi bước (workflow)</b> và <b>việc</b> - qua tiến trình học <b>chỉ-đọc, cô lập</b> (0 MCP, không xoá). Người ghi file là code tin cậy. Mặc định <b>bật sẵn + tự ghi</b>; nếu brain có git thì mỗi lần học còn được <b>git-commit để hoàn tác 1 chạm</b>.</p>
       <div class="si-grid">
         <div class="si-field"><label>Bật tự học</label>
           <button class="si-chip ${cfg.enabled ? "sel" : ""}" id="lnEnabled">${cfg.enabled ? "● Đang bật" : "○ Đang tắt"}</button>
@@ -2133,7 +2134,7 @@
         <div class="si-field"><label>Chế độ ghi</label><div class="si-row" id="lnModes">${modeChips}</div>
           <div class="dim" id="lnModeDesc" style="font-size:14px;margin-top:6px;color:var(--text3)">${esc(modeDesc)}</div>${gitWarn}</div>
         <div class="si-field"><label>Học cái gì</label><div class="si-row" id="lnCaps">${capRow}</div>
-          <div class="dim" style="font-size:13px;margin-top:6px;color:var(--text3)">Wiki/Skill nên bật sau khi đã quen với Ký ức (lộ trình Phase 2/3). Việc = học xong đề xuất task nền vào bảng Việc (Kanban) - chỉ tạo thật ở chế độ Tự ghi, và task luôn chờ bạn duyệt.</div></div>
+          <div class="dim" style="font-size:13px;margin-top:6px;color:var(--text3)">Wiki/Skill nên bật sau khi đã quen với Ký ức (lộ trình Phase 2/3). Vai (Agent) / Chuỗi bước (Workflow) = học từ hội thoại ra agent/workflow mới trong Studio - chỉ tạo MỚI không ghi đè, workflow tạo ở trạng thái tắt, và có vòng kiểm chứng riêng nên mặc định tắt. Việc = học xong đề xuất task nền vào bảng Việc (Kanban) - chỉ tạo thật ở chế độ Tự ghi, và task luôn chờ bạn duyệt.</div></div>
         <div class="si-field"><label>Curator (bảo trì định kỳ)</label>
           <button class="si-chip ${(cfg.curator||{}).enabled ? "sel" : ""}" id="lnCurator">${(cfg.curator||{}).enabled ? "● Bật" : "○ Tắt"}</button>
           <div class="dim" style="font-size:13px;margin-top:6px;color:var(--text3)">Dọn index, LINT Wiki (chỉ đề xuất), nén MEMORY.md. Không xoá.</div></div>
@@ -2156,10 +2157,10 @@
           <li>Dán URL repo + token vào đây, bấm <b>Kiểm tra</b>, rồi <b>Đồng bộ ngay</b>. Bật tự động để định kỳ tự khớp giữa các máy.</li>
         </ol>
         <div style="max-width:680px;margin:0 0 12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-1);color:var(--text3);font-size:13.5px;line-height:1.7">
-          <b style="color:var(--text)">Chỉ đồng bộ THÔNG TIN, không đồng bộ media.</b>
+          <b style="color:var(--text)">Mặc định chỉ đồng bộ THÔNG TIN, không đồng bộ media.</b>
           Lên GitHub là ghi chú, Wiki, ký ức, skill, cấu hình việc định kỳ, script - tức là file chữ
           (<code>.md .txt .html .csv .json .canvas .py</code>…). <b>Ảnh, video, âm thanh, PDF và các file nhị phân khác KHÔNG lên</b>;
-          chúng vẫn nằm nguyên trên máy này và dùng bình thường, chỉ là không đi vào lịch sử git.
+          chúng vẫn nằm nguyên trên máy này và dùng bình thường, chỉ là không đi vào lịch sử git. Riêng ẢNH nhỏ thì bật được bằng công tắc "Đồng bộ cả ảnh" bên dưới, sau khi đọc kỹ đánh đổi.
           <div style="margin-top:6px">Vì sao: git được thiết kế để <b>nhớ mãi mãi</b>. Một file video đã commit là nằm đó vĩnh viễn,
           xoá về sau cũng không đòi lại được dung lượng, và mỗi lần xuất lại clip là thêm nguyên một bản mới.
           Vài trăm MB media cộng thói quen render vài lượt sẽ đẩy repo lên nhiều GB trong ít tháng, máy mới clone về phải tải cả những bản đã bỏ từ lâu.
@@ -2173,7 +2174,9 @@
             <div class="si-field"><label>Nhánh</label><input id="bkBranch" value="main" style="max-width:120px"></div>
             <div class="si-field"><label>Tự đồng bộ mỗi (giờ)</label><input type="number" id="bkInterval" min="1" value="6" style="max-width:120px"></div>
             <div class="si-field"><label>Tự động</label><button class="si-chip" id="bkAuto">○ Tắt</button></div>
+            <div class="si-field"><label>Đồng bộ cả ảnh</label><button class="si-chip" id="bkAnh">○ Tắt</button></div>
           </div>
+          <div class="dim" style="font-size:12.5px;color:var(--text3);max-width:680px;margin-top:-4px">Bật "Đồng bộ cả ảnh" thì ảnh trong brain (jpg, png, gif, webp - mỗi ảnh tối đa 10MB) cũng lên repo và theo bạn sang máy khác. Cân nhắc trước khi bật: <b>git nhớ mãi mãi</b> - ảnh đã đẩy lên nằm vĩnh viễn trong lịch sử repo, tắt sau cũng không lấy lại dung lượng; dùng nhiều máy chung repo thì <b>bật trên mọi máy</b>. Video và file nặng vẫn không bao giờ lên. Khi bật, Thansa <b>ngừng tự dọn ảnh cũ trong attachments</b> để ảnh đã backup không tự biến mất theo hạn dọn.</div>
           <div class="si-actions">
             <button class="s-btn-ghost" id="bkTest">${ic("plug")} Kiểm tra kết nối</button>
             <button class="s-btn" id="bkNow">⇅ Đồng bộ ngay</button>
@@ -2189,7 +2192,8 @@
     </div>`;
 
     let cur = { enabled: !!cfg.enabled, mode: cfg.mode || "dry-run",
-                caps: { memory: !!caps.memory, wiki: !!caps.wiki, skill: !!caps.skill, task: !!caps.task },
+                caps: { memory: !!caps.memory, wiki: !!caps.wiki, skill: !!caps.skill,
+                        agent: !!caps.agent, workflow: !!caps.workflow, task: !!caps.task },
                 curator: !!(cfg.curator || {}).enabled };
     const modeDescEl = el.querySelector("#lnModeDesc");
     el.querySelectorAll("#lnModes .si-chip").forEach(c => c.onclick = () => {
@@ -2224,6 +2228,8 @@
       f.append("cap_memory", cur.caps.memory ? "1" : "0");
       f.append("cap_wiki", cur.caps.wiki ? "1" : "0");
       f.append("cap_skill", cur.caps.skill ? "1" : "0");
+      f.append("cap_agent", cur.caps.agent ? "1" : "0");
+      f.append("cap_workflow", cur.caps.workflow ? "1" : "0");
       f.append("cap_task", cur.caps.task ? "1" : "0");
       f.append("curator_enabled", cur.curator ? "1" : "0");
       f.append("brain", fbrain());
@@ -2276,9 +2282,11 @@
             `<div class="dim" style="color:var(--text3)">Chưa có nhật ký học.</div>`);
     }
     // ── Backup GitHub ──
-    let bkAutoOn = false;
+    let bkAutoOn = false, bkAnhOn = false;
     const bkAutoBtn = el.querySelector("#bkAuto");
     bkAutoBtn.onclick = () => { bkAutoOn = !bkAutoOn; bkAutoBtn.classList.toggle("sel", bkAutoOn); bkAutoBtn.textContent = bkAutoOn ? "● Bật" : "○ Tắt"; };
+    const bkAnhBtn = el.querySelector("#bkAnh");
+    bkAnhBtn.onclick = () => { bkAnhOn = !bkAnhOn; bkAnhBtn.classList.toggle("sel", bkAnhOn); bkAnhBtn.textContent = bkAnhOn ? "● Bật" : "○ Tắt"; };
     async function bkSaveCfg() {
       const f = new FormData();
       f.append("repo_url", el.querySelector("#bkRepo").value.trim());
@@ -2287,6 +2295,7 @@
       f.append("branch", el.querySelector("#bkBranch").value.trim() || "main");
       f.append("interval_hours", el.querySelector("#bkInterval").value || "6");
       f.append("enabled", bkAutoOn ? "1" : "0");
+      f.append("sync_images", bkAnhOn ? "1" : "0");
       return (await fetch("/backup/config", { method: "POST", body: f })).json();
     }
     el.querySelector("#bkSave").onclick = async () => { const b = el.querySelector("#bkSave"); b.textContent = "Đang lưu..."; await bkSaveCfg(); b.innerHTML = CHECK_ICON + " Đã lưu"; setTimeout(() => b.innerHTML = SAVE_ICON + " Lưu cấu hình", 1500); loadBackup(); };
@@ -2311,7 +2320,7 @@
         // Media bị bỏ qua phải NÓI RA. Im lặng thì có ngày người dùng tưởng ảnh của mình
         // cũng đã được sao lưu, tới lúc mất máy mới biết là không.
         const mq = r.media_bo_qua
-          ? `<div style="color:var(--text3);font-size:12.5px;margin-top:3px">Bỏ qua ${r.media_bo_qua} file media${r.media_bytes ? " (" + _humanSize(r.media_bytes) + ")" : ""} - git chỉ giữ chữ. Chúng vẫn nằm nguyên trên máy này; muốn có bản sao thì dùng Drive hoặc ổ ngoài.</div>` : "";
+          ? `<div style="color:var(--text3);font-size:12.5px;margin-top:3px">Bỏ qua ${r.media_bo_qua} file media${r.media_bytes ? " (" + _humanSize(r.media_bytes) + ")" : ""}${bkAnhOn ? " (video, file nặng, ảnh quá 10MB)" : " - git chỉ giữ chữ"}. Chúng vẫn nằm nguyên trên máy này; muốn có bản sao thì dùng Drive hoặc ổ ngoài.</div>` : "";
         el.querySelector("#bkStatus").innerHTML = `<span style="color:var(--green)">${CHECK_ICON} Đồng bộ xong${bits.length ? " - " + bits.join(", ") : " - hai bên đã khớp nhau"}.</span>${cf}${mq}`;
       } else {
         el.querySelector("#bkStatus").innerHTML = `<span style="color:var(--red)">${ic("circle-x")} ${esc(r.error || "lỗi")}</span>`;
@@ -2324,6 +2333,7 @@
       el.querySelector("#bkInterval").value = s.interval_hours || 6;
       if (s.token_set && !el.querySelector("#bkToken").value) el.querySelector("#bkToken").placeholder = "Đã lưu, để trống nếu giữ nguyên";
       bkAutoOn = !!s.enabled; bkAutoBtn.classList.toggle("sel", bkAutoOn); bkAutoBtn.textContent = bkAutoOn ? "● Bật" : "○ Tắt";
+      bkAnhOn = !!s.sync_images; bkAnhBtn.classList.toggle("sel", bkAnhOn); bkAnhBtn.textContent = bkAnhOn ? "● Bật" : "○ Tắt";
       const when = s.last_backup ? new Date(s.last_backup * 1000).toLocaleString() : "chưa đồng bộ";
       const gitNote = s.has_git ? "" : " · " + WARN_ICON + " máy chưa cài git (cần git để đồng bộ)";
       const brainsNote = s.brains_count != null ? ` · ${s.brains_count} brain trong thư mục brains` : "";
@@ -5155,7 +5165,11 @@
       padding:4px 10px; cursor:pointer; font-size:14px; line-height:1; }
     .cp-ico-btn:hover{ color:var(--accent); border-color:var(--accent); }
     .cp-ico-btn .ic{ vertical-align:-2px; }
-    .cp-side-toggle{ display:none; }
+    /* Nút Ẩn/hiện cột lịch sử: desktop thu gọn tại chỗ (.side-thu, có nhớ), màn hẹp
+       mở/đóng drawer như cũ. Trước 0.47.2 nút chỉ hiện ở màn hẹp - chủ muốn desktop
+       cũng thu được như sidebar (27/08). */
+    .cp-side-toggle{ display:inline-block; }
+    @media (min-width:861px){ .chatpage.side-thu .chatpage-side{ display:none; } }
     .cp-min{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font); }
     .chatpage-slot{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:10px; }
     /* Mở file từ tab Thư mục: trình sửa CHIẾM CHỖ khung chat, không đè lên nó. Khung chat chỉ
@@ -5362,9 +5376,16 @@
       try { _chatEngObs = new MutationObserver(sync); _chatEngObs.observe(eb, { childList: true, characterData: true, subtree: true }); } catch (e) {}
     }
 
-    // Mobile: nút lịch sử mở/đóng drawer lịch sử; bấm vào vùng chat thì đóng drawer
+    // Nút lịch sử: màn hẹp mở/đóng drawer như cũ; desktop THU GỌN cột lịch sử tại chỗ
+    // (như thu sidebar) và nhớ lựa chọn qua localStorage.
     const isNar = () => window.matchMedia("(max-width: 860px)").matches;
-    el.querySelector(".cp-side-toggle").onclick = () => page.classList.toggle("side-open");
+    try { if (localStorage.getItem("javis_chatside_thu") === "1") page.classList.add("side-thu"); } catch (e) {}
+    el.querySelector(".cp-side-toggle").onclick = () => {
+      if (isNar()) { page.classList.toggle("side-open"); return; }
+      const thu = !page.classList.contains("side-thu");
+      page.classList.toggle("side-thu", thu);
+      try { localStorage.setItem("javis_chatside_thu", thu ? "1" : "0"); } catch (e) {}
+    };
     // Đường VỀ. Nút phóng to ở màn Javis nay dẫn thẳng sang trang này (lớp nổi .chat-stage đã
     // bỏ), nên trang này phải có nút thu nhỏ, nếu không người dùng chỉ còn cách bấm rail.
     el.querySelector("#cpMinBtn").onclick = () => navigateTo("home");
@@ -5696,6 +5717,16 @@
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", _vtHome || ""); fd.append("name", n);
       await fetch("/files/mkdir", { method: "POST", body: fd }); _vtCache.clear(); renderVaultTree();
     };
+    // Thu gọn panel Vault như sidebar (yêu cầu chủ 27/08): thu → cột trái chỉ còn một nút
+    // mở lại; nhớ lựa chọn qua localStorage (boot() áp lại lúc tải trang). Trạng thái chỉ
+    // có nghĩa ở màn chính - CSS đã tự vô hiệu khi node bị mượn sang tab Thư mục.
+    const vc = document.getElementById("vtCollapse"), ve = document.getElementById("vtExpand");
+    const datVaultThu = (thu) => {
+      document.body.classList.toggle("vault-thu", thu);
+      try { localStorage.setItem("javis_vault_thu", thu ? "1" : "0"); } catch (e) {}
+    };
+    if (vc) vc.onclick = () => datVaultThu(true);
+    if (ve) ve.onclick = () => datVaultThu(false);
   }
 
   async function renderVaultTree() {
@@ -6234,6 +6265,9 @@
 
   function boot() {
     document.body.classList.add("has-rail");
+    // Áp lại trạng thái thu gọn panel Vault ĐÃ LƯU ngay lúc tải trang (nút bấm gắn trong
+    // _vtWire, nhưng chờ tới đó mới áp thì panel nháy to rồi mới thu).
+    try { if (localStorage.getItem("javis_vault_thu") === "1") document.body.classList.add("vault-thu"); } catch (e) {}
     refreshEngineBanner();
     setInterval(refreshEngineBanner, 90000);
     // Báo "chưa kết nối" mà không đưa được người ta tới chỗ kết nối thì chỉ là than phiền.

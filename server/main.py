@@ -2653,7 +2653,12 @@ def claude_status(refresh: bool = False):
     Nút "Kiểm tra lại" trên thẻ truyền refresh=1; còn lúc vẽ trang thì đọc bản nhớ, khỏi đẻ một
     tiến trình Node mỗi lần mở trang Models.
     """
-    return claude_auth_status(bo_qua_cache=bool(refresh))
+    d = claude_auth_status(bo_qua_cache=bool(refresh))
+    # "Kiểm tra lại" xác nhận CLI đang đăng nhập → tắt ngay đèn 'chưa kết nối Model AI'
+    # (kể cả đèn đỏ do lượt chạy cũ bật), đừng bắt người dùng chờ vòng probe 10 phút.
+    if refresh and d.get("connected"):
+        connect_health.engine_reconnected("claude")
+    return d
 
 
 @app.get("/gemini-cli/status")
@@ -2755,12 +2760,22 @@ def claude_login_start():
 @app.post("/claude/login-code")
 def claude_login_code(code: str = Form("")):
     """Nhận code user dán sau khi mở link đăng nhập."""
-    return auth_login_ui_code(code)
+    d = auth_login_ui_code(code)
+    if d.get("ok"):
+        # Vừa đăng nhập xong: đèn báo não phải xanh NGAY, không chờ vòng probe 10 phút
+        # (banner 'chưa kết nối Model AI' treo sau khi đã kết nối là lỗi khách báo 27/08).
+        connect_health.engine_reconnected("claude")
+    return d
 
 
 @app.post("/claude/logout")
 def claude_logout():
-    return claude_auth_logout()
+    d = claude_auth_logout()
+    try:
+        connect_health.probe_engines()   # ngắt chủ động → đèn phải đổi ngay, khỏi chờ vòng quét
+    except Exception:
+        pass
+    return d
 
 
 # ---- MCP do Javis quản lý (engine Claude Code) ----
@@ -3317,6 +3332,18 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         return JSONResponse({"ok": False, "error": "section không hợp lệ"}, status_code=400)
 
     cfgmod.write_settings(cfg)
+    if section == "model":
+        # Đổi Main Model / model việc nền / nguồn xác thực Claude xong thì đèn báo não phải
+        # phản ánh cấu hình MỚI ngay lượt poll kế (90s), không chờ vòng probe 10 phút.
+        # Đổi claude_auth là đổi hẳn cách xác thực → bằng chứng lỗi cũ (kể cả đèn đỏ do lượt
+        # chạy bật) lỗi thời, xoá rồi probe lại; các thay đổi khác chỉ cần probe thường.
+        try:
+            if "claude_auth" in patch:
+                connect_health.engine_reconnected("claude")
+            else:
+                connect_health.probe_engines()
+        except Exception as e:
+            print(f"[engine health] probe sau đổi model lỗi: {e}", file=__import__('sys').stderr)
     if section == "telegram":
         try:
             restart_telegram()   # áp cấu hình bot ngay
@@ -3348,7 +3375,8 @@ def _do_backup(brain: str = "") -> dict:
     mirror = str(cfgmod.STATE_DIR / "brains-backup")   # repo mirror riêng (tránh nested git từng brain)
     res = git_brain.sync_brains(BRAINS_DIR, mirror, b["repo_url"], b["token"], b.get("branch") or "main",
                                 trash_dir=str(cfgmod.STATE_DIR / "brain-trash"),
-                                protected_names={_default_brain_dir().name})
+                                protected_names={_default_brain_dir().name},
+                                sync_images=bool(b.get("sync_images")))
     # Ghi lại trạng thái (đọc lại cfg mới nhất để không đè thay đổi song song)
     cfg = cfgmod.read_settings()
     cfg.setdefault("backup", {})
@@ -3391,6 +3419,7 @@ async def backup_status(brain: str = Query("brain")):
         "repo_url": b.get("repo_url", ""),
         "branch": b.get("branch", "main"),
         "interval_hours": b.get("interval_hours", 6),
+        "sync_images": bool(b.get("sync_images")),
         "token_set": bool(b.get("token")),
         "last_backup": b.get("last_backup", 0.0),
         "last_status": b.get("last_status", ""),
@@ -3405,6 +3434,7 @@ async def backup_status(brain: str = Query("brain")):
 async def backup_config(
     repo_url: str = Form(None), token: str = Form(None), branch: str = Form(None),
     enabled: str = Form(None), interval_hours: str = Form(None),
+    sync_images: str = Form(None),
 ):
     cfg = cfgmod.read_settings()
     b = cfg.setdefault("backup", {})
@@ -3416,6 +3446,8 @@ async def backup_config(
         b["branch"] = branch.strip() or "main"
     if enabled is not None:
         b["enabled"] = enabled in ("1", "true", "True", "on")
+    if sync_images is not None:
+        b["sync_images"] = sync_images in ("1", "true", "True", "on")
     if interval_hours is not None:
         try:
             b["interval_hours"] = max(1, int(interval_hours))
@@ -7722,12 +7754,18 @@ async def _start_scheduler():
                 try:
                     if time.time() - _MEDIA_GC_LAST[0] >= 6 * 3600:
                         _MEDIA_GC_LAST[0] = time.time()
-                        mcfg = cfgmod.read_settings().get("media", {}) or {}
+                        _scfg = cfgmod.read_settings()
+                        mcfg = _scfg.get("media", {}) or {}
                         if mcfg.get("enabled", True):
                             tuoi = int(mcfg.get("max_age_days", 30))
                             tran = int(mcfg.get("max_mb", 300))
+                            # Bật đồng bộ ảnh -> KHÔNG dọn attachments nữa (ảnh giờ là thứ
+                            # người dùng muốn GIỮ; dọn xong lệnh xoá lan sang mọi máy qua
+                            # sync). inbox vẫn dọn - nó không bao giờ được sync.
+                            _giu_anh = bool((_scfg.get("backup", {}) or {}).get("sync_images"))
                             for _mb in loop_feature.scheduler_brains():
-                                kq = await asyncio.to_thread(media_gc.sweep, _mb, tuoi, tran)
+                                kq = await asyncio.to_thread(media_gc.sweep, _mb, tuoi, tran,
+                                                             None, not _giu_anh)
                                 if kq.get("files"):
                                     print(f"[media gc] {_mb}: dọn {kq['files']} tệp, "
                                           f"{kq['bytes'] // (1024 * 1024)}MB")
@@ -11509,7 +11547,7 @@ async def _bot_tra_loi(text, *, sess, sysprompt, prov, api_key, api_model, reaso
     Vì sao không đi theo bốn nhánh engine như đường chat của chủ:
 
     1. **Để đổi bộ não không đổi trải nghiệm.** Đó là lời hứa gốc của Javis. Đi bốn nhánh thì
-       Claude Code có Bash, Codex có kho MCP riêng, engine API bị trần 8 vòng gọi tool - ba
+       Claude Code có Bash, Codex có kho MCP riêng, engine API bị trần vòng gọi tool - ba
        kiểu hành xử khác nhau cho cùng một con bot, và chủ đổi model là khách thấy khác ngay.
        Ở đây mọi engine nhận CÙNG system prompt, CÙNG tài liệu, CÙNG lịch sử, và đều không có
        tool. Khác biệt còn lại đúng bằng khác biệt giữa các model, không phải giữa các đường ống.

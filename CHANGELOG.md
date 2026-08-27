@@ -4,6 +4,45 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.47.2] - 2026-08-27
+### Thêm mới
+- **Thu gọn được hai panel như sidebar.** Panel Vault ở màn chính có nút thu ngay cạnh nút làm mới - thu xong chỉ còn một dải hẹp với nút mở lại. Cột lịch sử hội thoại ở trang Trò chuyện cũng thu được trên máy tính bằng đúng nút lịch sử trên thanh tiêu đề.
+- Cả hai đều nhớ lựa chọn: F5 hay mở lại app vẫn giữ nguyên trạng thái thu/mở như bạn để.
+
+## [0.47.1] - 2026-08-27
+### Cải thiện
+- **Hết cảnh câu trả lời dừng giữa chừng vì "đã chạy hết 8 vòng gọi tool".** Trần vòng gọi tool của các bộ não API nâng từ 8 lên 30 (chỉnh được tới 120), đủ cho việc nhiều bước mà không phải chia nhỏ câu hỏi hay đi sửa biến môi trường.
+- Chống đốt token chuyển sang canh đúng bệnh: model gọi lại cùng công cụ với cùng tham số 3 vòng liên tiếp thì bị nhắc dừng, tới vòng thứ 5 thì Javis tự cắt lượt. Việc bình thường không bao giờ dính phanh này.
+
+## [0.47.0] - 2026-08-27
+### Thêm mới
+- **Cài Javis thành app trên máy tính, không chỉ điện thoại.** Trên Chrome/Edge, thanh trạng thái có nút "Mở như app" (kèm icon cài trong thanh địa chỉ): bấm một lần là Javis chạy trong cửa sổ riêng, mở từ Desktop/Dock như một ứng dụng thật, không lẫn giữa các tab.
+
+### Sửa lỗi
+- **Hết cảnh báo "Chưa kết nối Model AI" oan khi bạn đã kết nối đủ.** Trước đây banner đỏ vẫn treo nếu bạn chạy Claude bằng API key, nếu model việc nền để "Về mặc định" trên máy dùng bộ não khác, hoặc trong 10 phút đầu sau khi vừa đăng nhập lại. Giờ banner chỉ đỏ khi bộ não bạn thật sự chọn không dùng được, và tắt ngay khi bạn kết nối xong.
+
+## [0.46.0] - 2026-08-26
+### Thêm mới
+- **Công tắc "Đồng bộ cả ảnh" trong khối đồng bộ GitHub** (trang Tự học, mặc định tắt). Bật lên thì ảnh jpg/png/gif/webp trong brain (mỗi ảnh tối đa 10MB) cũng lên repo và theo bạn sang máy khác; video và file nặng vẫn không bao giờ lên.
+- Bật đồng bộ ảnh thì Javis ngừng tự dọn ảnh cũ trong attachments, để ảnh đã backup không tự biến mất theo hạn dọn rồi lan lệnh xoá sang máy khác.
+- An toàn khi các máy lệch cấu hình: máy chưa bật không đẩy, không nhận, và không xoá ảnh máy khác đã đưa lên. UI nói thẳng đánh đổi trước khi bật: git nhớ mãi mãi, tắt sau không lấy lại dung lượng.
+
+## [0.45.0] - 2026-08-26
+### Thêm mới
+- **Javis sửa thẳng vai và chuỗi bước đã có, thay vì đẻ bản sao.** Trước đây tự học chỉ biết tạo mới, nên mỗi lần một workflow cần cải tiến lại có thêm một bản gần giống nằm cạnh. Giờ nó sửa đúng file đó: thiếu bước thì thêm, thừa thì bỏ, sai thứ tự thì xếp lại.
+- Sửa xong vẫn giữ nguyên phần của bạn: tên bạn đặt, trạng thái bật/tắt, model bạn chọn cho agent. Mỗi lần sửa đều ghi ngày và lý do vào cuối file để bạn đọc lại, và vẫn hoàn tác được bằng một chạm.
+- **Khoá được từng file.** Thêm dòng `learn_lock: true` vào phần đầu file agent hoặc workflow là tự học không đụng vào nữa.
+
+## [0.44.0] - 2026-08-26
+### Thêm mới
+- **Tự học thêm được Vai (Agent) và Chuỗi bước (Workflow).** Trang Tự học có thêm 2 công tắc: bật lên thì khi bạn nhờ một vai hay một chuỗi việc lặp đi lặp lại trong chat, Javis tự đóng thành agent/workflow mới trong Studio.
+- An toàn như học skill: mặc định tắt, có vòng kiểm tra thứ hai trước khi ghi, chỉ tạo mới không ghi đè cái đã có, và workflow luôn tạo ở trạng thái tắt để bạn xem trước rồi tự bật.
+
+## [0.43.3] - 2026-08-26
+### Sửa lỗi
+- **Tự học chạy được cả khi máy chưa đăng nhập Claude.** Trước đây ai dùng bộ não Gemini, OpenAI hay Groq mà bỏ trống model việc nền thì vòng tự học nào cũng chết lặng, nhật ký chỉ ghi "không parse được manifest" kèm câu "Not logged in". Giờ việc nền tự chuyển sang đúng bộ não bạn đang chat khi Claude không sẵn sàng.
+- **Câu "Not logged in / Please run /login" không còn bị tưởng là kết quả.** Việc nền (tự học, loop, việc Kanban) coi nó là bộ não chết và thử bộ não dự phòng kế tiếp; hết đường mới báo lỗi, và báo đúng là mất đăng nhập chứ không phải lỗi khó hiểu.
+
 ## [0.43.2] - 2026-08-24
 ### Sửa lỗi
 - **Dải "việc đang chạy ngầm" không còn bị cắt mất nửa.** Trước đây khi khung chat đầy tin nhắn, dải này bị bóp bẹp chỉ còn ló nửa dòng đầu, phải cuộn bên trong mới đọc được.
