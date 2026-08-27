@@ -939,3 +939,25 @@
     node --check console.js OK; py syntax OK; suite xanh.
   dieu_kien_bo: >
     Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003/P028).
+
+- id: P032
+  ten: "Dịch EN chuỗi UI mới (vòng 0.47.2)"
+  y_dinh: >
+    Vòng trộn 0.43.2→0.47.2 thêm 16 mẩu text-node UI mới (chủ yếu công tắc "Đồng bộ cả ảnh"
+    của sync GitHub 0.46.0 + mô tả tự-học Agent/Workflow 0.44/0.45) chưa có bản dịch. Bổ sung
+    16 cặp việt→anh vào en-goi.json (giữ HTML/service/Thansa, dịch khớp ghép các mẩu tách theo
+    <b>). en-goi 3208 → 3224.
+  commit: "[me] P032: dich EN chuoi UI moi (vong 0.47.2)"
+  diem_neo:
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "Sync images too"
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "stops auto-cleaning old images in attachments"
+  vung_theo_doi:
+    - dashboard/i18n/en-goi.json
+  anh_goc: []
+  kiem_chung: >
+    build-en --extract mẩu UI thiếu = 0; build-en khung code GIỐNG HỆT + node --check OK;
+    test_i18n xanh; suite xanh.
+  dieu_kien_bo: >
+    Upstream i18n hoá toàn bộ thì bỏ, đóng góp bản dịch vào đó (cùng P015/P029).
