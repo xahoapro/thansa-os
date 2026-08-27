@@ -1653,7 +1653,7 @@ class _LapGuard:
     def loi_nhac(self) -> str:
         if self.lap != self.NHAC:
             return ""
-        return (f"\n\n⚠ [Javis] Bạn vừa gọi đúng tool này với đúng tham số này {self.NHAC} vòng "
+        return (f"\n\n⚠ [Thansa] Bạn vừa gọi đúng tool này với đúng tham số này {self.NHAC} vòng "
                 "liên tiếp - kết quả sẽ không đổi. ĐỪNG gọi lại nữa: trả lời ngay bằng dữ liệu "
                 "đã có, hoặc đổi tham số nếu thật sự cần dữ liệu khác.")
 
@@ -1663,7 +1663,7 @@ class _LapGuard:
 
 def _loi_ket_vong() -> str:
     return (f"\n\n⚠ Model gọi lại cùng tool với cùng tham số {_LapGuard.DUNG} vòng liên tiếp "
-            "(kẹt vòng lặp) nên Javis dừng lượt này để không đốt token vô ích. Câu trả lời ở "
+            "(kẹt vòng lặp) nên Thansa dừng lượt này để không đốt token vô ích. Câu trả lời ở "
             "trên có thể còn dở - thử hỏi lại, nói rõ hơn yêu cầu, hoặc đổi model ở trang Models.")
 
 

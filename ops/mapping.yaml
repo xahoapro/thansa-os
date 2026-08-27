@@ -912,3 +912,30 @@
     push main KHÔNG kích build image; chạy tay ở tab Actions vẫn được.
   dieu_kien_bo: >
     Chủ bắt đầu dùng Docker → bỏ patch (bật lại trigger push) để user Docker nhận image mới.
+
+- id: P031
+  ten: "Neo lại rebrand chuỗi hiển thị mới (vòng 0.47.2)"
+  y_dinh: >
+    Vòng trộn 0.43.2→0.47.2 thêm chuỗi HIỂN THỊ mới nhắc "Javis": mô tả "Đồng bộ cả ảnh"
+    (console.js, 0.46.0), title/aria-label nút "Cài Javis thành app riêng" PWA (index.html,
+    0.47.0), phanh kẹt-vòng-lặp "⚠ [Javis]" + "nên Javis dừng lượt này" (engine.py _LapGuard,
+    0.47.1), prompt tự-học "AGENT/WORKFLOW sau (Javis tự quan sát" (learn.py, 0.44/0.45) →
+    đổi sang Thansa. GIỮ: comment, định danh JS (JavisEditFile...), path "Javis/agents" +
+    ALLOWED_WRITE_PREFIXES "Javis", tên gói javis-cli.
+  commit: "[me] P031: neo lai rebrand chuoi hien thi moi (vong 0.47.2)"
+  diem_neo:
+    - file: server/engine.py
+      ky_hieu: "⚠ [Thansa] Bạn vừa gọi đúng tool"
+    - file: dashboard/index.html
+      ky_hieu: "Cài Thansa thành app riêng"
+  vung_theo_doi:
+    - "dashboard/console.js: mô tả sync ảnh; dashboard/index.html: nút PWA install"
+    - "server/engine.py: _LapGuard; server/learn.py: prompt tự-học agent/workflow"
+  anh_goc:
+    - file: server/engine.py
+      doan: "⚠ [Javis] Bạn vừa gọi đúng tool"
+  kiem_chung: >
+    grep chuỗi hiển thị 'Javis' mới trong 4 file = 0 (chỉ còn identifier JS/comment/path);
+    node --check console.js OK; py syntax OK; suite xanh.
+  dieu_kien_bo: >
+    Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003/P028).

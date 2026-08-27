@@ -878,7 +878,7 @@ class LearnFeature:
         if wfs:
             listing += ("\n" if listing else "") + "\n".join(
                 _dong("workflow", w, f"{len(w.get('steps') or [])} bước") for w in wfs)
-        prompt = ("Một vòng học đề xuất TẠO hoặc SỬA các AGENT/WORKFLOW sau (Javis tự quan sát từ "
+        prompt = ("Một vòng học đề xuất TẠO hoặc SỬA các AGENT/WORKFLOW sau (Thansa tự quan sát từ "
                   "hội thoại). GIẢ ĐỊNH chúng SAI/thừa. Với mỗi slug, quyết định giữ hay bỏ.\n"
                   "  • Mục [TẠO]: chỉ giữ vai/chuỗi THẬT SỰ lặp lại, đủ cụ thể, không trùng cái "
                   "có sẵn trong agents/ và workflows/. Trùng một cái đã có mà lại đòi tạo mới → BỎ "
