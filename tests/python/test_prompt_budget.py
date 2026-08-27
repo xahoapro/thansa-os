@@ -66,6 +66,11 @@ def _tok(chars):
 #     python -c "import tiktoken; print(len(tiktoken.get_encoding('cl100k_base').encode(open('CLAUDE.md', encoding='utf-8').read())))"
 #
 # Lần chạm trần TIẾP THEO thì cắt thật hoặc đẩy một mục sang skill, đừng nâng số này nữa.
+#
+# Thansa (28/08, vòng nền 0.50.2): fork nay cung dung CLAUDE.md TIENG ANH cua upstream, nen
+# tran cu 31_000 (do cho ban tieng Viet) da het hieu luc. Thue thuong hieu "Javis"->"Thansa"
+# (+1 ky tu x ~24 cho) day 33.369 -> 33.393 ky tu, con ~207 ky tu headroom duoi tran 33_600.
+# Giu nguyen tran upstream, KHONG nang.
 CLAUDE_MD_MAX_CHARS = 33_600
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")

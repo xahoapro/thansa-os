@@ -89,7 +89,15 @@ def test_websocket_disconnect_does_not_cancel_turn(monkeypatch, tmp_path):
 
         # Socket đã đóng nhưng job vẫn thuộc runtime của server.
         assert runtime.get_job("session-background") is not None
-        await asyncio.sleep(0.08)
+
+        # CHỜ TỚI KHI job chạy nốt xong (thay sleep cứng 0.08 - mong manh: máy chậm hoặc bản
+        # upstream nặng thêm là turn nền chưa kịp persist trong cửa sổ đó, test đỏ oan dù code
+        # đúng). Poll đúng bất biến "disconnect KHÔNG huỷ turn, turn chạy nốt rồi tự lưu": job
+        # tự dọn (finish_job) khi run_turn xong, nên chờ get_job==None là chờ đúng lúc đã persist.
+        for _ in range(300):  # trần ~3s, thừa sức cho lượt 0.03s dù máy tải nặng
+            if runtime.get_job("session-background") is None:
+                break
+            await asyncio.sleep(0.01)
 
         messages = store.get_messages("session-background")
         assert [m["role"] for m in messages] == ["user", "assistant"]
