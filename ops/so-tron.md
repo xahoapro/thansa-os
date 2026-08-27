@@ -262,3 +262,22 @@ build/suite xanh → `push origin me:main` (ff) → CI build image → user cậ
 
 **Đã phát hành thansa 1.2.0 / nền Javis 0.43.2** (main = 03937f4, VERSION 1.2.0-javis-0.43.2,
 image GHCR :1.2.0). Xem RELEASES.md.
+
+## Vòng 2026-08-27 (goc fac4746 → 78dff14, upstream +7 commit, VERSION nền 0.43.2 → 0.47.2, thansa 1.2→1.3)
+
+- 7 commit upstream: việc nền hết chết lặng khi chưa login Claude (0.43.3), tự-học ra Agent
+  (0.44.0) + SỬA thay vì đẻ bản sao (0.45.0), sync cả ảnh cho GitHub (0.46.0), banner Model
+  hết đỏ oan + PWA cài desktop (0.47.0), trần tool 8→30 + phanh kẹt-vòng-lặp (0.47.1), gọn
+  Vault panel + cột lịch sử (0.47.2).
+- Rebase 32 patch [me]. Xung đột giải 5 chỗ (rerere): P003 manifest (giữ field `id`+PWA
+  upstream, icon trỏ /brand-logo giữ logo Thansa), P007 learn.py/engine.py (5+5 chuỗi danh
+  tính), P008 console.js (intro tự-học), P025 VERSION→1.3.0-javis-0.47.2, P027 docs 16/18/22.
+- NEO LẠI (P031): PWA install title/aria, sync-ảnh, _LapGuard "⚠ [Javis]", tự-học agent/workflow.
+  Dịch 16 UI mới (P032). Vá 2 test coupled (P033): ws-disconnect POLL-tới-xong (dứt điểm bug
+  trạm #1 - timing chứ không phải code), trần CLAUDE.md 30k→31k (thuế rebrand + nội dung mới).
+- so_patch 30, VERSION 1.3.0-javis-0.47.2. Suite 257/257 xanh.
+- **Đổi cơ chế phát hành (quan trọng):** rebase làm `me` viết lại lịch sử → `push me:main` KHÔNG
+  còn ff, `git pull --ff-only` của user vỡ. Nay phát hành bằng **SNAPSHOT**: commit tree của `me`
+  lên trên origin/main (parent = main cũ) → main là chuỗi ff, user cập nhật được, updater cũ vẫn
+  chạy. `me` = chuỗi patch rebase (force-push origin/me); local `main` = nền upstream (cho luật 3);
+  origin/main = chuỗi snapshot phát hành.
