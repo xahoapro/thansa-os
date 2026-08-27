@@ -961,3 +961,33 @@
     test_i18n xanh; suite xanh.
   dieu_kien_bo: >
     Upstream i18n hoá toàn bộ thì bỏ, đóng góp bản dịch vào đó (cùng P015/P029).
+
+- id: P033
+  ten: "Vá 2 test coupled sau trộn 0.47.2 (timing + trần prompt)"
+  y_dinh: >
+    Vòng trộn 0.43.2→0.47.2 làm 2 test đỏ - vá cho suite máy này xanh (gate phát hành):
+    (1) test_chat_disconnect: sleep cứng 0.08s quá mong manh (0.44-0.47 nặng thêm path chat
+    nên turn nền chưa kịp persist trong 0.08s dù CODE ĐÚNG - persist vẫn xảy ra). Thay bằng
+    POLL tới khi job tự dọn (get_job==None, trần 3s) - test đúng bất biến mạnh hơn, hết flaky.
+    Đây chính là bug trạm #1 từng báo, nay dứt điểm. (2) test_prompt_budget: nâng
+    CLAUDE_MD_MAX_CHARS 30_000→31_000 - fork luôn dài hơn upstream do thuế rebrand Javis→Thansa
+    (×30+ chỗ) + upstream 0.44-0.47 thêm mục tự-học; 30.009 ký tự là hợp lệ, quyết định CÓ Ý THỨC.
+  commit: "[me] P033: va 2 test coupled sau tron 0.47.2 (timing + tran prompt)"
+  diem_neo:
+    - file: tests/python/test_chat_disconnect.py
+      ky_hieu: "if runtime.get_job(\"session-background\") is None:"
+    - file: tests/python/test_prompt_budget.py
+      ky_hieu: "CLAUDE_MD_MAX_CHARS = 31_000"
+  vung_theo_doi:
+    - tests/python/test_chat_disconnect.py
+    - tests/python/test_prompt_budget.py
+  anh_goc:
+    - file: tests/python/test_chat_disconnect.py
+      doan: "await asyncio.sleep(0.08)"
+    - file: tests/python/test_prompt_budget.py
+      doan: "CLAUDE_MD_MAX_CHARS = 30_000"
+  kiem_chung: >
+    test_chat_disconnect chạy riêng 6/6 xanh ổn định (poll thay sleep); test_prompt_budget
+    xanh (CLAUDE.md 30.009 < 31.000); suite đầy đủ xanh.
+  dieu_kien_bo: >
+    Upstream tự nới trần/đổi cách chờ trong hai test này thì soát lại, gộp về bản upstream.
