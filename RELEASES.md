@@ -13,5 +13,6 @@ Thansa OS đánh version RIÊNG (semver: `MAJOR.MINOR.PATCH`), độc lập vớ
 
 | Thansa | Nền Javis | Commit gốc | Ngày | Ghi chú |
 |--------|-----------|------------|------|---------|
+| 1.3.0  | 0.47.2    | `78dff14`  | 2026-08-27 (đã phát hành) | Trộn Javis 0.43→0.47.2 (tự-học ra Agent/Workflow không đè, sync cả ảnh, banner Model + PWA cài desktop, trần tool 8→30 + phanh kẹt-vòng, gọn Vault). Dịch UI mới; vá test timing (dứt điểm ws-disconnect) + trần prompt. Phát hành qua **snapshot main** (ff cho user cũ). |
 | 1.2.0  | 0.43.2    | `fac4746`  | 2026-08-25 (đã phát hành) | Trộn Javis 0.40→0.43.2 (YouTube phụ đề, đổi model giữ mạch, Antigravity MCP hub, Telegram sidebar); changelog song ngữ; dịch plugin/chatbot/UI mới; version Thansa riêng + neo; rebrand bản quyền/link/tác giả → Duy Quang. Đẩy `main`, image `:1.2.0`. |
 | 1.1    | 0.35.10   | (nhánh `release`) | 2026-08 | Bản Thansa OS đầu tiên phát hành (rebrand + EN). |
