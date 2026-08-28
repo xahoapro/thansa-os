@@ -402,7 +402,7 @@
     - dashboard/docs/substack.html
   anh_goc:
     - file: CLAUDE.md
-      doan: "Bạn là **Javis**, trợ lý AI cá nhân báo cáo **kinh doanh và cuộc sống**."
+      doan: "You are **Javis**, a personal AI assistant reporting on **business and life**."
     - file: system/plugins/javis-schedule/plugin.yaml
       doan: "author: Javis (bundled)"
     - file: system/mcp-catalog.json
@@ -977,7 +977,7 @@
     - file: tests/python/test_chat_disconnect.py
       ky_hieu: "if runtime.get_job(\"session-background\") is None:"
     - file: tests/python/test_prompt_budget.py
-      ky_hieu: "CLAUDE_MD_MAX_CHARS = 31_000"
+      ky_hieu: "CLAUDE_MD_MAX_CHARS = 33_600"
   vung_theo_doi:
     - tests/python/test_chat_disconnect.py
     - tests/python/test_prompt_budget.py
@@ -985,9 +985,43 @@
     - file: tests/python/test_chat_disconnect.py
       doan: "await asyncio.sleep(0.08)"
     - file: tests/python/test_prompt_budget.py
-      doan: "CLAUDE_MD_MAX_CHARS = 30_000"
+      doan: "CLAUDE_MD_MAX_CHARS = 33_600"
   kiem_chung: >
     test_chat_disconnect chạy riêng 6/6 xanh ổn định (poll thay sleep); test_prompt_budget
-    xanh (CLAUDE.md 30.009 < 31.000); suite đầy đủ xanh.
+    xanh (CLAUDE.md 33.393 < 33.600); suite đầy đủ xanh.
   dieu_kien_bo: >
     Upstream tự nới trần/đổi cách chờ trong hai test này thì soát lại, gộp về bản upstream.
+    Vòng 0.50.2: upstream đổi CLAUDE.md sang tiếng Anh + tự nâng trần 33_600, nên bỏ neo cũ
+    31_000 (của bản tiếng Việt), lấy trần upstream. Fork chỉ còn thuế rebrand +24 ký tự.
+
+- id: P034
+  ten: "Neo lại rebrand chuỗi hiển thị mới (vòng 0.50.2)"
+  y_dinh: >
+    Vòng trộn 0.47.2→0.50.2 thêm chuỗi HIỂN THỊ mới nhắc "Javis": thẻ Grok Build CLI trên
+    trang Models (console.js, 0.50.0) + trạng thái "tool của Javis đã đấu"/"Javis đã nhìn vào";
+    thông báo lỗi/hướng dẫn của Grok trả về chat (grok_cli.py); hòm thư + thông báo đẩy 0.49.0
+    (main.py /push/test title+body, notifications.js tiêu đề inbox + nhãn cài đặt, push.js lỗi
+    https, sw.js title mặc định) → đổi sang Thansa. GIỮ: comment/docstring, header X-Javis-*,
+    path Javis/, tag "javis-test", trường dữ liệu co_javis; và các chuỗi shipped 1.3.0 CỐ Ý giữ
+    Javis (console.js "Máy chủ Javis", "Hướng dẫn Javis CLI"; main.py OAuth "MÁY cài Javis").
+  commit: "[me] P034: neo lai rebrand chuoi hien thi moi (vong 0.50.2)"
+  diem_neo:
+    - file: dashboard/console.js
+      ky_hieu: "tool của Thansa đã đấu"
+    - file: dashboard/notifications.js
+      ky_hieu: "Thansa vừa gửi một tin"
+  vung_theo_doi:
+    - "dashboard/console.js: thẻ Grok + trạng thái tool"
+    - "server/grok_cli.py: thông báo chat; server/main.py: /push/test"
+    - "dashboard/notifications.js, push.js, sw.js: hòm thư + thông báo đẩy 0.49.0"
+  anh_goc:
+    - file: dashboard/notifications.js
+      doan: "Javis vừa gửi một tin"
+    - file: dashboard/sw.js
+      doan: "d.title || \"Javis\""
+  kiem_chung: >
+    grep chuỗi hiển thị 'Javis' mới (Grok card, hòm thư, push) = 0 (chỉ còn comment/header/
+    path/tag/data-field + chuỗi cố ý giữ); node --check console.js/notifications.js/push.js/
+    sw.js OK; py syntax main.py/grok_cli.py OK; suite xanh.
+  dieu_kien_bo: >
+    Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003/P028/P031).
