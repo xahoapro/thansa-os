@@ -281,3 +281,32 @@ image GHCR :1.2.0). Xem RELEASES.md.
   lên trên origin/main (parent = main cũ) → main là chuỗi ff, user cập nhật được, updater cũ vẫn
   chạy. `me` = chuỗi patch rebase (force-push origin/me); local `main` = nền upstream (cho luật 3);
   origin/main = chuỗi snapshot phát hành.
+
+## Vòng 2026-08-28 (goc 78dff14 → 60830fa, upstream +19 commit, VERSION nền 0.47.2 → 0.50.2, thansa 1.3→1.4)
+
+- 19 commit upstream (0.47.3-0.50.2), nổi bật: sửa .md trang Trò chuyện (0.47.3-0.48.x), bỏ nút
+  loa header (0.48.3), đấu Hostinger + agent chọn Ollama (0.48.1), ChatGPT tạo ảnh + agent chạy
+  Antigravity CLI (0.48.0), agent chọn đúng model mọi nhà cung cấp (0.47.9), **hòm thư + thông báo
+  đẩy trình duyệt (0.49.0)**, vá push điện thoại (0.49.2), **thêm bộ não Grok Build, gỡ Gemini CLI,
+  CLAUDE.md sang tiếng Anh (0.50.0)**, Telegram giữ ngữ cảnh qua restart (0.50.1), vá thẻ Grok
+  báo chưa đăng nhập oan (0.50.2).
+- Rebase 100 commit (31 patch [me] + ops/i18n). Xung đột giải 6 chỗ (rerere ghi lại):
+  P007 (main.py: Gemini→Grok, rm server/gemini_cli.py theo upstream, giữ rebrand chat "máy chạy
+  Thansa"), P008 (console.js/index.html/usage.js: bỏ thẻ Gemini theo upstream, rebrand nhãn brain
+  còn lại), P012 (**CLAUDE.md + mcp-catalog: lấy nền TIẾNG ANH upstream rồi áp lại rebrand Javis→
+  Thansa, giữ token kỹ thuật**), P025 (VERSION → 1.4.0-javis-0.50.2), P027 (docs 10/16: nền Grok/
+  env mới + regex rebrand), P033 (test_prompt_budget: bỏ trần cũ 31_000, lấy trần upstream 33_600).
+- **Ưu tiên 4.1 áp dụng:** Gemini CLI bị upstream gỡ (Google ngắt hạng cá nhân) → theo upstream,
+  bỏ mọi UI/route Gemini, KHÔNG níu patch. Grok Build là bộ não mới của upstream → Thansa nhận
+  nguyên. CLAUDE.md tiếng Anh (tiết kiệm ~2.000 token/lượt, GIỮ hành vi nói tiếng Việt với user)
+  → nhận nền, chỉ rebrand hiển thị. Không có commit BẢO MẬT/logic nghiệp vụ cần hỏi chủ.
+- NEO LẠI (P034): chuỗi hiển thị mới nhắc "Javis" → Thansa: thẻ Grok + trạng thái tool (console.js),
+  thông báo Grok chat (grok_cli.py), hòm thư + thông báo đẩy 0.49.0 (main.py /push/test, notifications.js,
+  push.js, sw.js). 12 chuỗi. Đối chiếu shipped 1.3.0: giữ nguyên các chuỗi 1.3.0 CỐ Ý để Javis
+  (Máy chủ Javis, Hướng dẫn Javis CLI, OAuth "MÁY cài Javis").
+- VERSION neo `1.4.0-javis-0.50.2`. moc-goc goc_commit 60830fa, goc_version 0.50.2, thansa_version
+  1.4.0, so_patch 31. tu-kiem-chung 5/5 XANH. Suite 273/273 xanh (cần `pip install pytest` cho 4 test
+  phaseN dùng pytest; không phải hồi quy).
+- **CÒN LẠI (chưa chặn phát hành):** 248 chuỗi UI tiếng Việt chưa dịch EN (upstream 0.48-0.50 thêm
+  nhiều: thẻ Grok, hòm thư/push, connector Hostinger với guide dài). build-en suy biến về tiếng Việt
+  cho tới khi dịch (không vỡ, test i18n xanh). Dồn sang một đợt dịch EN sau, như vòng 0.43.2 từng dồn 199.
