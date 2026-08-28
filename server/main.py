@@ -12984,9 +12984,9 @@ async def push_test():
     """Gửi thử một thông báo. Không có nút này thì người dùng bật quyền xong vẫn không biết
     nó có chạy thật hay không, mà lần "thật" đầu tiên có khi phải đợi tới sáng hôm sau."""
     ok, don, chi_tiet = await webpush.gui_het(
-        "Javis", localefmt.chu("Thông báo đẩy đã chạy. Từ giờ có kết quả là Javis báo ngay cả khi bạn "
+        "Thansa", localefmt.chu("Thông báo đẩy đã chạy. Từ giờ có kết quả là Thansa báo ngay cả khi bạn "
                                "không mở dashboard.",
-                               "Push notifications work. From now on Javis tells you as soon as there "
+                               "Push notifications work. From now on Thansa tells you as soon as there "
                                "is a result, even when the dashboard is closed."),
         "/?mo_thu=test", tag="javis-test")
     # Trả CHI TIẾT theo từng thiết bị, không chỉ một con số. Bản đầu trả ok=true khi có BẤT KỲ
