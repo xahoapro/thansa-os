@@ -8977,7 +8977,7 @@ async def push_test():
     """Gửi thử một thông báo. Không có nút này thì người dùng bật quyền xong vẫn không biết
     nó có chạy thật hay không, mà lần "thật" đầu tiên có khi phải đợi tới sáng hôm sau."""
     ok, don, chi_tiet = await webpush.gui_het(
-        "Javis", "Thông báo đẩy đã chạy. Từ giờ có kết quả là Javis báo ngay cả khi bạn "
+        "Thansa", "Thông báo đẩy đã chạy. Từ giờ có kết quả là Thansa báo ngay cả khi bạn "
                  "không mở dashboard.", "/?mo_thu=test", tag="javis-test")
     # Trả CHI TIẾT theo từng thiết bị, không chỉ một con số. Bản đầu trả ok=true khi có BẤT KỲ
     # thiết bị nào nhận được, nên máy tính nhận còn điện thoại hỏng thì màn hình vẫn báo

@@ -149,7 +149,7 @@
     return '<article class="noti-card' + chua + '" tabindex="0" role="button" data-thu-id="' + esc(item.id) + '">' +
       '<div class="noti-card-top"><span class="noti-kind ' + esc(item.kind || "answer") + '">' +
       esc(nhanLoai(item.kind)) + '</span><span class="noti-time">' + esc(thoiGian(item.ts)) + "</span></div>" +
-      "<h4>" + esc(item.title || "Javis vừa gửi một tin") + "</h4>" +
+      "<h4>" + esc(item.title || "Thansa vừa gửi một tin") + "</h4>" +
       '<p class="noti-card-body">' + esc(item.body || "") + "</p>" +
       (phu ? '<span class="noti-cta">' + phu + "</span>" : "") + "</article>";
   }
@@ -321,7 +321,7 @@
     if (thu) thu.hidden = !on;
     if (ghi) ghi.textContent = loi || (on
       ? "Đang bật trên trình duyệt này"
-      : "Báo cả khi bạn không mở Javis");
+      : "Báo cả khi bạn không mở Thansa");
     if (ghi) ghi.classList.toggle("loi", !!loi);
     if (loi || !on) return;
     // Bật/tắt là việc của TỪNG máy, nên "đang bật ở đây" chưa trả lời được "máy kia có nhận

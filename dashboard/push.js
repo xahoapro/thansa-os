@@ -20,7 +20,7 @@
   function antoan() { return window.isSecureContext === true; }
 
   function vichLyDo() {
-    if (!antoan()) return "Trình duyệt chỉ cho bật thông báo đẩy trên https (hoặc localhost). Javis đang chạy qua http nên chưa bật được.";
+    if (!antoan()) return "Trình duyệt chỉ cho bật thông báo đẩy trên https (hoặc localhost). Thansa đang chạy qua http nên chưa bật được.";
     if (!coHoTro()) return "Trình duyệt này không hỗ trợ thông báo đẩy.";
     if (Notification.permission === "denied") return "Bạn đã chặn thông báo cho trang này. Mở phần cài đặt quyền của trình duyệt để bỏ chặn.";
     return "";

@@ -546,7 +546,7 @@ def auth_status() -> dict:
     if co_file:
         return {"connected": False, "method": "", "account": "", "plan": "",
                 "error": ("Thư mục " + str(_grok_home()) + " đã có file (" + ", ".join(co_file[:6])
-                          + ") nhưng Javis không nhận ra token đăng nhập trong đó. "
+                          + ") nhưng Thansa không nhận ra token đăng nhập trong đó. "
                             "Bấm \"Kiểm tra lại\" để xem chi tiết.")}
     return {"connected": False, "method": "", "account": "", "plan": "",
             "error": "Đã cài Grok CLI nhưng chưa đăng nhập. Bấm \"Đăng nhập\" ngay trên thẻ này."}
@@ -610,7 +610,7 @@ def login_huong_dan() -> dict:
         "dang_nhap": "grok login --device-auth",
         "ghi_chu": ("Cách khác: chạy `grok login` trong terminal. Qua SSH thì thêm "
                     "`--device-auth`, nó in ra một link và một mã để mở trên máy bạn. "
-                    "Javis nhận ra cả tài khoản đăng nhập kiểu đó."),
+                    "Thansa nhận ra cả tài khoản đăng nhập kiểu đó."),
     }
 
 
