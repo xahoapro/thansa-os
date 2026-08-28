@@ -588,10 +588,10 @@ def auth_status() -> dict:
         return {"connected": False, "method": "", "account": "", "plan": "",
                 "error": localefmt.chu(
                     "Thư mục " + str(_grok_home()) + " đã có file (" + ", ".join(co_file[:6])
-                    + ") nhưng Javis không nhận ra token đăng nhập trong đó. "
+                    + ") nhưng Thansa không nhận ra token đăng nhập trong đó. "
                       "Bấm \"Kiểm tra lại\" để xem chi tiết.",
                     "The folder " + str(_grok_home()) + " has files (" + ", ".join(co_file[:6])
-                    + ") but Javis does not recognize a sign-in token in them. "
+                    + ") but Thansa does not recognize a sign-in token in them. "
                       "Click \"Re-check\" for details.")}
     return {"connected": False, "method": "", "account": "", "plan": "",
             "error": localefmt.chu("Đã cài Grok CLI nhưng chưa đăng nhập. Bấm \"Đăng nhập\" ngay trên thẻ này.",
@@ -657,10 +657,10 @@ def login_huong_dan() -> dict:
         "ghi_chu": localefmt.chu(
             "Cách khác: chạy `grok login` trong terminal. Qua SSH thì thêm "
             "`--device-auth`, nó in ra một link và một mã để mở trên máy bạn. "
-            "Javis nhận ra cả tài khoản đăng nhập kiểu đó.",
+            "Thansa nhận ra cả tài khoản đăng nhập kiểu đó.",
             "Alternatively: run `grok login` in a terminal. Over SSH add "
             "`--device-auth`; it prints a link and a code to open on your own machine. "
-            "Javis recognizes accounts signed in that way too."),
+            "Thansa recognizes accounts signed in that way too."),
     }
 
 
