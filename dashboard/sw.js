@@ -57,7 +57,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: (event.data && event.data.text()) || "" }; }
-  const title = d.title || "Javis";
+  const title = d.title || "Thansa";
   const opts = {
     body: d.body || "",
     icon: "/static/icon-192.png",
