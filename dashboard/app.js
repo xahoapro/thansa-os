@@ -69,7 +69,6 @@ const chatArea = document.getElementById("chatArea");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const voiceBtn = document.getElementById("voiceBtn");
-const ttsToggle = document.getElementById("ttsToggle");
 const voiceInterim = document.getElementById("voiceInterim");
 const orbState = document.getElementById("orbState");
 
@@ -129,9 +128,7 @@ function connect() {
   // không có chốt này là hai socket song song, mọi tin nhắn về gấp đôi.
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => updateSysStatus("active");
-  ws.onclose = () => { updateSysStatus("error"); setTimeout(connect, 3000); };
-  ws.onerror = () => updateSysStatus("error");
+  ws.onclose = () => { setTimeout(connect, 3000); };
   ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
 }
 
@@ -206,6 +203,18 @@ function handleMessage(data) {
     // Một việc nền vừa báo xong = hàng đợi vừa đổi. Hỏi lại ngay thay vì đợi hết nhịp 6 giây,
     // để dải trạng thái không còn khoe một việc vừa kết thúc.
     try { if (window.JavisBackground) window.JavisBackground.refresh(); } catch (e) {}
+    return;
+  }
+  if (data.type === "inbox") {
+    // Việc nền vừa để lại một mẩu thư → chấm đỏ trên chuông nhảy NGAY, không đợi tải lại
+    // trang. Nếu thư thuộc đúng hội thoại đang mở thì coi như đã đọc luôn: người dùng đang
+    // nhìn thẳng vào nội dung, bắt họ bấm thêm một lần nữa trong hòm là đếm hai lần.
+    try {
+      if (window.JavisInbox) {
+        if (sid && sid === savedSessionId) window.JavisInbox.docPhien(sid);
+        else window.JavisInbox.refresh();
+      }
+    } catch (e) {}
     return;
   }
   if (data.type === "status") {
@@ -414,6 +423,7 @@ async function openStoredSession(id) {
       else if (m.role === "assistant") { appendJavisMessage(m.content || "", ts, sess.brain); convo.push({ role: "javis", text: m.content || "", atts: [], ts, brain: sess.brain }); }
     });
     savedSessionId = id;          // lượt gửi tiếp theo → server resume đúng phiên này
+    try { if (window.JavisInbox) window.JavisInbox.docPhien(id); } catch (e) {}
     // Phiên này đang generate NỀN → gắn bong bóng SỐNG (kèm phần đã stream) để xem tiếp trực tiếp.
     const t = turns[id];
     if (t && t.running) {
@@ -768,12 +778,6 @@ chatArea.addEventListener("click", (e) => {
   chatArea.querySelectorAll(".msg.acts-on").forEach(m => { if (m !== msgEl) m.classList.remove("acts-on"); });
   if (msgEl) msgEl.classList.toggle("acts-on");
 });
-function updateSysStatus(s) {
-  document.getElementById("claudeStatus").className = "mcp-item " + s;
-  document.getElementById("ttsStatus").className = "mcp-item " + s;
-}
-
-const usedMCPs = new Map();
 function compactToolLabel(toolName) {
   const raw = String(toolName || "").trim();
   let label = raw || "Tool", cat = "Tool";
@@ -798,34 +802,51 @@ function compactToolLabel(toolName) {
   if (label.length > 48) label = label.slice(0, 47) + "…";
   return { label, cat };
 }
-function trackMCP(toolName) {
+// BA tool VỪA GỌI, mới nhất đứng đầu (0.49.3, chủ repo chốt).
+//
+// Bản cũ giữ tối đa 4 loại theo thứ tự LẦN ĐẦU thấy, nên tool gọi từ đầu phiên nằm lì ở đầu
+// dải còn tool vừa chạy xong thì nấp ở cuối - đúng chỗ mắt ít nhìn nhất. Với một dải chỉ để
+// LIẾC thì thứ tự phải là mới-nhất-trước, và ba mục là đủ: dải nằm ngang cạnh ô chọn model,
+// thêm mục thứ tư là bắt đầu cắt chữ.
+//
+// Dựng lại cả danh sách từ mảng thay vì xáo DOM tại chỗ: cách này ngắn hơn và không có
+// đường nào để thứ tự trên màn hình lệch khỏi thứ tự trong mảng.
+const TRAN_TOOL_GAN_NHAT = 3;
+let toolGanNhat = [];   // [{label, cat, raw}] - phần tử 0 là mới nhất
+function veToolGanNhat(vuaGoi) {
   const list = document.getElementById("mcpList");
   if (!list) return;
-  const { label, cat } = compactToolLabel(toolName);
-  if (!usedMCPs.has(label)) {
-    if (list.querySelector(".dim")) list.innerHTML = "";
+  list.innerHTML = "";
+  if (!toolGanNhat.length) {
+    const em = document.createElement("div");
+    em.className = "mcp-item dim";
+    em.textContent = "Chưa gọi tool nào";
+    list.appendChild(em);
+    return;
+  }
+  toolGanNhat.forEach((t, i) => {
     const div = document.createElement("div");
-    div.className = "mcp-item active";
-    div.title = String(toolName || label);
-    div.insertAdjacentHTML("beforeend", `${ic("circle", { cls: "ic-fill ic-sm" })} ${escapeHtml(label)} `);
+    // Chỉ mục vừa gọi mới nháy vàng rồi về xanh - nhìn là biết ngay cái nào vừa chạy.
+    div.className = "mcp-item " + (i === 0 && t.label === vuaGoi ? "loading" : "active");
+    div.title = t.raw;
+    div.insertAdjacentHTML("beforeend", `${ic("circle", { cls: "ic-fill ic-sm" })} ${escapeHtml(t.label)} `);
     const meta = document.createElement("span");
     meta.className = "mcp-kind";
-    meta.textContent = `· ${cat}`;
+    meta.textContent = `· ${t.cat}`;
     div.appendChild(meta);
-    list.appendChild(div); usedMCPs.set(label, div);
-    // Đây là trạng thái gần đây, không phải nhật ký. Giữ tối đa 4 loại để DOM/dải ngang
-    // không phình mãi trong một phiên chat dài.
-    while (usedMCPs.size > 4) {
-      const oldest = usedMCPs.keys().next().value;
-      const oldEl = usedMCPs.get(oldest);
-      if (oldEl && oldEl.parentNode) oldEl.parentNode.removeChild(oldEl);
-      usedMCPs.delete(oldest);
+    list.appendChild(div);
+    if (div.classList.contains("loading")) {
+      setTimeout(() => div.classList.replace("loading", "active"), 600);
     }
-  } else {
-    const el = usedMCPs.get(label);
-    el.classList.add("loading");
-    setTimeout(() => el.classList.replace("loading", "active"), 600);
-  }
+  });
+}
+function trackMCP(toolName) {
+  const { label, cat } = compactToolLabel(toolName);
+  // Gọi lại tool cũ = nó VỪA chạy, phải nhảy lên đầu chứ không giữ chỗ cũ.
+  toolGanNhat = [{ label, cat, raw: String(toolName || label) }]
+    .concat(toolGanNhat.filter((t) => t.label !== label))
+    .slice(0, TRAN_TOOL_GAN_NHAT);
+  veToolGanNhat(label);
 }
 
 // ============================================
@@ -1730,9 +1751,12 @@ window.addEventListener("drop", (e) => {
 // ============================================
 chatInput.addEventListener("input", () => {
   chatInput.style.height = "auto";
-  // Ở trang Trò chuyện (body.on-chat) cho ô nhập cao hơn để gõ dài dễ hơn. Trước đây mốc là
-  // .chat-zoomed của lớp phóng to; lớp đó đã bỏ, phóng to giờ là chuyển hẳn sang trang chat.
-  const _cap = document.body.classList.contains("on-chat") ? 220 : 90;
+  // Ô nhập NỞ THEO CHỮ như claude.ai (chủ yêu cầu 27/08): xuống dòng là thấy toàn bộ văn
+  // bản, không phải cuộn trong một ô 3 dòng. Trần ở trang Trò chuyện là 40% màn hình
+  // (đo lúc gõ nên đổi cỡ cửa sổ vẫn đúng); màn chính ô nhập nằm trong cột phải hẹp hơn
+  // nên trần 200px, quá nữa mới cuộn trong ô. CSS chỉ giữ lưới đỡ 45vh, không chặn nữa.
+  const _cap = document.body.classList.contains("on-chat")
+    ? Math.round(window.innerHeight * 0.4) : 200;
   chatInput.style.height = Math.min(chatInput.scrollHeight, _cap) + "px";
 });
 // Bộ gõ tiếng Việt/IME có thể phát keydown Enter trước compositionend. Nếu gửi và xoá
@@ -1827,10 +1851,8 @@ document.getElementById("testVoiceBtn").addEventListener("click", () => {
   // force: nghe thử là hành động chủ động của user, phải kêu kể cả khi đang tắt tiếng (mặc định).
   voice.speak(v.includes("HoaiMy") ? "Xin chào, em là HoaiMy, trợ lý của bạn." : "Xin chào, tôi là NamMinh, trợ lý của bạn.", { force: true });
 });
-ttsToggle.addEventListener("click", () => {
-  const enabled = voice.toggleTTS();
-  ttsToggle.classList.toggle("muted", !enabled);
-});
+// Nút loa header đã bỏ (0.48.3) - công tắc giọng nay chỉ còn nút trên THANH NHẬP
+// (#ttsToggleBar) và công tắc trong Cài đặt nhanh, cả hai do quick-settings.js lo.
 
 // Resume AudioContext khi user tương tác lần đầu (để analyser pulse hoạt động)
 function resumeAudio() {
@@ -1850,9 +1872,9 @@ const ENGINE_LABEL = {
   "anthropic-cli": "Claude Code", "openai-oauth": "ChatGPT", "openrouter": "OpenRouter",
   "openai": "OpenAI", "anthropic-api": "Anthropic", "gemini": "Gemini", "groq": "Groq",
   "ollama": "Ollama",
-  // Nhãn phải TÁCH khỏi "Gemini" ở trên: cùng model nhưng khác đường và khác hoá đơn
-  // (đăng nhập Google miễn phí, so với API key trả theo lượt gọi).
-  "gemini-cli": "Gemini CLI",
+  // Hai engine CLI gói thuê bao. Nhãn phải TÁCH khỏi nhà cung cấp API cùng tên: khác đường
+  // và khác hoá đơn (gói đã trả, so với API key trả theo lượt gọi).
+  "grok-cli": "Grok Build", "antigravity-cli": "Antigravity",
 };
 // Một dòng nhỏ dưới câu trả lời: lượt này chạy ở chế độ nào, và tốn bao nhiêu
 // token vào. Trước đây chuyện này hoàn toàn vô hình - chỉ lộ ra khi nhà cung cấp báo vượt hạn
@@ -2411,4 +2433,20 @@ window.refreshEngineBadge = refreshEngineBadge;
     btn.hidden = true;   // từ chối thì trình duyệt sẽ bắn lại event ở phiên sau, nút tự hiện lại
   });
   window.addEventListener("appinstalled", () => { deferredPrompt = null; btn.hidden = true; });
+  // Mở cho install-nudge.js dùng chung ĐÚNG một event beforeinstallprompt này. Trình duyệt
+  // chỉ bắn nó MỘT lần mỗi phiên và chỉ dùng lại được một lần, nên hai nơi cùng bắt là một
+  // nơi mất - phải đi qua cùng một chỗ giữ.
+  window.JavisInstall = {
+    daLaApp: daLaApp,
+    coHopCai: () => !!deferredPrompt,
+    moHopCai: async () => {
+      if (!deferredPrompt) return false;
+      deferredPrompt.prompt();
+      let ket = null;
+      try { ket = await deferredPrompt.userChoice; } catch (e) {}
+      deferredPrompt = null;
+      btn.hidden = true;
+      return !!(ket && ket.outcome === "accepted");
+    },
+  };
 })();

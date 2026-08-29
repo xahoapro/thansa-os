@@ -32,7 +32,7 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=66">
+  <link rel="stylesheet" href="/static/style.css?v=72">
   <link rel="stylesheet" href="/static/console.css?v=46">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại. -->
@@ -119,13 +119,10 @@
               <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
             </svg>
           </button>
-          <!-- Voice/tốc độ dùng lại cùng node trong trang Cài đặt để giữ nguyên handler. -->
-          <button class="hud-icon-btn muted" id="ttsToggle" title="Bật/tắt giọng Thansa">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>
-            </svg>
-          </button>
+          <!-- Nút loa ở đây đã BỎ (0.48.3): cùng một công tắc mà có tới ba chỗ bấm (header,
+               thanh nhập chat, công tắc trong Cài đặt nhanh). Giữ lại đúng nút trên THANH NHẬP
+               (#ttsToggleBar) - nó nằm ngay cạnh chỗ người ta gõ, thấy được ở cả màn Thansa lẫn
+               trang Trò chuyện, và có ở màn hẹp. Chỗ trống này để dành cho hòm thư. -->
           <button class="hud-icon-btn" id="resetBtn" title="Reset hội thoại">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3M3 4v5h5"/>
@@ -155,8 +152,28 @@
           <button class="noti-close" id="notificationClose" type="button" aria-label="Đóng">×</button>
         </div>
       </div>
+      <!-- Hai tab: thư RIÊNG của người dùng và tin PHÁT CHUNG. Gộp một danh sách thì kết quả
+           công việc thật bị chôn dưới mấy dòng changelog, mà đó mới là thứ cần đọc ngay. -->
+      <div class="noti-tabs" role="tablist">
+        <button class="noti-tab active" id="notiTabMine" type="button" role="tab" aria-selected="true">
+          Của tôi<span class="noti-tab-count" id="notiTabMineCount" hidden>0</span>
+        </button>
+        <button class="noti-tab" id="notiTabNews" type="button" role="tab" aria-selected="false">
+          Tin tức<span class="noti-tab-count" id="notiTabNewsCount" hidden>0</span>
+        </button>
+      </div>
       <div class="noti-list" id="notificationList">
         <div class="noti-loading">Đang tải thông báo…</div>
+      </div>
+      <!-- Công tắc thông báo đẩy. Ẩn khi trình duyệt/ngữ cảnh không cho (http trần, iOS chưa
+           cài PWA) và nói LÝ DO thay vì để một cái nút bấm không lên. -->
+      <div class="noti-push" id="notificationPush" hidden>
+        <div class="noti-push-main">
+          <span class="noti-push-title">Thông báo đẩy</span>
+          <span class="noti-push-note" id="notificationPushNote">Báo cả khi bạn không mở Javis</span>
+        </div>
+        <button class="noti-text-btn" id="notificationPushTest" type="button" hidden>Gửi thử</button>
+        <button class="noti-text-btn primary" id="notificationPushToggle" type="button">Bật</button>
       </div>
       <div class="noti-foot">
         <button class="noti-text-btn" id="notificationRefresh" type="button">↻ Làm mới</button>
@@ -278,11 +295,15 @@
 
       <!-- RIGHT: transcript + activity -->
       <aside class="hud-right">
+        <!-- Nút mở lại khi khung hội thoại đang thu (body.chatcol-thu, chỉ desktop).
+             Ẩn mặc định bằng CSS - trên điện thoại cột này chính là khung chat, không thu. -->
+        <button class="chatcol-expand" id="chatColMo" title="Mở lại khung hội thoại" aria-label="Mở lại khung hội thoại"><i data-ic="panel-left"></i></button>
         <div class="panel-label">
           <span>HỘI THOẠI</span>
           <span style="display:flex;align-items:center;gap:6px">
             <span class="engine-badge" id="engineBadge" title="Engine + model THẬT đang chạy (lấy từ server - không phải tên model tự nhận)">-</span>
             <button class="mini-btn" id="chatZoomBtn" title="Mở trang Trò chuyện (khung chat toàn màn)"><i data-ic="maximize"></i></button>
+            <button class="mini-btn chatcol-thu-btn" id="chatColThu" title="Thu khung hội thoại sang phải (như thu sidebar)"><i data-ic="panel-left"></i></button>
           </span>
         </div>
         <!-- MỨC DÙNG token đã DỜI xuống góc dưới-phải khung giữa (giải phóng chỗ cho khung chat). -->
@@ -419,16 +440,13 @@
         <span class="mb-caret">▾</span>
       </button>
       <div class="mb-pop" id="mbPop" hidden></div>
-      <!-- HỆ THỐNG + MCP ĐANG DÙNG: dời từ cột phải xuống đây, nằm ngang bên phải ô chọn model. -->
+      <!-- 0.49.3: dải này BỎ hai đèn "HỆ THỐNG" (Claude Code CLI / Voice) - chúng gần như
+           luôn xanh nên không nói thêm được gì, mà trạng thái thật đã có chỗ tử tế hơn:
+           banner đỏ trên navbar khi mất model, trang Kết nối cho MCP. Chỗ trống dành cho
+           thứ THAY ĐỔI theo từng lượt: BA tool Javis vừa gọi, mới nhất đứng đầu. -->
       <div class="sysbar" id="sysBar">
-        <span class="sysbar-label">HỆ THỐNG</span>
-        <div class="sys-status">
-          <div class="mcp-item" id="claudeStatus"><i data-ic="circle" class="ic-fill ic-sm"></i> Claude Code CLI</div>
-          <div class="mcp-item" id="ttsStatus"><i data-ic="circle" class="ic-fill ic-sm"></i> Voice (Edge TTS)</div>
-        </div>
-        <span class="sysbar-sep"></span>
-        <span class="sysbar-label">MCP</span>
-        <div id="mcpList" class="mcp-list"><div class="mcp-item dim">Chưa có hoạt động</div></div>
+        <span class="sysbar-label">VỪA GỌI</span>
+        <div id="mcpList" class="mcp-list"><div class="mcp-item dim">Chưa gọi tool nào</div></div>
       </div>
     </div>
 
@@ -753,7 +771,7 @@
   <script src="/static/theme.js?v=1"></script>
   <script src="/static/voice.js?v=15"></script>
   <script src="/static/graph.js?v=16"></script>
-  <script src="/static/chat-render.js?v=9"></script>
+  <script src="/static/chat-render.js?v=10"></script>
   <script src="/static/code-hl.js?v=1"></script>
   <script src="/static/dataview.js?v=1"></script>
   <script src="/static/task-suggest.js?v=1"></script>
@@ -765,16 +783,16 @@
   <script src="/static/chat-slash.js?v=1"></script>
   <script src="/static/chat-acts.js?v=1"></script>
   <script src="/static/chat-marks.js?v=1"></script>
-  <script src="/static/app.js?v=92"></script>
+  <script src="/static/app.js?v=97"></script>
   <!-- Sau app.js: dải việc nền đọc window.JavisSessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=1"></script>
   <script src="/static/model-picker.js?v=6"></script>
   <script src="/static/branding.js?v=7"></script>
-  <script src="/static/quick-settings.js?v=5"></script>
+  <script src="/static/quick-settings.js?v=6"></script>
   <script src="/static/chat-zoom.js?v=6"></script>
   <script src="/static/brains-ui.js?v=7"></script>
   <script src="/static/sessions-ui.js?v=12"></script>
-  <script src="/static/studio.js?v=28"></script>
+  <script src="/static/studio.js?v=29"></script>
   <script src="/static/chatbots.js?v=10"></script>
   <!-- Dashboard Token (trang Mức dùng nâng cấp): nạp TRƯỚC console.js để renderUsage ủy quyền được. -->
   <script src="/static/usage.js?v=1"></script>
@@ -782,10 +800,12 @@
        phần khung - xterm.js (285KB) nạp lười ở lần đầu mở tab, không nằm trong đường khởi động. -->
   <script src="/static/code-term.js?v=2"></script>
   <!-- Console layer: console.js đăng ký store TRƯỚC khi Alpine khởi động (defer) -->
-  <script src="/static/console.js?v=111"></script>
-  <script src="/static/mobile-chat.js?v=5"></script>
+  <script src="/static/console.js?v=118"></script>
+  <script src="/static/mobile-chat.js?v=6"></script>
   <script src="/static/brain-view.js?v=1"></script>
-  <script src="/static/notifications.js?v=1"></script>
+  <script src="/static/push.js?v=2"></script>
+  <script src="/static/install-nudge.js?v=1"></script>
+  <script src="/static/notifications.js?v=3"></script>
   <!-- (Nút đổi tông TỐI ↔ SÁNG: theme.js đã nạp ở đầu khối script phía trên) -->
   <!-- Alpine self-host (dashboard/vendor): bản unpkg đo được 2.1s lúc first load + chết khi offline -->
   <script defer src="/static/vendor/alpinejs-3.14.1.min.js?v=1"></script>

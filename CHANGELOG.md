@@ -4,6 +4,102 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.50.2] - 2026-08-28
+### Sửa lỗi
+- **Đăng nhập Grok xong mà thẻ vẫn báo chưa đăng nhập.** Bấm **Đăng nhập**, mở link, trang xAI báo "Device Authorized" - nhưng thẻ trên trang **Models** cứ quay "đang chờ bạn xác nhận" mãi. Javis đọc file phiên của Grok theo một khuôn đoán trước, nên file thật viết khác một chút là nó không thấy token đâu. Nay nó đọc được mọi cách viết.
+- **Thẻ hiện luôn Grok đang nói gì.** Trước đây chỉ có một dòng "đang chờ" quay không có tin tức gì, giờ dòng cuối Grok in ra hiện ngay dưới link, và khi hỏng thì nút **Kiểm tra lại** cho biết Javis đã nhìn vào thư mục nào, thấy file gì. Token không bao giờ hiện ra.
+- **Mã đăng nhập hiện ra đầy đủ** kể cả khi nó nằm sẵn trong link, và Javis bắt được link cả khi Grok in đè lên một dòng thay vì xuống dòng mới.
+
+## [0.50.1] - 2026-08-28
+### Sửa lỗi
+- **Telegram không còn quên sạch mỗi lần cập nhật.** Trước đây bấm nút cập nhật (hay khởi động lại máy chủ) là cuộc trò chuyện trên Telegram coi như mất trắng: phải dạy lại từ cách xưng hô tới quy ước đặt tên file, trong khi mở `localhost:7777` thì vẫn bình thường. Lý do: trình duyệt tự nhớ hộ bạn đang ở cuộc nào, còn Telegram thì không ai nhớ hộ. Giờ Javis tự ghi lại, khởi động xong nối tiếp đúng cuộc đang dở.
+- **Và nhớ cả nội dung đã nói, không chỉ nối đúng cuộc.** Sau khi khởi động lại, Javis đọc lại đoạn chat gần nhất đã lưu rồi mới trả lời, nên bạn nhắn tiếp "cái đó làm giúp anh" là nó vẫn hiểu. Đúng với mọi bộ não: Claude Code, ChatGPT, Grok, Antigravity và các model dùng API key.
+- **Lệnh `/reset` giờ reset thật.** Với bộ não Grok và Antigravity, gõ `/reset` xong Javis vẫn nhớ y nguyên cuộc cũ. Nay cả bốn bộ não đều cắt sạch, và lệnh này cũng dùng được ngay sau khi máy chủ vừa khởi động lại.
+
+## [0.50.0] - 2026-08-28
+### Thêm mới
+- **Bộ não mới: Grok Build của xAI.** Dùng chính gói **SuperGrok** hoặc **X Premium+** bạn đang trả tiền, không phải mua API key. Vào **Models**, thẻ **xAI Grok Build CLI**, bấm **Đăng nhập** là xong. Nó hiện một link và một mã để mở trên điện thoại hay máy tính của bạn, nên **đăng nhập được cả khi Javis chạy trên VPS** - thẻ CLI đầu tiên làm được việc này.
+- Grok **nhớ được mạch hội thoại** giữa các lượt, chạy được ở chat, Telegram, agent và việc nền, và gọi được đầy đủ tool của Javis (MCP, skill, việc Kanban). Bấm **Kiểm tra lại** ở thẻ để biết chắc tool đã đấu chưa.
+
+### Cải thiện
+- **Bỏ hẳn thẻ Google Gemini CLI.** Google đã ngắt nó với mọi tài khoản cá nhân từ 18/06/2026, nên nó chỉ còn là một lựa chọn bấm vào rồi đâm vào tường. Muốn model Gemini thì dùng **Antigravity CLI** (gói Google bạn đang có), **OpenRouter** hoặc thẻ **Google Gemini (API)** - cả ba đều còn nguyên.
+- **Ai đang đặt Gemini CLI làm model chính thì Javis tự chuyển về mặc định khi cập nhật**, và ghi một dòng vào nhật ký máy chủ nói rõ đã chuyển. Không có bước này thì trang Models không thẻ nào sáng nhãn MAIN và câu trả lời ra lạ mà không báo lỗi gì. Mở trang **Models** chọn lại bộ não bạn muốn là xong.
+- **Bản hướng dẫn nội bộ của Javis giờ viết bằng tiếng Anh.** Không có gì đổi với bạn: Javis vẫn trả lời bằng đúng thứ tiếng bạn nhắn, vẫn xưng "bạn/mình" như cũ. Đổi để model hiểu luật rõ hơn và ít hiểu lệch hơn.
+
+## [0.49.3] - 2026-08-27
+### Cải thiện
+- **Dải cạnh ô chọn model giờ cho biết Javis vừa gọi tool gì.** Hai đèn "Claude Code CLI" và "Voice" đã bỏ - chúng gần như luôn xanh nên chẳng nói thêm được gì. Thay vào đó là **ba tool vừa gọi, mới nhất đứng đầu**, cái vừa chạy nháy lên một nhịp.
+
+## [0.49.2] - 2026-08-27
+### Sửa lỗi
+- **Điện thoại không nhận được thông báo đẩy trong khi máy tính vẫn nhận.** Javis tự giới thiệu với dịch vụ đẩy bằng một địa chỉ liên hệ ghi là "localhost" - Google bỏ qua, còn **Apple từ chối thẳng**, nên iPhone im lặng tuyệt đối. Giờ dùng địa chỉ hợp lệ; ai muốn để địa chỉ riêng thì đặt biến `JAVIS_PUSH_CONTACT`.
+- **Nút Gửi thử nói rõ máy nào nhận được, máy nào không.** Trước đây chỉ cần một thiết bị nhận được là báo "đã gửi", nên máy hỏng nằm im không ai biết. Ô công tắc cũng hiện luôn số thiết bị đang nhận và nêu đích danh thiết bị đang lỗi.
+
+## [0.49.1] - 2026-08-27
+### Thêm mới
+- **Nhắc thêm Javis vào Màn hình chính trên điện thoại, mỗi ngày một lần.** Không phải để quảng cáo cài app: trên iPhone, Javis **chỉ gửi được thông báo đẩy khi đã thêm vào Màn hình chính**, nên mở bằng Safari thường là không bao giờ nhận được kết quả việc chạy nền. Popup chỉ ra từng bước đúng theo trình duyệt bạn đang dùng, và có nút **Đừng nhắc nữa** nếu bạn đã quyết định không cài.
+
+## [0.49.0] - 2026-08-27
+### Thêm mới
+- **Hòm thư trên chuông Thông báo.** Giao việc cho Javis xong không phải ngồi canh nữa: mỗi kết quả chạy nền, báo cáo định kỳ và nhắc hẹn đều để lại một mẩu thư. Bấm vào là **quay về đúng hội thoại đã hỏi**, không mở thread mới. Panel chia hai tab: Của tôi và Tin tức.
+- **Thông báo đẩy trên trình duyệt.** Bật một lần trong hòm thư, sau đó có kết quả là máy báo ngay cả khi bạn đã đóng Javis. Bấm vào thông báo là mở thẳng mẩu thư đó. Cần https (hoặc localhost); trên iPhone phải thêm Javis vào Màn hình chính trước.
+- **Nhắc hẹn không còn bắt buộc phải có Telegram.** Trước đây chưa đấu bot thì Javis chặn không cho tạo, vì kết quả sẽ rơi vào hư không. Giờ hòm thư luôn nhận nên cứ tạo thoải mái; đấu Telegram giờ chỉ để nhận thêm trên điện thoại.
+
+## [0.48.3] - 2026-08-27
+### Cải thiện
+- **Bỏ nút loa trên thanh tiêu đề.** Cùng một công tắc giọng mà có tới ba chỗ bấm, giờ giữ đúng nút loa ngay trên thanh nhập chat - nơi tay bạn đang ở sẵn. Công tắc trong Cài đặt nhanh vẫn còn và vẫn đồng bộ.
+
+## [0.48.2] - 2026-08-27
+### Sửa lỗi
+- **Mở file .md ở trang Trò chuyện không còn làm vỡ khung hội thoại bên phải.** Trình sửa phình rộng hơn cột của nó rồi nằm đè lên khung chat, nên chữ bên phải bị cắt mất mép trái, đọc không ra câu. Giờ trình sửa co đúng bằng cột trái, hội thoại hiện đủ như thiết kế.
+- Thanh nút của trình sửa (Sửa, Nguồn, Lưu, Tải...) tự **xuống dòng khi khung hẹp** thay vì bám một hàng rồi đẩy rộng cả trình sửa. Tên file dài thì cắt bằng ba chấm.
+
+## [0.48.1] - 2026-08-27
+### Thêm mới
+- **Đấu được Hostinger vào Javis.** Trang Kết nối có thêm connector chính chủ của Hostinger: hỏi ngay trong chat là ra danh sách tên miền, ngày hết hạn, bản ghi DNS, website WordPress, VPS, hộp thư và hoá đơn. Dán API token lấy từ hPanel là xong.
+- Kết nối này mặc định để mức **Chỉ đọc** vì nó là chìa khoá vào hạ tầng website. Muốn Javis tự sửa DNS hay tạo website thì nâng lên Ghi nháp; các việc xoá, dừng VPS, mua hay gia hạn tên miền chỉ chạy ở mức Toàn quyền.
+- **Agent chọn được thêm Ollama**, đủ 10 nhà cung cấp y như trang Models.
+
+## [0.48.0] - 2026-08-27
+### Thêm mới
+- **Gửi thẳng ảnh cho ChatGPT xem khi tạo ảnh.** Trước đây Javis chỉ tả lại ảnh của bạn bằng lời rồi để AI vẽ theo, nên sản phẩm, nhãn hay khuôn mặt không bao giờ giống bản gốc. Giờ đưa ảnh rồi bảo "dựng theo ảnh này" là ChatGPT nhìn thấy chính tấm ảnh đó (tối đa 4 ảnh một lượt).
+- **Agent chọn được thêm Antigravity CLI**, đủ 9 nhà cung cấp.
+
+## [0.47.9] - 2026-08-27
+### Thêm mới
+- **Agent chọn được model của mọi nhà cung cấp bạn đã kết nối**, không còn kẹt ở Claude và ChatGPT: thêm Gemini CLI, OpenRouter, Anthropic API, OpenAI, Google Gemini, Groq. Danh sách lấy thẳng từ trang Models nên kết nối thêm nhà là có thêm lựa chọn ngay.
+- Agent giờ chạy **đúng nhà bạn chọn** - trước đây chọn nhà khác Claude/ChatGPT thì nó vẫn lặng lẽ chạy bằng Claude. Nhà đang chọn trục trặc giữa chừng thì Javis tự lùi sang bộ não khác thay vì để agent chết lặng.
+
+## [0.47.8] - 2026-08-27
+### Sửa lỗi
+- **Phóng to file .md giờ phủ kín màn hình thật.** Trước đây thanh điều hướng bên trái vẫn nằm đè lên, ăn mất mép trái bài viết (tiêu đề "AGENTS.md" hiện thành "ENTS.md"). Bấm phóng to là toàn bộ màn hình dành cho nội dung; thu nhỏ lại thì thanh bên trở về như cũ.
+
+## [0.47.7] - 2026-08-27
+### Sửa lỗi
+- **Hết cảnh khối code nằm giữa file .md thành một cái thẻ chết.** Trước đây mở file ra sửa mà trong đó có đoạn code dài thì nó bị thu thành thẻ "Mã TEXT · 30 dòng", bấm không mở, nội dung không xem được. Giờ trong trình sửa, đoạn code hiện đầy đủ ngay tại chỗ và sửa được như phần còn lại của file.
+- Thẻ sơ đồ, ảnh SVG và trang HTML vẫn giữ dạng thẻ xem trước, nhưng nay **bấm được ngay trong trình sửa** để mở khung xem.
+
+## [0.47.6] - 2026-08-27
+### Sửa lỗi
+- **Ô nhập chat trải dài toàn bề rộng khi đang sửa file ở trang Trò chuyện.** Bản trước nhét cả cụm nhập vào cột hội thoại 340px nên chật cứng. Giờ đúng như màn Javis: hội thoại đứng cột phải, còn file đang mở + thanh model + ô nhập vắt ngang dưới cùng. Thu cột hội thoại thì ô nhập vẫn nguyên chỗ.
+
+## [0.47.5] - 2026-08-27
+### Sửa lỗi
+- **Mở file .md ở trang Trò chuyện: bố cục đúng như màn Javis.** Bản trước để khung chat nằm phía TRÊN trình sửa, nhìn ngược. Giờ trình sửa bên trái, hội thoại thành cột bên phải và ô nhập ở dưới đáy cột - y như khi xem file ở màn hình brain.
+### Thêm mới
+- **Khung hội thoại bên phải thu gọn được** ở cả màn Javis lẫn trang Trò chuyện (khi đang sửa file): bấm nút thu là cột co vào bên phải còn một dải hẹp với nút mở lại, và nhớ trạng thái qua F5.
+
+## [0.47.4] - 2026-08-27
+### Sửa lỗi
+- **Dứt điểm banner "Chưa kết nối Model AI" đỏ oan.** Banner giờ chỉ nói về đúng model chính bạn đang chat: model việc nền chưa đăng nhập không làm banner đỏ nữa (việc nền đã tự chạy bằng bộ não chat khi cần từ 0.43.3). Đổi lại, dùng gói ChatGPT mà mất kết nối thật thì banner giờ báo được - trước đây ca này im lặng.
+### Cải thiện
+- **Mở file .md trong trang Trò chuyện vẫn giữ khung chat bên dưới**: trình sửa đứng trên, hội thoại rút gọn và ô nhập giữ nguyên - vừa sửa file vừa nhắn Javis về chính file đó. Điện thoại giữ lối cũ vì màn không đủ chỗ.
+
+## [0.47.3] - 2026-08-27
+### Cải thiện
+- **Ô chat nở theo chữ như claude.ai.** Gõ dài hay xuống dòng là ô nhập tự cao lên cho thấy toàn bộ văn bản (tới 40% màn hình ở trang Trò chuyện), gửi xong tự xẹp về một dòng. Trước đây nó bị chặn cứng ở khoảng 3 dòng.
+- **Cột Hội thoại / Thư mục ở trang Trò chuyện thu gọn đẹp hơn**: có nút thu ngay góc panel, thu xong còn một dải hẹp với nút mở lại (giống panel Vault), thay vì biến mất hẳn.
+
 ## [0.47.2] - 2026-08-27
 ### Thêm mới
 - **Thu gọn được hai panel như sidebar.** Panel Vault ở màn chính có nút thu ngay cạnh nút làm mới - thu xong chỉ còn một dải hẹp với nút mở lại. Cột lịch sử hội thoại ở trang Trò chuyện cũng thu được trên máy tính bằng đúng nút lịch sử trên thanh tiêu đề.

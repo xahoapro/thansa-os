@@ -2901,8 +2901,8 @@
     // nằm chễm chệ trên cùng. Một request cục bộ, rẻ.
     let claudeOn = false;
     try { claudeOn = !!(await (await fetch("/claude/status")).json()).connected; } catch (e) {}
-    // kind "cli" nay có HAI bộ não (Claude Code, Gemini CLI). Chỉ Claude mới phải hỏi
-    // /claude/status; Gemini CLI đã có `configured` thật từ server (đọc file đăng nhập).
+    // kind "cli" nay có ba bộ não (Claude Code, Grok Build, Antigravity). Chỉ Claude mới phải
+    // hỏi /claude/status; hai cái kia đã có `configured` thật từ server (đọc file đăng nhập).
     const provOn = (p) => (p.id === "anthropic-cli" ? claudeOn : !!p.configured);
     const provList = providers.map((p, i) => ({ p, i }))
       .sort((a, b) => (provOn(b.p) - provOn(a.p)) || (a.i - b.i))
@@ -2964,6 +2964,35 @@
           </div>
         </div>`;
       }
+      if (p.id === "grok-cli") {
+        // Bộ não thứ 11. Đây là thẻ CLI DUY NHẤT có nút "Đăng nhập" thật sự bấm được trên VPS:
+        // `grok login --device-auth` in ra một link và một mã rồi tự đứng hỏi máy chủ, nên
+        // Javis chỉ cần bóc link + mã đưa lên đây, không phải giả lập terminal như bản `agy`
+        // 0.30-0.32.1 từng thử (và tắc trên Windows vì không có pseudo-terminal).
+        const dn = p.dang_nhap || {};
+        const st = on
+          ? "● Đã đăng nhập" + (p.account ? " · " + esc(p.account) : "")
+            + (p.plan ? " · " + esc(p.plan) : "") + " · " + p.models.length + " model"
+          : (p.cli_found ? "○ Đã cài CLI, chưa đăng nhập" : "○ Chưa cài Grok Build CLI");
+        return `<div class="prov-card ${p.is_main ? "main" : ""}">
+          ${provHead(p, on, "MCP/skill", st)}
+          <div class="prov-note">Dùng <b>gói SuperGrok hoặc X Premium+ của bạn</b>, không cần mua
+            API key. Đăng nhập được ngay tại đây <b>kể cả khi Thansa chạy trên VPS</b>.</div>
+          ${cliWarn("grok")}
+          ${p.cli_found ? "" : `<div class="prov-steps">
+            <div>Chưa thấy CLI trên máy. Cài một lần trên máy chạy Thansa:<br><code>${esc(p.cai_lenh || "")}</code></div>
+          </div>`}
+          <div id="grokBox" class="prov-steps" style="display:none"></div>
+          <div class="prov-action" style="flex-wrap:wrap">
+            ${on
+              ? `<button class="gcard-btn ghost" data-grokcheck="1">Kiểm tra lại</button>
+                 <button class="gcard-btn ghost" data-grokdisc="1">Ngắt</button>`
+              : `<button class="gcard-btn" data-groklogin="1">Đăng nhập</button>
+                 <button class="gcard-btn ghost" data-grokcheck="1">Kiểm tra lại</button>`}
+            <span id="grokMsg" class="gcard-meta" style="margin-left:10px;flex:1;min-width:200px">${on ? "" : esc(p.auth_error || "")}</span>
+          </div>
+        </div>`;
+      }
       if (p.id === "antigravity-cli") {
         // Bộ não thứ 10. Không có nút "Đăng nhập" ở đây và đó là quyết định có lý do: đăng nhập
         // của `agy` là một giao diện bàn phím trong terminal, token thì nằm trong keyring hệ
@@ -2993,40 +3022,6 @@
             <button class="gcard-btn ghost" data-agycheck="1">Kiểm tra lại</button>
             <span id="agyMsg" class="gcard-meta" style="margin-left:10px;flex:1;min-width:200px">${on ? "" : esc(p.auth_error || "")}</span>
           </div>
-        </div>`;
-      }
-      if (p.id === "gemini-cli") {
-        // Gemini CLI: đăng nhập bằng tài khoản Google, KHÔNG cần mua API key. Không có nút
-        // "Đăng nhập" ở đây là cố ý - luồng đăng nhập của nó là giao diện bàn phím trong
-        // terminal rồi mở trình duyệt, không có cờ headless nào để bọc cho tử tế. Dựng một
-        // cái nút chỉ chạy được trên máy có màn hình thì trên VPS nó là nút chết.
-        const st = on
-          ? "● Đã đăng nhập Google" + (p.account ? " · " + esc(p.account) : "")
-            + (p.auth_method ? " · " + esc(p.auth_method) : "") + " · " + p.models.length + " model"
-          : (p.cli_found ? "○ Đã cài CLI, chưa đăng nhập" : "○ Chưa cài Gemini CLI");
-        return `<div class="prov-card ${p.is_main ? "main" : ""}">
-          ${provHead(p, on, "MCP/skill", st)}
-          <div class="prov-note warn"><b>Google đã ngắt đường này với tài khoản cá nhân từ 18/06/2026</b>
-            - cả gói miễn phí, Google AI Pro lẫn Ultra. Đăng nhập vẫn xong nhưng lúc chat sẽ báo
-            <code>IneligibleTierError</code>. Chặn từ phía Google, không sửa được bên Thansa.
-            Thẻ này giờ chỉ còn dùng được với <b>giấy phép Code Assist doanh nghiệp</b> hoặc khi
-            chạy CLI bằng API key.</div>
-          <div class="prov-steps">
-            <div><b>Muốn dùng model Gemini thì đi đường khác:</b> thẻ <b>OpenRouter</b> (nhiều model
-              một chỗ, có cả Gemini lẫn Claude - gần nhất với trình chọn model của Antigravity),
-              hoặc thẻ <b>Google Gemini (API)</b> bên dưới.</div>
-          </div>
-          ${p.cli_found ? "" : `<div class="prov-steps">
-            <div>Chưa thấy CLI trên máy. Cài tay: <code>npm install -g @google/gemini-cli</code></div>
-          </div>`}
-          <div class="prov-action" style="flex-wrap:wrap">
-            ${on
-              ? (p.auth_by_javis ? `<button class="gcard-btn ghost" data-glogout="1">Ngắt</button>` : "")
-              : `<button class="gcard-btn" data-glogin="1">Đăng nhập Google</button>`}
-            <button class="gcard-btn ghost" data-gcheck="1">Kiểm tra lại</button>
-            <span id="gcliMsg" class="gcard-meta" style="margin-left:10px;flex:1;min-width:200px">${on ? "" : esc(p.auth_error || "")}</span>
-          </div>
-          <div id="gcliLogin"></div>
         </div>`;
       }
       if (p.kind === "cli") {   // Claude Code - trạng thái + login/logout nạp động qua /claude/status
@@ -3075,7 +3070,8 @@
         <h3>◆ Main Model <span style="opacity:.5">model chính cho hội thoại</span></h3>
         <div class="gcard current" style="max-width:540px">
           <div class="gcard-top"><span class="gcard-name">${esc(main.model || "-")}</span><span class="gcard-tag">${esc(mainP.label || main.provider || "")}</span></div>
-          <div class="gcard-meta">${mainP.id === "gemini-cli" ? "Qua Gemini CLI - MCP Thansa + skill + loop + chạy lệnh máy (đăng nhập Google)"
+          <div class="gcard-meta">${mainP.id === "grok-cli" ? "Qua Grok Build CLI - MCP Thansa + skill + loop + chạy lệnh máy (gói SuperGrok / X Premium+)"
+            : mainP.id === "antigravity-cli" ? "Qua Antigravity CLI - MCP Thansa + skill + loop + chạy lệnh máy (gói Google)"
             : mainP.kind === "cli" ? "Qua Claude Code - MCP Thansa + skill + loop + chạy lệnh máy"
             : mainP.kind === "oauth" ? "Qua Codex - MCP Thansa + skill + loop + chạy lệnh máy"
             : mainP.kind === "api" ? "Gọi API thẳng - MCP Thansa + skill + loop (không chạy lệnh máy)" : ""}</div>
@@ -3161,31 +3157,6 @@
     if (ol) ol.onclick = () => startOauthLogin(el);
     const ob = el.querySelector("[data-oauth-browser]");
     if (ob) ob.onclick = () => startOauthBrowser(el);
-    const gl = el.querySelector("[data-glogin]");
-    if (gl) gl.onclick = () => startGeminiLogin(el);
-    const glo = el.querySelector("[data-glogout]");
-    if (glo) glo.onclick = async () => {
-      if (!confirm("Ngắt tài khoản Google khỏi Thansa?")) return;
-      glo.disabled = true; glo.textContent = "Đang ngắt...";
-      try { await fetch("/gemini-cli/logout", { method: "POST" }); } catch (e) {}
-      _daHoiModel.delete("gemini-cli");
-      renderModels(el);
-    };
-    const gk = el.querySelector("[data-gcheck]");
-    if (gk) gk.onclick = async () => {
-      const msg = el.querySelector("#gcliMsg");
-      gk.disabled = true; const cu = gk.textContent; gk.textContent = "Đang thử…";
-      if (msg) msg.textContent = "Đang chạy thử một lượt thật…";
-      let r = null;
-      try { r = await (await fetch("/gemini-cli/check", { method: "POST" })).json(); }
-      catch (e) { r = { ok: false, error: "Lỗi mạng." }; }
-      gk.disabled = false; gk.textContent = cu;
-      if (r && r.ok) {
-        if (msg) msg.innerHTML = OK_ICON + " Dùng được.";
-        _daHoiModel.delete("gemini-cli");
-        setTimeout(() => renderModels(el), 700);
-      } else if (msg) msg.innerHTML = Icons.warn((r && r.error) || "Chưa dùng được.");
-    };
     const agk = el.querySelector("[data-agycheck]");
     if (agk) agk.onclick = async () => {
       const msg = el.querySelector("#agyMsg");
@@ -3212,6 +3183,118 @@
         _daHoiModel.delete("antigravity-cli");
         setTimeout(() => renderModels(el), 700);
       } else if (msg) msg.innerHTML = Icons.warn((r && r.error) || "Chưa dùng được.") + mcpTxt;
+    };
+    // ---- Grok Build CLI: đăng nhập device code ngay trên trang ----
+    const gkl = el.querySelector("[data-groklogin]");
+    if (gkl) gkl.onclick = async () => {
+      const msg = el.querySelector("#grokMsg"), box = el.querySelector("#grokBox");
+      gkl.disabled = true; const cu = gkl.textContent; gkl.textContent = "Đang mở…";
+      if (msg) msg.textContent = "Đang hỏi Grok CLI lấy link đăng nhập…";
+      let r = null;
+      try { r = await (await fetch("/grok/login-start", { method: "POST" })).json(); }
+      catch (e) { r = { ok: false, error: "Lỗi mạng." }; }
+      gkl.disabled = false; gkl.textContent = cu;
+      if (!r || !r.ok) { if (msg) msg.innerHTML = Icons.warn((r && r.error) || "Không mở được."); return; }
+      if (r.xong) { renderModels(el); return; }
+      // Link + mã hiện ra để người dùng mở trên MÁY CỦA HỌ - đây là cả lý do tồn tại của
+      // đường device code: máy chạy Javis (VPS) không cần có trình duyệt.
+      if (box) {
+        box.style.display = "";
+        box.innerHTML = `<div>Mở link này trên máy của bạn:<br><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></div>`
+          + (r.code ? `<div>Rồi nhập mã: <code>${esc(r.code)}</code></div>` : "")
+          + `<div>Xong thì quay lại đây, thẻ tự chuyển sang đã đăng nhập.</div>`;
+      }
+      if (msg) msg.textContent = "Đang chờ bạn xác nhận trên trình duyệt…";
+      // Vẽ lại phần "CLI đang nói gì" dưới link. Bản 0.50.0 chỉ có một dòng "đang chờ" quay
+      // mãi, nên người dùng xác nhận xong trên accounts.x.ai mà thẻ vẫn im thì không ai biết
+      // `grok login` đang kẹt ở đâu - đúng lỗi báo ngày 28/08/2026.
+      const veLog = (d, xong) => {
+        if (!box || !d || !d.nhat_ky || !d.nhat_ky.length) return;
+        const dong = d.nhat_ky.filter(x => !/^\[/.test(x));
+        const cuoi = dong.length ? dong[dong.length - 1] : "";
+        let h = box.querySelector("#grokLog");
+        if (!h) {
+          h = document.createElement("div");
+          h.id = "grokLog"; h.className = "gcard-meta"; h.style.marginTop = "6px";
+          box.appendChild(h);
+        }
+        h.innerHTML = xong
+          ? `Grok CLI vừa in ra:<br><code style="white-space:pre-wrap">${esc(d.nhat_ky.slice(-8).join("\n"))}</code>`
+          : (cuoi ? `Grok CLI: <code>${esc(cuoi.slice(0, 160))}</code>` : "");
+      };
+      // Hỏi lại tới khi CLI báo xong. Trần 5 phút cho khớp vòng device code của xAI; hết giờ
+      // thì nói thẳng là hết giờ chứ không quay mãi.
+      const han = Date.now() + 300000;
+      const quay = async () => {
+        let d = null;
+        try { d = await (await fetch("/grok/login-poll")).json(); } catch (e) {}
+        if (d && d.connected) { _daHoiModel.delete("grok-cli"); renderModels(el); return; }
+        if (Date.now() > han) {
+          if (msg) msg.innerHTML = Icons.warn("Hết giờ chờ. Bấm Đăng nhập lại.");
+          veLog(d, true);
+          return;
+        }
+        if (d && !d.dang_cho) {
+          if (msg) msg.innerHTML = Icons.warn(d.error || "Đăng nhập chưa xong.");
+          veLog(d, true);
+          return;
+        }
+        veLog(d, false);
+        setTimeout(quay, 2000);
+      };
+      setTimeout(quay, 2000);
+    };
+    const gkd = el.querySelector("[data-grokdisc]");
+    if (gkd) gkd.onclick = async () => {
+      gkd.disabled = true; gkd.textContent = "Đang ngắt…";
+      try { await fetch("/grok/logout", { method: "POST" }); } catch (e) {}
+      _daHoiModel.delete("grok-cli");
+      renderModels(el);
+    };
+    const gkc = el.querySelector("[data-grokcheck]");
+    if (gkc) gkc.onclick = async () => {
+      const msg = el.querySelector("#grokMsg");
+      gkc.disabled = true; const cu3 = gkc.textContent; gkc.textContent = "Đang thử…";
+      if (msg) msg.textContent = "Đang chạy thử một lượt thật…";
+      let r = null;
+      // Gửi kèm brain đang mở, cùng lý do với nút của `agy`: phần `mcp` soi cấu hình theo
+      // ĐÚNG brain đó, hỏi trống là soi nhầm chỗ.
+      const _br2 = window.currentBrainPath ? currentBrainPath() : "brain";
+      try { r = await (await fetch(`/grok/check?brain=${encodeURIComponent(_br2)}`,
+                                   { method: "POST" })).json(); }
+      catch (e) { r = { ok: false, error: "Lỗi mạng." }; }
+      gkc.disabled = false; gkc.textContent = cu3;
+      // Nói RIÊNG chuyện tool của Javis: "chat được" và "gọi được tool của Javis" là hai
+      // chuyện khác nhau, và cái thứ hai mới là chỗ đã ba lần hỏng câm với `agy`.
+      const mcpTxt2 = (r && r.mcp)
+        ? (r.mcp.co_javis ? " · tool của Thansa đã đấu"
+           : (r.mcp.hub_bat === false ? " · trung tâm kết nối đang tắt"
+              : " · <b>chưa đấu được tool của Thansa</b>"))
+        : "";
+      if (r && r.ok) {
+        if (msg) msg.innerHTML = OK_ICON + " Dùng được." + mcpTxt2;
+        _daHoiModel.delete("grok-cli");
+        setTimeout(() => renderModels(el), 700);
+      } else if (msg) {
+        msg.innerHTML = Icons.warn((r && r.error) || "Chưa dùng được.") + mcpTxt2;
+        // Chưa dùng được thì hiện luôn chỗ Javis đã nhìn: binary nào, thư mục nào, trong đó
+        // có file gì. Chỉ TÊN file và TÊN khoá - giá trị trong auth.json là token thật.
+        const cd = r && r.chan_doan, box2 = el.querySelector("#grokBox");
+        if (cd && box2) {
+          box2.style.display = "";
+          const fs = (cd.files || []).map(x => x.ten).join(", ") || "(trống)";
+          box2.innerHTML = `<div class="gcard-meta">Thansa đã nhìn vào:<br>`
+            + `binary <code>${esc(cd.cli_path || "(không thấy)")}</code><br>`
+            + `thư mục <code>${esc(cd.home || "")}</code> - ${cd.home_ton_tai ? "có" : "KHÔNG có"}<br>`
+            + `file trong đó: <code>${esc(fs)}</code><br>`
+            + `nhận ra token đăng nhập: <b>${cd.co_token ? "có" : "KHÔNG"}</b>`
+            + (cd.khoa_cap_cao && cd.khoa_cap_cao.length
+               ? `<br>khoá trong file: <code>${esc(cd.khoa_cap_cao.slice(0, 20).join(", "))}</code>` : "")
+            + (cd.nhat_ky && cd.nhat_ky.length
+               ? `<br>lần đăng nhập gần nhất:<br><code style="white-space:pre-wrap">${esc(cd.nhat_ky.slice(-8).join("\n"))}</code>` : "")
+            + `</div>`;
+        }
+      }
     };
     const od = el.querySelector("[data-oauth-disc]");
     if (od) od.onclick = async () => {
@@ -3344,55 +3427,6 @@
       catch (e) { if (m2) m2.textContent = "Lỗi mạng."; return; }
       if (rr.ok) { stopped = true; refreshClaudeCard(el); }
       else if (m2) m2.innerHTML = Icons.warn(rr.error || "Code sai, thử lại.");
-    };
-  }
-
-  // ---- Gemini CLI: đăng nhập Google ngay trên trang, không phải mở terminal ----
-  // Dùng đúng đường "mã dán" của chính Gemini CLI: Google redirect về trang codeassist của họ,
-  // trang đó HIỆN RA một mã cho người dùng chép. Không có localhost nào ở giữa nên chạy được
-  // cả khi Javis nằm trên VPS còn trình duyệt ở máy người dùng - y như đăng nhập Claude Code.
-  async function startGeminiLogin(el) {
-    const hop = el.querySelector("#gcliLogin");
-    const msg = el.querySelector("#gcliMsg");
-    if (msg) msg.textContent = "Đang lấy link đăng nhập…";
-    let r;
-    try { r = await (await fetch("/gemini-cli/login-start", { method: "POST" })).json(); }
-    catch (e) { if (msg) msg.textContent = "Lỗi mạng."; return; }
-    if (!r.ok || !r.authorize_url) {
-      if (msg) msg.innerHTML = Icons.warn(r.error || "Không bắt đầu được đăng nhập.");
-      return;
-    }
-    if (msg) msg.textContent = "";
-    try { window.open(r.authorize_url, "_blank"); } catch (e) {}
-    if (hop) hop.innerHTML = `
-      <div class="prov-steps">
-        <div><b>1)</b> Mở link này rồi đăng nhập bằng tài khoản Google của bạn:<br>
-          <a href="${esc(safeHref(r.authorize_url))}" target="_blank" rel="noopener"
-             style="color:var(--link-ink);word-break:break-all">${esc(r.authorize_url.slice(0, 90))}…</a></div>
-        <div><b>2)</b> Đồng ý xong, Google hiện ra <b>một mã</b>. Chép mã đó dán vào đây:</div>
-        <div class="gcli-code-row">
-          <input class="js-input" id="gcliCode" placeholder="Dán mã Google vừa hiện" autocomplete="off"
-                 spellcheck="false">
-          <button class="gcard-btn" id="gcliCodeBtn">Xong</button>
-        </div>
-        <div id="gcliCodeMsg" class="gcard-meta" style="margin-top:4px"></div>
-      </div>`;
-    const btn = el.querySelector("#gcliCodeBtn");
-    if (btn) btn.onclick = async () => {
-      const m2 = el.querySelector("#gcliCodeMsg");
-      const code = (el.querySelector("#gcliCode").value || "").trim();
-      if (!code) { if (m2) m2.textContent = "Dán mã vào đã."; return; }
-      btn.disabled = true; if (m2) m2.textContent = "Đang xác nhận…";
-      let d;
-      try {
-        const fd = new FormData(); fd.append("code", code);
-        d = await (await fetch("/gemini-cli/login-code", { method: "POST", body: fd })).json();
-      } catch (e) { d = { ok: false, error: "Lỗi mạng." }; }
-      btn.disabled = false;
-      if (!d.ok) { if (m2) m2.innerHTML = Icons.warn(d.error || "Chưa được, thử lại."); return; }
-      if (m2) m2.innerHTML = OK_ICON + " Đã kết nối" + (d.email ? " · " + esc(d.email) : "") + ".";
-      _daHoiModel.delete("gemini-cli");
-      setTimeout(() => renderModels(el), 900);
     };
   }
 
@@ -5165,24 +5199,88 @@
       padding:4px 10px; cursor:pointer; font-size:14px; line-height:1; }
     .cp-ico-btn:hover{ color:var(--accent); border-color:var(--accent); }
     .cp-ico-btn .ic{ vertical-align:-2px; }
-    /* Nút Ẩn/hiện cột lịch sử: desktop thu gọn tại chỗ (.side-thu, có nhớ), màn hẹp
-       mở/đóng drawer như cũ. Trước 0.47.2 nút chỉ hiện ở màn hẹp - chủ muốn desktop
-       cũng thu được như sidebar (27/08). */
+    /* Thu gọn cột Hội thoại/Thư mục như sidebar (chủ yêu cầu 27/08): desktop thu về dải
+       hẹp chỉ còn nút mở lại (.side-thu, có nhớ), màn hẹp giữ drawer như cũ. Nút thu nằm
+       ngay góc panel (cùng icon panel-left với nút thu rail); nút lịch sử trên thanh tiêu
+       đề cũng toggle được cùng trạng thái. */
     .cp-side-toggle{ display:inline-block; }
-    @media (min-width:861px){ .chatpage.side-thu .chatpage-side{ display:none; } }
+    .cside-thu-btn, .cside-expand{ display:none; }
+    @media (min-width:861px){
+      .chatpage-side{ position:relative; }
+      .chatpage-side .cside-tabs{ padding-right:34px; }
+      .cside-thu-btn{ display:flex; align-items:center; justify-content:center;
+        position:absolute; top:16px; right:10px; width:27px; height:27px; border-radius:7px;
+        border:1px solid var(--border); background:none; color:var(--text3); cursor:pointer; }
+      .cside-thu-btn:hover{ color:var(--accent); border-color:var(--accent); }
+      .chatpage.side-thu .chatpage-side{ width:46px; padding:14px 8px; align-items:center; overflow:hidden; }
+      .chatpage.side-thu .chatpage-side > :not(.cside-expand){ display:none; }
+      .chatpage.side-thu .chatpage-side > .cside-expand{ display:flex; align-items:center;
+        justify-content:center; width:30px; height:30px; flex:none; border-radius:8px;
+        border:1px solid var(--border); background:none; color:var(--text2); cursor:pointer; }
+      .chatpage.side-thu .chatpage-side > .cside-expand:hover{ color:var(--accent); border-color:var(--accent); }
+    }
     .cp-min{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font); }
     .chatpage-slot{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:10px; }
-    /* Mở file từ tab Thư mục: trình sửa CHIẾM CHỖ khung chat, không đè lên nó. Khung chat chỉ
-       bị display:none - node vẫn nguyên nên đóng trình sửa ra là còn đủ đoạn chat đang dở. */
-    .chatpage-edit{ display:none; position:relative; flex:1 1 auto; min-height:0; }
-    .chatpage-main.edit-on > .chatpage-slot{ display:none; }
+    /* Mở file từ tab Thư mục (desktop): trình sửa bên TRÁI, khung chat co thành CỘT PHẢI
+       y như màn Javis - hội thoại ở trên, ô nhập dưới đáy cột (chủ chỉnh 27/08: bản xếp
+       chồng dọc trước đó để chat nằm TRÊN trình sửa theo thứ tự DOM, nhìn ngược). Grid
+       đặt chỗ theo ô nên thứ tự DOM không còn quyết định vị trí. Màn hẹp giữ lối cũ:
+       trình sửa chiếm chỗ (luật display:none nằm trong khối @media 860px bên dưới),
+       node chat còn nguyên nên đóng trình sửa là chat về đủ. */
+    /* flex-direction COLUMN chứ không để mặc định row: trình sửa là MỘT khối xếp dọc trong
+       khung này. Để row thì nó thành item của một hàng ngang, và item hàng ngang có
+       min-width:auto = min-content -> nó TỪ CHỐI co lại, tràn sang phải đè lên cột hội thoại
+       (lỗi chủ repo báo 27/08: chữ bên phải bị cắt mất mép trái). min-width:0 ở cả hai tầng
+       là chốt thật của chuyện đó. */
+    .chatpage-edit{ display:none; position:relative; flex:1 1 auto; min-height:0;
+      flex-direction:column; min-width:0; }
     .chatpage-main.edit-on > .chatpage-edit{ display:flex; }
+    .cedit-thu-btn, .cedit-expand{ display:none; }
+    /* Icon panel-left lật gương = panel-right: bộ icon chưa đóng gói panel-right, và thêm
+       icon mới cần chạy gen_icons (tải mạng) - lật CSS rẻ hơn mà cùng nghĩa. */
+    .cedit-thu-btn svg, .cedit-expand svg{ transform:scaleX(-1); }
+    @media (min-width:861px){
+      /* Bản 0.47.5 nhét CẢ cụm nhập (file chip + thanh model + ô nhập) vào cột phải 340px
+         nên chật cứng - chủ chỉnh lại: y như màn Javis, các thanh đó phải TRẢI DÀI TOÀN BỀ
+         RỘNG dưới cùng (ở màn Javis chúng nằm NGOÀI .hud-body, vắt ngang đáy), chỉ có
+         HỘI THOẠI đứng cột phải. Slot tan vào lưới bằng display:contents để từng con của
+         nó tự nhận ô grid riêng. */
+      .chatpage-main.edit-on{ display:grid; column-gap:14px;
+        grid-template-columns:minmax(0,1fr) 340px;
+        grid-template-rows:auto minmax(0,1fr) auto auto auto auto; }
+      .chatpage-main.edit-on > .chatpage-bar{ grid-row:1; grid-column:1 / -1; }
+      .chatpage-main.edit-on > .chatpage-edit{ grid-row:2; grid-column:1; min-width:0; }
+      .chatpage-main.edit-on > .chatpage-slot{ display:contents; }
+      .chatpage-main.edit-on > .chatpage-slot > *{ max-width:none; }
+      .chatpage-main.edit-on > .chatpage-slot > .transcript{ grid-row:2; grid-column:2;
+        min-height:0; overflow-y:auto; border-left:1px solid var(--border); padding-left:12px; }
+      .chatpage-main.edit-on > .chatpage-slot > .bg-strip{ grid-row:3; grid-column:1 / -1; }
+      .chatpage-main.edit-on > .chatpage-slot > .attach-bar{ grid-row:4; grid-column:1 / -1; }
+      .chatpage-main.edit-on > .chatpage-slot > .model-bar{ grid-row:5; grid-column:1 / -1; }
+      .chatpage-main.edit-on > .chatpage-slot > .hud-voice{ grid-row:6; grid-column:1 / -1; }
+      /* Nút thu khung hội thoại phải - đè lên góc trên-phải cột hội thoại (grid cho phép
+         hai item cùng ô; slot display:contents nên không dùng position:absolute được). */
+      .chatpage-main.edit-on > .chatpage-slot > .cedit-thu-btn{ display:flex; grid-row:2;
+        grid-column:2; justify-self:end; align-self:start; z-index:3; margin:2px 2px 0 0;
+        align-items:center; justify-content:center; width:26px; height:26px; border-radius:7px;
+        border:1px solid var(--border); background:var(--bg2); color:var(--text3); cursor:pointer; }
+      .chatpage-main.edit-on > .chatpage-slot > .cedit-thu-btn:hover{ color:var(--accent); border-color:var(--accent); }
+      /* Thu: chỉ CỘT HỘI THOẠI co vào phải - ô nhập vẫn trải dài dưới cùng. */
+      .chatpage-main.edit-on.echat-thu{ grid-template-columns:minmax(0,1fr) 44px; }
+      .chatpage-main.edit-on.echat-thu > .chatpage-slot > .transcript,
+      .chatpage-main.edit-on.echat-thu > .chatpage-slot > .cedit-thu-btn{ display:none; }
+      .chatpage-main.edit-on.echat-thu > .chatpage-slot > .cedit-expand{ display:flex; grid-row:2;
+        grid-column:2; justify-self:center; align-self:start; align-items:center;
+        justify-content:center; width:30px; height:30px; border-radius:8px;
+        border:1px solid var(--border); background:none; color:var(--text2); cursor:pointer; }
+      .chatpage-main.edit-on.echat-thu > .chatpage-slot > .cedit-expand:hover{ color:var(--accent); border-color:var(--accent); }
+    }
     /* Trình sửa vốn là lớp nổi neo trong .hud-center; ở đây nó là một khối bình thường của
        cột chat, nên gỡ inset/z-index đi kẻo nó bung ra ngoài khung. TRỪ khi đang phóng to
        (.ne-full) - lúc đó nó cố ý phủ kín màn hình, và :not() giữ cho khối CSS này không
        vô hiệu hoá nút phóng to (hai selector cùng độ ưu tiên, khối này nạp sau nên thắng). */
     .chatpage-edit > .note-editor:not(.ne-full){ position:static; inset:auto; z-index:auto;
-      flex:1 1 auto; min-height:0; border-radius:12px; }
+      flex:1 1 auto; min-height:0; min-width:0; border-radius:12px; }
     .chatpage-slot > *{ width:100%; max-width:900px; margin-left:auto; margin-right:auto; }
     .chatpage-slot .transcript{ flex:1 1 auto; min-height:0; max-height:none; background:transparent; }
     /* Khung nhập giữ NGUYÊN bộ mặt của thanh nhập ở màn Javis (--bg2 + bo 18px). Trước đây
@@ -5194,6 +5292,8 @@
        chụp lại đúng cảnh đó. Ba việc: nút chỉ còn icon, tiêu đề cấm xuống dòng và tự cắt,
        nhãn engine nhường chỗ trước vì nó là thứ ít cần nhất trong ba. */
     @media (max-width:860px){
+      /* Màn hẹp không đủ chỗ xếp chồng trình sửa + chat → trình sửa chiếm chỗ như cũ. */
+      .chatpage-main.edit-on > .chatpage-slot{ display:none; }
       .chatpage-bar{ gap:6px; min-width:0; }
       .cp-min span{ display:none; }
       .cp-min{ padding:4px 8px; }
@@ -5262,10 +5362,11 @@
   // Đúng - cây Vault đã có sẵn tìm theo tên/nội dung, tạo file, tạo thư mục, làm mới, tô sáng
   // file đang mở. Dựng bản thứ hai là chép lại từng đó thứ rồi để hai bản trôi lệch nhau.
   // Mượn node y như cách trang này vẫn mượn #chatArea: cùng một cây, chỉ đổi chỗ đứng.
-  // ===== Trình sửa file CHIẾM CHỖ khung chat khi mở file từ tab Thư mục =====
+  // ===== Trình sửa file đứng TRÊN khung chat khi mở file từ tab Thư mục =====
   // Ở màn chính, trình sửa là lớp nổi đè lên visual não - chỗ đó rỗng nên đè là hợp lý. Ở
-  // trang Trò chuyện thì phía dưới là khung chat đang có nội dung; đè lên nó vừa chật vừa
-  // rối. Yêu cầu của chủ repo: mở file thì khung chat biến mất hẳn, chỉ còn trình sửa.
+  // trang Trò chuyện, desktop XẾP CHỒNG: trình sửa trên, khung chat rút gọn ở dưới - chủ
+  // repo đổi ý 27/08 (trước đó muốn ẩn hẳn): vừa sửa file vừa nhắn Javis về file đó.
+  // Màn hẹp vẫn ẩn hẳn khung chat vì không đủ chỗ. Xem khối CSS .chatpage-main.edit-on.
   // Vẫn MƯỢN chính #noteEditor chứ không dựng trình sửa thứ hai - cùng lý do với cây Vault.
   // `into` = khung sẽ mượn trình sửa. Bỏ trống = khung của trang Trò chuyện (#chatPageEdit).
   // Từ 0.33.4 trang Tệp tin cũng mượn chính node này (#fmEdit) thay vì bật popup riêng - một
@@ -5291,6 +5392,9 @@
     if (s.next && s.next.parentNode === s.parent) s.parent.insertBefore(s.node, s.next);
     else s.parent.appendChild(s.node);
     _neSlot = null;
+    // Rời trang trong khi đang phóng to: trình sửa về lại khung cũ nên lớp ne-full-on phải
+    // tắt theo, không thì .cview còn đứng trên rail dù chẳng còn gì phóng to.
+    _neSyncFull();
   }
 
   let _vaultSlot = null;
@@ -5376,16 +5480,50 @@
       try { _chatEngObs = new MutationObserver(sync); _chatEngObs.observe(eb, { childList: true, characterData: true, subtree: true }); } catch (e) {}
     }
 
-    // Nút lịch sử: màn hẹp mở/đóng drawer như cũ; desktop THU GỌN cột lịch sử tại chỗ
-    // (như thu sidebar) và nhớ lựa chọn qua localStorage.
+    // Thu gọn cột Hội thoại/Thư mục: màn hẹp giữ drawer như cũ; desktop thu về dải hẹp
+    // và nhớ lựa chọn. Nút thu/mở gắn SAU khi JavisChatSide.mount vì mount ghi đè innerHTML
+    // của panel - gắn trước là nút biến mất.
     const isNar = () => window.matchMedia("(max-width: 860px)").matches;
-    try { if (localStorage.getItem("javis_chatside_thu") === "1") page.classList.add("side-thu"); } catch (e) {}
-    el.querySelector(".cp-side-toggle").onclick = () => {
-      if (isNar()) { page.classList.toggle("side-open"); return; }
-      const thu = !page.classList.contains("side-thu");
+    const sideEl = el.querySelector("#chatPageSide");
+    const datSideThu = (thu) => {
       page.classList.toggle("side-thu", thu);
       try { localStorage.setItem("javis_chatside_thu", thu ? "1" : "0"); } catch (e) {}
     };
+    try { if (localStorage.getItem("javis_chatside_thu") === "1") page.classList.add("side-thu"); } catch (e) {}
+    if (sideEl) {
+      const thuBtn = document.createElement("button");
+      thuBtn.className = "cside-thu-btn"; thuBtn.type = "button";
+      thuBtn.title = "Thu gọn cột này (như sidebar)"; thuBtn.innerHTML = ic("panel-left");
+      thuBtn.onclick = () => datSideThu(true);
+      const moBtn = document.createElement("button");
+      moBtn.className = "cside-expand"; moBtn.type = "button";
+      moBtn.title = "Mở lại cột Hội thoại / Thư mục"; moBtn.innerHTML = ic("panel-left");
+      moBtn.onclick = () => datSideThu(false);
+      sideEl.appendChild(thuBtn); sideEl.appendChild(moBtn);
+    }
+    el.querySelector(".cp-side-toggle").onclick = () => {
+      if (isNar()) { page.classList.toggle("side-open"); return; }
+      datSideThu(!page.classList.contains("side-thu"));
+    };
+    // Khung chat PHẢI khi đang sửa file (.edit-on): nút thu co vào bên phải + nhớ trạng
+    // thái. Nút gắn vào slot SAU khi mượn node chat nên không bị _borrowChatNodes chen chỗ.
+    const mainEl = el.querySelector(".chatpage-main");
+    if (mainEl && slot) {
+      const datEditThu = (thu) => {
+        mainEl.classList.toggle("echat-thu", thu);
+        try { localStorage.setItem("javis_editchat_thu", thu ? "1" : "0"); } catch (e) {}
+      };
+      try { if (localStorage.getItem("javis_editchat_thu") === "1") mainEl.classList.add("echat-thu"); } catch (e) {}
+      const et = document.createElement("button");
+      et.className = "cedit-thu-btn"; et.type = "button";
+      et.title = "Thu khung hội thoại sang phải"; et.innerHTML = ic("panel-left");
+      et.onclick = () => datEditThu(true);
+      const em = document.createElement("button");
+      em.className = "cedit-expand"; em.type = "button";
+      em.title = "Mở lại khung hội thoại"; em.innerHTML = ic("panel-left");
+      em.onclick = () => datEditThu(false);
+      slot.appendChild(et); slot.appendChild(em);
+    }
     // Đường VỀ. Nút phóng to ở màn Javis nay dẫn thẳng sang trang này (lớp nổi .chat-stage đã
     // bỏ), nên trang này phải có nút thu nhỏ, nếu không người dùng chỉ còn cách bấm rail.
     el.querySelector("#cpMinBtn").onclick = () => navigateTo("home");
@@ -5776,9 +5914,19 @@
     if (e.button === 3) { e.preventDefault(); _neDiLichSu(-1); }
     else if (e.button === 4) { e.preventDefault(); _neDiLichSu(1); }
   });
+  // Body có lớp `ne-full-on` khi trình sửa đang phóng to. style.css dựa vào đó để nâng
+  // stacking context .cview lên trên rail - không có nó thì phóng to xong rail vẫn phủ
+  // lên mép trái bài viết (chữ bị lẹm). SUY RA từ DOM thật chứ không bật/tắt theo từng
+  // đường: quên một nhánh là lớp treo lại, mà lúc đó .cview đứng trên rail vĩnh viễn.
+  function _neSyncFull() {
+    const ed = document.getElementById("noteEditor");
+    document.body.classList.toggle("ne-full-on",
+      !!(ed && !ed.hidden && ed.classList.contains("ne-full")));
+  }
+
   function closeNote() {
     const ed = document.getElementById("noteEditor"); if (!ed) return;
-    ed.hidden = true; ed.classList.remove("ne-full");
+    ed.hidden = true; ed.classList.remove("ne-full"); _neSyncFull();
     // Đóng trình sửa ở trang Trò chuyện = trả chỗ lại cho khung chat. Không trả thì khung chat
     // vẫn bị ẩn và người dùng nhìn vào một trang trống, tưởng chat hỏng.
     _returnNoteEditor();
@@ -5837,7 +5985,7 @@
     actions.appendChild(mk(ic("trash-2"), "Xoá file", () => _neDeleteCur(rel, it)));
     actions.appendChild(mk("↗", "Mở tab mới", () => window.open(_vtRaw(rel), "_blank")));
     actions.appendChild(mk("⤓ Tải", "Tải file về máy", () => _dlFile(rel)));
-    actions.appendChild(mk(ic("maximize"), "Phóng to / thu nhỏ", () => ed.classList.toggle("ne-full")));
+    actions.appendChild(mk(ic("maximize"), "Phóng to / thu nhỏ", () => { ed.classList.toggle("ne-full"); _neSyncFull(); }));
     actions.appendChild(mk(X_ICON, "Đóng (Esc)", closeNote));
   }
   function _neRenderDownload(body, actions, rel, it) {
@@ -5865,6 +6013,7 @@
     b.innerHTML = X_ICON; b.title = "Đóng (Esc)"; b.onclick = closeNote;
     actions.appendChild(b);
     if (ed) ed.classList.remove("ne-full");
+    _neSyncFull();
     _neTimFileGan(String(rel).split("/").pop(), body.querySelector("#neMissHits"));
   }
   // Link hụt thường KHÔNG phải file đã mất - chỉ là tên trong chat lệch tên trên đĩa (hay gặp
@@ -6085,7 +6234,7 @@
     _neDangDiLichSu = false;
     if (!laLichSu) _neDayLichSu(rel, it);
     _neVeNutLui();
-    ed.hidden = false; ed.classList.remove("ne-full");
+    ed.hidden = false; ed.classList.remove("ne-full"); _neSyncFull();
     _neOpenRel = rel || "";     // để chip "file đang mở" biết có cần nạp lại hay chỉ cần đưa mắt về
     _neLayNoiDung = null; _neGocText = null;   // file mới: mốc so sánh dựng lại ở dưới
     // Đang ở trang Trò chuyện thì trình sửa chiếm chỗ khung chat thay vì đè lên visual não
@@ -6133,12 +6282,14 @@
       let mdGetter = null;
       if (isMd) {
         const wys = document.getElementById("neWys");
-        wys.innerHTML = window.mdToHtml ? window.mdToHtml(ta.value) : esc(ta.value);
+        // {trinhSua:true}: khối code dài giữ nguyên hình khối code thay vì thu thành thẻ
+        // artifact - trong trình sửa, nội dung phải nhìn thấy và sửa được tại chỗ.
+        wys.innerHTML = window.mdToHtml ? window.mdToHtml(ta.value, null, { trinhSua: true }) : esc(ta.value);
         let curMode = wysOk ? "wys" : "source";
         // Tick checkbox task trong bản render -> tự lưu ngay (như Obsidian), khỏi bấm nút Lưu
         wys.addEventListener("jv-task-toggle", () => { if (_neSaveFn) _neSaveFn(); });
         const wysToSrc = () => { const md = _mdFromHtml(wys.innerHTML); if (md != null) ta.value = md; };
-        const srcToWys = () => { wys.innerHTML = window.mdToHtml ? window.mdToHtml(ta.value) : esc(ta.value); };
+        const srcToWys = () => { wys.innerHTML = window.mdToHtml ? window.mdToHtml(ta.value, null, { trinhSua: true }) : esc(ta.value); };
         _neBuildToolbar(body.querySelector(".ne-fmt"), { mode: () => curMode, ta, wys });   // thanh công cụ chạy cả 2 chế độ
         mdGetter = () => (curMode === "wys" ? (_mdFromHtml(wys.innerHTML) != null ? _mdFromHtml(wys.innerHTML) : ta.value) : ta.value);
         const seg = document.createElement("span"); seg.className = "ne-seg";
@@ -6268,6 +6419,16 @@
     // Áp lại trạng thái thu gọn panel Vault ĐÃ LƯU ngay lúc tải trang (nút bấm gắn trong
     // _vtWire, nhưng chờ tới đó mới áp thì panel nháy to rồi mới thu).
     try { if (localStorage.getItem("javis_vault_thu") === "1") document.body.classList.add("vault-thu"); } catch (e) {}
+    // Thu khung HỘI THOẠI (cột phải màn chính) - co vào bên phải, có nhớ. CSS đã tự vô
+    // hiệu ở màn hẹp (cột đó chính là khung chat mobile) nên chỉ cần gắn handler + áp lại.
+    const cct = document.getElementById("chatColThu"), ccm = document.getElementById("chatColMo");
+    const datChatColThu = (thu) => {
+      document.body.classList.toggle("chatcol-thu", thu);
+      try { localStorage.setItem("javis_chatcol_thu", thu ? "1" : "0"); } catch (e) {}
+    };
+    if (cct) cct.onclick = () => datChatColThu(true);
+    if (ccm) ccm.onclick = () => datChatColThu(false);
+    try { if (localStorage.getItem("javis_chatcol_thu") === "1") document.body.classList.add("chatcol-thu"); } catch (e) {}
     refreshEngineBanner();
     setInterval(refreshEngineBanner, 90000);
     // Báo "chưa kết nối" mà không đưa được người ta tới chỗ kết nối thì chỉ là than phiền.

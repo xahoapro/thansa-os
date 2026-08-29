@@ -51,12 +51,11 @@ import git_brain
 import engine
 import openai_oauth
 import claude_models   # model Claude LIVE cho provider anthropic-cli (hỏi bằng API key, nếu có)
-import gemini_cli      # bộ não thứ 9: Gemini CLI (Google đã ngắt hạng cá nhân 18/06/2026)
 import winproc         # chạy lệnh con câm lặng trên Windows (không nháy console đen)
 import md_repair       # chữa file .md bị vòng lưu WYSIWYG của bản <= 0.33.3 làm hỏng
 import terminal        # tab Code: pseudo-terminal thật trong dashboard (pty trên POSIX, ống trên Windows)
 import antigravity_cli   # bộ não thứ 10: Antigravity CLI (`agy`) - bản Google chỉ định thay Gemini CLI
-import gemini_oauth    # đăng nhập Google ngay trên dashboard rồi bắc cầu token sang Gemini CLI
+import grok_cli          # bộ não thứ 11: Grok Build CLI (`grok`) - gói SuperGrok / X Premium+
 import totp            # xác thực 2 lớp (TOTP) cho cổng đăng nhập - thuần toán, không đụng cấu hình
 import claude_auth     # gói Claude Code xác thực bằng gì: phiên subscription hay API key
 import aux_engine   # engine việc nền: Claude / Codex / API rẻ
@@ -70,6 +69,8 @@ import plugins_host   # hệ PLUGIN: thư mục Python thả vào, tự thêm to
 import web_security   # chống CSRF-to-localhost + DNS-rebinding cho web API cục bộ
 import image_gen      # tạo ảnh bằng gói ChatGPT (OAuth) - Codex Responses + tool image_generation
 import media_gc       # dọn vùng cache media (attachments/ + inbox/) theo hạn tuổi + trần dung lượng
+import inbox         # hòm thư: mọi kết quả chạy nền để lại một mẩu thư bền ở server
+import webpush       # thông báo đẩy trình duyệt (Web Push, tự mã hoá - không thêm thư viện)
 import stt            # nghe tin thoại (Whisper qua Groq) -> chữ, cho kênh Telegram/Zalo
 import zalo_login
 import oauth_mcp
@@ -1038,29 +1039,32 @@ async def auth_disable():
 #   kind=api   (OpenRouter/OpenAI/Anthropic/Gemini) - MCP qua hub trong vòng gọi tool
 #              (_api_stream_mcp), đọc/ghi brain bằng tool vault, KHÔNG chạy lệnh máy
 #
-# `gemini-cli` để kind="cli" là CỐ Ý, không phải tiện tay: `kind` phân loại NĂNG LỰC chứ không
-# phải nhà cung cấp. Mọi chỗ hỏi "đây có phải bộ não gói thuê bao có tool thật không" đều viết
-# `kind in ("cli","oauth")` - đường tắt fast-path, ngân sách ngữ cảnh, nhãn thuê bao. Đặt nó
-# một kind riêng là phải sửa đúng 17 chỗ đó và chắc chắn sót. Chỗ nào cần biết ĐÚNG engine nào
-# thì so bằng `prov`, như nhánh chat vẫn làm với openai-oauth.
+# `kind` phân loại NĂNG LỰC chứ không phải nhà cung cấp. Mọi chỗ hỏi "đây có phải bộ não gói
+# thuê bao có tool thật không" đều viết `kind in ("cli","oauth")` - đường tắt fast-path, ngân
+# sách ngữ cảnh, nhãn thuê bao. Chỗ nào cần biết ĐÚNG engine nào thì so bằng `prov`, như nhánh
+# chat vẫn làm với openai-oauth.
 # ============================================================
 PROVIDER_DEFS = [   # thứ tự = thứ tự hiển thị card ở trang Models
     {"id": "anthropic-cli", "label": "Anthropic OAuth (Claude Code)", "kind": "cli", "key_field": None,          "catalog_key": "claude",
      "default_models": ["opus", "sonnet", "haiku", "fable"]},
     {"id": "openai-oauth",  "label": "OpenAI OAuth (ChatGPT)",  "kind": "oauth", "key_field": None,             "catalog_key": "openai-oauth",
      "default_models": []},  # model/list của Codex app-server là nguồn chân lý; không ghim version ở đây
-    # Gemini CLI: đăng nhập bằng TÀI KHOẢN GOOGLE, không cần mua API key - cùng backend Code
-    # Assist mà Antigravity dùng, nhưng qua CLI chính chủ Google có hỗ trợ bên thứ ba.
-    # Khác hẳn provider `gemini` bên dưới (kind=api, trả tiền theo lượt gọi bằng API key).
     # Antigravity CLI (binary `agy`) - bản Google chỉ định thay cho Gemini CLI sau khi họ ngắt
     # hạng cá nhân 18/06/2026. Đặt TRƯỚC thẻ Gemini CLI vì đây mới là đường còn sống cho người
     # dùng cá nhân, và cho chọn đúng dàn model của Antigravity IDE (có cả Claude).
     # default_models để RỖNG là cố ý: danh sách hỏi thẳng `agy models` chứ không chép tay - tên
     # model của Google đổi liên tục, mà bảng chép tay thì sai lặng lẽ.
+    # Grok Build (binary `grok`) - đường xAI dùng GÓI SuperGrok / X Premium+ sẵn có, không phải
+    # mua API key riêng. Đặt ngay sau ChatGPT vì đây cũng là một đường "gói cá nhân" còn sống.
+    # Nó khác hai thẻ Google bên dưới ở một điểm người dùng thấy ngay: đăng nhập được TỪ
+    # DASHBOARD kể cả trên VPS (`grok login --device-auth` in ra link + mã), nên thẻ này có nút
+    # Đăng nhập thật chứ không phải bảo người ta mở terminal.
+    # default_models để RỖNG là cố ý, đúng bài học của `agy`: tên model của xAI đổi liên tục,
+    # bảng chép tay thì sai lặng lẽ - /provider/models hỏi CLI rồi nhớ lại.
+    {"id": "grok-cli", "label": "xAI Grok Build CLI", "kind": "cli", "key_field": None,
+     "catalog_key": "grok-cli", "default_models": []},
     {"id": "antigravity-cli", "label": "Google Antigravity CLI", "kind": "cli", "key_field": None,
      "catalog_key": "antigravity-cli", "default_models": []},
-    {"id": "gemini-cli",    "label": "Google Gemini CLI (cá nhân đã bị Google ngắt)", "kind": "cli", "key_field": None,
-     "catalog_key": "gemini-cli", "default_models": list(gemini_cli.MODELS_MAC_DINH)},
     {"id": "openrouter",    "label": "OpenRouter",              "kind": "api", "key_field": "openrouter_key",    "catalog_key": "openrouter",
      "default_models": ["openai/gpt-4o-mini"]},
     {"id": "anthropic-api", "label": "Anthropic (API)",         "kind": "api", "key_field": "anthropic_api_key", "catalog_key": "anthropic-api",
@@ -1087,7 +1091,12 @@ def _effective_main(cfg):
     (để config cũ chưa có 'main' vẫn route đúng provider)."""
     m = cfg.get("model", {})
     main = m.get("main") or {}
-    if main.get("provider"):
+    # Lớp phòng vệ THỨ HAI cho provider đã gỡ. `config._nan_provider_da_go` đã nắn lúc đọc
+    # settings, nhưng hàm này cũng nhận cfg do nơi khác dựng (test, bot chuyên trách, cfg sửa
+    # tay), nên vẫn phải tự kiểm. Provider không còn trong PROVIDER_DEFS thì coi như chưa đặt
+    # và rơi xuống mặc định bên dưới - thà chạy bằng bộ não mặc định còn hơn đưa tên model của
+    # nhà này cho engine của nhà kia rồi hỏng câm.
+    if main.get("provider") and _provider_def(main["provider"]):
         return {"provider": main["provider"], "model": main.get("model") or ""}
     eng = m.get("engine")
     if eng == "openrouter":
@@ -1104,26 +1113,13 @@ def _providers_view(cfg):
     oauth_on = bool(oauth.get("access_token") or oauth.get("refresh_token"))
     out = []
     for p in PROVIDER_DEFS:
-        # Gemini CLI: ẨN thẻ khi máy không có binary `gemini` (0.29.1).
-        #
-        # Google ngừng phục vụ nó cho MỌI tài khoản cá nhân từ 18/06/2026, nên với gần như mọi
-        # người đây là một lựa chọn chết - bày ra chỉ để họ đăng nhập xong rồi đâm vào tường.
-        # Nhưng KHÔNG xoá engine: hai diện Google giữ nguyên là giấy phép Code Assist doanh
-        # nghiệp và chạy bằng API key, mà máy của họ thì luôn có sẵn binary. Nên "có binary hay
-        # không" vừa đúng là ranh giới giữa hai nhóm, vừa không cần thêm nút bật/tắt nào.
-        #
-        # Ngoại lệ `is_main`: ai đang ĐẶT nó làm Main Model thì phải thấy thẻ, không thì họ mất
-        # đường đổi sang engine khác ngay trên trang này.
-        if (p["id"] == "gemini-cli" and not gemini_cli.find_gemini_cli()
-                and main.get("provider") != p["id"]):
-            continue
         models = cat.get(p["catalog_key"]) or p.get("default_models", [])
         if p["kind"] == "oauth":
             configured = oauth_on
-        elif p["id"] == "gemini-cli":
-            # Không dùng lối "key_field rỗng nên coi như xong" của anthropic-cli: Gemini CLI có
-            # thể chưa cài, hoặc cài rồi mà chưa đăng nhập Google. Cả hai đều đọc từ file, rẻ.
-            configured = bool(gemini_cli.auth_status().get("connected"))
+        elif p["id"] == "grok-cli":
+            # Đọc `~/.grok/auth.json` - file thật, quyền 0600. Rẻ như nhánh Gemini CLI, và đây
+            # chính là chỗ Grok dễ hơn `agy`: có file để soi nên không phải hỏi CLI.
+            configured = bool(grok_cli.auth_status().get("connected"))
         elif p["id"] == "antigravity-cli":
             # `agy` giữ phiên trong keyring của hệ điều hành nên không có file nào để soi -
             # auth_status() phải hỏi chính CLI, và nó tự nhớ kết quả một phút để mở trang Models
@@ -1139,6 +1135,9 @@ def _providers_view(cfg):
             "configured": configured,
             "models": models,
             "is_main": main.get("provider") == p["id"],
+            # Agent (Studio) chạy được bằng nhà này không. Trang Studio lọc theo cờ này để
+            # không bày ra một lựa chọn mà server sẽ lặng lẽ hạ về Claude. Xem AGENT_PROVIDERS.
+            "agent_ok": p["id"] in AGENT_PROVIDERS,
         }
         if p["kind"] == "oauth":
             item["account"] = oauth.get("account_id", "")
@@ -1149,15 +1148,18 @@ def _providers_view(cfg):
             # được. Lộ cli_found để thẻ nói thẳng ngay tại trang Models.
             item["cli_found"] = bool(find_codex_cli())
             item["cai_lenh"] = "npm install -g @openai/codex"
-        if p["id"] == "gemini-cli":
-            _g = gemini_cli.auth_status()
-            item["cli_found"] = bool(gemini_cli.find_gemini_cli())
-            item["auth_method"] = _g.get("method", "")
-            item["account"] = _g.get("email", "")
-            item["auth_error"] = _g.get("error", "")
-            # Đăng nhập qua dashboard thì Javis giữ token nên NGẮT được; đăng nhập bằng
-            # terminal thì token là của CLI, Javis không có quyền gỡ hộ.
-            item["auth_by_javis"] = gemini_oauth.connected()
+        if p["id"] == "grok-cli":
+            _k = grok_cli.auth_status()
+            item["cli_found"] = bool(grok_cli.find_grok_cli())
+            item["auth_method"] = _k.get("method", "")
+            item["account"] = _k.get("account", "")
+            item["plan"] = _k.get("plan", "")
+            item["auth_error"] = _k.get("error", "")
+            item["cai_lenh"] = grok_cli.lenh_cai()
+            item["dang_nhap"] = grok_cli.login_huong_dan()
+            # Phiên nằm trong `~/.grok/auth.json` do chính CLI giữ, Javis không sở hữu nó -
+            # nhưng `grok logout` thì gọi được, nên thẻ CÓ nút Ngắt (khác `agy`).
+            item["auth_by_javis"] = False
         if p["id"] == "antigravity-cli":
             _a = antigravity_cli.auth_status()
             item["cli_found"] = bool(antigravity_cli.find_antigravity_cli())
@@ -1207,10 +1209,10 @@ def _set_main_model(cfg, provider, model):
         m["engine"] = "openai-oauth"
     elif provider == "gemini":
         m["engine"] = "gemini"
-    elif provider == "gemini-cli":
-        m["engine"] = "gemini-cli"
     elif provider == "antigravity-cli":
         m["engine"] = "antigravity-cli"
+    elif provider == "grok-cli":
+        m["engine"] = "grok-cli"
     elif provider == "groq":
         m["engine"] = "groq"
     elif provider == "ollama":
@@ -1263,6 +1265,29 @@ def _chat_provider(mcfg):
     if prov == "openrouter":
         model = model or mcfg.get("openrouter_model")
     return prov, kind, key, model
+
+
+# Provider mà AGENT chạy THẬT được. Không phải mọi provider ở trang Models: aux_engine chỉ
+# dựng nổi engine cho ngần này (xem _build_codex/_build_gemini/_build_api). Bày thêm
+# antigravity-cli hay ollama vào ô chọn model của agent chỉ là hứa suông - agent sẽ lặng lẽ
+# chạy bằng Claude mà không ai biết. Trang Studio đọc chính danh sách này để vẽ ô chọn, nên
+# thêm provider mới ở aux_engine thì thêm tên vào đây là giao diện có ngay.
+AGENT_PROVIDERS = ("anthropic-cli", "openai-oauth", "grok-cli", "antigravity-cli",
+                   "openrouter", "anthropic-api", "openai", "gemini", "groq", "ollama")
+
+
+def _agent_model_provider(model: str, provider: str = "") -> str:
+    """Provider để chạy agent với `model`.
+
+    Agent LƯU SẴN provider (từ 0.47.9) thì theo đúng nó - cần thiết vì cùng một tên model
+    có thể thuộc hai nhà (vd `gemini-2.5-pro` ở cả Gemini CLI lẫn Gemini API, `claude-*` ở
+    cả Claude Code lẫn Anthropic API), đoán mò là chạy nhầm nhà và nhầm cả hoá đơn.
+    Agent CŨ chưa có trường đó thì suy đúng như trước: gpt*/-codex = Codex, còn lại = Claude.
+    """
+    p = (provider or "").strip()
+    if p in AGENT_PROVIDERS:
+        return p
+    return "openai-oauth" if _is_codex_model(model) else "anthropic-cli"
 
 
 def _chat_provider_for_session(mcfg, row):
@@ -1406,9 +1431,9 @@ def _claude_sub_stream(model, messages, reasoning="off", *, brain=None, tag="cha
     return _claude_sub_doc(cli, _cli_think(reasoning, prompt), model)
 
 
-def _gemini_sub_stream(model, messages, reasoning="off", *, brain=None, tag="chat",
-                       mode="suggest"):
-    """Gói Google (Gemini CLI) cho đường CHAT-THUẦN của `_api_stream`.
+def _antigravity_sub_stream(model, messages, reasoning="off", *, brain=None, tag="chat",
+                            mode="suggest"):
+    """Gói Google qua Antigravity CLI cho đường CHAT-THUẦN của `_api_stream`.
 
     Vì sao phải có: `_api_stream` là đường DÙNG CHUNG của bot chuyên trách, tóm tắt, đặt tiêu
     đề - những chỗ chỉ cần một lượt chữ. Provider nào không có nhánh ở đó thì rơi xuống dòng
@@ -1423,23 +1448,6 @@ def _gemini_sub_stream(model, messages, reasoning="off", *, brain=None, tag="cha
     nó. Viết `async def` ở đây thì `async for` nhận một coroutine và ném TypeError giữa lượt.
     """
     sys_txt, prompt = _claude_sub_tach(messages)
-    g = gemini_cli.GeminiCLI(cwd=_brain_root(brain) if brain else None, tag=tag,
-                             model=model or gemini_cli.MODEL_MAC_DINH, instructions=sys_txt)
-    g.approval_mode = gemini_cli.approval_cho_mode(mode)
-    if brain:
-        _apply_gemini_hub(g, _brain_root(brain), mode=mode)
-    return _gemini_sub_doc(g, _cli_think(reasoning, prompt), model)
-
-
-def _antigravity_sub_stream(model, messages, reasoning="off", *, brain=None, tag="chat",
-                            mode="suggest"):
-    """Gói Google qua Antigravity CLI cho đường CHAT-THUẦN của `_api_stream`.
-
-    Cùng lý do tồn tại với `_gemini_sub_stream`: provider nào không có nhánh ở `_api_stream` sẽ
-    rơi xuống `engine.anthropic_stream(key="")` và hỏng câm. KHÔNG phải `async def` - xem chú
-    thích dài ở `_gemini_sub_stream`.
-    """
-    sys_txt, prompt = _claude_sub_tach(messages)
     g = antigravity_cli.AntigravityCLI(cwd=_brain_root(brain) if brain else None, tag=tag,
                                        model=model or None, instructions=sys_txt)
     g.mode = mode or "suggest"
@@ -1447,11 +1455,33 @@ def _antigravity_sub_stream(model, messages, reasoning="off", *, brain=None, tag
         _apply_antigravity_hub(g, _brain_root(brain), mode=mode)
     # Dùng chung bộ dịch sự kiện với Gemini CLI: hai engine đã phát cùng một hợp đồng
     # {tool_call, final, usage, error}, viết lại là hai bản dễ lệch nhau.
-    return _gemini_sub_doc(g, _cli_think(reasoning, prompt), model)
+    return _cli_sub_doc(g, _cli_think(reasoning, prompt), model)
 
 
-async def _gemini_sub_doc(g, prompt, model):
-    """Một lượt engine CLI (Gemini hoặc Antigravity) -> hợp đồng sự kiện của `_api_stream`."""
+def _grok_sub_stream(model, messages, reasoning="off", *, brain=None, tag="chat",
+                     mode="suggest"):
+    """Gói SuperGrok / X Premium+ (Grok Build CLI) cho đường CHAT-THUẦN của `_api_stream`.
+
+    Cùng lý do tồn tại với `_antigravity_sub_stream`: provider nào không có nhánh ở
+    `_api_stream` sẽ rơi xuống `engine.anthropic_stream(key="")` và hỏng câm. KHÔNG phải
+    `async def` - xem chú thích dài ở `_antigravity_sub_stream`.
+    """
+    sys_txt, prompt = _claude_sub_tach(messages)
+    g = grok_cli.GrokCLI(cwd=_brain_root(brain) if brain else None, tag=tag,
+                         model=model or None, instructions=sys_txt)
+    g.mode = mode or "suggest"
+    if brain:
+        _apply_grok_hub(g, _brain_root(brain), mode=mode)
+    # Dùng chung bộ dịch sự kiện với Gemini/Antigravity: ba engine đã phát cùng một hợp đồng
+    # {tool_call, final, usage, error}, viết lại là ba bản dễ lệch nhau.
+    return _cli_sub_doc(g, _cli_think(reasoning, prompt), model)
+
+
+async def _cli_sub_doc(g, prompt, model):
+    """Một lượt engine CLI (Antigravity hoặc Grok) -> hợp đồng sự kiện của `_api_stream`.
+
+    Dùng chung được vì hai engine đã phát cùng một hợp đồng {tool_call, final, usage, error};
+    viết lại là hai bản dễ lệch nhau."""
     yield {"type": "meta", "model": model}
     async for ev in g.query(prompt):
         et = ev.get("type")
@@ -1527,12 +1557,10 @@ def _api_stream_goc(prov, key, model, messages, reasoning="off"):
         creds = openai_oauth.valid_creds() or {}
         return engine.openai_responses_stream(creds.get("access_token", ""), creds.get("account_id", ""),
                                               _codex_safe_model(model), messages, reasoning)
-    if prov == "gemini-cli":
-        # Gói Google đi qua chính binary `gemini`, cùng lý do với anthropic-cli ngay dưới:
-        # Javis không cầm token của ai, CLI tự lo đăng nhập.
-        return _gemini_sub_stream(model, messages, reasoning)
     if prov == "antigravity-cli":
         return _antigravity_sub_stream(model, messages, reasoning)
+    if prov == "grok-cli":
+        return _grok_sub_stream(model, messages, reasoning)
     if prov == "anthropic-cli":
         # Gói Claude Code đi qua chính binary `claude`, KHÔNG tự dựng request tới
         # api.anthropic.com bằng token của người dùng nữa (xem claude_auth.py). Vẫn không có
@@ -2487,16 +2515,20 @@ def _write_codex_profile():
     return None
 
 
-def _apply_gemini_hub(cli, vault_root=None, mode="full"):
-    """Gắn MCP hub của Javis vào tiến trình Gemini CLI, khoá theo đúng brain đang mở.
+def _apply_grok_hub(cli, vault_root=None, mode="full"):
+    """Gắn MCP hub của Javis vào tiến trình `grok`, khoá theo đúng brain đang mở.
 
-    Gemini CLI đọc `mcpServers` từ `.gemini/settings.json` của THƯ MỤC LÀM VIỆC, và Javis luôn
-    chạy nó với cwd = gốc brain - nên ghi file ngay trong brain vừa đúng chỗ vừa cô lập sẵn
-    từng brain. Không đụng `~/.gemini/settings.json` của người dùng: đó là cấu hình cá nhân họ
-    dùng cho mọi thứ chạy bằng `gemini`, và nhiều brain thì brain nọ sẽ đọc header brain kia.
+    Cùng khuôn `_apply_gemini_hub` ngay trên, và cùng lý do: Grok đọc `[mcp_servers.*]` từ
+    `config.toml` của THƯ MỤC LÀM VIỆC, mà Javis luôn chạy nó với cwd = gốc brain - nên ghi
+    file ngay trong brain vừa đúng chỗ vừa cô lập sẵn từng brain. Không đụng
+    `~/.grok/config.toml`: đó là cấu hình cá nhân người dùng dùng cho mọi thứ chạy bằng `grok`.
 
-    Header giống hệt đường Claude/Codex (`Bearer hub_token` + X-Javis-Mode + X-Javis-Vault) nên
-    hub áp đúng một bộ luật quyền cho cả ba engine.
+    Header y hệt bốn engine kia (`Bearer hub_token` + X-Javis-Mode + X-Javis-Vault) nên hub áp
+    đúng một bộ luật quyền cho cả năm.
+
+    Hình dạng entry lấy từ `grok_cli.hub_entry` chứ KHÔNG viết tay ở đây - Grok dùng khoá `url`,
+    Gemini CLI dùng `httpUrl`, `agy` dùng `serverUrl`. Ba engine ba khoá khác nhau, và lần
+    trước chép nhầm khoá giữa hai file là bộ não chạy mấy bản mà không có lấy một tool nào.
     """
     root = vault_root or getattr(cli, "cwd", None)
     if not root:
@@ -2508,9 +2540,8 @@ def _apply_gemini_hub(cli, vault_root=None, mode="full"):
             headers["X-Javis-Vault"] = str(Path(root).expanduser().resolve())
         except Exception:
             headers["X-Javis-Vault"] = str(root)
-        hub = {"httpUrl": mcp_hub.hub_url(), "headers": headers,
-               "trust": True, "timeout": 20000}
-    gemini_cli.ghi_mcp_settings(root, hub)
+        hub = grok_cli.hub_entry(mcp_hub.hub_url(), headers)
+    grok_cli.ghi_mcp_settings(root, hub)
     return cli
 
 
@@ -2608,7 +2639,11 @@ def oauth_openai_start():
 
 @app.post("/oauth/openai/poll")
 def oauth_openai_poll():
-    return openai_oauth.poll()
+    d = openai_oauth.poll()
+    if d.get("status") == "connected":
+        # Vừa đăng nhập ChatGPT xong: đèn báo não phải xanh NGAY, không chờ vòng probe.
+        connect_health.engine_reconnected("codex")
+    return d
 
 
 # Browser OAuth (Authorization Code + PKCE) - cho Workspace chặn device-code.
@@ -2627,7 +2662,10 @@ async def oauth_openai_browser_finish(request: Request):
     except Exception:
         body = {}
     callback = (body or {}).get("callback") or (body or {}).get("url") or ""
-    return openai_oauth.finish_browser(callback)
+    d = openai_oauth.finish_browser(callback)
+    if d.get("status") == "connected":
+        connect_health.engine_reconnected("codex")   # đăng nhập xong đèn xanh ngay
+    return d
 
 
 @app.post("/oauth/openai/disconnect")
@@ -2637,6 +2675,10 @@ def oauth_openai_disconnect():
         _set_main_model(cfg, "anthropic-cli", cfg["model"].get("claude_model") or "opus")
         cfgmod.write_settings(cfg)
     openai_oauth.disconnect()
+    try:
+        connect_health.probe_engines()   # ngắt chủ động → đèn đổi ngay theo Main Model mới
+    except Exception:
+        pass
     return {"ok": True}
 
 
@@ -2659,47 +2701,6 @@ def claude_status(refresh: bool = False):
     if refresh and d.get("connected"):
         connect_health.engine_reconnected("claude")
     return d
-
-
-@app.get("/gemini-cli/status")
-def gemini_cli_status():
-    """Trạng thái bộ não Gemini CLI: đã cài chưa, đã đăng nhập Google chưa, đăng nhập kiểu gì."""
-    d = gemini_cli.auth_status()
-    d["cli_path"] = gemini_cli.find_gemini_cli() or ""
-    d["huong_dan"] = gemini_cli.login_huong_dan()
-    return d
-
-
-@app.post("/gemini-cli/login-start")
-def gemini_cli_login_start():
-    """Bước 1: trả link đồng ý của Google để người dùng mở.
-
-    Đòi session trình duyệt: đây là thao tác GẮN một tài khoản Google vào máy này, ngang hàng
-    với /auth/tokens - không cho token API tự làm."""
-    return gemini_oauth.start_login()
-
-
-@app.post("/gemini-cli/login-code")
-async def gemini_cli_login_code(code: str = Form("")):
-    """Bước 2: nhận mã Google hiện ra, đổi lấy token, bắc cầu sang Gemini CLI."""
-    return await asyncio.to_thread(gemini_oauth.finish_login, code)
-
-
-@app.post("/gemini-cli/logout")
-def gemini_cli_logout():
-    """Ngắt tài khoản Google khỏi Javis (không đụng tới đăng nhập bằng `gemini` trong terminal)."""
-    gemini_oauth.disconnect()
-    return {"ok": True}
-
-
-@app.post("/gemini-cli/check")
-async def gemini_cli_check():
-    """Chạy thử MỘT lượt thật để biết chắc gói đang dùng được.
-
-    File credential còn nằm đó không có nghĩa là còn dùng được (token hết hạn mà refresh hỏng
-    thì file vẫn nguyên). Trang Models cần câu trả lời dứt khoát, và đây là cách duy nhất có nó.
-    """
-    return await asyncio.to_thread(gemini_cli.kiem_tra_nhanh)
 
 
 @app.get("/antigravity/status")
@@ -2736,6 +2737,85 @@ async def antigravity_check(brain: str = "brain"):
         d["mcp"] = mcp
     except Exception as e:
         d["mcp"] = {"ok": False, "files": [], "thieu": [], "loi": f"{type(e).__name__}: {e}"}
+    return d
+
+
+@app.get("/grok/status")
+def grok_status():
+    """Trạng thái bộ não Grok Build cho trang Models, kèm phần chẩn đoán.
+
+    `chan_doan` chỉ có TÊN file và TÊN khoá, không bao giờ có giá trị - giá trị trong
+    `~/.grok/auth.json` chính là thứ đăng nhập được vào tài khoản xAI của người dùng.
+    """
+    d = grok_cli.auth_status()
+    d["cli_path"] = grok_cli.find_grok_cli() or ""
+    d["cai_lenh"] = grok_cli.lenh_cai()
+    d["huong_dan"] = grok_cli.login_huong_dan()
+    try:
+        d["chan_doan"] = grok_cli.chan_doan()
+    except Exception as e:
+        d["chan_doan"] = {"loi": f"{type(e).__name__}: {e}"}
+    return d
+
+
+@app.post("/grok/login-start")
+async def grok_login_start():
+    """Bước 1: mở vòng device code, trả link + mã để người dùng mở trên máy của họ.
+
+    Chỉ có MỘT bước, không có `login-code` đối xứng như Gemini: `grok login --device-auth` tự
+    đứng hỏi máy chủ tới khi người dùng bấm xong trên web, nên Javis không nhận lại mã nào cả.
+    Giao diện gọi tiếp `/grok/login-poll` để biết đã xong chưa.
+    """
+    return await asyncio.to_thread(grok_cli.login_start)
+
+
+@app.get("/grok/login-poll")
+def grok_login_poll():
+    """Bước 2: vòng đăng nhập tới đâu rồi. Giao diện hỏi lặp lại cái này sau login-start."""
+    return grok_cli.login_trang_thai()
+
+
+@app.post("/grok/logout")
+async def grok_logout():
+    """Ngắt tài khoản xAI khỏi máy này (`grok logout`).
+
+    Khác thẻ `agy` - ở đó không có nút Ngắt vì token nằm trong keyring không đụng tới được.
+    Grok có lệnh đăng xuất chính chủ nên nút này làm đúng việc nó hứa.
+    """
+    return await asyncio.to_thread(grok_cli.logout)
+
+
+@app.post("/grok/check")
+async def grok_check(brain: str = "brain"):
+    """Chạy thử MỘT lượt thật, VÀ soát lại xem hub MCP đã vào cấu hình của `grok` chưa.
+
+    Cùng lý do với `/antigravity/check`: `auth.json` còn nằm đó không có nghĩa là còn dùng
+    được, và quyền dùng Grok Build gắn vào GÓI (SuperGrok / X Premium+) chứ không vào binary -
+    đúng hạng chuyện đã làm Gemini CLI chết lặng khi Google ngắt hạng cá nhân. Câu hỏi "chat
+    được chưa" chỉ trả lời được bằng cách chat thật một lượt.
+
+    Phần `mcp` ghi lại cấu hình rồi ĐỌC LẠI chính file đó, canh hạng lỗi đã ba lần lọt lưới với
+    `agy`: ghi thành công nhưng sai chỗ hoặc sai khoá thì CLI chạy trơn tru mà không có lấy một
+    tool nào của Javis, và không ở đâu có một câu lỗi để lần ra.
+    """
+    root = _brain_root(brain)
+    try:
+        _apply_grok_hub(_types.SimpleNamespace(cwd=root), root)
+    except Exception as e:
+        print(f"[grok check] ghi cấu hình MCP: {e}", file=__import__('sys').stderr)
+    d = await asyncio.to_thread(grok_cli.kiem_tra_nhanh)
+    try:
+        mcp = grok_cli.trang_thai_mcp(root)
+        mcp["hub_bat"] = _hub_enabled()
+        d["mcp"] = mcp
+    except Exception as e:
+        d["mcp"] = {"co_javis": False, "loi": f"{type(e).__name__}: {e}"}
+    # Kèm chẩn đoán: câu lỗi của `auth_status` bảo người dùng "bấm Kiểm tra lại để xem chi
+    # tiết", nên nút đó phải THẬT SỰ có chi tiết, không thì lại là một vòng bấm vô ích nữa.
+    try:
+        d["chan_doan"] = grok_cli.chan_doan()
+    except Exception as e:
+        d["chan_doan"] = {"loi": f"{type(e).__name__}: {e}"}
     return d
 
 
@@ -3584,8 +3664,10 @@ async def _fetch_provider_models(provider, m):
         # app-server là subprocess đồng bộ; chạy ở worker để request FastAPI
         # khác không đứng hình trong lúc Codex nạp catalog.
         return await asyncio.to_thread(openai_oauth.list_models, openai_oauth.valid_creds())
-    if provider == "gemini-cli":
-        return gemini_cli.list_models()
+    if provider == "grok-cli":
+        # Chạy ở worker: `list_models` có thể đẻ tiến trình con (`grok --help` để dò cờ, rồi
+        # `grok models` nếu bản này có) và mất vài giây.
+        return await asyncio.to_thread(grok_cli.list_models)
     if provider == "antigravity-cli":
         # `agy models` là NGUỒN CHÂN LÝ, không có bảng chép tay nào để rơi về - chạy ở worker
         # vì nó đẻ tiến trình con và có thể mất vài giây.
@@ -3639,9 +3721,6 @@ def _vi_sao_khong_co_model(provider: str, m: dict) -> str:
                     "môi trường JAVIS_CODEX_BIN.")
         return ("Có Codex CLI nhưng nó chưa trả được danh sách model. Thường là bản Codex quá "
                 "cũ (`npm i -g @openai/codex@latest`), hoặc máy chưa chạy `codex login` lần nào.")
-    if provider == "gemini-cli":
-        return (gemini_cli.auth_status().get("error")
-                or "Không đọc được danh sách model của Gemini CLI.")
     if provider == "ollama":
         return "Không gọi được Ollama. Kiểm tra máy chủ Ollama còn chạy và key còn hạn."
     if d.get("key_field") and not m.get(d["key_field"]):
@@ -4447,7 +4526,8 @@ def agents_index(brain: str) -> list:
         meta, body = _read_md(f)
         out.append({"slug": f.stem, "name": meta.get("name", f.stem),
                     "role": meta.get("role", ""), "skills": meta.get("skills", []) or [],
-                    "model": meta.get("model", ""), "prompt": body})
+                    "model": meta.get("model", ""),
+                    "model_provider": meta.get("model_provider", ""), "prompt": body})
     return out
 
 @app.get("/agents")
@@ -4457,11 +4537,18 @@ async def list_agents(brain: str = Query("brain")):
 @app.post("/agents")
 async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = Form(""),
                      model: str = Form(""), slug: str = Form(""), prompt: str = Form(""),
-                     brain: str = Form("brain")):
+                     brain: str = Form("brain"), model_provider: str = Form("")):
     slug = slug or _slugify(name)
     skills_list = [s.strip() for s in re.split(r"[,\n]", skills) if s.strip()]
+    # `model_provider` nói RÕ model thuộc nhà nào - cùng một tên model có thể có ở hai nhà
+    # (gemini-2.5-pro: Gemini CLI lẫn Gemini API; claude-*: Claude Code lẫn Anthropic API).
+    # Giá trị lạ (client cũ, gõ tay) bị loại về "" để _agent_model_provider suy như agent cũ,
+    # chứ không ghi vào file một nhà mà server không chạy được.
+    mp = (model_provider or "").strip()
     meta = {"type": "agent", "name": name, "slug": slug, "role": role,
-            "skills": skills_list, "model": model, "updated": _today()}  # "" = mặc định theo CLI
+            "skills": skills_list, "model": model,
+            "model_provider": mp if mp in AGENT_PROVIDERS else "",
+            "updated": _today()}  # "" = mặc định theo CLI
     _write_md(_agents_dir(brain) / f"{slug}.md", meta, (prompt.strip() or role))
     return {"ok": True, "slug": slug}
 
@@ -5991,10 +6078,11 @@ async def usage_ngan_sach(gia_goi_thang_usd: str = Form(""), ngan_sach_thang_usd
     # ngân sách và báo cáo tuần. Chưa đấu kênh nào thì tới giờ chúng chạy xong rồi rơi vào hư
     # không, và người dùng tưởng Javis quên. Không chặn (họ có thể sắp đấu), nhưng phải NÓI.
     canh_bao = []
-    san_sang, ly_do = _notify_ready()
-    if not san_sang and (m.get("bao_cao_tuan") or m["ngan_sach_thang_usd"] > 0):
-        canh_bao.append(ly_do or "Chưa đấu kênh báo nào (Telegram hoặc Zalo) nên báo cáo và "
-                                 "cảnh báo ngân sách sẽ không tới được ai.")
+    co_ngoai, ly_do = _kenh_con_thieu()
+    if not co_ngoai and (m.get("bao_cao_tuan") or m["ngan_sach_thang_usd"] > 0):
+        canh_bao.append("Chưa đấu Telegram hoặc Zalo (" + (ly_do or "chưa bật kênh nào") +
+                        ") nên báo cáo và cảnh báo ngân sách chỉ nằm trong hòm thư trên "
+                        "dashboard, không tới được điện thoại.")
     if m["ngan_sach_thang_usd"] > 0 and not m.get("tu_phanh"):
         canh_bao.append("Tự phanh đang tắt, nên chạm trần Thansa chỉ nhắc chứ không dừng tiêu tiền.")
 
@@ -6210,7 +6298,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
     `log_run(slug, task, out)`: ghi nhật ký lượt chạy vào memory/agents/<slug>/runs/.
     Trước 0.35.3 chỉ runner cũ ghi - bật canary graph là nhật ký lặng lẽ biến mất.
     """
-    agent_name, sysprompt, agent_model = agent_sysprompt(node.agent)
+    agent_name, sysprompt, agent_model, agent_prov = agent_sysprompt(node.agent)
     # Studio định vị chỗ đổ chữ bằng CHỈ SỐ bước, không phải id node. Thiếu `i` thì
     # event vẫn phát ra nhưng giao diện lặng lẽ vứt đi - người xem thấy bước chạy và
     # bước xong mà không thấy chữ nào.
@@ -6221,12 +6309,16 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
         await sink({"type": "step_model", "i": index, "node": node.id,
                     "model": routed_model, "reason": route_reason})
         agent_model = routed_model
+        # Router chỉ chọn trong nhà Claude/Codex (_WORKFLOW_ROUTABLE_PROVIDERS), nên provider
+        # agent lưu sẵn đã hết đúng với model vừa đổi. Bỏ đi để _agent_model_provider suy lại
+        # từ chính model mới, thay vì ép model Claude chạy qua nhà người dùng chọn lúc trước.
+        agent_prov = ""
     cur_prompt = prompt
     out = ""
     verified = None
     attempt = 0
     while True:
-        gcli = mk(sysprompt, agent_model)
+        gcli = mk(sysprompt, agent_model, agent_prov)
         out = ""
         async for ev in gcli.query(cur_prompt):
             if ev["type"] == "text":
@@ -6242,7 +6334,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
                             "content": ev["content"]})
         if not node.verify_agent:
             break
-        v_name, v_body, v_model = agent_sysprompt(node.verify_agent)
+        v_name, v_body, v_model, v_prov = agent_sysprompt(node.verify_agent)
         await sink({"type": "step_verify", "i": index, "node": node.id,
                     "agent": v_name, "attempt": attempt})
         v_sys = (
@@ -6256,7 +6348,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
             f"KẾT QUẢ CẦN KIỂM CHỨNG:\n{out}\n\n"
             "Đánh giá kết quả có ĐẠT nhiệm vụ không. Trả JSON như hướng dẫn."
         )
-        vcli = mk(v_sys, v_model)
+        vcli = mk(v_sys, v_model, v_prov)
         v_out = ""
         async for ev in vcli.query(v_prompt):
             if ev["type"] == "final":
@@ -6305,8 +6397,9 @@ def _workflow_agent_helpers(brain, tools):
     """
     vault_root = str(_brain_root(brain))
 
-    def _mk(sysprompt, model=None):
-        if model and _is_codex_model(model) and tools is None and find_codex_cli():
+    def _mk(sysprompt, model=None, provider=""):
+        prov = _agent_model_provider(model, provider)
+        if prov == "openai-oauth" and model and tools is None and find_codex_cli():
             openai_oauth.write_codex_auth()
             cc = CodexCLI(cwd=vault_root, tag="workflow", model=_codex_safe_model(model),
                           instructions=sysprompt)
@@ -6314,7 +6407,10 @@ def _workflow_agent_helpers(brain, tools):
             return cc
         c = claude_engine(system_prompt=sysprompt, cwd=vault_root, tag="workflow",
                           allowed_tools=tools)
-        c.model = ((model if not _is_codex_model(model) else "") or _aux_model() or None)
+        # Chỉ gán `model` vào engine Claude khi model ĐÚNG LÀ của Claude Code. Model của nhà
+        # khác mà nhét vào đây là Claude nhận một tên nó không hiểu (bug tới 0.47.8: agent
+        # chọn Gemini/OpenRouter vẫn chạy Claude, im lặng, không ai biết).
+        c.model = ((model if prov == "anthropic-cli" else "") or _aux_model() or None)
         if tools is not None:
             _mcpf = _empty_mcp_file()
             if _mcpf:
@@ -6326,6 +6422,21 @@ def _workflow_agent_helpers(brain, tools):
             c.max_wall_s = aux_engine.bg_max_wall_s()
         else:
             c.javis_vault = vault_root
+        # `tools is not None` = workflow chạy NỀN ở chế độ giới hạn công cụ. Ở đó agent luôn
+        # phải là Claude Code, y như nhánh Codex ngay trên: giới hạn an toàn nằm ở
+        # allowed_tools + disallowed_tools của chính CLI đó, engine nhà khác lấy tool từ hub
+        # nên không mang theo được rào ấy. Đây là hành vi đã hứa trong docs/07, không phải
+        # bỏ sót - đổi nó là nới quyền cho việc chạy nền mà không ai yêu cầu.
+        if tools is None and prov not in ("anthropic-cli", "openai-oauth"):
+            # Nhà khác Claude/Codex: mượn ĐÚNG bộ dựng engine của việc nền thay vì viết bản
+            # thứ hai - aux_engine.swap lo cả key, khả dụng, tool qua hub và chuỗi dự phòng
+            # (nhà đã chọn chết giữa chừng thì lùi về Claude/bộ não chính, không chết lặng).
+            # Gọi SAU khi đã gắn javis_vault/system_prompt vì _build_* đọc lại từ engine này.
+            try:
+                c = aux_engine.swap(c, tag="workflow", codex_profile=_write_codex_profile,
+                                    spec={"provider": prov, "model": (model or "")})
+            except Exception as e:
+                print(f"[agent engine] {prov}: {type(e).__name__}: {e}", file=__import__('sys').stderr)
         return c
 
     def _agent_sysprompt(aslug):
@@ -6350,7 +6461,9 @@ def _workflow_agent_helpers(brain, tools):
               "lặp lại bài học đã có trong bộ nhớ.\n"
             + "\nLàm việc trong vault. Tập trung hoàn thành nhiệm vụ, trả kết quả rõ ràng, ngắn gọn."
         )
-        return ameta.get("name", aslug), sysprompt, (ameta.get("model") or "").strip() or None
+        return (ameta.get("name", aslug), sysprompt,
+                (ameta.get("model") or "").strip() or None,
+                (ameta.get("model_provider") or "").strip())
 
     def _log_run(aslug, task, out):
         _log_agent_run(brain, aslug, task, out)
@@ -6577,7 +6690,7 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
         task = step.get("task", "")
         verify_slug = (step.get("verify_agent") or "").strip()
         max_retries = int(step.get("max_retries", 1) or 0)
-        agent_name, sysprompt, agent_model = _agent_sysprompt(agent_slug)
+        agent_name, sysprompt, agent_model, agent_prov = _agent_sysprompt(agent_slug)
         task_f = task.replace("{{input}}", input or "").replace("{{prev}}", prev or "")
         yield {"type": "step_start", "i": i, "agent": agent_name, "task": task_f}
 
@@ -6586,7 +6699,7 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
         verified = None
         attempt = 0
         while True:
-            gcli = _mk(sysprompt, agent_model)   # áp model agent đã chọn
+            gcli = _mk(sysprompt, agent_model, agent_prov)   # áp model agent đã chọn
             out = ""
             async for ev in gcli.query(cur_prompt):
                 if ev["type"] == "text":
@@ -6602,7 +6715,7 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
                 break
 
             # --- KIỂM CHỨNG bằng agent KHÁC (giả định kết quả SAI) ---
-            v_name, v_body, v_model = _agent_sysprompt(verify_slug)
+            v_name, v_body, v_model, v_prov = _agent_sysprompt(verify_slug)
             yield {"type": "step_verify", "i": i, "agent": v_name, "attempt": attempt}
             v_sys = (
                 v_body + "\n\nVAI TRÒ KIỂM CHỨNG: Bạn là người ĐÁNH GIÁ độc lập. "
@@ -6615,7 +6728,7 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
                 f"KẾT QUẢ CẦN KIỂM CHỨNG:\n{out}\n\n"
                 "Đánh giá kết quả có ĐẠT nhiệm vụ không. Trả JSON như hướng dẫn."
             )
-            vcli = _mk(v_sys, v_model)   # agent kiểm chứng cũng dùng model của nó
+            vcli = _mk(v_sys, v_model, v_prov)   # agent kiểm chứng cũng dùng model của nó
             v_out = ""
             async for ev in vcli.query(v_prompt):
                 if ev["type"] == "final":
@@ -6930,7 +7043,52 @@ async def _zalo_send_to(chat_id, text) -> tuple:
     return ok_any, "; ".join(errs)[:200]
 
 
-async def _notify_owner(owner_chat, text) -> tuple:
+_PUSH_TASKS = set()   # giữ tham chiếu task đẩy đang bay (xem chú thích trong _bo_vao_hom_thu)
+
+
+async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="") -> bool:
+    """Để lại MỘT mẩu thư cho mọi kết quả chạy nền, rồi rung chuông đẩy nếu có đăng ký.
+
+    Vì sao đặt ở đây chứ không ở từng nơi sinh việc: `_notify_owner` là CỬA DUY NHẤT mà
+    loop, việc Kanban và nhắc hẹn đều đi qua để nói chuyện lại với người dùng. Móc một chỗ
+    này là cả ba có hòm thư, không phải sửa dòng nào bên trong chúng - và nơi nào sau này
+    thêm vào cũng tự có, khỏi nhớ.
+
+    Hòm thư ghi BẤT KỂ tin đi bằng kênh nào: kênh (chat web / Telegram / Zalo / push) là
+    chuông cửa, hụt cũng không sao; hòm thư là bản ghi bền. Đó cũng là lý do hàm này nuốt
+    mọi lỗi - hòm thư hỏng thì cùng lắm mất một mẩu thư, không được phép làm hỏng việc BÁO.
+    """
+    try:
+        cid = str(owner_chat or "").strip()
+        sid = cid[len(WEB_CHAT_PREFIX):] if cid.startswith(WEB_CHAT_PREFIX) else ""
+        item = inbox.add(text, kind=kind, session_id=sid, source=source, label=label)
+    except Exception as e:
+        print(f"[inbox] bỏ thư lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+        return False
+    try:
+        # Ai đang mở dashboard thì chấm đỏ trên chuông phải nhảy NGAY, không đợi lần
+        # tải lại trang sau. Đi chung đường WebSocket sẵn có của khung chat.
+        await _CHAT_RUNTIME.publish({"type": "inbox", "session_id": item["session_id"]})
+    except Exception as e:
+        print(f"[inbox] bắn WebSocket lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+    try:
+        # Bấm vào thông báo đẩy phải về ĐÚNG chỗ nội dung nằm: hội thoại đã hỏi nếu có,
+        # còn không thì mở hòm thư. Không có tham số này thì push chỉ mở trang chủ, và
+        # người dùng lại phải tự đi tìm - đúng cái phiền mà hòm thư sinh ra để bỏ.
+        url = f"/?mo_thu={item['id']}"
+        # KHÔNG await: mỗi đăng ký chết là một request chờ tới 15 giây, mà việc rung chuông
+        # không được phép giữ chân cái đã xong. Hòm thư đã ghi rồi - push chỉ là chuông cửa.
+        # Giữ tham chiếu tới task, không thì bộ dọn rác có thể nuốt nó giữa chừng.
+        t = asyncio.create_task(
+            webpush.gui_het(item["title"], item["body"][:200], url, tag=f"javis-{item['id']}"))
+        _PUSH_TASKS.add(t)
+        t.add_done_callback(_PUSH_TASKS.discard)
+    except Exception as e:
+        print(f"[webpush] đẩy lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+    return True
+
+
+async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="") -> tuple:
     """Báo cáo cho NGƯỜI YÊU CẦU loop/task (mặc định của Javis). Quy tắc:
       - owner_chat dạng "web:<sid>" → đẩy thẳng vào ĐÚNG khung chat web đã giao việc.
       - owner_chat dạng "zalo:<id>" → gửi qua bot Zalo cho ĐÚNG người đó.
@@ -6943,7 +7101,29 @@ async def _notify_owner(owner_chat, text) -> tuple:
     (đã xuyên suốt enqueue → DB → _report) thay vì thêm cột: một việc chỉ sinh ra từ MỘT
     kênh nên không bao giờ cần mang cả hai.
 
-    Im lặng (trả (False, lý do)) nếu bot chưa bật / chưa có chat_id. Trả (ok, error)."""
+    Từ 0.49.0 mọi lượt báo đều để lại một mẩu thư trong HÒM THƯ trước khi thử gửi. Nhờ đó
+    kết quả không còn phụ thuộc vào chuyện người dùng có đang mở đúng hội thoại đó không,
+    hay có đấu Telegram hay không.
+
+    Trả (ok, error). `ok` là ĐÃ TỚI ĐƯỢC NGƯỜI DÙNG, và hòm thư tính là tới: nó nằm ở
+    server, còn sau F5, thấy được từ máy khác. Nhờ vậy một cái nhắc hẹn trên máy chưa đấu
+    Telegram không còn bị ghi là "failed" trong khi nội dung đang nằm sẵn trong hòm."""
+    vao_hom = await _bo_vao_hom_thu(owner_chat, text, kind=kind, label=label, source=source)
+    ok, err = await _gui_qua_kenh(owner_chat, text)
+    if ok or not vao_hom:
+        return ok, ("" if ok else err)
+    # Kênh hỏng nhưng hòm thư đã giữ tin: với NGƯỜI DÙNG đây là thành công, nên đừng trả lỗi
+    # lên (nhắc hẹn sẽ bị ghi "failed" trong khi nội dung nằm sẵn trong hòm). Lý do kênh hỏng
+    # vẫn phải còn dấu vết để còn dò được, nên ghi log - và trang Việc đã nói riêng chuyện
+    # "chưa đấu Telegram/Zalo" qua `_kenh_con_thieu`.
+    if err:
+        print(f"[notify] hòm thư đã giữ tin, nhưng kênh ngoài hỏng: {err}", file=sys.stderr)
+    return True, ""
+
+
+async def _gui_qua_kenh(owner_chat, text) -> tuple:
+    """Gửi qua ĐÚNG kênh đã giao việc. Tách khỏi `_notify_owner` để chỗ đó chỉ còn lo việc
+    ghép hai đường (hòm thư + kênh), không lẫn với chi tiết của từng nhà."""
     cid = str(owner_chat or "").strip()
     if cid.startswith(WEB_CHAT_PREFIX):
         sid = cid[len(WEB_CHAT_PREFIX):]
@@ -7105,7 +7285,18 @@ def _notify_ready() -> tuple:
     ĐỦ MỘT kênh là đủ. Từ 0.26.8 Zalo cũng tính: người dùng chỉ đấu Zalo mà bị chặn tạo nhắc
     hẹn với lý do "bot Telegram chưa bật" là một câu vừa sai vừa không sửa được, và nó đẩy họ
     đi cài một app họ không cần.
+
+    Từ 0.49.0 HÒM THƯ là kênh mặc định và nó luôn có, nên rào này gần như không còn chặn ai:
+    kết quả bao giờ cũng có chỗ đậu ở server, mở dashboard là thấy. Vẫn giữ hàm (và vẫn liệt
+    kê kênh còn thiếu) vì Telegram/Zalo mới là đường tới được ĐIỆN THOẠI lúc không mở
+    dashboard - thiếu chúng không phải lỗi, nhưng là điều đáng nói ra ở trang Việc.
     """
+    return True, ""
+
+
+def _kenh_con_thieu() -> tuple:
+    """(có_kênh_ngoài, mô_tả_thiếu) - phần soi Telegram/Zalo tách ra khỏi `_notify_ready`.
+    Dùng để HIỂN THỊ chứ không để chặn."""
     try:
         cfg = cfgmod.read_settings()
     except Exception:
@@ -7139,10 +7330,19 @@ def _notify_live_warn() -> str:
         return ""
 
 
+async def _bao_nhac_hen(chat_id, text) -> tuple:
+    """Đường BÁO của nhắc hẹn. Cùng chữ ký (chat_id, text) -> (ok, err) như `_tg_send_to` cũ,
+    nhưng đi qua `_notify_owner` nên nhắc hẹn được đúng ba thứ mà trước đây nó không có:
+    hòm thư ở server, đẩy về khung chat web khi chat_id là "web:<sid>", và thông báo đẩy.
+    Trước bản này nhắc hẹn là thứ DUY NHẤT còn gọi thẳng Telegram - đó cũng là lý do
+    reminders.py phải chặn không cho tạo khi chưa đấu bot."""
+    return await _notify_owner(chat_id, text, kind="report", source="reminder")
+
+
 reminders_feature = reminders_mod.register(app, reminders_mod.RemindersDeps(
     brain_root=_brain_root,
     atomic_write_text=_atomic_write_text,
-    send_telegram=_tg_send_to,
+    send_telegram=_bao_nhac_hen,
     notify_ready=_notify_ready,
     build_system_prompt=build_system_prompt,
     aux_model=_aux_model,
@@ -7237,13 +7437,17 @@ async def viec_all():
             out.append(v)
 
     ready, why = reminders_feature.notify_status()
+    co_ngoai, thieu = _kenh_con_thieu()
     return {"brains": out, "running": loop_feature.lock.locked(),
             "running_slug": loop_feature._running[1] if loop_feature._running else "",
-            # Trang Việc cảnh báo ngay đầu trang khi chưa có kênh báo: việc vẫn chạy nhưng không
-            # ai nhận được kết quả, mà đó là thứ người dùng KHÔNG tự đoán ra được. "warn" là
-            # trường hợp KHÁC: cấu hình đủ nhưng bot đang lỗi thật (token bị thu hồi, 409...) -
-            # không chặn tạo việc (lỗi có thể chỉ thoáng qua) nhưng phải nói ra.
-            "notify": {"ok": ready, "error": why, "warn": _notify_live_warn()}}
+            # "ok" từ 0.49.0 gần như luôn true: hòm thư là kênh mặc định và nó luôn có, nên
+            # kết quả không còn rơi vào hư không. Cái CÒN đáng nói là chưa đấu Telegram/Zalo -
+            # lúc đó kết quả vẫn về hòm thư, chỉ là không tới được ĐIỆN THOẠI khi không mở
+            # dashboard. Đó là một ghi chú, không phải báo động, nên tách hẳn khỏi "error".
+            # "warn" là trường hợp KHÁC nữa: cấu hình đủ nhưng bot đang lỗi thật (token bị thu
+            # hồi, 409...) - không chặn tạo việc (lỗi có thể thoáng qua) nhưng phải nói ra.
+            "notify": {"ok": ready, "error": why, "warn": _notify_live_warn(),
+                       "kenh_ngoai": bool(co_ngoai), "thieu_kenh_ngoai": thieu}}
 
 
 # ============================================================
@@ -7600,10 +7804,16 @@ async def javis_index(brain: str = Query("brain")):
 # ============================================================
 @app.post("/image/generate")
 async def image_generate(prompt: str = Form(...), aspect_ratio: str = Form("square"),
-                         quality: str = Form("medium"), brain: str = Form("brain")):
+                         quality: str = Form("medium"), brain: str = Form("brain"),
+                         images: str = Form("")):
     """Tạo ảnh bằng gói ChatGPT (OAuth) → lưu vào attachments/ của vault. Cho UI/gọi trực tiếp;
-    engine LLM dùng tool javis_generate_image (plugin image-chatgpt). Trả rel_path để nhúng ![](...)."""
-    res = await image_gen.generate_chatgpt(prompt, aspect_ratio, quality, vault_root=_brain_root(brain))
+    engine LLM dùng tool javis_generate_image (plugin image-chatgpt). Trả rel_path để nhúng ![](...).
+
+    `images`: đường dẫn ảnh MẪU trong brain, phân tách bằng dấu phẩy hoặc xuống dòng - có ảnh
+    thì ChatGPT nhìn thấy ảnh thật để sửa/dựng theo thay vì vẽ từ mô tả suông."""
+    ds = [x.strip() for x in re.split(r"[,\n]", images or "") if x.strip()]
+    res = await image_gen.generate_chatgpt(prompt, aspect_ratio, quality,
+                                           vault_root=_brain_root(brain), images=ds)
     return JSONResponse(res, status_code=200 if res.get("ok") else 400)
 
 
@@ -8587,6 +8797,100 @@ async def notifications_info():
 
 
 # ============================================
+# HÒM THƯ + THÔNG BÁO ĐẨY
+#
+# Hòm thư (inbox.py) là bản ghi BỀN của mọi kết quả chạy nền; push (webpush.py) chỉ là cái
+# chuông cửa trỏ vào một mẩu thư. Tách hai tầng như vậy để push hụt (đóng trình duyệt, từ
+# chối quyền, iOS chưa cài PWA) không bao giờ làm MẤT nội dung - thứ tệ nhất một hệ thống
+# thông báo có thể làm.
+#
+# Đã-đọc nằm ở SERVER chứ không phải localStorage như chuông "Thông báo" cũ: thư riêng phải
+# đếm giống nhau giữa điện thoại và máy tính, và không được bay mất khi xoá dữ liệu duyệt web.
+# ============================================
+@app.get("/inbox")
+async def inbox_list(limit: int = 50):
+    return {"items": inbox.danh_sach(limit), "unread": inbox.so_chua_doc(),
+            "push": {"supported": True, "subs": webpush.so_sub()}}
+
+
+@app.post("/inbox/read")
+async def inbox_read(payload: dict = Body(None)):
+    """Đánh dấu đã đọc. `id` một mẩu, `session_id` cả hội thoại, `all` toàn bộ."""
+    p = payload or {}
+    if p.get("all"):
+        return {"ok": True, "changed": inbox.doc_het(), "unread": inbox.so_chua_doc()}
+    if p.get("session_id"):
+        return {"ok": True, "changed": inbox.doc_theo_phien(str(p["session_id"])),
+                "unread": inbox.so_chua_doc()}
+    ok = inbox.danh_dau_doc(str(p.get("id") or ""))
+    return {"ok": ok, "unread": inbox.so_chua_doc()}
+
+
+@app.post("/inbox/delete")
+async def inbox_delete(payload: dict = Body(None)):
+    ok = inbox.xoa(str((payload or {}).get("id") or ""))
+    return {"ok": ok, "unread": inbox.so_chua_doc()}
+
+
+@app.get("/push/key")
+async def push_key():
+    """Khoá công khai VAPID + danh sách thiết bị đã đăng ký.
+
+    Kèm thiết bị vì "bật hay chưa" là câu hỏi của TỪNG máy, còn "ai đang nhận" là câu hỏi
+    của cả nhà - thiếu vế sau thì bật trên điện thoại xong vẫn không biết máy chủ có ghi
+    nhận hay không, và lỗi gửi của riêng một máy thì mất hút.
+    """
+    tb = [{"dich_vu": webpush.ten_dich_vu(x.get("endpoint", "")),
+           "nhan": x.get("nhan", ""), "lan_cuoi": x.get("lan_cuoi", 0),
+           "ok_lan_cuoi": bool(x.get("ok_lan_cuoi")), "loi_lan_cuoi": x.get("loi_lan_cuoi", "")}
+          for x in webpush.danh_sach_sub()]
+    return {"key": webpush.khoa_cong_khai(), "subs": len(tb), "devices": tb}
+
+
+@app.post("/push/subscribe")
+async def push_subscribe(payload: dict = Body(None)):
+    p = payload or {}
+    ok, err = webpush.dang_ky(p.get("subscription") or p, str(p.get("nhan") or ""))
+    return {"ok": ok, "error": err, "subs": webpush.so_sub()}
+
+
+@app.post("/push/unsubscribe")
+async def push_unsubscribe(payload: dict = Body(None)):
+    ep = str((payload or {}).get("endpoint") or "")
+    return {"ok": webpush.huy_dang_ky(ep), "subs": webpush.so_sub()}
+
+
+@app.post("/push/test")
+async def push_test():
+    """Gửi thử một thông báo. Không có nút này thì người dùng bật quyền xong vẫn không biết
+    nó có chạy thật hay không, mà lần "thật" đầu tiên có khi phải đợi tới sáng hôm sau."""
+    ok, don, chi_tiet = await webpush.gui_het(
+        "Thansa", "Thông báo đẩy đã chạy. Từ giờ có kết quả là Thansa báo ngay cả khi bạn "
+                 "không mở dashboard.", "/?mo_thu=test", tag="javis-test")
+    # Trả CHI TIẾT theo từng thiết bị, không chỉ một con số. Bản đầu trả ok=true khi có BẤT KỲ
+    # thiết bị nào nhận được, nên máy tính nhận còn điện thoại hỏng thì màn hình vẫn báo
+    # "đã gửi" - người dùng không có đường nào lần ra. Đây đúng là lỗi chủ repo gặp 27/08.
+    return {"ok": ok > 0, "sent": ok, "cleaned": don, "subs": webpush.so_sub(),
+            "all_ok": ok == len(chi_tiet) and ok > 0, "devices": chi_tiet}
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """Service worker PHẢI phục vụ từ gốc site.
+
+    Phạm vi (scope) mặc định của một service worker là thư mục chứa nó, nên đặt ở
+    /static/sw.js thì nó chỉ điều khiển được /static/* - tức là không nhận được push cho
+    trang chủ, và bấm vào thông báo không tìm thấy tab nào để focus. Trả thẳng ở "/" là
+    cách gọn nhất, khỏi phải thêm header Service-Worker-Allowed.
+    """
+    f = DASHBOARD_PATH / "sw.js"
+    if not f.exists():
+        return Response("// no sw", media_type="application/javascript")
+    return FileResponse(f, media_type="application/javascript",
+                        headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+
+
+# ============================================
 # Branding - logo/avatar đổi được qua UI (lưu ở STATE_DIR/branding, giữ qua update).
 # Trong Docker code tree read-only → KHÔNG ghi đè dashboard/logo.png; lưu ở volume state.
 # ============================================
@@ -9069,89 +9373,88 @@ async def websocket_endpoint(ws: WebSocket):
             _da_tra_loi = bool(_schedule_action) or used_fast_path
             if _da_tra_loi:
                 pass
-            elif prov == "gemini-cli":
-                # ===== Gói Google (đăng nhập tài khoản) qua GEMINI CLI - tool native + MCP hub =====
-                actual_model = api_model or gemini_cli.MODEL_MAC_DINH
+            elif prov == "grok-cli":
+                # ===== Gói SuperGrok / X Premium+ qua GROK BUILD CLI - tool native + MCP hub =====
+                #
+                # CÓ nối lại mạch như nhánh Gemini/Codex, khác nhánh `agy` ngay dưới: `grok`
+                # tự sinh id phiên rồi phát ra trong dòng sự kiện, nên Javis chỉ ĐỌC LẠI id đó
+                # chứ không tự bịa ra một cái. Không có chuyện lưu nhầm một id sai dạng rồi
+                # lượt sau nối vào mạch không tồn tại - lý do khiến `agy` phải bỏ resume.
+                actual_model = api_model or None
                 sysprompt, _sub_plan = await _subscription_system_prompt(
-                    "gemini-cli", actual_model, kind)
-                gcli = gemini_cli.GeminiCLI(cwd=_brain_root(brain), model=actual_model,
-                                            tag=turn_tag, instructions=sysprompt)
-                _apply_gemini_hub(gcli, _brain_root(brain))
-                if not gcli.is_available():
-                    final_text = ("⚠ Chưa cài Gemini CLI trên máy này. Cài bằng "
-                                  "`npm i -g @google/gemini-cli` rồi chạy `gemini` một lần để "
-                                  "đăng nhập Google.")
+                    "grok-cli", actual_model or "", kind)
+                kcli = grok_cli.GrokCLI(cwd=_brain_root(brain), model=actual_model,
+                                        tag=turn_tag, instructions=sysprompt)
+                kcli.mode = "full"
+                _apply_grok_hub(kcli, _brain_root(brain))
+                if not kcli.is_available():
+                    final_text = ("⚠ Chưa cài Grok Build CLI trên máy này. Cài một lần:\n\n"
+                                  f"`{grok_cli.lenh_cai()}`\n\n"
+                                  "Rồi bấm \"Đăng nhập\" ở thẻ Grok trên trang Models (chạy "
+                                  "trên VPS cũng được, nó in ra một link và một mã).")
                     await ws.send_text(json.dumps({
-                        "type": "response", "content": final_text, "engine": "gemini-cli",
-                        "model": actual_model, "session_id": conv_sid,
+                        "type": "response", "content": final_text, "engine": "grok-cli",
+                        "model": actual_model or "", "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in)}))
                 else:
-                    # Mạch cũ: nối lại nếu có và chưa phình quá ngưỡng. Cùng luật với Codex và
-                    # Claude Code - Javis không nhìn được vào mạch của CLI, chỉ có token vào của
-                    # lượt trước làm dấu hiệu.
-                    _g_mach = (_row0.get("gemini_session_id") or "").strip()
-                    if _g_mach and compaction.nen_mach_thue_bao(
+                    _k_mach = (_row0.get("grok_session_id") or "").strip()
+                    if _k_mach and compaction.nen_mach_thue_bao(
                             _row0.get("last_input_tokens"), msg_count=_row0.get("msg_count"),
                             rotated_at=_row0.get("thread_rotated_msg")):
-                        _g_mach = ""
-                        store.clear_gemini_session_id(conv_sid)
+                        _k_mach = ""
+                        store.clear_grok_session_id(conv_sid)
                         store.mark_thread_rotated(conv_sid)
                         _CONTEXT_RUNTIME.record_runtime_event(
                             runtime_trace, "thread.rotated",
-                            {"engine": "gemini-cli",
+                            {"engine": "grok-cli",
                              "last_input_tokens": int(_row0.get("last_input_tokens") or 0),
                              "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                         await ws.send_text(json.dumps({
                             "type": "tool_call", "tool": "javis_nen_mach",
                             "content": "⚙ Mạch hội thoại đã dài, Thansa mở mạch mới."}))
-                    gcli.session_id = _g_mach or None
-                    # Mạch mới thì mồi lại bằng transcript đã lưu, y như Codex: không có bước
-                    # này là mở mạch mới = mất sạch ngữ cảnh cuộc đang nói dở.
-                    _g_cur = _cli_think(reasoning, user_message)
-                    _g_raw = [{"role": _m["role"], "content": _m["content"]}
+                    kcli.session_id = _k_mach or None
+                    # Mạch mới thì mồi lại bằng transcript đã lưu, y như Codex/Gemini: không có
+                    # bước này là mở mạch mới = mất sạch ngữ cảnh cuộc đang nói dở.
+                    _k_cur = _cli_think(reasoning, user_message)
+                    _k_raw = [{"role": _m["role"], "content": _m["content"]}
                               for _m in store.get_messages(conv_sid)[:-1]
                               if _m["role"] in ("user", "assistant") and _m.get("content")]
-                    _g_prompt = (_g_cur if _g_mach else compaction.bootstrap_prompt(
-                        _g_raw, _g_cur, summary=_row0.get("compact_summary") or ""))
-
-                    async def _nuot_gemini(prompt):
-                        nonlocal final_text
-                        _CONTEXT_RUNTIME.observe_payload(
-                            runtime_trace,
-                            [{"role": "system", "content": sysprompt},
-                             {"role": "user", "content": prompt}],
-                            provider="gemini-cli", model=actual_model)
-                        async for ev in gcli.query(prompt):
-                            et = ev.get("type")
-                            if et == "tool_call":
-                                await ws.send_text(json.dumps({
-                                    "type": "tool_call", "tool": ev.get("name", ""),
-                                    "content": f"⚙ Đang gọi: {ev.get('name', '')}"}))
-                            elif et == "final":
-                                final_text = ev.get("content") or ""
-                            elif et == "usage":
-                                # Token VÀO của lượt là dấu hiệu DUY NHẤT để biết mạch đã phình
-                                # tới đâu (CLI tự quản mạch, Javis không nhìn vào được).
-                                store.set_last_input_tokens(
-                                    conv_sid, int(ev.get("input_tokens") or 0))
-                            elif et == "error":
-                                _noi = _subscription_limit_message(ev.get("content") or "",
-                                                                   "gemini-cli")
-                                if _noi:
-                                    _CONTEXT_RUNTIME.record_runtime_event(
-                                        runtime_trace, "subscription.limit_reached",
-                                        {"engine": "gemini-cli", "model": actual_model})
-                                    final_text = final_text or _noi
-                                await ws.send_text(json.dumps({
-                                    "type": "error", "content": _noi or ev.get("content", "")}))
-
-                    await _nuot_gemini(_g_prompt)
-                    # CLI cấp UUID mạch ở sự kiện `init`; lưu lại để lượt sau --resume.
-                    if gcli.session_id:
-                        store.set_gemini_session_id(conv_sid, gcli.session_id)
+                    _k_prompt = (_k_cur if _k_mach else compaction.bootstrap_prompt(
+                        _k_raw, _k_cur, summary=_row0.get("compact_summary") or ""))
+                    _CONTEXT_RUNTIME.observe_payload(
+                        runtime_trace,
+                        [{"role": "system", "content": sysprompt},
+                         {"role": "user", "content": _k_prompt}],
+                        provider="grok-cli", model=actual_model or "")
+                    async for ev in kcli.query(_k_prompt):
+                        et = ev.get("type")
+                        if et == "tool_call":
+                            await ws.send_text(json.dumps({
+                                "type": "tool_call", "tool": ev.get("name", ""),
+                                "content": f"⚙ Đang gọi: {ev.get('name', '')}"}))
+                        elif et == "final":
+                            final_text = ev.get("content") or ""
+                        elif et == "usage":
+                            # Token VÀO của lượt là dấu hiệu DUY NHẤT để biết mạch đã phình tới
+                            # đâu (CLI tự quản mạch, Javis không nhìn vào được).
+                            store.set_last_input_tokens(
+                                conv_sid, int(ev.get("input_tokens") or 0))
+                        elif et == "error":
+                            _noi = _subscription_limit_message(ev.get("content") or "",
+                                                               "grok-cli")
+                            if _noi:
+                                _CONTEXT_RUNTIME.record_runtime_event(
+                                    runtime_trace, "subscription.limit_reached",
+                                    {"engine": "grok-cli", "model": actual_model or ""})
+                                final_text = final_text or _noi
+                            await ws.send_text(json.dumps({
+                                "type": "error", "content": _noi or ev.get("content", "")}))
+                    # CLI phát id mạch trong dòng sự kiện; lưu lại để lượt sau `--resume`.
+                    if kcli.session_id:
+                        store.set_grok_session_id(conv_sid, kcli.session_id)
                     await ws.send_text(json.dumps({
-                        "type": "response", "content": final_text, "engine": "gemini-cli",
-                        "model": actual_model, "session_id": conv_sid,
+                        "type": "response", "content": final_text, "engine": "grok-cli",
+                        "model": actual_model or "", "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in)}))
             elif prov == "antigravity-cli":
                 # ===== Gói Google qua ANTIGRAVITY CLI (`agy`) - tool native + MCP hub =====
@@ -9827,7 +10130,7 @@ async def websocket_endpoint(ws: WebSocket):
             _prow = store.get_session(payload.get("session_id") or "") or {}
             prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _prow)
             engine_label = ("codex" if prov == "openai-oauth"
-                            else "gemini-cli" if prov == "gemini-cli"
+                            else "grok-cli" if prov == "grok-cli"
                             else "antigravity-cli" if prov == "antigravity-cli"
                             else prov if ((kind == "api" and api_key) or kind == "oauth")
                             else "cli")
@@ -11142,6 +11445,92 @@ _TG_SESS = {}
 # resolve tên -> path. Ghi STATE_DIR/tg_brain.json (server state, gitignored, xuyên brain).
 _TG_BRAIN_PATH = cfgmod.STATE_DIR / "tg_brain.json"
 
+# Map BỀN chat_id -> id phiên hội thoại, sống sót qua restart. Cùng lý do tồn tại với
+# _TG_BRAIN_MAP ngay trên, và chữa một lỗi người dùng báo thẳng (28/08/2026):
+#
+#   "mỗi lần update bản mới bấm nút update thì bên telegram nó mất hết ký ức, quên sạch mọi
+#    thứ, từ cách xưng hô tới quy trình đặt tên file. Còn ở localhost thì bình thường."
+#
+# Đúng như vậy, và đây là chỗ hỏng: `sess["sid"]` chỉ sống trong `_TG_SESS` (RAM), nên restart
+# là mất liên kết chat -> hội thoại, lượt kế đẻ một phiên TRỐNG. Bản ghi cũ vẫn nằm nguyên
+# trong SQLite, chỉ là không còn ai nối vào. Dashboard không dính vì trình duyệt giữ
+# `session_id` và gửi kèm mỗi request; Telegram thì không có ai giữ hộ.
+#
+# Lý do cũ ghi trong docstring `_tg_conv_sid` ("restart là mạch ngữ cảnh đã mất rồi") chỉ đúng
+# với MẠCH NATIVE của engine CLI. Nó KHÔNG đúng với bản ghi hội thoại: transcript nằm trong
+# SQLite, sống sót qua restart, và đó mới là thứ dựng lại ngữ cảnh - đúng cách dashboard vẫn
+# làm cho cả engine CLI lẫn engine API.
+_TG_SID_PATH = cfgmod.STATE_DIR / "tg_sid.json"
+
+
+def _tg_load_sid_map() -> dict:
+    try:
+        if _TG_SID_PATH.exists():
+            d = json.loads(_TG_SID_PATH.read_text(encoding="utf-8"))
+            if isinstance(d, dict):
+                return {str(k): str(v) for k, v in d.items()}
+    except Exception:
+        pass
+    return {}
+
+
+_TG_SID_MAP = _tg_load_sid_map()
+
+
+def _tg_save_sid_map() -> None:
+    try:
+        _atomic_write_text(_TG_SID_PATH, json.dumps(_TG_SID_MAP, ensure_ascii=False, indent=2))
+    except Exception as e:
+        import sys
+        print(f"[tg sid map write] {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def _tg_nho_sid(sess, sid: str) -> None:
+    """Ghi nhớ chat này đang ở phiên nào, để restart xong còn nối lại."""
+    key = str(sess.get("key") or "")
+    if not key or not sid or _TG_SID_MAP.get(key) == sid:
+        return
+    _TG_SID_MAP[key] = sid
+    _tg_save_sid_map()
+
+
+def _tg_quen_sid(sess) -> None:
+    """Bỏ liên kết bền (đổi brain, /reset). Không xoá bản ghi hội thoại, chỉ thôi nối vào nó."""
+    key = str(sess.get("key") or "")
+    if key and _TG_SID_MAP.pop(key, None) is not None:
+        _tg_save_sid_map()
+
+
+# Bốn engine tự giữ mạch hội thoại trong đối tượng nằm ở `sess`. Gom thành MỘT bảng vì mỗi
+# chỗ tự liệt kê tay là có ngày sót một cái: nhánh đổi provider đã sót `cli` một thời gian, và
+# `antigravity` thì sót ở cả ba chỗ.
+_TG_ENGINE_MACH = (("cli", "cli"), ("codex", "codex"), ("grok-cli", "grok"),
+                   ("antigravity-cli", "antigravity"))
+
+
+def _tg_ngat_mach(sess, tru=None):
+    """Cắt liên kết mạch native của các engine trong phiên, GIỮ nguyên đối tượng engine.
+
+    `tru` = nhãn engine được tha (dùng khi engine khác vừa chen một lượt: engine ĐANG chạy
+    không việc gì phải mất mạch). Không truyền thì cắt sạch - đúng ý /reset và đổi brain.
+
+    Giữ đối tượng lại vì cwd/instructions vẫn dùng được; lượt sau của engine đó tự mồi lại từ
+    kho phiên (xem `_tg_lich_su_kho`).
+    """
+    for nhan, khoa in _TG_ENGINE_MACH:
+        if nhan == tru or sess.get(khoa) is None:
+            continue
+        try:
+            obj = sess[khoa]
+            # Dùng API công khai khi engine có (Claude Code), rơi về gán thẳng cho engine
+            # chưa có - khỏi phải rẽ nhánh theo tên engine ở đây.
+            if hasattr(obj, "reset_session"):
+                obj.reset_session()
+            else:
+                obj.session_id = None
+        except Exception:
+            sess[khoa] = None
+
 
 def _tg_load_brain_map() -> dict:
     try:
@@ -11173,6 +11562,10 @@ def _tg_session(chat_id):
         s = {
             "cli": None, "codex": None, "or": None,
             "last": None, "sent": set(), "brain": None,
+            # Khoá của chính phiên này. `_tg_conv_sid` cần nó để đọc/ghi map BỀN chat -> sid
+            # mà không phải đổi chữ ký ở mọi chỗ gọi (khoá có thể là chat_id, hoặc
+            # "bot:<id>:<chat>" với bot chuyên trách).
+            "key": key,
         }
         _TG_SESS[key] = s
     return s
@@ -11207,12 +11600,11 @@ def _tg_set_brain(chat_id, brain_path):
         _tg_save_brain_map()
     except Exception:
         pass
-    if sess.get("cli"):
-        sess["cli"].reset_session()
-    sess["codex"] = None
+    _tg_ngat_mach(sess)    # cả bốn engine, không riêng Claude Code + Codex như bản cũ
     sess["or"] = None
     sess["last"] = None
     sess["sid"] = None     # brain khác = hội thoại khác → mở phiên mới trong kho, đừng trộn
+    _tg_quen_sid(sess)     # ...và cắt cả liên kết BỀN, kẻo restart xong lại nối về brain cũ
 
 
 def _tg_chat_busy(chat) -> bool:
@@ -11285,15 +11677,32 @@ _TG_CONV_ARCHIVE_DAYS = 30       # phiên Telegram nguội quá ngần này → 
 def _tg_conv_sid(store, sess, brain, engine_label, model):
     """Phiên kho cho lượt Telegram này, tự xoay theo hai ngưỡng trên.
 
-    sess['sid'] sống theo RAM giống sess['cli']/['or']/['codex'] - restart server là mạch ngữ
-    cảnh đã mất rồi, nên mở phiên mới mới đúng, chứ không nối tiếp phiên cụt. Đổi brain và
-    /reset đã tự đặt sess['sid'] = None ở chỗ khác nên ở đây không phải xét lại.
+    sess['sid'] chỉ sống trong RAM, nên sau restart phải hỏi lại map BỀN `_TG_SID_MAP` (lý do
+    đầy đủ ở chú thích `_TG_SID_PATH`) mới nối được vào đúng bản ghi cũ. Trước 0.50.1 chỗ này
+    CỐ Ý mở phiên mới sau restart với lý do "restart là mạch ngữ cảnh đã mất rồi" - lý do đó
+    chỉ đúng với MẠCH NATIVE của engine CLI; bản ghi hội thoại thì nằm trong SQLite và còn
+    nguyên, nên người dùng Telegram đang trả giá bằng việc mất sạch ngữ cảnh mỗi lần cập nhật.
+
+    Nối lại xong vẫn đi qua ĐÚNG hai ngưỡng xoay bên dưới: sid khôi phục mà đã nguội quá 12
+    tiếng hoặc đã dài quá 200 tin thì vẫn sang khúc mới. Khôi phục không phải là được miễn
+    luật xoay. Đổi brain và /reset gọi `_tg_quen_sid` nên xoá luôn cả liên kết bền.
     """
-    sid = sess.get("sid")
+    sid = sess.get("sid") or _TG_SID_MAP.get(str(sess.get("key") or ""))
     if sid:
         row = store.get_session(sid)
         if not row:
             sid = None      # user đã xoá hội thoại đó trên dashboard → đừng hồi sinh id cũ
+        elif (row.get("brain") or "") and row["brain"] not in _brain_keys(brain):
+            # Brain đổi lúc server tắt (Settings, hoặc brain bị đổi tên). Nối tiếp thì
+            # `get_or_create` lặng lẽ ghi đè cột brain của bản ghi cũ, tức trộn hội thoại của
+            # hai bộ não vào một chỗ. Thà mở khúc mới.
+            #
+            # `_brain_keys` chứ không `_brain_key`: cột này từng được mỗi kênh ghi một kiểu cho
+            # CÙNG một brain (xem docstring của nó), nên so bằng dấu bằng là mọi phiên Telegram
+            # có từ trước bản chuẩn hoá đều bị coi là "khác brain" và bị bỏ - MỖI LƯỢT một
+            # phiên mới, đúng cái hỏng mà khối ngay dưới đang canh. Cột rỗng cũng tha, vì rỗng
+            # là không biết chứ không phải là khác.
+            sid = None
         else:
             # Chỉ xoay khi có BẰNG CHỨNG phiên đã cũ/đã dài. Thiếu số liệu thì giữ nguyên,
             # kẻo một cột rỗng bất ngờ làm mỗi lượt đẻ một phiên.
@@ -11304,11 +11713,13 @@ def _tg_conv_sid(store, sess, brain, engine_label, model):
         # Còn dùng tiếp: đồng bộ engine/model vì người dùng có thể vừa đổi bằng /model.
         sess["sid"] = store.get_or_create(sid, brain=_brain_key(brain), engine=engine_label,
                                           model=model)
+        _tg_nho_sid(sess, sess["sid"])
         return sess["sid"]
     # `_brain_key`: Telegram cầm ĐƯỜNG DẪN brain, dashboard gửi tên gọi tắt "brain" - ghi
     # nguyên văn thì hai bên lệch khoá và thanh bên không thấy hội thoại Telegram đâu.
     sess["sid"] = store.create_session(brain=_brain_key(brain), engine=engine_label, model=model,
                                        channel="telegram")
+    _tg_nho_sid(sess, sess["sid"])
     # Dọn theo nhịp XOAY (hiếm, cỡ vài ngày một lần) chứ không mỗi lượt - đủ để thanh bên
     # không ngập dần vì các khúc cũ.
     try:
@@ -11319,6 +11730,47 @@ def _tg_conv_sid(store, sess, brain, engine_label, model):
     except Exception as e:
         print(f"[telegram archive] {type(e).__name__}: {e}", file=__import__('sys').stderr)
     return sess["sid"]
+
+
+# Số TIN (không phải lượt) mồi lại tối đa khi dựng lịch sử từ transcript. Bằng
+# BOT_LICH_SU_MAX bên dưới cho dễ nhớ: ~10 lượt hỏi-đáp, đủ để "cái đó", "như lần trước" còn
+# nghĩa, mà không thổi phồng lượt đầu sau mỗi lần restart.
+_TG_MOI_LAI_MAX = 20
+
+
+def _tg_lich_su_kho(store, conv_sid, text):
+    """Transcript đã lưu của phiên này, để MỒI LẠI ngữ cảnh sau restart.
+
+    Vì sao cần: mọi mạch hội thoại của Telegram sống trong RAM - `sess['or']` của engine API,
+    `session_id` của Claude Code / Codex / Grok / Antigravity. Restart server (bấm nút cập
+    nhật là restart) xoá sạch chúng, nên lượt kế mở mạch TAY KHÔNG dù bản ghi vẫn còn nguyên
+    trong SQLite. Người dùng báo đúng triệu chứng đó ngày 28/08/2026: mỗi lần cập nhật là
+    phải dạy lại từ cách xưng hô tới quy ước đặt tên file, trong khi localhost:7777 không sao
+    (trình duyệt giữ `session_id` và dashboard đọc lại transcript mỗi lượt).
+
+    Trả về `(danh sách tin, tóm tắt đã nén)`. Bỏ lượt user ĐANG hỏi - `_tg_answer` đã ghi nó
+    vào kho trước khi gọi engine, gửi lại là hỏi hai lần. So khớp nội dung chứ không cắt cứng
+    phần tử cuối: lệnh ghi kia nằm trong try/except, hụt một cái mà vẫn cắt là ăn mất một tin
+    thật.
+    """
+    if store is None or not conv_sid:
+        return [], ""
+    try:
+        raw = store.get_messages(conv_sid)
+    except Exception as e:
+        print(f"[telegram mồi lại] {type(e).__name__}: {e}", file=__import__('sys').stderr)
+        return [], ""
+    msgs = [{"role": m["role"], "content": m["content"]} for m in raw
+            if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)
+            and m["content"].strip()]
+    if msgs and msgs[-1]["role"] == "user" and msgs[-1]["content"] == text:
+        msgs.pop()
+    tom_tat = ""
+    try:
+        tom_tat = (store.get_session(conv_sid) or {}).get("compact_summary") or ""
+    except Exception:
+        pass
+    return msgs, tom_tat
 
 
 async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=None):
@@ -11354,30 +11806,19 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
     # Nhãn engine phải do VỎ quyết định rồi truyền xuống lõi: hai bên tự suy ra độc lập là
     # có ngày phiên bị dán nhãn 'cli' trong khi lượt thật chạy qua OpenRouter.
     engine_label = ("codex" if prov == "openai-oauth"
-                    else "gemini-cli" if prov == "gemini-cli"
+                    else "grok-cli" if prov == "grok-cli"
                     else "antigravity-cli" if prov == "antigravity-cli"
                     else prov if ((kind == "api" and api_key) or kind == "oauth")
                     else "cli")
 
-    # Bản tương ứng của `store.clear_native_threads` bên dashboard, cho ba engine giữ phiên.
+    # Bản tương ứng của `store.clear_native_threads` bên dashboard, cho bốn engine giữ phiên.
     # Cùng một bất biến: engine khác vừa chen một lượt thì mạch của MỌI engine còn lại không
-    # chứa lượt đó, nối tiếp là mù đúng đoạn ở giữa. Xoá liên kết thôi, giữ nguyên đối tượng
-    # (cwd/instructions vẫn dùng lại được); lượt sau của engine đó bootstrap từ kho phiên.
+    # chứa lượt đó, nối tiếp là mù đúng đoạn ở giữa. Xoá liên kết thôi, giữ nguyên đối tượng;
+    # lượt sau của engine đó bootstrap từ kho phiên.
     #
-    # Claude Code (`sess["cli"]`) trước đây BỊ BỎ SÓT ở đây, dù nó là engine hay dùng nhất.
-    for _nhan, _khoa in (("gemini-cli", "gemini"), ("codex", "codex"), ("cli", "cli")):
-        if engine_label == _nhan or sess.get(_khoa) is None:
-            continue
-        try:
-            _obj = sess[_khoa]
-            # Dùng API công khai khi engine có (Claude Code), rơi về gán thẳng cho engine
-            # chưa có - khỏi phải rẽ nhánh theo tên engine ở đây.
-            if hasattr(_obj, "reset_session"):
-                _obj.reset_session()
-            else:
-                _obj.session_id = None
-        except Exception:
-            sess[_khoa] = None
+    # Câu "bootstrap từ kho phiên" đó mãi tới 0.50.1 mới đúng với cả bốn: trước đó chỉ Codex
+    # làm thật, ba engine còn lại mở mạch tay không nên đoạn ở giữa vẫn mất.
+    _tg_ngat_mach(sess, tru=engine_label)
 
     store = get_store()
     conv_sid = ""
@@ -11897,26 +12338,35 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             if _txt.strip():
                 return {"text": channel_context.strip_control_blocks(_txt), "files": []}
 
-    if prov == "gemini-cli":
-        # Cùng engine với dashboard: Gemini CLI + tool native + MCP hub, chỉ khác chỗ giữ mạch.
-        # Phiên Telegram giữ luôn object engine trong `sess` (như Codex), nên mạch hội thoại
-        # nối tiếp qua các tin nhắn mà không phải đụng SQLite.
-        actual_model = api_model or gemini_cli.MODEL_MAC_DINH
-        gcli = sess.get("gemini")
-        if gcli is None:
-            gcli = gemini_cli.GeminiCLI(cwd=_brain_root(brain), model=actual_model,
-                                        tag=f"telegram:{chat_id}", instructions=sysprompt)
-            sess["gemini"] = gcli
+    if prov == "grok-cli":
+        # Cùng engine với dashboard: Grok Build CLI + tool native + MCP hub, chỉ khác chỗ giữ
+        # mạch. Phiên Telegram giữ luôn object engine trong `sess` (như Codex), nên mạch hội
+        # thoại nối tiếp qua các tin nhắn mà không phải đụng SQLite.
+        actual_model = api_model or None
+        kcli = sess.get("grok")
+        if kcli is None:
+            kcli = grok_cli.GrokCLI(cwd=_brain_root(brain), model=actual_model,
+                                    tag=f"telegram:{chat_id}", instructions=sysprompt)
+            sess["grok"] = kcli
         else:
-            gcli.cwd = _brain_root(brain)
-            gcli.model = actual_model
-            gcli.instructions = sysprompt
-        _apply_gemini_hub(gcli, _brain_root(brain))
-        if not gcli.is_available():
-            return ("⚠ Chưa cài Gemini CLI trên máy chạy Thansa. Cài bằng "
-                    "`npm i -g @google/gemini-cli` rồi chạy `gemini` một lần để đăng nhập Google.")
+            kcli.cwd = _brain_root(brain)
+            kcli.model = actual_model
+            kcli.instructions = sysprompt
+        kcli.mode = "full"
+        _apply_grok_hub(kcli, _brain_root(brain))
+        if not kcli.is_available():
+            return ("⚠ Chưa cài Grok Build CLI trên máy chạy Thansa. Cài một lần:\n"
+                    f"`{grok_cli.lenh_cai()}`\n"
+                    "Rồi đăng nhập ở thẻ Grok trên trang Models.")
+        _hoi = text
+        if not getattr(kcli, "session_id", None):
+            # Chưa có mạch native (phiên mới, hoặc vừa restart nên object engine dựng lại từ
+            # đầu) thì mồi transcript đã lưu vào ĐÚNG MỘT lượt, y như dashboard vẫn làm. Có mạch
+            # rồi thì engine tự nhớ, gửi lại là tốn token vô ích.
+            _raw_cu, _tom_cu = _tg_lich_su_kho(store, conv_sid, text)
+            _hoi = compaction.bootstrap_prompt(_raw_cu, _hoi, summary=_tom_cu)
         out, loi = "", []
-        async for ev in gcli.query(text):
+        async for ev in kcli.query(_hoi):
             et = ev.get("type")
             if et == "tool_call":
                 await _p(f"⚙ Đang gọi: {ev.get('name', '')}")
@@ -11925,12 +12375,12 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             elif et == "error":
                 loi.append(str(ev.get("content") or ""))
         if not out and loi:
-            _noi = _subscription_limit_message(loi[0], "gemini-cli")
-            return _noi or ("⚠ Gemini CLI lỗi: " + loi[0][:400])
+            _noi = _subscription_limit_message(loi[0], "grok-cli")
+            return _noi or ("⚠ Grok Build CLI lỗi: " + loi[0][:400])
         return out or "(không có nội dung)"
 
     if prov == "antigravity-cli":
-        # Cùng khuôn nhánh Gemini CLI ngay trên: giữ object engine trong `sess` để mạch hội
+        # Cùng khuôn nhánh Grok Build ngay trên: giữ object engine trong `sess` để mạch hội
         # thoại nối tiếp qua các tin nhắn mà không phải đụng SQLite.
         actual_model = api_model or None
         acli = sess.get("antigravity")
@@ -11949,8 +12399,15 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             return ("⚠ Chưa cài Antigravity CLI trên máy chạy Thansa. Cài một lần:\n"
                     f"`{antigravity_cli.lenh_cai()}`\n"
                     "Rồi gõ `agy` một lần để đăng nhập Google.")
+        _hoi = text
+        if not getattr(acli, "session_id", None):
+            # Chưa có mạch native (phiên mới, hoặc vừa restart nên object engine dựng lại từ
+            # đầu) thì mồi transcript đã lưu vào ĐÚNG MỘT lượt, y như dashboard vẫn làm. Có mạch
+            # rồi thì engine tự nhớ, gửi lại là tốn token vô ích.
+            _raw_cu, _tom_cu = _tg_lich_su_kho(store, conv_sid, text)
+            _hoi = compaction.bootstrap_prompt(_raw_cu, _hoi, summary=_tom_cu)
         out, loi = "", []
-        async for ev in acli.query(text):
+        async for ev in acli.query(_hoi):
             et = ev.get("type")
             if et == "tool_call":
                 await _p(f"⚙ Đang gọi: {ev.get('name', '')}")
@@ -12083,6 +12540,17 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             ident = (f"\n\n[Sự thật hệ thống: bạn chạy qua {label}, model '{api_model}'. "
                      f"Hỏi model nào thì khai đúng tên này, KHÔNG nhận là model khác.]")
             sess["or"] = [{"role": "system", "content": sysprompt + ident}]
+            # Lịch sử này chỉ sống trong RAM, nên restart là mất. Dựng lại từ transcript đã
+            # lưu (xem `_tg_lich_su_kho`) - đây là nửa THẬT SỰ quan trọng với người dùng chạy
+            # engine API: nối lại được id phiên mà lịch sử vẫn rỗng thì Javis vẫn quên sạch.
+            #
+            # Chỉ chạy khi `sess["or"]` rỗng, tức phiên vừa dựng: đang chat liên tục thì khối
+            # này không đụng tới. /reset và đổi brain xoá cả sid lẫn liên kết bền nên
+            # `conv_sid` khi đó là phiên mới tinh, mồi lại ra rỗng - đúng ý người dùng.
+            _cu, _tom = _tg_lich_su_kho(store, conv_sid, text)
+            if _tom:
+                sess["or"].append({"role": "system", "content": compaction.SUMMARY_HEADER + _tom})
+            sess["or"] += _cu[-_TG_MOI_LAI_MAX:]
         sess["or"].append({"role": "user", "content": text})
         t0 = time.time()
         out = ""
@@ -12144,6 +12612,12 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         loi = []
         _pinged = False
         _cli_prompt = _cli_think(reasoning, text)
+        if not getattr(cli, "session_id", None):
+            # Chưa có mạch native (phiên mới, hoặc vừa restart nên object engine dựng lại từ
+            # đầu) thì mồi transcript đã lưu vào ĐÚNG MỘT lượt, y như dashboard vẫn làm. Có mạch
+            # rồi thì engine tự nhớ, gửi lại là tốn token vô ích.
+            _raw_cu, _tom_cu = _tg_lich_su_kho(store, conv_sid, text)
+            _cli_prompt = compaction.bootstrap_prompt(_raw_cu, _cli_prompt, summary=_tom_cu)
         _CONTEXT_RUNTIME.observe_payload(
             runtime_trace,
             [{"role": "system", "content": sysprompt},
@@ -12236,8 +12710,8 @@ async def _tg_skills_text(brain):
 _TG_NHAN_NGAN = {
     "anthropic-cli": "Claude Code",
     "openai-oauth": "ChatGPT",
+    "grok-cli": "Grok Build",
     "antigravity-cli": "Antigravity",
-    "gemini-cli": "Gemini CLI",
     "openrouter": "OpenRouter",
     "anthropic-api": "Claude API",
     "openai": "OpenAI API",
@@ -12489,14 +12963,18 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
         cancel_all(f"telegram:{chat_key}")
         return {"reply": "⏹ Đã dừng lệnh đang chạy."}
     if cmd in ("reset", "new", "clear"):
-        sess = _TG_SESS.get(chat_key)
-        if sess:
-            if sess.get("cli"):
-                sess["cli"].reset_session()
-            sess["codex"] = None
-            sess["or"] = None
-            sess["last"] = None
-            sess["sid"] = None     # hội thoại mới → phiên mới trong kho, khỏi nối vào mạch cũ
+        # `_tg_session` chứ không `_TG_SESS.get`: sau restart phiên RAM chưa tồn tại nhưng liên
+        # kết BỀN chat -> sid thì còn, và /reset phải cắt được đúng cái đó. Tạo phiên rỗng ở đây
+        # không tốn gì - lượt kế cũng tạo.
+        sess = _tg_session(chat_key)
+        # Cắt mạch của CẢ BỐN engine. Trước đây chỉ Claude Code được reset và Codex bị vứt đối
+        # tượng, còn Grok/Antigravity giữ nguyên mạch native - /reset xong Javis vẫn nhớ y
+        # nguyên, đúng thứ người dùng gõ lệnh này để thoát khỏi.
+        _tg_ngat_mach(sess)
+        sess["or"] = None
+        sess["last"] = None
+        sess["sid"] = None     # hội thoại mới → phiên mới trong kho, khỏi nối vào mạch cũ
+        _tg_quen_sid(sess)
         return {"reply": "🔄 Đã reset hội thoại (chỉ phiên của bạn)."}
     if cmd in ("cli", "claude"):
         s = cfgmod.read_settings()

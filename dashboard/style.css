@@ -398,6 +398,35 @@ body {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
   padding: 10px 12px; border-top: 1px solid var(--hairline);
 }
+/* Hai tab của hòm thư: "Của tôi" (thư riêng) và "Tin tức" (phát chung). */
+.noti-kind.answer { color: var(--accent-ink); background: var(--accent-wash); }
+.noti-kind.report { color: var(--info-ink); background: var(--info-wash); }
+.noti-kind.system { color: var(--text3); background: var(--surface-2); }
+.noti-tabs {
+  flex: 0 0 auto; display: flex; gap: 4px; padding: 8px 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.noti-tab {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border: none; border-bottom: 2px solid transparent; background: none;
+  color: var(--text3); font: 600 12.5px var(--font); cursor: pointer;
+}
+.noti-tab:hover { color: var(--text2); }
+.noti-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+.noti-tab-count {
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+}
+/* Công tắc thông báo đẩy - nằm ngay trên chân panel, thấy được lúc đang đọc thư. */
+.noti-push {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-top: 1px solid var(--hairline); background: var(--surface-1);
+}
+.noti-push-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.noti-push-title { color: var(--text); font-size: 12.5px; font-weight: 600; }
+.noti-push-note { color: var(--text3); font-size: 11px; line-height: 1.4; }
+.noti-push-note.loi { color: var(--warn-ink); }
 @media (min-width: 861px) and (max-width: 1180px) {
   .ws-date, .notification-trigger-label { display: none; }
   .notification-trigger { width: 34px; min-width: 34px; padding: 0; }
@@ -472,6 +501,27 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
 /* Node được mượn sang tab Thư mục của trang Trò chuyện: giấu cả nút thu (cột đó là của
    trang chat, có nút riêng) lẫn nút mở lại. */
 .cside-pane .vault-tools #vtCollapse, .cside-pane > .hud-left > .vault-expand { display: none; }
+
+/* ===== Thu khung HỘI THOẠI (cột phải màn chính) - co VÀO BÊN PHẢI, cùng lối với thu
+   sidebar/Vault. CHỈ desktop: trên điện thoại cột này chính là khung chat, thu là mất app
+   (console.css bố trí mobile riêng), nên mọi luật nằm trong media min-width và nút thu
+   cũng ẩn ở màn hẹp. Icon panel-left lật gương = panel-right (bộ icon chưa đóng gói
+   panel-right, thêm icon mới phải chạy gen_icons tải mạng - lật CSS rẻ hơn, cùng nghĩa). */
+.chatcol-expand { display: none; }
+.chatcol-thu-btn svg, .chatcol-expand svg { transform: scaleX(-1); }
+@media (max-width: 860px) { .chatcol-thu-btn { display: none; } }
+@media (min-width: 861px) {
+  body.chatcol-thu .hud-body { grid-template-columns: 260px minmax(0, 1fr) 44px; }
+  body.vault-thu.chatcol-thu .hud-body { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  body.chatcol-thu .hud-body > .hud-right { padding: 12px 6px; align-items: center; overflow: hidden; }
+  body.chatcol-thu .hud-body > .hud-right > :not(.chatcol-expand) { display: none; }
+  body.chatcol-thu .hud-body > .hud-right > .chatcol-expand {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; flex: none; border-radius: 8px;
+    border: 1px solid var(--border); background: none; color: var(--text2); cursor: pointer;
+  }
+  body.chatcol-thu .hud-body > .hud-right > .chatcol-expand:hover { color: var(--accent); border-color: var(--accent); }
+}
 
 .hud-left::-webkit-scrollbar, .hud-right::-webkit-scrollbar, .transcript::-webkit-scrollbar { width: 4px; }
 .hud-left::-webkit-scrollbar-thumb, .hud-right::-webkit-scrollbar-thumb, .transcript::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -1147,7 +1197,9 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 /* BOTTOM voice bar: pill nổi có khoảng thở quanh 4 phía (đồng bộ với kiểu pill của mobile),
    thay cho dải full-width dán sát mép dưới viewport */
 .hud-voice {
-  display: flex; align-items: center; gap: 12px;
+  /* flex-end chứ không center: ô nhập LỚN DẦN theo chữ (kiểu claude.ai), các nút mic/gửi
+     phải neo ở đáy thay vì trôi lơ lửng giữa một ô nhập cao. */
+  display: flex; align-items: flex-end; gap: 12px;
   margin: 4px 16px 16px; padding: 8px 12px;
   border: 1px solid var(--border); border-radius: 18px; background: var(--bg2);
 }
@@ -1176,7 +1228,10 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 .voice-input {
   flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
   color: var(--text); font-size: 16px; padding: 11px 14px; resize: none; outline: none;
-  line-height: 1.4; max-height: 90px; font-family: inherit;
+  /* max-height 45vh chỉ là lưới đỡ - chiều cao thật do app.js đặt theo scrollHeight
+     (nở theo chữ, xuống dòng là thấy toàn bộ văn bản). Trần cũ 90px từng chặn cứng
+     autosize ở ~3 dòng trên desktop dù JS đã tính đúng - chủ báo 27/08. */
+  line-height: 1.4; max-height: 45vh; font-family: inherit;
 }
 .voice-input:focus { border-color: var(--accent-line); }
 .voice-input::placeholder { color: var(--text3); }
@@ -2108,8 +2163,24 @@ a.jv-fcode:hover code { color: var(--accent); text-decoration: underline; }
   background: var(--panel-solid); }
 .note-editor[hidden] { display: none; }
 .note-editor.ne-full { position: fixed; inset: 0; z-index: 1000; }
+/* Phóng to = phủ KÍN màn hình, kể cả rail bên trái.
+   Vì sao phải thêm luật cho .cview: nó là position:fixed + z-index:40 nên TẠO MỘT
+   STACKING CONTEXT. Trình sửa nằm trong đó (trang Trò chuyện, trang Tệp tin), nên
+   z-index:1000 của .ne-full chỉ có giá trị BÊN TRONG .cview - rail (z-index 60, tầng
+   gốc) vẫn phủ lên trên và ăn mất mép trái bài viết: bấm phóng to mà chữ bị lẹm
+   (chủ repo báo 27/08, ảnh chụp 'AGENTS.md' còn 'ENTS.md'). Nâng cả stacking context
+   lên trong lúc phóng to là đủ, và 250 vẫn THẤP HƠN thông báo/panel artifact/modal
+   (350, 390, 3200+) nên các lớp đó vẫn nổi lên trên đúng như trước.
+   Màn Javis (.hud) không cần luật này: .hud không có z-index nên .ne-full nằm thẳng
+   ở tầng gốc và vốn đã phủ được rail. */
+body.ne-full-on .cview { z-index: 250; }
+/* flex-wrap: hàng nút (8 nút, không nút nào xuống dòng được) phải TỰ RỚT xuống dòng dưới khi
+   thanh hẹp. Trước đây chỉ có @media(max-width:700px) lo việc này, mà media query đo BỀ RỘNG
+   CỬA SỔ - ở trang Trò chuyện trình sửa nằm trong một CỘT hẹp giữa một cửa sổ rộng, nên luật
+   đó không bao giờ chạy và hàng nút giữ nguyên bề ngang ~440px. Đó chính là con số ép trình
+   sửa phình ra đè lên cột hội thoại. */
 .ne-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px;
-  border-bottom: 1px solid var(--border); background: var(--bg2); }
+  flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--bg2); }
 .ne-title { font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
 /* Lùi / Tiến giữa các note. Hết chỗ để đi thì MỜ ĐI chứ không biến mất: nút ẩn hiện làm
@@ -2473,3 +2544,35 @@ a.jv-fcode:hover code { color: var(--accent); text-decoration: underline; }
         white-space: pre-wrap; }
 .cb-src { font-size: 11.5px; color: var(--text3); margin-top: 5px;
           display: inline-flex; align-items: center; gap: 4px; }
+
+/* ===== Nhắc thêm Javis vào Màn hình chính (install-nudge.js) =====
+   Bảng trượt từ đáy chứ không phải hộp giữa màn: trên điện thoại đáy là chỗ ngón cái với
+   tới, và nó không che mất nội dung người ta đang đọc ở nửa trên. */
+.inud-wrap { position: fixed; inset: 0; z-index: 3400; display: flex; align-items: flex-end; }
+.inud-nen { position: absolute; inset: 0; background: var(--scrim); }
+.inud-hop {
+  position: relative; width: 100%; max-width: 520px; margin: 0 auto;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 18px 18px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
+  box-shadow: var(--shadow-3); animation: inudLen .22s ease;
+}
+@keyframes inudLen { from { transform: translateY(18px); opacity: .4; } to { transform: none; opacity: 1; } }
+.inud-dau { display: flex; gap: 12px; align-items: flex-start; }
+.inud-icon { width: 44px; height: 44px; border-radius: 11px; flex: none; }
+.inud-tieude { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.inud-tieude b { color: var(--text); font-size: 15px; }
+.inud-tieude span { color: var(--text2); font-size: 12.5px; line-height: 1.5; }
+.inud-buoc { margin: 14px 0 4px; padding-left: 20px; color: var(--text2); font-size: 13px; line-height: 1.8; }
+.inud-buoc b { color: var(--text); }
+.inud-mo { margin: 14px 0 4px; color: var(--text2); font-size: 13px; line-height: 1.6; }
+.inud-nut { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.inud-day { flex: 1 1 auto; }
+.inud-nut button {
+  border-radius: 9px; font: 600 13px var(--font); cursor: pointer; padding: 9px 14px;
+  border: 1px solid var(--border); background: none; color: var(--text2);
+}
+.inud-tat { font-weight: 500 !important; color: var(--text3) !important; border-color: transparent !important; padding-left: 0 !important; }
+.inud-tat:hover { color: var(--text2) !important; }
+.inud-sau:hover { color: var(--text); border-color: var(--info-line); }
+.inud-cai { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+.inud-cai:disabled { opacity: .6; cursor: default; }
