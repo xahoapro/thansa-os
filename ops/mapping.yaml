@@ -425,7 +425,7 @@
   diem_neo:
     - file: server/image_gen.py
       ky_hieu: "BRAND_SOURCE"
-    - file: dashboard/console.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "tradingauto.org"
   vung_theo_doi:
     - server/image_gen.py
@@ -585,7 +585,7 @@
     DICT_CHUAN (gộp khoảng trắng).
   commit: "[me] P018: va rebrand sot console.js + hoan thien dich mo ta provider/Zalo"
   diem_neo:
-    - file: dashboard/console.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "Ảnh Thansa tạo ra"
   vung_theo_doi:
     - "dashboard/console.js: đoạn mô tả Content Credentials"
@@ -852,7 +852,7 @@
     về tiếng Việt.)
   commit: "[me] P028: neo lai rebrand chuoi hien thi moi (vong 0.43.2)"
   diem_neo:
-    - file: dashboard/console.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "tool của Thansa đã đấu"
     - file: dashboard/i18n/en-goi.json
       ky_hieu: "chưa đấu được tool của Thansa"
@@ -1006,7 +1006,7 @@
     Javis (console.js "Máy chủ Javis", "Hướng dẫn Javis CLI"; main.py OAuth "MÁY cài Javis").
   commit: "[me] P034: neo lai rebrand chuoi hien thi moi (vong 0.50.2)"
   diem_neo:
-    - file: dashboard/console.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "tool của Thansa đã đấu"
     - file: dashboard/notifications.js
       ky_hieu: "Thansa vừa gửi một tin"
@@ -1025,3 +1025,38 @@
     sw.js OK; py syntax main.py/grok_cli.py OK; suite xanh.
   dieu_kien_bo: >
     Upstream đưa chuỗi hiển thị vào i18n/branding config thì bỏ (cùng P003/P028/P031).
+
+- id: P035
+  ten: "Neo lại rebrand chuỗi hiển thị mới (vòng 0.52.10)"
+  y_dinh: >
+    Vòng trộn 0.50.2→0.52.10 upstream ĐƯA HÀNG LOẠT chuỗi hiển thị vào hệ i18n gốc mới
+    (dashboard/i18n/vi.json + en.json, các #230/#231/#233), nên nhiều rebrand cũ (P008/P009/
+    P013/P018/P028/P034) bị upstream hấp thụ về từ điển. Rebrand tên sản phẩm Javis→Thansa
+    CHUYỂN XUỐNG TẦNG TỪ ĐIỂN: vi.json + en.json (native i18n), cộng chuỗi cứng còn sót trong
+    console.js/index.html và overlay en-goi.json. Nhãn tác giả C2PA trong c2pa_desc khớp
+    BRAND_SOURCE = tradingauto.org. GIỮ: tool names javis_*, env JAVIS_*, header X-Javis-*
+    (aux_engine/mcp_hub/main.py), path Javis/, định danh JS (JavisI18n, javisTheme,
+    __javisRefresh), container 'javis', file stop-javis.bat/vbs, package javis-cli.
+  commit: "[me] P035: neo lai rebrand chuoi hien thi moi (vong 0.52.10)"
+  diem_neo:
+    - file: dashboard/i18n/vi.json
+      ky_hieu: "Cài Thansa thành app riêng"
+    - file: dashboard/console.js
+      ky_hieu: "MCP Thansa"
+  vung_theo_doi:
+    - "dashboard/i18n/vi.json + en.json: từ điển i18n gốc upstream (product-name)"
+    - "dashboard/console.js + index.html: chuỗi cứng còn sót"
+    - "dashboard/i18n/en-goi.json: overlay dịch EN"
+  anh_goc:
+    - file: dashboard/i18n/vi.json
+      doan: "Cài Javis thành app riêng"
+    - file: dashboard/console.js
+      doan: "MCP Javis"
+  kiem_chung: >
+    python regex Javis(?![/\w])(?!-[A-Z]) trên vi.json/en.json/en-goi.json/console.js/
+    index.html/studio.js = 0 chuỗi product-name; token kỹ thuật còn nguyên (JavisI18n=19,
+    X-Javis-Vault=1, javis-cli=1, Javis/agents=1); JSON hợp lệ; node --check console.js OK;
+    'MCP Thansa' có trong console.js (test_engine_ngang_quyen); suite xanh.
+  dieu_kien_bo: >
+    Vòng sau upstream đưa NỐT chuỗi cứng còn lại vào i18n thì overlay en-goi.json/dich-en.js
+    teo dần, cân nhắc bỏ hẳn khi native i18n phủ 100% (dựa vào en.json upstream).
