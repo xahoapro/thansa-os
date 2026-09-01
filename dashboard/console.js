@@ -119,10 +119,10 @@
   // Trang CÓ THẬT nhưng KHÔNG hiện trên thanh bên. Bỏ hẳn khỏi `RAIL_ITEMS` thì không dùng
   // được, vì đó mới là nguồn icon và nhãn; nên chỗ ẩn nằm ở đây.
   //
-  // Rỗng từ 0.55.37. Trước đó Javis Store bị ẩn với lý do "nó không phải một chức năng ngang
+  // Rỗng từ 0.55.37. Trước đó Thansa Store bị ẩn với lý do "nó không phải một chức năng ngang
   // hàng với Trợ lý hay Kỹ năng, đường vào đúng là cái tab trên chính trang bạn đang đứng".
   // Lập luận đó đúng khi kho chỉ có vài gói và ai cũng tới nó từ một trang năng lực. Nó sai
-  // ngay khi kho thành chỗ chứa PHẦN LỚN kết nối của Javis (0.55.36 dọn 16 khuôn ra kho):
+  // ngay khi kho thành chỗ chứa PHẦN LỚN kết nối của Thansa (0.55.36 dọn 16 khuôn ra kho):
   // một người mới cài, chưa đấu gì, không có trang nào để mà bấm tab - họ cần thấy lối vào
   // ngay trên thanh bên. Chủ dự án yêu cầu đưa ra, và đặt cạnh Kết nối.
   //
@@ -300,7 +300,7 @@
       // Về nơi có hiển thị model thì làm mới, phòng khi model bị đổi bằng đường khác
       // (trang Models, Cài đặt nhanh, hoặc chỉnh tay settings).
       if (id === "home" || id === "chat") refreshModelUi();
-      // Nút điều khiển cockpit (cài đặt, giọng nói, làm mới) chỉ hiện ở trang Javis, không hiện navbar trang quản lý
+      // Nút điều khiển cockpit (cài đặt, giọng nói, làm mới) chỉ hiện ở trang Thansa, không hiện navbar trang quản lý
       document.body.classList.toggle("in-console", id !== "home");
       // Rời trang Cài đặt → cất #quickSet về holder TRƯỚC khi cviewBody bị ghi đè (giữ node + handler).
       if (id !== "settings") parkQuickSet();
@@ -519,7 +519,7 @@
     // hệt như "tab hỏng" chứ không giống "ai đó cướp handler".
     row.innerHTML = ds.map((x, i) =>
         `<button class="tab-kho${x.chon ? " on" : ""}" data-tab-cb="${i}">${esc(x.nhan)}</button>`).join("")
-      + `<button class="tab-kho" data-mo-kho="${kind}">${ic("package")} Javis Store</button>`;
+      + `<button class="tab-kho" data-mo-kho="${kind}">${ic("package")} Thansa Store</button>`;
     row.querySelectorAll("[data-tab-cb]").forEach(b => b.onclick = () => {
       const f = ds[Number(b.dataset.tabCb)];
       if (f && f.bam) f.bam();
@@ -609,7 +609,7 @@
   }
 
   // ============================================
-  // Trang Mức dùng (token & chi phí Javis tự đo, có đồ thị 14 ngày)
+  // Trang Mức dùng (token & chi phí Thansa tự đo, có đồ thị 14 ngày)
   // ============================================
   let _uzCss = false;
   function _injectUsageCss() {
@@ -3013,7 +3013,7 @@
     const m = s.model || {};
     // Đọc từ model.main + model.providers (nguồn thật của trang Models), KHÔNG từ m.engine -
     // trường cũ đó chỉ biết "cli" với "openrouter" nên máy đang chạy Gemini/OpenAI vẫn bị
-    // ghi là "Claude CLI". Mọi provider đều có MCP Javis, khác nhau ở chỗ chạy được lệnh máy.
+    // ghi là "Claude CLI". Mọi provider đều có MCP Thansa, khác nhau ở chỗ chạy được lệnh máy.
     const _mainP = (m.providers || []).find(p => p.id === (m.main || {}).provider) || {};
     const eng = (_mainP.label || (m.main || {}).provider || "-")
       + (_mainP.kind === "api" ? " " + window.t("cs.ov_eng_api") : _mainP.kind ? " " + window.t("cs.ov_eng_cli") : "");
@@ -3321,8 +3321,8 @@
   }
 
   // ===== Tab Local Model (Ollama chạy trên máy) =====
-  // HAI trạng thái chứ không ba như bản demo. Demo có "đang cài Ollama" vì nó giả định Javis
-  // tự chạy được lệnh cài trên máy người dùng - chỉ đúng khi Javis chạy native. Bản Docker/VPS
+  // HAI trạng thái chứ không ba như bản demo. Demo có "đang cài Ollama" vì nó giả định Thansa
+  // tự chạy được lệnh cài trên máy người dùng - chỉ đúng khi Thansa chạy native. Bản Docker/VPS
   // không có quyền, cũng không có đường, chạy lệnh trên máy vật lý của người ta. Nên ở đây
   // chỉ còn: CHƯA NỐI (hiện lệnh cài để người dùng tự chạy trong terminal máy thật) và ĐÃ NỐI.
   const OL_LENH = {
@@ -3337,7 +3337,7 @@
     return st.host_platform === "mac" ? lenh + "   # " + t("ol.mac_hint") : lenh;
   }
   // Bản Docker cần NHIỀU HƠN một lệnh cài. Bản 0.55.0 chỉ nói "cài trên máy thật rồi điền địa
-  // chỉ", và chủ repo dán ngay lệnh đó vào terminal của Javis (02/09) - dễ hiểu, vì nút copy
+  // chỉ", và chủ repo dán ngay lệnh đó vào terminal của Thansa (02/09) - dễ hiểu, vì nút copy
   // nằm ngay cạnh mà app thì có sẵn một cái terminal. Nhưng kể cả cài đúng chỗ vẫn còn hai bức
   // tường nữa: Ollama mặc định chỉ nghe 127.0.0.1 nên container không với tới, và không ai
   // đoán được phải điền địa chỉ cầu nối Docker. Thiếu một trong hai là "không nối được" mà
@@ -3354,7 +3354,7 @@
       "sudo systemctl daemon-reload && sudo systemctl restart ollama";
   }
   // (Hằng OL_DIA_CHI_DOCKER = "http://172.17.0.1:11434" ĐÃ BỎ.) 172.17.0.1 là cổng của mạng
-  // bridge MẶC ĐỊNH, chỉ đúng với `docker run` trần. Javis cài bằng compose thì nằm trên mạng
+  // bridge MẶC ĐỊNH, chỉ đúng với `docker run` trần. Thansa cài bằng compose thì nằm trên mạng
   // riêng của project (172.18.x trở đi), nên con số đó SAI với gần như mọi bản cài - điền
   // đúng theo hướng dẫn vẫn không nối được. Nay server dò cổng thật và trả về `goi_y_endpoint`.
 
@@ -3372,7 +3372,7 @@
 
   function olVeChuaNoi(el, st) {
     const lenh = olLenhCai(st);
-    // Docker/VPS: máy chạy Javis KHÔNG phải máy người dùng, nên câu hướng dẫn phải khác hẳn -
+    // Docker/VPS: máy chạy Thansa KHÔNG phải máy người dùng, nên câu hướng dẫn phải khác hẳn -
     // bảo họ chạy lệnh "trên máy này" là bảo họ cài Ollama vào trong container.
     const xa = st.deploy_mode === "docker";
     const lenhNghe = olLenhNghe(st);
@@ -3418,7 +3418,7 @@
               esc(t("common.copy")) + "</button></div>"
           : "") +
         (st.error ? '<div class="ol-err">' + ic("triangle-alert") + "<span>" + esc(st.error) + "</span></div>" : "") +
-        // Đã lưu địa chỉ mà vẫn không nối được thì từ trong container Javis không phân biệt
+        // Đã lưu địa chỉ mà vẫn không nối được thì từ trong container Thansa không phân biệt
         // nổi "chưa cài" với "đã chạy nhưng chỉ nghe 127.0.0.1". Máy chủ thì phân biệt được
         // bằng đúng một lệnh - đưa lệnh đó và cách đọc kết quả, thay vì để người dùng đoán.
         (st.error && xa ? '<div class="ol-note">' + ic("terminal") + "<span>" + esc(t("ol.dk_chan_doan")) + "</span></div>" : "") +
@@ -3803,7 +3803,7 @@
       if (p.id === "grok-cli") {
         // Bộ não thứ 11. Đây là thẻ CLI DUY NHẤT có nút "Đăng nhập" thật sự bấm được trên VPS:
         // `grok login --device-auth` in ra một link và một mã rồi tự đứng hỏi máy chủ, nên
-        // Javis chỉ cần bóc link + mã đưa lên đây, không phải giả lập terminal như bản `agy`
+        // Thansa chỉ cần bóc link + mã đưa lên đây, không phải giả lập terminal như bản `agy`
         // 0.30-0.32.1 từng thử (và tắc trên Windows vì không có pseudo-terminal).
         const dn = p.dang_nhap || {};
         const st = on
@@ -3860,7 +3860,7 @@
       }
       if (p.kind === "cli") {   // Claude Code - trạng thái + login/logout nạp động qua /claude/status
         // Ô chọn nguồn xác thực. Cả hai lựa chọn giữ NGUYÊN năng lực (Bash, WebFetch, MCP, nối
-        // phiên cũ); khác nhau ở chỗ ai trả tiền và ai chịu rủi ro. Javis cố ý không tắt cứng
+        // phiên cũ); khác nhau ở chỗ ai trả tiền và ai chịu rủi ro. Thansa cố ý không tắt cứng
         // đường subscription - chủ máy tự cân, nhưng phải cân khi đã BIẾT, nên có cảnh báo.
         const byKey = p.auth_mode === "api_key";
         return `<div class="prov-card ${p.is_main ? "main" : ""}">
@@ -3888,7 +3888,7 @@
       }
       const masked = (m[KEYFIELD[p.id]] || "").slice(-4);
       return `<div class="prov-card ${p.is_main ? "main" : ""}">
-        ${provHead(p, on, p.kind === "cli" ? "MCP/skill" : "MCP Javis", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
+        ${provHead(p, on, p.kind === "cli" ? "MCP/skill" : "MCP Thansa", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
         ${p.needs_key
           ? `<div class="prov-action"><input class="js-input" id="pk-${p.id}" type="password" placeholder="${on ? esc(t("models.key_change_ph", { duoi: masked })) : esc(t("models.key_ph"))}"><button class="gcard-btn" data-pk="${p.id}">${on ? esc(t("models.key_change")) : esc(t("models.connect"))}</button>${on ? `<button class="gcard-btn ghost" data-disc="${p.id}">${esc(t("models.disconnect"))}</button>` : ""}</div>`
           : `<div class="prov-note">${esc(t("models.no_key_note"))}</div>`}
@@ -4029,7 +4029,7 @@
                                    { method: "POST" })).json(); }
       catch (e) { r = { ok: false, error: t("common.net_err") }; }
       agk.disabled = false; agk.textContent = cu2;
-      // Nói RIÊNG chuyện tool của Javis. "Chat được" và "gọi được tool của Javis" là hai
+      // Nói RIÊNG chuyện tool của Thansa. "Chat được" và "gọi được tool của Thansa" là hai
       // chuyện khác nhau, và suốt các bản 0.30-0.42 cái thứ hai luôn hỏng trong khi cái thứ
       // nhất vẫn xanh - nên thẻ này chỉ báo "Dùng được" là báo thiếu đúng chỗ đau.
       const mcpTxt = (r && r.mcp)
@@ -4056,7 +4056,7 @@
       if (!r || !r.ok) { if (msg) msg.innerHTML = Icons.warn((r && r.error) || t("models.cant_open")); return; }
       if (r.xong) { renderModelsCloudTab(el); return; }
       // Link + mã hiện ra để người dùng mở trên MÁY CỦA HỌ - đây là cả lý do tồn tại của
-      // đường device code: máy chạy Javis (VPS) không cần có trình duyệt.
+      // đường device code: máy chạy Thansa (VPS) không cần có trình duyệt.
       if (box) {
         box.style.display = "";
         box.innerHTML = `<div>${esc(t("models.grok_open"))}<br><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></div>`
@@ -4123,7 +4123,7 @@
                                    { method: "POST" })).json(); }
       catch (e) { r = { ok: false, error: t("common.net_err") }; }
       gkc.disabled = false; gkc.textContent = cu3;
-      // Nói RIÊNG chuyện tool của Javis: "chat được" và "gọi được tool của Javis" là hai
+      // Nói RIÊNG chuyện tool của Thansa: "chat được" và "gọi được tool của Thansa" là hai
       // chuyện khác nhau, và cái thứ hai mới là chỗ đã ba lần hỏng câm với `agy`.
       const mcpTxt2 = (r && r.mcp)
         ? (r.mcp.co_javis ? " · " + esc(t("models.mcp_ok"))
@@ -4136,7 +4136,7 @@
         setTimeout(() => renderModelsCloudTab(el), 700);
       } else if (msg) {
         msg.innerHTML = Icons.warn((r && r.error) || t("models.not_works")) + mcpTxt2;
-        // Chưa dùng được thì hiện luôn chỗ Javis đã nhìn: binary nào, thư mục nào, trong đó
+        // Chưa dùng được thì hiện luôn chỗ Thansa đã nhìn: binary nào, thư mục nào, trong đó
         // có file gì. Chỉ TÊN file và TÊN khoá - giá trị trong auth.json là token thật.
         const cd = r && r.chan_doan, box2 = el.querySelector("#grokBox");
         if (cd && box2) {
@@ -4170,7 +4170,7 @@
   //
   // Vì sao cần: con số trên thẻ đọc từ `model.catalog` trong settings, mà catalog chỉ được ghi
   // SAU một lần lấy live thành công. ChatGPT không có catalog mặc định (danh sách model do
-  // Codex quyết, Javis cố ý không ghim version), nên trên máy mới đăng nhập xong là thẻ hiện
+  // Codex quyết, Thansa cố ý không ghim version), nên trên máy mới đăng nhập xong là thẻ hiện
   // "● Đã kết nối · 0 model" và nằm im như vậy cho tới khi ai đó mở hộp chọn model - trông y
   // hệt đăng nhập hỏng. Máy cũ không thấy lỗi này chỉ vì catalog đã có sẵn từ lần trước.
   const _daHoiModel = new Set();   // hỏi HỤT thì thôi, không quay vòng vô tận
@@ -4810,7 +4810,7 @@
         force: !!m._forceAdd });
       if (!r.ok) {
         err.textContent = r.error || window.t("app.err_cap");
-        // can_force = server chặn có lý do (vd connector cần trình duyệt trên máy chạy Javis
+        // can_force = server chặn có lý do (vd connector cần trình duyệt trên máy chạy Thansa
         // mà đang mở qua domain public - issue #112). Bấm lần nữa là xác nhận vẫn muốn đấu.
         if (r.can_force) { m._forceAdd = true; go.textContent = window.t("cs.cn_force_add"); }
         else { go.textContent = window.t("models.connect"); }
@@ -5103,7 +5103,7 @@
         await postJson("/connect/update", { id: c.id, deny_tools: v.split(",").map(x => x.trim()).filter(Boolean) });
         closeConnModal(); renderConnect(el);
       } else if (act === "relogin") {
-        // Nguồn tự giữ token ngoài Javis (workspace-mcp): nút Kết nối lại chỉ lưu key chứ không
+        // Nguồn tự giữ token ngoài Thansa (workspace-mcp): nút Kết nối lại chỉ lưu key chứ không
         // đụng được token, nên token cấp thiếu quyền là thiếu mãi. Đây là đường duy nhất bắt nó
         // hỏi lại quyền.
         if (!confirm(window.t("cs.cn_relogin_confirm", { ten: c.label || "" }))) return;
@@ -5301,7 +5301,7 @@
     const st = await freshSettings();
     const main = (st.model && st.model.main) || {};
     const provs = (st.model && st.model.providers) || [];
-    // MỌI provider Javis hỗ trợ đều gọi được kho Kết nối: hai CLI (Claude Code, Codex) đi
+    // MỌI provider Thansa hỗ trợ đều gọi được kho Kết nối: hai CLI (Claude Code, Codex) đi
     // native, bốn provider API đi qua vòng gọi tool + hub trong _api_stream_mcp. Gemini từng
     // thiếu trong danh sách này nên khách chạy Gemini bị banner vàng "chưa hỗ trợ gọi công cụ"
     // dù bên dưới đã chạy MCP ngon - nhánh vàng giờ chỉ còn để chặn provider lạ.
@@ -5313,7 +5313,7 @@
     } else if (!MCP_PROVIDERS.includes(main.provider)) {
       warn = `<div class="gcard" style="border:1px solid var(--warn-ink);background:rgba(185,130,31,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${WARN_ICON} ${esc(window.t("cs.cn_w_notool_a"))} <b>${esc(mainLabel)}</b> ${esc(window.t("cs.cn_w_notool_b"))} <b>Models</b>.</div></div>`;
     } else if (main.provider !== "anthropic-cli") {
-      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>${esc(mainLabel)}</b> ${esc(window.t("cs.cn_w_hub_a"))} <b>MCP Javis</b> ${esc(window.t("cs.cn_w_hub_b"))}</div></div>`;
+      warn = `<div class="gcard" style="border:1px solid var(--green);background:rgba(44,122,75,.10);max-width:740px;margin-bottom:14px"><div class="gcard-meta" style="opacity:1">${CHECK_ICON} <b>${esc(mainLabel)}</b> ${esc(window.t("cs.cn_w_hub_a"))} <b>MCP Thansa</b> ${esc(window.t("cs.cn_w_hub_b"))}</div></div>`;
     }
     const groups = {};
     conns.forEach(c => { const k = c.connector_id || "custom"; (groups[k] = groups[k] || []).push(c); });
@@ -5323,12 +5323,12 @@
     const removed = d.removed || [];
     const orphans = d.orphans || [];
     // Kết nối mất khuôn thì `mcp_store.resolved` từ chối dựng dial spec, tức nó IM. Phải nói ra
-    // thay vì để người dùng ngồi đoán vì sao một nguồn đang có mà Javis bảo không có.
+    // thay vì để người dùng ngồi đoán vì sao một nguồn đang có mà Thansa bảo không có.
     //
     // Hai nguyên nhân, hai lối thoát khác hẳn nhau - trộn làm một là đẩy người dùng đi sai
     // đường ở đúng lúc họ đang hoảng:
     //   `co_trong_kho`  người dùng vừa tự gỡ dịch vụ đó → cài lại ở khu "Đã gỡ" ngay dưới.
-    //   không có        dịch vụ đã DỌN RA Javis Store (0.55.36 dọn 16 cái) → cài lại từ kho.
+    //   không có        dịch vụ đã DỌN RA Thansa Store (0.55.36 dọn 16 cái) → cài lại từ kho.
     //
     // Câu cũ ở nhánh thứ hai xui người dùng nâng cấp app hoặc bỏ kết nối đi. Từ 0.55.36 nó
     // vừa sai vừa nguy hiểm: nâng cấp không mọc lại dịch vụ nữa, còn bỏ kết nối là vứt luôn
@@ -5381,7 +5381,7 @@
       + 'padding:14px 16px;margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:12px">'
       + '<span style="flex:1;min-width:240px">' + esc(window.t("cs.cn_more_services")) + '</span>'
       + '<button class="mp-btn" id="mcpDiSanCo">' + esc(window.t("cs.cn_tab_sanco")) + '</button>'
-      + '<button class="mp-btn primary" id="mcpDiKho">Javis Store</button></div>'
+      + '<button class="mp-btn primary" id="mcpDiKho">Thansa Store</button></div>'
       + '<details class="cview-section amb-details" id="ambWrap"><summary><h3 style="display:inline">◆ ' + esc(window.t("cs.cn_amb_head")) + ' <span style="opacity:.5">' + esc(window.t("cs.cn_amb_hint")) + '</span></h3></summary>'
       + '<div class="gcard-meta" style="max-width:740px;margin-top:10px">' + esc(window.t("cs.cn_amb_desc_a")) + ' <code>codex mcp</code>' + esc(window.t("cs.cn_amb_desc_b")) + '</div>'
       + '<div class="prov-list" id="mcpAmbient" style="margin-top:12px"><div class="mp-empty">' + esc(window.t("cs.cn_amb_click")) + '</div></div>'
@@ -5729,7 +5729,7 @@
       <div class="cview-section">
         <h3>${esc(window.t("cs.ac_tk_head"))}</h3>
         <div class="gcard" style="max-width:560px">
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_intro_a"))} <b>Javis CLI</b> ${esc(window.t("cs.ac_tk_intro_b"))}</div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_intro_a"))} <b>Thansa CLI</b> ${esc(window.t("cs.ac_tk_intro_b"))}</div>
           <label class="js-lbl">${esc(window.t("cs.ac_tk_name"))}</label>
           <input class="js-input" id="tkName" placeholder="${esc(window.t("cs.ac_tk_name_ph"))}">
           <label class="js-lbl">${esc(window.t("cs.ac_tk_scope"))}</label>
@@ -6030,9 +6030,9 @@
   // ---- Trang Cài đặt: nhúng #quickSet + bộ chọn nhà cung cấp giọng đọc ----
   // Dòng trạng thái 2FA trong khối "Tài khoản đăng nhập" cũ (#quickSet, index.html).
   //
-  // Vì sao cần: Javis có HAI bề mặt cài đặt tài khoản - trang Tài khoản (đủ thứ, gồm cả 2FA)
+  // Vì sao cần: Thansa có HAI bề mặt cài đặt tài khoản - trang Tài khoản (đủ thứ, gồm cả 2FA)
   // và khối cũ này nhúng trong trang Cài đặt (chỉ đổi mật khẩu). Ai mở Cài đặt trước sẽ thấy
-  // một khối tài khoản không nhắc gì tới 2FA và kết luận Javis không có, rồi thôi.
+  // một khối tài khoản không nhắc gì tới 2FA và kết luận Thansa không có, rồi thôi.
   //
   // Đây CHỈ là trạng thái + lối đi. Nút bấm mang data-settings-go="account" nên nó dùng chung
   // đúng đường chuyển trang với mấy nút còn lại, không tự gọi navigateTo.
@@ -6633,7 +6633,7 @@
       const selUi = document.getElementById("vpUiLang");
       if (selUi) selUi.onchange = async () => {
         // Đổi NGAY trên máy này trước, rồi mới lưu lên server. Ngôn ngữ giao diện là lựa chọn
-        // THEO THIẾT BỊ (người dùng mở Javis từ nhiều máy), nên trải nghiệm phải tức thì và
+        // THEO THIẾT BỊ (người dùng mở Thansa từ nhiều máy), nên trải nghiệm phải tức thì và
         // không được phụ thuộc vào việc gọi mạng có thành công hay không.
         try { await JavisI18n.setLang(selUi.value); } catch (e) { /* noop */ }
         // Đặt cookie để server biết phục vụ bản dịch dashboard/en/ (bản Thansa). Đổi ngôn ngữ
@@ -6760,7 +6760,7 @@
   // Trang TRÒ CHUYỆN - khung chat toàn khung (mượn node chat của cockpit + sidebar lịch sử)
   // Không nhân đôi bộ máy chat: relocate chính #chatArea/#attachBar/#modelBar/#hudVoice
   // (giữ nguyên mọi handler + WebSocket + streaming đã gắn trong app.js) rồi TRẢ về HUD khi
-  // rời trang. Cùng một cuộc trò chuyện hiển thị ở cả màn Javis lẫn tab này.
+  // rời trang. Cùng một cuộc trò chuyện hiển thị ở cả màn Thansa lẫn tab này.
   // ============================================
   const CHAT_NODE_IDS = ["chatArea", "bgStrip", "attachBar", "modelBar", "hudVoice"];
   let _chatSlots = [];        // vị trí gốc từng node để trả về đúng chỗ trong HUD
@@ -6809,7 +6809,7 @@
     .cp-min{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font); }
     .chatpage-slot{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:10px; }
     /* Mở file từ tab Thư mục (desktop): trình sửa bên TRÁI, khung chat co thành CỘT PHẢI
-       y như màn Javis - hội thoại ở trên, ô nhập dưới đáy cột (chủ chỉnh 27/08: bản xếp
+       y như màn Thansa - hội thoại ở trên, ô nhập dưới đáy cột (chủ chỉnh 27/08: bản xếp
        chồng dọc trước đó để chat nằm TRÊN trình sửa theo thứ tự DOM, nhìn ngược). Grid
        đặt chỗ theo ô nên thứ tự DOM không còn quyết định vị trí. Màn hẹp giữ lối cũ:
        trình sửa chiếm chỗ (luật display:none nằm trong khối @media 860px bên dưới),
@@ -6828,8 +6828,8 @@
     .cedit-thu-btn svg, .cedit-expand svg{ transform:scaleX(-1); }
     @media (min-width:861px){
       /* Bản 0.47.5 nhét CẢ cụm nhập (file chip + thanh model + ô nhập) vào cột phải 340px
-         nên chật cứng - chủ chỉnh lại: y như màn Javis, các thanh đó phải TRẢI DÀI TOÀN BỀ
-         RỘNG dưới cùng (ở màn Javis chúng nằm NGOÀI .hud-body, vắt ngang đáy), chỉ có
+         nên chật cứng - chủ chỉnh lại: y như màn Thansa, các thanh đó phải TRẢI DÀI TOÀN BỀ
+         RỘNG dưới cùng (ở màn Thansa chúng nằm NGOÀI .hud-body, vắt ngang đáy), chỉ có
          HỘI THOẠI đứng cột phải. Slot tan vào lưới bằng display:contents để từng con của
          nó tự nhận ô grid riêng. */
       .chatpage-main.edit-on{ display:grid; column-gap:14px;
@@ -6870,11 +6870,11 @@
       flex:1 1 auto; min-height:0; min-width:0; border-radius:12px; }
     .chatpage-slot > *{ width:100%; max-width:900px; margin-left:auto; margin-right:auto; }
     .chatpage-slot .transcript{ flex:1 1 auto; min-height:0; max-height:none; background:transparent; }
-    /* Khung nhập giữ NGUYÊN bộ mặt của thanh nhập ở màn Javis (--bg2 + bo 18px). Trước đây
+    /* Khung nhập giữ NGUYÊN bộ mặt của thanh nhập ở màn Thansa (--bg2 + bo 18px). Trước đây
        gõ cứng rgba(24,24,34,.6) nên tông sáng lòi ra một dải xám đen giữa nền giấy. */
     .chatpage-slot .hud-voice{ background:var(--bg2); border:1px solid var(--border); border-radius:18px; }
     .chatpage-slot .attach-bar{ flex:none; }
-    /* Màn hẹp: cả hàng tiêu đề phải nằm gọn MỘT dòng. Trước đây tiêu đề "Trò chuyện với Javis"
+    /* Màn hẹp: cả hàng tiêu đề phải nằm gọn MỘT dòng. Trước đây tiêu đề "Trò chuyện với Thansa"
        xuống bốn dòng và chữ "Thu nhỏ" xuống hai dòng, đẩy khung chat tụt hẳn xuống - chủ repo
        chụp lại đúng cảnh đó. Nay hàng này nhẹ hẳn: tiêu đề tĩnh và nhãn engine đều đã bỏ, chỉ
        còn hai nút (rút về icon) và chip project ở mép phải (tự cắt, xem style.css). */
@@ -6951,14 +6951,14 @@
   }
   // ===== Cho tab "Thư mục" của khung chat MƯỢN chính panel Vault =====
   // Không dựng lại cây thứ hai. Bản đầu của tính năng này viết hẳn một module cây riêng, và
-  // chủ repo chỉ ra ngay: "sao không bê nguyên cái cây y hệt bên Javis sang mà phải dựng lại".
+  // chủ repo chỉ ra ngay: "sao không bê nguyên cái cây y hệt bên Thansa sang mà phải dựng lại".
   // Đúng - cây Vault đã có sẵn tìm theo tên/nội dung, tạo file, tạo thư mục, làm mới, tô sáng
   // file đang mở. Dựng bản thứ hai là chép lại từng đó thứ rồi để hai bản trôi lệch nhau.
   // Mượn node y như cách trang này vẫn mượn #chatArea: cùng một cây, chỉ đổi chỗ đứng.
   // ===== Trình sửa file đứng TRÊN khung chat khi mở file từ tab Thư mục =====
   // Ở màn chính, trình sửa là lớp nổi đè lên visual não - chỗ đó rỗng nên đè là hợp lý. Ở
   // trang Trò chuyện, desktop XẾP CHỒNG: trình sửa trên, khung chat rút gọn ở dưới - chủ
-  // repo đổi ý 27/08 (trước đó muốn ẩn hẳn): vừa sửa file vừa nhắn Javis về file đó.
+  // repo đổi ý 27/08 (trước đó muốn ẩn hẳn): vừa sửa file vừa nhắn Thansa về file đó.
   // Màn hẹp vẫn ẩn hẳn khung chat vì không đủ chỗ. Xem khối CSS .chatpage-main.edit-on.
   // Vẫn MƯỢN chính #noteEditor chứ không dựng trình sửa thứ hai - cùng lý do với cây Vault.
   // `into` = khung sẽ mượn trình sửa. Bỏ trống = khung của trang Trò chuyện (#chatPageEdit).
@@ -7084,7 +7084,7 @@
             '<button class="cp-ico-btn cp-min" type="button" id="cpMinBtn" ' +
               'title="' + esc(window.t("cs.cp_min_title")) + '" aria-label="' + esc(window.t("cs.cp_min_title")) + '">' +
               ic("chevron-left") + '<span>' + esc(window.t("cs.cp_min")) + '</span></button>' +
-            // Tiêu đề tĩnh "Trò chuyện với Javis" ĐÃ BỎ (chủ repo yêu cầu 01/09). Nó nói
+            // Tiêu đề tĩnh "Trò chuyện với Thansa" ĐÃ BỎ (chủ repo yêu cầu 01/09). Nó nói
             // đúng một điều mà rail đang tô sáng và khung trống đã ghi bằng chữ in nghiêng
             // ngay bên dưới, nên nó chỉ ăn chỗ. Chip project lùi về mép phải, chiếm chỗ đó.
             '<span class="proj-chip-host"></span>' +
@@ -7147,7 +7147,7 @@
       em.onclick = () => datEditThu(false);
       slot.appendChild(et); slot.appendChild(em);
     }
-    // Đường VỀ. Nút phóng to ở màn Javis nay dẫn thẳng sang trang này (lớp nổi .chat-stage đã
+    // Đường VỀ. Nút phóng to ở màn Thansa nay dẫn thẳng sang trang này (lớp nổi .chat-stage đã
     // bỏ), nên trang này phải có nút thu nhỏ, nếu không người dùng chỉ còn cách bấm rail.
     el.querySelector("#cpMinBtn").onclick = () => navigateTo("home");
     slot.addEventListener("click", () => { if (isNar() && page.classList.contains("side-open")) page.classList.remove("side-open"); });
@@ -7640,7 +7640,7 @@
     if (!confirm(window.t("cs.vt_del_file", { ten: name }))) return;
     const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel);
     try { await fetch("/files/delete", { method: "POST", body: fd }); } catch (e) {}
-    // Ghim trỏ tới file vừa xoá thì bỏ, đừng để Javis đi mở một đường dẫn không còn tồn tại.
+    // Ghim trỏ tới file vừa xoá thì bỏ, đừng để Thansa đi mở một đường dẫn không còn tồn tại.
     try {
       const p = window.JavisPin && window.JavisPin.get();
       if (p && p.rel === rel) window.JavisPin.clear();
@@ -7873,7 +7873,7 @@
   // Nội dung có khác lúc vừa mở không. So với BẢN ĐÃ VÒNG QUA markdown lúc mở, không phải
   // chữ thô đọc từ đĩa: bản render WYSIWYG đổi lại thành markdown luôn lệch đôi chỗ so với
   // file gốc (turndown chuẩn hoá dấu, xuống dòng). So với file gốc thì mỗi lần chỉ ĐỌC rồi
-  // rời đi cũng bị tính là có sửa, và Javis sẽ âm thầm ghi đè định dạng của file đó.
+  // rời đi cũng bị tính là có sửa, và Thansa sẽ âm thầm ghi đè định dạng của file đó.
   function _neCoSuaChua() {
     if (!_neSaveFn || !_neLayNoiDung || _neGocText == null) return false;
     try { return _neLayNoiDung() !== _neGocText; } catch (e) { return false; }
@@ -8094,7 +8094,7 @@
   // của server rồi nối thêm hướng dẫn, ra một chuỗi dài hơn cả thanh trạng thái nên bị cắt
   // cụt, và nó còn chỉ sai chỗ ("mở terminal gõ /login") vì giờ kết nối ở trang Models.
   // Người dùng cũng không cần biết "bộ não claude" là gì: với họ chỉ có một sự thật là chưa
-  // dùng được Javis, và một việc phải làm là vào Models.
+  // dùng được Thansa, và một việc phải làm là vào Models.
   async function refreshEngineBanner() {
     const b = document.getElementById("engineBanner");
     if (!b) return;
@@ -8144,7 +8144,7 @@
     const st = document.getElementById("studio");
     if (st) new MutationObserver(recomputeGraph).observe(st, { attributes: true, attributeFilter: ["class"] });
     // Màn hình co/giãn qua ngưỡng mobile → tính lại (chỉ tắt/bật graph, KHÔNG tự nhảy trang:
-    // đang đứng ở màn Javis mà tự bị đẩy sang Trò chuyện là mất chỗ đang xem)
+    // đang đứng ở màn Thansa mà tự bị đẩy sang Trò chuyện là mất chỗ đang xem)
     window.matchMedia("(max-width: 860px)").addEventListener("change", recomputeGraph);
     // Đổi brain (Select Brain) → nạp lại trang quản lý đang xem theo brain mới (không cần F5)
     const gs = document.getElementById("graphSource");
@@ -8153,7 +8153,7 @@
       if (active !== "home") renderPage(active);
       // Cây vault ở cột trái sống ngoài hệ cview → tự làm mới theo brain mới
       _vtCache.clear(); _vtIndex = null; _vtActivePath = null; renderVaultTree();
-      // Ghim của brain cũ trỏ ra ngoài brain mới → bỏ, kẻo Javis sửa nhầm file brain khác.
+      // Ghim của brain cũ trỏ ra ngoài brain mới → bỏ, kẻo Thansa sửa nhầm file brain khác.
       try { if (window.JavisPin) window.JavisPin.clear(); } catch (e) {}
       // Vệt đường đi cũng thuộc brain cũ: mọi bước trong đó trỏ vào file của brain kia.
       _neLichSu = []; _neViTri = -1; _neVeNutLui();
@@ -8185,7 +8185,7 @@
         }
       } catch (e) { /* thiếu ô thì rail vẫn sống */ }
       graphEnabled = !(s.dashboard && s.dashboard.graph_enabled === false);
-      // MỞ APP LÀ VÀO MÀN JAVIS, kể cả lite-mode (cờ graph tắt hoặc màn hẹp): màn Javis đã có
+      // MỞ APP LÀ VÀO MÀN JAVIS, kể cả lite-mode (cờ graph tắt hoặc màn hẹp): màn Thansa đã có
       // sẵn ô chat, chỉ khác là không vẽ khoang não. Bản trước tự đẩy sang trang Trò chuyện,
       // hoá ra rối hơn - mỗi lần tải lại là mỗi lần rơi vào một trang khác.
       recomputeGraph();
