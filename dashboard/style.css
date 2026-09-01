@@ -1048,9 +1048,22 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
    trên vùng cuộn, và chiều cao thật của ray do JS đo theo clientHeight của khung. */
 #chatMarks { position: sticky; top: 0; height: 0; z-index: 4; flex: none;
   align-self: flex-end; width: 0; overflow: visible; }
-.cm-ray { position: absolute; top: 0; right: 2px; width: 22px;
+/* Sát mép PHẢI và chỉ rộng bằng đúng vạch dài nhất (20px lúc hover/active).
+   Bản đầu rộng 22px + lùi vào 2px, tức chiếm 24px ĐÈ LÊN vùng chữ của bong bóng - bôi đen để
+   copy một câu cũ mà quét tới mép phải là chuột đi vào dải này, danh sách bung ra che mất và
+   cắt ngang thao tác (người dùng báo 2026-08-31). Cặp với .transcript.cm-co-thanh bên dưới:
+   một bên thu hẹp vùng bắt chuột, một bên chừa hẳn chỗ cho nó - hai vùng không còn chồng. */
+.cm-ray { position: absolute; top: 0; right: 0; width: 20px;
   display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
   gap: calc(var(--cm-cach, 11px) - 2px); pointer-events: auto; }
+/* Khung chat chừa lề phải đúng bằng dải mốc, và CHỈ khi dải đang hiện (JS gắn class). Không
+   chừa thì bong bóng chạy tới sát mép, nằm ngay dưới dải - mà chữ nằm dưới một vùng bắt chuột
+   thì không cách nào bôi đen sạch được. */
+.transcript.cm-co-thanh { padding-right: 22px; }
+/* Đang giữ chuột kéo (bôi đen) thì dải mốc TRONG SUỐT với chuột. Hai cái trên đã tách vùng,
+   nhưng người ta hay quét lố ra ngoài mép chữ một chút - đây là lớp cuối, và cũng là lớp duy
+   nhất đúng cho cả trường hợp quét từ trong ra ngoài khung. */
+.transcript.cm-dang-chon .cm-ray, .transcript.cm-dang-chon .cm-hop { pointer-events: none; }
 .cm-vach { flex: none; width: 13px; height: 2px; padding: 0; border: 0; border-radius: 2px;
   background: var(--text3); opacity: .38; cursor: pointer;
   transition: width .14s, opacity .14s, background .14s; }
@@ -1412,10 +1425,25 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 /* Attachment in chat message */
 .msg-attach { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .msg-attach img { max-width: 160px; max-height: 120px; border-radius: 8px; border: 1px solid var(--border); }
+.msg-attach .att-img { display: block; line-height: 0; cursor: zoom-in; }
 .msg-attach .file-tag {
   font-size: 13px; background: var(--bg); border: 1px solid var(--border);
   border-radius: 6px; padding: 4px 8px; font-family: var(--font); color: var(--text2);
 }
+/* Ảnh stage tạm đã bị dọn: một khung RỖNG nói thẳng là hết xem lại được. Viền đứt + icon mờ
+   để mắt đọc ngay ra "không còn nữa" thay vì tưởng ảnh đang tải hay app hỏng. */
+.msg-attach .att-mat {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 260px;
+  padding: 8px 10px; border-radius: 8px; border: 1px dashed var(--border);
+  background: var(--bg); color: var(--text2); font-size: 12px; line-height: 1.35;
+}
+.msg-attach .att-mat svg { width: 18px; height: 18px; flex: none; opacity: .5; }
+.msg-attach .att-mat-ten {
+  font-family: var(--font); max-width: 120px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.msg-attach .att-mat-note { opacity: .75; }
+.attach-chip .chip-thumb { display: block; line-height: 0; cursor: zoom-in; }
 
 /* Voice picker popover */
 .voice-picker-wrap { position: relative; }

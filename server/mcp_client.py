@@ -38,6 +38,7 @@ _INTERNAL = {"botcake": "botcake_mcp", "substack": "substack_mcp"}   # transport
 
 _DIAL_SONG_SONG = 8      # số connection dò tool CÙNG LÚC (đừng để npx nổ ra 30 tiến trình)
 _DIAL_TRAN = "20"        # giây - trần dò tool CHO MỖI connection (0 = không giới hạn)
+_WARM_TRAN = "180"       # giây - trần cho vòng LÀM NÓNG lúc khởi động (xem tran_warm)
 
 
 def sanitize_fn(name):
@@ -395,7 +396,11 @@ class SessionPool:
 
     def _sweep(self):
         now = time.time()
-        for key in [k for k, v in self._sessions.items() if now - v["last"] > _IDLE_TTL]:
+        # `not v.get("ban")`: phiên đang chạy dở một tool call thì TUYỆT ĐỐI không đóng. Đóng
+        # phiên stdio là SIGKILL cả cây tiến trình (xem `McpStdioSession.close`), tức là giết
+        # luôn cái đơn/tin đang gửi dở. Một tool call dài hơn _IDLE_TTL là hiếm nhưng có thật.
+        for key in [k for k, v in self._sessions.items()
+                    if now - v["last"] > _IDLE_TTL and not v.get("ban")]:
             ent = self._sessions.pop(key, None)
             if ent:
                 self._close_later(ent["obj"])
@@ -424,6 +429,25 @@ class SessionPool:
         ent["last"] = time.time()
         return key, ent["obj"]
 
+    def _danh_dau_ban(self, key, delta):
+        ent = self._sessions.get(key)
+        if ent is not None:
+            ent["ban"] = max(0, int(ent.get("ban", 0)) + delta)
+            ent["last"] = time.time()
+
+    def dang_goi_tool(self, spec) -> bool:
+        """Phiên của spec này có đang chạy dở một tool call không.
+
+        Dùng ở chỗ DÒ TOOL: `tools/list` quá hạn trong lúc phiên đang bận nghĩa là nó mới chỉ
+        XẾP HÀNG chờ khoá chứ chưa gửi đi byte nào - khác hẳn "server treo giữa request"."""
+        ent = self._sessions.get(spec.get("key") or _spec_hash(spec))
+        return bool(ent and ent.get("ban"))
+
+    def tool_da_biet(self, spec):
+        """Danh sách tool của lần dò gần nhất trên phiên này (None nếu chưa dò được lần nào)."""
+        ent = self._sessions.get(spec.get("key") or _spec_hash(spec))
+        return (ent or {}).get("tools")
+
     def invalidate(self, key):
         ent = self._sessions.pop(key, None)
         if ent:
@@ -443,23 +467,40 @@ class SessionPool:
         """Lỗi CHẮC CHẮN xảy ra trước khi request chạm server → retry không gây side-effect đôi."""
         return isinstance(e, (httpx.ConnectError, httpx.ConnectTimeout, ConnectionError))
 
-    async def _retry(self, spec, op, idempotent=True):
+    async def _retry(self, spec, op, idempotent=True, ban=False):
         """Chạy op(session); lỗi → dựng session mới, thử lại ĐÚNG 1 lần.
         Tool KHÔNG idempotent (tools/call - có thể là gửi tin/tạo đơn): CHỈ retry khi lỗi
         thuộc pha kết nối (chưa gửi được request) - timeout giữa chừng KHÔNG gọi lại,
-        tránh người thật nhận tin 2 lần / tạo đơn trùng."""
+        tránh người thật nhận tin 2 lần / tạo đơn trùng.
+
+        `ban=True` bật cờ "phiên đang chạy tool" suốt lúc op chạy, để vòng dò tool và vòng
+        quét phiên rảnh biết mà TRÁNH giết phiên này."""
         key, sess = self._get(spec)
         try:
-            return await op(sess)
+            return await self._chay(key, sess, op, ban)
         except Exception as e:
             self.invalidate(key)
             if not (idempotent or self._pre_send_error(e)):
                 raise
             key, sess = self._get(spec)
-            return await op(sess)   # lần 2 lỗi thì raise cho caller xử lý
+            return await self._chay(key, sess, op, ban)   # lần 2 lỗi thì raise cho caller
+
+    async def _chay(self, key, sess, op, ban):
+        if not ban:
+            return await op(sess)
+        self._danh_dau_ban(key, 1)
+        try:
+            return await op(sess)
+        finally:
+            self._danh_dau_ban(key, -1)
 
     async def list_tools(self, spec):
-        return await self._retry(spec, lambda s: s.list_tools(), idempotent=True)
+        tools = await self._retry(spec, lambda s: s.list_tools(), idempotent=True)
+        # Nhớ lại để vòng dò sau còn thứ mà dùng khi phiên đang bận (xem `tool_da_biet`).
+        ent = self._sessions.get(spec.get("key") or _spec_hash(spec))
+        if ent is not None and tools:
+            ent["tools"] = tools
+        return tools
 
     async def call_tool(self, spec, tool, arguments):
         # Chèn tham số kỹ thuật BẮT BUỘC của connector (catalog `inject_args`) vào đây - đây là
@@ -476,7 +517,8 @@ class SessionPool:
                 print(f"[mcp] inject_args {spec.get('label')}: {type(e).__name__}: {e}",
                       file=sys.stderr)
         try:
-            return await self._retry(spec, lambda s: s.call_tool(tool, args), idempotent=False)
+            return await self._retry(spec, lambda s: s.call_tool(tool, args), idempotent=False,
+                                     ban=True)
         except Exception as e:
             return f"ERROR: gọi tool lỗi: {type(e).__name__}: {e}"
 
@@ -584,9 +626,86 @@ def tran_dial():
     return v if v > 0 else None
 
 
-async def discover_resolved(conns):
+def tran_warm():
+    """Trần MỘT connection ở vòng LÀM NÓNG lúc khởi động (giây). None = không giới hạn.
+
+    Phải RỘNG HƠN HẲN `tran_dial()` vì hai vòng trả lời hai câu hỏi khác nhau. Vòng dò của
+    một lượt chat có người đang ngồi chờ, nên 20 giây là đúng: thà thiếu một nguồn còn hơn
+    treo cả lượt. Vòng làm nóng thì KHÔNG AI CHỜ - nó chạy vài giây sau khi server lên, chỉ
+    để mở sẵn phiên. Cắt nó ở 20 giây là cắt đúng thứ nó sinh ra để làm, vì mọi việc nặng
+    của một phiên nguội đều nằm quá mốc đó: `npx -y` / `uvx` phải TẢI package lần đầu (bản
+    Docker mất sạch cache npm/uv sau mỗi lần đổi ảnh), và máy chủ HTTP phía dịch vụ cũng
+    phải dựng lại phiên từ đầu.
+    """
+    raw = os.getenv("JAVIS_MCP_WARM_TIMEOUT", _WARM_TRAN)
+    try:
+        v = float(raw)
+    except (TypeError, ValueError):
+        v = float(_WARM_TRAN)
+    return v if v > 0 else None
+
+
+async def warm_pool(conns):
+    """Mở sẵn phiên MCP cho từng connection. Trả (id đã nóng, id còn nguội). Không bao giờ raise.
+
+    Đây là vòng chạy NỀN lúc khởi động, không phải đường găng của lượt chat, nên nó khác
+    `discover_resolved` ở đúng hai chỗ: chờ theo `tran_warm()` (rộng gấp nhiều lần) và không
+    quan tâm tool là gì - chỉ cần phiên nằm sẵn trong pool để vòng dò kế tiếp trả lời tức thì.
+
+    Vì sao cần (báo cáo 31/08: "khi update rất hay bị mất kết nối với các MCP"): sau mỗi lần
+    cập nhật, pool rỗng và cache npm/uv trong ảnh Docker cũng mất theo. Nguồn nào nguội quá 20
+    giây là rơi khỏi vòng dò đầu tiên, mà danh sách tool của vòng đó lại được cache và được
+    CLI engine đọc đúng một lần lúc mở phiên - nên nguồn đó biến mất khỏi hộp công cụ suốt cả
+    phiên chat, dù kết nối chẳng hỏng gì.
+    """
+    tran = tran_warm()
+    sem = asyncio.Semaphore(_DIAL_SONG_SONG)
+    nong, con_lanh = [], []
+
+    async def _mo(conn):
+        spec = _conn_spec(conn)
+        if not co_server_de_dial(spec):
+            return                      # connector ảo: không có phiên nào để mở
+
+        async def _lay():
+            spec["headers"].update(await _oauth_headers(conn))
+            return await pool.list_tools(spec)
+
+        async with sem:
+            try:
+                if tran is None:
+                    await _lay()
+                else:
+                    await asyncio.wait_for(_lay(), timeout=tran)
+                nong.append(conn["id"])
+                return
+            except (asyncio.TimeoutError, TimeoutError):
+                # Cùng lý do như `discover_resolved`: huỷ từ ngoài giữa một request NDJSON là
+                # ống stdio lệch pha vĩnh viễn - vứt phiên chứ đừng tái dùng. TRỪ khi phiên
+                # đang chạy dở một tool call: lúc đó `tools/list` mới chỉ chờ khoá, chưa gửi
+                # gì, mà giết phiên là giết luôn việc đang chạy.
+                if pool.dang_goi_tool(spec):
+                    print(f"[mcp warm] {conn.get('label')}: đang chạy tool - để nguyên phiên",
+                          file=sys.stderr)
+                else:
+                    pool.invalidate(spec.get("key") or _spec_hash(spec))
+                    print(f"[mcp warm] {conn.get('label')}: quá hạn làm nóng", file=sys.stderr)
+            except Exception as e:
+                print(f"[mcp warm] {conn.get('label')}: {type(e).__name__}: {e}", file=sys.stderr)
+        con_lanh.append(conn["id"])
+
+    if conns:
+        await asyncio.gather(*(_mo(c) for c in conns))
+    return nong, con_lanh
+
+
+async def discover_resolved(conns, bo_qua=None):
     """conns = mcp_store.resolved() → (tools_spec, route) namespaced theo connection.
     Conn nào không kết nối được thì BỎ QUA (không raise) để nguồn khác vẫn chạy.
+
+    `bo_qua`: truyền vào một set để NHẬN LẠI id những connection đã bị bỏ ở vòng này. Caller
+    cần nó để biết danh sách tool vừa dựng là bản THIẾU chứ không phải bản đủ - `mcp_hub` dùng
+    đúng chỗ đó để cache ngắn hạn thay vì đóng băng một danh sách thiếu nguồn trong 60 giây.
 
     Dò SONG SONG (trước 0.26.18 là tuần tự): tổng thời gian nay xấp xỉ nguồn CHẬM NHẤT chứ
     không còn là tổng của mọi nguồn. Máy đấu chục connector thì đây là khác biệt giữa vài giây
@@ -616,13 +735,32 @@ async def discover_resolved(conns):
                     return spec, await _lay()
                 return spec, await asyncio.wait_for(_lay(), timeout=tran)
             except (asyncio.TimeoutError, TimeoutError):
-                # Huỷ từ NGOÀI cắt ngang giữa một request NDJSON: phiên stdio còn nửa câu trả
-                # lời nằm trong ống, lần sau đọc là lệch pha vĩnh viễn. Vứt phiên, đừng tái dùng.
-                pool.invalidate(spec.get("key") or _spec_hash(spec))
-                print(f"[mcp discover] {conn.get('label')}: quá hạn dò tool - bỏ qua vòng này",
-                      file=sys.stderr)
+                # Quá hạn ở đây có HAI nghĩa khác hẳn nhau, và trước 0.52.8 cả hai bị xử như một.
+                #
+                # (a) Phiên ĐANG CHẠY DỞ một tool call thật (tạo đơn POS, gửi tin...). Khoá
+                #     phiên đang bị cái đó giữ, nên `tools/list` mới chỉ XẾP HÀNG chứ chưa gửi
+                #     đi byte nào: ống stdio không hề lệch pha. Giết phiên lúc này là SIGKILL cả
+                #     cây tiến trình, tức là giết luôn cái đơn đang lên dở - đúng lỗi "lên đơn
+                #     thứ 2 là rớt kết nối" khách của chủ repo báo 01/09/2026. Giữ phiên, và trả
+                #     lại danh sách tool lần dò trước để nguồn KHÔNG biến mất khỏi hộp công cụ
+                #     chỉ vì nó đang bận (biến mất là Javis nói "chưa đấu POS", cũng sai nốt).
+                # (b) Server thật sự treo giữa một request: huỷ từ ngoài để lại nửa câu trả lời
+                #     trong ống, lần sau đọc là lệch pha vĩnh viễn - vứt phiên, đừng tái dùng.
+                if pool.dang_goi_tool(spec):
+                    cu = pool.tool_da_biet(spec)
+                    print(f"[mcp discover] {conn.get('label')}: đang chạy tool - giữ phiên, "
+                          f"dùng lại danh sách tool lần trước ({len(cu or [])} tool)",
+                          file=sys.stderr)
+                    if cu:
+                        return spec, cu
+                else:
+                    pool.invalidate(spec.get("key") or _spec_hash(spec))
+                    print(f"[mcp discover] {conn.get('label')}: quá hạn dò tool - bỏ qua vòng này",
+                          file=sys.stderr)
             except Exception as e:
                 print(f"[mcp discover] {conn.get('label')}: {type(e).__name__}: {e}", file=sys.stderr)
+        if bo_qua is not None:
+            bo_qua.add(conn["id"])
         return spec, None
 
     ket = await asyncio.gather(*(_dial(c) for c in conns)) if conns else []

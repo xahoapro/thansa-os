@@ -31,6 +31,7 @@ Chỗ nào chưa đo được thì ghi thẳng "CHƯA ĐO" trong chú thích tha
 from __future__ import annotations
 
 import asyncio
+import errno
 import json
 import os
 import re
@@ -101,6 +102,9 @@ def find_antigravity_cli() -> Optional[str]:
 _HELP_CACHE: dict = {"path": None, "text": "", "ts": 0.0}
 _HELP_TTL = 300.0     # 5 phút: đủ để một phiên chat không đẻ tiến trình mỗi lượt, mà nâng cấp
                       # bản CLI xong cũng không phải khởi động lại Javis mới nhận cờ mới.
+_HELP_TTL_LOI = 120.0  # kết quả RỖNG cũng phải nhớ: binary hỏng mà cứ chạy lại `--help` 20s
+                       # mỗi lượt gọi là tự biến một CLI hỏng thành cả app đơ (khách báo
+                       # 2026-08-30: mọi trang cùng đứng hình khi `agy` treo).
 
 
 def _help_text() -> str:
@@ -109,12 +113,17 @@ def _help_text() -> str:
     if not cli:
         return ""
     now = time.time()
-    if (_HELP_CACHE["path"] == cli and _HELP_CACHE["text"]
-            and now - _HELP_CACHE["ts"] < _HELP_TTL):
+    # Cache CẢ kết quả rỗng (TTL ngắn hơn): điều kiện cũ đòi text khác rỗng nên một binary
+    # hỏng là `--help` chạy lại đủ 20s ở MỌI lượt gọi - đúng lỗ đã góp phần treo cả dashboard.
+    if _HELP_CACHE["path"] == cli and now - _HELP_CACHE["ts"] < (
+            _HELP_TTL if _HELP_CACHE["text"] else _HELP_TTL_LOI):
         return _HELP_CACHE["text"]
     try:
+        # stdin=DEVNULL: `agy` chưa đăng nhập (hoặc lần chạy đầu) là mở menu tương tác rồi
+        # ngồi chờ bàn phím - cắt stdin thì nó thoát ngay thay vì ăn trọn timeout.
         r = subprocess.run([cli, "--help"], capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=20, creationflags=_no_window())
+                           errors="replace", timeout=20, creationflags=_no_window(),
+                           stdin=subprocess.DEVNULL)
         txt = (r.stdout or "") + "\n" + (r.stderr or "")
     except Exception:
         txt = ""
@@ -182,10 +191,32 @@ def phien_moi() -> str:
 # Linux/macOS không có trần tổng, nhưng có trần cho MỘT tham số: MAX_ARG_STRLEN = 32 trang = 128KB.
 # Hội thoại thật sự dài vẫn chạm được, nên chừa luôn.
 def _tran_argv() -> int:
-    """Quá bao nhiêu ký tự thì phải bỏ đường argv. Đọc `os.name` lúc gọi, không phải lúc import."""
+    """Quá bao nhiêu ĐƠN VỊ thì phải bỏ đường argv. Đọc `os.name` lúc gọi, không phải lúc import.
+
+    Đơn vị ở đây KHÔNG phải ký tự Python - xem `_do_dai_argv`.
+    """
     if os.name == "nt":
-        return 30000        # trần thật 32767, chừa chỗ cho đường dẫn binary và các cờ
-    return 120000           # Linux: MAX_ARG_STRLEN 131072 cho MỘT tham số
+        return 30000        # trần thật 32767 (đơn vị UTF-16), chừa chỗ cho binary và các cờ
+    return 120000           # Linux: MAX_ARG_STRLEN 131072 BYTE cho MỘT tham số
+
+
+def _do_dai_argv(s: str) -> int:
+    """Độ dài của một tham số theo ĐÚNG đơn vị hệ điều hành đếm khi áp trần.
+
+    Vì sao không dùng thẳng `len()`: `len()` đếm KÝ TỰ Unicode, còn nhân Linux áp
+    MAX_ARG_STRLEN theo BYTE của chuỗi đã mã hoá UTF-8. Tiếng Việt tốn ~1.3 byte mỗi ký tự
+    (dấu tổ hợp còn hơn), nên một prompt 120.000 ký tự tiếng Việt là ~156.000 byte - vượt
+    131.072 mà phép đo cũ vẫn kết luận "vừa argv", rồi Popen nổ
+    `OSError: [Errno 7] Argument list too long`. Đúng lỗi người dùng báo 2026-08-30 khi chat
+    dài bằng tiếng Việt; hội thoại tiếng Anh cùng độ dài thì lọt, nên nó trông như ngẫu nhiên.
+
+    Windows đếm theo đơn vị mã UTF-16 của dòng lệnh, không phải byte UTF-8 - đo đúng thứ nó
+    đếm thay vì quy đổi gần đúng.
+    """
+    s = str(s or "")
+    if os.name == "nt":
+        return len(s.encode("utf-16-le", errors="replace")) // 2
+    return len(s.encode("utf-8", errors="replace"))
 
 
 _NHO_DUONG = "antigravity-duong-prompt.json"
@@ -537,7 +568,7 @@ def list_models() -> Optional[list]:
         try:
             r = subprocess.run([cli, "models", "--output-format", "json"], capture_output=True,
                                text=True, encoding="utf-8", errors="replace", timeout=30,
-                               creationflags=_no_window())
+                               creationflags=_no_window(), stdin=subprocess.DEVNULL)
             if r.returncode == 0 and (r.stdout or "").strip():
                 ds = _tach_model(json.loads(r.stdout))
                 if ds:
@@ -545,8 +576,11 @@ def list_models() -> Optional[list]:
         except Exception:
             pass
     try:
+        # stdin=DEVNULL cùng lý do với _help_text: chưa đăng nhập là `agy` mở menu chờ bàn
+        # phím; cắt stdin cho nó thoát nhanh thay vì ngồi đủ 30 giây.
         r = subprocess.run([cli, "models"], capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=30, creationflags=_no_window())
+                           errors="replace", timeout=30, creationflags=_no_window(),
+                           stdin=subprocess.DEVNULL)
     except Exception:
         return []
     if r.returncode != 0:
@@ -621,6 +655,50 @@ def auth_status(bo_qua_cache: bool = False) -> dict:
                       "(vd root) đăng nhập xong Thansa vẫn không thấy."}
     _AUTH_CACHE.update(ts=now, val=dict(d))
     return d
+
+
+_AUTH_LAM_MOI = {"dang_chay": False}   # single-flight: một thread làm mới là đủ
+
+
+def auth_status_nen() -> dict:
+    """Trạng thái đăng nhập cho HOT PATH (/settings, /providers): trả NGAY từ cache, KHÔNG
+    bao giờ đẻ tiến trình trong luồng gọi. Cache hết hạn thì đá một thread nền làm mới
+    (single-flight), kết quả dùng cho lượt hỏi sau.
+
+    Vì sao phải có bản riêng thay vì gọi auth_status(): auth_status hỏi chính `agy` (một
+    `--help` 20s + hai lượt `models` 30s khi binary treo), mà _providers_view chạy NGAY TRONG
+    handler async của GET /settings - tức trên event loop. Một `agy` hỏng là MỌI trang của
+    dashboard cùng đứng hình theo: nút xám hết, không đổi được model, trang Cập nhật báo
+    "không kiểm tra được phiên bản", và cài đè source mới cũng không hết vì binary hỏng vẫn
+    nằm trên PATH (khách báo đúng nguyên văn cảnh này, 2026-08-30).
+
+    Đánh đổi nói thẳng: lần hỏi ĐẦU TIÊN sau khi khởi động trả "chưa rõ, đang kiểm" thay vì
+    chặn để chờ câu trả lời thật - thẻ Models có thể hiện "chưa kết nối" vài giây rồi tự đúng
+    lại ở lượt vẽ sau. Đó là cái giá đúng để đổi lấy việc app không bao giờ chết theo CLI.
+    """
+    cli = find_antigravity_cli()
+    if not cli:
+        return {"connected": False, "method": "", "email": "",
+                "error": f"Chưa cài Antigravity CLI. Cài một lần: {lenh_cai()}"}
+    now = time.time()
+    cu = _AUTH_CACHE["val"]
+    if cu and now - _AUTH_CACHE["ts"] < _AUTH_TTL:
+        return dict(cu)
+    if not _AUTH_LAM_MOI["dang_chay"]:
+        _AUTH_LAM_MOI["dang_chay"] = True
+
+        def _lam_moi():
+            try:
+                auth_status(bo_qua_cache=True)
+            except Exception as e:   # không để thread nền chết câm mang theo cờ single-flight
+                print(f"[antigravity] làm mới auth_status lỗi: {e}", file=sys.stderr)
+            finally:
+                _AUTH_LAM_MOI["dang_chay"] = False
+
+        threading.Thread(target=_lam_moi, daemon=True, name="agy-auth-refresh").start()
+    if cu:
+        return dict(cu)   # cache cũ còn hơn chặn cả app: sai lệch tối đa một vòng làm mới
+    return {"connected": False, "method": "", "email": "", "error": "", "dang_kiem": True}
 
 
 def login_huong_dan() -> dict:
@@ -907,7 +985,10 @@ class AntigravityCLI:
         ep = (os.environ.get("JAVIS_AGY_PROMPT_DAI") or "").strip().lower()
         if ep in ("stdin", "file", "argv"):
             return duong_prompt_dai(self.cli_path) if ep == "stdin" else ep
-        if len(full) + sum(len(a) + 3 for a in self._build_args("")) <= _tran_argv():
+        # Đo bằng _do_dai_argv chứ KHÔNG bằng len(): trần của hệ điều hành tính theo byte
+        # (Linux) hoặc đơn vị UTF-16 (Windows), mà tiếng Việt tốn ~1.3 byte mỗi ký tự.
+        do_dai = _do_dai_argv(full) + sum(_do_dai_argv(a) + 3 for a in self._build_args(""))
+        if do_dai <= _tran_argv():
             return "argv"     # vừa dòng lệnh thì cứ đường cũ, đã chạy tốt trên Linux/macOS
         return duong_prompt_dai(self.cli_path)
 
@@ -931,8 +1012,22 @@ class AntigravityCLI:
         # prompt" và "thoát với mã 1" hiện lên, rồi mới tới câu trả lời - người dùng không có
         # cách nào biết cái đỏ đó Javis đã tự xử xong.
         async for ev in self._mot_luot(full, prompt, duong, ket,
-                                       giu_loi=duong.startswith("stdin")):
+                                       giu_loi=(duong != "file")):
             yield ev
+        # Vượt trần dòng lệnh: chạy lại NGAY bằng đường không có trần. Không có nhánh này thì
+        # người dùng nhận nguyên "OSError: [Errno 7] Argument list too long" - một câu họ không
+        # sửa được gì, và lượt chat coi như mất trắng (báo 2026-08-30, chat dài tiếng Việt).
+        if ket.get("qua_tran_argv"):
+            _duong_lui = await asyncio.to_thread(duong_prompt_dai, self.cli_path)
+            if _duong_lui == "argv":      # cửa thoát env đang ép argv, mà argv vừa nổ
+                _duong_lui = "file"
+            print(f"[antigravity] prompt vượt trần dòng lệnh, chuyển sang {_duong_lui}",
+                  file=sys.stderr)
+            ket = {}
+            async for ev in self._mot_luot(full, prompt, _duong_lui, ket,
+                                           giu_loi=(_duong_lui != "file")):
+                yield ev
+            duong = _duong_lui
         # Prompt KHÔNG TỚI NƠI có hai hình dạng, và bản trước chỉ bắt được một:
         #   - chạy xong, không lỗi, không lấy một chữ (bản CLI nuốt stdin);
         #   - thoát mã 1 kèm "Error: empty prompt. Usage: agy --print ..." (bản CLI kiểm giá trị
@@ -1076,6 +1171,16 @@ class AntigravityCLI:
                     {"_exit": -1, "_err": f"Antigravity CLI chạy quá {int(self.timeout)}s nên bị "
                                           f"cắt. Nếu việc thật sự dài thì nâng biến môi trường "
                                           f"JAVIS_AGY_TIMEOUT."})
+            except OSError as e:
+                # E2BIG = prompt vượt trần dòng lệnh của hệ điều hành. Phép đo ở `_chon_duong`
+                # có thể vẫn hụt (biến môi trường to chiếm chỗ trong ARG_MAX chung, hoặc bản
+                # `agy` nào đó tự nối thêm), nên đây là lưới an toàn CUỐI: đánh dấu để `query()`
+                # chạy lại bằng stdin/file thay vì ném "OSError: [Errno 7] Argument list too
+                # long" thẳng vào mặt người dùng - câu đó họ không sửa được gì (báo 2026-08-30).
+                qua_tran = getattr(e, "errno", None) in (errno.E2BIG, errno.ENAMETOOLONG)
+                loop.call_soon_threadsafe(
+                    hang.put_nowait,
+                    {"_exit": -1, "_err": f"{type(e).__name__}: {e}", "_qua_tran": qua_tran})
             except Exception as e:
                 loop.call_soon_threadsafe(hang.put_nowait,
                                           {"_exit": -1, "_err": f"{type(e).__name__}: {e}"})
@@ -1118,10 +1223,13 @@ class AntigravityCLI:
         # - lúc đó vắng sự kiện tool KHÔNG chứng minh được gì.
         co_stream = co_co("--output-format")
         co_json = False
+        qua_tran_argv = False
         while True:
             ev = await hang.get()
             if ev is HET:
                 break
+            if ev.get("_qua_tran"):
+                qua_tran_argv = True      # query() sẽ chạy lại bằng stdin/file
             if duong == "file" and not doc_duoc:
                 t = str(ev.get("type") or ev.get("event") or "").lower()
                 if "_raw" not in ev and "_exit" not in ev:
@@ -1143,7 +1251,7 @@ class AntigravityCLI:
                         continue      # lượt này còn có thể thử lại bằng đường khác
                 yield ra
         ket.update(text="".join(cac_manh).strip(), loi=da_loi, cac_loi=cac_loi,
-                   ten_ngu_canh=ten_ngu_canh,
+                   ten_ngu_canh=ten_ngu_canh, qua_tran_argv=qua_tran_argv,
                    doc_duoc=doc_duoc, da_thu_doc=da_thu_doc,
                    biet_doc_hay_khong=(duong != "file") or (co_stream and co_json))
 
@@ -1285,8 +1393,11 @@ def kiem_tra_nhanh(timeout: float = 60.0) -> dict:
         args += ["--output-format", "json"]
     args += ["-p", "Trả lời đúng một chữ: ok"]
     try:
+        # stdin=DEVNULL: chưa đăng nhập thì `agy` mở menu "Select login method" chờ bàn phím
+        # (xem chú thích dưới) - cắt stdin để nó thoát ngay với mã lỗi thay vì treo đủ timeout.
         r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=timeout, creationflags=_no_window())
+                           errors="replace", timeout=timeout, creationflags=_no_window(),
+                           stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired as e:
         # Hết giờ ở đây gần như LUÔN là "chưa đăng nhập" chứ không phải máy chậm: chưa có phiên
         # thì `agy` mở menu "Select login method" rồi ngồi chờ bàn phím, mà ở đây không có ai

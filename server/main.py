@@ -259,7 +259,13 @@ async def _static_cache_headers(request: Request, call_next):
     Không có ?v= thì giữ nguyên (ETag/Last-Modified của StaticFiles vẫn lo revalidate).
     Thiếu header này trình duyệt phải hỏi lại ~27 file JS/CSS mỗi lần mở trang."""
     resp = await call_next(request)
-    if request.url.path.startswith("/static/") and request.query_params.get("v"):
+    if request.url.path.startswith("/static/i18n/") and request.url.path.endswith(".json"):
+        # Từ điển i18n được fetch KHÔNG có ?v= (i18n/index.js nạp trước khi biết phiên bản).
+        # Không đóng dấu gì là trình duyệt cache theo heuristic và giữ từ điển CŨ qua cả bản
+        # cập nhật - code mới gọi khoá mới, màn hình in nguyên mã khoá (khách báo 2026-08-30).
+        # no-cache = được cache nhưng PHẢI hỏi lại mỗi lần (ETag/304 của StaticFiles lo phần rẻ).
+        resp.headers["Cache-Control"] = "no-cache"
+    elif request.url.path.startswith("/static/") and request.query_params.get("v"):
         resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
     return resp
 
@@ -1122,9 +1128,12 @@ def _providers_view(cfg):
             configured = bool(grok_cli.auth_status().get("connected"))
         elif p["id"] == "antigravity-cli":
             # `agy` giữ phiên trong keyring của hệ điều hành nên không có file nào để soi -
-            # auth_status() phải hỏi chính CLI, và nó tự nhớ kết quả một phút để mở trang Models
-            # không đẻ tiến trình mỗi lần.
-            configured = bool(antigravity_cli.auth_status().get("connected"))
+            # phải hỏi chính CLI. Nhưng TUYỆT ĐỐI không hỏi trong luồng này: _providers_view
+            # chạy ngay trong handler async của GET /settings, một `agy` treo (chưa đăng nhập
+            # là nó mở menu chờ bàn phím) từng làm CẢ dashboard đứng hình - mọi nút xám, không
+            # đổi được model, trang Cập nhật chết (khách báo 2026-08-30). auth_status_nen trả
+            # cache ngay và tự làm mới ở thread nền.
+            configured = bool(antigravity_cli.auth_status_nen().get("connected"))
         elif p["key_field"] is None:
             configured = True
         else:
@@ -1161,7 +1170,7 @@ def _providers_view(cfg):
             # nhưng `grok logout` thì gọi được, nên thẻ CÓ nút Ngắt (khác `agy`).
             item["auth_by_javis"] = False
         if p["id"] == "antigravity-cli":
-            _a = antigravity_cli.auth_status()
+            _a = antigravity_cli.auth_status_nen()   # cùng lý do nhánh `configured` ở trên
             item["cli_found"] = bool(antigravity_cli.find_antigravity_cli())
             item["auth_method"] = _a.get("method", "")
             item["auth_error"] = _a.get("error", "")
@@ -3839,6 +3848,7 @@ IMG_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
 # vì trong container code tree /app là read-only + chạy user non-root → makedirs ném
 # PermissionError → HTTP 500 khi upload. (config.py cùng nguyên tắc cho settings/branding.)
 STAGING = cfgmod.STATE_DIR / ".staging"
+from urllib.parse import quote as urlquote   # dựng URL /upload/raw cho tên file có dấu
 
 def _default_brain_dir() -> Path:
     """Brain mặc định = <BRAINS_DIR>/Brain Default. BRAINS_DIR = thư mục CHA chứa mọi brain
@@ -3965,11 +3975,57 @@ async def upload(file: UploadFile = File(...), brain: str = Form("")):
         attachments = _resolve_subfolder(root, r"^(\d+\s*[-_.]\s*)?attachments$", "Attachments")
         return {"ok": True, "staged": staged, "name": os.path.basename(staged),
                 "kind": kind, "size": os.path.getsize(staged),
+                "url": "/upload/raw?name=" + urlquote(os.path.basename(staged)),
                 "sources": sources, "attachments": attachments}
     except Exception as e:
         import sys, traceback
         traceback.print_exc(file=sys.stderr)
         return {"ok": False, "error": f"Không lưu được file tạm: {e}"}
+
+
+def _duong_staging(name: str) -> Path:
+    """Tên file trong staging -> đường tuyệt đối. ValueError nếu tên không hợp lệ.
+
+    Chỉ nhận TÊN, không nhận đường dẫn: mọi dấu phân cách đều bị chặn thẳng, rồi vẫn resolve
+    và kiểm lại là còn nằm trong STAGING. Hai lớp vì lớp đầu là luật chuỗi (dễ sót một cách
+    viết lạ) còn lớp sau là sự thật của hệ thống tệp (symlink, "..", tên Windows)."""
+    ten = str(name or "").strip()
+    if not ten or ten in (".", "..") or "/" in ten or "\\" in ten or "\x00" in ten:
+        raise ValueError("Tên file không hợp lệ")
+    goc = Path(STAGING).resolve()
+    f = (goc / ten).resolve()
+    if f.parent != goc:      # symlink trỏ ra ngoài cũng rơi vào đây (resolve đã đi theo nó)
+        raise ValueError("Tên file không hợp lệ")
+    return f
+
+
+@app.get("/upload/raw")
+async def upload_raw(name: str = Query(...), dl: int = Query(0)):
+    """Phục vụ lại file VỪA DÁN / TẢI LÊN khung chat, đọc thẳng từ thư mục stage tạm.
+
+    Vì sao cần (chủ repo báo 01/09): bong bóng tin của người dùng hiện ảnh bằng
+    `URL.createObjectURL` - một URL chỉ sống trong tab đang mở và bị thu hồi ngay sau khi
+    gửi. Nên ảnh vừa gửi đã hỏng, F5 một cái là mất hẳn, chỉ còn trơ cái tên file, và cũng
+    không bấm phóng to được. Có đường này thì bong bóng trỏ vào chính file trên máy chủ:
+    xem lại được, phóng to được như mọi ảnh khác trong chat.
+
+    Staging là chỗ TRUNG CHUYỂN, không phải kho: `media_gc.sweep_staging` dọn sau
+    `staging_days` (mặc định 3 ngày). Lúc đó đường này trả 404 - đúng ý đồ, và dashboard vẽ
+    khung "ảnh không còn xem lại được" thay cho một ô ảnh vỡ không ai hiểu.
+    """
+    try:
+        f = _duong_staging(name)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    if not f.is_file():
+        return JSONResponse({"error": "File tạm đã hết hạn hoặc đã được dọn"}, status_code=404)
+    if dl:
+        return FileResponse(str(f), filename=f.name)
+    mt, _ = mimetypes.guess_type(f.name)
+    resp = FileResponse(str(f), media_type=mt or "application/octet-stream")
+    resp.headers["Content-Disposition"] = "inline"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
 
 @app.post("/ingest-upload")
 async def ingest_upload(
@@ -5000,11 +5056,53 @@ def _quet_md_hong(brain: str, chi_path: set = None):
     return out
 
 
+# Dấu "brain này đã soi xong và sạch" - xem `files_md_hong` để biết vì sao phải nhớ.
+_MD_HONG_DAU = cfgmod.STATE_DIR / "md_hong_da_soi.json"
+
+
+def _md_hong_da_sach(broot: str) -> bool:
+    try:
+        d = json.loads(_MD_HONG_DAU.read_text(encoding="utf-8"))
+        return bool((d or {}).get(str(broot), {}).get("sach"))
+    except (OSError, ValueError):
+        return False
+
+
+def _md_hong_ghi_sach(broot: str, sach: bool) -> None:
+    try:
+        d = {}
+        try:
+            d = json.loads(_MD_HONG_DAU.read_text(encoding="utf-8")) or {}
+        except (OSError, ValueError):
+            d = {}
+        if not isinstance(d, dict):
+            d = {}
+        d[str(broot)] = {"sach": bool(sach), "ts": time.time()}
+        _atomic_write_text(_MD_HONG_DAU, json.dumps(d, ensure_ascii=False, indent=1))
+    except Exception as e:
+        print(f"[md-hong] không ghi được dấu đã soi: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 @app.get("/files/md-hong")
-async def files_md_hong(brain: str = Query("brain")):
-    """CHỈ SOI, không ghi gì: liệt kê file .md còn dấu vết hỏng của bản cũ."""
+async def files_md_hong(brain: str = Query("brain"), force: str = Query("")):
+    """CHỈ SOI, không ghi gì: liệt kê file .md còn dấu vết hỏng của bản cũ.
+
+    SOI ĐÚNG MỘT LẦN cho mỗi brain. Vòng soi này ĐỌC TOÀN BỘ file .md của brain, mà dashboard
+    gọi nó mỗi lần mở trang Tệp tin - brain vài nghìn note trên ổ đĩa VPS là hàng chục MB đọc
+    lại từ đầu mỗi lần mở, tranh cả đĩa lẫn thread với cái tìm kiếm người dùng vừa gõ. Đó là
+    lý do chủ repo báo 01/09/2026 "cây thư mục load rất lâu và chậm".
+
+    Soi xong mà SẠCH thì ghi dấu và thôi hẳn: thứ nó đi tìm là vết hỏng do bản <= 0.33.3 để
+    lại, mà bản đó không còn tồn tại, nên brain đã sạch một lần thì không thể tự bẩn lại. Còn
+    vết hỏng thì KHÔNG ghi dấu - lần mở sau vẫn mời chữa, đúng như cũ.
+
+    `force=1` soi lại từ đầu (chép vault cũ từ máy khác vào thì dùng đường này)."""
     from starlette.concurrency import run_in_threadpool
+    broot = str(Path(_brain_root(brain)).resolve())
+    if str(force or "").strip() not in ("1", "true", "on") and _md_hong_da_sach(broot):
+        return {"items": [], "cham_nguong": False, "bo_qua": "da-soi-sach"}
     items = await run_in_threadpool(_quet_md_hong, brain)
+    _md_hong_ghi_sach(broot, not items)
     return {"items": items, "cham_nguong": len(items) >= _MD_HONG_MAX_HIT}
 
 
@@ -7046,7 +7144,8 @@ async def _zalo_send_to(chat_id, text) -> tuple:
 _PUSH_TASKS = set()   # giữ tham chiếu task đẩy đang bay (xem chú thích trong _bo_vao_hom_thu)
 
 
-async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="") -> bool:
+async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="",
+                          quiet=False) -> bool:
     """Để lại MỘT mẩu thư cho mọi kết quả chạy nền, rồi rung chuông đẩy nếu có đăng ký.
 
     Vì sao đặt ở đây chứ không ở từng nơi sinh việc: `_notify_owner` là CỬA DUY NHẤT mà
@@ -7061,7 +7160,8 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
     try:
         cid = str(owner_chat or "").strip()
         sid = cid[len(WEB_CHAT_PREFIX):] if cid.startswith(WEB_CHAT_PREFIX) else ""
-        item = inbox.add(text, kind=kind, session_id=sid, source=source, label=label)
+        item = inbox.add(text, kind=kind, session_id=sid, source=source, label=label,
+                         read=bool(quiet))
     except Exception as e:
         print(f"[inbox] bỏ thư lỗi: {type(e).__name__}: {e}", file=sys.stderr)
         return False
@@ -7071,6 +7171,12 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
         await _CHAT_RUNTIME.publish({"type": "inbox", "session_id": item["session_id"]})
     except Exception as e:
         print(f"[inbox] bắn WebSocket lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+    if quiet:
+        # Tin lặng: đã vào hòm ở dạng ĐÃ ĐỌC nên chuông không nổi chấm đỏ, và cũng không
+        # rung thông báo đẩy. Nội dung thì người dùng đã thấy rồi - nó vừa rơi thẳng vào
+        # khung chat đã giao việc. Vẫn bắn WebSocket ở trên để danh sách chuông đang mở
+        # hiện thêm mẩu này ngay, chỉ là không kêu.
+        return True
     try:
         # Bấm vào thông báo đẩy phải về ĐÚNG chỗ nội dung nằm: hội thoại đã hỏi nếu có,
         # còn không thì mở hòm thư. Không có tham số này thì push chỉ mở trang chủ, và
@@ -7088,7 +7194,8 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
     return True
 
 
-async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="") -> tuple:
+async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="",
+                        quiet=False) -> tuple:
     """Báo cáo cho NGƯỜI YÊU CẦU loop/task (mặc định của Javis). Quy tắc:
       - owner_chat dạng "web:<sid>" → đẩy thẳng vào ĐÚNG khung chat web đã giao việc.
       - owner_chat dạng "zalo:<id>" → gửi qua bot Zalo cho ĐÚNG người đó.
@@ -7105,10 +7212,15 @@ async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="")
     kết quả không còn phụ thuộc vào chuyện người dùng có đang mở đúng hội thoại đó không,
     hay có đấu Telegram hay không.
 
+    `quiet=True` vẫn gửi qua kênh như thường (kết quả vẫn rơi vào khung chat đã giao việc),
+    chỉ bỏ hai thứ GỌI người dùng dậy: chấm đỏ trên chuông và thông báo đẩy của trình duyệt.
+    Dành cho tin đáng lưu mà không đáng làm phiền - xem `_bo_vao_hom_thu` và `TaskRunner._report`.
+
     Trả (ok, error). `ok` là ĐÃ TỚI ĐƯỢC NGƯỜI DÙNG, và hòm thư tính là tới: nó nằm ở
     server, còn sau F5, thấy được từ máy khác. Nhờ vậy một cái nhắc hẹn trên máy chưa đấu
     Telegram không còn bị ghi là "failed" trong khi nội dung đang nằm sẵn trong hòm."""
-    vao_hom = await _bo_vao_hom_thu(owner_chat, text, kind=kind, label=label, source=source)
+    vao_hom = await _bo_vao_hom_thu(owner_chat, text, kind=kind, label=label, source=source,
+                                    quiet=quiet)
     ok, err = await _gui_qua_kenh(owner_chat, text)
     if ok or not vao_hom:
         return ok, ("" if ok else err)
@@ -13829,7 +13941,21 @@ async def _soat_secret_hong():
 @app.on_event("startup")
 async def _warm_mcp_hub():
     """Làm nóng hub sau khi boot: mở sẵn session MCP (stdio npx lần đầu phải tải package)
-    để tin nhắn/tool call đầu tiên không phải chờ."""
+    để tin nhắn/tool call đầu tiên không phải chờ.
+
+    Bản đầu chỉ gọi thẳng `discover_all("full")`, và chính chỗ đó là bệnh (báo cáo 31/08:
+    "khi update rất hay bị mất kết nối với các MCP của Javis, đặc biệt là Pancake POS").
+    `discover_all` đi qua vòng dò của LƯỢT CHAT, tức trần 20 giây mỗi nguồn - đúng con số
+    sinh ra để bảo vệ người đang ngồi chờ, nhưng ở đây không có ai chờ cả. Sau một lần cập
+    nhật thì pool rỗng, và với bản Docker cache npm/uv cũng mất theo ảnh cũ, nên nguồn nguội
+    nào cần hơn 20 giây là rơi khỏi vòng đó. Danh sách tool THIẾU ấy được cache, rồi lượt
+    chat đầu tiên (người ta vừa cập nhật xong thì mở app gõ ngay) nhận đúng bản thiếu - mà
+    CLI engine chỉ đọc danh sách MỘT LẦN lúc mở phiên, nên cả phiên chat đó không có nguồn
+    kia. Nhìn từ ngoài: cập nhật xong là mất kết nối, lát sau tự khỏi.
+
+    Nay làm nóng POOL trước bằng trần rộng (`mcp_client.warm_pool`), dò xong mới cache; nguồn
+    nào vẫn nguội thì hẹn lại 2 lượt nữa rồi làm mới cache, chứ không bỏ mặc bản thiếu.
+    """
     async def _w():
         try:
             await asyncio.to_thread(_EVIDENCE_STORE.cleanup)
@@ -13841,8 +13967,28 @@ async def _warm_mcp_hub():
                 print(f"[write ledger] {len(stale)} write chuyển UNKNOWN sau restart",
                       file=__import__('sys').stderr)
             await asyncio.sleep(3)
-            if _hub_enabled():
-                await mcp_hub.discover_all("full")
+            if not _hub_enabled():
+                return
+            conns = await asyncio.to_thread(mcp_store.resolved, True)
+            _, lanh = await mcp_client.warm_pool(conns)
+            await mcp_hub.discover_all("full", force_refresh=True)
+            # Nguồn còn nguội: thường là npx/uvx đang tải package hoặc dịch vụ ngoài đang
+            # chập. Chỉ làm nóng lại ĐÚNG mấy nguồn đó (nguồn đã nóng chỉ tốn một vòng gọi),
+            # rồi làm mới cache để chúng hiện trở lại trong hộp công cụ mà không cần ai gõ
+            # lại câu nào.
+            for cho in (20, 60):
+                if not lanh:
+                    return
+                await asyncio.sleep(cho)
+                con_lai = [c for c in await asyncio.to_thread(mcp_store.resolved, True)
+                           if c["id"] in set(lanh)]
+                if not con_lai:
+                    return
+                _, lanh = await mcp_client.warm_pool(con_lai)
+                await mcp_hub.discover_all("full", force_refresh=True)
+            if lanh:
+                print(f"[hub warmup] {len(lanh)} nguồn MCP vẫn chưa nóng sau 3 lượt - "
+                      "vòng kiểm sức khoẻ sẽ thử tiếp", file=__import__('sys').stderr)
         except Exception as e:
             print(f"[hub warmup] {e}", file=__import__('sys').stderr)
     asyncio.create_task(_w())

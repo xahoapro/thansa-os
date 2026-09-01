@@ -527,7 +527,7 @@ check("CANARY: màn hình có hiện lại lời CLI khi chờ - bản cũ chỉ
       "mãi, nên không ai biết `grok login` kẹt ở đâu",
       "nhat_ky" in _CONSOLE_LOG and "grokLog" in _CONSOLE_LOG)
 check("và vòng quay kiểm `connected` TRƯỚC khi kêu hết giờ",
-      _CONSOLE_LOG.find("d.connected") < _CONSOLE_LOG.find("Hết giờ chờ"))
+      0 < _CONSOLE_LOG.find("d.connected") < _CONSOLE_LOG.find('t("models.timeout_login")'))
 
 
 # ============================================================
@@ -589,6 +589,266 @@ if _HOME_CU2 is None:
 else:
     os.environ["GROK_HOME"] = _HOME_CU2
 grok_cli._HELP_CACHE.update(path=None, text="", ts=0.0)
+
+
+# ============================================================
+# 10. LƯỢT CHAT KHÔNG RA CHỮ - chỗ hỏng thứ hai người dùng gặp
+# ============================================================
+# Đăng nhập xong, gõ "chào grok", và nhận lại đúng một câu:
+#
+#     "Grok CLI chạy xong nhưng không trả về nội dung nào."
+#
+# Câu đó không nói được gì và không dẫn tới đâu. Nấp sau nó là HAI ca khác hẳn nhau, mà bản
+# 0.50.2 gộp làm một:
+#
+#   a) CLI in ra JSON nhưng toàn loại sự kiện Javis chưa biết. Sơ đồ `streaming-json` là ĐOÁN
+#      từ tài liệu, chưa từng đo trên máy thật - cùng hạng lỗi với `auth.json` ở 0.50.2.
+#   b) CLI in ra ĐÚNG KHÔNG GÌ CẢ rồi thoát 0. Nhiều CLI coi `-p` là cờ BẬT chế độ headless,
+#      còn `--prompt-file` chỉ là chỗ lấy nội dung.
+#
+# Hai ca cần hai cách chữa, nên test này canh riêng từng ca.
+def _gia_kich_ban(than: str):
+    """Dựng `grok` giả với thân hàm tự viết, và trỏ cả `co_co` vào nó."""
+    d = Path(tempfile.mkdtemp(prefix="javis-grokq-"))
+    q = d / "grok"
+    q.write_text("#!/usr/bin/env python3\nimport sys, json\n" + than, encoding="utf-8")
+    q.chmod(q.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+    return str(q)
+
+
+def _chay(cli_path, prompt="chào grok"):
+    g = grok_cli.GrokCLI(cwd="/tmp")
+    g.cli_path = cli_path
+
+    async def _go():
+        return [e async for e in g.query(prompt)]
+    return asyncio.run(_go()), g
+
+
+# --- ca (a): JSON toàn loại lạ ---
+_la = _gia_kich_ban(
+    "print(json.dumps({'type': 'assistant_message', 'message': {'content': 'Chào bạn!'}}))\n"
+    "print(json.dumps({'type': 'result_v2', 'sessionId': 'abc-123'}))\n")
+_nap_help(path=_la)
+_evs, _g = _chay(_la)
+_fin = [e for e in _evs if e["type"] == "final"]
+check("CANARY: sự kiện toàn loại LẠ nhưng có chữ -> vẫn vớt ra được câu trả lời, "
+      "không trả về ô trống", _fin and "Chào bạn!" in _fin[0]["content"], _evs)
+
+# --- ca (a2): loại lạ mà KHÔNG có chữ nào -> phải kể tên loại đã thấy ---
+_la2 = _gia_kich_ban("print(json.dumps({'type': 'ping'}))\n"
+                     "print(json.dumps({'type': 'heartbeat'}))\n")
+_nap_help(path=_la2)
+_evs2, _ = _chay(_la2)
+_er = [e for e in _evs2 if e["type"] == "error"]
+check("không vớt được chữ thì báo lỗi", bool(_er), _evs2)
+check("CANARY: câu lỗi KỂ TÊN loại sự kiện đã thấy - đó là thứ duy nhất chỉ ra sơ đồ đã "
+      "đổi ở đâu",
+      _er and "ping" in _er[0]["content"] and "heartbeat" in _er[0]["content"],
+      _er and _er[0]["content"])
+check("và nói luôn nó in ra mấy dòng, kèm dòng đầu",
+      _er and "2 dòng" in _er[0]["content"], _er and _er[0]["content"])
+
+# --- ca (b): im hoàn toàn, thoát 0. Đúng thứ ảnh chụp người dùng cho thấy ---
+# `--prompt-file` thì im, `-p` thì trả lời - mô phỏng CLI coi `-p` là cờ bật headless.
+_im = _gia_kich_ban(
+    "a = sys.argv[1:]\n"
+    "if '-p' in a:\n"
+    "    print(json.dumps({'type': 'text', 'text': 'chào anh'}))\n"
+    "sys.exit(0)\n")
+_nap_help(path=_im)
+_evs3, _ = _chay(_im)
+_fin3 = [e for e in _evs3 if e["type"] == "final"]
+check("CANARY: `--prompt-file` ra rỗng thì THỬ LẠI bằng `-p` trên dòng lệnh, và lượt chat "
+      "vẫn có câu trả lời thay vì một ô trống",
+      _fin3 and "chào anh" in _fin3[0]["content"], _evs3)
+
+# --- ca (b2): im hoàn toàn ở CẢ HAI đường -> câu lỗi phải dùng được ---
+_im2 = _gia_kich_ban("sys.exit(0)\n")
+_nap_help(path=_im2)
+_evs4, _ = _chay(_im2)
+_er4 = [e for e in _evs4 if e["type"] == "error"]
+check("im ở cả hai đường thì báo lỗi", bool(_er4), _evs4)
+_t4 = _er4[0]["content"] if _er4 else ""
+check("CANARY: câu lỗi nói rõ CLI không in ra gì và mã thoát là bao nhiêu",
+      "KHÔNG in ra gì" in _t4 and "mã thoát 0" in _t4, _t4)
+check("và đưa lệnh chạy tay để người dùng tự soi", "grok -p" in _t4, _t4)
+check("kể cả cờ đã truyền", "--output-format" in _t4, _t4)
+
+# Prompt TUYỆT ĐỐI không được lọt vào câu lỗi: nó là system prompt + ngữ cảnh brain.
+_evs5, _ = _chay(_im2, prompt="BÍ MẬT CỦA NGƯỜI DÙNG cần giữ kín")
+_t5 = "".join(e.get("content") or "" for e in _evs5)
+check("CANARY: câu lỗi KHÔNG chứa nội dung prompt (system prompt + ngữ cảnh brain nằm trong "
+      "đó, và câu lỗi thì hiện lên màn hình rồi vào ảnh chụp)",
+      "BÍ MẬT CỦA NGƯỜI DÙNG" not in _t5, _t5[:200])
+
+# Đường bình thường KHÔNG được đi qua phần vớt: vớt hai lần là chữ nhân đôi.
+_thuong = _gia_kich_ban(
+    "print(json.dumps({'type': 'text', 'text': 'một hai '}))\n"
+    "print(json.dumps({'type': 'text', 'text': 'ba'}))\n"
+    "print(json.dumps({'type': 'end', 'stopReason': 'stop'}))\n")
+_nap_help(path=_thuong)
+_evs6, _ = _chay(_thuong)
+_fin6 = [e for e in _evs6 if e["type"] == "final"]
+check("CANARY: lượt bình thường trả về ĐÚNG một lần chữ, không nhân đôi vì phần vớt",
+      _fin6 and _fin6[0]["content"] == "một hai ba", _fin6)
+
+# ============================================================
+# 11. LUỒNG THẬT của Grok, đo từ máy người dùng ngày 29/08
+# ============================================================
+# Phần chẩn đoán thêm ở 0.50.3 đã làm đúng việc của nó và trả về nguyên văn:
+#
+#   "Grok CLI in ra 40 dòng nhưng Javis không nhận ra loại sự kiện nào là câu trả lời
+#    (thấy: available_commands, thought). Dòng đầu CLI in ra:
+#    {"type":"available_commands","tools":["run_terminal_command","read_file",...]}"
+#
+# Hai điều rút ra, và cả hai đều là lỗi của chính phần chẩn đoán:
+#
+#   1. Sơ đồ sự kiện thật KHÔNG giống bảng Javis đoán. `available_commands` và `thought` không
+#      hề có trong tài liệu Javis dựa vào.
+#   2. Trần 40 dòng chỉ giữ phần ĐẦU, mà câu trả lời của model luôn nằm ở CUỐI - sau bảng khai
+#      báo tool và một tràng `thought`. Nên nó chẩn được phần mở đầu và mù đúng phần cần nhìn.
+#      Trần 30 sự kiện cho danh sách LOẠI cũng vậy: 40 dòng `thought` ăn hết chỗ.
+_DAU = json.dumps({"type": "available_commands",
+                   "tools": ["run_terminal_command", "read_file", "grep", "todo_write"]})
+_NGHI = json.dumps({"type": "thought", "text": "đang nghĩ"})
+
+
+def _luong_that(cuoi_json, so_nghi=40):
+    """`grok` giả phát đúng khuôn luồng thật: khai báo tool -> một tràng thought -> kết."""
+    return _gia_kich_ban(
+        f"print({_DAU!r})\n"
+        f"for _ in range({so_nghi}):\n"
+        f"    print({_NGHI!r})\n"
+        f"print({cuoi_json!r})\n")
+
+
+# --- Câu trả lời nằm ở CUỐI, dưới một loại Javis chưa biết ---
+_cuoi = json.dumps({"type": "assistant_turn_complete",
+                    "message": {"content": "Chào anh, em nghe đây."}})
+_cli = _luong_that(_cuoi)
+_nap_help(path=_cli)
+_evs, _ = _chay(_cli, "hello em")
+_fin = [e for e in _evs if e["type"] == "final"]
+check("CANARY: câu trả lời ở CUỐI luồng vẫn ra được - trần cũ giữ 40 dòng ĐẦU nên đúng chỗ "
+      "này bị cắt mất (ảnh chụp người dùng 29/08)",
+      _fin and "Chào anh, em nghe đây." in _fin[0]["content"], _evs[-3:])
+check("CANARY: bảng khai báo tool KHÔNG bị vớt nhầm thành câu trả lời",
+      _fin and "run_terminal_command" not in _fin[0]["content"], _fin)
+check("CANARY: và `thought` cũng không - đó là lập luận nội bộ, không phải câu trả lời",
+      _fin and "đang nghĩ" not in _fin[0]["content"], _fin)
+
+# --- Không có câu trả lời: câu lỗi phải kể được DÒNG CUỐI và ĐỦ loại ---
+_cli2 = _luong_that(json.dumps({"type": "stream_closed", "reason": "done"}))
+_nap_help(path=_cli2)
+_evs2, _ = _chay(_cli2, "hello em")
+_er = [e for e in _evs2 if e["type"] == "error"]
+_t = _er[0]["content"] if _er else ""
+check("không có câu trả lời thì vẫn báo lỗi", bool(_er), _evs2)
+check("CANARY: câu lỗi kể được DÒNG CUỐI (bản cũ chỉ in dòng đầu, mà dòng đầu luôn là "
+      "bảng khai báo tool nên dẫn sai hướng)", "stream_closed" in _t, _t)
+check("CANARY: danh sách loại không bị `thought` chiếm hết chỗ - loại là TẬP, không phải "
+      "30 sự kiện đầu tiên",
+      "available_commands" in _t and "stream_closed" in _t and "thought" in _t, _t)
+check("có nói bao nhiêu dòng, và số đó là số THẬT chứ không phải trần",
+      f"{2 + 40} dòng" in _t, _t)
+
+# --- Lượt hai: streaming-json hụt thì đổi sang `--output-format json` ---
+# Bản 0.50.3 chỉ thử lại khi stdout RỖNG, nên ca thật ở trên (40 dòng, không chữ) không hề
+# chạm tới đường này. Điều kiện đúng là "chưa ra chữ", không phải "chưa in gì".
+_hai_duong = _gia_kich_ban(
+    "a = sys.argv[1:]\n"
+    "if 'json' in a:\n"
+    "    print(json.dumps({'text': 'Chào anh (đường json).'}))\n"
+    "else:\n"
+    f"    print({_DAU!r})\n"
+    f"    print({_NGHI!r})\n"
+    "sys.exit(0)\n")
+_nap_help(path=_hai_duong)
+_evs3, _ = _chay(_hai_duong, "hello em")
+_fin3 = [e for e in _evs3 if e["type"] == "final"]
+check("CANARY: streaming-json in ra dòng mà không ra chữ -> thử lại bằng `--output-format "
+      "json`, và lượt chat có câu trả lời",
+      _fin3 and "đường json" in _fin3[0]["content"], _evs3)
+
+# --- Trần bộ đệm vẫn phải có, kẻo một câu trả lời dài nằm hết trong RAM ---
+check("bộ đệm chẩn đoán có trần cả hai đầu",
+      grok_cli._CHAN_DAU_TOI_DA > 0 and grok_cli._CHAN_DUOI_TOI_DA > 0)
+_chan = grok_cli._chan_moi()
+_chan["so_dong"] = 500
+for _i in range(grok_cli._CHAN_DAU_TOI_DA):
+    _chan["raw"].append(f"đầu {_i}")
+for _i in range(300):
+    _chan["duoi"].append(f"đuôi {_i}")
+_d = grok_cli._chan_dong(_chan)
+check("giữ cả đầu lẫn đuôi, có dấu cắt ở giữa",
+      _d[0] == "đầu 0" and _d[-1] == "đuôi 299" and any("lược" in x for x in _d), _d[:3])
+check("và KHÔNG phình vô hạn",
+      len(_d) <= grok_cli._CHAN_DAU_TOI_DA + grok_cli._CHAN_DUOI_TOI_DA + 1, len(_d))
+
+# ============================================================
+# 12. MẪU VÀNG: luồng streaming-json THẬT, dán nguyên từ máy người dùng
+# ============================================================
+# Đây là thứ đáng lẽ phải có từ Giai đoạn 0 của kế hoạch, và việc thiếu nó đã đẻ ra bốn bản
+# vá đi vòng quanh. Người dùng chạy trên VPS ngày 29/08:
+#
+#     $ grok -p "chào" --output-format streaming-json | tail -5
+#     {"type":"text","data":" nay"}
+#     {"type":"text","data":"?"}
+#     {"type":"available_commands","tools":[...],"commands":[...]}
+#     {"type":"usage","usage":{"input_tokens":9028,...},"signature":"..."}
+#     {"type":"end","stopReason":"end_turn","sessionId":"01a04b69-...","usage":{...}}
+#
+# Ba chỗ lệch so với bảng Javis ĐOÁN, và cái đầu tiên là gốc rễ của cả chuỗi lỗi:
+#
+#   1. Chữ nằm ở khoá `data`, KHÔNG phải `text`. Javis dò `text`/`content`/`delta` nên mọi sự
+#      kiện text trả về chuỗi rỗng - lượt chạy đúng, model trả lời đúng, người dùng thấy ô
+#      trống. Bản 0.50.5 vẫn hỏng y nguyên vì `text` là loại ĐÃ BIẾT nên không đi qua đường vớt.
+#   2. Sự kiện `usage` BỌC số liệu trong khoá `usage`; đọc tầng ngoài là mọi lượt vào bảng Mức
+#      dùng với 0 token.
+#   3. Tên khoá token là `input_tokens` / `cache_read_input_tokens`.
+_MAU_VANG = [
+    "{\"type\":\"text\",\"data\":\"Chào\"}",
+    "{\"type\":\"text\",\"data\":\" anh,\"}",
+    "{\"type\":\"text\",\"data\":\" khỏe không\"}",
+    "{\"type\":\"text\",\"data\":\" nay\"}",
+    "{\"type\":\"text\",\"data\":\"?\"}",
+    "{\"type\":\"available_commands\",\"tools\":[\"run_terminal_command\",\"read_file\",\"search_replace\",\"list_dir\",\"grep\",\"web_search\",\"image_gen\",\"write\"],\"commands\":[\"compact\",\"context\",\"review\"]}",
+    "{\"type\":\"usage\",\"usage\":{\"input_tokens\":9028,\"output_tokens\":54,\"cache_read_input_tokens\":4352,\"cache_creation_input_tokens\":0,\"reasoning_tokens\":32},\"signature\":\"3+dBOy9tPOFi4\"}",
+    "{\"type\":\"end\",\"stopReason\":\"end_turn\",\"sessionId\":\"01a04b69-8bcc-71c3-8cab-4c2320bd28c2\",\"requestId\":\"8ffd587e\",\"usage\":{\"input_tokens\":9028,\"cache_read_input_tokens\":4352,\"cache_creation_input_tokens\":0,\"output_tokens\":54,\"reasoning_tokens\":32,\"total_tokens\":13434},\"num_turns\":1,\"total_cost_usd\":0.020556}"
+]
+
+_vang = _gia_kich_ban(
+    "for l in " + repr(_MAU_VANG) + ":\n"
+    "    print(l)\n")
+_nap_help(path=_vang)
+_evs_v, _g_v = _chay(_vang, "chào")
+_fin_v = [e for e in _evs_v if e["type"] == "final"]
+check("CANARY: luồng THẬT ra đúng câu trả lời - khoá chữ là `data`, và bốn bản trước dò "
+      "`text`/`content`/`delta` nên lượt nào cũng ra ô trống",
+      _fin_v and _fin_v[0]["content"] == "Chào anh, khỏe không nay?", _fin_v)
+check("CANARY: bảng `available_commands` ở CUỐI luồng không lọt vào câu trả lời",
+      _fin_v and "run_terminal_command" not in _fin_v[0]["content"], _fin_v)
+
+_us = [e for e in _evs_v if e["type"] == "usage"]
+check("có sự kiện Mức dùng", bool(_us), _evs_v)
+check("CANARY: đọc đúng token dù số liệu BỌC trong khoá `usage` (đọc tầng ngoài là mọi lượt "
+      "Grok vào bảng Mức dùng với 0 token)",
+      _us and _us[0]["input_tokens"] == 9028 and _us[0]["output_tokens"] == 54,
+      _us[:1])
+check("đọc đúng token đọc-từ-cache (`cache_read_input_tokens`)",
+      _us and any(e.get("cached") == 4352 for e in _us), _us)
+check("tổng token lấy từ `total_tokens` của sự kiện end",
+      any(e.get("total_tokens") == 13434 for e in _us), _us)
+
+check("CANARY: nhặt được sessionId từ `end` để lượt sau `--resume` nối đúng mạch",
+      _g_v.session_id == "01a04b69-8bcc-71c3-8cab-4c2320bd28c2", _g_v.session_id)
+
+# Và KHÔNG được thử lại lần hai: lượt này ra chữ rồi, chạy thêm là tốn một lượt model.
+check("CANARY: lượt ra chữ thì KHÔNG chạy lại lần hai", len(_fin_v) == 1, _evs_v)
+
+grok_cli._HELP_CACHE.update(path=None, text="", ts=0.0)
+grok_cli.find_grok_cli = _that_find
 
 
 _CLAUDEMD = Path(ROOT, "CLAUDE.md").read_text(encoding="utf-8")

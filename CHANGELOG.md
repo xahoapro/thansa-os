@@ -4,6 +4,96 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.52.10] - 2026-09-01
+### Sửa lỗi
+- **Ảnh gửi vào chat nay ở lại trong đoạn chat.** Trước đây gửi xong là ảnh biến mất, tải lại trang thì chỉ còn trơ cái tên file.
+- **Bấm vào ảnh là phóng to được**, cả ảnh đã gửi lẫn ảnh vừa dán còn nằm ở thanh đính kèm.
+- Ảnh chỉ được giữ tạm vài ngày. Quá hạn thì chỗ đó hiện **một khung nói rõ là không xem lại được nữa**, thay vì một ô ảnh vỡ khiến bạn tưởng app hỏng.
+
+## [0.52.9] - 2026-09-01
+### Sửa lỗi
+- **Ô tìm note ở cột VAULT thôi ì.** Nó đang dò tên file bằng cách **bò cả vault từ trình duyệt**, mỗi thư mục một lượt hỏi máy chủ. Trên máy nhà thì không ai thấy, nhưng qua mạng tới VPS thì vault vài chục thư mục là chờ hàng chục giây. Nay nó hỏi máy chủ đúng một lần, y như ô tìm ở trang Tệp tin vốn vẫn nhanh.
+
+## [0.52.8] - 2026-09-01
+### Sửa lỗi
+- **POS thôi rớt giữa lúc đang lên đơn.** Mỗi lượt chat Javis hỏi lại danh sách công cụ của từng nguồn, mà lượt hỏi đó phải xếp hàng sau cái đơn đang chạy. Chờ quá 20 giây là bản cũ **giết cả phiên kết nối**, tức là giết luôn cái đơn đang lên dở, rồi lượt sau báo "chưa đấu POS". Nay nguồn đang chạy việc được để yên và vẫn giữ nguyên danh sách công cụ, nên đơn thứ hai không còn bị cắt ngang.
+- Trang Kết nối cũng thôi bật đèn đỏ oan cho nguồn đang bận chạy việc.
+- **Trang Tệp tin mở nhanh trở lại.** Mỗi lần vào trang, Javis đọc lại toàn bộ file `.md` của brain để dò một lỗi cũ từ bản 0.33.3; brain vài nghìn note là chậm hẳn cả trang lẫn ô tìm kiếm. Nay brain nào sạch thì Javis nhớ và thôi dò lại.
+
+## [0.52.7] - 2026-09-01
+### Sửa lỗi
+- **Javis thôi tự đẻ việc trong lúc bàn kế hoạch.** Đang trò chuyện bình thường mà nó tự giao mấy việc kiểu "áp dụng kế hoạch vừa trình bày" hay "cập nhật lại timeline", rồi mỗi việc lúc xong hoặc lúc kẹt lại bắn một thông báo về chuông và về đúng khung chat đang nói. Việc thì không ai yêu cầu, mà tiếng ồn thì thật.
+- Nay hàng đợi việc chỉ dành cho **việc bạn bảo làm**. Kế hoạch hay bước tiếp theo do Javis tự nghĩ ra thì nó viết ra cho bạn đọc, không tự giao. Không chắc bạn có muốn giao hay không thì nó **hỏi một câu** rồi mới tạo.
+- **Chuông chỉ kêu cho việc cần bạn ra tay.** Việc bị chặn hay chờ bạn duyệt thì nổi chấm đỏ như cũ. Việc chạy xong trót lọt thì thôi kêu: kết quả vẫn rơi vào đúng khung chat đã giao việc và vẫn nằm trong danh sách chuông để mở ra xem lại. Đổi lại, lúc bạn đi vắng thì việc xong sẽ không có gì nhắc, phải tự mở chuông xem.
+
+## [0.52.6] - 2026-09-01
+### Sửa lỗi
+- **Khung chat không còn tự mọc ra một câu bạn chưa từng gõ.** Thủ phạm là mic: bấm rồi thả phím Cách thật nhanh thì lệnh tắt rơi vào lúc mic chưa kịp mở xong, nên mic ở lại nghe âm thầm. Nghe được tiếng nhạc hay TV trong phòng là nó chép thành chữ rồi gửi đi như tin của bạn.
+- **Javis đang đọc thành tiếng cũng thôi tự bật mic.** Trước đây chỉ cần bạn từng nói một lần trong phiên là mỗi lần Javis đọc, một tiếng động đủ to sẽ mở mic trở lại. Nay chỉ chen ngang được khi mic đang thật sự mở.
+- Nhắc bạn cho yên tâm: việc chạy nền, nhắc hẹn và loop luôn trả lời ở bong bóng bên trái. Không có đường nào để Javis tự gõ vào ô chat thay bạn.
+
+## [0.52.5] - 2026-08-31
+### Sửa lỗi
+- **Cập nhật xong không còn mất kết nối MCP.** Hay gặp nhất với Pancake POS: vừa cập nhật vào chat hỏi thì Javis bảo chưa có POS, lát sau lại có. Kết nối không hỏng - nó chỉ chưa kịp mở lại phiên trong lúc Javis đã đi hỏi tool, mà mỗi nguồn chỉ được chờ 20 giây.
+- Nay ngay khi khởi động, Javis **mở sẵn phiên cho mọi nguồn đã đấu** và chờ chúng thoải mái, vì lúc đó chưa có ai ngồi chờ. Nguồn nào còn chậm sẽ được gọi lại thêm hai lần nữa và tự hiện lại trong hộp công cụ.
+- Trường hợp một nguồn vẫn lỡ nhịp, danh sách công cụ thiếu đó **chỉ giữ vài giây thay vì một phút**, nên câu hỏi kế tiếp là thấy đủ.
+
+## [0.52.4] - 2026-08-31
+### Sửa lỗi
+- **Copy chữ trong khung chat không còn bị dải mốc hội thoại chắn ngang.** Dải vạch bên phải nằm đè lên mép chữ, nên mỗi lần bôi đen một câu cũ là danh sách lịch sử bung ra che mất. Nay dải nằm hẳn ra lề riêng, và trong lúc bạn đang quét chuột thì nó không phản ứng nữa.
+
+## [0.52.3] - 2026-08-30
+### Sửa lỗi
+- **Chat dài bằng tiếng Việt qua Antigravity CLI không còn báo "Argument list too long".** Javis đo độ dài câu hỏi bằng số chữ, trong khi hệ điều hành đếm theo byte - mà tiếng Việt tốn nhiều byte hơn tiếng Anh, nên hội thoại dài bằng tiếng Việt bị chặn còn tiếng Anh thì không. Nay đo đúng.
+- Nếu vẫn chạm trần vì lý do khác, Javis **tự chuyển sang đường gửi khác và trả lời bình thường**, thay vì ném một câu lỗi kỹ thuật rồi bỏ mất lượt chat.
+- Grok CLI bản cũ gặp cùng tình huống cũng được báo bằng câu dễ hiểu kèm cách xử lý.
+
+## [0.52.2] - 2026-08-30
+### Sửa lỗi
+- **Hết cảnh chữ trên màn hình biến thành mã khoá** kiểu `models.st_connected` sau khi cập nhật. Nguyên nhân: trình duyệt giữ file từ điển ngôn ngữ bản cũ qua bản mới. Nay từ điển luôn được kiểm tra bản mới mỗi lần mở trang.
+- Nếu vì lý do gì đó vẫn thiếu bản dịch, Javis giữ nguyên chữ có sẵn thay vì in mã khoá ra màn hình.
+- Ai đang gặp lỗi này: cập nhật xong bấm tải lại trang một lần (Ctrl+Shift+R) là sạch hẳn.
+
+## [0.52.1] - 2026-08-30
+### Sửa lỗi
+- **Antigravity CLI hỏng/treo không còn kéo cả app đứng hình.** Trước đây mỗi lần mở trang, Javis hỏi thẳng `agy` ngay trên luồng chính - `agy` chưa đăng nhập thì ngồi chờ bàn phím tới 80 giây, thế là mọi nút xám hết, không đổi được model, trang Cập nhật cũng chết. Nay Javis hỏi ở nền, giao diện trả lời ngay.
+- CLI nào rơi vào màn hỏi tương tác (menu đăng nhập, hộp thoại lần đầu chạy) giờ thoát ngay thay vì treo chờ một bàn phím không tồn tại.
+- Binary CLI hỏng chỉ bị thử lại sau vài phút, không thử lại mỗi lượt bấm.
+
+## [0.52.0] - 2026-08-30
+### Cải thiện
+- **Ba trang lớn nói được tiếng Anh: Models, Việc và Studio.** Chọn English là thẻ nhà cung cấp, bảng Việc, danh sách workflow/agent/skill cùng mọi nút và thông báo trên ba trang này đổi theo.
+- Cả luồng đăng nhập nhà cung cấp (Claude, ChatGPT, Grok, Antigravity) và hộp chọn model cũng đã có bản dịch, kể cả các dòng báo lỗi.
+- Từ điển giao diện lên gần 600 mục cho mỗi ngôn ngữ.
+
+## [0.51.0] - 2026-08-30
+### Thêm mới
+- **Ô đổi ngôn ngữ ngay dưới thanh bên trái**, cạnh số phiên bản. Chọn English là chữ trên nút, nhãn và menu đổi ngay, không cần vào Cài đặt, không cần tải lại trang.
+- **Toàn bộ màn hình chính đã có bản tiếng Anh**: thanh trên, hộp Thông báo, cây Vault, Cài đặt nhanh, khung chat, màn đăng nhập và bộ cài đặt lần đầu. Trang Cài đặt (tiêu đề nhóm, thẻ, nút) cũng đổi theo.
+- Đổi ngôn ngữ ở đâu thì ô chọn ở chỗ kia tự nhảy theo, hai nơi luôn chỉ cùng một thứ tiếng.
+
+## [0.50.6] - 2026-08-29
+### Sửa lỗi
+- **Chat với Grok đã trả lời được.** Grok gửi câu trả lời về dưới một cái tên khác thứ Javis chờ, nên Javis nhận đủ chữ mà gom ra rỗng - lượt chạy đúng, model trả lời đúng, bạn thấy ô trống. Nay đọc đúng.
+- **Bảng Mức dùng đếm đúng token của Grok.** Trước đây mọi lượt Grok đều vào bảng với 0 token vì số liệu nằm sâu hơn một tầng so với chỗ Javis đọc.
+- **Grok nhớ được mạch hội thoại giữa các lượt** - mã phiên nay được nhận đúng, nên hỏi tiếp "cái đó" là nó vẫn hiểu.
+
+## [0.50.5] - 2026-08-29
+### Sửa lỗi
+- **Chat với Grok vẫn ra ô trống - lần này chữa đúng chỗ.** Grok trả lời bằng một kiểu dữ liệu khác hẳn thứ Javis đang chờ, và câu trả lời nằm ở **cuối** luồng, sau một tràng dòng suy nghĩ. Javis nay đọc phần cuối đó, và nếu vẫn không ra thì tự hỏi lại Grok theo một cách khác.
+- **Phần báo lỗi ở bản trước nhìn nhầm chỗ.** Nó chỉ giữ 40 dòng đầu, mà dòng đầu luôn là bảng liệt kê công cụ - nên nó tả đúng phần mở đầu và mù đúng phần cần nhìn. Nay giữ cả đầu lẫn cuối, và kể đủ các kiểu dữ liệu đã gặp.
+
+## [0.50.4] - 2026-08-29
+### Sửa lỗi
+- **Cập nhật bản mới là Grok bị đăng xuất.** Phiên đăng nhập xAI nằm trong thư mục chỉ tồn tại bên trong container, nên mỗi lần đổi sang bản mới là nó biến mất - trong khi bản thân Grok CLI vẫn còn nên thẻ vẫn báo "Đã cài CLI", làm nó trông như lỗi đăng nhập chứ không phải lỗi lưu trữ. Nay phiên được cất cùng chỗ với đăng nhập Claude và ChatGPT.
+- Bạn **không cần sửa gì trong `docker-compose`**, chỉ cần cập nhật như bình thường. Riêng lần cập nhật này vẫn phải đăng nhập Grok lại một lần cuối - từ lần sau trở đi thì giữ nguyên.
+
+## [0.50.3] - 2026-08-28
+### Sửa lỗi
+- **Chat với Grok chỉ nhận lại ô trống.** Đăng nhập xong, gõ một câu, và Javis trả lời "Grok CLI chạy xong nhưng không trả về nội dung nào". Javis đưa câu hỏi cho Grok qua một đường mà bản CLI này không nhận, nên nó chạy rồi thoát mà không nói gì. Giờ Javis tự thử lại đường thứ hai và lượt chat có câu trả lời.
+- **Grok trả lời kiểu Javis chưa biết thì vẫn đọc ra được.** Trước đây Javis chỉ hiểu đúng vài dạng dữ liệu; gặp dạng khác là bỏ qua sạch và bạn thấy ô trống. Nay nó vớt lấy phần chữ ở bất kỳ dạng nào.
+- **Và nếu vẫn không ra, câu báo lỗi nói rõ vì sao**: Grok đã in ra mấy dòng, dạng gì, mã thoát bao nhiêu, kèm lệnh để bạn tự chạy thử trên máy chủ. Nội dung câu hỏi của bạn không bao giờ bị đưa vào đó.
+
 ## [0.50.2] - 2026-08-28
 ### Sửa lỗi
 - **Đăng nhập Grok xong mà thẻ vẫn báo chưa đăng nhập.** Bấm **Đăng nhập**, mở link, trang xAI báo "Device Authorized" - nhưng thẻ trên trang **Models** cứ quay "đang chờ bạn xác nhận" mãi. Javis đọc file phiên của Grok theo một khuôn đoán trước, nên file thật viết khác một chút là nó không thấy token đâu. Nay nó đọc được mọi cách viết.
