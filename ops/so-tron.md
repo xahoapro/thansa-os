@@ -310,3 +310,41 @@ image GHCR :1.2.0). Xem RELEASES.md.
 - **CÒN LẠI (chưa chặn phát hành):** 248 chuỗi UI tiếng Việt chưa dịch EN (upstream 0.48-0.50 thêm
   nhiều: thẻ Grok, hòm thư/push, connector Hostinger với guide dài). build-en suy biến về tiếng Việt
   cho tới khi dịch (không vỡ, test i18n xanh). Dồn sang một đợt dịch EN sau, như vòng 0.43.2 từng dồn 199.
+
+## Vòng 2026-09-01 (goc 60830fa → 91aa663, upstream +14 commit, VERSION nền 0.50.2 → 0.52.10, thansa 1.4→1.5)
+
+- 14 commit upstream (0.50.3-0.52.10), nổi bật: loạt vá **Grok** (0.50.3-0.50.6: hết trả ô trống,
+  đọc đúng luồng sự kiện, chữ ở khoá `data`, hết đăng xuất mỗi lần cập nhật image), **upstream tự
+  thêm i18n gốc EN** (#230 ô đổi ngôn ngữ + màn chính, #231 ba trang Models/Việc/Studio), hết in mã
+  khoá do từ điển cũ (#233), Antigravity CLI treo không kéo sập dashboard (#232), chat dài tiếng Việt
+  hết nổ "Argument list too long" (#234), dải mốc hội thoại không chắn bôi đen copy (#235), cập nhật
+  xong không rớt MCP (#236), mic tự gửi/tự đẻ việc + POS rớt đơn (0.52.6-0.52.8), ô tìm note hỏi
+  server một phát (0.52.9), **ảnh gửi vào chat ở lại + bấm phóng to** (#239).
+- **BƯỚC NGOẶT KIẾN TRÚC:** upstream chuyển hàng loạt chuỗi hiển thị cứng SANG hệ **i18n gốc mới**
+  (`dashboard/i18n/vi.json` + `en.json`, nạp qua `i18n/index.js`). Nhiều rebrand cũ của Thansa
+  (P008/P009/P013/P018/P028/P034 vốn sửa chuỗi CỨNG) bị upstream hấp thụ về từ điển → khi rebase,
+  các hunk đó giải bằng cách LẤY HEAD (nhận i18n gốc), rồi rebrand CHUYỂN XUỐNG tầng từ điển.
+- Rebase 103 commit (32 patch [me] + ops/i18n). Xung đột giải: P001 (console.js: giữ fallback
+  "Thansa OS" + nhận `t()` Telegram của upstream), P003 (index.html 8 hunk: giữ `data-i18n` +
+  chữ Thansa), P008 (console.js/index.html/studio.js: lấy HEAD i18n gốc; test_engine_ngang_quyen
+  đọc vi.json + assert "MCP Thansa"), P009/P013/P018/P028/P034 (console.js c2pa/tool status: lấy
+  HEAD i18n), P015 (**giữ CẢ overlay `dich-en.js` LẪN i18n gốc `index.js?v=2`** - hai cơ chế bổ
+  trợ), P017 (đổi ngôn ngữ dùng `refreshSettings()` tức thì thay `location.reload()`), P025 (VERSION
+  → 1.5.0-javis-0.52.10), P026 (link docs → xahoapro/thansa-os + giữ data-i18n), P027 (docs 02/05/09:
+  nền nội dung 0.52.x của upstream + rebrand Javis→Thansa), P031 (nút PWA giữ data-i18n-title/aria),
+  P035 mới.
+- **NEO LẠI (P035):** rebrand tên sản phẩm chuyển xuống **tầng từ điển** - regex an toàn
+  `Javis(?![/\w])(?!-[A-Z])` áp cho `vi.json`+`en.json` (i18n gốc) + chuỗi cứng còn sót
+  `console.js`/`index.html` + overlay `en-goi.json`. Nhãn tác giả C2PA khớp `BRAND_SOURCE =
+  tradingauto.org`. GIỮ nguyên token kỹ thuật: `javis_*`, `JAVIS_*`, header `X-Javis-Vault`
+  (aux_engine/mcp_hub/main.py), path `Javis/`, định danh JS (`JavisI18n`=19, `javisTheme`,
+  `__javisRefresh`), container `javis`, `stop-javis.bat/vbs`, `javis-cli`. Product-name 'Javis'
+  còn sót trên mọi bề mặt hiển thị = 0.
+- **Sửa 4 neo mapping chết** (chuỗi dời console.js→vi.json): P013 (tradingauto.org), P018 (Ảnh Thansa
+  tạo ra), P028 + P034 (tool của Thansa đã đấu) → trỏ `dashboard/i18n/vi.json`.
+- **English giờ chạy runtime:** `dashboard/en/` vắng (không prebuild), server tự lùi bản gốc; đổi
+  ngôn ngữ tức thì bằng i18n gốc (`JavisI18n.setLang`) + overlay `dich-en.js`, KHÔNG cần tải lại.
+  Overlay `en-goi.json`/`dich-en.js` dần teo khi native i18n phủ hết (ghi ở dieu_kien_bo P035).
+- VERSION neo `1.5.0-javis-0.52.10`. moc-goc goc_commit 91aa663, goc_version 0.52.10, thansa_version
+  1.5.0, so_patch 32. tu-kiem-chung 5/5 XANH. Suite đầy đủ xanh (283 test).
+- Phát hành bằng **snapshot main** (ff cho user 1.4.0), Docker vẫn tắt.
