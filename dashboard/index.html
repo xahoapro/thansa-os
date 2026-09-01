@@ -82,7 +82,7 @@
           <span class="notification-trigger-label" data-i18n="noti.label">Thông báo</span>
           <span class="notification-badge" id="notificationBadge" hidden>0</span>
         </button>
-        <!-- Cài Javis như app riêng (PWA). Ẩn mặc định: app.js chỉ hiện khi trình duyệt
+        <!-- Cài Thansa như app riêng (PWA). Ẩn mặc định: app.js chỉ hiện khi trình duyệt
              bắn beforeinstallprompt (Chrome/Edge desktop + Android) và chưa chạy standalone.
              Safari/iOS không có event này - bên đó vẫn là Share → Thêm vào MH chính. -->
         <button class="install-app-btn" id="installAppBtn" type="button" hidden
@@ -121,7 +121,7 @@
           </button>
           <!-- Nút loa ở đây đã BỎ (0.48.3): cùng một công tắc mà có tới ba chỗ bấm (header,
                thanh nhập chat, công tắc trong Cài đặt nhanh). Giữ lại đúng nút trên THANH NHẬP
-               (#ttsToggleBar) - nó nằm ngay cạnh chỗ người ta gõ, thấy được ở cả màn Javis lẫn
+               (#ttsToggleBar) - nó nằm ngay cạnh chỗ người ta gõ, thấy được ở cả màn Thansa lẫn
                trang Trò chuyện, và có ở màn hẹp. Chỗ trống này để dành cho hòm thư. -->
           <button class="hud-icon-btn" id="resetBtn" title="Reset hội thoại" data-i18n-title="top.reset">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -170,7 +170,7 @@
       <div class="noti-push" id="notificationPush" hidden>
         <div class="noti-push-main">
           <span class="noti-push-title" data-i18n="noti.push">Thông báo đẩy</span>
-          <span class="noti-push-note" id="notificationPushNote" data-i18n="noti.push_note">Báo cả khi bạn không mở Javis</span>
+          <span class="noti-push-note" id="notificationPushNote" data-i18n="noti.push_note">Báo cả khi bạn không mở Thansa</span>
         </div>
         <button class="noti-text-btn" id="notificationPushTest" type="button" hidden data-i18n="noti.push_test">Gửi thử</button>
         <button class="noti-text-btn primary" id="notificationPushToggle" type="button" data-i18n="noti.push_on">Bật</button>
@@ -395,9 +395,9 @@
 
             <div class="qs-block">
               <div class="popover-label" data-i18n="qs.domain">TÊN MIỀN & SSL</div>
-              <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Javis kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
+              <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Thansa kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
               <div class="dom-field">
-                <input id="setDomain" placeholder="Ví dụ: javis.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
+                <input id="setDomain" placeholder="Ví dụ: thansa.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
                 <button class="s-btn" id="saveDomain" data-i18n="qs.domain_save">Lưu &amp; kiểm tra</button>
               </div>
               <div class="dom-status" id="domStatusRow" style="display:none">
@@ -443,7 +443,7 @@
       <!-- 0.49.3: dải này BỎ hai đèn "HỆ THỐNG" (Claude Code CLI / Voice) - chúng gần như
            luôn xanh nên không nói thêm được gì, mà trạng thái thật đã có chỗ tử tế hơn:
            banner đỏ trên navbar khi mất model, trang Kết nối cho MCP. Chỗ trống dành cho
-           thứ THAY ĐỔI theo từng lượt: BA tool Javis vừa gọi, mới nhất đứng đầu. -->
+           thứ THAY ĐỔI theo từng lượt: BA tool Thansa vừa gọi, mới nhất đứng đầu. -->
       <div class="sysbar" id="sysBar">
         <span class="sysbar-label" data-i18n="mb.recent">VỪA GỌI</span>
         <div id="mcpList" class="mcp-list"><div class="mcp-item dim" data-i18n="mb.no_tools">Chưa gọi tool nào</div></div>
@@ -470,7 +470,7 @@
         </svg>
       </button>
       <input type="file" id="fileInput" multiple style="display:none">
-      <textarea id="chatInput" class="voice-input" placeholder="Nói với Javis, gõ ở đây, hoặc kéo/dán file vào..." data-i18n-ph="bar.input_ph" rows="1"></textarea>
+      <textarea id="chatInput" class="voice-input" placeholder="Nói với Thansa, gõ ở đây, hoặc kéo/dán file vào..." data-i18n-ph="bar.input_ph" rows="1"></textarea>
       <button class="stop-btn" id="stopBtn" title="Ngắt lệnh / dừng đọc (Esc)" data-i18n-title="bar.stop" style="display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
@@ -560,7 +560,7 @@
   <!-- Vault structure banner -->
   <div class="vault-banner" id="vaultBanner">
     <i class="vb-icon" data-ic="triangle-alert"></i>
-    <span class="vb-text" id="vbText" data-i18n="vbanner.text">Cấu trúc vault chưa chuẩn cho Javis.</span>
+    <span class="vb-text" id="vbText" data-i18n="vbanner.text">Cấu trúc vault chưa chuẩn cho Thansa.</span>
     <button class="vb-init" id="vbInit" data-i18n="vbanner.init">Khởi tạo cấu trúc</button>
     <button class="vb-close" id="vbClose"><i data-ic="x"></i></button>
   </div>
@@ -691,7 +691,7 @@
   <!-- Cài đặt -->
   <div class="modal-overlay" id="settingsOverlay">
     <div class="settings-modal">
-      <div class="fm-head"><span><i data-ic="settings"></i> <span data-i18n="setm.title">Cài đặt Javis</span></span><button class="fm-close" id="settingsClose"><i data-ic="x"></i></button></div>
+      <div class="fm-head"><span><i data-ic="settings"></i> <span data-i18n="setm.title">Cài đặt Thansa</span></span><button class="fm-close" id="settingsClose"><i data-ic="x"></i></button></div>
       <div class="settings-body">
         <div class="set-sec">
           <h4 data-i18n="setm.general">Chung</h4>
@@ -702,8 +702,8 @@
           <h4>Model</h4>
           <label data-i18n="setm.engine">Engine xử lý chat</label>
           <select id="setEngine">
-            <option value="cli" data-i18n="setm.engine_cli">Claude Code CLI - MCP Javis + skill + loop + lệnh máy</option>
-            <option value="openrouter" data-i18n="setm.engine_or">OpenRouter - MCP Javis + skill + loop (không lệnh máy)</option>
+            <option value="cli" data-i18n="setm.engine_cli">Claude Code CLI - MCP Thansa + skill + loop + lệnh máy</option>
+            <option value="openrouter" data-i18n="setm.engine_or">OpenRouter - MCP Thansa + skill + loop (không lệnh máy)</option>
           </select>
           <label data-i18n="setm.claude_model">Model Claude (khi dùng CLI)</label>
           <select id="setClaudeModel">
@@ -727,7 +727,7 @@
           <label><span data-i18n="setm.tg_chat">Chat ID được phép dùng</span> <span class="dim" data-i18n="setm.tg_chat_dim">(nhiều ID cách nhau dấu phẩy)</span></label>
           <input id="setTgChat" placeholder="Ví dụ: 123456789, 987654321" data-i18n-ph="setm.tg_chat_ph">
           <div class="set-note" id="setTgStatus">-</div>
-          <div class="set-note" data-i18n="setm.tg_note">Nhắn Telegram ↔ Javis. Dùng đúng engine đang chọn (CLI thì có cả MCP để hỏi doanh thu/ads qua điện thoại). Có thể dùng lại token bot Morning Briefing.</div>
+          <div class="set-note" data-i18n="setm.tg_note">Nhắn Telegram ↔ Thansa. Dùng đúng engine đang chọn (CLI thì có cả MCP để hỏi doanh thu/ads qua điện thoại). Có thể dùng lại token bot Morning Briefing.</div>
           <div class="set-actions">
             <button class="s-btn" id="saveTelegram" data-i18n="setm.tg_save">Lưu & bật</button>
             <button class="s-btn-ghost" id="testTelegram" data-i18n="setm.tg_test">Gửi test</button>
@@ -747,7 +747,7 @@
             <button class="s-btn-ghost" id="logoutBtn" data-i18n="setm.logout">Đăng xuất</button>
             <button class="s-btn-ghost" id="disableAuthBtn" data-i18n="setm.auth_off">Tắt đăng nhập</button>
           </div>
-          <div class="set-note" data-i18n="setm.auth_note">Đặt mật khẩu để chặn người lạ khi đưa Javis lên VPS. Lưu ý: trên VPS nên chạy sau HTTPS (reverse proxy).</div>
+          <div class="set-note" data-i18n="setm.auth_note">Đặt mật khẩu để chặn người lạ khi đưa Thansa lên VPS. Lưu ý: trên VPS nên chạy sau HTTPS (reverse proxy).</div>
           <!-- Xác thực 2 lớp: CỐ Ý chỉ là dòng trạng thái + lối đi, không phải luồng bật đầy đủ.
                Màn quét QR nằm ở trang Tài khoản. Bê nguyên luồng đó sang đây là có hai bản sao
                của một tính năng bảo mật, và chỗ nào quên sửa thì chỗ đó thành lỗ.
