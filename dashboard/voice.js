@@ -17,7 +17,7 @@ class JavisVoice {
 
   // ---- Ngắt lời bằng giọng: mẹo NHÁ TIẾNG (0.57.14) ----
   // Đo mức âm mic KHÔNG phân biệt nổi giọng người với tiếng LOA NGOÀI vọng lại, nên bản cũ
-  // kẹt giữa hai cái sai: ngưỡng thấp thì Javis nghe chính mình rồi tự câm, ngưỡng cao thì
+  // kẹt giữa hai cái sai: ngưỡng thấp thì Thansa nghe chính mình rồi tự câm, ngưỡng cao thì
   // nói kiểu gì nó cũng đọc tiếp. Cách thoát: đừng đoán, hãy THỬ. Nghi có người nói thì hạ
   // âm lượng loa xuống một nhá rồi đo lại. Tiếng vọng đi theo âm lượng nên tụt cả chục lần;
   // giọng người thì không tụt. So mức sau khi nhá với mức trước khi nhá là biết ngay, không
@@ -140,7 +140,7 @@ class JavisVoice {
 
     // Audio analysis - cho hiệu ứng phát sáng theo âm thanh
     this.audioCtx = null;
-    this.outAnalyser = null;   // âm Javis đọc (TTS)
+    this.outAnalyser = null;   // âm Thansa đọc (TTS)
     this.inAnalyser = null;    // âm mic (khi nghe)
     this.micStream = null;
     this._freqData = new Uint8Array(64);
@@ -299,7 +299,7 @@ class JavisVoice {
     // iPhone/iPad: WebKit KHÔNG nghe liên tục được. Đặt continuous=true thì nó vào một phiên
     // "ghi âm" không bao giờ tự kết thúc câu, và onend tự mở lại càng làm nó kéo dài - đúng
     // cảnh chủ repo tả 02/09 "bật mic nó thành chế độ ghi âm". Trên iOS mỗi lượt nói là một
-    // phiên: nói xong -> gửi -> vòng rảnh tay bên app.js mở lại khi Javis đọc xong.
+    // phiên: nói xong -> gửi -> vòng rảnh tay bên app.js mở lại khi Thansa đọc xong.
     if (this._laIOS()) this.recognition.continuous = false;
     this.recognition.interimResults = true;
     this.recognition.maxAlternatives = 1;
@@ -323,7 +323,7 @@ class JavisVoice {
       this._duoiTam = "";
       // Lệnh dừng tới TRƯỚC khi phiên kịp mở (bấm rồi thả Space thật nhanh, bấm nút mic hai
       // lần liền): lúc đó isListening còn false nên stopListening() không dừng được gì, mic ở
-      // lại MỞ vĩnh viễn và onend còn tự khởi động lại. Người dùng tưởng đã tắt, thực ra Javis
+      // lại MỞ vĩnh viễn và onend còn tự khởi động lại. Người dùng tưởng đã tắt, thực ra Thansa
       // vẫn nghe: tiếng nhạc hay TV trong phòng được chép thành chữ rồi TỰ GỬI như tin của họ.
       // Nợ đó trả ở đây - đóng phiên ngay khi nó vừa mở, không nhận chữ, không gửi gì.
       if (this._stopPending) {
@@ -336,9 +336,9 @@ class JavisVoice {
     };
 
     this.recognition.onresult = (event) => {
-      // Đang phát TTS thì BỎ mọi kết quả nhận dạng: đó là mic nghe lại chính giọng Javis
+      // Đang phát TTS thì BỎ mọi kết quả nhận dạng: đó là mic nghe lại chính giọng Thansa
       // (SpeechRecognition thu riêng, KHÔNG được khử vọng như luồng đo mức âm), không phải
-      // user nói. Không chặn thì giọng Javis bị chép vào khung chat rồi tự gửi đi.
+      // user nói. Không chặn thì giọng Thansa bị chép vào khung chat rồi tự gửi đi.
       if ((this.isSpeaking() && !this._awaitingFirstAudio) || this._discardRecognition || (this._stopping && this._endpointText)) return;
       // DỰNG LẠI từ TOÀN BỘ event.results mỗi lần, KHÔNG cộng dồn qua từng sự kiện.
       // Bản cũ làm `accumulated += final` từ resultIndex trở đi. Chrome máy tính giao đúng
@@ -385,10 +385,10 @@ class JavisVoice {
         clearTimeout(this._silenceTimer);
         // TRẦN CHO MỘT LƯỢT. Đồng hồ trên được hẹn lại ở MỌI mẩu chữ tạm, nên tiếng TV hay hai
         // người nói chuyện trong phòng giữ nó không bao giờ nổ: chữ cứ dồn vào một lượt khổng
-        // lồ và Javis trông như điếc suốt cả đoạn đó (chủ dự án 17/09 gửi ảnh một lượt dài cả
+        // lồ và Thansa trông như điếc suốt cả đoạn đó (chủ dự án 17/09 gửi ảnh một lượt dài cả
         // trang, lẫn tiếng TV, mà cuối mới có câu hỏi thật). Quá trần thì chốt NGAY thay vì hẹn
         // tiếp: mỗi mẩu 30 giây đi qua cửa tạp âm ở bộ não giọng và bị bỏ nếu không nói với
-        // Javis, còn câu thật thì được trả lời trong vòng nửa phút chứ không phải hai phút.
+        // Thansa, còn câu thật thì được trả lời trong vòng nửa phút chứ không phải hai phút.
         if (Date.now() - this._batDauLuot >= JavisVoice.TRAN_LUOT_MS) { this.stopListening(); return; }
         let ms = this.silenceMs;
         try { if (this.endpointDelay) ms = this.endpointDelay(display) || ms; } catch (e) {}
@@ -549,7 +549,7 @@ class JavisVoice {
   // Ba triệu chứng đó là một nguyên nhân, và nó là cuộc đua giữa hai đường thu mic.
   //
   // Chữa: trên điện thoại, lúc NGHE thì chỉ để SpeechRecognition giữ mic. Luồng getUserMedia
-  // chỉ sống trong lúc Javis ĐỌC, là lúc nhận dạng đã bị abort (xem _muteRecognition), nên
+  // chỉ sống trong lúc Thansa ĐỌC, là lúc nhận dạng đã bị abort (xem _muteRecognition), nên
   // ngắt lời vẫn nguyên vẹn. Thứ mất đi trên điện thoại chỉ là hiệu ứng phát sáng theo giọng
   // lúc đang nghe, và bản ghi gửi Groq - hai thứ trang trí và tuỳ chọn, đổi lấy cái mic chạy.
   _nhaMicStream() {
@@ -779,7 +779,7 @@ class JavisVoice {
     else this._speakBrowser(text);                   // fallback Web Speech
   }
 
-  // Javis bắt đầu đọc mà mic đang nghe → tạm NGỪNG nhận dạng (abort, bỏ kết quả dở),
+  // Thansa bắt đầu đọc mà mic đang nghe → tạm NGỪNG nhận dạng (abort, bỏ kết quả dở),
   // vì SpeechRecognition sẽ chép chính giọng TTS thành tin nhắn của user. Ngắt lời bằng
   // giọng vẫn hoạt động - barge-in đo mức âm qua luồng mic đã khử vọng, không cần nhận dạng.
   _muteRecognition() {
@@ -821,7 +821,7 @@ class JavisVoice {
     }, 400);
   }
 
-  // Đang nói chuyện bằng giọng thì phải GIỮ luồng mic sống trong lúc Javis đọc, kể cả khi
+  // Đang nói chuyện bằng giọng thì phải GIỮ luồng mic sống trong lúc Thansa đọc, kể cả khi
   // nhận dạng đã đóng. Ngắt lời đo mức âm chứ không đọc chữ, nên không có luồng mic là không
   // có gì để đo và ngắt lời chết câm. Luồng mic vốn không bao giờ bị tắt tracks, nên thường
   // chỉ cần nối lại bộ đo; lần đầu thì mở (quyền đã cấp từ lúc bật rảnh tay, không hỏi lại).
@@ -850,13 +850,13 @@ class JavisVoice {
     // hẳn trước khi câu trả lời kịp đọc; tới lượt đọc, _muteRecognition() thấy isListening đã
     // false nên thoát ngay và không đặt cờ ấy; vòng giữ mic trong app.js thì bỏ qua vì đang
     // đọc. Cả ba chốt cùng đúng riêng lẻ mà ghép lại thành điếc hoàn toàn (chủ dự án thử thật
-    // 15/09: nói chen vào, Javis đọc tiếp như không nghe thấy gì).
+    // 15/09: nói chen vào, Thansa đọc tiếp như không nghe thấy gì).
     //
     // Nỗi lo cũ vẫn được giữ nguyên, chỉ đổi chốt cho đúng chỗ: không được để luồng mic sống
-    // suốt đời trang rồi lần nào Javis đọc cũng rình, vì một tiếng động to trong phòng (nhạc,
+    // suốt đời trang rồi lần nào Thansa đọc cũng rình, vì một tiếng động to trong phòng (nhạc,
     // TV, người khác nói) sẽ tự mở mic rồi chép thành tin nhắn. Chốt đúng là "người dùng CÓ
     // đang nói chuyện bằng giọng không" (handsFree), chứ không phải "mic có tình cờ còn mở
-    // không". Rảnh tay tắt thì Javis đọc trong im lặng, không nghe gì hết.
+    // không". Rảnh tay tắt thì Thansa đọc trong im lặng, không nghe gì hết.
     if (!this._resumeAfterTTS && !this.handsFree) return;
     if (!this.bargeEnabled) return;                  // người dùng tắt "ngắt lời bằng giọng" trong Cài đặt nhanh
     if (this._dangNha) return;                       // đang nhá tiếng thăm dò, đừng mở bộ rình thứ hai
@@ -864,7 +864,7 @@ class JavisVoice {
     let hits = 0, gan = [];
     // NGƯỠNG TỰ HỌC, không còn đo một lần rồi thôi. Bản cũ lấy nền trong 600 ms ĐẦU, mà bộ
     // rình khởi động TRƯỚC lúc tiếng thật sự ra loa (còn đang tải file TTS), nên nền đo được
-    // là phòng im và ngưỡng rơi về sàn 0.045: loa ngoài mở to là vượt ngay, Javis tự ngắt
+    // là phòng im và ngưỡng rơi về sàn 0.045: loa ngoài mở to là vượt ngay, Thansa tự ngắt
     // lời mình. Nay nền là trung bình trượt của chính những nhịp KHÔNG nghi ngờ, nên nó dâng
     // dần tới đúng mức vọng của phòng; thêm nữa mỗi lần nhá tiếng kết luận "là vọng" thì nền
     // được nâng thẳng lên trên mức vừa đo (xem _ketThucNha), nên chỉ sau một hai lần là hết
@@ -953,7 +953,7 @@ class JavisVoice {
     // Người nghe chỉ thấy tiếng nhỏ đi một nhá, không giật, không câm.
     //
     // Nền leo TỪNG BẬC chứ không nhảy thẳng tới mức vừa đo: một tiếng ho to (0.2) mà nhảy
-    // thẳng là nền treo ở đó, ngưỡng vọt lên gần 0.4 và mấy lượt sau nói gì Javis cũng không
+    // thẳng là nền treo ở đó, ngưỡng vọt lên gần 0.4 và mấy lượt sau nói gì Thansa cũng không
     // nghe. Leo bậc thì vọng thật (lặp lại liên tục) vẫn tới nơi sau một hai nhá, còn tiếng
     // ho một lần chỉ đẩy được một bậc nhỏ.
     const tran = (preLevel || 0) * 1.05;
@@ -1022,7 +1022,7 @@ class JavisVoice {
     return true;
   }
 
-  // Phần Javis ĐÃ ĐỌC RA TIẾNG trong lượt này: các khúc đã phát xong cộng phần khúc dở theo
+  // Phần Thansa ĐÃ ĐỌC RA TIẾNG trong lượt này: các khúc đã phát xong cộng phần khúc dở theo
   // tỉ lệ thời gian, cắt ở ranh giới từ. Dùng khi bị ngắt lời thật, để tin kế tiếp mang
   // "ngắt_lời=" và model không đọc lại từ đầu (mượn synchronized_transcript của LiveKit).
   static demTu(s) { const m = String(s || "").trim().match(/\S+/g); return m ? m.length : 0; }

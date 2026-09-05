@@ -146,7 +146,7 @@ const voice = new JavisVoice({
     nhapGiong(text);
     if (text) petReact("nghe");   // mỗi lần bắt thêm chữ, linh vật gật nhẹ một cái
     // Đang tạm dừng vì nghi chen ngang mà có chữ -> chen ngang THẬT: đạo diễn trả stop_tts.
-    // Đọc phần Javis đã đọc ra tiếng TRƯỚC khi dừng, để tin kế tiếp mang ngắt_lời=.
+    // Đọc phần Thansa đã đọc ra tiếng TRƯỚC khi dừng, để tin kế tiếp mang ngắt_lời=.
     if (turn.interrupted && text) turn.setInterruptedAt(voice.lastSpokenPrefix());
     runActions(turn.interim(text));
   },
@@ -252,7 +252,7 @@ function adaptiveReceipt(data) {
 }
 let _bargeTimer = null;   // 2 giây sau khi tạm dừng mà không có chữ -> chen ngang giả
 let _waitTimer = null;    // "khoan" rồi im lâu -> thôi chờ
-let _ngatLoiTai = "";     // câu Javis bị ngắt lúc đọc, đi vào tin kế tiếp rồi xoá
+let _ngatLoiTai = "";     // câu Thansa bị ngắt lúc đọc, đi vào tin kế tiếp rồi xoá
 
 // ---- Voice V3: cắt cụm cho loa + câu tiến độ (docs/dev/2026-09-voice-v2-spec.md mục 11) ----
 // Chữ stream của MỌI làn đi qua voice-chunker.js rồi mới ra loa: đọc theo cụm tự nhiên (hết
@@ -597,7 +597,7 @@ window.JavisOrb = {
   setVoiceJobs: (n) => datSoViecGiong(n),
 };
 
-// ---- Voice V3: Javis TỰ HỎI THĂM khi việc nền chạy lâu ----
+// ---- Voice V3: Thansa TỰ HỎI THĂM khi việc nền chạy lâu ----
 // Chủ dự án 15/09: giao việc xong thì im lặng hàng phút, "anh không rõ nó có chạy nền thật hay
 // không"; anh ấy muốn nó nói kiểu "để em xem nhé", "chờ em tý", "em vẫn chưa xong". Người thật
 // nhận việc lâu thì thỉnh thoảng ngẩng lên nói một câu, chứ không ngồi câm.
@@ -765,7 +765,7 @@ function handleMessage(data) {
       const el = appendJavisMessage(data.content || "");
       recordTurn("javis", data.content || "", null, null);
       scrollBottom();
-      // Đọc tin nền chỉ khi người dùng KHÔNG đang nói hay đang nghe Javis nói dở (Voice V1):
+      // Đọc tin nền chỉ khi người dùng KHÔNG đang nói hay đang nghe Thansa nói dở (Voice V1):
       // chen một bản tin vào giữa câu người dùng là cắt ngang họ. Hoãn tới lúc rảnh.
       if (voice.ttsEnabled) {
         // Đọc phần chữ, không đọc khối ẩn JAVIS_VIEC.
@@ -910,9 +910,9 @@ function handleMessage(data) {
     // Lượt nói: server đã DIỄN GIẢI câu máy nghe (lớp sửa theo ngữ cảnh, hoặc bộ não giọng
     // viết lại dòng JAVIS_NGHE). Bong bóng người dùng đang hiện chữ thô của máy nghe, nên thay
     // bằng câu đã diễn giải và ghi chữ thô nhỏ bên dưới để đối chiếu. Chủ dự án 16/09: nói
-    // "Javis" mà bong bóng vẫn "David" thì không biết Javis đã hiểu đúng chưa.
+    // "Thansa" mà bong bóng vẫn "David" thì không biết Thansa đã hiểu đúng chưa.
     // CỬA TẠP ÂM: bộ não giọng xét ra cả lượt chỉ là tiếng TV hay người khác trong phòng,
-    // không có câu nào nói với Javis. Gỡ HẲN bong bóng (chủ dự án chốt 17/09: ẩn luôn để mắt
+    // không có câu nào nói với Thansa. Gỡ HẲN bong bóng (chủ dự án chốt 17/09: ẩn luôn để mắt
     // chỉ còn nội dung đang bàn), server đã xoá tin khỏi kho phiên nên F5 cũng không thấy lại.
     // Chỉ để lại một dòng ghi chú tự tắt: im hoàn toàn thì lúc cửa xét NHẦM, người dùng nói mà
     // không có gì xảy ra, trông y hệt mic hỏng và không có đầu mối nào để đi tắt bớt lọc.
@@ -1100,7 +1100,7 @@ function sendMessage(text, opts) {
   if (!ws || ws.readyState !== WebSocket.OPEN) { if(opts && opts.adaptive){chatInput.value=msg;ghiChuThoang(window.t("app.ws_mat_ket_noi"));return;} giuTinKhiDutMang(msg); return; }
   // File còn ĐANG TẢI LÊN thì đợi nó xong rồi gửi, KHÔNG gửi thiếu. Trước đây dòng lọc
   // `a.path` bên dưới lặng lẽ bỏ file chưa tải xong: dán ảnh hay một đoạn văn dài rồi gõ câu
-  // hỏi và Enter ngay là tin bay đi tay không, bong bóng không có ảnh, Javis cũng không nhận
+  // hỏi và Enter ngay là tin bay đi tay không, bong bóng không có ảnh, Thansa cũng không nhận
   // được file - đúng lỗi chủ repo báo 2026-09-10. Chip trên thanh đính kèm vẫn hiện "đang
   // tải..." nên người dùng thấy vì sao tin chưa đi.
   const dangTai = pendingAttachments.filter(a => a.uploading);
@@ -1137,7 +1137,7 @@ function sendMessage(text, opts) {
   }
   const sid = savedSessionId;
   // Phiên đang trả lời thì không gửi chồng lượt. NHƯNG tin từ MIC (hay gõ trong lúc rảnh tay)
-  // là người dùng CHEN NGANG: họ vừa cắt lời Javis rồi nói câu mới, nên câu mới phải thắng -
+  // là người dùng CHEN NGANG: họ vừa cắt lời Thansa rồi nói câu mới, nên câu mới phải thắng -
   // dừng lượt cũ rồi gửi. Nuốt lặng như trước là kẹt cứng: đạo diễn đã bật `processing` trong
   // endpoint() TRƯỚC khi gọi vào đây, mà lượt bị nuốt thì không bao giờ có turn_done để hạ nó,
   // nên orb đứng mãi ở "đang suy nghĩ" và người dùng không thấy tin mình vừa nói ở đâu cả.
@@ -1159,7 +1159,7 @@ function sendMessage(text, opts) {
   voice.resetSpokenWords();    // lượt mới đếm từ đã đọc lại từ 0
   nhapGiong("");               // bong bóng nháp (chữ đang nghe) nhường chỗ cho tin thật
   // Voice V3: đang ở phiên Live mà GÕ chữ thì đẩy thẳng vào phiên Live (cùng một cuộc nói
-  // chuyện, Javis đáp bằng giọng), không mở lượt chat riêng. Có file đính kèm thì đi đường thường.
+  // chuyện, Thansa đáp bằng giọng), không mở lượt chat riêng. Có file đính kèm thì đi đường thường.
   if (voiceMode === "live" && !atts.length && window.JavisVoiceLive && window.JavisVoiceLive.isOn()) {
     chatInput.value = ""; chatInput.style.height = "auto";
     appendUserMessage(msg, []);
@@ -1173,7 +1173,7 @@ function sendMessage(text, opts) {
   // không còn gì để trỏ tới, và bong bóng chỉ còn trơ cái tên file.
   recordTurn("user", msg, atts.map(a => ({ name: a.name, kind: a.kind, url: a.url || "" })));
 
-  // Soạn message gửi Javis (kèm đường dẫn file trong Sources)
+  // Soạn message gửi Thansa (kèm đường dẫn file trong Sources)
   const _isSkill = _slash.type === "skill";
   let outMsg = _isSkill ? _slash.message : msg;
   if (atts.length) {
@@ -1196,7 +1196,7 @@ function sendMessage(text, opts) {
   // File đang ghim đi TRƯỚC mọi thứ: nó là ngữ cảnh nền của cả lượt, không phải dữ liệu
   // đính kèm một lần. Gửi lại mỗi lượt vì engine API dựng lại payload từ SQLite mỗi lần,
   // không giữ trạng thái "đang mở file nào" giữa các lượt.
-  // Ngữ cảnh giao diện (Voice V1, spec mục 5): trang đang mở, đoạn đang bôi đen, câu Javis bị
+  // Ngữ cảnh giao diện (Voice V1, spec mục 5): trang đang mở, đoạn đang bôi đen, câu Thansa bị
   // ngắt lời. Đứng SAU khối file ghim và TRƯỚC câu hỏi; rỗng thì không chèn gì.
   try {
     // `voice`: đang nói chuyện bằng giọng (tin từ mic, HAY gõ chữ khi mic rảnh tay đang bật):
@@ -1209,7 +1209,7 @@ function sendMessage(text, opts) {
   } catch (e) {}
   _ngatLoiTai = "";
   if (pinnedNote) {
-    outMsg = `[FILE ĐANG MỞ trong trình sửa của Javis: ${pinnedNote.abs}\n`
+    outMsg = `[FILE ĐANG MỞ trong trình sửa của Thansa: ${pinnedNote.abs}\n`
       + `Đây là file người dùng ĐANG LÀM VIỆC TRÊN ĐÓ - coi như đầu vào của cuộc trò chuyện này. `
       + `Đọc nó trước khi trả lời. Khi được yêu cầu sửa/viết thêm/dọn lại mà không nói rõ file nào `
       + `thì ghi thẳng vào chính file này.]\n\n${outMsg}`;
@@ -1322,7 +1322,7 @@ function goTinNguoiDungCuoi(raw) {
   return true;
 }
 // Dòng ghi chú THOÁNG QUA giữa khung chat: hiện rồi tự tắt, không vào convo, không lưu
-// localStorage, không đọc ra loa, không đi vào ngữ cảnh lượt sau. Dùng cho chuyện Javis vừa
+// localStorage, không đọc ra loa, không đi vào ngữ cảnh lượt sau. Dùng cho chuyện Thansa vừa
 // quyết mà không đáng để lại một lượt trong hội thoại.
 const GHI_CHU_MS = 6000;
 function ghiChuThoang(text) {
@@ -1577,7 +1577,7 @@ function notifySessions() { try { window.dispatchEvent(new Event("javis:sessions
 function actsHtml(role, ts, canResend) {
   return window.JavisActs ? window.JavisActs.actsHtml(role, ts, canResend) : "";
 }
-// Tin chỉ có ảnh (không kèm lời nhắn) thì chẳng có chữ nào để gửi lại. Ở tin của Javis
+// Tin chỉ có ảnh (không kèm lời nhắn) thì chẳng có chữ nào để gửi lại. Ở tin của Thansa
 // thì cái quyết định là CÂU HỎI ngay trên nó, nên soi tin người dùng cuối cùng đã nằm
 // trong khung (chatAppend chèn theo đúng thứ tự nên lúc này nó đã có mặt).
 function lastUserText() {
@@ -1592,7 +1592,7 @@ function lastUserText() {
 // "[SKILL: " là khối do chat-slash.js dựng khi người dùng gõ lệnh "/". Gỡ nó ra thì bong bóng
 // hiện ĐÚNG câu họ đã gõ, thay vì câu máy dựng quanh câu đó - khách báo đúng chuyện này 16/09.
 // Giữ MỘT DÒNG: test_dinh_kem_khong_roi.js bóc đúng dòng này ra để chạy docDinhKem bằng node.
-const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Javis:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:", "[SKILL: "];
+const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:", "[SKILL: "];
 
 // Gỡ mấy khối đó ra để lấy lại ĐÚNG câu người dùng đã gõ.
 //
@@ -1944,7 +1944,7 @@ function flashCopied(btn, label) {
   setTimeout(() => { btn.textContent = label || old; }, 1200);
 }
 // Bấm một nút trong hàng .msg-acts. Gửi lại / sửa lại đều lấy chữ GỐC của tin người
-// dùng (dataset.text) chứ không đọc lại DOM, vì tin dài đang thu gọn và tin Javis đã
+// dùng (dataset.text) chứ không đọc lại DOM, vì tin dài đang thu gọn và tin Thansa đã
 // thành HTML. Gửi lại = một lượt MỚI ở cuối hội thoại, không xoá gì của lượt cũ.
 function runMsgAct(btn) {
   const msgEl = btn.closest(".msg");
@@ -1957,7 +1957,7 @@ function runMsgAct(btn) {
   }
   // Chi tin NGUOI DUNG mang nut gui lai / sua lai, nen chu goc luon nam ngay tren chinh no.
   // Truoc day con mot nhanh nguoc len tim tin nguoi dung gan nhat - do la duong cua nut "tra
-  // loi lai cau hoi phia tren" o tin Javis, da bo o 0.52.13.
+  // loi lai cau hoi phia tren" o tin Thansa, da bo o 0.52.13.
   const text = msgEl.dataset.text || "";
   if (!text) return;
   if (act === "edit") {
@@ -2046,7 +2046,7 @@ async function initGraph() {
   await reloadGraph();
 }
 
-// Click node trong graph → Javis mở & thao tác note đó trong vault
+// Click node trong graph → Thansa mở & thao tác note đó trong vault
 window.onGraphNodeClick = (node) => {
   if (!node || !node.path) return;
   const brainRel = (node.path || "").split("/").slice(1).join("/") || node.path;   // bỏ đoạn gốc → path tương đối brain
@@ -2477,7 +2477,7 @@ window.addEventListener("resize", () => { if (javisGraph) javisGraph.resize(); }
 let _stopBtnTick = 0;
 function pumpAudioLevel() {
   if (javisGraph) javisGraph.setLevel(voice.getLevel());
-  // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc Javis đang đọc)
+  // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc Thansa đang đọc)
   if (_theoLoi && (_stopBtnTick % 3) === 0) nhipTheoLoi();   // V3: chữ theo lời ~20 lần/giây
   if ((_stopBtnTick++ % 10) === 0) {
     updateStopBtn();
@@ -2974,7 +2974,7 @@ async function uploadFile(file, att) {
 }
 function _mb(b) { return (b / 1048576).toFixed(1).replace(/\.0$/, ""); }
 async function _taiLen(file, att) {
-  // Chỉ STAGE để Javis đọc - KHÔNG tự convert/lưu. Lưu Sources chỉ khi user yêu cầu.
+  // Chỉ STAGE để Thansa đọc - KHÔNG tự convert/lưu. Lưu Sources chỉ khi user yêu cầu.
   let ve = 0;
   const onTien = (daGui, tong) => {
     if (daGui < 0) att.statusText = window.t("app.att_saving");
@@ -3043,7 +3043,7 @@ fileInput.addEventListener("change", () => {
 
 // Dán ảnh (Ctrl+V) + dán VĂN BẢN SIÊU DÀI thành file .txt đính kèm (kiểu Claude):
 // bài dài nhồi thẳng vào ô chat vừa khó đọc vừa nặng khung hội thoại - biến thành
-// file thì Javis đọc trọn vẹn còn màn hình chỉ hiện một chip gọn.
+// file thì Thansa đọc trọn vẹn còn màn hình chỉ hiện một chip gọn.
 const PASTE_TXT_CHARS = 1500;   // vượt MỘT trong hai ngưỡng là thành file
 const PASTE_TXT_LINES = 25;
 function pasteAsTxt(text) {
@@ -3160,7 +3160,7 @@ function alertMic(err) {
   if (err === "not-allowed") {
     // Trang không chạy ở ngữ cảnh bảo mật thì trình duyệt chặn thẳng, và KHÔNG hề hỏi quyền.
     // Bảo họ "cấp quyền" lúc này là chỉ họ đi tìm một cái nút không tồn tại. Hay gặp khi mở
-    // Javis qua địa chỉ LAN hoặc tên miền chưa có HTTPS.
+    // Thansa qua địa chỉ LAN hoặc tên miền chưa có HTTPS.
     if (!window.isSecureContext) {
       alert(window.t("app.mic_insecure") + "\n" + "\n"
         + window.t("app.mic_insecure_fix"));
@@ -3188,7 +3188,7 @@ voiceBtn.addEventListener("click", () => {
   voiceBtn.classList.toggle("handsfree", handsFree);
   voice.handsFree = handsFree && voiceMode !== "live";   // bật ngay, không đợi vòng 500 ms
   // Loa đi theo mic (chủ repo yêu cầu 02/09): bật nghe là muốn NÓI CHUYỆN bằng giọng, nên
-  // Javis phải đáp bằng giọng; tắt nghe là quay về gõ chữ, Javis im. Điện thoại từng không
+  // Thansa phải đáp bằng giọng; tắt nghe là quay về gõ chữ, Thansa im. Điện thoại từng không
   // có chỗ nào bật loa cả, nên gộp vào mic là một nút lo cả hai chiều.
   try { if (window.JavisTts) window.JavisTts.set(handsFree); } catch (e) {}
   // Voice V2 bậc Live: nút mic mở phiên nghe nói thẳng thay cho Web Speech + TTS.
@@ -3206,7 +3206,7 @@ voiceBtn.addEventListener("click", () => {
 });
 
 // ---- Voice V1: hai nút trong Cài đặt nhanh (lưu localStorage, không đụng settings.json) ----
-// Im lặng bao lâu thì gửi (500 / 800 / 1200 ms, mặc định 1200 - chủ dự án chốt 17/09) và có cho ngắt lời Javis bằng giọng không.
+// Im lặng bao lâu thì gửi (500 / 800 / 1200 ms, mặc định 1200 - chủ dự án chốt 17/09) và có cho ngắt lời Thansa bằng giọng không.
 (function () {
   // 0.58.8: ba thẻ radio đổi thành một ô chọn (#endpointSel). Giá trị lưu KHÔNG đổi nên
   // người đang dùng không bị reset về mặc định.
@@ -3244,7 +3244,7 @@ setInterval(() => {
   // `micHong()` là chốt thứ hai (chốt thứ nhất là tatRanhTay() trong onError). Giữ cả hai vì
   // vòng này chạy hai lần mỗi giây: sót một nhịp là một hộp thoại nữa đập vào mặt người dùng.
   //
-  // KHÔNG còn đòi `!isProcessing`: trong lúc Javis đang nghĩ, người ta vẫn phải nói chen vào
+  // KHÔNG còn đòi `!isProcessing`: trong lúc Thansa đang nghĩ, người ta vẫn phải nói chen vào
   // hay nói thêm ngữ cảnh được, y như nói chuyện với người thật. Chốt cũ đóng mic suốt thời
   // gian xử lý (có khi vài chục giây) nên nói vào chỗ trống, không ai nghe (chủ dự án báo
   // 15/09). Tin nói lúc ấy đi qua sendMessage: nó dừng lượt cũ rồi gửi lại câu mới, và tin
@@ -3272,7 +3272,7 @@ document.addEventListener("keydown", (e) => {
   }
   if (e.code === "Escape") {
     // Esc chỉ thoát chế độ rảnh tay + tắt mic + đóng popup node nếu đang mở. KHÔNG còn dừng câu
-    // trả lời hay ngắt Javis đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
+    // trả lời hay ngắt Thansa đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
     tatRanhTay();
     try { if (window.JavisTts) window.JavisTts.set(false); } catch (e2) {}   // Esc = thoát nói chuyện bằng giọng
     if (typeof closeNodePopup === "function") closeNodePopup();
@@ -3434,7 +3434,7 @@ async function refreshTgStatus() {
 
 
 // ============================================
-// Mức dùng (token Javis tự đo, đa nhà cung cấp) - panel sidebar
+// Mức dùng (token Thansa tự đo, đa nhà cung cấp) - panel sidebar
 // ============================================
 const _PROV_LABEL = { cli: "Claude Code", codex: "ChatGPT", openrouter: "OpenRouter", openai: "OpenAI", "anthropic-api": "Anthropic", gemini: "Gemini", groq: "Groq" };
 function _fmtTok(n) {

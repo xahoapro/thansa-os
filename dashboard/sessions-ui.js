@@ -1,5 +1,5 @@
 // ============================================================
-// Javis - Sidebar "Lịch sử hội thoại" TRONG chat workspace (cột trái khi phóng to chat).
+// Thansa - Sidebar "Lịch sử hội thoại" TRONG chat workspace (cột trái khi phóng to chat).
 // chat-zoom.js tạo khung <aside id="chatSide"> và gọi window.JavisChatSide.mount/refresh;
 // module này render nội dung: + Hội thoại mới, tìm kiếm, danh sách nhóm theo thời gian,
 // đổi tên/xoá, highlight phiên đang mở. Mở phiên qua window.JavisSessions (app.js).
@@ -269,7 +269,7 @@
   //
   // Chip nói về project CỦA LƯỢT CHAT, không phải bộ lọc cột trái. Hai thứ đó khác nhau và
   // server bơm hướng dẫn theo cái thứ nhất (`sessions.project_id`): mở lại một cuộc cũ thuộc
-  // project A trong khi cột trái đang lọc project B thì Javis vẫn nhận hướng dẫn của A. Chip
+  // project A trong khi cột trái đang lọc project B thì Thansa vẫn nhận hướng dẫn của A. Chip
   // mà đọc bộ lọc là nó nói dối đúng vào lúc người dùng cần tin nó nhất.
 
   var PROJ_INSTR_MAX = 4000;       // gương của PROJECT_INSTRUCTIONS_MAX (server/sessions.py)
@@ -451,7 +451,7 @@
   // Dùng lại đúng vỏ ngăn kéo của project (đầu khung, tab, thân) chứ không dựng khung thứ
   // hai: hai danh sách này trông giống nhau, hành xử giống nhau, chỉ khác nguồn dữ liệu.
   //
-  // Danh sách của cuộc trộn HAI nguồn: phần Javis tự dò ra từ tin nhắn (`manual: false`,
+  // Danh sách của cuộc trộn HAI nguồn: phần Thansa tự dò ra từ tin nhắn (`manual: false`,
   // không gỡ/ghim được vì nó không phải một bản ghi) và phần người dùng TỰ GẮN (`manual:
   // true`, có id nên đủ nút như bên project). Server lo phần trộn; ở đây chỉ chia nhóm.
   var cuocTS = null;      // {files, links, dangTai, loi} của cuộc đang xem
@@ -864,7 +864,7 @@
   }
 
   function hangMuc(o) {
-    // Hàng TỰ DÒ (chỉ có ở chế độ cuộc): Javis suy ra từ tin nhắn chứ không phải một bản ghi,
+    // Hàng TỰ DÒ (chỉ có ở chế độ cuộc): Thansa suy ra từ tin nhắn chứ không phải một bản ghi,
     // nên không có id để gỡ hay ghim. Vẫn mở ra đọc được - đó mới là việc chính của nó.
     if (o.tuDong) {
       return '<div class="pd-row' + (o.mat ? " mat" : "") + '" data-path="' + esc(o.duong || "") + '">' +
@@ -923,7 +923,7 @@
   function dsFileHtml(p) {
     var fs = p.files || [];
     var laCuoc = pdLaCuoc();
-    // Chế độ cuộc: file người dùng GẮN TAY (có id) đứng trên, file Javis tự dò ra đứng dưới.
+    // Chế độ cuộc: file người dùng GẮN TAY (có id) đứng trên, file Thansa tự dò ra đứng dưới.
     // Thứ mình chủ động gắn vào thì phải nằm chỗ mắt nhìn trước, và chỉ nó mới có nút.
     var tuDong = laCuoc ? fs.filter(function (f) { return !f.manual; }) : [];
     var tay = laCuoc ? fs.filter(function (f) { return f.manual; }) : fs;
@@ -1119,7 +1119,7 @@
     var box = pdEl && pdEl.querySelector(".pd-results");
     if (!box || !p) return;
     var theoDuong = {};
-    // Chỉ file GẮN TAY mới đối chiếu được: file Javis tự dò ra không có id nên không gỡ được,
+    // Chỉ file GẮN TAY mới đối chiếu được: file Thansa tự dò ra không có id nên không gỡ được,
     // và người dùng vẫn có quyền gắn tay chính nó để ghim hoặc giữ lại.
     (p.files || []).forEach(function (f) { if (f.id) theoDuong[f.path] = f; });
     box.querySelectorAll(".pd-res").forEach(function (r) {
@@ -1801,7 +1801,7 @@
   // Cập nhật khi có lượt chat mới / đổi phiên / đổi brain
   window.addEventListener("javis:sessions-changed", refresh);
   // Chip phải tự sống KHÔNG phụ thuộc cột trái: refresh() thoát sớm khi chưa mount sidebar,
-  // mà chip còn đứng ở màn Javis nơi cột đó chưa bao giờ mount. Đổi phiên là đổi project có
+  // mà chip còn đứng ở màn Thansa nơi cột đó chưa bao giờ mount. Đổi phiên là đổi project có
   // hiệu lực, nên bỏ cache rồi vẽ lại.
   window.addEventListener("javis:sessions-changed", function () {
     quenPhienProj();
