@@ -35,7 +35,7 @@
   }
 
   /* crc32 khớp từng bit với zlib.crc32 bên Python (server dùng chính hàm đó).
-   * Không dùng crypto.subtle: nó chỉ có trong ngữ cảnh bảo mật, mà Javis rất hay chạy
+   * Không dùng crypto.subtle: nó chỉ có trong ngữ cảnh bảo mật, mà Thansa rất hay chạy
    * trên http:// theo IP của VPS - dùng nó là người gác cổng chết lặng đúng lúc cần nhất. */
   var BANG = null;
   function bangCrc() {

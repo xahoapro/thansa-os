@@ -309,7 +309,7 @@
       .catch(function () { return state.viec || null; });
   }
 
-  // fetch KHÔNG reject với status 4xx/5xx, mà middleware đăng nhập của Javis lại trả 401 kèm
+  // fetch KHÔNG reject với status 4xx/5xx, mà middleware đăng nhập của Thansa lại trả 401 kèm
   // một THÂN JSON. Nên `.then(r => r.json())` trơn sẽ resolve ngon lành với {error:...}, khối
   // .catch không bao giờ chạy, và trang vẽ ra "0 token / $0.00 / Chưa có dữ liệu" ở mọi ô -
   // trông y hệt một tháng chưa dùng gì. Phiên hết hạn mà báo là "bạn chưa tiêu đồng nào" là
@@ -618,7 +618,7 @@
     var k = t.tiet_kiem || {};
     if (!k.du_du_lieu) {
       // Hai lý do khác hẳn nhau, và gộp làm một là nói dối theo hướng làm người ta tắt chế độ
-      // tiết kiệm đi: "chưa chạy lượt nào" với "bạn đang chỉnh tay nên Javis không biết cấu
+      // tiết kiệm đi: "chưa chạy lượt nào" với "bạn đang chỉnh tay nên Thansa không biết cấu
       // hình đó tốn bao nhiêu".
       if (k.khong_do_duoc) {
         // The reason is state, like "chua_luot" below, so it stays open (review 0.214.0).
