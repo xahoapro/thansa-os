@@ -1,5 +1,5 @@
 // ============================================================
-// Javis - Trang Chatbot: quản lý các Bot chuyên trách (mỗi bot một Agent, một brain,
+// Thansa - Trang Chatbot: quản lý các Bot chuyên trách (mỗi bot một Agent, một brain,
 // một token Telegram riêng). console.js gọi window.JavisChatbots.render(el).
 //
 // UX dựng theo hướng NHIỀU BOT ngay từ đầu dù lần đầu chỉ chạy một con: lưới thẻ, ô tìm,
@@ -298,7 +298,7 @@
     // trong khi thẻ vẫn xanh và bot vẫn trả lời bình thường.
     if (st.loi_menu_lenh)
       loiTen += '<div class="cb-err">' + ic("triangle-alert") + ' ' + esc(st.loi_menu_lenh) + '</div>';
-    // Chế độ riêng tư của Telegram chặn Ở PHÍA TELEGRAM, trước khi Javis nhìn thấy tin nào.
+    // Chế độ riêng tư của Telegram chặn Ở PHÍA TELEGRAM, trước khi Thansa nhìn thấy tin nào.
     // Hiện cho MỌI bot có dùng nhóm, không riêng bot đặt "trả lời mọi tin": nó là nguyên nhân
     // số một của "nhắn riêng thì được, trong nhóm tag tên thì im re", và người dùng không có
     // cách nào đoán ra vì mọi dấu hiệu trên trang này đều xanh.
