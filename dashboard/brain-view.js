@@ -37,7 +37,7 @@
       apply(!root.classList.contains("brain-overlays-hidden"), true);
     });
 
-    // Đồng bộ nếu người dùng mở Javis ở nhiều tab.
+    // Đồng bộ nếu người dùng mở Thansa ở nhiều tab.
     window.addEventListener("storage", function (event) {
       if (event.key === STORAGE_KEY) apply(event.newValue === "1", false);
     });

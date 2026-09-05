@@ -657,7 +657,7 @@
     // Danh mục cache 6 giờ ở phía server (`packs_store.TTL`). Với việc TÌM một gói mới thì 6
     // giờ là hợp lý. Với việc BIẾT gói mình đã cài có bản mới chưa thì nó sai một cách im
     // lặng: mở trang ra vẫn là danh mục của sáng nay, không dấu hiệu gì, và người dùng kết
-    // luận là Javis không có tính năng cập nhật.
+    // luận là Thansa không có tính năng cập nhật.
     //
     // Nên khi bản đang cầm đã quá cũ, lấy lại MỘT lần ở nền rồi vẽ lại. Không đụng TTL của
     // server (các nơi khác vẫn hưởng cache), chỉ trang Kho mới trả cái giá một request nhỏ.
@@ -1306,7 +1306,7 @@
           + tw("store.back_to", { trang: esc(veTrang.nhan) }) + '</button>'
         : "")
       // No heading and no intro here (owner, 2026-10-28): the page header right above already says
-      // "Javis Store" and what it holds, and the cards explain themselves. Where installs land on
+      // "Thansa Store" and what it holds, and the cards explain themselves. Where installs land on
       // disk moved into the (i) of the Install from .zip dialog, the one place it matters.
       + '<div class="kho-khoi">'
       + (d.disabled

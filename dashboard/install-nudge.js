@@ -1,8 +1,8 @@
-/* install-nudge.js - nhắc thêm Javis vào Màn hình chính, MỖI NGÀY MỘT LẦN.
+/* install-nudge.js - nhắc thêm Thansa vào Màn hình chính, MỖI NGÀY MỘT LẦN.
 
-   Vì sao cần: trên điện thoại, Javis mở bằng tab trình duyệt và Javis mở bằng app đã cài là
+   Vì sao cần: trên điện thoại, Thansa mở bằng tab trình duyệt và Thansa mở bằng app đã cài là
    hai trải nghiệm khác hẳn nhau - và cái khác lớn nhất không nhìn thấy được. iOS CHỈ cho
-   nhận thông báo đẩy khi trang đã được "Thêm vào MH chính" (iOS 16.4+). Ai dùng Javis bằng
+   nhận thông báo đẩy khi trang đã được "Thêm vào MH chính" (iOS 16.4+). Ai dùng Thansa bằng
    Safari thường sẽ không bao giờ nhận được kết quả việc nền, mà cũng không có gì nói cho họ
    biết vì sao. Nút "Mở như app" trên thanh trạng thái chỉ hiện ở trình duyệt có
    beforeinstallprompt (Chrome/Edge), tức là đúng iOS - nơi cần nhất - lại không có nút nào.
