@@ -48,7 +48,7 @@
     try { return window.innerWidth < HEP; } catch (e) { return false; }
   }
 
-  // Chỗ đứng của nút "≡ n/m" trên điện thoại: hàng nhãn ngay trên khung chat. Ở màn Javis là
+  // Chỗ đứng của nút "≡ n/m" trên điện thoại: hàng nhãn ngay trên khung chat. Ở màn Thansa là
   // nhóm nút .panel-acts (cạnh nút phóng to), ở trang Trò chuyện là thanh .chatpage-bar. Tìm
   // theo KHUNG ĐANG CHỨA #chatArea chứ không theo id cố định, vì node chat bị mượn qua lại
   // giữa hai trang. Không thấy thì rơi về góc khung như cũ - còn hơn không có nút.
@@ -322,7 +322,7 @@
   function gan() {
     chatArea = document.getElementById("chatArea");
     if (!chatArea) return;
-    // childList thôi, KHÔNG subtree: lúc Javis trả lời, nội dung bong bóng vẽ lại liên tục
+    // childList thôi, KHÔNG subtree: lúc Thansa trả lời, nội dung bong bóng vẽ lại liên tục
     // theo từng chữ. Nghe subtree là dựng lại thanh mốc hàng chục lần mỗi câu trả lời, trong
     // khi số câu HỎI có đổi gì đâu.
     try {
