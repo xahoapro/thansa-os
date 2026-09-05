@@ -95,7 +95,7 @@
     var b = document.getElementById("themeToggle");
     if (b) b.addEventListener("click", toggle);
 
-    // Mở Javis ở nhiều tab: đổi tông ở tab này thì tab kia đổi theo.
+    // Mở Thansa ở nhiều tab: đổi tông ở tab này thì tab kia đổi theo.
     window.addEventListener("storage", function (e) {
       if (e.key === KEY) apply(e.newValue === "light", false);
     });
