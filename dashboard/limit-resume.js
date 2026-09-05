@@ -196,7 +196,7 @@
   }
   function armTimer() { if (!timer) timer = setInterval(tick, TICK_MS); }
 
-  // Gan the vao mot bong bong Javis (thuong la bong bong bao loi vua ve).
+  // Gan the vao mot bong bong Thansa (thuong la bong bong bao loi vua ve).
   function attach(msgEl, sid, limit) {
     if (!msgEl || !sid) return null;
     var bubble = msgEl.querySelector(".bubble") || msgEl;
@@ -268,7 +268,7 @@
     if (activeSid) renderFor(activeSid);
   }
 
-  // Phien vua mo (F5 hoac chon o Lich su): co muc cho thi gan the vao bong bong Javis cuoi.
+  // Phien vua mo (F5 hoac chon o Lich su): co muc cho thi gan the vao bong bong Thansa cuoi.
   // Cau "het luot" luon la tin cuoi cua phien khi con muc cho (gui tin moi la server huy muc).
   function renderFor(sid) {
     var info = pending[sid];
