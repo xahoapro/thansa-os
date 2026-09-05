@@ -203,7 +203,7 @@
     });
     window.addEventListener("focus", tick);
 
-    // Mở Javis ở nhiều tab: đổi tông hay khung giờ ở tab này thì tab kia đổi theo.
+    // Mở Thansa ở nhiều tab: đổi tông hay khung giờ ở tab này thì tab kia đổi theo.
     window.addEventListener("storage", function (e) {
       if (e.key === KEY || e.key === KEY_SCHED) paint(wantLight(), true);
     });
