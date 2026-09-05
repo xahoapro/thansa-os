@@ -113,7 +113,7 @@
     });
   }
 
-  // Bảng màu theo tông của Javis. xterm vẽ bằng canvas nên KHÔNG đọc được biến CSS - phải
+  // Bảng màu theo tông của Thansa. xterm vẽ bằng canvas nên KHÔNG đọc được biến CSS - phải
   // truyền màu vào tay, và đổi lại mỗi khi người dùng lật tông.
   function bangMau() {
     var sang = !!(window.javisTheme && window.javisTheme.isLight());
