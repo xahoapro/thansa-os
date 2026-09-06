@@ -609,10 +609,10 @@
     rebrand Javis→Thansa các chuỗi hiển thị mới, giữ javis_*/JAVIS_*/Javis/.
   commit: "[me] P020: neo lai rebrand chuoi hien thi moi upstream 0.39 (Shopify/UCP)"
   diem_neo:
-    - file: system/mcp-catalog.json
-      ky_hieu: "shopify"
+    # Shopify đã dời sang repo kho javis-store (upstream 0.55.33+), khỏi mcp-catalog.json.
+    # Neo còn lại là hồ sơ agent UCP - phần rebrand của P020 vẫn sống ở đó.
     - file: system/ucp-agent-profile.json
-      ky_hieu: '"_doc"'
+      ky_hieu: "Hồ sơ agent UCP của Thansa OS"
   vung_theo_doi:
     - system/mcp-catalog.json
     - system/ucp-agent-profile.json
@@ -974,10 +974,11 @@
     (×30+ chỗ) + upstream 0.44-0.47 thêm mục tự-học; 30.009 ký tự là hợp lệ, quyết định CÓ Ý THỨC.
   commit: "[me] P033: va 2 test coupled sau tron 0.47.2 (timing + tran prompt)"
   diem_neo:
-    - file: tests/python/test_chat_disconnect.py
-      ky_hieu: "if runtime.get_job(\"session-background\") is None:"
+    # Vế test_chat_disconnect nay do UPSTREAM tu vá (0.55.16: bỏ sleep cứng → helper cho_xong,
+    # cùng ý poll của P033) nên đã lấy HEAD, neo cũ chết. Phần P033 còn sống là khối chú thích
+    # giải thích thuế rebrand đẩy CLAUDE.md sát trần trong test_prompt_budget.
     - file: tests/python/test_prompt_budget.py
-      ky_hieu: "CLAUDE_MD_MAX_CHARS = 33_600"
+      ky_hieu: 'Thue thuong hieu "Javis"->"Thansa"'
   vung_theo_doi:
     - tests/python/test_chat_disconnect.py
     - tests/python/test_prompt_budget.py
@@ -1060,3 +1061,36 @@
   dieu_kien_bo: >
     Vòng sau upstream đưa NỐT chuỗi cứng còn lại vào i18n thì overlay en-goi.json/dich-en.js
     teo dần, cân nhắc bỏ hẳn khi native i18n phủ 100% (dựa vào en.json upstream).
+
+- id: P036
+  ten: "Rebrand vòng 0.55.46 - Javis Store + UI mới"
+  y_dinh: >
+    Vòng trộn 0.52.10→0.55.46 upstream thêm hệ con LỚN: Javis Store (kho gói trợ lý/kỹ năng/
+    quy trình/connector, tách sang repo riêng javis-store) + nhiều UI mới (độ sâu suy nghĩ,
+    gom nhóm Agent/Workflow, Ollama Local, vá mic/đính kèm...). Rebrand tên sản phẩm Javis→
+    Thansa trên TOÀN dashboard/*.js + *.html (packs.js "Thansa Store", app.js/voice.js/
+    install-nudge/sessions-ui/chat-*/...) và Store backend packs_store.py. Regex an toàn
+    Javis(?![/\w])(?!-[A-Z]) GIỮ định danh JS (JavisI18n/JavisPacks/appendJavisMessage/
+    JavisSessions/JavisEditFile...), path Javis/ (loops/agents/workflows), header X-Javis-*,
+    URL kho blogminhquy/javis-store (gói chạy thật; chủ đổi được trong Cài đặt).
+  commit: "[me] P036: rebrand vong 0.55.46 - Javis Store + UI moi (thansa)"
+  diem_neo:
+    - file: dashboard/packs.js
+      ky_hieu: "Thansa Store"
+    - file: dashboard/app.js
+      ky_hieu: "Thansa"
+  vung_theo_doi:
+    - "dashboard/*.js + *.html: toàn bộ UI (packs.js Store là bề mặt mới lớn nhất)"
+    - "server/packs_store.py: backend kho gói (message hiển thị)"
+    - "server/*.py khác: comment nội bộ CỐ Ý giữ 'Javis' (không hiển thị, như mọi vòng)"
+  anh_goc:
+    - file: dashboard/packs.js
+      doan: "Javis Store"
+  kiem_chung: >
+    python regex Javis(?![/\w])(?!-[A-Z]) trên dashboard/*.js + *.html = 0 product-name;
+    'Thansa Store' có trong packs.js; định danh JS còn nguyên (JavisI18n=26, JavisPacks=18,
+    appendJavisMessage=8, window.Javis=260); node --check MỌI dashboard/*.js OK; packs_store.py
+    py syntax OK; URL kho javis-store giữ nguyên; suite xanh.
+  dieu_kien_bo: >
+    Chủ muốn kho gói RIÊNG thì fork blogminhquy/javis-store → xahoapro/thansa-store và đổi
+    STORE_MAC_DINH (hoặc URL trong Cài đặt); mặc định giữ kho upstream để gói chạy thật.
