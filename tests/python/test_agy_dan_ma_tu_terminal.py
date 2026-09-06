@@ -107,7 +107,7 @@ hd = antigravity_cli.login_huong_dan()
 check("hướng dẫn nói phải DÁN địa chỉ ngược vào terminal", "dán" in hd["ghi_chu"].lower())
 check("nói trước rằng localhost báo lỗi là bước ĐÚNG", "localhost" in hd["ghi_chu"].lower())
 check("vẫn giữ lời cảnh báo đăng nhập đúng user (trang Code trong Javis)",
-      "NGAY TRONG Javis" in hd["ghi_chu"] and "root" in hd["ghi_chu"])
+      "NGAY TRONG Thansa" in hd["ghi_chu"] and "root" in hd["ghi_chu"])
 check("có đường cứu hộ bằng curl cho bản agy cũ",
       "curl" in (hd.get("cuu_ho") or ""))
 

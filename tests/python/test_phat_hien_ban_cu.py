@@ -65,7 +65,7 @@ check("CANARY: /app-version KHÔNG chạm mạng (khác /version đi hỏi GitHu
       "httpx" not in _av_ma and "AsyncClient" not in _av_ma, _av_ma[:120])
 check("và trả cả phiên bản lẫn vân tay", '"version"' in _av and '"assets"' in _av)
 
-_root = MAIN.split("async def root()", 1)[1].split("\n@app.", 1)[0]
+_root = MAIN.split("async def root(", 1)[1].split("\n@app.", 1)[0]
 check("trang nhúng khối javis-fresh", 'id="javis-fresh"' in _root)
 # Regex tìm vân tay bám vào `?v=`, nên tính SAU khi đã đổi `?v=` là ra rỗng sạch.
 check("CANARY: vân tay tính TRƯỚC khi viết lại ?v= (tính sau là ra rỗng)",
