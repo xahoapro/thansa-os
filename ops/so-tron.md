@@ -348,3 +348,37 @@ image GHCR :1.2.0). Xem RELEASES.md.
 - VERSION neo `1.5.0-javis-0.52.10`. moc-goc goc_commit 91aa663, goc_version 0.52.10, thansa_version
   1.5.0, so_patch 32. tu-kiem-chung 5/5 XANH. Suite đầy đủ xanh (283 test).
 - Phát hành bằng **snapshot main** (ff cho user 1.4.0), Docker vẫn tắt.
+
+## Vòng 2026-09-05 (goc 91aa663 → 886ac7e, upstream +57 commit, VERSION nền 0.52.10 → 0.55.46, thansa 1.5→1.6)
+
+- 57 commit upstream (0.53.x-0.55.46) - VÒNG LỚN NHẤT. Chủ đề: **Javis Store** (kho gói trợ lý/
+  kỹ năng/quy trình/connector, 0.55.19-0.55.46) **tách sang repo riêng `javis-store`** (0.55.30);
+  dọn 16-26 connector từ mcp-catalog.json ra kho; độ sâu suy nghĩ thật trên Codex/Grok/Antigravity
+  (0.55.41-42); **tài liệu song ngữ VI-EN** (0.55.40, thêm thư mục docs/en/ + header mỗi trang);
+  Fable 5.1 trong Claude Code (0.55.39); gom nhóm Agent/Workflow (0.55.38); "người gác cổng bản cũ"
+  (freshness.js + /app-version, 0.55.18); Ollama Local (0.55.7-13); vá mic/đính kèm/Antigravity dán mã.
+- Rebase 105 commit (33 patch [me]). Xung đột giải: P004 (vi/en.json page.home.label), P007 (mcp_hub
+  javis_connections + antigravity_cli: lấy text mới upstream + rebrand), P012 (**mcp-catalog.json:
+  upstream tái cấu trúc lớn do dọn connector ra Store → lấy HEAD + rebrand regex**), P015 (giữ overlay
+  dich-en.js + lucide?v=4), P016 (app.js wizard refactor upstream + rebrand nút), P017 (**giữ CẢ hai:
+  vân tay tài sản /app-version của upstream LẪN _lang_en/_dashboard_file của mình**), P025 (VERSION
+  1.6.0), P026 (catalog link - hấp thụ bởi P012), P027 (**26 docs song ngữ: lấy HEAD upstream + rebrand
+  toàn bộ docs VI + docs/en/**), P033 (**upstream TỰ vá test timing 0.55.16 = cho_xong, lấy HEAD**),
+  P035 (lấy HEAD dicts + chạy lại regex rebrand).
+- **NEO LẠI (P036):** rebrand tên sản phẩm Javis→Thansa toàn dashboard/*.js + *.html (packs.js
+  "Thansa Store" là bề mặt mới lớn nhất) + Store backend packs_store.py. Regex an toàn giữ định danh
+  JS (JavisI18n/JavisPacks/appendJavisMessage/JavisSessions=25, window.Javis=260), path Javis/,
+  header X-Javis-*, URL kho blogminhquy/javis-store (gói chạy thật, chủ đổi trong Cài đặt).
+- **Nhiều patch bị upstream HẤP THỤ do tái cấu trúc:** P033 test_chat_disconnect (upstream tự vá cùng
+  cách), P033 test_prompt_budget (upstream cũng 33_600), P026 catalog link (gộp P012), shopify khỏi
+  catalog (dời Store). Sửa 2 neo mapping chết: P020 (shopify→ucp-agent-profile "Hồ sơ agent UCP của
+  Thansa OS"), P033 (poll→comment thuế rebrand trong test_prompt_budget).
+- **Trần prompt 33_600→33_700** (test:, non-[me]): upstream tự làm CLAUDE.md phình tới 33.581 (chỉ
+  19 headroom dưới trần CỦA HỌ), thuế rebrand +23 đẩy lên 33.604 → vượt 4. Không còn khoảng trắng để
+  cắt, cắt văn xuôi upstream sẽ lệch nghĩa → nâng trần có ý thức (thuế cấu trúc của fork).
+- Sửa test theo rebrand (test:, non-[me]): test_kho_goi ("Thansa Store"), test_cai_go_goi ("máy chủ
+  Thansa").
+- VERSION neo `1.6.0-javis-0.55.46`. moc-goc 886ac7e/0.55.46, thansa 1.6.0, so_patch 33. tu-kiem-chung
+  5/5 XANH. Phát hành snapshot main (ff cho user 1.5.0), Docker vẫn tắt.
+- **QUYẾT ĐỊNH mở: kho gói riêng.** Mặc định Store trỏ catalog upstream (blogminhquy/javis-store) để
+  gói chạy thật. Chủ muốn kho RIÊNG thì fork → xahoapro/thansa-store, đổi STORE_MAC_DINH / URL Cài đặt.
