@@ -354,9 +354,9 @@ check("bật/tắt tạm chuyển lên thẻ chứ không mất",
 # Nút chọn tệp nằm TRONG thanh công cụ của lưới, tức trên đầu - không phải cuối trang.
 check("nút cài từ tệp .zip nằm trên thanh công cụ của lưới",
       src_js.index('data-kho-zip="1"') < src_js.index('id="pkGrid"'))
-# 0.384.0: the page header (VIEW_META) already reads "Javis Store", so the page body must not
+# 0.384.0: the page header (VIEW_META) already reads "Thansa Store", so the page body must not
 # repeat it as a second heading (owner, 2026-10-28).
-check("không lặp tiêu đề Javis Store trong thân trang", "◆ Javis Store" not in src_js)
+check("không lặp tiêu đề Thansa Store trong thân trang", "◆ Thansa Store" not in src_js)
 check("thanh tab của kho cố định khi cuộn",
       ".kho-thanh { position: sticky;" in (DASHBOARD / "console.css").read_text(encoding="utf-8"))
 check("phân trang 18 mục một trang", "const MOI_TRANG = 18;" in src_js)
