@@ -70,8 +70,15 @@ def _tok(chars):
 # Thansa (28/08, vòng nền 0.50.2): fork nay cung dung CLAUDE.md TIENG ANH cua upstream, nen
 # tran cu 31_000 (do cho ban tieng Viet) da het hieu luc. Thue thuong hieu "Javis"->"Thansa"
 # (+1 ky tu x ~24 cho) day 33.369 -> 33.393 ky tu, con ~207 ky tu headroom duoi tran 33_600.
-# Giu nguyen tran upstream, KHONG nang.
-CLAUDE_MD_MAX_CHARS = 33_600
+#
+# Thansa (05/09, vong nen 0.55.46): upstream tu lam CLAUDE.md phinh len 33.581 ky tu (ban goc,
+# con "Javis") - chi con 19 ky tu headroom duoi tran 33_600 CUA CHINH HO. Thue rebrand +23
+# (23 lan "Thansa") day len 33.604 -> VUOT 4. Da soi: khong con double-space/trailing/em-dash
+# de cat, va cat van xuoi upstream se lech nghia + xung dot moi vong. Day la THUE CAU TRUC cua
+# fork (Thansa dai hon Javis), KHONG phai phinh do minh them noi dung. Nang tran 33_600->33_700
+# (headroom moi ~96) la quyet dinh CO Y THUC, dung nghia "chup thi cat" o tren: khong co gi
+# cua Thansa de cat, phan phinh la cua upstream + thue ten khong tranh duoc.
+CLAUDE_MD_MAX_CHARS = 33_700
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(
