@@ -1,6 +1,8 @@
 # Thương hiệu & tên miền riêng
 
-Trang này hướng dẫn hai việc: đổi logo/avatar của Thansa thành ảnh của bạn, và trỏ một tên miền riêng (ví dụ `javis.tencuaban.com`) vào Thansa để chạy qua HTTPS. Các thao tác nằm trong **Cài đặt → Giọng nói, thương hiệu & truy cập**.
+***Tiếng Việt** · [English](en/15-branding-and-domains.md)*
+
+Trang này hướng dẫn hai việc: đổi logo/avatar của Thansa thành ảnh của bạn, và trỏ một tên miền riêng (ví dụ `thansa.tencuaban.com`) vào Thansa để chạy qua HTTPS. Các thao tác nằm trong **Cài đặt → Giọng nói, thương hiệu & truy cập**.
 
 ## Tính năng này là gì
 
@@ -14,7 +16,7 @@ Lưu ý quan trọng ngay từ đầu: phần **Tên miền riêng** chỉ hoạ
 Cả hai tính năng nằm trong **Cài đặt → Giọng nói, thương hiệu & truy cập**. Nếu nhóm đang thu gọn, bấm tiêu đề để mở. Bên trong có hai card:
 
 - Ô **ẢNH ĐẠI DIỆN**: có ảnh xem trước, nút **Tải ảnh lên** và nút **Khôi phục mặc định**.
-- Ô **TÊN MIỀN & SSL**: có ô nhập (chỗ trống ghi "vd: javis.tencuaban.com"), nút **Lưu & kiểm tra**, hai badge trạng thái DNS và SSL, hai nút **Bật SSL** và **Kiểm tra lại**, cùng wizard ba bước đổi nội dung theo đúng môi trường VPS/Hostinger.
+- Ô **TÊN MIỀN & SSL**: có ô nhập (chỗ trống ghi "vd: thansa.tencuaban.com"), nút **Lưu & kiểm tra**, hai badge trạng thái DNS và SSL, hai nút **Bật SSL** và **Kiểm tra lại**, cùng wizard ba bước đổi nội dung theo đúng môi trường VPS/Hostinger.
 
 Mỗi lần mở Cài đặt, Thansa tự nạp lại giá trị đang dùng, kiểm tra DNS/HTTPS và đưa ra đúng bước tiếp theo.
 
@@ -53,9 +55,9 @@ Phần này giả định bạn đã deploy Thansa bằng Docker trên VPS, đã
 ### Bước A: nhập và lưu tên miền
 
 1. Mở **Cài đặt → Giọng nói, thương hiệu & truy cập**, tìm ô **TÊN MIỀN & SSL**.
-2. Nhập tên miền (hoặc tên miền con) bạn muốn dùng vào ô, ví dụ `javis.tencuaban.com`. Không cần gõ `https://`; nếu có gõ, Thansa tự bỏ.
+2. Nhập tên miền (hoặc tên miền con) bạn muốn dùng vào ô, ví dụ `thansa.tencuaban.com`. Không cần gõ `https://`; nếu có gõ, Thansa tự bỏ.
 3. Bấm nút **Lưu & kiểm tra** (hoặc nhấn Enter trong ô nhập). Thansa hiện **Đang lưu và kiểm tra…**, lưu tên miền, rồi tự chạy kiểm tra DNS/SSL và vẽ wizard ba bước ngay trên UI.
-4. Nếu tên miền sai định dạng, Thansa báo: **Tên miền không hợp lệ (vd: javis.tencuaban.com)**. Sửa lại rồi lưu tiếp.
+4. Nếu tên miền sai định dạng, Thansa báo: **Tên miền không hợp lệ (vd: thansa.tencuaban.com)**. Sửa lại rồi lưu tiếp.
 
 Muốn **xóa** tên miền: xóa trống ô nhập rồi bấm **Lưu & kiểm tra**. Thansa báo **Đã xoá tên miền.** và ẩn phần hướng dẫn.
 
@@ -68,7 +70,7 @@ Sau khi lưu (hoặc khi bấm **Kiểm tra lại**), wizard hiện bước **2.
    | Trường | Giá trị |
    |---|---|
    | Loại (Type) | A |
-   | Tên (Name/Host) | tên miền bạn vừa nhập, ví dụ `javis.tencuaban.com` |
+   | Tên (Name/Host) | tên miền bạn vừa nhập, ví dụ `thansa.tencuaban.com` |
    | Trỏ tới (Value/Points to) | địa chỉ IP máy chủ VPS của bạn (Thansa tự dò và điền sẵn IP này trong wizard) |
 
 2. Đợi DNS lan (vài phút đến vài giờ), bấm **Kiểm tra lại**. Khi DNS đúng, bước 2 chuyển sang dấu ✓ và dòng mô tả đổi thành "Bản ghi A đã trỏ đúng IP máy chủ."
@@ -128,7 +130,7 @@ Dòng trạng thái dưới cùng của card có thể là:
 | Không kết nối được cổng 443 - Caddy/HTTPS chưa chạy, hoặc cổng 80/443 bị proxy khác chiếm | Không ai trả lời ở cổng 443. | Bật lớp HTTPS theo lệnh Thansa gợi ý, và kiểm tra cổng 80/443 có bị dịch vụ khác chiếm không. |
 | Đã lưu trong Thansa; còn bước đặt DOMAIN_NAME và Redeploy trên Hostinger. | Hostinger: route Traefik chưa khớp tên miền. | Làm bước 3 của wizard Hostinger. |
 | Hãy nhập và lưu tên miền trước. | Bấm Bật SSL khi ô tên miền còn trống. | Nhập tên miền rồi lưu. |
-| Tên miền không hợp lệ (vd: javis.tencuaban.com) | Chuỗi nhập không đúng dạng tên miền. | Bỏ khoảng trắng, bỏ đường dẫn phía sau, gõ dạng `ten.tencuaban.com`. |
+| Tên miền không hợp lệ (vd: thansa.tencuaban.com) | Chuỗi nhập không đúng dạng tên miền. | Bỏ khoảng trắng, bỏ đường dẫn phía sau, gõ dạng `ten.tencuaban.com`. |
 | Bật SSL thất bại | Server từ chối bật. | Đọc thêm dòng lý do đi kèm. |
 | Không kiểm tra được (lỗi mạng). | Trình duyệt không gọi được server. | Thử lại sau ít phút. |
 | Lỗi mạng khi lưu / Lỗi mạng khi bật SSL | Mất kết nối giữa chừng. | Thử lại. |

@@ -1,4 +1,4 @@
-/* chat-render.js - bo render chat "chan that nhu Claude" cho Javis OS.
+/* chat-render.js - bo render chat "chan that nhu Claude" cho Thansa OS.
    Thay bo markdownToHtml regex cu trong app.js: markdown day du (heading h1-h6,
    danh sach co thu tu + long + checkbox, blockquote, duong ke ngang, in nghieng,
    gach ngang, link, anh), code block co nhan ngon ngu + to mau cu phap, render an
@@ -40,7 +40,7 @@
   // Vi sao can: duong dan anh trong tin nhan la tuong doi ("attachments/x.png"), khong mang
   // brain. Truoc day moi lan ve lai deu ghep voi brain DANG chon, nen mo mot hoi thoai cu
   // trong khi dang o brain khac la anh tro sai cho, 404, roi bi thay bang o xam - nguoi dung
-  // tuong Javis tu xoa anh di. Gan brain cua chinh hoi thoai do vao luot render thi het.
+  // tuong Thansa tu xoa anh di. Gan brain cua chinh hoi thoai do vao luot render thi het.
   var _brainForRender = null;
   function brainPath() {
     if (_brainForRender != null) return _brainForRender;
@@ -320,7 +320,7 @@
   // Khoi `---\n...\n---` o DAU mot file .md la METADATA (type, status, created...), khong phai
   // van ban de soan. Truoc ban nay no roi vao luat "--- = duong ke ngang", nen mo mot note trong
   // trinh sua WYSIWYG roi bam Luu la frontmatter bien thanh "* * *" cong may dong chu roi: file
-  // hong that su, va moi thu doc metadata (Javis, dataview, Obsidian) doc truot tu do. Chu repo
+  // hong that su, va moi thu doc metadata (Thansa, dataview, Obsidian) doc truot tu do. Chu repo
   // gap dung canh nay 2026-08-13 ("mot so file .md dang khong doc duoc").
   //
   // Cach chua: cat ra thanh MOT khoi rieng, contenteditable=false, va giu NGUYEN VAN trong

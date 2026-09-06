@@ -1,5 +1,7 @@
 # Thansa CLI - hỏi Thansa từ terminal
 
+***Tiếng Việt** · [English](en/24-cli.md)*
+
 Cài một gói nhỏ lên máy tính rồi gõ `javis "doanh thu tuần này thế nào"` ngay trong terminal, không cần mở trình duyệt. Câu trả lời vẫn đến từ chính Thansa của bạn: cùng brain, cùng bộ nhớ, cùng MCP đã đấu, cùng lịch sử hội thoại.
 
 > **Đọc dòng này trước:** Thansa CLI **không chứa Thansa bên trong**. Nó là cái ống nói - đầu kia phải có một máy chủ Thansa đang chạy, trên chính máy này hoặc trên VPS. Không có máy chủ thì CLI không làm gì được, và nó sẽ nói thẳng như vậy chứ không báo lỗi mạng mơ hồ.

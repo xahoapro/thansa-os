@@ -39,6 +39,7 @@
     channels: "send",
     mcp: "plug",
     plugins: "toolbox",
+    packs: "package",
     logs: "scroll-text",
     account: "circle-user",
     usage: "chart-column",
@@ -80,7 +81,7 @@
   const RAIL_ITEMS = [
     "home", "chat", "settings", "workflows", "agents", "skills", "chatbots", "files",
     "terminal", "selfimprove", "learn", "kanban", "models", "channels", "mcp", "plugins",
-    "logs", "account", "usage",
+    "packs", "logs", "account", "usage",
   ].map(id => ({ id, icon: ICON[id], get label() { return t(`page.${id}.label`); } }));
 
   // ---- Gom rail thành nhóm theo chức năng (dễ tìm hơn danh sách phẳng 18 mục) ----
@@ -97,15 +98,28 @@
     { get label() { return t("nav.group.code"); },        icon: GICON["Code"],     ids: ["terminal"] },
     { get label() { return t("nav.group.nang_luc"); },    icon: GICON["Năng lực"], ids: ["agents", "chatbots", "skills", "workflows", "plugins"] },
     { get label() { return t("nav.group.viec"); },        icon: GICON["Việc"],     ids: ["kanban", "selfimprove"] },
-    { get label() { return t("nav.group.ket_noi"); },     icon: GICON["Kết nối"],  ids: ["mcp", "channels", "models"] },
+    { get label() { return t("nav.group.ket_noi"); },     icon: GICON["Kết nối"],  ids: ["mcp", "packs", "channels", "models"] },
     { get label() { return t("nav.group.he_thong"); },    icon: GICON["Hệ thống"], ids: ["usage", "settings", "logs", "account"], foot: true },
   ];
   const RAIL_BY_ID = Object.fromEntries(RAIL_ITEMS.map(i => [i.id, i]));
+
+  // Trang CÓ THẬT nhưng KHÔNG hiện trên thanh bên. Bỏ hẳn khỏi `RAIL_ITEMS` thì không dùng
+  // được, vì đó mới là nguồn icon và nhãn; nên chỗ ẩn nằm ở đây.
+  //
+  // Rỗng từ 0.55.37. Trước đó Thansa Store bị ẩn với lý do "nó không phải một chức năng ngang
+  // hàng với Trợ lý hay Kỹ năng, đường vào đúng là cái tab trên chính trang bạn đang đứng".
+  // Lập luận đó đúng khi kho chỉ có vài gói và ai cũng tới nó từ một trang năng lực. Nó sai
+  // ngay khi kho thành chỗ chứa PHẦN LỚN kết nối của Thansa (0.55.36 dọn 16 khuôn ra kho):
+  // một người mới cài, chưa đấu gì, không có trang nào để mà bấm tab - họ cần thấy lối vào
+  // ngay trên thanh bên. Chủ dự án yêu cầu đưa ra, và đặt cạnh Kết nối.
+  const RAIL_AN = new Set();
   // Trả về [{label, foot, items:[...]}], bỏ id không tồn tại. Mục nào chưa xếp nhóm → dồn vào "Khác".
   function railGroups() {
     const seen = new Set();
     const groups = RAIL_GROUPS.map(g => {
-      const items = (g.ids || []).map(id => { seen.add(id); return RAIL_BY_ID[id]; }).filter(Boolean);
+      const items = (g.ids || [])
+        .map(id => { seen.add(id); return RAIL_AN.has(id) ? null : RAIL_BY_ID[id]; })
+        .filter(Boolean);
       return { label: g.label, icon: g.icon || "", foot: !!g.foot, items };
     }).filter(g => g.items.length);
     const rest = RAIL_ITEMS.filter(i => !seen.has(i.id));
@@ -128,7 +142,7 @@
   //
   // `page.<id>.title` cho phép tiêu đề trang KHÁC nhãn trên rail khi cần (rail chật nên
   // "Việc", trang rộng nên "Việc (Kanban)"); thiếu key đó thì tự rơi về `page.<id>.label`.
-  const VIEW_META = Object.fromEntries(["home", "chat", "settings", "workflows", "agents", "skills", "files", "terminal", "selfimprove", "chatbots", "learn", "kanban", "models", "channels", "mcp", "plugins", "logs", "account", "usage"].map(id => [id, {
+  const VIEW_META = Object.fromEntries(["home", "chat", "settings", "workflows", "agents", "skills", "files", "terminal", "selfimprove", "chatbots", "learn", "kanban", "models", "channels", "mcp", "plugins", "packs", "logs", "account", "usage"].map(id => [id, {
     icon: VIEW_ICON[id],
     get label() {
       const rieng = t(`page.${id}.title`);
@@ -152,8 +166,22 @@
   const liteMode = () => !graphEnabled || isNarrow();
 
   const esc = (s) => (s || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  // Chỉ cho link http(s) (chặn javascript:/data: XSS); dùng kèm esc() khi nhúng vào href.
-  const safeHref = (u) => /^https?:\/\//i.test((u || "").toString().trim()) ? u : "#";
+  // Chỉ cho link http(s) HOẶC đường dẫn cùng origin (chặn javascript:/data: XSS); dùng kèm
+  // esc() khi nhúng vào href.
+  //
+  // Vì sao phải nhận cả đường dẫn tương đối: catalog có connector trỏ guide_url vào trang tự
+  // host, ví dụ "/static/docs/substack.html". Luật cũ chỉ nhận ^https?:// nên nó biến thành
+  // "#" - link Hướng dẫn của Substack đã chết âm thầm. Và khi gói của người khác cấp được
+  // guide_url thì chỗ này thành cửa XSS, nên phải siết cùng lúc với việc nới.
+  //
+  // "//evil.com" bị CHẶN có chủ ý: trình duyệt hiểu nó là protocol-relative, tức link ra
+  // ngoài, chứ không phải đường dẫn nội bộ. Chỉ nhận đúng MỘT dấu gạch mở đầu.
+  const safeHref = (u) => {
+    const s = (u || "").toString().trim();
+    if (/^https?:\/\//i.test(s)) return s;
+    if (/^\/(?!\/)/.test(s)) return s;
+    return "#";
+  };
   const _shield = (on) => on
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V5l8-3z"/><path d="M9 12l2 2 4-4"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V5l8-3z"/></svg>';
@@ -361,6 +389,13 @@
     if (id === "models")   return renderModels(el);
     if (id === "mcp")      return renderConnect(el);
     if (id === "plugins")  return renderPlugins(el);
+    // Trang Gói do packs.js dựng, uỷ quyền y như renderStudioPage uỷ cho studio.js. Để riêng
+    // file vì console.js đã ~7k dòng.
+    if (id === "packs") {
+      if (window.JavisPacks) return window.JavisPacks.render(el);
+      el.innerHTML = placeholder("packs", "packs.js chưa sẵn sàng.");
+      return;
+    }
     if (id === "channels") return renderChannels(el);
     if (id === "account")  return renderAccount(el);
     if (id === "files")    return renderFiles(el);
@@ -374,9 +409,61 @@
     el.innerHTML = placeholder(id);
   }
 
+  // Loại trong kho tương ứng với từng trang năng lực. Trang nào có mặt ở đây thì được một
+  // hàng tab dẫn sang kho, đã lọc sẵn đúng loại của nó.
+  const LOAI_KHO = { agents: "agent", skills: "skill", workflows: "workflow",
+                     plugins: "tool", mcp: "connector" };
+  const TEN_CUA_BAN = { agents: "Trợ lý của bạn", skills: "Kỹ năng của bạn",
+                        workflows: "Quy trình của bạn", plugins: "Công cụ của bạn",
+                        mcp: "Kết nối của bạn" };
+
+  // Hàng tab "của bạn | Kho cài đặt" đặt trên đầu bốn trang năng lực.
+  //
+  // Tab thứ hai ĐIỀU HƯỚNG sang trang kho chứ không vẽ một bản sao của lưới kho tại chỗ. Bốn
+  // bản sao là bốn thứ sẽ lệch nhau sau vài tháng, và người dùng thì học hai lần cùng một
+  // giao diện. Một kho, một chỗ sửa - vào từ đâu cũng tới đúng nơi đó, chỉ khác cái chip đã
+  // bật sẵn.
+  // `cucBo` = các tab đổi phần hiển thị NGAY TRONG trang, dạng [{nhan, chon, bam}]. Không
+  // truyền thì hàng tab có đúng hai mục như bốn trang năng lực kia.
+  function hangTabKho(id, cucBo) {
+    const kind = LOAI_KHO[id];
+    if (!kind) return null;
+    const row = document.createElement("div");
+    row.className = "cat-filter";
+    row.style.margin = "0 0 14px";
+    const ds = (cucBo && cucBo.length) ? cucBo
+      : [{ nhan: TEN_CUA_BAN[id] || "Của bạn", chon: true }];
+    // Lớp RIÊNG `tab-kho`, KHÔNG dùng lại `.cat-chip`.
+    //
+    // Trang Kết nối gán lại `onclick` cho MỌI `.cat-chip` trong trang để lọc danh mục dịch vụ
+    // (`el.querySelectorAll(".cat-chip")`). Hàng tab này nằm cùng trong `el`, nên dùng chung
+    // lớp là handler của tab bị đè mất sạch: bấm tab chỉ thấy viên thuốc sáng lên rồi lưới
+    // danh mục lọc lại, còn khối hiển thị thì không đổi. Mất nửa tiếng mới lần ra, vì trông
+    // hệt như "tab hỏng" chứ không giống "ai đó cướp handler".
+    row.innerHTML = ds.map((x, i) =>
+        `<button class="tab-kho${x.chon ? " on" : ""}" data-tab-cb="${i}">${esc(x.nhan)}</button>`).join("")
+      + `<button class="tab-kho" data-mo-kho="${kind}">${ic("package")} Thansa Store</button>`;
+    row.querySelectorAll("[data-tab-cb]").forEach(b => b.onclick = () => {
+      const f = ds[Number(b.dataset.tabCb)];
+      if (f && f.bam) f.bam();
+    });
+    const nut = row.querySelector("[data-mo-kho]");
+    // Truyền cả TRANG GỐC để kho vẽ được nút quay lại. Không truyền thì người dùng sang kho
+    // rồi phải tự tìm đường về bằng thanh bên - mà kho không nằm trên thanh bên nữa, nên họ
+    // dễ thấy mình bị lạc.
+    nut.onclick = () => {
+      if (window.JavisPacks && window.JavisPacks.moKho) {
+        window.JavisPacks.moKho(kind, id, VIEW_META[id] ? VIEW_META[id].label : id);
+      } else { const s = window.Alpine && Alpine.store("nav"); if (s && s.go) s.go("packs"); }
+    };
+    return row;
+  }
+
   // Trang Studio: tạo panel-<id> trong cview rồi gọi loader cũ (studio.js fill vào đó).
   function renderStudioPage(el, id) {
     el.innerHTML = `<div class="stab-panel" id="panel-${id}"></div>`;
+    const tab = hangTabKho(id);
+    if (tab) el.insertBefore(tab, el.firstChild);
     const fn = window.JavisStudio && window.JavisStudio[id];
     if (fn) { try { fn(); } catch (e) { el.innerHTML = placeholder(id, "Lỗi nạp: " + e.message); } }
     else el.innerHTML = placeholder(id, "studio.js chưa sẵn sàng.");
@@ -610,7 +697,7 @@
     // Nhật ký TỰ VIẾT song ngữ (changelog-thansa.json): version nào có ở đó thì hiện bản
     // tự viết theo ngôn ngữ giao diện (dùng lang làm KEY, không so sánh cứng); không có thì
     // rơi về changelog gốc. Tránh dịch máy sai cho phần mô tả cập nhật.
-    const _lang = (window.JavisI18n && JavisI18n.lang && JavisI18n.lang()) || "vi";
+    const _lang = (window.JavisI18n && JavisI18n.lang()) || "vi";
     const _tw = _clThansa && _clThansa[rel.version];
     const _twItems = _tw && (_tw[_lang] || _tw.vi);
     const secs = _twItems
@@ -977,10 +1064,18 @@
     .kn-health{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px;margin:16px 0}
     .kn-kpi{padding:13px 14px;border:1px solid var(--hairline);border-radius:11px;background:var(--surface-1)}
     .kn-kpi b{display:block;font-size:22px;color:var(--text);margin-top:4px}.kn-kpi span{font-size:12px;color:var(--text3)}
-    .kn-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:14px;align-items:start}
+    /* MỘT cột. Trước đây là lưới 2 cột, và nó chống lại chính thứ nó bày ra: khu Cần bạn xử
+       lý nằm cột phải bị bóp còn ~1/3 bề ngang, nên mỗi việc kẹt phải cuộn trong một ô hẹp để
+       đọc hết lý do - trong khi hai khu bên trái thường trống trơn. Xếp dọc thì mọi khu đều
+       được cả bề ngang, và thứ tự đọc đúng thứ tự cần làm. */
+    .kn-layout{display:flex;flex-direction:column;gap:14px;align-items:stretch}
     .kn-panel{border:1px solid var(--hairline);border-radius:12px;background:rgba(255,255,255,.018);overflow:hidden}
     .kn-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
     .kn-panel-head b{font-size:14px;color:var(--text)}.kn-panel-head span{font-size:12px;color:var(--text3)}
+    .kn-panel-head .kn-head-right{display:flex;align-items:center;gap:10px}
+    .kn-wipe{background:none;border:none;padding:2px 4px;font:inherit;font-size:12px;color:var(--text3);
+      cursor:pointer;border-radius:6px;text-decoration:underline;text-underline-offset:2px}
+    .kn-wipe:hover{color:var(--red)}.kn-wipe[disabled]{opacity:.45;cursor:default;text-decoration:none}
     .kn-list{max-height:440px;overflow:auto}.kn-empty{padding:22px;text-align:center;color:var(--text3);font-size:13px}
     .kn-task{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.055);cursor:pointer;transition:.15s}
     .kn-task:last-child{border-bottom:none}.kn-task:hover{background:rgba(127,176,255,.055)}
@@ -994,7 +1089,7 @@
     .kn-drawer{position:fixed;z-index:10001;top:0;right:0;width:min(520px,94vw);height:100vh;height:100dvh;background:var(--bg2);border-left:1px solid rgba(127,176,255,.25);box-shadow:-20px 0 60px rgba(0,0,0,.45);transform:translateX(105%);transition:transform .2s;display:flex;flex-direction:column}
     .kn-drawer.open{transform:translateX(0)}.kn-drawer-head{position:sticky;top:0;z-index:2;padding:12px 12px 12px 17px;border-bottom:1px solid var(--hairline);background:var(--bg2);display:flex;align-items:center;gap:10px}.kn-drawer-head b{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kn-drawer-head button{width:36px;height:36px;display:grid;place-items:center;background:rgba(255,255,255,.035);border:1px solid var(--hairline);border-radius:8px;color:var(--text2);font-size:22px;line-height:1;cursor:pointer}.kn-drawer-head button:hover{border-color:var(--link-ink);color:var(--text-hi)}
     .kn-drawer-body{padding:16px 17px;overflow:auto;color:var(--text2);font-size:13px;line-height:1.5}.kn-detail-block{margin-top:16px}.kn-detail-block h4{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin:0 0 7px}.kn-event{padding:8px 0;border-bottom:1px solid var(--surface-2)}
-    @media(max-width:850px){.fm-search-tools{align-items:stretch}.fm-search{flex-basis:100%;max-width:none}.fm-search-meta{width:100%;min-width:0}.fm-search-kind{display:none}.kn-health{grid-template-columns:repeat(2,1fr)}.kn-layout{grid-template-columns:1fr}.kn-list{max-height:none}}`;
+    @media(max-width:850px){.fm-search-tools{align-items:stretch}.fm-search{flex-basis:100%;max-width:none}.fm-search-meta{width:100%;min-width:0}.fm-search-kind{display:none}.kn-health{grid-template-columns:repeat(2,1fr)}.kn-list{max-height:none}}`;
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
   }
 
@@ -1431,7 +1526,7 @@
     const myGen = _renderGen;   // chống race: đổi trang → load dở tự bỏ
     el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
 
-    const SRC = { bundled: ["Có sẵn", "var(--green)"], user: ["Toàn cục", "var(--link-ink)"], vault: ["Brain này", "var(--warn-ink)"] };
+    const SRC = { bundled: ["Có sẵn", "var(--green)"], pack: ["Từ gói", "var(--accent, #7c5cff)"], user: ["Toàn cục", "var(--link-ink)"], vault: ["Brain này", "var(--warn-ink)"] };
     const srcBadge = (s) => {
       const [t, c] = SRC[s] || [s, "var(--text3)"];
       return `<span style="font-size:11px;padding:2px 7px;border-radius:99px;border:1px solid ${c}55;color:${c}">${esc(t)}</span>`;
@@ -1459,8 +1554,38 @@
         </div>
         <div class="wf-desc">${esc(p.description || "")}</div>
         <div class="wf-steps">${meta}${chips ? `<div style="margin-top:8px">${chips}</div>` : ""}${p.error ? `<div style="margin-top:6px;color:var(--red)">${esc(p.error)}</div>` : ""}</div>
-        <div class="wf-actions"><button class="s-btn-ghost tgl">${p.enabled ? "Tắt" : "Bật"}</button></div>`;
-      div.querySelector(".tgl").onclick = async () => {
+        <div class="wf-actions">${p.source === "pack"
+            ? `<button class="s-btn-ghost" data-goto-packs="1">Quản lý ở Thansa Store</button>`
+            : p.removed
+              ? `<button class="s-btn-ghost undel">Cài lại</button>`
+              : `<button class="s-btn-ghost tgl">${p.enabled ? "Tắt" : "Bật"}</button>
+                 <button class="s-btn-ghost del" style="color:var(--red)">Gỡ</button>`}</div>`;
+      // Plugin đến từ gói thì bật/tắt và gỡ đều làm ở Kho cài đặt - nó đi theo cả gói, và có
+      // đúng MỘT chỗ gỡ thì người dùng không phải đoán gỡ ở đâu mới là gỡ thật.
+      const nutGoto = div.querySelector("[data-goto-packs]");
+      if (nutGoto) nutGoto.onclick = () => {
+        const s = window.Alpine && Alpine.store("nav");
+        if (s && s.go) s.go("packs");
+      };
+      // "Gỡ" khác "Tắt" ở Ý ĐỊNH, nên thẻ rời hẳn khỏi danh sách chính chứ không chỉ mờ đi.
+      // Không xoá file trong bản cài: cây code read-only trên Docker, và git pull sẽ mọc lại.
+      const doiGo = async (go) => {
+        const fd = new FormData();
+        fd.append("slug", p.slug); fd.append("removed", go ? "1" : "0"); fd.append("brain", fbrain());
+        let r = {}; try { r = await (await fetch("/plugins/remove", { method: "POST", body: fd })).json(); } catch (e) { r = { error: e.message }; }
+        if (r && r.error) alert(r.error);
+        load();
+      };
+      const nutDel = div.querySelector(".del");
+      if (nutDel) nutDel.onclick = () => {
+        if (confirm(`Gỡ plugin "${p.name}"?
+
+Tệp vẫn nằm trong bản cài, cài lại được bất cứ lúc nào. Công cụ của nó sẽ biến khỏi mọi bộ não.`)) doiGo(true);
+      };
+      const nutUn = div.querySelector(".undel");
+      if (nutUn) nutUn.onclick = () => doiGo(false);
+      const nutTgl = div.querySelector(".tgl");
+      if (nutTgl) nutTgl.onclick = async () => {
         const fd = new FormData();
         fd.append("slug", p.slug); fd.append("enabled", p.enabled ? "0" : "1"); fd.append("brain", fbrain());
         let r = {}; try { r = await (await fetch("/plugins/toggle", { method: "POST", body: fd })).json(); } catch (e) { r = { error: e.message }; }
@@ -1486,9 +1611,21 @@
       wrap.className = "cview-section";
       wrap.innerHTML = intro + gateBanner + dirHint + `<div id="plCards"></div>`;
       const host = wrap.querySelector("#plCards");
-      if (!plugins.length) host.innerHTML = `<div class="empty">Chưa có plugin nào. Thả một thư mục plugin vào ${esc(d.global_dir || "thư mục plugins toàn cục")} rồi tải lại.</div>`;
-      else plugins.forEach(p => host.appendChild(card(p)));
+      const conDung = plugins.filter(p => !p.removed);
+      const daGo = plugins.filter(p => p.removed);
+      if (!conDung.length) host.innerHTML = `<div class="empty">Chưa có plugin nào. Thả một thư mục plugin vào ${esc(d.global_dir || "thư mục plugins toàn cục")} rồi tải lại.</div>`;
+      else conDung.forEach(p => host.appendChild(card(p)));
+      if (daGo.length) {
+        const det = document.createElement("details");
+        det.style.marginTop = "18px";
+        det.innerHTML = `<summary style="cursor:pointer;color:var(--text3)">◆ Đã gỡ <span style="opacity:.7">${daGo.length} plugin - bấm để xem</span></summary><div id="plGo" style="margin-top:10px"></div>`;
+        wrap.appendChild(det);
+        const hostGo = det.querySelector("#plGo");
+        daGo.forEach(p => hostGo.appendChild(card(p)));
+      }
       el.innerHTML = "";
+      const tab = hangTabKho("plugins");
+      if (tab) el.appendChild(tab);
       el.appendChild(wrap);
     }
     load();
@@ -2402,14 +2539,14 @@
         <div class="si-actions"><button class="s-btn" id="knSave">${esc(t("kanban.save"))}</button><button class="s-btn-ghost" id="knCancel">${esc(t("common.cancel"))}</button></div>
       </div>
       <div class="kn-layout" id="knOps">
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_active"))}</b><span id="knActiveCount">0 worker</span></div><div class="kn-list" id="knActive"></div></section>
-          <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_queue"))}</b><span id="knQueueCount">0 task</span></div><div class="kn-list" id="knQueue"></div></section>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <section class="kn-panel"><div class="kn-panel-head"><b style="color:var(--accent-ink)">${esc(t("kanban.kpi_attention"))}</b><span id="knAttentionCount">0 ${esc(t("kanban.exceptions"))}</span></div><div class="kn-list" id="knAttention"></div></section>
-          <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_history"))}</b><span>${esc(t("kanban.p_history_sub"))}</span></div><div class="kn-list" id="knHistory"></div></section>
-        </div>
+        <section class="kn-panel"><div class="kn-panel-head"><b style="color:var(--accent-ink)">${esc(t("kanban.kpi_attention"))}</b>
+          <span class="kn-head-right"><span id="knAttentionCount">0 ${esc(t("kanban.exceptions"))}</span>
+          <button class="kn-wipe" id="knWipeAttention" data-panel="attention">${esc(t("kanban.wipe"))}</button></span></div><div class="kn-list" id="knAttention"></div></section>
+        <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_active"))}</b><span id="knActiveCount">0 worker</span></div><div class="kn-list" id="knActive"></div></section>
+        <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_queue"))}</b><span id="knQueueCount">0 task</span></div><div class="kn-list" id="knQueue"></div></section>
+        <section class="kn-panel"><div class="kn-panel-head"><b>${esc(t("kanban.p_history"))}</b>
+          <span class="kn-head-right"><span>${esc(t("kanban.p_history_sub"))}</span>
+          <button class="kn-wipe" id="knWipeHistory" data-panel="history">${esc(t("kanban.wipe"))}</button></span></div><div class="kn-list" id="knHistory"></div></section>
       </div>
     </div>`;
 
@@ -2486,8 +2623,13 @@
 
     function taskActions(t) {
       const acts = [];
+      // Việc dừng lại vì CHƯA ĐƯỢC CẤP QUYỀN thao tác ra ngoài: nút đầu tiên phải là nút cấp
+      // quyền, và "Thử lại" thì BỎ ĐI. Thử lại ở đây chạy lại đúng nhánh chặn rồi chặn lại y
+      // hệt, kèm một tiếng chuông nữa - bày ra một cái nút không bao giờ dẫn tới đâu.
+      const canQuyen = t.status === "blocked" && t.block_kind === "capability";
+      if (canQuyen) acts.push(`<button data-act="grant" data-id="${esc(t.id)}">${esc(window.t("kanban.act_grant"))}</button>`);
       if (t.status === "review") acts.push(`<button data-act="done" data-id="${esc(t.id)}">${CHECK_ICON} ${esc(window.t("kanban.act_approve"))}</button>`);
-      if (t.status === "blocked" || t.status === "review") acts.push(`<button data-act="retry" data-id="${esc(t.id)}">↻ ${esc(window.t("kanban.act_retry"))}</button>`);
+      if (!canQuyen && (t.status === "blocked" || t.status === "review")) acts.push(`<button data-act="retry" data-id="${esc(t.id)}">↻ ${esc(window.t("kanban.act_retry"))}</button>`);
       if (t.status === "running") acts.push(`<button data-act="cancel" data-id="${esc(t.id)}">${esc(window.t("kanban.act_stop"))}</button>`);
       if (t.status !== "running") acts.push(`<button class="danger" data-act="archive" data-id="${esc(t.id)}">${esc(window.t("kanban.act_archive"))}</button>`);
       return acts;
@@ -2511,8 +2653,12 @@
 
     async function doTaskAction(id, act) {
       if (act === "archive" && !confirm(t("kanban.confirm_archive"))) return false;
+      // Cấp toàn quyền là cho việc TỰ THAO TÁC THẬT ra ngoài và không hoàn tác được, nên phải
+      // hỏi lại bằng đúng chữ nói ra hậu quả, không phải một câu "bạn chắc chứ".
+      if (act === "grant" && !confirm(t("kanban.confirm_grant"))) return false;
       let result;
       if (act === "retry") result = await post("/kanban/task/retry", { id });
+      else if (act === "grant") result = await post("/kanban/task/grant", { id });
       else if (act === "cancel") result = await post("/kanban/task/cancel", { id });
       else if (act === "archive") result = await post("/kanban/task/delete", { id });
       else result = await post("/kanban/task/move", { id, status: act });
@@ -2538,6 +2684,18 @@
       el.querySelectorAll(".kn-task[data-task]").forEach(row => row.onclick = () => showTask(row.dataset.task));
       bindActionButtons(el);
     }
+
+    // Xoá tất cả của một khu. Hai khu hai hậu quả khác nhau nên hỏi bằng hai câu khác nhau:
+    // khu Cần bạn xử lý chỉ dọn khỏi bảng (vẫn tra lại được), khu Lịch sử là xoá hẳn.
+    el.querySelectorAll(".kn-wipe").forEach(b => b.onclick = async () => {
+      const khu = b.dataset.panel;
+      if (!confirm(t(khu === "attention" ? "kanban.confirm_wipe_attention" : "kanban.confirm_wipe_history"))) return;
+      b.disabled = true;
+      const r = await post("/kanban/panel/clear", { panel: khu });
+      b.disabled = false;
+      if (!r || !r.ok) { alert((r && r.error) || t("kanban.cant_update")); return; }
+      await load();
+    });
 
     async function showTask(id) {
       openDrawer();
@@ -2581,6 +2739,10 @@
       fillList(el.querySelector("#knQueue"), queue, "queue");
       fillList(el.querySelector("#knAttention"), attention, "attention");
       fillList(el.querySelector("#knHistory"), history.slice(0, 20), "history");
+      // Khu rỗng thì nút Xoá tất cả xám đi: bấm được một nút không xoá gì cả chỉ làm người ta
+      // nghi ngờ là nó có chạy hay không.
+      el.querySelector("#knWipeAttention").disabled = !attention.length;
+      el.querySelector("#knWipeHistory").disabled = !history.length;
       bindActions();
     }
     load();
@@ -2891,7 +3053,403 @@
   }
 
   // ---- Trang Models: (A) Main Model + (B) Providers ----
+  // ===== Trang Models: hai tab =====
+  // Cloud (nhà cung cấp gọi qua mạng) và Local (Ollama chạy trên máy). Tách vì hai bên trả
+  // lời hai câu hỏi khác nhau - "dùng khoá của ai" với "máy nào chạy, model nào vừa sức" -
+  // và nhồi chung một trang thì phần Local bị đẩy xuống dưới mười cái card không liên quan.
+  // Tab đang chọn giữ trong biến module: nó là chỗ đứng trên MỘT máy, không phải cấu hình.
+  let _modelTab = "cloud";
+
   async function renderModels(el) {
+    const tab = (k, ico, nhan) =>
+      `<button class="mtab${_modelTab === k ? " act" : ""}" data-mtab="${k}" type="button">` +
+      ic(ico) + " " + esc(nhan) + "</button>";
+    el.innerHTML =
+      '<div class="mtabs">' +
+        tab("cloud", "globe", t("models.tab_cloud")) +
+        tab("local", "cpu", t("models.tab_local")) +
+      '</div><div class="mtab-pane" id="mTabPane"></div>';
+    el.querySelectorAll(".mtab").forEach((b) => {
+      b.onclick = () => { _modelTab = b.dataset.mtab; renderModels(el); };
+    });
+    const pane = el.querySelector("#mTabPane");
+    if (_modelTab === "local") await renderModelsLocalTab(pane);
+    else await renderModelsCloudTab(pane);
+  }
+
+  // ===== Tab Local Model (Ollama chạy trên máy) =====
+  // HAI trạng thái chứ không ba như bản demo. Demo có "đang cài Ollama" vì nó giả định Thansa
+  // tự chạy được lệnh cài trên máy người dùng - chỉ đúng khi Thansa chạy native. Bản Docker/VPS
+  // không có quyền, cũng không có đường, chạy lệnh trên máy vật lý của người ta. Nên ở đây
+  // chỉ còn: CHƯA NỐI (hiện lệnh cài để người dùng tự chạy trong terminal máy thật) và ĐÃ NỐI.
+  const OL_LENH = {
+    linux: "curl -fsSL https://ollama.com/install.sh | sh",
+    mac: "brew install ollama   # hoặc tải bản .dmg ở ollama.com/download",
+    windows: "winget install Ollama.Ollama",
+  };
+  // Bản Docker cần NHIỀU HƠN một lệnh cài. Bản 0.55.0 chỉ nói "cài trên máy thật rồi điền địa
+  // chỉ", và chủ repo dán ngay lệnh đó vào terminal của Thansa (02/09) - dễ hiểu, vì nút copy
+  // nằm ngay cạnh mà app thì có sẵn một cái terminal. Nhưng kể cả cài đúng chỗ vẫn còn hai bức
+  // tường nữa: Ollama mặc định chỉ nghe 127.0.0.1 nên container không với tới, và không ai
+  // đoán được phải điền địa chỉ cầu nối Docker. Thiếu một trong hai là "không nối được" mà
+  // không hiểu vì sao.
+  // Gắn vào ĐÚNG địa chỉ cầu nối Docker chứ không phải 0.0.0.0: chỉ container trên máy này gọi
+  // được, nên không cần bước tường lửa nào nữa. Vụ thật 02/09: Ollama trên VPS đã chạy sẵn,
+  // thiếu đúng bước này; mà hướng dẫn cũ bảo mở 0.0.0.0 rồi bật ufw - VPS đó ufw đang tắt,
+  // bật mù là có thể tự khoá luôn SSH. Dò không ra cổng thì mới rơi về 0.0.0.0, kèm cảnh báo.
+  // Ghi bằng file override thay vì lệnh sửa unit của systemd (mở trình soạn thảo, không dán được).
+  function olLenhNghe(st) {
+    const host = (st && st.docker_gateway ? st.docker_gateway : "0.0.0.0") + ":11434";
+    return "sudo mkdir -p /etc/systemd/system/ollama.service.d\n" +
+      "printf '[Service]\\nEnvironment=\"OLLAMA_HOST=" + host + "\"\\n' | sudo tee /etc/systemd/system/ollama.service.d/override.conf\n" +
+      "sudo systemctl daemon-reload && sudo systemctl restart ollama";
+  }
+  // (Hằng OL_DIA_CHI_DOCKER = "http://172.17.0.1:11434" ĐÃ BỎ.) 172.17.0.1 là cổng của mạng
+  // bridge MẶC ĐỊNH, chỉ đúng với `docker run` trần. Thansa cài bằng compose thì nằm trên mạng
+  // riêng của project (172.18.x trở đi), nên con số đó SAI với gần như mọi bản cài - điền
+  // đúng theo hướng dẫn vẫn không nối được. Nay server dò cổng thật và trả về `goi_y_endpoint`.
+
+  const OL_LENH_TIM_CONG = "docker exec javis ip route | grep default";
+
+  function olGb(n) { return (Math.round((n || 0) * 10) / 10) + " GB"; }
+
+  async function renderModelsLocalTab(el) {
+    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    let st = {};
+    try { st = await (await fetch("/ollama-local/status")).json(); } catch (e) { st = {}; }
+    if (!st.reachable) return olVeChuaNoi(el, st);
+    return olVeDaNoi(el, st);
+  }
+
+  function olVeChuaNoi(el, st) {
+    const lenh = OL_LENH[st.host_platform] || OL_LENH.linux;
+    // Docker/VPS: máy chạy Thansa KHÔNG phải máy người dùng, nên câu hướng dẫn phải khác hẳn -
+    // bảo họ chạy lệnh "trên máy này" là bảo họ cài Ollama vào trong container.
+    const xa = st.deploy_mode === "docker";
+    const lenhNghe = olLenhNghe(st);
+    el.innerHTML =
+      '<div class="gcard ol-empty">' +
+        '<div class="ol-empty-ico">' + ic("cpu", { cls: "ic-xl" }) + "</div>" +
+        '<div class="ol-empty-title">' + esc(t("ol.title")) + "</div>" +
+        '<div class="ol-empty-desc">' + esc(t("ol.desc")) + "</div>" +
+        (xa ? '<div class="ol-note">' + ic("info") + "<span>" + esc(t("ol.note_docker")) + "</span></div>"
+            : '<div class="ol-note">' + ic("info") + "<span>" + esc(t("ol.note_native")) + "</span></div>") +
+        (xa
+          ? '<div class="ol-note ol-warn">' + ic("triangle-alert") + "<span>" + esc(t("ol.dk_cham")) + "</span></div>" +
+            '<div class="ol-step">' + esc(t("ol.dk_title")) + "</div>" +
+            '<div class="ol-buoc">1. ' + esc(t("ol.dk_b1")) + "</div>" +
+            '<div class="ol-buoc">2. ' + esc(t("ol.dk_b2")) + "</div>" +
+            '<div class="ol-cmd"><code>' + esc(lenh) + "</code>" +
+              '<button class="gcard-btn ol-copy" type="button">' + ic("copy") + " " + esc(t("common.copy")) + "</button></div>" +
+            '<div class="ol-buoc">3. ' + esc(t("ol.dk_b3")) + "</div>" +
+            '<div class="ol-cmd"><code>' + esc(lenhNghe) + "</code>" +
+              '<button class="gcard-btn ol-copy2" type="button">' + ic("copy") + " " + esc(t("common.copy")) + "</button></div>" +
+            '<div class="ol-note ol-warn">' + ic("shield") + "<span>" + esc(t("ol.dk_canh_bao")) + "</span></div>" +
+            '<div class="ol-step">' + esc(t("ol.dk_b4")) + "</div>"
+          : '<div class="ol-step">1. ' + esc(t("ol.step_install")) + "</div>" +
+            '<div class="ol-cmd"><code>' + esc(lenh) + "</code>" +
+              '<button class="gcard-btn ol-copy" type="button">' + ic("copy") + " " + esc(t("common.copy")) + "</button></div>" +
+            '<div class="ol-step">2. ' + esc(t("ol.step_endpoint")) + "</div>") +
+        // ĐIỀN SẴN chứ không để trong placeholder. Chủ repo báo 02/09: "ghi điền địa chỉ này
+        // mà không biết là địa chỉ nào" - đúng, vì chữ xám trong ô nhập trông như gợi ý chứ
+        // không như một giá trị, lại còn bị ô hẹp cắt cụt giữa chừng. Dò ra được thì điền
+        // thẳng vào: người dùng chỉ việc bấm Kết nối.
+        '<div class="ol-row">' +
+          '<input class="ol-in ol-ep" placeholder="Ví dụ: http://127.0.0.1:11434"' +
+            (st.goi_y_endpoint ? ' value="' + esc(st.goi_y_endpoint) + '"' : "") + ">" +
+          '<button class="gcard-btn primary ol-noi" type="button">' + esc(t("ol.connect")) + "</button>" +
+        "</div>" +
+        // Dò không ra cổng (mạng Docker lạ, hoặc chạy --network=host) thì nói thẳng là phải
+        // tự tìm, kèm đúng một lệnh tìm. Im lặng để ô trống là đẩy người dùng vào ngõ cụt.
+        (xa && !st.goi_y_endpoint
+          ? '<div class="ol-note ol-warn">' + ic("triangle-alert") + "<span>" +
+            esc(t("ol.dk_khong_do_duoc")) + "</span></div>" +
+            '<div class="ol-cmd"><code>' + esc(OL_LENH_TIM_CONG) + "</code>" +
+              '<button class="gcard-btn ol-copy3" type="button">' + ic("copy") + " " +
+              esc(t("common.copy")) + "</button></div>"
+          : "") +
+        (st.error ? '<div class="ol-err">' + ic("triangle-alert") + "<span>" + esc(st.error) + "</span></div>" : "") +
+        // Đã lưu địa chỉ mà vẫn không nối được thì từ trong container Thansa không phân biệt
+        // nổi "chưa cài" với "đã chạy nhưng chỉ nghe 127.0.0.1". Máy chủ thì phân biệt được
+        // bằng đúng một lệnh - đưa lệnh đó và cách đọc kết quả, thay vì để người dùng đoán.
+        (st.error && xa ? '<div class="ol-note">' + ic("terminal") + "<span>" + esc(t("ol.dk_chan_doan")) + "</span></div>" : "") +
+      "</div>";
+    const cop3 = el.querySelector(".ol-copy3");
+    if (cop3) cop3.onclick = () => {
+      try { navigator.clipboard.writeText(OL_LENH_TIM_CONG); } catch (e) {}
+    };
+    const cop = el.querySelector(".ol-copy2");
+    if (cop) cop.onclick = () => {
+      try { navigator.clipboard.writeText(lenhNghe); } catch (e) {}
+    };
+    const inp = el.querySelector(".ol-ep");
+    const noi = async () => {
+      const v = (inp.value || inp.placeholder || "").trim();
+      if (!v) return;
+      const b = el.querySelector(".ol-noi");
+      b.disabled = true; b.textContent = t("ol.connecting");
+      const fd = new FormData(); fd.append("endpoint", v);
+      let r = {};
+      try { r = await (await fetch("/ollama-local/endpoint", { method: "POST", body: fd })).json(); }
+      catch (e) { r = { error: String(e) }; }
+      if (r.reachable) {
+        // Nối được rồi mới cảnh báo: Ollama không có mật khẩu, nên một địa chỉ công khai
+        // nghĩa là cả Internet gọi được model đó. Nói lúc này thì người dùng còn nhớ mình
+        // vừa gõ gì; nói trong đoạn hướng dẫn phía trên thì ai cũng lướt qua.
+        if (r.canh_bao_cong_khai) alert(t("ol.canh_bao_cong_khai"));
+        return renderModelsLocalTab(el);
+      }
+      b.disabled = false; b.textContent = t("ol.connect");
+      alert((r.error || t("ol.err_connect")));
+      // Địa chỉ đã được lưu dù chưa nối được; vẽ lại để /status trả lỗi kèm dòng chẩn đoán.
+      renderModelsLocalTab(el);
+    };
+    el.querySelector(".ol-noi").onclick = noi;
+    inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); noi(); } };
+    el.querySelector(".ol-copy").onclick = () => {
+      try { navigator.clipboard.writeText(lenh); } catch (e) {}
+    };
+  }
+
+  async function olVeDaNoi(el, st) {
+    el.innerHTML =
+      '<div class="gcard ol-conn">' +
+        '<span class="ol-dot on"></span>' +
+        '<div class="grow"><div class="ol-conn-name">' + esc(t("ol.connected")) + "</div>" +
+          '<div class="ol-conn-ep">' + esc(st.endpoint) + "</div></div>" +
+        '<button class="gcard-btn ol-doi" type="button">' + esc(t("ol.change_ep")) + "</button>" +
+      "</div>" +
+      '<div class="ol-sect" id="olSpecs"></div>' +
+      '<div class="ol-sect" id="olRec"></div>' +
+      '<div class="ol-sect" id="olInst"></div>' +
+      '<div class="ol-sect" id="olSearch"></div>';
+    el.querySelector(".ol-doi").onclick = async () => {
+      if (!confirm(t("ol.confirm_change"))) return;
+      const fd = new FormData(); fd.append("endpoint", "");
+      try { await fetch("/ollama-local/endpoint", { method: "POST", body: fd }); } catch (e) {}
+      renderModelsLocalTab(el);
+    };
+    await Promise.all([olVeSpecs(el), olVeGoiY(el), olVeDaCai(el)]);
+    olVeTimKiem(el);
+  }
+
+  async function olVeSpecs(el) {
+    const host = el.querySelector("#olSpecs");
+    let d = {};
+    try { d = await (await fetch("/ollama-local/specs")).json(); } catch (e) { return; }
+    const sp = d.specs || {};
+    const tu = sp.source === "auto";
+    const chip = (ico, nhan) => '<span class="ol-chip">' + ic(ico) + esc(nhan) + "</span>";
+    let than = "";
+    if (sp.source === "unknown") {
+      // Không đoán bừa: nói thẳng là chưa biết, và vì sao lại chưa biết được.
+      than = '<div class="ol-note">' + ic("triangle-alert") + "<span>" + esc(t("ol.specs_unknown")) + "</span></div>";
+    } else {
+      than = '<div class="ol-chips">' +
+        chip("cpu", t("ol.ram") + ": " + olGb(sp.ram_gb)) +
+        (sp.has_gpu ? chip("zap", "GPU" + (sp.vram_gb ? " " + olGb(sp.vram_gb) : "")) 
+                    : chip("circle", t("ol.no_gpu"))) +
+        chip(tu ? "circle-check" : "pencil", tu ? t("ol.specs_auto") : t("ol.specs_manual")) +
+        "</div>";
+    }
+    host.innerHTML = '<h3 class="ol-h">' + ic("cpu") + " " + esc(t("ol.specs_title")) + "</h3>" + than +
+      '<div class="ol-row ol-specs-form">' +
+        '<input class="ol-in ol-ram" type="number" min="0" step="1" placeholder="' + esc(t("ol.ram_ph")) + '" value="' + (sp.ram_gb || "") + '">' +
+        '<input class="ol-in ol-vram" type="number" min="0" step="1" placeholder="' + esc(t("ol.vram_ph")) + '" value="' + (sp.vram_gb || "") + '">' +
+        '<button class="gcard-btn ol-luu-specs" type="button">' + esc(t("ol.save_specs")) + "</button>" +
+      "</div>" +
+      '<div class="ol-hint">' + esc(t("ol.specs_hint")) + "</div>";
+    host.querySelector(".ol-luu-specs").onclick = async () => {
+      const ram = parseFloat(host.querySelector(".ol-ram").value || "0");
+      const vram = parseFloat(host.querySelector(".ol-vram").value || "0");
+      const fd = new FormData();
+      fd.append("ram_gb", ram); fd.append("vram_gb", vram);
+      fd.append("has_gpu", vram > 0 ? "1" : "0");
+      try { await fetch("/ollama-local/specs", { method: "POST", body: fd }); } catch (e) {}
+      await olVeSpecs(el);
+      await olVeGoiY(el);           // gợi ý ăn theo cấu hình, đổi specs mà không vẽ lại là nói dối
+    };
+  }
+
+  function olTheModel(m, ctx) {
+    const nut = m.installed
+      ? '<span class="ol-done">' + ic("circle-check") + " " + esc(t("ol.installed")) + "</span>"
+      : '<button class="gcard-btn primary ol-tai" type="button" data-model="' + esc(m.name) + '">' +
+        ic("download") + " " + esc(t("ol.pull")) + "</button>";
+    return '<div class="ol-card" data-model="' + esc(m.name) + '">' +
+      '<div class="ol-card-top"><span class="ol-card-name">' + esc(m.name) + "</span>" +
+        '<span class="ol-card-size">' + olGb(m.size_gb) + "</span></div>" +
+      '<div class="ol-card-desc">' + esc(m.description || "") + "</div>" +
+      (m.note ? '<div class="ol-card-note">' + esc(m.note) + "</div>" : "") +
+      '<div class="ol-tags">' + (m.tags || []).map(x => '<span class="ol-tag">' + esc(x) + "</span>").join("") + "</div>" +
+      '<div class="ol-card-act">' + nut + "</div>" +
+      "</div>";
+  }
+
+  function olNoiNutTai(host, xong) {
+    host.querySelectorAll(".ol-tai").forEach((b) => {
+      b.onclick = () => olTai(b, xong);
+    });
+  }
+
+  /** Tải một model, đổ tiến độ ngay trên thẻ đó. Huỷ = đóng luồng; Ollama tự tiếp tục từ chỗ
+   *  dở ở lần tải sau nên không mất phần đã tải, và không có gì phải dọn. */
+  function olTai(btn, xong) {
+    const the = btn.closest(".ol-card") || btn.parentElement;
+    const model = btn.dataset.model;
+    const act = btn.parentElement;
+    act.innerHTML =
+      '<div class="ol-prog"><div class="ol-prog-track"><div class="ol-prog-fill"></div></div>' +
+      '<div class="ol-prog-lbl"><span class="ol-prog-txt">' + esc(t("ol.pulling")) + "</span>" +
+      '<button class="gcard-btn ol-huy" type="button">' + esc(t("ol.cancel")) + "</button></div></div>";
+    const fill = act.querySelector(".ol-prog-fill");
+    const txt = act.querySelector(".ol-prog-txt");
+    const ctrl = new AbortController();
+    act.querySelector(".ol-huy").onclick = () => { ctrl.abort(); };
+
+    const fd = new FormData(); fd.append("model", model);
+    fetch("/ollama-local/pull", { method: "POST", body: fd, signal: ctrl.signal })
+      .then(async (r) => {
+        const reader = r.body.getReader();
+        const dec = new TextDecoder();
+        let dem = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          dem += dec.decode(value, { stream: true });
+          const dong = dem.split("\n");
+          dem = dong.pop();
+          for (const d of dong) {
+            if (!d.startsWith("data: ")) continue;
+            let mo = {};
+            try { mo = JSON.parse(d.slice(6)); } catch (e) { continue; }
+            if (mo.status === "__done__") continue;
+            if (mo.status === "error") { txt.textContent = mo.error || t("ol.err_pull"); continue; }
+            if (mo.total) {
+              const pc = Math.round((mo.completed || 0) / mo.total * 100);
+              fill.style.width = pc + "%";
+              txt.textContent = t("ol.pulling") + " " + pc + "%";
+            } else if (mo.status) {
+              txt.textContent = mo.status;
+            }
+          }
+        }
+        if (typeof xong === "function") xong();
+      })
+      .catch(() => {
+        // Huỷ tay cũng rơi vào đây. Trả thẻ về nút Tải: người dùng bấm lại là Ollama tiếp tục
+        // từ chỗ dở, không tải lại từ đầu.
+        act.innerHTML = '<button class="gcard-btn primary ol-tai" type="button" data-model="' +
+          esc(model) + '">' + ic("download") + " " + esc(t("ol.pull")) + "</button>";
+        olNoiNutTai(act, xong);
+      });
+  }
+
+  async function olVeGoiY(el) {
+    const host = el.querySelector("#olRec");
+    if (!host) return;
+    let d = {};
+    try { d = await (await fetch("/ollama-local/recommended")).json(); } catch (e) { return; }
+    const ds = d.models || [];
+    host.innerHTML = '<h3 class="ol-h">' + ic("sparkles") + " " + esc(t("ol.rec_title")) +
+      '<span class="ol-h-sub">' + esc(t("ol.rec_sub")) + "</span></h3>" +
+      (ds.length ? '<div class="ol-grid">' + ds.map(m => olTheModel(m)).join("") + "</div>"
+                 : '<div class="ol-empty-line">' + esc(t("ol.rec_none")) + "</div>") +
+      (d.catalog_source === "builtin"
+        ? '<div class="ol-hint">' + esc(t("ol.catalog_builtin")) + "</div>" : "");
+    olNoiNutTai(host, () => { olVeGoiY(el); olVeDaCai(el); });
+  }
+
+  async function olVeDaCai(el, vuaDat) {
+    const host = el.querySelector("#olInst");
+    if (!host) return;
+    let d = {};
+    try { d = await (await fetch("/ollama-local/installed")).json(); } catch (e) { return; }
+    const ds = d.models || [];
+    // Tải model về xong mà vẫn phải mò sang tab Cloud, bấm Đặt Main Model, tìm nhà Ollama
+    // trong danh sách dài mới chọn được nó - là tính năng nửa vời. Đặt ngay tại đây.
+    let main = {};
+    try { main = ((await freshSettings()).model || {}).main || {}; } catch (e) {}
+    const laChinh = (ten) => main.provider === "ollama-local" && main.model === ten;
+    // Model embedding sinh vector cho tìm kiếm, KHÔNG sinh được câu trả lời, nên không có nút
+    // đặt làm model chính. Câu trả lời đến từ SERVER (nó hỏi thẳng Ollama qua /api/show);
+    // phép thử theo tên dưới đây chỉ là lưới đỡ khi server cũ chưa trả trường đó, và nó sai
+    // cả hai chiều - `all-minilm`, `bge-m3` là model embedding mà tên không có chữ "embed".
+    const chatDuoc = (m) => (m && typeof m.chat_duoc === "boolean")
+      ? m.chat_duoc : !/embed/i.test((m && m.name) || "");
+    host.innerHTML = '<h3 class="ol-h">' + ic("database") + " " + esc(t("ol.inst_title")) +
+      '<span class="ol-h-sub">' + ds.length + "</span></h3>" +
+      (vuaDat ? '<div class="ol-hint ol-ok">' + esc(t("ol.set_main_ok", { ten: vuaDat })) + "</div>" : "") +
+      (ds.length ? '<div class="ol-list">' + ds.map(m =>
+          '<div class="ol-row-item">' +
+            '<span class="ol-row-ico">' + ic("cpu") + "</span>" +
+            '<span class="grow"><span class="ol-row-name">' + esc(m.name) +
+              (laChinh(m.name) ? '<span class="ol-badge ol-badge-main">' + esc(t("ol.is_main")) + "</span>" : "") +
+              (m.loaded ? '<span class="ol-badge">' + esc(t("ol.loaded")) + "</span>" : "") + "</span>" +
+              '<span class="ol-row-meta">' + olGb(m.size_gb) + "</span></span>" +
+            // 02/09: chủ repo hỏi "sao có 2 model mà chỉ 1 dùng được". Bản cũ chỉ LẶNG LẼ
+            // bỏ nút đi, nên không có cách nào biết vì sao ngoài việc đi hỏi. Nói ra.
+            (!chatDuoc(m)
+              ? '<span class="ol-row-note">' + ic("info") + " " + esc(t("ol.embed_note")) + "</span>"
+              : (laChinh(m.name) ? ""
+                 : '<button class="gcard-btn primary ol-main" type="button" data-model="' + esc(m.name) + '">' +
+                     ic("star") + " " + esc(t("ol.use_main")) + "</button>")) +
+            '<button class="gcard-btn ol-go" type="button" data-model="' + esc(m.name) + '">' +
+              ic("trash-2") + " " + esc(t("ol.remove")) + "</button>" +
+          "</div>").join("") + "</div>"
+        : '<div class="ol-empty-line">' + esc(t("ol.inst_none")) + "</div>");
+    host.querySelectorAll(".ol-main").forEach((b) => {
+      b.onclick = async () => {
+        b.disabled = true;
+        await saveSetting("model", { main: { provider: "ollama-local", model: b.dataset.model } });
+        olVeDaCai(el, b.dataset.model);
+      };
+    });
+    host.querySelectorAll(".ol-go").forEach((b) => {
+      b.onclick = async () => {
+        if (!confirm(t("ol.confirm_remove", { ten: b.dataset.model }))) return;
+        const fd = new FormData(); fd.append("model", b.dataset.model);
+        try { await fetch("/ollama-local/delete", { method: "POST", body: fd }); } catch (e) {}
+        olVeDaCai(el); olVeGoiY(el);
+      };
+    });
+  }
+
+  function olVeTimKiem(el) {
+    const host = el.querySelector("#olSearch");
+    if (!host) return;
+    const chip = (k, nhan) => '<button class="ol-fchip" data-cap="' + k + '" type="button">' + esc(nhan) + "</button>";
+    host.innerHTML = '<h3 class="ol-h">' + ic("search") + " " + esc(t("ol.find_title")) + "</h3>" +
+      '<div class="ol-row"><input class="ol-in ol-q" placeholder="' + esc(t("ol.find_ph")) + '"></div>' +
+      '<div class="ol-chips ol-filters">' + chip("", t("ol.cap_all")) + chip("tools", "tools") +
+        chip("thinking", "thinking") + chip("vision", "vision") + chip("embedding", "embedding") + "</div>" +
+      '<div class="ol-grid ol-kq"></div>';
+    const kq = host.querySelector(".ol-kq");
+    const o = host.querySelector(".ol-q");
+    let cap = "";
+    let timer = null;
+    const chay = async () => {
+      const p = new URLSearchParams({ q: o.value.trim(), capability: cap });
+      let d = {};
+      try { d = await (await fetch("/ollama-local/search?" + p)).json(); } catch (e) { return; }
+      const ds = d.models || [];
+      kq.innerHTML = ds.length ? ds.map(m => olTheModel(m)).join("")
+                               : '<div class="ol-empty-line">' + esc(t("ol.find_none")) + "</div>";
+      olNoiNutTai(kq, () => { olVeDaCai(el); chay(); });
+    };
+    o.oninput = () => { clearTimeout(timer); timer = setTimeout(chay, 300); };
+    host.querySelectorAll(".ol-fchip").forEach((b) => {
+      b.onclick = () => {
+        cap = b.dataset.cap;
+        host.querySelectorAll(".ol-fchip").forEach(x => x.classList.toggle("on", x === b));
+        chay();
+      };
+    });
+    host.querySelector('.ol-fchip[data-cap=""]').classList.add("on");
+    chay();
+  }
+
+  async function renderModelsCloudTab(el) {
     el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
     const s = await freshSettings();
     const m = s.model || {};
@@ -2920,6 +3478,15 @@
     // cột provider, tự nạp model live) - đúng cái đang dùng cho model chính ngay phía trên.
     const auxProvDef = providers.find(p => p.id === auxProv) || {};
     const auxReady = auxProv === "anthropic-cli" || auxProvDef.configured;
+    // Model RIÊNG cho Telegram. provider rỗng = theo model chính (mặc định). Ghim thì đổi
+    // model trên web không kéo Telegram theo - chủ repo đổi model liên tục để thử, mỗi lần
+    // thử là điện thoại của cả nhà bị kéo theo (02/09).
+    const tgCfg = m.telegram || {};
+    const tgPinned = !!tgCfg.provider;
+    const tgProv = tgCfg.provider || main.provider;
+    const tgModel = tgPinned ? (tgCfg.model || "") : (main.model || "");
+    const tgProvDef = providers.find(p => p.id === tgProv) || {};
+    const tgReady = !tgPinned || tgProv === "anthropic-cli" || tgProvDef.configured;
     const reasoning = m.reasoning || "off";
     // Thang này phải KHỚP engine.REASONING_LEVELS bên server và EFFORT trong model-picker.js.
     // Mỗi nấc kèm một dòng RẤT ngắn nói nó đánh đổi gì - đủ để chọn, không phải đọc bài.
@@ -3015,6 +3582,7 @@
           ${on ? "" : `<div class="prov-steps">
             <div><b>${esc(t("models.agy_login"))}</b> <code>${esc(dn.dang_nhap || "agy")}</code></div>
             <div>${esc(dn.ghi_chu || "")}</div>
+            ${dn.cuu_ho ? `<div class="gcard-meta">${esc(dn.cuu_ho)}</div>` : ""}
             <div>${esc(t("models.agy_done"))}</div>
           </div>`}
           <div class="prov-action" style="flex-wrap:wrap">
@@ -3096,6 +3664,24 @@
         </div>
       </div>
       <div class="cview-section">
+        <h3>◆ ${esc(t("models.h_tg"))} <span style="opacity:.5">${esc(t("models.h_tg_sub"))}</span></h3>
+        <div class="gcard aux-card" id="tgCard">
+          <div class="gcard-meta">${esc(t("models.tg_meta"))}</div>
+          <div class="aux-now">
+            <div class="aux-now-txt">
+              <div class="aux-now-model">${tgPinned ? esc(tgModel || "-") : esc(t("models.tg_follow"))}</div>
+              <div class="aux-now-prov">${tgPinned ? esc(tgProvDef.label || tgProv) : esc(t("models.tg_follow_sub"))}</div>
+            </div>
+            <div class="aux-now-act">
+              ${tgPinned ? `<button class="gcard-btn ghost" id="tgReset">${esc(t("models.tg_reset"))}</button>` : ""}
+              <button class="gcard-btn" id="tgChange">${esc(tgPinned ? t("models.change_model") : t("models.tg_pin"))}</button>
+            </div>
+          </div>
+          ${tgReady ? "" : `<div class="aux-note warn">${WARN_ICON} ${esc(t("models.tg_warn"))}</div>`}
+          <div class="aux-note">${esc(t("models.tg_note"))}</div>
+        </div>
+      </div>
+      <div class="cview-section">
         <h3>◆ ${esc(t("models.h_reason"))} <span style="opacity:.5">${esc(t("models.h_reason_sub"))}</span></h3>
         <div class="gcard aux-card">
           <div class="gcard-meta">${esc(t("models.reason_meta"))}</div>
@@ -3105,18 +3691,18 @@
       </div>`;
 
     const chg = document.getElementById("mdChange");
-    if (chg) chg.onclick = () => openModelPicker(provList, main, () => renderModels(el));
+    if (chg) chg.onclick = () => openModelPicker(provList, main, () => renderModelsCloudTab(el));
     // Nguồn xác thực của gói Claude Code. Vẽ lại cả trang sau khi lưu vì cảnh báo phụ thuộc
     // cả lựa chọn này LẪN model việc nền - chỉ server mới ghép được hai thứ đó.
     el.querySelectorAll('input[name="claudeAuth"]').forEach((r) => {
       r.onchange = async () => {
         if (!r.checked) return;
         await saveSetting("model", { claude_auth: r.value });
-        renderModels(el);
+        renderModelsCloudTab(el);
       };
     });
     const auxChg = document.getElementById("auxChange");
-    if (auxChg) auxChg.onclick = () => openModelPicker(provList, { provider: auxProv, model: aux }, () => renderModels(el), {
+    if (auxChg) auxChg.onclick = () => openModelPicker(provList, { provider: auxProv, model: aux }, () => renderModelsCloudTab(el), {
       title: t("models.aux_title"),
       note: t("models.aux_note2"),
       save: (prov, mod) => saveSetting("model", { auxiliary: { provider: prov, model: mod } }),
@@ -3124,11 +3710,22 @@
     const auxRst = document.getElementById("auxReset");
     if (auxRst) auxRst.onclick = async () => {
       await saveSetting("model", { auxiliary: { provider: "anthropic-cli", model: "" } });
-      renderModels(el);
+      renderModelsCloudTab(el);
+    };
+    const tgChg = document.getElementById("tgChange");
+    if (tgChg) tgChg.onclick = () => openModelPicker(provList, { provider: tgProv, model: tgModel }, () => renderModelsCloudTab(el), {
+      title: t("models.tg_title"),
+      note: t("models.tg_note2"),
+      save: (prov, mod) => saveSetting("model", { telegram: { provider: prov, model: mod } }),
+    });
+    const tgRst = document.getElementById("tgReset");
+    if (tgRst) tgRst.onclick = async () => {
+      await saveSetting("model", { telegram: { provider: "", model: "" } });
+      renderModelsCloudTab(el);
     };
     el.querySelectorAll("[data-reason]").forEach(b => b.onclick = async () => {
       await saveSetting("model", { reasoning: b.dataset.reason });
-      renderModels(el);
+      renderModelsCloudTab(el);
     });
     el.querySelectorAll(".gcard-btn[data-pk]").forEach(b => {
       b.onclick = async () => {
@@ -3138,14 +3735,14 @@
         if (!val) { if (inp) inp.focus(); return; }
         b.disabled = true; b.textContent = t("settings.saving");
         await saveSetting("model", { [KEYFIELD[pid]]: val });
-        renderModels(el);
+        renderModelsCloudTab(el);
       };
     });
     el.querySelectorAll(".gcard-btn[data-disc]").forEach(b => {
       b.onclick = async () => {
         b.disabled = true; b.textContent = t("models.disconnecting");
         await saveSetting("model", { clear_key: b.dataset.disc });
-        renderModels(el);
+        renderModelsCloudTab(el);
       };
     });
     const ol = el.querySelector("[data-oauth-login]");
@@ -3176,7 +3773,7 @@
       if (r && r.ok) {
         if (msg) msg.innerHTML = OK_ICON + " " + esc(t("models.works")) + mcpTxt;
         _daHoiModel.delete("antigravity-cli");
-        setTimeout(() => renderModels(el), 700);
+        setTimeout(() => renderModelsCloudTab(el), 700);
       } else if (msg) msg.innerHTML = Icons.warn((r && r.error) || t("models.not_works")) + mcpTxt;
     };
     // ---- Grok Build CLI: đăng nhập device code ngay trên trang ----
@@ -3190,7 +3787,7 @@
       catch (e) { r = { ok: false, error: t("common.net_err") }; }
       gkl.disabled = false; gkl.textContent = cu;
       if (!r || !r.ok) { if (msg) msg.innerHTML = Icons.warn((r && r.error) || t("models.cant_open")); return; }
-      if (r.xong) { renderModels(el); return; }
+      if (r.xong) { renderModelsCloudTab(el); return; }
       // Link + mã hiện ra để người dùng mở trên MÁY CỦA HỌ - đây là cả lý do tồn tại của
       // đường device code: máy chạy Thansa (VPS) không cần có trình duyệt.
       if (box) {
@@ -3223,7 +3820,7 @@
       const quay = async () => {
         let d = null;
         try { d = await (await fetch("/grok/login-poll")).json(); } catch (e) {}
-        if (d && d.connected) { _daHoiModel.delete("grok-cli"); renderModels(el); return; }
+        if (d && d.connected) { _daHoiModel.delete("grok-cli"); renderModelsCloudTab(el); return; }
         if (Date.now() > han) {
           if (msg) msg.innerHTML = Icons.warn(t("models.timeout_login"));
           veLog(d, true);
@@ -3244,7 +3841,7 @@
       gkd.disabled = true; gkd.textContent = t("models.disconnecting");
       try { await fetch("/grok/logout", { method: "POST" }); } catch (e) {}
       _daHoiModel.delete("grok-cli");
-      renderModels(el);
+      renderModelsCloudTab(el);
     };
     const gkc = el.querySelector("[data-grokcheck]");
     if (gkc) gkc.onclick = async () => {
@@ -3269,7 +3866,7 @@
       if (r && r.ok) {
         if (msg) msg.innerHTML = OK_ICON + " " + esc(t("models.works")) + mcpTxt2;
         _daHoiModel.delete("grok-cli");
-        setTimeout(() => renderModels(el), 700);
+        setTimeout(() => renderModelsCloudTab(el), 700);
       } else if (msg) {
         msg.innerHTML = Icons.warn((r && r.error) || t("models.not_works")) + mcpTxt2;
         // Chưa dùng được thì hiện luôn chỗ Thansa đã nhìn: binary nào, thư mục nào, trong đó
@@ -3296,7 +3893,7 @@
       od.disabled = true; od.textContent = t("models.disconnecting");
       try { await fetch("/oauth/openai/disconnect", { method: "POST" }); } catch (e) {}
       _daHoiModel.delete("openai-oauth");
-      renderModels(el);
+      renderModelsCloudTab(el);
     };
     refreshClaudeCard(el);   // nạp trạng thái đăng nhập Claude Code (bất đồng bộ)
     hoiModelConNo(el, provList);   // thẻ "0 model" của provider đã kết nối: hỏi danh sách thật
@@ -3327,7 +3924,7 @@
         }
       } catch (e) {}
     }
-    if (coThem && el.isConnected) renderModels(el);
+    if (coThem && el.isConnected) renderModelsCloudTab(el);
   }
 
   // ---- Card Claude Code: status + login/logout (giống OpenAI OAuth) ----
@@ -3444,7 +4041,7 @@
       if (p.status === "connected") {
         if (msg) msg.innerHTML = CHECK_ICON + " " + esc(t("models.oauth_done"));
         _daHoiModel.delete("openai-oauth");   // vừa đăng nhập xong: cho phép hỏi lại danh sách
-        renderModels(el); return;
+        renderModelsCloudTab(el); return;
       }
       if (p.status === "error") { if (msg) msg.textContent = t("models.err") + " " + (p.error || ""); return; }
       setTimeout(poll, iv);
@@ -3485,7 +4082,7 @@
       if (p.status === "connected") {
         if (msg) msg.innerHTML = CHECK_ICON + " " + esc(t("models.oauth_done"));
         _daHoiModel.delete("openai-oauth");
-        renderModels(el); return;
+        renderModelsCloudTab(el); return;
       }
       if (m2) m2.innerHTML = Icons.warn(p.error || t("models.not_yet"));
       btn.disabled = false;
@@ -3670,6 +4267,20 @@
   }
 
   // ── Sức khoẻ kết nối (khối A): tô chấm màu chip theo /connect/health + nút Kết nối lại ──
+  // `checked_at` là giây kiểu Unix (`connect_health.py` dùng `time.time()`).
+  //
+  // Hàm này thay `zlAgo` - một cái tên còn sót lại từ module Zalo đã gỡ, KHÔNG hề được định
+  // nghĩa ở đâu. Nó ném ReferenceError ngay giữa vòng tô chấm, mà `forEach` thì không bắt lỗi,
+  // nên mọi kết nối SAU cái đầu tiên có `checked_at` đều không được tô - và vòng làm mới 60
+  // giây lại ném thêm một lần nữa. Hỏng lặng lẽ: chấm cứ xám, không ai biết vì sao.
+  function _lucNao(ts) {
+    const s = Math.max(0, Math.floor(Date.now() / 1000 - Number(ts || 0)));
+    if (s < 60) return "vừa xong";
+    if (s < 3600) return Math.floor(s / 60) + " phút trước";
+    if (s < 86400) return Math.floor(s / 3600) + " giờ trước";
+    return Math.floor(s / 86400) + " ngày trước";
+  }
+
   let _healthTimer = null;
   async function refreshConnHealth(el, conns, byId) {
     if (!document.body.contains(el)) { clearInterval(_healthTimer); _healthTimer = null; return; }
@@ -3682,7 +4293,7 @@
       const rec = h[chip.dataset.conn];
       dot.classList.remove("hok", "herr", "hunk");
       if (!rec) { dot.classList.add("hunk"); chip.title = "Chưa kiểm tra - vòng check nền sẽ tự chạy"; return; }
-      const when = rec.checked_at ? " · kiểm tra " + zlAgo(rec.checked_at) : "";
+      const when = rec.checked_at ? " · kiểm tra " + _lucNao(rec.checked_at) : "";
       if (rec.ok) {
         dot.classList.add("hok");
         chip.title = "Hoạt động bình thường (" + (rec.tools || 0) + " công cụ)" + when;
@@ -3809,13 +4420,20 @@
     const badge = '<span class="prov-kind">' + (AUTH_BADGE[con.auth_type] || con.auth_type || "") + '</span>'
       + (con.status === "beta" ? ' <span class="prov-kind" style="color:var(--warn-ink)">beta</span>' : "")
       + (soon ? ' <span class="prov-kind">sắp có</span>' : "");
+    // Nút gỡ: dọn kho cho gọn. KHÔNG xoá file trong system/ (cây code read-only trên Docker,
+    // và git pull sẽ mọc lại) - chỉ ghi vào STATE_DIR/core-off.json, nên cài lại được.
+    // Thẻ "Tự thêm (nâng cao)" không có nút này: nó là lối vào, không phải một dịch vụ.
+    const nutGo = con.id === "custom" ? ""
+      : '<button class="cat-x" data-coreoff="' + esc(con.id) + '" title="Gỡ khỏi kho">'
+        + ic("x") + '</button>';
     return '<div class="cat-card' + (soon ? " soon" : "") + '" data-cat="' + esc(con.category || "Khác") + '">'
+      + nutGo
       + '<div class="cat-ico">' + iconInner(con) + '</div>'
       + '<div class="cat-name">' + esc(con.name) + ' ' + badge + '</div>'
       + '<div class="cat-desc">' + esc(con.description || "") + '</div>'
       + (soon
         ? '<button class="gcard-btn" disabled style="opacity:.5">Sắp có</button>'
-          + (con.guide_url ? ' <a class="cat-doc" href="' + esc(con.guide_url) + '" target="_blank">docs ↗</a>' : "")
+          + (con.guide_url ? ' <a class="cat-doc" href="' + esc(safeHref(con.guide_url)) + '" target="_blank" rel="noopener">docs ↗</a>' : "")
         : '<button class="gcard-btn" data-connect="' + esc(con.id) + '">Kết nối</button>'
           + (con.guide_url ? ' <a class="cat-doc" href="' + esc(safeHref(con.guide_url))
               + '" target="_blank" rel="noopener">Hướng dẫn ↗</a>' : ""))
@@ -3851,7 +4469,7 @@
       + (con.risk ? '<div class="conn-risk">' + WARN_ICON + ' ' + esc(con.risk) + '</div>' : "")
       // Có steps thì wizard từng bước THAY guide tường chữ (guide giữ làm fallback catalog cũ)
       + (hasSteps ? stepsHtml(con)
-        : (con.guide ? '<div class="conn-guide">' + esc(con.guide) + (con.guide_url ? ' <a href="' + esc(con.guide_url) + '" target="_blank">Hướng dẫn ↗</a>' : "") + '</div>' : ""))
+        : (con.guide ? '<div class="conn-guide">' + esc(con.guide) + (con.guide_url ? ' <a href="' + esc(safeHref(con.guide_url)) + '" target="_blank" rel="noopener">Hướng dẫn ↗</a>' : "") + '</div>' : ""))
       + oauthWizard(con)   // nút mở trang ngoài (vd "Tạo App Password") khi catalog khai auth.setup.links
       + reuseHtml(reuseDonors(con, ctx))
       + jsonDropHtml(con)
@@ -4079,7 +4697,7 @@
       + (con.risk ? '<div class="conn-risk">' + WARN_ICON + ' ' + esc(con.risk) + '</div>' : "")
       + (hasSteps ? stepsHtml(con)
         : '<div class="conn-guide">' + esc(con.guide || "Đăng nhập bằng tài khoản của nhà cung cấp.")
-          + (con.guide_url ? ' <a href="' + esc(con.guide_url) + '" target="_blank">Hướng dẫn ↗</a>' : "") + '</div>')
+          + (con.guide_url ? ' <a href="' + esc(safeHref(con.guide_url)) + '" target="_blank" rel="noopener">Hướng dẫn ↗</a>' : "") + '</div>')
       + oauthWizard(con)
       + reuseHtml(reuseDonors(con, ctx))
       + jsonDropHtml(con)
@@ -4181,10 +4799,93 @@
       } else if (act === "toggle") {
         await postJson("/connect/toggle", { id: c.id }); closeConnModal(); renderConnect(el);
       } else if (act === "del") {
-        if (!confirm('Xoá kết nối "' + (c.label || "") + '"?')) return;
-        await postJson("/connect/delete", { id: c.id }); closeConnModal(); renderConnect(el);
+        closeConnModal(); openPurgeModal(el, c);
       }
     });
+  }
+
+  function _dungLuong(b) {
+    b = Number(b || 0);
+    if (!b) return "";
+    if (b < 1024) return b + " B";
+    if (b < 1024 * 1024) return Math.round(b / 1024) + " KB";
+    return (b / 1024 / 1024).toFixed(1) + " MB";
+  }
+
+  async function openPurgeModal(el, c) {
+    // Hộp này VẼ TỪ /connect/purge-plan chứ không tự liệt kê. Lý do: danh sách "sẽ mất những
+    // gì" viết tay trong JS thì sau vài tháng nó lệch khỏi việc server thật sự làm, mà lệch
+    // theo hướng nguy hiểm - người dùng đọc thấy ít hơn thực tế. Server đi một vòng quét thật
+    // rồi trả về đúng cái nó sắp xoá.
+    let d;
+    connModal(mHead("XOÁ KẾT NỐI") + '<div class="mp-body" id="pgBody">Đang kiểm tra…</div>');
+    try { d = await (await fetch("/connect/purge-plan?id=" + encodeURIComponent(c.id))).json(); }
+    catch (e) { d = { ok: false, error: String(e) }; }
+    const body = document.getElementById("pgBody");
+    if (!body) return;
+    if (!d || !d.ok) {
+      body.innerHTML = WARN_ICON + " " + esc((d && d.error) || "Không đọc được kết nối.");
+      return;
+    }
+    if (d.busy) {
+      body.innerHTML = WARN_ICON + ' Kết nối đang chạy dở một việc. Chờ nó xong rồi xoá, '
+        + 'vì dừng giữa chừng có thể cắt ngang một việc thật đang gửi đi.';
+      return;
+    }
+
+    const muc = (d.items || []).map(function (i) {
+      const co = _dungLuong(i.bytes);
+      return '<li>' + esc(i.label) + (i.n > 1 ? ' <b>x' + i.n + '</b>' : "")
+        + (co ? ' <span style="opacity:.6">(' + co + ')</span>' : "")
+        + (i.note ? '<br><span style="opacity:.6;font-size:.9em">' + esc(i.note) + '</span>' : "")
+        + '</li>';
+    }).join("");
+
+    // Cảnh báo lấy từ CATALOG (trường purge_warning), không viết cứng ở đây: mất phiên quét QR
+    // là tính chất của connector, nên nó phải đi cùng connector chứ không nằm trong giao diện.
+    const nang = !!d.warning;
+    body.innerHTML =
+      '<p>Sắp xoá <b>' + esc(d.label) + '</b> (' + esc(d.connector_name || "") + ').</p>'
+      + (nang ? '<div class="conn-guide" style="border-left:3px solid var(--warn,#e0a33e);padding-left:10px">'
+                + WARN_ICON + ' ' + esc(d.warning) + '</div>' : "")
+      + '<p style="margin-top:10px">Những thứ sẽ mất:</p><ul style="margin:6px 0 0 18px">' + muc + '</ul>'
+      + '<label style="display:block;margin-top:12px"><input type="checkbox" id="pgAudit"> '
+      + 'Xoá luôn nhật ký gọi tool <span style="opacity:.6">(mặc định giữ lại, chỉ bỏ tên hiển thị)</span></label>'
+      + (nang ? '<label style="display:block;margin-top:8px">Gõ đúng <b>' + esc(d.label)
+                + '</b> để xoá hẳn ngay:<br>'
+                + '<input class="mp-input" id="pgName" placeholder="Gõ lại tên kết nối"></label>' : "")
+      + '<div class="mp-foot" style="margin-top:14px"><span class="mp-note" id="pgNote"></span>'
+      + '<button class="mp-btn" data-act="close">Huỷ</button>'
+      + '<button class="mp-btn primary" id="pgTrash">'
+      + (nang ? 'Chuyển vào thùng rác 30 ngày' : 'Xoá kết nối') + '</button>'
+      + (nang ? '<button class="mp-btn danger" id="pgHard">Xoá hẳn ngay</button>' : "")
+      + '</div>';
+
+    const note = document.getElementById("pgNote");
+    async function chay(hard) {
+      note.textContent = "Đang xoá…";
+      const r = await postJson("/connect/delete", {
+        id: c.id, hard: !!hard,
+        purge_audit: !!(document.getElementById("pgAudit") || {}).checked
+      });
+      if (!r || !r.ok) {
+        note.innerHTML = WARN_ICON + " " + esc((r && r.error) || "Lỗi");
+        return;
+      }
+      closeConnModal();
+      renderConnect(el);
+    }
+    const nutTrash = document.getElementById("pgTrash");
+    if (nutTrash) nutTrash.onclick = () => chay(false);
+    const nutHard = document.getElementById("pgHard");
+    if (nutHard) nutHard.onclick = () => {
+      const v = (document.getElementById("pgName") || {}).value || "";
+      if (v.trim() !== (d.label || "").trim()) {
+        note.innerHTML = WARN_ICON + " Gõ đúng tên kết nối thì mới xoá hẳn được.";
+        return;
+      }
+      chay(true);
+    };
   }
 
   async function openAuditModal(c) {
@@ -4211,6 +4912,10 @@
       </div>
     </div>`;
   }
+  // Tab đang mở của trang Kết nối. Để NGOÀI renderConnect vì trang tự vẽ lại sau mỗi lần
+  // đấu, ngắt hay gỡ dịch vụ - giữ trong hàm thì mỗi thao tác lại quăng người dùng về tab đầu.
+  let _mcpTab = "danoi";
+
   async function renderConnect(el) {
     el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
     let d;
@@ -4243,22 +4948,135 @@
     const connectedHtml = Object.keys(groups).map(cid =>
       connectorCard(byId[cid] || { id: cid, name: cid, icon: "plug" }, groups[cid])).join("");
     const cats = Array.from(new Set(cat.map(c => c.category || "Khác")));
-    el.innerHTML = warn
+    const removed = d.removed || [];
+    const orphans = d.orphans || [];
+    // Kết nối mất khuôn thì `mcp_store.resolved` từ chối dựng dial spec, tức nó IM. Phải nói ra
+    // thay vì để người dùng ngồi đoán vì sao một nguồn đang có mà Thansa bảo không có.
+    //
+    // Hai nguyên nhân, hai lối thoát khác hẳn nhau - trộn làm một là đẩy người dùng đi sai
+    // đường ở đúng lúc họ đang hoảng:
+    //   `co_trong_kho`  người dùng vừa tự gỡ dịch vụ đó → cài lại ở khu "Đã gỡ" ngay dưới.
+    //   không có        dịch vụ đã DỌN RA Thansa Store (0.55.36 dọn 16 cái) → cài lại từ kho.
+    //
+    // Câu cũ ở nhánh thứ hai xui người dùng nâng cấp app hoặc bỏ kết nối đi. Từ 0.55.36 nó
+    // vừa sai vừa nguy hiểm: nâng cấp không mọc lại dịch vụ nữa, còn bỏ kết nối là vứt luôn
+    // credential họ đã đấu - trong khi thứ họ cần chỉ là bấm cài một gói.
+    const moCoiKho = orphans.filter(o => !o.co_trong_kho);
+    const banMoCoi = orphans.length
+      ? '<div class="conn-guide" style="border-left:3px solid var(--warn,#e0a33e);padding-left:10px;margin-bottom:12px">'
+        + WARN_ICON + ' <b>' + orphans.length + ' kết nối đang dừng vì thiếu dịch vụ trong kho:</b> '
+        + orphans.map(o => esc(o.label)).join(", ") + '. '
+        + (orphans.some(o => o.co_trong_kho)
+            ? 'Cài lại dịch vụ ở khu "Đã gỡ" bên dưới là chúng chạy lại. ' : "")
+        + (moCoiKho.length
+            ? 'Những dịch vụ này đã dọn ra Thansa Store để nhận bản mới mà không cần cập nhật app. '
+              + 'Cài lại là kết nối cũ chạy tiếp, không phải đăng nhập lại.'
+              // Nút xếp NGANG và chỉ rộng bằng chữ. `.gcard-btn` mặc định chiếm trọn hàng, nên
+              // để trần thì hai ba nút thành hai ba dải to đùng chồng lên nhau, trông như lỗi.
+              + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">'
+              + Array.from(new Set(moCoiKho.map(o => o.connector_id))).map(cid =>
+                  '<button class="gcard-btn" style="width:auto;flex:none" data-mocoi="' + esc(cid)
+                  + '">Cài ' + esc(cid) + ' từ kho</button>').join("")
+              + '</div>'
+            : "")
+        + '</div>'
+      : "";
+    const khuDaGo = removed.length
+      ? '<details class="cview-section"><summary><h3 style="display:inline">◆ Đã gỡ '
+        + '<span style="opacity:.5">' + removed.length + ' dịch vụ - bấm để xem</span></h3></summary>'
+        + '<div class="gcard-meta" style="max-width:740px;margin-top:10px">Những dịch vụ bạn đã gỡ khỏi kho. '
+        + 'File của chúng vẫn nằm trong bản cài (Thansa không sửa mã nguồn của chính nó), nên cài lại là có ngay.</div>'
+        + '<div class="prov-list" style="margin-top:12px">'
+        + removed.map(r => '<div class="prov-row"><div class="prov-ico">' + iconInner(r) + '</div>'
+            + '<div class="prov-main"><div class="prov-name">' + esc(r.name) + '</div>'
+            + '<div class="prov-meta">' + esc(r.category) + '</div></div>'
+            + '<button class="gcard-btn" data-coreon="' + esc(r.id) + '">Cài lại</button></div>').join("")
+        + '</div></details>'
+      : "";
+    el.innerHTML = warn + banMoCoi
+      // Hai TAB, không phải một mạch cuộn. Trang này gộp hai danh sách rất khác nhau:
+      // thứ đang chạy, và thứ có thể đấu thêm. Gộp lại thì người đã đấu vài chục tài
+      // khoản phải cuộn qua hết đống đó mới tới chỗ đấu cái mới.
+      //
+      // Cả hai khối đều NẰM TRONG DOM, chỉ ẩn đi - phần dây nối bên dưới tìm theo id và
+      // chạy một lần cho cả hai, nên đổi tab không phải vẽ lại hay nối lại gì cả.
+      + '<div id="mcpTabDaNoi"' + (_mcpTab === "danoi" ? "" : " hidden") + '>'
       + '<div class="cview-section"><h3>◆ Đã kết nối <span style="opacity:.5">' + conns.length + ' tài khoản</span></h3>'
       + '<div class="gcard-meta" style="max-width:740px">Một dịch vụ nối được NHIỀU tài khoản (nhiều shop, nhiều số Zalo…). Mọi bộ não - Claude Code, ChatGPT/Codex, OpenRouter, API - dùng chung kho này qua trung tâm kết nối của Thansa, kèm phân quyền và nhật ký.'
       + '<label style="margin-left:8px;cursor:pointer"><input type="checkbox" id="mcpStrict" ' + (d.strict ? "checked" : "") + '> Chỉ dùng kết nối của Thansa (bỏ kết nối sẵn của máy)</label></div>'
-      + '<div class="prov-list" style="margin-top:12px">' + (connectedHtml || '<div class="mp-empty">Chưa đấu nguồn nào - chọn một dịch vụ trong Kho bên dưới để bắt đầu.</div>') + '</div></div>'
-      + '<div class="cview-section"><h3>◆ Kho kết nối</h3>'
+      + '<div class="prov-list" style="margin-top:12px">' + (connectedHtml || '<div class="mp-empty">Chưa đấu nguồn nào - mở tab <b>Kết nối sẵn có</b> để bắt đầu.</div>') + '</div></div>'
+      // Lối đi tiếp, đặt ngay dưới danh sách. Không có nó thì tab này là ngõ cụt với
+      // người chưa đấu gì: họ nhìn một ô trống mà không biết bước kế tiếp ở đâu.
+      + '<div class="conn-guide" style="border:1px dashed var(--border);border-radius:12px;'
+      + 'padding:14px 16px;margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;gap:12px">'
+      + '<span style="flex:1;min-width:240px">Muốn nối thêm dịch vụ? Chọn từ những dịch vụ '
+      + 'Thansa có sẵn, hoặc tải thêm từ kho.</span>'
+      + '<button class="mp-btn" id="mcpDiSanCo">Kết nối sẵn có</button>'
+      + '<button class="mp-btn primary" id="mcpDiKho">Thansa Store</button></div>'
+      + '<details class="cview-section amb-details" id="ambWrap"><summary><h3 style="display:inline">◆ Kết nối sẵn của Claude Code và Codex <span style="opacity:.5">chỉ hiển thị - bấm để xem</span></h3></summary>'
+      + '<div class="gcard-meta" style="max-width:740px;margin-top:10px">Những nguồn đã đăng nhập sẵn trong tài khoản Claude (đồng bộ từ claude.ai) và trong Codex CLI. Bộ não tương ứng tự dùng được các nguồn "Connected". Đăng nhập và quản lý trong app Claude hoặc bằng lệnh <code>codex mcp</code>, không sửa ở đây.</div>'
+      + '<div class="prov-list" id="mcpAmbient" style="margin-top:12px"><div class="mp-empty">Bấm để tải…</div></div>'
+      + '<div class="prov-list" id="mcpAmbientCodex" style="margin-top:12px"></div></details>'
+      + '</div>'
+      + '<div id="mcpTabSanCo"' + (_mcpTab === "sanco" ? "" : " hidden") + '>'
+      + '<div class="cview-section"><h3>◆ Kết nối sẵn có</h3>'
       + '<div class="cat-tools"><input class="js-input" id="catQ" placeholder="Tìm dịch vụ…" style="max-width:220px">'
       + '<span class="cat-filter"><button class="cat-chip on" data-catf="">Tất cả</button>' + cats.map(x => '<button class="cat-chip" data-catf="' + esc(x) + '">' + esc(x) + '</button>').join("") + '</span></div>'
       + '<div class="cat-grid" id="catGrid">' + catalogCard(byId.custom) + groupCards(cat, conns) + catSolo(cat).map(catalogCard).join("") + '</div></div>'
       // Hai khu kết nối sẵn của CLI: GẬP mặc định (dân thường không cần thấy) + LAZY:
       // chỉ gọi /mcp/ambient (chậm - phải health check) khi người dùng thật sự mở ra.
-      + '<details class="cview-section amb-details" id="ambWrap"><summary><h3 style="display:inline">◆ Kết nối sẵn của Claude Code và Codex <span style="opacity:.5">chỉ hiển thị - bấm để xem</span></h3></summary>'
-      + '<div class="gcard-meta" style="max-width:740px;margin-top:10px">Những nguồn đã đăng nhập sẵn trong tài khoản Claude (đồng bộ từ claude.ai) và trong Codex CLI. Bộ não tương ứng tự dùng được các nguồn "Connected". Đăng nhập và quản lý trong app Claude hoặc bằng lệnh <code>codex mcp</code>, không sửa ở đây.</div>'
-      + '<div class="prov-list" id="mcpAmbient" style="margin-top:12px"><div class="mp-empty">Bấm để tải…</div></div>'
-      + '<div class="prov-list" id="mcpAmbientCodex" style="margin-top:12px"></div></details>';
+      + '</div>';
+    // Ba tab. Hai tab đầu chỉ đổi khối hiển thị trong trang; tab thứ ba ĐIỀU HƯỚNG sang kho
+    // cài đặt - nơi có cả connector không nằm trong bản app.
+    const doiTab = (v) => {
+      _mcpTab = v;
+      const a = document.getElementById("mcpTabDaNoi");
+      const b = document.getElementById("mcpTabSanCo");
+      if (a) a.hidden = v !== "danoi";
+      if (b) b.hidden = v !== "sanco";
+      el.querySelectorAll("[data-tab-cb]").forEach((x, i) =>
+        x.classList.toggle("on", i === (v === "danoi" ? 0 : 1)));
+      // Đổi tab xong mà vẫn đang ở giữa trang cũ thì người dùng tưởng không có gì xảy ra.
+      try { el.scrollTop = 0; } catch (e) {}
+    };
+    const tabKho = hangTabKho("mcp", [
+      { nhan: "Đã kết nối", chon: _mcpTab === "danoi", bam: () => doiTab("danoi") },
+      { nhan: "Kết nối sẵn có", chon: _mcpTab === "sanco", bam: () => doiTab("sanco") },
+    ]);
+    if (tabKho) el.insertBefore(tabKho, el.firstChild);
+    const nutSanCo = document.getElementById("mcpDiSanCo");
+    if (nutSanCo) nutSanCo.onclick = () => doiTab("sanco");
+    // Từ banner mồ côi sang thẳng gói cần cài, ô tìm điền sẵn id connector. Thả người dùng vào
+    // một kho ba chục mục rồi bảo tự tìm cái vừa biến mất là bắt họ làm việc của mình.
+    el.querySelectorAll("[data-mocoi]").forEach(b => b.onclick = () => {
+      if (window.JavisPacks && window.JavisPacks.moKho) {
+        window.JavisPacks.moKho("connector", "mcp",
+          VIEW_META.mcp ? VIEW_META.mcp.label : "Kết nối", b.dataset.mocoi);
+      }
+    });
+    const nutKho = document.getElementById("mcpDiKho");
+    if (nutKho) nutKho.onclick = () => {
+      if (window.JavisPacks && window.JavisPacks.moKho) {
+        window.JavisPacks.moKho("connector", "mcp", VIEW_META.mcp ? VIEW_META.mcp.label : "Kết nối");
+      }
+    };
     document.getElementById("mcpStrict").onchange = (e) => postJson("/mcp/strict", { strict: e.target.checked });
+    // Gỡ một dịch vụ có sẵn. Luồng hỏi lại nằm trong `JavisPacks.goApp` chứ không viết lại ở
+    // đây: dấu × trên thẻ và nút Gỡ trong kho là CÙNG một hành động, nên phải hỏi y hệt nhau -
+    // hai bản sao thì sớm muộn cũng lệch, mà lệch ở đúng chỗ hỏi trước khi xoá.
+    el.querySelectorAll("[data-coreoff]").forEach(b => b.onclick = async (ev) => {
+      ev.stopPropagation();
+      const con = byId[b.dataset.coreoff] || {};
+      if (!window.JavisPacks || !window.JavisPacks.goApp) { alert("Tải lại trang rồi thử lại."); return; }
+      const r = await window.JavisPacks.goApp(con.name || b.dataset.coreoff, b.dataset.coreoff);
+      if (r.ok) renderConnect(el);
+      else if (!r.huy) alert(r.error);
+    });
+    el.querySelectorAll("[data-coreon]").forEach(b => b.onclick = async () => {
+      const r = await postJson("/connect/core-toggle", { id: b.dataset.coreon, off: false });
+      if (r && r.ok) renderConnect(el);
+      else alert((r && r.error) || "Không cài lại được.");
+    });
     // Sức khoẻ kết nối: tô ngay khi mở trang + làm tươi mỗi 60s (tự dừng khi rời trang)
     clearInterval(_healthTimer);
     refreshConnHealth(el, conns, byId);
@@ -4838,7 +5656,6 @@
   // đầu hội thoại (badge trong trang chat soi gương từ badge HUD nên chỉ cần làm mới HUD).
   function refreshModelUi() {
     try { if (window.initModelBar) window.initModelBar(); } catch (e) {}
-    try { if (window.refreshEngineBadge) window.refreshEngineBadge(); } catch (e) {}
   }
   if (typeof window !== "undefined") window.JavisRefreshModelUi = refreshModelUi;
 
@@ -5172,7 +5989,6 @@
   // ============================================
   const CHAT_NODE_IDS = ["chatArea", "bgStrip", "attachBar", "modelBar", "hudVoice"];
   let _chatSlots = [];        // vị trí gốc từng node để trả về đúng chỗ trong HUD
-  let _chatEngObs = null;     // theo dõi engineBadge gốc để phản chiếu badge trong tab
 
   function _injectChatCss() {
     if (document.getElementById("cp-css")) return;
@@ -5188,8 +6004,9 @@
       min-height:0; padding:14px 12px; border-right:1px solid var(--glass-brd); background:var(--surface-1); }
     .chatpage-main{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; min-height:0; padding:14px 20px 16px; }
     .chatpage-bar{ display:flex; align-items:center; gap:10px; padding:0 4px 10px; flex:none; }
-    .cp-title{ font-family:var(--font); font-weight:700; letter-spacing:.5px; color:var(--text); }
-    .cp-engine{ margin-left:auto; font-size:12px; color:var(--text2); font-family:var(--font); white-space:nowrap; }
+    /* Chip project lùi hẳn về mép phải: thanh này giờ chỉ còn hai nút bên trái, để chip
+       dính ngay sau chúng thì nó trông như nút thứ ba chứ không phải nhãn của cuộc chat. */
+    .chatpage-bar .proj-chip-host{ margin-left:auto; }
     .cp-ico-btn{ background:none; border:1px solid var(--border); color:var(--text2); border-radius:8px;
       padding:4px 10px; cursor:pointer; font-size:14px; line-height:1; }
     .cp-ico-btn:hover{ color:var(--accent); border-color:var(--accent); }
@@ -5284,21 +6101,27 @@
     .chatpage-slot .attach-bar{ flex:none; }
     /* Màn hẹp: cả hàng tiêu đề phải nằm gọn MỘT dòng. Trước đây tiêu đề "Trò chuyện với Thansa"
        xuống bốn dòng và chữ "Thu nhỏ" xuống hai dòng, đẩy khung chat tụt hẳn xuống - chủ repo
-       chụp lại đúng cảnh đó. Ba việc: nút chỉ còn icon, tiêu đề cấm xuống dòng và tự cắt,
-       nhãn engine nhường chỗ trước vì nó là thứ ít cần nhất trong ba. */
+       chụp lại đúng cảnh đó. Nay hàng này nhẹ hẳn: tiêu đề tĩnh và nhãn engine đều đã bỏ, chỉ
+       còn hai nút (rút về icon) và chip project ở mép phải (tự cắt, xem style.css). */
     @media (max-width:860px){
       /* Màn hẹp không đủ chỗ xếp chồng trình sửa + chat → trình sửa chiếm chỗ như cũ. */
       .chatpage-main.edit-on > .chatpage-slot{ display:none; }
       .chatpage-bar{ gap:6px; min-width:0; }
       .cp-min span{ display:none; }
       .cp-min{ padding:4px 8px; }
-      .cp-title{ font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-        min-width:0; flex:0 1 auto; }
-      .cp-engine{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; font-size:11px; }
       .cp-side-toggle{ display:inline-block; }
       .chatpage-side{ position:absolute; left:0; top:0; bottom:0; z-index:6; width:min(84vw,300px);
         transform:translateX(-105%); transition:transform .2s ease; box-shadow:10px 0 40px var(--shadow-veil); background:var(--bg); }
       .chatpage.side-open .chatpage-side{ transform:none; }
+      /* NỀN MỜ. Ngăn kéo này trước đây mở ra mà không có nền, và đóng lại được đúng ba đường -
+         cả ba đều TẮT khi mở một file để sửa: nút bật/tắt nằm trên thanh tiêu đề thì bị chính
+         ngăn kéo (84vw) che, chạm vào khung chat thì khung chat đang bị ẩn nhường chỗ cho
+         trình sửa, còn chạm một dòng hội thoại thì đang ở tab Thư mục làm gì có dòng nào.
+         Kết quả: ngăn kéo dính cứng giữa màn hình, không cách nào đóng (chủ repo báo 01/09).
+         Nền mờ vừa nói cho mắt biết "chạm ra ngoài là đóng", vừa là chỗ hứng cú chạm đó.
+         z-index 5: trên nội dung, dưới chính ngăn kéo (6). */
+      .chatpage.side-open::before{ content:""; position:absolute; inset:0; z-index:5;
+        background:var(--scrim); }
       .chatpage-main{ padding:10px 12px 12px; }
     }`;
     const st = document.createElement("style"); st.id = "cp-css"; st.textContent = css; document.head.appendChild(st);
@@ -5375,6 +6198,13 @@
     into.appendChild(ed);
     const main = into.parentNode;
     if (main && main.classList) main.classList.add("edit-on");
+    // Màn hẹp: trình sửa vừa chiếm chỗ khung chat, mà ngăn kéo Hội thoại/Thư mục thì vẫn đang
+    // mở đè lên nó. Đóng ngay tại ĐÂY vì đây là chỗ MỌI đường mở file đi qua (bấm file trong
+    // cây, bấm [[wikilink]], bấm chip file đang ghim) - gắn ở từng handler là sót đường.
+    try {
+      const _cp = document.getElementById("chatPage");
+      if (_cp && window.matchMedia("(max-width: 860px)").matches) _cp.classList.remove("side-open");
+    } catch (e) {}
     return true;
   }
   function _returnNoteEditor() {
@@ -5417,7 +6247,6 @@
   }
 
   function _returnChatNodes() {
-    if (_chatEngObs) { try { _chatEngObs.disconnect(); } catch (e) {} _chatEngObs = null; }
     // Rời trang Trò chuyện thì trả cây Vault về cột trái màn chính, nếu không màn chính mất
     // hẳn panel Vault và người dùng tưởng app hỏng. Trình sửa cũng vậy - nó đang nằm trong
     // khung sắp bị xoá, không trả về là mất luôn node và mở file ở màn chính sẽ trắng trơn.
@@ -5452,8 +6281,10 @@
             '<button class="cp-ico-btn cp-min" type="button" id="cpMinBtn" ' +
               'title="Thu nhỏ về màn Thansa" aria-label="Thu nhỏ về màn Thansa">' +
               ic("chevron-left") + '<span>Thu nhỏ</span></button>' +
-            '<span class="cp-title">Trò chuyện với Thansa</span>' +
-            '<span class="cp-engine" id="cpEngine"></span>' +
+            // Tiêu đề tĩnh "Trò chuyện với Thansa" ĐÃ BỎ (chủ repo yêu cầu 01/09). Nó nói
+            // đúng một điều mà rail đang tô sáng và khung trống đã ghi bằng chữ in nghiêng
+            // ngay bên dưới, nên nó chỉ ăn chỗ. Chip project lùi về mép phải, chiếm chỗ đó.
+            '<span class="proj-chip-host"></span>' +
           '</div>' +
           '<div class="chatpage-slot" id="chatPageSlot"></div>' +
           // Chỗ đứng cho TRÌNH SỬA khi mở file từ tab Thư mục. Rỗng và ẩn cho tới lúc đó.
@@ -5466,14 +6297,8 @@
 
     // Sidebar lịch sử hội thoại (dùng lại module chung của chat workspace)
     try { if (window.JavisChatSide) window.JavisChatSide.mount(el.querySelector("#chatPageSide")); } catch (e) {}
-
-    // Badge engine: phản chiếu từ badge gốc trong HUD (không mượn node để khỏi phá HUD)
-    const eb = document.getElementById("engineBadge"), cpe = el.querySelector("#cpEngine");
-    if (eb && cpe) {
-      const sync = () => { cpe.textContent = (eb.textContent || "").trim(); };
-      sync();
-      try { _chatEngObs = new MutationObserver(sync); _chatEngObs.observe(eb, { childList: true, characterData: true, subtree: true }); } catch (e) {}
-    }
+    // Thanh tiêu đề vừa dựng lại từ đầu nên chip project trong đó đang trống.
+    try { if (window.JavisChatSide) window.JavisChatSide.chip(); } catch (e) {}
 
     // Thu gọn cột Hội thoại/Thư mục: màn hẹp giữ drawer như cũ; desktop thu về dải hẹp
     // và nhớ lựa chọn. Nút thu/mở gắn SAU khi JavisChatSide.mount vì mount ghi đè innerHTML
@@ -5523,6 +6348,11 @@
     // bỏ), nên trang này phải có nút thu nhỏ, nếu không người dùng chỉ còn cách bấm rail.
     el.querySelector("#cpMinBtn").onclick = () => navigateTo("home");
     slot.addEventListener("click", () => { if (isNar() && page.classList.contains("side-open")) page.classList.remove("side-open"); });
+    // Chạm NỀN MỜ (pseudo-element của chính .chatpage nên cú chạm rơi vào page) = đóng ngăn kéo.
+    // Đây là đường đóng DUY NHẤT còn sống khi trình sửa đang chiếm chỗ khung chat.
+    page.addEventListener("click", (e) => {
+      if (isNar() && e.target === page && page.classList.contains("side-open")) page.classList.remove("side-open");
+    });
     el.querySelector("#chatPageSide").addEventListener("click", (e) => {
       if (isNar() && e.target.closest(".cside-item")) page.classList.remove("side-open");
     });

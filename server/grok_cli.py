@@ -63,6 +63,7 @@ import asyncio
 import errno
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -88,9 +89,21 @@ LENH_CAI = "curl -fsSL https://x.ai/cli/install.sh | bash"
 LENH_CAI_WIN = "irm https://x.ai/cli/install.ps1 | iex"
 
 # Mức quyền Javis -> luật chặn của Grok. Xem `permission_cho_mode`.
+#
+# TÊN TOOL Ở ĐÂY PHẢI LÀ TOOL CỦA GROK, KHÔNG PHẢI CỦA CLAUDE CODE. Bản trước chép nguyên
+# danh sách của Claude vào đây, kèm `NotebookEdit(*)` - một tool Grok không có. Grok CLI không
+# bỏ qua tên lạ mà TỪ CHỐI cả lượt gọi: "unsupported tool prefix: NotebookEdit".
+#
+# Hậu quả lắt léo đúng kiểu khó truy: chat THẬT của người dùng chạy ở mức full, mà mức full
+# không truyền cờ --deny nào, nên chat vẫn chạy ngon. Chỉ lượt chat thử của thẻ Models là
+# chạy ở mức suggest - tức lượt DUY NHẤT đụng vào danh sách này - nên thẻ đỏ lè trong khi mọi
+# thứ khác bình thường. Người dùng báo 02/09: "vẫn chạy ào ào mà tại hiện lỗi đó tí".
+#
+# Bỏ NotebookEdit KHÔNG nới lỏng gì: Grok không có tool sửa notebook thì cũng chẳng có gì để
+# chặn. Thêm tên mới vào đây phải kiểm là Grok thật sự có tool đó (test_grok_cli canh).
 _LUAT_CHAN = {
     # suggest: CHỈ ĐỌC. Chặn cả ghi file lẫn lệnh máy.
-    "suggest": ("Write(*)", "Edit(*)", "Bash(*)", "NotebookEdit(*)"),
+    "suggest": ("Write(*)", "Edit(*)", "Bash(*)"),
     # auto: ghi file nháp được, KHÔNG chạy lệnh máy.
     "auto": ("Bash(*)",),
     # full: không chặn gì ở tầng CLI.
@@ -201,6 +214,32 @@ def co_co(*ten_co: str) -> bool:
     if not txt:
         return False
     return any(c in txt for c in ten_co)
+
+
+# ---- Mức effort: chỉ truyền khi CHÍNH `--help` khai cả cờ LẪN giá trị ----
+#
+# Cùng tinh thần `co_co` nhưng chặt hơn một nấc, vì ở đây sai không chỉ mất một tuỳ chọn: một
+# cờ `--effort` có thật mà chỉ nhận `low|high` thì gửi "medium" là CLI thoát ngay, hỏng trọn
+# lượt chat. Nên phải thấy TÊN CỜ trong help, và thấy CẢ GIÁ TRỊ định gửi, mới truyền.
+#
+# Hệ quả thành thật: bản CLI nào không liệt kê giá trị trong help thì Javis không truyền gì
+# cả, và độ sâu suy nghĩ rơi về câu nhắc trong prompt. Đó là chủ ý - thà mất một tuỳ chọn còn
+# hơn đoán một giá trị rồi làm hỏng lượt chat của người dùng. Khi CLI khai rõ ra thì phần này
+# tự chạy, khỏi sửa code.
+_CO_EFFORT = ("--effort", "--reasoning-effort")
+
+
+def co_effort(muc: Optional[str]) -> list:
+    """['--effort', '<muc>'] nếu bản CLI này khai đủ cả hai, không thì [] (không truyền gì)."""
+    if not muc:
+        return []
+    txt = _help_text()
+    if not txt or not re.search(r"\b" + re.escape(str(muc)) + r"\b", txt):
+        return []
+    for co in _CO_EFFORT:
+        if co in txt:
+            return [co, str(muc)]
+    return []
 
 
 def phien_moi() -> str:
@@ -989,6 +1028,9 @@ class GrokCLI:
         self.mode = "full"
         self.max_turns = 0              # 0 = để CLI tự quản, như mọi engine CLI khác
         self.extra_args: list = []
+        # Độ sâu suy nghĩ (`main._cli_do_sau_khac` đặt). None = không truyền cờ nào.
+        # Chỉ tới được dòng lệnh khi `co_effort` thấy bản CLI này khai đủ cờ lẫn giá trị.
+        self.effort = None
         # Trần wall-clock cho MỘT lượt. Đây không phải phòng xa: `permission_cho_mode()` fail-
         # closed, nên trên một bản CLI không khai `--permission-mode` nó không truyền cờ nào -
         # và headless mà CLI dừng lại hỏi duyệt là treo tới vô tận, im lặng, không một dòng ra
@@ -1005,6 +1047,7 @@ class GrokCLI:
         if self.model and co_co("--model"):
             args += ["--model", self.model]
         args += permission_cho_mode(self.mode)
+        args += co_effort(self.effort)
         if self.max_turns and co_co("--max-turns"):
             args += ["--max-turns", str(int(self.max_turns))]
         if co_co("--output-format"):

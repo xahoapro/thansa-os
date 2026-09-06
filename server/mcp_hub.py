@@ -100,6 +100,59 @@ def _audit_append(rec):
         print(f"[hub audit] {e}", file=sys.stderr)
 
 
+def forget_rate(conn_id) -> None:
+    """Quên bộ đếm tần suất của một connection đã bị xoá.
+
+    Nhỏ nhưng có thật: `_rate` là dict theo conn_id và không ai pop nó bao giờ, nên id của
+    mọi kết nối từng dùng tool sẽ nằm lại trong RAM tới lúc khởi động lại."""
+    _rate.pop(conn_id, None)
+
+
+def audit_scrub(conn_id, drop=False) -> int:
+    """Dọn nhật ký cho một connection đã xoá. Trả về số dòng đã chạm.
+
+    MẶC ĐỊNH CHỈ XOÁ NHÃN, không xoá dòng. Nhãn là thứ duy nhất trong bản ghi mang tên người
+    hoặc tên cửa hàng; bỏ nó đi là hết dữ liệu cá nhân, mà vẫn còn lại dấu vết "kết nối này
+    từng gọi tool kia lúc đó". Một nhật ký mà thao tác xoá tự quét sạch được thì không còn là
+    nhật ký - nên `drop=True` phải do người dùng tự tick.
+
+    Ghi lại bằng tmp + replace vì `_audit_append` mở file ở chế độ append KHÔNG khoá: sửa tại
+    chỗ mà gặp đúng lúc một tool call đang ghi là mất dòng đó.
+    """
+    if not conn_id or not _AUDIT_PATH.exists():
+        return 0
+    try:
+        lines = _AUDIT_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError as e:
+        print(f"[hub audit] doc de don: {e}", file=sys.stderr)
+        return 0
+    out, touched = [], 0
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            out.append(line)      # dòng hỏng: giữ nguyên, không phải việc của hàm này
+            continue
+        if rec.get("conn_id") != conn_id:
+            out.append(line)
+            continue
+        touched += 1
+        if drop:
+            continue
+        rec["label"] = ""
+        out.append(json.dumps(rec, ensure_ascii=False))
+    if not touched:
+        return 0
+    try:
+        tmp = _AUDIT_PATH.with_suffix(".jsonl.tmp")
+        tmp.write_text((("\n".join(out)) + "\n") if out else "", encoding="utf-8")
+        tmp.replace(_AUDIT_PATH)
+    except OSError as e:
+        print(f"[hub audit] ghi lai: {e}", file=sys.stderr)
+        return 0
+    return touched
+
+
 def audit_tail(limit=50, conn_id=None):
     try:
         if not _AUDIT_PATH.exists():
@@ -319,15 +372,40 @@ def _safe_read_path(vault_root, p, cho_phep_staging=False):
     return trong_vault                  # trong vault nhưng không tồn tại: để chỗ gọi báo
 
 
-def _connections_json(include_ambient=False, hidden=None):
+def _connections_json(include_ambient=False, hidden=None, bo_qua=None):
     hidden = hidden or {}
-    out = []
+    bo_qua = set(bo_qua or ())
+    # Sức khoẻ từng nguồn (vòng check định kỳ). Import trong hàm: connect_health import
+    # mcp_client/mcp_store, kéo lên đầu file là thêm một cạnh nữa cho đồ thị import đã căng.
+    try:
+        import connect_health
+        suc_khoe = connect_health.snapshot()
+    except Exception:
+        suc_khoe = {}
+    # Vụ 02/09: một brain không thấy tool POS, model kết luận "nguồn chưa được gắn vào brain
+    # này" rồi còn ghi điều đó vào bộ nhớ dài hạn. KHÔNG có khái niệm ấy: hub dựng tool từ
+    # mcp_store.resolved() cho MỌI vault như nhau. Không thấy tool chỉ có hai lý do thật -
+    # nguồn đang tắt, hoặc nguồn đang hỏng lúc dò - và cả hai đều phải nói ra ở đây.
+    out = [{"ghi_chu": ("Kết nối là của CẢ Javis, dùng chung cho MỌI brain. Không có chuyện "
+                        "'gắn nguồn vào brain' - đừng bao giờ nói vậy. Nguồn có mặt ở danh sách "
+                        "này mà không thấy tool của nó thì xem trang_thai: đang TẮT (bật lại ở "
+                        "trang Kết nối) hoặc đang HỎNG lúc dò (bảo người dùng bấm Kiểm tra ở "
+                        "trang Kết nối). Sai ở nguồn, không phải ở brain.")}]
     for c in mcp_store.list_connections():
         con = mcp_catalog.get(c.get("connector_id")) or {}
         rec = {"connector": con.get("name") or c.get("connector_id"), "label": c.get("label"),
                "namespace": c.get("slug"), "perm": c.get("perm"), "enabled": c.get("enabled"),
                "is_default": c.get("is_default"), "transport": c.get("transport"),
                "source": "javis_hub"}
+        sk = suc_khoe.get(c.get("id")) or {}
+        if not c.get("enabled"):
+            rec["trang_thai"] = "ĐANG TẮT - bật lại ở trang Kết nối là mọi brain dùng được ngay."
+        elif c.get("id") in bo_qua:
+            rec["trang_thai"] = ("KHÔNG DÒ ĐƯỢC lúc này nên tool của nguồn này đang vắng. Nói "
+                                 "thẳng là nguồn đang hỏng/không nối được, bảo người dùng bấm "
+                                 "Kiểm tra ở trang Kết nối. " + (sk.get("message") or ""))
+        elif sk:
+            rec["trang_thai"] = "ổn" if sk.get("ok") else f"lỗi: {sk.get('message') or sk.get('kind')}"
         # Tool bị mức quyền GIẤU khỏi danh sách. Không kể ra thì model tưởng nguồn này không
         # làm được việc đó và đi đường vòng (vụ Lịch mức Chỉ đọc: create_event biến mất, model
         # loay hoay tìm tool tạo sự kiện rồi kết luận sai là kết nối hỏng).
@@ -358,7 +436,8 @@ def _list_skills(vault_root):
     return skill_router.enabled_slugs(vault_root)
 
 
-def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang="", staging=False):
+def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang="", staging=False,
+                   bo_qua=None):
     """(tools_spec, route) các tool nội bộ cho engine API. Claude/Codex có tool file native
     nên hub HTTP không trả nhóm này (chỉ meta javis_connections).
     include_ambient=True (đường engine Claude): javis_connections kèm cả connector tài khoản
@@ -384,11 +463,12 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
         }
 
     add("javis_connections", "Liệt kê các nguồn dữ liệu (connector/tài khoản MCP) đang đấu vào Thansa, "
-        "kèm mức quyền và các tool đang bị mức quyền ẩn (tool_bi_an_do_quyen). Gồm cả connector đấu "
+        "kèm mức quyền, trạng thái sống/hỏng, và các tool đang bị mức quyền ẩn (tool_bi_an_do_quyen). "
+        "Kết nối DÙNG CHUNG cho mọi brain - không có khái niệm gắn nguồn vào brain. Gồm cả connector đấu "
         "vào TÀI KHOẢN Claude (Drive/Gmail/lịch...) - loại source='claude_account' gọi THẲNG qua "
         "tool native mcp__<tên>__*, KHÔNG qua javis_run_tool. Dùng khi cần biết đang có nguồn nào / "
         "tài khoản nào là mặc định, hoặc khi không tìm thấy tool tưởng phải có.",
-        {}, [], lambda args: _async_const(_connections_json(include_ambient, hidden)))
+        {}, [], lambda args: _async_const(_connections_json(include_ambient, hidden, bo_qua)))
 
     if not vault_root:
         return tools, route
@@ -764,10 +844,21 @@ def _apply_lazy(tools_spec, route, include_ambient=False, hidden=None, force=Fal
 # Discover (cache) - gộp MCP connections + builtin
 # ============================================================
 def _store_mtime():
-    try:
-        return mcp_store.STORE.stat().st_mtime
-    except OSError:
-        return 0
+    """Mốc thời gian để biết bảng tool có cần dựng lại không.
+
+    Gộp cả kho GÓI và sổ ĐÃ GỠ, không chỉ file kết nối: cả hai đều đổi được danh sách connector
+    mà không ai đụng tới `mcp_servers.json`. Ba lệnh stat, chạy trên đường nóng nên không đi
+    quét sâu - `discover_all` gọi hàm này mỗi lượt chat.
+
+    Đây là đường CHẬM (trong TTL 60 giây sẵn có), dành cho ca thả thư mục vào bằng tay. Đổi qua
+    endpoint thì đã gọi thẳng `invalidate_cache()` nên có hiệu lực ngay."""
+    tong = 0.0
+    for f in (mcp_store.STORE, STATE_DIR / "core-off.json", STATE_DIR / "packs"):
+        try:
+            tong += f.stat().st_mtime
+        except OSError:
+            pass
+    return tong
 
 
 async def discover_all(mode="full", vault_root=None, include_plugins=True, include_ambient=False,
@@ -835,7 +926,7 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
             "health": "healthy",
         }
 
-    b_tools, b_route = _builtin_tools(mode, vault_root, include_ambient, hidden, lang, staging)
+    b_tools, b_route = _builtin_tools(mode, vault_root, include_ambient, hidden, lang, staging, bo_qua)
     tools_spec += b_tools
     route.update(b_route)
 

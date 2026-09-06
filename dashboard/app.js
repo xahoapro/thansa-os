@@ -114,8 +114,11 @@ const voice = new JavisVoice({
   onError: (err) => {
     voiceBtn.classList.remove("recording");
     setOrbState("", "SẴN SÀNG");
-    if (err === "not-allowed") alert("Bạn cần cấp quyền microphone cho trang này.");
-    else if (err === "not-supported") alert("Trình duyệt không hỗ trợ nhận giọng. Dùng Chrome/Edge.");
+    // Mic hỏng hẳn thì TẮT chế độ rảnh tay. Không tắt thì vòng giữ mic 500ms bên dưới cứ mở
+    // lại mãi, mỗi lần một hộp thoại chặn - người dùng bấm OK xong nửa giây sau nó nổ tiếp,
+    // không còn đường nào bấm vào trang nữa. Đúng cảnh người dùng báo ngày 04/09.
+    if (voice.micHong && voice.micHong()) tatRanhTay();
+    alertMic(err);
   }
 });
 
@@ -176,6 +179,8 @@ function handleMessage(data) {
     });
     syncActiveUI();
     notifySessions();
+    // Lượt đang chờ gói thuê bao mở lại hạn mức: dựng lại thẻ "tự chạy lại" cho phiên đang xem.
+    try { if (window.JavisResume) window.JavisResume.fromHello(data.resumes || [], savedSessionId); } catch (e) {}
     return;
   }
 
@@ -242,6 +247,13 @@ function handleMessage(data) {
       }
     }
   } else if (data.type === "response") {
+    // Lượt vấp hạn mức gói thuê bao: câu báo đã hiện ở bong bóng lỗi (kèm thẻ tự chạy lại) và
+    // server không có câu trả lời nào, nên không vẽ thêm bong bóng "(không có nội dung)".
+    if (t && t.limit && !(data.content || "").trim()) {
+      if (isActive) { hideActivity(); setOrbState("", "SẴN SÀNG"); }
+      refreshUsage();
+      return;
+    }
     const { clean: askClean, ask } = window.JavisAsk.extract(data.content || "");
     const finalText = askClean || (t && t.text) || "";
     const shownText = finalText || "_(không có nội dung trả về - thử lại hoặc đổi model)_";
@@ -252,7 +264,6 @@ function handleMessage(data) {
       if (!msgEl) msgEl = appendJavisMessage(shownText);
       else msgEl.querySelector(".bubble").innerHTML = markdownToHtml(shownText);
       if (ask) window.JavisAsk.render(msgEl, ask, true);   // chip chỉ mọc khi lượt xong
-      if (data.engine) setEngineBadge(data.engine, data.model);   // sự thật engine+model của lượt này
       _renderCtxLine(msgEl, data);   // lượt này đi đường nào, tốn bao nhiêu
       if (finalText.trim()) recordTurn("javis", finalText, null, ask);
       if (voice.ttsEnabled && t && !t.spoke && finalText) { setOrbState("speaking", "ĐANG NÓI"); voice.speak(finalText); }
@@ -261,11 +272,26 @@ function handleMessage(data) {
     }
     refreshUsage();     // cập nhật panel Mức dùng sau mỗi lượt
   } else if (data.type === "error") {
-    if (isActive) { hideActivity(); appendJavisError(data.content); setOrbState("", "SẴN SÀNG"); }
+    if (t && data.limit) t.limit = data.limit;
+    if (isActive) {
+      hideActivity();
+      const errEl = appendJavisError(data.content);
+      setOrbState("", "SẴN SÀNG");
+      if (data.limit) {
+        // Hết lượt gói thuê bao: câu báo là tin cuối của lượt (server không trả gì thêm), ghi
+        // vào convo để F5 còn thấy, rồi gắn thẻ "tự chạy lại" dưới nó (limit-resume.js).
+        recordTurn("javis", data.content || "", null, null);
+        try { if (window.JavisResume) window.JavisResume.attach(errEl, sid, data.limit); } catch (e) {}
+      }
+    }
+  } else if (data.type === "resume") {
+    // Trạng thái lịch tự chạy lại (hẹn / tắt / đang chạy / huỷ) - thẻ tự vẽ lại.
+    try { if (window.JavisResume) window.JavisResume.onFrame(data); } catch (e) {}
   } else if (data.type === "system") {
     if (isActive) appendJavisMessage(data.content);
   } else if (data.type === "turn_done") {
     // Lượt của phiên này kết thúc (xong / lỗi / bị dừng): bỏ cờ chạy, dọn buffer, refresh Lịch sử.
+    try { if (window.JavisResume) window.JavisResume.turnDone(sid); } catch (e) {}
     if (t) t.running = false;
     setSessionRunning(sid, false);
     if (isActive) syncActiveUI();
@@ -315,7 +341,7 @@ function sendMessage(text) {
   // không còn gì để trỏ tới, và bong bóng chỉ còn trơ cái tên file.
   recordTurn("user", msg, atts.map(a => ({ name: a.name, kind: a.kind, url: a.url || "" })));
 
-  // Soạn message gửi Javis (kèm đường dẫn file trong Sources)
+  // Soạn message gửi Thansa (kèm đường dẫn file trong Sources)
   const _isSkill = _slash.type === "skill";
   let outMsg = _isSkill ? _slash.message : msg;
   if (atts.length) {
@@ -358,6 +384,11 @@ function sendMessage(text) {
 }
 // Chip lựa chọn (chat-ask.js) gửi đáp án qua đây: bấm chip = y như người dùng gõ tay nhãn đó.
 window.JavisSend = sendMessage;
+// Module ngoài (limit-resume.js) gửi một khung điều khiển thô lên server. true = đã gửi.
+window.JavisWsSend = function (obj) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+  try { ws.send(JSON.stringify(obj)); return true; } catch (e) { return false; }
+};
 
 // ============================================
 // Lưu / khôi phục phiên
@@ -396,6 +427,8 @@ function restoreSession() {
     if (t.ask) window.JavisAsk.render(el, t.ask, i === convo.length - 1);
   });
   if (convo.length) scrollBottom(true);
+  // hello thường tới SAU bước này; nếu tới trước (kết nối nhanh) thì thẻ "tự chạy lại" gắn ở đây.
+  try { if (window.JavisResume && savedSessionId) window.JavisResume.renderFor(savedSessionId); } catch (e) {}
   notifySessions();   // panel Lịch sử tô đúng phiên đang xem thay vì không tô cái nào
   syncActiveUI();
 }
@@ -434,6 +467,8 @@ async function openStoredSession(id) {
       showActivity(Icons.msg("pen-line", "Đang soạn câu trả lời..."));
       setOrbState("thinking", "ĐANG SUY NGHĨ");
     }
+    // Phiên này đang chờ gói thuê bao mở lại hạn mức → gắn thẻ "tự chạy lại" dưới tin cuối.
+    try { if (window.JavisResume) window.JavisResume.renderFor(id); } catch (e) {}
     persistSession();
     scrollBottom(true);
     notifySessions();
@@ -470,7 +505,7 @@ function notifySessions() { try { window.dispatchEvent(new Event("javis:sessions
 function actsHtml(role, ts, canResend) {
   return window.JavisActs ? window.JavisActs.actsHtml(role, ts, canResend) : "";
 }
-// Tin chỉ có ảnh (không kèm lời nhắn) thì chẳng có chữ nào để gửi lại. Ở tin của Javis
+// Tin chỉ có ảnh (không kèm lời nhắn) thì chẳng có chữ nào để gửi lại. Ở tin của Thansa
 // thì cái quyết định là CÂU HỎI ngay trên nó, nên soi tin người dùng cuối cùng đã nằm
 // trong khung (chatAppend chèn theo đúng thứ tự nên lúc này nó đã có mặt).
 function lastUserText() {
@@ -779,7 +814,7 @@ function flashCopied(btn, label) {
   setTimeout(() => { btn.textContent = label || old; }, 1200);
 }
 // Bấm một nút trong hàng .msg-acts. Gửi lại / sửa lại đều lấy chữ GỐC của tin người
-// dùng (dataset.text) chứ không đọc lại DOM, vì tin dài đang thu gọn và tin Javis đã
+// dùng (dataset.text) chứ không đọc lại DOM, vì tin dài đang thu gọn và tin Thansa đã
 // thành HTML. Gửi lại = một lượt MỚI ở cuối hội thoại, không xoá gì của lượt cũ.
 function runMsgAct(btn) {
   const msgEl = btn.closest(".msg");
@@ -790,9 +825,10 @@ function runMsgAct(btn) {
     if (b) copyText(b.innerText).then(() => flashCopied(btn, "⧉"));
     return;
   }
-  const text = window.JavisActs && window.JavisActs.isUserMsg(msgEl)
-    ? (msgEl.dataset.text || "")
-    : (window.JavisActs ? window.JavisActs.prevUserText(msgEl) : "");
+  // Chi tin NGUOI DUNG mang nut gui lai / sua lai, nen chu goc luon nam ngay tren chinh no.
+  // Truoc day con mot nhanh nguoc len tim tin nguoi dung gan nhat - do la duong cua nut "tra
+  // loi lai cau hoi phia tren" o tin Thansa, da bo o 0.52.13.
+  const text = msgEl.dataset.text || "";
   if (!text) return;
   if (act === "edit") {
     // Chỉ đổ chữ vào ô nhập, KHÔNG tự gửi - để anh sửa xong tự bấm gửi.
@@ -926,7 +962,7 @@ async function initGraph() {
   await reloadGraph();
 }
 
-// Click node trong graph → Javis mở & thao tác note đó trong vault
+// Click node trong graph → Thansa mở & thao tác note đó trong vault
 window.onGraphNodeClick = (node) => {
   if (!node || !node.path) return;
   const brainRel = (node.path || "").split("/").slice(1).join("/") || node.path;   // bỏ đoạn gốc → path tương đối brain
@@ -1310,7 +1346,7 @@ window.addEventListener("resize", () => { if (javisGraph) javisGraph.resize(); }
 let _stopBtnTick = 0;
 function pumpAudioLevel() {
   if (javisGraph) javisGraph.setLevel(voice.getLevel());
-  // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc Javis đang đọc)
+  // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc Thansa đang đọc)
   if ((_stopBtnTick++ % 10) === 0) {
     updateStopBtn();
     // Đọc xong cả hàng đợi (gồm các bước trung gian) → trả orb về nghỉ.
@@ -1726,7 +1762,7 @@ async function uploadFile(file) {
   pendingAttachments.push(att);
   renderChips();
   try {
-    // Chỉ STAGE để Javis đọc - KHÔNG tự convert/lưu. Lưu Sources chỉ khi user yêu cầu.
+    // Chỉ STAGE để Thansa đọc - KHÔNG tự convert/lưu. Lưu Sources chỉ khi user yêu cầu.
     const fd = new FormData();
     fd.append("file", file, att.name);
     fd.append("brain", currentBrainPath());
@@ -1761,7 +1797,7 @@ fileInput.addEventListener("change", () => {
 
 // Dán ảnh (Ctrl+V) + dán VĂN BẢN SIÊU DÀI thành file .txt đính kèm (kiểu Claude):
 // bài dài nhồi thẳng vào ô chat vừa khó đọc vừa nặng khung hội thoại - biến thành
-// file thì Javis đọc trọn vẹn còn màn hình chỉ hiện một chip gọn.
+// file thì Thansa đọc trọn vẹn còn màn hình chỉ hiện một chip gọn.
 const PASTE_TXT_CHARS = 1500;   // vượt MỘT trong hai ngưỡng là thành file
 const PASTE_TXT_LINES = 25;
 function pasteAsTxt(text) {
@@ -1790,16 +1826,28 @@ document.addEventListener("paste", (e) => {
 });
 
 // Kéo-thả file
+// Vài khung có ô thả RIÊNG của nó (ngăn kéo project...) và tự đánh dấu [data-localdrop].
+// Thả vào đó thì file phải đi vào đúng khung đó, không được rơi tiếp xuống khung chat -
+// chủ repo báo 03/09: kéo file vào ô "kéo thả vào đây" của project thì nó nhảy sang chat.
+const inLocalDrop = (e) => !!(e.target && e.target.closest && e.target.closest("[data-localdrop]"));
 let dragDepth = 0;
 window.addEventListener("dragenter", (e) => {
   if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) {
-    dragDepth++; dropOverlay.classList.add("show");
+    dragDepth++; if (!inLocalDrop(e)) dropOverlay.classList.add("show");
   }
 });
-window.addEventListener("dragover", (e) => e.preventDefault());
+// dragover nổ liên tục nên nó là chỗ chuẩn nhất để bật/tắt lớp phủ: rê qua ô thả riêng thì
+// lớp phủ biến đi, rê ra ngoài lại hiện.
+window.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  if (inLocalDrop(e)) dropOverlay.classList.remove("show");
+  else if (dragDepth > 0) dropOverlay.classList.add("show");
+});
 window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; dropOverlay.classList.remove("show"); } });
 window.addEventListener("drop", (e) => {
-  e.preventDefault(); dragDepth = 0; dropOverlay.classList.remove("show");
+  dragDepth = 0; dropOverlay.classList.remove("show");
+  if (inLocalDrop(e)) return;   // chỗ kia đã preventDefault + chặn bọt, không đụng vào
+  e.preventDefault();
   if (e.dataTransfer?.files) [...e.dataTransfer.files].forEach(uploadFile);
 });
 
@@ -1835,10 +1883,52 @@ sendBtn.addEventListener("click", () => sendMessage());
 
 // Chế độ luôn nghe (hands-free): bấm 1 lần → nghe liên tục đến khi bấm lại
 let handsFree = false;
+
+// Tắt rảnh tay từ chỗ KHÔNG phải cú bấm của người dùng (mic hỏng). Gom về một hàm vì trạng
+// thái này nằm ở ba nơi - biến, lớp CSS của nút, và công tắc loa - và bỏ sót một nơi thì giao
+// diện nói dối: nút vẫn sáng "đang nghe" trong khi không có gì đang nghe cả.
+function tatRanhTay() {
+  if (!handsFree) return;
+  handsFree = false;
+  voiceBtn.classList.remove("handsfree");
+  try { if (window.JavisTts) window.JavisTts.set(false); } catch (e) {}
+}
+
+// Câu báo lỗi mic. Nói ĐÚNG nguyên nhân, vì ba nguyên nhân cần ba hành động khác hẳn nhau và
+// câu chung "hãy cấp quyền" là lời khuyên KHÔNG LÀM ĐƯỢC với hai trong ba trường hợp.
+function alertMic(err) {
+  if (err === "not-allowed") {
+    // Trang không chạy ở ngữ cảnh bảo mật thì trình duyệt chặn thẳng, và KHÔNG hề hỏi quyền.
+    // Bảo họ "cấp quyền" lúc này là chỉ họ đi tìm một cái nút không tồn tại. Hay gặp khi mở
+    // Thansa qua địa chỉ LAN hoặc tên miền chưa có HTTPS.
+    if (!window.isSecureContext) {
+      alert("Trình duyệt chặn micro vì trang này không chạy qua kết nối bảo mật." + "\n" + "\n"
+        + "Mở Thansa bằng http://localhost:7777 trên chính máy chạy Thansa, hoặc cho tên miền của bạn dùng HTTPS.");
+    } else {
+      alert("Bạn cần cấp quyền microphone cho trang này." + "\n" + "\n"
+        + "Bấm biểu tượng ổ khoá cạnh thanh địa chỉ để cấp lại, rồi bấm nút mic lần nữa.");
+    }
+  } else if (err === "audio-capture") {
+    // Trước đây lỗi này im lặng hoàn toàn: mic không bao giờ chạy mà không ai nói vì sao.
+    alert("Không tìm thấy microphone nào trên máy này." + "\n" + "\n"
+      + "Nếu bạn đang điều khiển máy từ xa thì mic của máy bạn ngồi thường không đi theo.");
+  } else if (err === "service-not-allowed") {
+    alert("Trình duyệt đang chặn dịch vụ nhận giọng nói." + "\n" + "\n"
+      + "Kiểm tra cài đặt quyền riêng tư của trình duyệt, hoặc thử Chrome/Edge.");
+  } else if (err === "not-supported") {
+    alert("Trình duyệt không hỗ trợ nhận giọng. Dùng Chrome/Edge.");
+  }
+  // Lỗi khác (mạng, start-failed…) KHÔNG hiện hộp thoại: chúng thoáng qua và tự thử lại được,
+  // còn hộp thoại thì chặn cứng cả trang.
+}
 voiceBtn.addEventListener("click", () => {
   if (!voice.isSupported()) { alert("Trình duyệt không hỗ trợ giọng nói. Dùng Chrome/Edge."); return; }
   handsFree = !handsFree;
   voiceBtn.classList.toggle("handsfree", handsFree);
+  // Loa đi theo mic (chủ repo yêu cầu 02/09): bật nghe là muốn NÓI CHUYỆN bằng giọng, nên
+  // Thansa phải đáp bằng giọng; tắt nghe là quay về gõ chữ, Thansa im. Điện thoại từng không
+  // có chỗ nào bật loa cả, nên gộp vào mic là một nút lo cả hai chiều.
+  try { if (window.JavisTts) window.JavisTts.set(handsFree); } catch (e) {}
   if (handsFree) {
     voice.startListening();
   } else {
@@ -1849,8 +1939,11 @@ voiceBtn.addEventListener("click", () => {
 
 // Tự nghe lại khi rảnh (không đang xử lý, không đang nói) - giữ mic sống ở hands-free
 setInterval(() => {
-  if (handsFree && !voice.isListening && !isProcessing && !voice.isSpeaking()) {
-    voice.startListening();
+  // `micHong()` là chốt thứ hai (chốt thứ nhất là tatRanhTay() trong onError). Giữ cả hai vì
+  // vòng này chạy hai lần mỗi giây: sót một nhịp là một hộp thoại nữa đập vào mặt người dùng.
+  if (handsFree && !voice.isListening && !isProcessing && !voice.isSpeaking()
+      && !(voice.micHong && voice.micHong())) {
+    voice.startListening(true);   // true = máy tự gọi, không phải người bấm
   }
 }, 500);
 
@@ -1861,13 +1954,17 @@ document.addEventListener("keydown", (e) => {
   const _ae = document.activeElement;
   const _typing = _ae && (_ae.tagName === "INPUT" || _ae.tagName === "TEXTAREA" || _ae.tagName === "SELECT" || _ae.isContentEditable);
   if (e.code === "Space" && !handsFree && !spacePressed && !_typing) {
+    // Bấm-giữ Space cũng là mở mic -> bật loa. Thả phím là hết câu, không phải "tắt nghe",
+    // nên KHÔNG tắt loa ở keyup - tắt thì câu trả lời ngay sau đó bị câm.
+    try { if (window.JavisTts) window.JavisTts.set(true); } catch (e2) {}
     e.preventDefault(); spacePressed = true; voice.startListening();
   }
   if (e.code === "Escape") {
     // Esc chỉ thoát chế độ rảnh tay + tắt mic + đóng popup node nếu đang mở. KHÔNG còn dừng câu
-    // trả lời hay ngắt Javis đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
+    // trả lời hay ngắt Thansa đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
     handsFree = false; voiceBtn.classList.remove("handsfree");
     voice.stopListening();
+    try { if (window.JavisTts) window.JavisTts.set(false); } catch (e2) {}   // Esc = thoát nói chuyện bằng giọng
     if (typeof closeNodePopup === "function") closeNodePopup();
   }
 });
@@ -1918,13 +2015,10 @@ function resumeAudio() {
 document.addEventListener("click", resumeAudio, { once: true });
 document.addEventListener("keydown", resumeAudio, { once: true });
 
-// ============================================
-// Badge engine+model (sự thật, không hỏi model)
-// ============================================
+
 // Nhãn hiển thị cho TỪNG provider. Trước đây chỉ có hai nhánh openrouter-hoặc-CLI, nên chọn
 // Groq/Gemini/OpenAI đều bị dán nhãn "CLI" - vừa sai, vừa phạm đúng luật trong CLAUDE.md là
-// phải trả lời ĐÚNG engine đang chạy. Chủ repo chụp lại cảnh badge ghi "CLI · openai/gpt-oss-120b"
-// trong khi thanh model ngay bên cạnh ghi "Groq".
+// phải trả lời ĐÚNG engine đang chạy.
 const ENGINE_LABEL = {
   "anthropic-cli": "Claude Code", "openai-oauth": "ChatGPT", "openrouter": "OpenRouter",
   "openai": "OpenAI", "anthropic-api": "Anthropic", "gemini": "Gemini", "groq": "Groq",
@@ -1933,13 +2027,19 @@ const ENGINE_LABEL = {
   // và khác hoá đơn (gói đã trả, so với API key trả theo lượt gọi).
   "grok-cli": "Grok Build", "antigravity-cli": "Antigravity",
 };
-// Một dòng nhỏ dưới câu trả lời: lượt này chạy ở chế độ nào, và tốn bao nhiêu
+// Một dòng nhỏ dưới câu trả lời: lượt này chạy BẰNG GÌ, ở chế độ nào, và tốn bao nhiêu
 // token vào. Trước đây chuyện này hoàn toàn vô hình - chỉ lộ ra khi nhà cung cấp báo vượt hạn
 // mức, tức là đã muộn. Thấy được thì người dùng tự biết mức vừa bật có ăn thật hay không.
 // Tên NÓI ĐÚNG NÓ LÀM GÌ, không phải nó cũ hay mới. "Đường cũ" là góc nhìn của người viết
 // code; với người dùng đó là chế độ gửi đủ mọi thứ, an toàn nhất, và đúng là thứ họ chọn khi
 // bấm "Tắt" - gọi nó là "cũ" vừa nghe như đang xin lỗi, vừa làm người ta tưởng máy đang hỏng.
 // Tên ở đây khớp tên nút bên trang Mức dùng để nhìn một dòng là biết mình đang ở đâu.
+//
+// Engine+model đứng ĐẦU dòng này từ 0.52.13. Trước đó nó là một badge riêng ở đầu khung hội
+// thoại, và badge ấy có hai vấn đề: nó chiếm chỗ để lặp lại thứ thanh model ngay dưới ô chat
+// đã nói, và nó chỉ nói về LƯỢT CUỐI - cuộn ngược lên một hội thoại từng đổi model, hay từng
+// bị đẩy sang model dự phòng lúc model chính quá tải, thì badge nói sai về mọi tin phía trên.
+// Gắn vào TỪNG TIN thì mỗi tin tự khai đúng bộ não đã sinh ra nó, và đầu khung được trả lại.
 const CTX_PATH_LABEL = {
   legacy: "Đầy đủ", sources: "Tối ưu", fast: "Tức thì",
   readonly: "Tra cứu", orchestrator: "Tra cứu sâu", write: "Thực thi",
@@ -1949,31 +2049,43 @@ const CTX_PATH_LABEL = {
   bot: "Bot chuyên trách",
 };
 function _renderCtxLine(msgEl, data) {
-  if (!msgEl || !data || !data.ctx_path) return;
+  // Có engine mà chưa có ctx_path thì VẪN vẽ: hai thứ đến từ hai chỗ khác nhau trong payload,
+  // và bỏ cả dòng chỉ vì thiếu một nửa là mất luôn nửa đang có.
+  if (!msgEl || !data || !(data.ctx_path || data.engine)) return;
   const cu = data.ctx_path === "legacy";
-  const ten = CTX_PATH_LABEL[data.ctx_path] || data.ctx_path;
   const tok = Number(data.ctx_in) || 0;
   const old = msgEl.querySelector(".msg-ctx");
   if (old) old.remove();
   const el = document.createElement("div");
-  el.className = "msg-ctx" + (cu ? "" : " saved");
+  // Lớp "saved" (tô khác) chỉ có nghĩa khi BIẾT lượt này đi đường tiết kiệm. Không có ctx_path
+  // thì đừng đoán - gắn bừa là nói dối bằng màu sắc.
+  el.className = "msg-ctx" + (data.ctx_path && !cu ? " saved" : "");
   // Bấm vào là sang trang Mức dùng, nơi có khối chọn mức ngay đầu trang - thấy chế độ đang
   // chạy mà không biết chỉnh ở đâu thì thông tin đó cũng chỉ để bực mình.
   el.dataset.usageGoto = "usage";
-  el.title = cu ? "Đang gửi đủ mọi thứ. Bấm để chọn mức tiết kiệm."
-                : "Đang tiết kiệm token. Bấm để xem chi tiết.";
-  el.textContent = ten + (tok ? " · " + _fmtTok(tok) + " token" : "");
+  const phan = [];
+  if (data.engine) {
+    // Tên model cắt ngắn cho vừa dòng; tên đầy đủ nằm ở tooltip bên dưới.
+    phan.push((ENGINE_LABEL[data.engine] || data.engine)
+              + (data.model ? " · " + _shortModel(data.model) : ""));
+  }
+  if (data.ctx_path) phan.push(CTX_PATH_LABEL[data.ctx_path] || data.ctx_path);
+  if (tok) phan.push(_fmtTok(tok) + " token");
+  el.textContent = phan.join(" · ");
+  const chuThich = [];
+  if (data.engine) {
+    chuThich.push("Bộ não THẬT đã chạy lượt này"
+                  + (data.model ? ": " + data.model : "")
+                  + " (máy chủ khai, không phải model tự nhận).");
+  }
+  if (data.ctx_path) {
+    chuThich.push(cu ? "Đang gửi đủ mọi thứ. Bấm để chọn mức tiết kiệm."
+                     : "Đang tiết kiệm token. Bấm để xem chi tiết.");
+  }
+  el.title = chuThich.join("\n");
   msgEl.appendChild(el);
 }
 
-function setEngineBadge(engine, model) {
-  const el = document.getElementById("engineBadge");
-  if (!el) return;
-  const label = ENGINE_LABEL[engine] || engine || "Chưa rõ";
-  el.textContent = label + (model ? " · " + model : "");
-  // Chỉ còn hai lớp màu: giữ nguyên bộ mặt cũ, không đẻ thêm 7 biến thể CSS.
-  el.className = "engine-badge " + (engine === "openrouter" ? "or" : "cli");
-}
 async function refreshTgStatus() {
   const el = document.getElementById("setTgStatus");
   if (!el) return;
@@ -1987,27 +2099,10 @@ async function refreshTgStatus() {
     if (s.loi_menu_lenh) el.innerHTML += '<div class="set-note">' + ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(s.loi_menu_lenh) + "</div>";
   } catch (e) { el.textContent = ""; }
 }
-// Xuất ra window: console.js gọi lại sau khi đổi model để badge engine không bị cũ.
-// Model chính HIỆU LỰC, soi theo đúng thứ tự server dùng (_effective_main trong main.py):
-// model.main nếu đã đặt, không thì suy từ trường engine cũ. Đọc thiếu bước này là badge
-// đứng ì ở "CLI" cho mọi provider API.
-function _mainProviderModel(m) {
-  const main = m.main || {};
-  if (main.provider) return [main.provider, main.model || ""];
-  if (m.engine === "openrouter") return ["openrouter", m.openrouter_model || ""];
-  if (m.engine === "anthropic-api") return ["anthropic-api", m.claude_model || ""];
-  return ["anthropic-cli", m.claude_model || "mặc định"];
-}
-async function refreshEngineBadge() {
-  try {
-    const s = await (await fetch("/settings")).json();
-    const [prov, model] = _mainProviderModel(s.model || {});
-    setEngineBadge(prov, model || "mặc định");
-  } catch (e) {}
-}
+
 
 // ============================================
-// Mức dùng (token Javis tự đo, đa nhà cung cấp) - panel sidebar
+// Mức dùng (token Thansa tự đo, đa nhà cung cấp) - panel sidebar
 // ============================================
 const _PROV_LABEL = { cli: "Claude Code", codex: "ChatGPT", openrouter: "OpenRouter", openai: "OpenAI", "anthropic-api": "Anthropic", gemini: "Gemini", groq: "Groq" };
 function _fmtTok(n) {
@@ -2181,6 +2276,25 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
 });
 
 // ---- Settings ----
+// Ô "Model Claude (khi dùng CLI)" nạp danh sách từ server thay vì ba lựa chọn ghi cứng trong
+// index.html. Ghi cứng là một cái bẫy im lặng: dòng model mới (Fable) không có trong ô, mà
+// gán `select.value` một giá trị không có option thì trình duyệt lặng lẽ nhả về "" - tức mở
+// Cài đặt rồi bấm Lưu là model đang chạy bị đổi về Mặc định mà không ai nói gì.
+async function loadClaudeModels(cur) {
+  const sel = document.getElementById("setClaudeModel");
+  if (!sel) return;
+  let ids = [];
+  try {
+    const d = await (await fetch("/provider/models?provider=anthropic-cli")).json();
+    ids = d.models || [];
+  } catch (e) {}
+  if (cur && ids.indexOf(cur) < 0) ids.unshift(cur);   // model đang chạy luôn phải có mặt
+  const nhan = (id) => id.charAt(0).toUpperCase() + id.slice(1);
+  sel.innerHTML = '<option value="">Mặc định</option>'
+    + ids.map((id) => `<option value="${id}">${nhan(id)}</option>`).join("");
+  sel.value = cur || "";
+}
+
 async function openSettings() {
   settingsOverlay.classList.add("open");
   try {
@@ -2188,7 +2302,7 @@ async function openSettings() {
     _settingsCache = s;
     document.getElementById("setWsName").value = s.workspace_name || "";
     document.getElementById("setEngine").value = (s.model && s.model.engine) || "cli";
-    document.getElementById("setClaudeModel").value = (s.model && s.model.claude_model) || "";
+    await loadClaudeModels((s.model && s.model.claude_model) || "");
     loadOrModels((s.model && s.model.openrouter_model) || "");
     document.getElementById("setKeyHint").textContent = (s.model && s.model.openrouter_key_set) ? "(đã lưu " + s.model.openrouter_key + ")" : "(chưa có)";
     document.getElementById("setTgEnabled").checked = !!(s.telegram && s.telegram.enabled);
@@ -2247,7 +2361,7 @@ if (document.getElementById("settingsBtn")) {
     const orModel = (sel.value === "__custom__") ? document.getElementById("setOrModel").value.trim() : sel.value;
     const d = { engine: document.getElementById("setEngine").value, claude_model: document.getElementById("setClaudeModel").value, openrouter_model: orModel };
     const k = document.getElementById("setOrKey").value.trim(); if (k) d.openrouter_key = k;
-    _saveSetting("model", d, e.target).then(() => { document.getElementById("setOrKey").value = ""; openSettings(); refreshEngineBadge(); });
+    _saveSetting("model", d, e.target).then(() => { document.getElementById("setOrKey").value = ""; openSettings(); });
   });
   // Dropdown model OpenRouter: chọn custom → hiện ô nhập tay
   document.getElementById("setOrModelSel").addEventListener("change", (e) => {
@@ -2393,12 +2507,31 @@ if (document.getElementById("wzFinish")) {
     const pass = document.getElementById("wzPass").value;
     const prov = (document.querySelector('input[name="wzprov"]:checked') || {}).value || "anthropic-cli";
     const btn = document.getElementById("wzFinish"); btn.disabled = true; btn.textContent = "Đang lưu…";
-    if (_wizardMandatory && !pass) { err.textContent = "Bắt buộc đặt mật khẩu khi chạy trên server công khai."; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; return; }
+    // Ô mã thiết lập nằm ở mục 2, còn nút bấm và dòng báo lỗi nằm tít dưới đáy. Bỏ trống rồi
+    // bấm thì người dùng chỉ thấy một dòng đỏ ở đáy, không thấy ô nào đang trống - có người
+    // còn không biết là CÓ một ô như vậy. Nên khi lỗi phải KÉO MÀN HÌNH tới đúng ô đó.
+    const _soiOTrong = (o, cau) => {
+      err.textContent = cau;
+      btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →";
+      if (o) { try { o.scrollIntoView({ block: "center", behavior: "smooth" }); o.focus(); } catch (e) {} }
+    };
+    if (_wizardMandatory && !pass) {
+      return _soiOTrong(document.getElementById("wzPass"),
+                        "Bắt buộc đặt mật khẩu khi chạy trên server công khai.");
+    }
+    // Chặn ngay ở đây thay vì để server trả 403: cùng một câu lỗi, nhưng người dùng thấy con
+    // trỏ nhảy vào đúng ô đang trống nên hiểu ngay phải làm gì.
+    const _tokO = document.getElementById("wzToken");
+    if (_wizardMandatory && _tokO && !_tokO.value.trim()) {
+      return _soiOTrong(_tokO, "Thiếu MÃ THIẾT LẬP. Lấy mã bằng lệnh ngay dưới ô này, "
+                               + "rồi dán chuỗi đó vào đây.");
+    }
     try {
       if (pass) {
-        const _tok = document.getElementById("wzToken");
-        const d = await (await fetch("/auth/setup", { method: "POST", body: _fd({ username: user || "admin", password: pass, setup_token: _tok ? _tok.value.trim() : "" }) })).json();
-        if (!d.ok) { err.textContent = d.error || "Đặt mật khẩu lỗi"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; return; }
+        const d = await (await fetch("/auth/setup", { method: "POST", body: _fd({ username: user || "admin", password: pass, setup_token: _tokO ? _tokO.value.trim() : "" }) })).json();
+        // Server từ chối vì mã sai (403) thì cũng kéo về đúng ô mã, đừng để người dùng tự dò.
+        if (!d.ok) { return _soiOTrong(/MÃ THIẾT LẬP/i.test(d.error || "") ? _tokO : null,
+                                       d.error || "Đặt mật khẩu lỗi"); }
       }
       await fetch("/settings", { method: "POST", body: _fd({ section: "general", data: JSON.stringify({ workspace_name: ws, setup_done: true }) }) });
       const _PM = { "anthropic-cli": "sonnet", "openai-oauth": "gpt-5.5", "openrouter": "openai/gpt-4o-mini" };
@@ -2436,7 +2569,6 @@ if (document.getElementById("wzFinish")) {
 // Boot
 // ============================================
 initAuthGate();
-refreshEngineBadge();
 refreshUsage();
 connect();
 initStarfield();
@@ -2456,9 +2588,6 @@ restoreSession();
 // mà khôi phục hội thoại ở trên sinh ra để tránh.
 _pinRestore();
 renderChips();
-
-// Đồng bộ badge engine từ module khác (console.js sau khi đổi model).
-window.refreshEngineBadge = refreshEngineBadge;
 
 // ============================================
 // "Mở như app" (cài PWA) - desktop lẫn Android, không chỉ mobile.

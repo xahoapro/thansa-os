@@ -3,6 +3,13 @@
 // ============================================
 
 class JavisVoice {
+  // Lỗi mic KHÔNG bao giờ tự khỏi khi thử lại. Thử lại chỉ đẻ ra đúng lỗi đó, và nếu nơi gọi
+  // báo bằng alert thì thành vòng lặp chặn cứng cả trang.
+  //   not-allowed         người dùng từ chối quyền, hoặc trang không chạy ở ngữ cảnh bảo mật
+  //   service-not-allowed trình duyệt chặn dịch vụ nhận giọng
+  //   audio-capture       máy không có mic (hay gặp trên phiên điều khiển từ xa)
+  static LOI_CHET = ["not-allowed", "service-not-allowed", "audio-capture"];
+
   constructor(opts = {}) {
     this.lang = opts.lang || "vi-VN";
     this.onTranscript = opts.onTranscript || (() => {});
@@ -32,7 +39,7 @@ class JavisVoice {
 
     // Audio analysis - cho hiệu ứng phát sáng theo âm thanh
     this.audioCtx = null;
-    this.outAnalyser = null;   // âm Javis đọc (TTS)
+    this.outAnalyser = null;   // âm Thansa đọc (TTS)
     this.inAnalyser = null;    // âm mic (khi nghe)
     this.micStream = null;
     this._freqData = new Uint8Array(64);
@@ -97,15 +104,22 @@ class JavisVoice {
     this.recognition = new SR();
     this.recognition.lang = this.lang;
     this.recognition.continuous = true;       // nghe liên tục, không dừng giữa câu
+    // iPhone/iPad: WebKit KHÔNG nghe liên tục được. Đặt continuous=true thì nó vào một phiên
+    // "ghi âm" không bao giờ tự kết thúc câu, và onend tự mở lại càng làm nó kéo dài - đúng
+    // cảnh chủ repo tả 02/09 "bật mic nó thành chế độ ghi âm". Trên iOS mỗi lượt nói là một
+    // phiên: nói xong -> gửi -> vòng rảnh tay bên app.js mở lại khi Thansa đọc xong.
+    if (this._laIOS()) this.recognition.continuous = false;
     this.recognition.interimResults = true;
     this.recognition.maxAlternatives = 1;
 
     this.accumulatedTranscript = "";
+    this._committed = "";                     // chữ đã nghe ở các phiên trước trong CÙNG một lượt nói
     this.userStopped = false;                 // user chủ động dừng?
     this.silenceMs = 1500;                    // im lặng bao lâu thì tự gửi
     this._silenceTimer = null;
     this._starting = false;                   // đã gọi start() nhưng onstart chưa chạy
     this._stopPending = false;                // có lệnh dừng tới trong lúc đang mở phiên
+    this._micHong = "";                       // lỗi mic KHÔNG thể tự thử lại (xem LOI_CHET)
 
     this.recognition.onstart = () => {
       this._starting = false;
@@ -114,7 +128,7 @@ class JavisVoice {
       this.accumulatedTranscript = "";
       // Lệnh dừng tới TRƯỚC khi phiên kịp mở (bấm rồi thả Space thật nhanh, bấm nút mic hai
       // lần liền): lúc đó isListening còn false nên stopListening() không dừng được gì, mic ở
-      // lại MỞ vĩnh viễn và onend còn tự khởi động lại. Người dùng tưởng đã tắt, thực ra Javis
+      // lại MỞ vĩnh viễn và onend còn tự khởi động lại. Người dùng tưởng đã tắt, thực ra Thansa
       // vẫn nghe: tiếng nhạc hay TV trong phòng được chép thành chữ rồi TỰ GỬI như tin của họ.
       // Nợ đó trả ở đây - đóng phiên ngay khi nó vừa mở, không nhận chữ, không gửi gì.
       if (this._stopPending) {
@@ -127,19 +141,26 @@ class JavisVoice {
     };
 
     this.recognition.onresult = (event) => {
-      // Đang phát TTS thì BỎ mọi kết quả nhận dạng: đó là mic nghe lại chính giọng Javis
+      // Đang phát TTS thì BỎ mọi kết quả nhận dạng: đó là mic nghe lại chính giọng Thansa
       // (SpeechRecognition thu riêng, KHÔNG được khử vọng như luồng đo mức âm), không phải
-      // user nói. Không chặn thì giọng Javis bị chép vào khung chat rồi tự gửi đi.
+      // user nói. Không chặn thì giọng Thansa bị chép vào khung chat rồi tự gửi đi.
       if (this.isSpeaking()) return;
+      // DỰNG LẠI từ TOÀN BỘ event.results mỗi lần, KHÔNG cộng dồn qua từng sự kiện.
+      // Bản cũ làm `accumulated += final` từ resultIndex trở đi. Chrome máy tính giao đúng
+      // từng mảnh một nên không sao; Chrome Android thì resultIndex thường đứng ở 0 và mỗi
+      // "final" lại chứa CẢ câu tới lúc đó, nên cộng dồn là chép câu ấy thêm một lần ở mỗi
+      // sự kiện: "Ok" + "Ok có" + "Ok có vẻ" + ... - đúng cái tin dài cả trang chủ repo gửi
+      // ảnh ngày 02/09. results là bức ảnh đầy đủ của phiên nên đọc lại từ 0 luôn đúng, và
+      // phần đã nghe ở phiên trước (Chrome tự đóng rồi ta mở lại) giữ ở _committed.
       let interim = "", final = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += transcript;
+      for (let i = 0; i < event.results.length; i++) {
+        const transcript = (event.results[i][0] || {}).transcript || "";
+        if (event.results[i].isFinal) final += transcript + " ";
         else interim += transcript;
       }
-      if (final) this.accumulatedTranscript += final + " ";
+      this.accumulatedTranscript = this._ghepChuyenBien(final.trim());
       // Show user toàn bộ tích lũy + đoạn đang nghe
-      const display = (this.accumulatedTranscript + interim).trim();
+      const display = (this.accumulatedTranscript + " " + interim).trim();
       if (display) {
         this.onInterim(display);
         // Reset đồng hồ im lặng - nói tiếp thì hoãn, im đủ lâu thì tự gửi
@@ -155,14 +176,30 @@ class JavisVoice {
         return;
       }
       this.isListening = false;
+      // Ba lỗi này KHÔNG bao giờ tự khỏi khi thử lại: người dùng đã từ chối quyền, trình duyệt
+      // chặn dịch vụ nhận giọng, hoặc máy không có mic. Thử lại chỉ đẻ ra đúng lỗi đó.
+      //
+      // Không chốt ở đây thì thành VÒNG LẶP KHÔNG THOÁT ĐƯỢC, và đã xảy ra thật (người dùng
+      // báo 04/09 kèm ảnh): onend thấy `userStopped` còn false nên mở lại phiên; phiên mới lại
+      // 'not-allowed'; app.js lại alert. Alert là hộp CHẶN, nên bấm OK xong là vòng kế tiếp
+      // nổ ngay - không còn đường nào bấm vào trang nữa. Đánh dấu `userStopped` để chặn luôn
+      // nhánh mở lại trong onend, chứ không chỉ ghi nhớ suông.
+      if (JavisVoice.LOI_CHET.includes(event.error)) {
+        this._micHong = event.error;
+        this.userStopped = true;
+      }
       this.onError(event.error);
     };
 
     this.recognition.onend = () => {
       this._starting = false;
-      // Nếu user chưa chủ động dừng → tự restart (giữ session sống khi user dừng nghĩ)
-      if (!this.userStopped) {
+      // Nếu user chưa chủ động dừng → tự restart (giữ session sống khi user dừng nghĩ).
+      // iOS không: phiên kết thúc là hết một câu, gửi luôn (xem chú thích ở continuous).
+      if (!this.userStopped && !this._micHong && !this._laIOS()) {
         try {
+          // Phiên mới thì event.results bắt đầu lại từ trống. Gói phần đã nghe vào
+          // _committed trước, không thì onstart xoá trắng và nửa câu đầu biến mất.
+          this._committed = this._ghepChuyenBien("");
           this.recognition.start();
           return;
         } catch (e) {
@@ -172,9 +209,49 @@ class JavisVoice {
       this.isListening = false;
       // Gửi toàn bộ text đã tích luỹ khi user dừng
       const finalText = this.accumulatedTranscript.trim();
+      this._committed = "";
       if (finalText) this.onTranscript(finalText);
       this.onEnd();
     };
+  }
+
+  // Ghép phần đã chốt ở phiên trước với phần final của phiên này. Android đôi khi giao một
+  // final là BẢN DÀI HƠN của final trước (cùng câu, thêm chữ), nên câu mới mà mở đầu bằng câu
+  // cũ thì lấy câu mới thay vì nối - đó chính là cách "Ok có vẻ" không thành "Ok Ok có vẻ".
+  _ghepChuyenBien(finalNay) {
+    const cu = (this._committed || "").trim();
+    const moi = (finalNay || "").trim();
+    if (!moi) return cu;
+    if (!cu) return moi;
+    if (moi.startsWith(cu)) return moi;
+    if (cu.endsWith(moi)) return cu;
+    return (cu + " " + moi).trim();
+  }
+
+  // Mic đang hỏng hẳn không? Nơi gọi dùng nó để TẮT chế độ rảnh tay thay vì cứ thử mãi.
+  micHong() { return this._micHong; }
+
+  _laIOS() {
+    if (this._iosCache === undefined) {
+      const ua = navigator.userAgent || "";
+      this._iosCache = /iP(hone|ad|od)/.test(ua)
+        || (navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1);
+    }
+    return this._iosCache;
+  }
+
+  // iOS chỉ cho phát âm thanh do CỬ CHỈ người dùng khởi động, và mỗi `new Audio()` là một
+  // phần tử mới chưa được "mở khoá". Bản cũ tạo Audio mới cho từng đoạn + một Audio preload,
+  // nên trên iPhone đoạn đầu phát được còn các đoạn sau bị chặn hoặc trễ - "đọc ngập ngừng,
+  // ngắt giữa chừng". Chữa: MỘT phần tử Audio dùng lại, mở khoá ngay trong cử chỉ bấm mic
+  // bằng một file WAV im lặng, sau đó chỉ đổi src.
+  _moKhoaAudioIOS() {
+    if (!this._laIOS() || this._iosAudio) return;
+    const a = new Audio();
+    a.setAttribute("playsinline", "");
+    a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+    a.play().catch(() => {});
+    this._iosAudio = a;
   }
 
   _loadVoices() {
@@ -193,18 +270,28 @@ class JavisVoice {
     }
   }
 
-  startListening() {
+  // `tuDong` = true nghĩa là máy tự gọi (vòng giữ mic của chế độ rảnh tay, mở lại sau TTS).
+  // Đường tự động KHÔNG được thử lại khi mic đã hỏng hẳn - đó chính là chỗ sinh vòng lặp.
+  // Còn người dùng bấm nút mic thì LUÔN được thử lại: họ có thể vừa mới cấp quyền trong cài
+  // đặt trình duyệt, và một cái nút bấm không lên là thứ không ai chẩn đoán nổi.
+  startListening(tuDong) {
     if (!this.recognition) {
       this.onError("not-supported");
       return;
     }
     if (this.isListening) return;
+    if (this._micHong) {
+      if (tuDong) return;
+      this._micHong = "";
+    }
     // Mở nghe chủ động → huỷ mọi lịch tự-mở-lại còn treo
     this._resumeAfterTTS = false;
     clearTimeout(this._resumeTimer);
+    this._committed = "";                     // lượt nói MỚI, không kéo chữ của lượt trước sang
     // Stop TTS đang đọc nếu user bấm nói
     this.synth.cancel();
     this.stopSpeaking();
+    this._moKhoaAudioIOS(); // iOS: mở khoá phần tử phát tiếng NGAY trong cử chỉ bấm mic
     this._startMicMeter();  // bật đo âm mic cho hiệu ứng phát sáng
     try {
       this._stopPending = false;
@@ -252,6 +339,10 @@ class JavisVoice {
     if (!this.ttsEnabled && !opts.force) return;
     const clean = this._cleanForTTS(text);
     if (!clean) return;
+    // Cùng một đoạn tới hai lần liền (socket nối lại giao trùng sự kiện, hay lượt cuối lặp
+    // lại đúng đoạn vừa stream) thì đọc một lần là đủ.
+    if (clean === this._lastQueued && !opts.force) return;
+    this._lastQueued = clean;
     this.speechQueue.push(clean);
     if (!this.isPlaying) this._pumpQueue();
   }
@@ -272,7 +363,7 @@ class JavisVoice {
     else this._speakBrowser(text);                   // fallback Web Speech
   }
 
-  // Javis bắt đầu đọc mà mic đang nghe → tạm NGỪNG nhận dạng (abort, bỏ kết quả dở),
+  // Thansa bắt đầu đọc mà mic đang nghe → tạm NGỪNG nhận dạng (abort, bỏ kết quả dở),
   // vì SpeechRecognition sẽ chép chính giọng TTS thành tin nhắn của user. Ngắt lời bằng
   // giọng vẫn hoạt động - barge-in đo mức âm qua luồng mic đã khử vọng, không cần nhận dạng.
   _muteRecognition() {
@@ -292,7 +383,7 @@ class JavisVoice {
     this._resumeAfterTTS = false;
     clearTimeout(this._resumeTimer);
     this._resumeTimer = setTimeout(() => {
-      if (!this.isPlaying && !this.isListening) this.startListening();
+      if (!this.isPlaying && !this.isListening) this.startListening(true);
     }, 400);
   }
 
@@ -303,9 +394,9 @@ class JavisVoice {
     // cao im lặng nên giọng nói không bao giờ chạm ngưỡng). Tự HIỆU CHỈNH theo nền (echo + ồn) đo
     // trong ~600ms đầu để hợp mọi máy/môi trường, hạn chế tự-ngắt do nghe lại chính giọng TTS.
     // CHỈ rình khi mic ĐANG mở và vừa bị tạm ngừng vì TTS (_resumeAfterTTS). Không có chốt này
-    // thì luồng mic mở từ lần nói trước còn sống suốt đời trang, nên MỌI lần Javis đọc đều rình:
+    // thì luồng mic mở từ lần nói trước còn sống suốt đời trang, nên MỌI lần Thansa đọc đều rình:
     // một tiếng động đủ to trong phòng (nhạc, TV, người khác nói) là mic tự mở, chép lại rồi tự
-    // gửi thành tin nhắn của người dùng. Mic đang tắt thì Javis không được phép tự nghe lại.
+    // gửi thành tin nhắn của người dùng. Mic đang tắt thì Thansa không được phép tự nghe lại.
     if (!this._resumeAfterTTS) return;
     if (this._bargeTimer || !this.micStream || !this.inAnalyser) return;
     const N = this.inAnalyser.fftSize || 128;
@@ -331,7 +422,7 @@ class JavisVoice {
 
   _bargeIn() {
     this.stopSpeaking();       // dừng đọc ngay (không để chồng tiếng)
-    this.startListening();     // user muốn nói → mở nghe luôn, bắt trọn câu
+    this.startListening(true); // máy tự mở lại (do đo được mức âm), không phải cú bấm
   }
 
   _cleanForTTS(text) {
@@ -386,6 +477,21 @@ class JavisVoice {
   _playChunk(i, retry) {
     // Hết chunk của đoạn này → chuyển sang đoạn kế trong hàng đợi (không tự dừng).
     if (!this.ttsChunks || i >= this.ttsChunks.length) { this._pumpQueue(); return; }
+    if (this._laIOS()) {
+      // Đường iOS: một phần tử Audio dùng lại, KHÔNG preload, KHÔNG nối qua AudioContext
+      // (createMediaElementSource trên WebKit hay làm câm tiếng khi context chưa chạy).
+      this._moKhoaAudioIOS();
+      const a = this._iosAudio || (this._iosAudio = new Audio());
+      a.onended = null; a.onerror = null;
+      a.src = this._chunkUrl(this.ttsChunks[i]) + (retry ? "&retry=1" : "");
+      this.currentAudio = a;
+      let done = false;
+      const onFail = () => { if (done) return; done = true; a.onerror = null; this._chunkFailed(i, retry); };
+      a.onended = () => { if (!done) this._playChunk(i + 1); };
+      a.onerror = onFail;
+      a.play().catch(onFail);
+      return;
+    }
     // Dùng audio đã preload nếu trùng index, không thì tạo mới (retry = tạo mới, tránh cache lỗi).
     let audio = (!retry && this._preloaded && this._preloaded.i === i) ? this._preloaded.audio
               : new Audio(this._chunkUrl(this.ttsChunks[i]) + (retry ? "&retry=1" : ""));
@@ -472,6 +578,7 @@ class JavisVoice {
     this.ttsChunks = null;
     this.ttsQueue = [];
     this.speechQueue = [];
+    this._lastQueued = "";
     this.isPlaying = false;
     this._resumeRecognitionIfNeeded();   // mic từng bị tạm ngừng vì TTS → mở nghe lại
   }
