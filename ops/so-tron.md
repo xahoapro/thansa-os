@@ -382,3 +382,23 @@ image GHCR :1.2.0). Xem RELEASES.md.
   5/5 XANH. Phát hành snapshot main (ff cho user 1.5.0), Docker vẫn tắt.
 - **QUYẾT ĐỊNH mở: kho gói riêng.** Mặc định Store trỏ catalog upstream (blogminhquy/javis-store) để
   gói chạy thật. Chủ muốn kho RIÊNG thì fork → xahoapro/thansa-store, đổi STORE_MAC_DINH / URL Cài đặt.
+
+## Vòng 2026-09-07 (goc 886ac7e → 8a38217, upstream +7 commit, VERSION nền 0.55.46 → 0.55.53, thansa 1.6→1.7)
+
+- 7 commit upstream (0.55.47-0.55.53) - vòng NHỎ, chủ yếu vá lỗi + bảo mật: **gắn file & link vào
+  hội thoại** (0.55.48), ô tìm Store gõ liền mạch (0.55.53), 2 brain chép chung file bộ nhớ không
+  hỏng index (0.55.51), **CVE path traversal python-multipart 0.0.18→0.0.30** (0.55.50), vá 3 lỗi
+  06/09 (wiki trùng, app chậm, ký ức lạc Memory→memory 0.55.50), thực đơn tool gọi tên từng plugin
+  thay vì gộp "javis" (0.55.47), Codex refresh CI.
+- Rebase 108 commit (34 patch [me]). Xung đột giải ÍT: P008 (main.py: upstream đổi Memory/→memory/
+  vá 0.55.50, giữ casing mới + rebrand), P012 (CLAUDE.md 3 hunk: memory/ lowercase + ghi chú mới),
+  P025 (VERSION 1.7.0), P035 (lấy HEAD dicts + chạy lại regex rebrand + c2pa tradingauto.org).
+  P027 docs KHÔNG đụng (upstream không sửa docs vòng này).
+- **NEO LẠI (P037):** rebrand sessions-ui.js (gắn file/link 0.55.48, 4 chuỗi mới), giữ JavisSessions=13.
+- **SỰ CỐ BẢO MẬT tái diễn (đã chặn):** `ops/.telegram` (token) bị `git add -A` RE-TRACK ở P012 khi
+  rebase - file local còn trên đĩa, mà file ĐÃ TRACK thì gitignore bó tay (check-ignore báo not-ignored
+  vì tracked). **Luật secret-scan mới BẮT ĐÚNG.** Xử: git rm --cached + filter-branch xoá khỏi MỌI
+  commit me (886ac7e..me, --prune-empty), secret-scan cây = 0. Token đã revoke từ vòng trước = chết.
+  GỐC RỄ: file local trong repo → cần chuyển bao-khan.sh đọc ~/.thansa-alert.env (ghi dieu_kien_bo P037).
+- VERSION neo `1.7.0-javis-0.55.53`. moc-goc 8a38217/0.55.53, thansa 1.7.0, so_patch 34. tu-kiem-chung
+  5/5 XANH. Phát hành snapshot main (ff cho user 1.6.0), Docker vẫn tắt.
