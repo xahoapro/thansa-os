@@ -1094,3 +1094,27 @@
   dieu_kien_bo: >
     Chủ muốn kho gói RIÊNG thì fork blogminhquy/javis-store → xahoapro/thansa-store và đổi
     STORE_MAC_DINH (hoặc URL trong Cài đặt); mặc định giữ kho upstream để gói chạy thật.
+
+- id: P037
+  ten: "Rebrand vòng 0.55.53 - sessions-ui gắn file/link vào hội thoại"
+  y_dinh: >
+    Vòng trộn 0.55.46→0.55.53 (7 commit, chủ yếu vá lỗi + CVE python-multipart): upstream thêm
+    'gắn tay file & link vào một cuộc trò chuyện' (0.55.48) → dashboard/sessions-ui.js có 4 chuỗi
+    hiển thị mới nhắc "Javis". Rebrand Javis→Thansa, giữ định danh JS JavisSessions.
+  commit: "[me] P037: rebrand vong 0.55.53 - sessions-ui gan file/link vao hoi thoai (thansa)"
+  diem_neo:
+    - file: dashboard/sessions-ui.js
+      ky_hieu: "JavisSessions"
+  vung_theo_doi:
+    - "dashboard/sessions-ui.js: gắn file/link vào hội thoại (0.55.48)"
+  anh_goc:
+    - file: dashboard/sessions-ui.js
+      doan: "Javis"
+  kiem_chung: >
+    python regex Javis(?![/\w])(?!-[A-Z]) trên sessions-ui.js = 0 product-name; JavisSessions=13
+    giữ nguyên; node --check OK. BẢO MẬT: ops/.telegram (token) bị git add -A re-track ở P012 khi
+    rebase (file local trên đĩa + đã track thì gitignore bó tay) → filter-branch xoá khỏi mọi
+    commit me, secret-scan cây phát hành = 0.
+  dieu_kien_bo: >
+    Gốc rễ tái lộ: file local ops/.telegram nằm trong repo. Triệt để thì chuyển bao-khan.sh đọc
+    ~/.thansa-alert.env và xoá hẳn file khỏi thư mục repo. Trước mắt: luôn secret-scan trước phát hành.
