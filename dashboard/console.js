@@ -1947,7 +1947,7 @@
               <div class="si-field"><label>${esc(window.t("cs.si_mode"))}</label><div class="si-row" id="lpModes">
                 <button class="si-chip" data-mode="suggest">${esc(window.t("cs.si_mode_suggest"))}</button>
                 <button class="si-chip" data-mode="auto">${esc(window.t("cs.si_mode_auto"))}</button>
-                <button class="si-chip" data-mode="full">${esc(window.t("cs.si_mode_full"))}</button></div></div>
+                <button class="si-chip" data-mode="full" style="border-color:rgba(224,102,74,.5)">${WARN_ICON} ${esc(window.t("cs.si_mode_full"))}</button></div></div>
               <div class="si-field"><label>${esc(window.t("cs.si_interval"))}</label><input type="number" id="lpInterval" min="5" value="120" style="max-width:120px"></div>
             </div>
           </div>
@@ -1963,8 +1963,14 @@
                 <button class="si-chip sel" data-mq="full">${esc(window.t("cs.si_mode_full"))}</button></div></div>
             </div>
             <div class="dim" style="font-size:12px;color:var(--text3);margin-top:4px">${esc(window.t("cs.si_rem_hint"))}</div>
+            <div id="lpRemMqWarn" style="display:none;margin-top:6px;padding:10px 12px;border:1px solid rgba(224,102,74,.5);border-radius:8px;background:rgba(224,102,74,.08);color:var(--red);font-size:13px;line-height:1.5">
+              <b>${WARN_ICON} ${esc(window.t("cs.si_mqwarn_head"))}</b> ${esc(window.t("cs.si_mqwarn_a"))} <b>${esc(window.t("cs.si_mqwarn_b"))}</b>${esc(window.t("cs.si_mqwarn_c"))} <b>${esc(window.t("cs.si_mqwarn_d"))}</b>${esc(window.t("cs.si_mqwarn_e"))} <b>${esc(window.t("cs.si_mqwarn_f"))}</b>${esc(window.t("cs.si_mqwarn_g"))} <b>${esc(window.t("cs.si_mq_read"))}</b>.
+            </div>
           </div>
           <div class="si-field"><label>${esc(window.t("cs.si_brain"))}</label><select id="lpBrain" class="loop-sel" style="min-width:180px"></select></div>
+          <div id="lpFullWarn" style="display:none;margin-top:4px;padding:10px 12px;border:1px solid rgba(224,102,74,.5);border-radius:8px;background:rgba(224,102,74,.08);color:var(--red);font-size:13px;line-height:1.5">
+            <b>${WARN_ICON} ${esc(window.t("cs.si_fullwarn_head"))}</b> ${esc(window.t("cs.si_fullwarn_a"))} <b>${esc(window.t("cs.si_fullwarn_b"))}</b>${esc(window.t("cs.si_fullwarn_c"))} <b>${esc(window.t("cs.si_fullwarn_d"))}</b>${esc(window.t("cs.si_fullwarn_e"))}
+          </div>
           <div class="dim" id="lpLoopNote" style="font-size:12px;color:var(--text3);margin-top:2px">${esc(window.t("cs.si_loopnote"))} <code>Javis/loops/&lt;${esc(window.t("cs.si_loopnote_name"))}&gt;.md</code>.</div>
           <div class="si-actions"><button class="s-btn" id="lpSave">${SAVE_ICON} ${esc(window.t("common.save"))}</button><button class="s-btn-ghost" id="lpCancel">${esc(window.t("common.cancel"))}</button><span class="dim" id="lpFormMsg" style="font-size:13px;color:var(--warn-ink)"></span></div>
         </div>
@@ -1978,12 +1984,13 @@
       <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.si_log_head"))} · <select id="lpLogFilter" class="loop-sel" style="font-size:13px"><option value="">${esc(window.t("cs.si_log_all"))}</option></select></h3><div id="lpLog">${esc(window.t("common.loading"))}</div></div>
     </div>`;
 
-    let fcur = { mode: "full" };   // mặc định toàn quyền (chủ repo bỏ luật an toàn cũ 2026-09-10)
+    let fcur = { mode: "suggest" };
     let fkind = "loop";      // loại việc đang tạo: loop (việc lặp) | reminder (nhắc hẹn)
     let frmode = "notify";   // kiểu nhắc hẹn: notify (chỉ nhắc) | task (tự làm rồi báo)
     let frmq = "full";       // mức quyền của kiểu "task": suggest | auto | full
     function syncFormChips() {
       el.querySelectorAll("#lpModes .si-chip").forEach(x => x.classList.toggle("sel", x.dataset.mode === fcur.mode));
+      const w = el.querySelector("#lpFullWarn"); if (w) w.style.display = (fcur.mode === "full" && fkind === "loop") ? "block" : "none";
     }
     el.querySelectorAll("#lpModes .si-chip").forEach(c => c.onclick = () => { fcur.mode = c.dataset.mode; syncFormChips(); });
 
@@ -1995,6 +2002,7 @@
       if (q("#lpLoopFields")) q("#lpLoopFields").style.display = isRem ? "none" : "";
       if (q("#lpRemFields")) q("#lpRemFields").style.display = isRem ? "" : "none";
       if (q("#lpLoopNote")) q("#lpLoopNote").style.display = isRem ? "none" : "";
+      if (isRem && q("#lpFullWarn")) q("#lpFullWarn").style.display = "none";
       q("#lpBodyLabel").textContent = isRem
         ? window.t("cs.si_body_rem")
         : window.t("cs.si_body_loop");
@@ -2009,7 +2017,9 @@
     // nên phơi ô đó ra là bày thêm một lựa chọn không làm gì.
     function syncRemMq() {
       const wrap = el.querySelector("#lpRemMqWrap");
+      const warn = el.querySelector("#lpRemMqWarn");
       if (wrap) wrap.style.display = frmode === "task" ? "" : "none";
+      if (warn) warn.style.display = (frmode === "task" && frmq === "full") ? "block" : "none";
       el.querySelectorAll("#lpRemMq .si-chip").forEach(x => x.classList.toggle("sel", x.dataset.mq === frmq));
     }
     el.querySelectorAll("#lpRemModes .si-chip").forEach(c => c.onclick = () => {
@@ -2089,7 +2099,7 @@
     // xoá rồi tạo lại, đúng chỗ khách báo "không sửa được lịch cron".
     async function openForm(lp, rem) {
       await ensureBrains();   // đảm bảo ô brain luôn có lựa chọn dù /viec/all chưa tải xong
-      fcur = { mode: lp ? lp.mode : "full" };
+      fcur = { mode: lp ? lp.mode : "suggest" };
       fkind = rem ? "reminder" : "loop";
       frmode = rem && rem.mode === "task" ? "task" : "notify";
       // Mở form một nhắc hẹn cũ thì hiện ĐÚNG mức nó đang chạy (bản ghi cũ chưa có trường này
@@ -2192,6 +2202,7 @@
       }
 
       // LOOP → POST /loops (file Javis/loops/<slug>.md).
+      if (fcur.mode === "full" && !confirm(window.t("cs.si_full_confirm", { ten: name }))) return;
       const fd = new FormData();
       fd.append("slug", el.querySelector("#lpSlug").value);
       fd.append("name", name);
@@ -2255,7 +2266,7 @@
       const next = (lp.enabled && !paused && lp.next_run)
         ? ` · ${window.t("cs.si_next", { luc: fmtWhen(lp.next_run), con: fmtLeft(lp.next_run) })}`
         : (lp.enabled ? "" : " · " + window.t("cs.si_no_next"));
-      const modeLbl = lp.mode === "full" ? window.t("cs.si_mode_full_low")
+      const modeLbl = lp.mode === "full" ? `<span style="color:var(--red);font-weight:600">${WARN_ICON} ${window.t("cs.si_mode_full_low")}</span>`
         : lp.mode === "auto" ? window.t("cs.si_mode_auto_low") : window.t("cs.si_mode_suggest_low");
       const extra = [
         `${modeLbl} · ${window.t("cs.si_every", { so: lp.interval_min })}`,
@@ -2282,6 +2293,9 @@
       // MỌI thao tác gửi brain của CHÍNH item (lp.brain_path), KHÔNG phải fbrain() - trang này gộp
       // nhiều brain nên bám sidebar sẽ nhắm nhầm brain.
       div.querySelector(".tgl").onclick = async () => {
+        // Bật loop TOÀN QUYỀN = xác nhận rủi ro (tắt thì khỏi hỏi)
+        if (!lp.enabled && lp.mode === "full" &&
+            !confirm(window.t("cs.si_toggle_confirm", { ten: lp.name }))) return;
         await fetch("/loops/toggle", { method: "POST", body: (() => { const f = new FormData(); f.append("slug", lp.slug); f.append("brain", lp.brain_path); return f; })() });
         loadAll();
       };
