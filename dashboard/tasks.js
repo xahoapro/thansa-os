@@ -906,6 +906,15 @@
   var REMS = ["0", "5", "15", "30", "60"];
   var LVL = { suggest: "nv.lp.m_suggest", auto: "nv.lp.m_auto", full: "nv.lp.m_full" };
   var LP_NOTE = { suggest: "cs.si_level_note_suggest", auto: "cs.si_level_note_auto", full: "cs.si_level_note_full" };
+  // Thansa P038 (chủ giữ chốt an toàn): mức toàn quyền có hộp cảnh báo đỏ, loop mặc định suggest, lưu/bật loop toàn quyền phải confirm().
+  function fullWarn(kind) {
+    var k = kind === "loop" ? ["cs.si_fullwarn_head", "cs.si_fullwarn_a", "cs.si_fullwarn_b", "cs.si_fullwarn_c", "cs.si_fullwarn_d", "cs.si_fullwarn_e"]
+      : ["cs.si_mqwarn_head", "cs.si_mqwarn_a", "cs.si_mqwarn_b", "cs.si_mqwarn_c", "cs.si_mqwarn_d", "cs.si_mqwarn_e", "cs.si_mqwarn_f", "cs.si_mqwarn_g", "nv.lp.m_suggest"];
+    var b = function (i) { return "<b>" + esc(tw(k[i])) + "</b>"; }, p = function (i) { return esc(tw(k[i])); };
+    var body = kind === "loop" ? b(0) + " " + p(1) + " " + b(2) + p(3) + " " + b(4) + p(5)
+      : b(0) + " " + p(1) + " " + b(2) + p(3) + " " + b(4) + p(5) + " " + b(6) + p(7) + " " + b(8) + ".";
+    return '<div class="nv-fullwarn" role="alert" style="margin-top:6px;padding:10px 12px;border:1px solid rgba(224,102,74,.5);border-radius:8px;background:rgba(224,102,74,.08);color:var(--red);font-size:13px;line-height:1.5">' + body + "</div>";
+  }
   function toMin(hm) { var p = String(hm || "0:0").split(":"); return Number(p[0]) * 60 + Number(p[1] || 0); }
   function fromMin(m) { m = Math.max(0, Math.min(23 * 60 + 59, m)); return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60); }
   function durTxt(m) { return m >= 60 ? tw("nv.ap.h", { h: Math.floor(m / 60) }) + (m % 60 ? " " + tw("nv.ap.m", { m: m % 60 }) : "") : tw("nv.ap.m", { m: m }); }
@@ -1214,7 +1223,7 @@
     var box = function (k, label) { return '<label class="nv-prep"><input type="checkbox" data-act="fset" data-k="' + k + '" data-v="' + (f[k] ? "" : "1") + '"' + (f[k] ? " checked" : "") + "><span>" + esc(tw(label)) + "</span></label>"; };
     var lv = f.mq || "full";
     return (f.mode === "do" ? '<div class="nv-fld"><span>' + esc(tw("nv.lp.mode")) + "</span>" + '<div class="nv-seg" role="group">' + [["suggest", "nv.lp.m_suggest"], ["auto", "nv.lp.m_auto"], ["full", "nv.lp.m_full"]].map(function (o) { return '<button type="button" data-act="fset" data-k="mq" data-v="' + o[0] + '" aria-pressed="' + (lv === o[0]) + '">' + esc(tw(o[1])) + "</button>"; }).join("") + "</div>"
-        + '<small class="nv-hint' + (lv === "full" ? " full" : "") + '" role="status">' + esc(tw(LP_NOTE[lv])) + "</small></div>" : "")
+        + '<small class="nv-hint' + (lv === "full" ? " full" : "") + '" role="status">' + esc(tw(LP_NOTE[lv])) + "</small>" + (lv === "full" ? fullWarn("reminder") : "") + "</div>" : "")
       + '<div class="nv-fld nv-opts">' + box("call", "nv.f.call") + box("speak", "nv.f.speak") + (f.mode === "do" ? box("last", "nv.f.last") : "") + "</div>";
   }
 
@@ -1239,7 +1248,7 @@
       return head + '<label class="nv-fld"><span>' + esc(tw("nv.lp.name")) + '</span><input class="nv-inp" id="nvLn" required value="' + esc(f.name || "") + '"></label>'
         + '<label class="nv-fld"><span>' + esc(tw("nv.lp.body")) + '</span><textarea class="nv-ta" id="nvW" required>' + esc(f.text || "") + "</textarea></label>"
         + '<div class="nv-fld"><span>' + esc(tw("nv.lp.mode")) + "</span>" + seg("lmode", [["suggest", "nv.lp.m_suggest"], ["auto", "nv.lp.m_auto"], ["full", "nv.lp.m_full"]])
-        + '<small class="nv-hint' + ((f.lmode || "full") === "full" ? " full" : "") + '" role="status">' + esc(tw(LP_NOTE[f.lmode] || LP_NOTE.full)) + "</small></div>"
+        + '<small class="nv-hint' + ((f.lmode || "suggest") === "full" ? " full" : "") + '" role="status">' + esc(tw(LP_NOTE[f.lmode] || LP_NOTE.suggest)) + "</small>" + (f.lmode === "full" ? fullWarn("loop") : "") + "</div>"
         + '<label class="nv-fld"><span>' + esc(tw("nv.lp.every")) + '</span><input class="nv-inp" id="nvIv" type="number" min="5" step="5" inputmode="numeric" value="' + esc(f.iv || "60") + '"></label>'
         + (f.err ? '<div class="nv-ferr" role="alert">' + esc(f.err) + "</div>" : "")
         + '<div class="nv-acts end"><button type="button" class="nv-btn ghost" data-act="close">' + esc(tw("nv.cancel")) + '</button><button type="submit" class="nv-btn pri">' + esc(tw("nv.save")) + "</button></div></form></div>";
@@ -1272,7 +1281,7 @@
   function openForm(it) {
     if (it && it.src === "loop") {
       var lp = it.raw || {};
-      S.form = { loop: it.ref, name: lp.name || it.ref, text: lp.body || "", lmode: lp.mode || "full", iv: String(lp.interval_min || 60) };
+      S.form = { loop: it.ref, name: lp.name || it.ref, text: lp.body || "", lmode: lp.mode || "suggest", iv: String(lp.interval_min || 60) };
     } else if (it && it.src === "reminder") {
       var raw = it.raw || {}, ts = stamp(raw.due_at);
       S.form = { edit: it.ref, who: "ai", text: raw.text || it.title, mode: raw.mode === "notify" ? "remind" : "do", date: ts.date, time: ts.time, rule: null, cronLocked: !!(raw.cron || raw.repeat_min),
@@ -1303,7 +1312,8 @@
     if (!txt) return;
     var b = brain(), r;
     if (f.loop) {
-      r = await postForm("/loops", { brain: b, slug: f.loop, name: (f.name || "").trim() || f.loop, body: txt, mode: f.lmode || "full",
+      if (f.lmode === "full" && !window.confirm(tw("cs.si_full_confirm", { ten: (f.name || "").trim() || f.loop }))) return;
+      r = await postForm("/loops", { brain: b, slug: f.loop, name: (f.name || "").trim() || f.loop, body: txt, mode: f.lmode || "suggest",
         interval_min: String(Math.max(5, Number(f.iv) || 60)) });
     } else if (f.edit) {
       var fields = f.script ? { id: f.edit, brain: b, text: txt } : { id: f.edit, brain: b, text: txt, mode: f.mode === "remind" ? "notify" : "task", muc_quyen: f.mq || "full",
@@ -1417,6 +1427,7 @@
         if (!r) return;
         S.sheet = null;
         var wasOn = r.on;
+        if (!wasOn && r.src === "loop" && (r.raw || {}).mode === "full" && !window.confirm(tw("cs.si_toggle_confirm", { ten: r.title }))) return;
         return act(toggleRep(r, !wasOn), wasOn ? tw("nv.ok.paused") : tw("nv.ok.resumed"), function () { return toggleRep(r, wasOn); });
       }
       case "m-gopen": S.sheet = null; if (it && it.raw && /^https:\/\//.test(it.raw.link || "")) window.open(it.raw.link, "_blank", "noopener"); return renderLayer();
