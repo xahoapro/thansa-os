@@ -402,3 +402,31 @@ image GHCR :1.2.0). Xem RELEASES.md.
   GỐC RỄ: file local trong repo → cần chuyển bao-khan.sh đọc ~/.thansa-alert.env (ghi dieu_kien_bo P037).
 - VERSION neo `1.7.0-javis-0.55.53`. moc-goc 8a38217/0.55.53, thansa 1.7.0, so_patch 34. tu-kiem-chung
   5/5 XANH. Phát hành snapshot main (ff cho user 1.6.0), Docker vẫn tắt.
+
+## Vòng 2026-09-09 (goc 8a38217 → 9ddc3d0, upstream +10 commit, VERSION nền 0.55.53 → 0.55.63, thansa vẫn 1.7.0 - cuộn bản chưa phát hành)
+
+- LƯU Ý: bản 1.7.0/0.55.53 đã dựng xong + xanh nhưng CHƯA phát hành (bị ngắt giữa suite) → cuộn
+  thẳng lên nền 0.55.63, phát hành một lần 1.7.0-javis-0.55.63.
+- 10 commit upstream (0.55.54-0.55.63): **dịch nốt UI sang tiếng Anh 1245 chuỗi, từ điển 594→2586
+  dòng** (#304 - mốc khai tử overlay đang tới), ảnh/file đính kèm không rơi khi Enter sớm (#313),
+  link file:// bấm mở (#311), tạo file từ chat trong thư mục brain (#308), vá 3 lỗi 08/09 (#307),
+  Watchtower kèm sẵn cả 2 compose (#306), Antigravity bỏ --effort thừa (#305), **#312 (0.55.62):
+  upstream BỎ chốt an toàn - loop/việc mặc định TOÀN QUYỀN**, nhãn tác giả "by Minh Quý"→"by Javis
+  OS team"→"by Javis Foundation" (#309/#310).
+- **QUYẾT ĐỊNH LỚN (chủ chọn): GIỮ chốt an toàn** trước #312. Thêm [me] P038 = git revert #312 trên
+  cây đã rebrand: loop/việc mặc định suggest, cấm tự tiền/đơn/đăng/nhắn; giữ hộp cảnh báo đỏ +
+  confirm trang Việc; javis_task/schedule mặc định suggest; khôi phục 20 khoá i18n cảnh báo (16 gỡ
+  + 4 sửa), docs 08/13/20, website. Revert TỰ auto-merge đúng CLAUDE.md/console.js/plugin/server/
+  test an toàn; chỉ giải tay dicts (phẫu thuật: giữ 2586 chuỗi #304 + thêm lại khoá an toàn) + docs.
+- Rebase 110 commit. Xung đột nhiều do #304 i18n-hoá hàng loạt (P001/P003/P008/P016/P022/P026/P031/
+  P034/P035/P036 lấy HEAD i18n + rebrand dồn về dict). Footer tác giả: GIỮ P011 "by Tradingauto.org"
+  (không theo "by Javis Foundation"). Image lùi Docker: ghcr.io/xahoapro/thansa-os.
+- **P037 (sessions-ui vòng 0.55.53) bị git DROP** ("patch contents already upstream") - #304 i18n-hoá
+  nốt sessions-ui + P036 rebrand lại → trùng upstream. Bỏ P037 khỏi mapping, thêm P038. Sửa 3 neo
+  chết (P016 "Bắt đầu dùng Thansa"→vi.json, P034 "Thansa vừa gửi"→vi.json, P011 "Cách lùi Docker"→
+  image thansa-os).
+- **Overlay đo lại:** i18n gốc 594→2586 khoá. Overlay 3220 cặp giờ 47% THỪA (1539) / 52% riêng
+  (1681). Redundancy vọt từ 13%→47% chỉ một vòng. Vẫn giữ (bỏ = 1681 chuỗi Việt lòi ra EN) nhưng
+  gần mốc khai tử - vòng sau cân nhắc bỏ hẳn khi phần-riêng < ~200.
+- VERSION neo `1.7.0-javis-0.55.63`. moc-goc 9ddc3d0/0.55.63, thansa 1.7.0, so_patch 34. tu-kiem-chung
+  5/5 XANH. Phát hành snapshot main (ff cho user 1.6.0). Docker vẫn tắt. Secret-scan trước phát hành = 0.
