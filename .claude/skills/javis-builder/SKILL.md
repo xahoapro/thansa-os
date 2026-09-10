@@ -152,8 +152,8 @@ ngừng báo mỗi vòng), hoặc `goal` khác `custom` (`business`/`brain`/`pro
 type: loop
 name: <Tên>
 slug: <ascii>
-enabled: false            # LUÔN tạo ở trạng thái TẮT - user bấm Bật ở trang Việc
-mode: full                # full=toàn quyền (MẶC ĐỊNH) | auto=chỉ ghi nháp | suggest=chỉ đọc/đề xuất
+enabled: false            # LUÔN tạo ở trạng thái TẮT
+mode: suggest             # suggest=chỉ đọc/đề xuất | auto=tự ghi nháp an toàn | full=toàn quyền
 goal: custom              # BẮT BUỘC khi ghi tay - thiếu dòng này self_improve.py mặc định
                            # 'business' (chỉ đọc số liệu MCP, bỏ qua hoàn toàn thân file dưới đây)
 interval_min: 120         # tối thiểu 5
@@ -192,10 +192,9 @@ ctx có `ctx.vault_root`, `ctx.data_dir` (state riêng plugin, không đụng va
 
 ## Rào an toàn (BẮT BUỘC)
 
-- Loop tạo qua chat LUÔN `enabled: false` (user bấm Bật ở trang Việc) và mặc định `mode: full`:
-  chủ dự án đã bỏ luật "không giao tự động tiền/đơn/đăng bài/nhắn khách" (2026-09-10), nên
-  loop tự thao tác ra ngoài và KHÔNG cần cảnh báo rủi ro. Chỉ hạ `mode: auto/suggest` khi user
-  muốn loop đó nhẹ hơn.
+- Loop tạo qua chat LUÔN `enabled: false` + `mode: suggest`. Chỉ nâng `mode: auto/full` hoặc bật
+  ngay khi user yêu cầu RÕ RÀNG, và phải cảnh báo rủi ro (full = tự tạo đơn/tiêu tiền/đăng bài).
+- KHÔNG tạo năng lực tự làm hành động tiền/đơn/quảng cáo/gửi tin/đăng bài mà không có người duyệt.
 - KHÔNG bao giờ để một loop/automation tự tạo hoặc tự bật loop khác (chống phình vô hạn) - chỉ ĐỀ XUẤT.
 - Skill do engine TỰ HỌC sinh ra -> tạo BẬT sẵn (đánh dấu `origin: javis-learned`), nhưng KHÔNG ghi
   đè skill đã có và KHÔNG hồi sinh skill user đã tắt; agent tự động -> để nháp chờ duyệt. Skill do
@@ -205,5 +204,6 @@ ctx có `ctx.vault_root`, `ctx.data_dir` (state riêng plugin, không đụng va
 - Plugin user (toàn cục lẫn vault) chạy CODE PYTHON THẬT trong tiến trình server -> tạo `enabled: false`,
   `min_mode: readonly`, và NÓI RÕ với user: plugin nằm tắt cho tới khi họ bật nó trong app. Từ 15/10/2026
   Javis cho tải plugin người dùng mặc định; máy nào muốn chặn hẳn thì đặt env `JAVIS_ENABLE_USER_PLUGINS=false`
-  rồi khởi động lại. Plugin làm hành động ra ngoài thì khai `min_mode: full` cho đúng, hub xét theo mức quyền của chỗ gọi.
+  rồi khởi động lại.
+  KHÔNG viết plugin làm hành động tiền/đơn/gửi tin; việc đó để MCP + mức quyền lo.
 - Sau khi tạo, KHÔNG tự chạy thứ có side-effect; để user xem trước.
