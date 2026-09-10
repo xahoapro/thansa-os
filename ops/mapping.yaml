@@ -358,7 +358,7 @@
     - file: dashboard/index.html
       ky_hieu: "rf-author"
     - file: dashboard/console.js
-      ky_hieu: "Cách lùi bản Docker"
+      ky_hieu: "ghcr.io/xahoapro/thansa-os"
   vung_theo_doi:
     - "dashboard/index.html: khối rf-meta footer sidebar"
     - "dashboard/console.js: khối cập nhật/lùi bản"
@@ -519,7 +519,7 @@
     JavisSessions/JavisEditorCmds, javis.* localStorage, JAVIS_*.
   commit: "[me] P016: app.js chuoi hien thi + marker file-open Thansa"
   diem_neo:
-    - file: dashboard/app.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "Bắt đầu dùng Thansa"
     - file: dashboard/app.js
       ky_hieu: "trình sửa của Thansa"
@@ -1009,7 +1009,7 @@
   diem_neo:
     - file: dashboard/i18n/vi.json
       ky_hieu: "tool của Thansa đã đấu"
-    - file: dashboard/notifications.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "Thansa vừa gửi một tin"
   vung_theo_doi:
     - "dashboard/console.js: thẻ Grok + trạng thái tool"
@@ -1095,26 +1095,41 @@
     Chủ muốn kho gói RIÊNG thì fork blogminhquy/javis-store → xahoapro/thansa-store và đổi
     STORE_MAC_DINH (hoặc URL trong Cài đặt); mặc định giữ kho upstream để gói chạy thật.
 
-- id: P037
-  ten: "Rebrand vòng 0.55.53 - sessions-ui gắn file/link vào hội thoại"
+# P037 (rebrand sessions-ui vòng 0.55.53) ĐÃ BỎ: vòng 0.55.63 upstream i18n-hoá nốt chuỗi
+# sessions-ui (#304, dịch 1245 chuỗi) + P036 vòng này rebrand lại toàn dashboard → nội dung P037
+# trùng upstream, git rebase tự drop ("patch contents already upstream"). Bài học bảo mật
+# ops/.telegram vẫn giữ ở so-tron + bộ nhớ.
+
+- id: P038
+  ten: "Giữ chốt an toàn (đảo #312) - loop/việc mặc định suggest"
   y_dinh: >
-    Vòng trộn 0.55.46→0.55.53 (7 commit, chủ yếu vá lỗi + CVE python-multipart): upstream thêm
-    'gắn tay file & link vào một cuộc trò chuyện' (0.55.48) → dashboard/sessions-ui.js có 4 chuỗi
-    hiển thị mới nhắc "Javis". Rebrand Javis→Thansa, giữ định danh JS JavisSessions.
-  commit: "[me] P037: rebrand vong 0.55.53 - sessions-ui gan file/link vao hoi thoai (thansa)"
+    Upstream 0.55.62 (#312) BỎ luật an toàn: loop/việc tạo từ chat mặc định TOÀN QUYỀN (tự tạo
+    đơn/tiêu tiền/đăng/nhắn, không hỏi). Chủ (Duy Quang) CHỌN GIỮ chốt an toàn cho spa thật →
+    P038 đảo ngược #312 (git revert trên cây đã rebrand): loop/việc mặc định mode=suggest (chỉ
+    đọc+đề xuất), việc tiền/đơn/đăng/nhắn CẤM tự chạy trừ khi ra lệnh rõ; giữ hộp cảnh báo đỏ +
+    confirm() trang Việc + câu cảnh báo khi tạo nhắc hẹn; javis_task/javis_schedule mặc định
+    suggest. Khôi phục: CLAUDE.md safety, console.js, plugin javis-task/schedule, skill javis-
+    builder/notes, docs 08/13/20 (vi+en), website, 20 khoá i18n cảnh báo. GIỮ nguyên: quyền
+    từng kết nối MCP, bot chuyên trách chỉ đọc, loop mới enabled:false.
+  commit: "[me] P038: giu chot an toan (dao #312) - loop/viec mac dinh suggest"
   diem_neo:
-    - file: dashboard/sessions-ui.js
-      ky_hieu: "JavisSessions"
+    - file: CLAUDE.md
+      ky_hieu: "money/order/publishing actions are ALWAYS forbidden to self-execute"
+    - file: system/plugins/javis-schedule/plugin.py
+      ky_hieu: "muc_quyen"
   vung_theo_doi:
-    - "dashboard/sessions-ui.js: gắn file/link vào hội thoại (0.55.48)"
+    - "CLAUDE.md mục Safety when orchestrating; console.js hộp cảnh báo + confirm trang Việc"
+    - "system/plugins/javis-task + javis-schedule: mặc định suggest"
+    - "dashboard/i18n/vi.json + en.json: 20 khoá cảnh báo (cs.si_*warn*, *_confirm)"
+    - "docs 08/13/20 (vi+en) + website: wording an toàn"
   anh_goc:
-    - file: dashboard/sessions-ui.js
-      doan: "Javis"
+    - file: CLAUDE.md
+      doan: "`full`: the DEFAULT. Performs REAL outside actions"
   kiem_chung: >
-    python regex Javis(?![/\w])(?!-[A-Z]) trên sessions-ui.js = 0 product-name; JavisSessions=13
-    giữ nguyên; node --check OK. BẢO MẬT: ops/.telegram (token) bị git add -A re-track ở P012 khi
-    rebase (file local trên đĩa + đã track thì gitignore bó tay) → filter-branch xoá khỏi mọi
-    commit me, secret-scan cây phát hành = 0.
+    CLAUDE.md có 'mode: suggest' + 'ALWAYS forbidden to self-execute' (3 chỗ), 0 product-name
+    Javis, dài 33.611 < 33.700; test an toàn xanh (test_javis_schedule/test_nhac_hen_muc_quyen/
+    test_giao_viec_moi_engine/test_prefix_slim); vi/en.json có lại khoá cs.si_fullwarn_*; suite xanh.
   dieu_kien_bo: >
-    Gốc rễ tái lộ: file local ops/.telegram nằm trong repo. Triệt để thì chuyển bao-khan.sh đọc
-    ~/.thansa-alert.env và xoá hẳn file khỏi thư mục repo. Trước mắt: luôn secret-scan trước phát hành.
+    Nếu chủ đổi ý muốn theo upstream (toàn quyền mặc định) thì BỎ P038. Mỗi vòng sau, khi rebase
+    replay P038 (git revert #312) sẽ cần giải lại nếu upstream sửa tiếp vùng an toàn - theo dõi
+    commit upstream đụng loop/mode/mux_quyen.
