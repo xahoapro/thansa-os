@@ -208,7 +208,7 @@ Nếu bạn dồn nhiều nguồn chưa xử lý, có thể giao cho Thansa mộ
 3. Ở **Loại việc**, giữ **🔁 Việc lặp**.
 4. Đặt **Tên** (ví dụ "Tiêu hoá nguồn mới").
 5. Điền ô **Mô tả nhiệm vụ (mỗi vòng Thansa làm đúng việc này)**, ví dụ: "Mỗi vòng đọc 1 source chưa xử lý trong sources rồi đề xuất Wiki page nên tạo".
-6. Chọn **Chế độ**: **Toàn quyền** (mặc định) để Thansa tự thao tác thật, **Tự làm (ghi nháp)** để nó chỉ ghi file nháp trong brain, hoặc **Đề xuất (chỉ đọc)** để nó chỉ gợi ý.
+6. Chọn **Chế độ**: **Đề xuất (chỉ đọc)** để Thansa chỉ gợi ý, hoặc **Tự làm (an toàn)** để nó được ghi file nháp trong brain.
 7. Đặt **Chu kỳ (phút, tối thiểu 5)**, chọn **Brain (nơi lưu việc)**, rồi bấm **💾 Lưu**.
 
 Chi tiết từng chế độ, cách bật/tắt, xem nhật ký và mẹo an toàn: [Việc định kỳ & Nhắc hẹn](08-viec-dinh-ky.md).
