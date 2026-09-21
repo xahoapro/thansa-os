@@ -7769,43 +7769,73 @@ def _tien_cache(by_model: list, prices: dict) -> float:
     return round(tong, 4)
 
 
-def _cau_mo_dau(d: dict) -> str:
+def _cau_mo_dau(d: dict, en: bool = False) -> str:
     """Một câu tiếng người tóm tắt cả trang. Không bảng, không phần trăm trần trụi.
 
     Vì sao câu này đáng có: sáu ô số ngang hàng nhau bắt người đọc tự ghép nghĩa, và con số
     to nhất trên trang ("chi phí quy đổi") lại là con số KHÔNG phải tiền thật - đọc lướt thì
     y như một hoá đơn. Một câu nói thẳng ai trả gì cho cái gì thì không đọc nhầm được.
+
+    Câu này server GHÉP nên overlay dịch-en (khớp text-node) không phủ được: dịch tại nguồn
+    theo `en` (đọc từ cookie thansa_lang ở endpoint) - fork thêm nhánh EN.
     """
     t = d.get("tien") or {}
     goi = t.get("goi") or {}
     that = float((t.get("that") or {}).get("usd") or 0)
     quy = float((t.get("quy_doi") or {}).get("usd") or 0)
-    ky = d.get("ten_ky") or "Kỳ này"
+    ky = d.get("ten_ky") or ("This period" if en else "Kỳ này")
     ve = []
     if goi.get("so_duoc"):
         lan = goi.get("roi_lan") or 0
         # Nói đủ cả ba ca. Chỉ khoe khi thật sự lời, và dám nói khi gói đang đắt hơn API -
         # một trang chỉ biết khen thì lần sau không ai tin nó nữa.
-        if lan >= 1.2:
-            ket = f", tức gói đang lời {lan:g} lần."
-        elif lan >= 0.8:
-            ket = ", tức gói đang hoà vốn so với giá API."
-        elif lan > 0:
-            ket = ", tức với nhịp dùng này thì gói đang đắt hơn trả theo API."
+        if en:
+            if lan >= 1.2:
+                ket = f", i.e. the plan is paying off {lan:g}x."
+            elif lan >= 0.8:
+                ket = ", i.e. the plan breaks even versus API pricing."
+            elif lan > 0:
+                ket = ", i.e. at this usage rate the plan costs more than paying per API."
+            else:
+                ket = "."
+            ve.append(f"{ky} you paid ${goi['gia_thang_usd']:g} for the plan; "
+                      f"the work run would cost about ${quy:,.0f} at API prices" + ket)
         else:
-            ket = "."
-        ve.append(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
-                  f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}" + ket)
+            if lan >= 1.2:
+                ket = f", tức gói đang lời {lan:g} lần."
+            elif lan >= 0.8:
+                ket = ", tức gói đang hoà vốn so với giá API."
+            elif lan > 0:
+                ket = ", tức với nhịp dùng này thì gói đang đắt hơn trả theo API."
+            else:
+                ket = "."
+            ve.append(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
+                      f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}" + ket)
     elif quy > 0:
-        ve.append(f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.")
+        ve.append(f"{ky} the work run comes to about ${quy:,.2f} at API prices." if en
+                  else f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.")
     if that > 0:
-        ve.append(f"Tiền mặt thật đã tiêu: ${that:,.2f}.")
+        ve.append((f"Real cash spent: ${that:,.2f}." if en
+                   else f"Tiền mặt thật đã tiêu: ${that:,.2f}."))
     else:
-        ve.append("Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.")
+        ve.append("No branch charges per token, so real cash spent is $0." if en
+                  else "Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.")
     tk = d.get("tiet_kiem") or {}
     if tk.get("token"):
-        ve.append(f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token.")
+        ve.append((f"Saver mode avoided {_fmt_tok_en(tk['token'])} tokens." if en
+                   else f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token."))
     return " ".join(ve)
+
+
+def _fmt_tok_en(n) -> str:
+    n = int(n or 0)
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K"
+    return str(n)
 
 
 def _fmt_tok_vn(n) -> str:
@@ -7822,10 +7852,15 @@ def _fmt_tok_vn(n) -> str:
 _TEN_KY = {"today": "Hôm nay", "yesterday": "Hôm qua", "this_week": "Tuần này",
            "last_week": "Tuần trước", "this_month": "Tháng này", "last_month": "Tháng trước",
            "last_3_months": "3 tháng qua", "this_year": "Năm nay"}
+# Bản EN cho tên kỳ (fork): câu tóm tắt server ghép nên overlay không phủ được, dịch tại nguồn.
+_TEN_KY_EN = {"today": "Today", "yesterday": "Yesterday", "this_week": "This week",
+              "last_week": "Last week", "this_month": "This month", "last_month": "Last month",
+              "last_3_months": "Last 3 months", "this_year": "This year"}
 
 
 @app.get("/usage/tong-quan")
-async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0):
+async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0,
+                          request: Request = None):
     """Khối ĐẦU trang Mức dùng: tiền thật vs tiền quy đổi, trần gói, tiết kiệm, dự báo.
 
     Tách khỏi `/usage/summary` có chủ ý. Endpoint kia là số liệu thô theo chiều (model, dự
@@ -7908,8 +7943,11 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
     ns["dang_phanh"] = usage_saving.dang_phanh()
 
     usd_cache = _tien_cache(s.get("by_model") or [], prices)
+    en = _lang_en(request) if request is not None else False
     d = {
-        "period": period, "ten_ky": _TEN_KY.get(period, "Kỳ này"), "range": s.get("range"),
+        "period": period,
+        "ten_ky": (_TEN_KY_EN if en else _TEN_KY).get(period, "This period" if en else "Kỳ này"),
+        "range": s.get("range"),
         "engine": _engine_runtime_view(cfgmod.read_settings().get("context_runtime") or {}),
         "tien": {
             "that": {"usd": tien_that, "usd_thang": tien_that_thang, "openrouter": orb},
@@ -7928,7 +7966,7 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
         "moc": usage_saving.doc_moc((s.get("range") or ["", ""])[0],
                                     (s.get("range") or ["", ""])[1]),
     }
-    d["cau"] = _cau_mo_dau(d)
+    d["cau"] = _cau_mo_dau(d, en)
     return d
 
 
