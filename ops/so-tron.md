@@ -430,3 +430,59 @@ image GHCR :1.2.0). Xem RELEASES.md.
   gần mốc khai tử - vòng sau cân nhắc bỏ hẳn khi phần-riêng < ~200.
 - VERSION neo `1.7.0-javis-0.55.63`. moc-goc 9ddc3d0/0.55.63, thansa 1.7.0, so_patch 34. tu-kiem-chung
   5/5 XANH. Phát hành snapshot main (ff cho user 1.6.0). Docker vẫn tắt. Secret-scan trước phát hành = 0.
+
+## Vòng 2026-09-21 (goc 9ddc3d0 → 423a83e, upstream +93 commit, VERSION nền 0.55.63 → 0.60.1, thansa 1.7→1.8)
+
+- **BỐI CẢNH:** bản 1.7.0/0.55.63 đã trộn+xanh nhưng CHƯA từng đẩy remote (origin/main vẫn ở
+  1.6.0/0.55.46 = e606057). RELEASES.md local LỠ ghi 1.7.0 "đã phát hành" - SAI, đã đính chính
+  thành "cuộn vào 1.8.0, không phát hành riêng". Vòng này cuộn thẳng 0.55.63→0.60.1, phát hành
+  MỘT lần 1.8.0-javis-0.60.1 (user nhảy 1.6.0 → 1.8.0).
+- 93 commit upstream (0.56.0-0.60.1). Chủ đề LỚN NHẤT từ trước tới nay: **Voice** (V1 điều khiển
+  dashboard+app máy tính bằng lời 0.56.0; V2/Live bộ não giọng riêng nghe bằng Groq, chữ theo lời
+  như ChatGPT Voice, ngắt lời bằng giọng, tách nói khỏi làm 0.57.x); **linh vật** mép màn hình +
+  logo mới + thanh bên gọn + 5 giọng Edge (0.58.x); **trang Cộng sự** chat với trợ lý/quy trình +
+  lịch sử chạy + lệnh gạch chéo (0.59.x); **Hộp thư Hội thoại khách** (Chatbot V2), kênh Zalo cá
+  nhân, tầng CRM (0.60.0/0.60.1).
+- Rebase 111 commit (35 patch [me] sau khi thêm P039). rerere: **rr-cache CŨ (~140 resolution
+  tích luỹ) bị XOÁ SẠCH** giữa vòng - lý do: một lần lỡ stage vi.json còn conflict-marker ở P004
+  khiến rerere ghi một resolution ĐỘC (kèm marker); không tách được entry độc nên xoá cả rr-cache
+  (ở common git dir /home/thansa/thansa/goc/.git, KHÔNG phải .git của worktree) rồi giải tay lại
+  từ đầu. Bài học: **worktree dùng `.git` là FILE trỏ common dir → rr-cache/rerere nằm ở
+  git-common-dir**; và app.js bị grep nhận nhầm BINARY nên marker check phải dùng `grep -a`.
+- Xung đột giải tay: P003 (index.html: giữ cấu trúc linh vật brand-mark + chữ tách ô của upstream,
+  rebrand THANSA OS + khối "Công cụ tuỳ chọn"), P004 (vi/en.json: lấy HEAD cấu trúc pet/share/graph
+  của upstream, override page.home.label="Thansa"; ui_lang.title lấy HEAD "Giao diện"), P007 (danh
+  tính chat-facing: background_status.py lấy HEAD wording mới, compaction.py lấy HEAD +
+  CURRENT_REQUEST_MARKER + rebrand "trò chuyện Thansa", learn.py lấy HEAD refactor TẠO/SỬA skill +
+  rebrand), P010 (app.js: giữ null-check `const wn; if(wn)` của upstream + fallback "Thansa OS"),
+  P012 (CLAUDE.md xưng hô - xem QUYẾT ĐỊNH HÀNH VI bên dưới), P015 (giữ overlay dich-en.js + lucide
+  v=5 mới), test P016 (marker file-open: lấy HEAD ca test mới SKILL/GHIM + rebrand "của Thansa:"),
+  .gitignore (union: entry mới upstream + ops/.telegram + .thansa-alert), P025 (VERSION neo
+  1.8.0-javis-0.60.1), P027 (9 docs README+VI+EN: lấy HEAD upstream + rebrand regex 550 chuỗi),
+  P035 (console.js lấy HEAD olLenhCai; vi.json lấy HEAD nhãn "Công cụ" + "Thansa Store"; index.html
+  giữ class gcard-btn + placeholder thansa.), P036 (app.js+voice.js: --ours upstream + regex rebrand,
+  GIỮ mảng _KHOI_NGU_CANH 4 marker mới + [Javis TTS]), P038 (chốt an toàn - xem bên dưới).
+- **QUYẾT ĐỊNH HÀNH VI (P012 - CẦN CHỦ ĐIỂM DUYỆT):** upstream đổi luật xưng hô #9 từ "mặc định
+  bạn/mình" → **"theo người dùng" (quyết định upstream 2026-09-14, XOÁ luôn test_xung_ho.py)**.
+  Bản Thansa chỉ *thừa hưởng* text cũ rồi rebrand, KHÔNG có test riêng ép bạn/mình. Theo luật ưu
+  tiên #4 (upstream tiến hoá tương đương) + việc "theo người dùng" phục vụ đúng cách chủ xưng "anh"
+  → LẤY HEAD (theo upstream). **Nếu chủ muốn giữ "bạn/mình mặc định" cho spa (nhiều khách lạ) thì
+  báo, sẽ đảo lại thành một patch [me] như P038.**
+- **P038 (chốt an toàn) SỐNG trên nền 0.60.1:** phần lớn auto-merge sạch (CLAUDE.md safety section,
+  console.js, javis-schedule). Giải tay: javis-task/plugin.py (giữ bugfix check-trùng-tên MỚI của
+  upstream + `_MODE_CHO_PHEP=("suggest","auto")`, ten_mode 2-mode, mode=full BỊ TỪ CHỐI); vi/en.json
+  (UNION: giữ TOÀN BỘ khoá mới upstream ws.*/ht.*/share.*/page.conversations.* + thêm lại 20 khoá
+  cảnh báo cs.si_*warn*/*_confirm của P038). loop/việc vẫn mặc định suggest, cấm tự tiền/đơn/đăng/nhắn.
+- **P037 (sessions-ui vòng 0.55.53) đã bỏ từ vòng trước; thêm P039 mới.** P039 = rebrand nền 0.60.1:
+  regex an toàn Javis→Thansa trên dashboard/*.js + index.html + i18n vi/en (giữ định danh JS
+  JavisVoice/JavisI18n/JavisPet/JavisSessions/JavisWorkspace, path Javis/, tag debug [Javis TTS]).
+  Bề mặt MODEL-facing MỚI rebrand SOURCE: voice_brain.py/voice_live.py ("Bạn là Thansa" + nhãn
+  transcript), channel_context.py (NGỮ CẢNH GIAO DIỆN, GIỮ path Javis/reminders|scripts|loops).
+  Server còn lại + comment nội bộ + CSS cố ý giữ "Javis". 90 chuỗi hiển thị đổi; residual display
+  Javis = 0. Chatbot/CRM/conversations/workflow server KHÔNG lộ tên sản phẩm cho model (đã rà).
+- VERSION neo `1.8.0-javis-0.60.1`. moc-goc 423a83e/0.60.1, thansa 1.8.0, so_patch 35. tu-kiem-chung
+  5/5 XANH (không neo nào chết vòng này). node --check mọi dashboard/*.js xanh; py_compile file sửa xanh.
+- **NGHIỆM THU (điền sau khi chạy suite):** Suite 414 test chạy qua .venv (goc, fastapi 0.115): sau khi sửa 4 test coupled-rebrand (test_linh_vat.js 'JAVIS OS'->'THANSA OS' + home 'Thansa'->'Đồ thị/Graph' theo upstream; test_dinh_kem_khong_roi.js + test_channel_ui_prompt.py marker 'của Javis:'->'của Thansa:' khớp app.js:987/1352 [producer+consumer đều Thansa, NHẤT QUÁN]; test_cai_windows.py README 'khởi động lại Javis'->'Thansa') → fork còn 3 ĐỎ {test_form_chuoi_rong, test_route_table, test_terminal_cmd_goc} = Y HỆT nền upstream 0.60.1 SẠCH (410/414, sandbox: route/form/PTY), test_terminal flaky. fork_reds - upstream_reds = 0 hồi quy. node --check mọi dashboard/*.js xanh; py_compile file sửa xanh. LƯU Ý MÔI TRƯỜNG: worktree thansa/ KHÔNG có .venv (chỉ goc/ có) - phải chạy suite bằng goc/.venv/bin/python, đừng tin python hệ thống (thiếu fastapi = 192 đỏ GIẢ). SECRET-SCAN cây phát hành = SẠCH (ops/.telegram KHÔNG track, chỉ placeholder comment trong bao-khan.sh).
+- **CHƯA đẩy remote** (origin/me vẫn 327af23, origin/main vẫn e606057=1.6.0) - chờ chủ bấm. Lệnh phát
+  hành: secret-scan cây → force-push origin/me → `C=git commit-tree me^{tree} -p origin/main -m
+  "release: Thansa OS 1.8.0 (nen Javis 0.60.1)"` → `git push origin $C:main` → tag me-backup-0.60.1.

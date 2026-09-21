@@ -1133,3 +1133,41 @@
     Nếu chủ đổi ý muốn theo upstream (toàn quyền mặc định) thì BỎ P038. Mỗi vòng sau, khi rebase
     replay P038 (git revert #312) sẽ cần giải lại nếu upstream sửa tiếp vùng an toàn - theo dõi
     commit upstream đụng loop/mode/mux_quyen.
+
+- id: P039
+  ten: "Rebrand vòng 0.60.1 - Voice/Cộng sự/Chatbot UI + system prompt Voice"
+  y_dinh: >
+    Nền 0.56-0.60 thêm nhiều bề mặt MỚI có tên sản phẩm: Voice V1/V2/Live, linh vật (pet),
+    trang Cộng sự (workspace), Hộp thư Hội thoại + Zalo + CRM. Người dùng phải thấy "Thansa"
+    ở mọi bề mặt hiển thị mới này. Rebrand hiển thị Javis->Thansa trên dashboard/*.js +
+    index.html + i18n vi/en bằng regex an toàn (giữ định danh JS JavisVoice/JavisI18n/JavisPet/
+    JavisSessions/JavisWorkspace..., path Javis/, tag debug [Javis TTS]). Đồng thời bề mặt
+    MODEL-facing MỚI không qua _rebrand_hien_thi phải rebrand SOURCE: system prompt Voice
+    (voice_brain.py/voice_live.py "Bạn là Thansa" + nhãn transcript) và channel_context.py
+    (NGỮ CẢNH GIAO DIỆN). Server còn lại CỐ Ý giữ "Javis" nội bộ (rebrand lúc hiển thị).
+  commit: "[me] P039: rebrand vong 0.60.1 - Voice/Cong su/Chatbot UI + system prompt Voice (thansa)"
+  diem_neo:
+    - file: server/voice_brain.py
+      ky_hieu: "Bạn là Thansa, trợ lý cá nhân"
+    - file: server/voice_live.py
+      ky_hieu: "Bạn là Thansa, trợ lý cá nhân"
+    - file: dashboard/index.html
+      ky_hieu: "THANSA <i>OS</i>"
+  vung_theo_doi:
+    - "dashboard/*.js + index.html + i18n vi/en.json: chuỗi hiển thị tên sản phẩm"
+    - "server/voice_brain.py + voice_live.py: system prompt giọng nói"
+    - "server/channel_context.py: NGỮ CẢNH GIAO DIỆN (giữ path Javis/...)"
+  anh_goc:
+    - file: server/voice_brain.py
+      doan: "Bạn là Javis, trợ lý cá nhân, đang NÓI CHUYỆN BẰNG GIỌNG"
+    - file: dashboard/index.html
+      doan: '<span class="rail-brand-text">JAVIS <i>OS</i></span>'
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js + index.html + i18n vi/en + voice_brain/voice_live/
+    channel_context = 0 (regex an toàn, trừ [Javis TTS]); voice_brain/voice_live có "Bạn là Thansa";
+    channel_context giữ path Javis/reminders|scripts|loops; node --check mọi dashboard/*.js xanh;
+    py_compile 3 file server xanh; định danh JS JavisVoice/JavisI18n... còn nguyên.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào một biến branding/i18n duy nhất cho CẢ Voice/pet/Cộng sự
+    thì thu hẹp P039 về đúng biến đó. Overlay EN (dich-en.js/en-goi.json) gần mốc khai tử khi
+    i18n gốc phủ hết phần thân app - đo lại mỗi vòng.
