@@ -1171,3 +1171,32 @@
     Nếu upstream đưa tên sản phẩm vào một biến branding/i18n duy nhất cho CẢ Voice/pet/Cộng sự
     thì thu hẹp P039 về đúng biến đó. Overlay EN (dich-en.js/en-goi.json) gần mốc khai tử khi
     i18n gốc phủ hết phần thân app - đo lại mỗi vòng.
+
+- id: P040
+  ten: "Giữ mặc định xưng hô bạn/mình + nhãn home Thansa (chủ chọn, đảo upstream 0.60)"
+  y_dinh: >
+    Chủ (Duy Quang) CHỌN giữ sở thích fork thay vì theo upstream 0.60: (1) xưng hô mặc định
+    "bạn"/"mình", chỉ đổi anh/em||chị/em khi BIẾT giới tính chắc chắn - upstream 2026-09-14 bỏ
+    luật này (coi là sở thích cá nhân) + xoá test_xung_ho, Thansa giữ vì spa nhiều khách lạ;
+    (2) nhãn page.home.label giữ "Thansa" (vi+en) làm mục đầu thanh bên - upstream đổi thành
+    "Đồ thị"/"Graph", Thansa ưu tiên thương hiệu (brand hiện cả ở rail-brand THANSA OS).
+  commit: '[me] P040: giu mac dinh xung ho ban/minh + nhan home "Thansa" (chu chon, dao upstream)'
+  diem_neo:
+    - file: CLAUDE.md
+      ky_hieu: 'by default call the user "bạn" and refer to yourself as "mình"'
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"page.home.label": "Thansa"'
+  vung_theo_doi:
+    - "CLAUDE.md rule #9 Address forms (upstream có thể sửa tiếp vùng xưng hô)"
+    - "dashboard/i18n/vi.json + en.json: page.home.label (upstream đặt Đồ thị/Graph)"
+  anh_goc:
+    - file: CLAUDE.md
+      doan: "Address forms (Vietnamese): follow the user."
+    - file: dashboard/i18n/vi.json
+      doan: '"page.home.label": "Đồ thị"'
+  kiem_chung: >
+    CLAUDE.md rule #9 có 'by default call the user "bạn"'; vi/en.json page.home.label == "Thansa";
+    test_linh_vat.js xanh (assert home label "Thansa"); tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu sau này chủ muốn theo upstream (xưng hô theo người dùng, home = Đồ thị) thì BỎ P040.
+    Mỗi vòng rebase, nếu upstream sửa tiếp rule #9 hoặc đổi lại page.home thì giải theo ý_định này.
