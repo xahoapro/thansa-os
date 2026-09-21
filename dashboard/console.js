@@ -1811,8 +1811,8 @@
   // ============================================
   // Trang PLUGINS - tool/hook native cho mọi engine (bundled / toàn cục / brain)
   // ============================================
-  // ---- Công cụ TUỲ CHỌN: thứ Javis dùng được nhưng không cài sẵn ----
-  // Đặt ở ĐẦU trang Công cụ vì đây là câu trả lời cho "vì sao Javis không mở được trình duyệt"
+  // ---- Công cụ TUỲ CHỌN: thứ Thansa dùng được nhưng không cài sẵn ----
+  // Đặt ở ĐẦU trang Công cụ vì đây là câu trả lời cho "vì sao Thansa không mở được trình duyệt"
   // - người dùng đi tìm câu đó sẽ tới trang này trước. Thẻ Playwright ở trang Kết nối cũng
   // nhắc sang đây, vì chỗ người ta PHÁT HIỆN ra mình thiếu lại là lúc đang đấu kết nối.
   let _ctTimer = null;
@@ -8600,7 +8600,7 @@
     // chứ không để module tự đặt store.active: navigateTo còn dọn trang cũ, cất #quickSet và
     // vẽ lại đồ thị - bỏ qua mấy bước đó là để lại rác của trang trước trên trang sau.
     // `go` đi qua store Alpine chứ không gọi thẳng `navigateTo`: store còn BUNG NHÓM chứa trang
-    // vừa mở. Gọi thẳng thì mở trang bằng lời xong thanh bên vẫn gập, người dùng tưởng Javis
+    // vừa mở. Gọi thẳng thì mở trang bằng lời xong thanh bên vẫn gập, người dùng tưởng Thansa
     // không hiểu "mở dropdown". Không có store (trang chưa dựng xong) thì lui về navigateTo.
     function _navStore() {
       try { return window.Alpine && window.Alpine.store("nav"); } catch (e) { return null; }
@@ -9375,7 +9375,7 @@
     // Chép đường dẫn file đang mở. Đứng đầu hàng nút vì nó nói về CHÍNH file này chứ không
     // sửa gì nó, và vì đây là thứ hay cần nhất khi đang đọc một file rồi muốn nhắc tới nó ở
     // chỗ khác. Chép đúng chuỗi `rel` (đường dẫn trong brain) - thứ JavisOpenNoteAt, wikilink
-    // và mọi tool đọc file của Javis nhận vào.
+    // và mọi tool đọc file của Thansa nhận vào.
     const bSao = mk(ic("copy"), window.t("common.copy_path") + ": " + rel,
                     () => { if (window.JavisCopy) window.JavisCopy(rel, bSao); });
     actions.appendChild(bSao);
