@@ -22,7 +22,7 @@ Ba nhà cung cấp:
   bằng `conversation.item.truncate` (trình duyệt báo số ms đã phát).
 - GPTLive (`wss://api.openai.com/v1/live/sessions`, 09/2026): song công toàn phần, model tự
   quyết ngắt lời, KHÔNG có sự kiện interrupted / turn_done; ủy nhiệm kiểu `client`: model phát
-  `session.delegation.created`, Javis chạy bộ não chính rồi trả kết quả bằng
+  `session.delegation.created`, Thansa chạy bộ não chính rồi trả kết quả bằng
   `session.commentary.append` (model tự thuật lại), tiến độ bằng `session.thinking.append`.
   Khuôn sự kiện lấy từ SDK openai 3.13 (`openai/types/live/*`). CHƯA chạy thật.
 
@@ -56,7 +56,7 @@ PROVIDERS = {
 
 ASK_JAVIS_TOOL = {
     "name": "ask_javis",
-    "description": ("Hỏi bộ não chính của Javis khi cần dữ liệu thật (số liệu kinh doanh, lịch, email, file, "
+    "description": ("Hỏi bộ não chính của Thansa khi cần dữ liệu thật (số liệu kinh doanh, lịch, email, file, "
                     "ghi chú, ký ức), giao việc, nhắc hẹn, mở trang hay app, hoặc bất cứ hành động nào ra "
                     "ngoài. Truyền yêu cầu đầy đủ bằng ngôn ngữ người dùng. Trong lúc chờ hãy nói một câu "
                     "ngắn như 'để mình xem'. Kết quả trả về là chữ, hãy thuật lại ngắn gọn."),
@@ -64,14 +64,14 @@ ASK_JAVIS_TOOL = {
 }
 
 SYSTEM_PROMPT = (
-    "Bạn là Javis, trợ lý cá nhân, đang nói chuyện trực tiếp bằng giọng. Nói ngắn, tự nhiên, đúng "
+    "Bạn là Thansa, trợ lý cá nhân, đang nói chuyện trực tiếp bằng giọng. Nói ngắn, tự nhiên, đúng "
     "ngôn ngữ người dùng. Không bịa dữ liệu: cần dữ liệu thật hay hành động thì gọi tool ask_javis "
     "rồi thuật lại kết quả. Đang được ngắt lời thì dừng ngay và nghe."
 )
 
 # GPT-Live không có tool: nó ỦY NHIỆM. Prompt hội thoại ngắn, nói rõ khi nào giao việc.
 GPT_LIVE_PROMPT = (
-    "Bạn là Javis, trợ lý cá nhân, đang nói chuyện bằng giọng, đúng ngôn ngữ người dùng, ngắn và "
+    "Bạn là Thansa, trợ lý cá nhân, đang nói chuyện bằng giọng, đúng ngôn ngữ người dùng, ngắn và "
     "tự nhiên. Chuyện phiếm, hỏi đáp thường thì trả lời ngay. Câu nào cần dữ liệu thật (số liệu "
     "kinh doanh, lịch, email, file, ghi chú, ký ức), cần làm việc, nhắc hẹn, mở trang hay app, hay "
     "bất cứ hành động nào ra ngoài thì GIAO cho bộ não chính (delegate), nói một câu ngắn như 'để "
@@ -440,10 +440,10 @@ class OpenAIRealtime(LiveProvider):
 
 
 class GPTLive(LiveProvider):
-    """OpenAI GPT-Live, ủy nhiệm kiểu client: Javis là backend.
+    """OpenAI GPT-Live, ủy nhiệm kiểu client: Thansa là backend.
 
     Không có tool theo nghĩa cũ: model tự quyết giao việc và phát `session.delegation.created`
-    (chỉ có metadata, KHÔNG có nội dung việc), nên Javis dựng yêu cầu từ chữ người dùng vừa nói.
+    (chỉ có metadata, KHÔNG có nội dung việc), nên Thansa dựng yêu cầu từ chữ người dùng vừa nói.
     Trả kết quả bằng `session.commentary.append` (model tự thuật lại), tiến độ bằng
     `session.thinking.append`. Không có sự kiện interrupted (model tự quyết ngắt lời) lẫn
     turn_done; turn_done được suy ra khi người dùng bắt đầu nói mà trợ lý đang có chữ dở.

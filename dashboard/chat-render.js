@@ -89,11 +89,11 @@
   // thu cai ke tiep - khong phai hoi may chu truoc, va mot note tro dung duong van tai mot lan.
   //
   //   1. THEO THU MUC CUA CHINH FILE .md  - dung cach Obsidian, VS Code va GitHub hieu mot
-  //      duong dan tuong doi. Day la cai ma nguoi viet note mong doi, va la cai Javis thieu
+  //      duong dan tuong doi. Day la cai ma nguoi viet note mong doi, va la cai Thansa thieu
   //      truoc ban nay: no phan giai MOI duong dan theo GOC BRAIN, nen note nam trong thu muc
   //      con ma viet ![](anh.jpg) thi di tim <brain>/anh.jpg, khong bao gio co.
   //   2. THEO GOC BRAIN - dung hanh vi cu. Giu lai de note nao dang tro kieu do van chay.
-  //   3. attachments/<ten file> - cho Javis tu cat anh no sinh ra (quy uoc trong CLAUDE.md).
+  //   3. attachments/<ten file> - cho Thansa tu cat anh no sinh ra (quy uoc trong CLAUDE.md).
   function ungVienAnh(src) {
     var ra = [];
     var raw = String(src || "").trim().replace(/^\.\//, "");
@@ -1065,7 +1065,7 @@
     document.body.appendChild(_lb);
     document.body.classList.add("jv-lb-open");
     // Nut Back cua dien thoai (va cu vuot canh man hinh) phai DONG anh, khong phai roi khoi
-    // Javis. Chu repo bao 2026-09-13: dang xem anh thi vuot canh trai khong an gi, ma nut X thi
+    // Thansa. Chu repo bao 2026-09-13: dang xem anh thi vuot canh trai khong an gi, ma nut X thi
     // bi thanh trang thai che - khong con duong nao ra. Chen mot buoc lich su o day de cu Back
     // co cho ma lui ve.
     if (!_lbDayLichSu) {
