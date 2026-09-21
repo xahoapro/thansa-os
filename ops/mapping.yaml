@@ -1226,3 +1226,35 @@
   dieu_kien_bo: >
     Khi phần-riêng-còn-sống < ~vài chục và chấp nhận vài chuỗi lẻ hiện tiếng Việt ở EN, thì BỎ HẲN
     overlay (xoá dich-en.js + en-goi.json + thẻ script index.html), gộp nốt vào native i18n.
+
+- id: P042
+  ten: "Dịch EN bề mặt runtime còn thiếu - catalog Store + câu tóm usage"
+  y_dinh: >
+    Hai chỗ hiện tiếng Việt ở chế độ EN mà i18n gốc + overlay dich-en không phủ được (chuỗi
+    runtime): (1) mô tả gói Store fetch từ catalog upstream javis-store chỉ có 'vi' - thêm
+    system/store-en.json (54 gói) + packs_store._them_en chèn bản 'en' vào map name/description
+    để packs.js nn() tự lấy .en khi giao diện EN; (2) câu tóm tắt server GHÉP trên trang Mức
+    dùng (_cau_mo_dau + _TEN_KY: "{ky} bạn trả $X tiền gói, lượng việc đã chạy...") nhiều biến
+    nên overlay khớp-text-node không phủ - dịch tại nguồn theo _lang_en (cookie thansa_lang).
+  commit: "[me] P042: dich EN cho be mat runtime con thieu - catalog Store + cau tom usage"
+  diem_neo:
+    - file: server/packs_store.py
+      ky_hieu: "def _them_en"
+    - file: system/store-en.json
+      ky_hieu: "javis.tts-dropship"
+    - file: server/main.py
+      ky_hieu: "_TEN_KY_EN"
+  vung_theo_doi:
+    - "server/packs_store.py: lay() + _them_en (upstream đổi cấu trúc catalog/nn)"
+    - "system/store-en.json: catalog upstream thêm gói mới thì bổ sung bản dịch"
+    - "server/main.py: _cau_mo_dau + _TEN_KY + usage_tong_quan (upstream đổi câu tóm/kỳ)"
+  anh_goc:
+    - file: server/main.py
+      doan: "lượng việc đã chạy nếu tính theo giá API đáng"
+  kiem_chung: >
+    packs.js nn() lấy description.en khi lang=en; _them_en inject đúng (unit: tts-dropship →
+    "TTS Dropship..."); /usage/tong-quan trả ten_ky+cau EN khi cookie thansa_lang=en; test
+    kho_goi/cai_go_goi/muc_dung_moi/trang_tiet_kiem/da_ngon_ngu xanh; py_compile xanh.
+  dieu_kien_bo: >
+    Nếu upstream i18n-hoá mô tả catalog (thêm 'en' ở nguồn) thì bỏ store-en.json + _them_en.
+    Nếu upstream thêm cơ chế UI-lang cho endpoint usage thì gộp nhánh EN vào đó.
