@@ -23,14 +23,14 @@ Khế ước một module kênh (hàm thiếu = năng lực đó không có, s�
     bat(account_id, on) -> dict                      kind="account": bật/tắt ghi vào hộp thư
     async gui(tk: dict, chat_id, text, chat_type)    gửi MỘT tin chữ từ tài khoản `tk` tới cuộc
                                                      chat. Trả (ok, loi). Có hàm này = kênh có
-                                                     năng lực "trả lời từ Javis".
+                                                     năng lực "trả lời từ Thansa".
 
 Ba LOẠI kênh (`kind`), khác nhau ở cách có tài khoản chứ không ở cách hiện ra:
     bot      - tài khoản là một TOKEN bot (Telegram Bot API, Zalo Bot API). Lưu ở
                `channel_accounts`, long-poll bằng `Transport`.
     account  - tài khoản là một PHIÊN đăng nhập sẵn có ở nơi khác (Zalo cá nhân qua MCP). Module
                tự liệt kê qua `tai_khoan()`, có công tắc ghi.
-    webhook  - nền tảng GỌI NGƯỢC vào Javis (Zalo OA, Facebook Messenger: chưa có, chừa chỗ).
+    webhook  - nền tảng GỌI NGƯỢC vào Thansa (Zalo OA, Facebook Messenger: chưa có, chừa chỗ).
 
 Thêm một kênh = thêm một file ở đây + một dòng trong `_MODULES` + một logo trong icons.js.
 Không sửa gì khác.
@@ -168,7 +168,7 @@ async def gui(kenh: str, tk: dict, chat_id: str, text: str, chat_type: str = "pr
     if not s or not m:
         return False, f"kênh '{kenh}' không có trong sổ đăng ký"
     if not s.nl("tra_loi_tu_javis"):
-        return False, f"{s.nhan} chưa gửi được tin từ Javis"
+        return False, f"{s.nhan} chưa gửi được tin từ Thansa"
     try:
         return await m.gui(tk, str(chat_id), str(text or ""), chat_type or "private")
     except Exception as e:
