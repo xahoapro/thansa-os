@@ -514,3 +514,22 @@ facebook/meta ads...) và (2) tab thời kỳ + câu "lượng việc đã chạ
   + _fmt_tok_en, usage_tong_quan nhận request. Báo cáo Telegram/Zalo GIỮ (theo ngôn ngữ chat).
 so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - native i18n (en.json), overlay
 (dich-en/en-goi cho chuỗi cứng), và SERVER-COMPOSED/CATALOG (phải sửa nguồn: _lang_en hoặc map .en).
+
+## Vòng 2026-09-21b (goc 423a83e → f1a5891, upstream +15 commit, VERSION nền 0.60.1 → 0.62.5, thansa 1.8→1.9)
+- Vòng NHỎ (15 commit, 0.61.0-0.62.5), gộp bản 1.8.0/0.60.1 chưa phát hành → phát hành một lần 1.9.0.
+  Chủ đề: **gộp Chatbot vào trang Hội thoại** (sổ đăng ký kênh, tài khoản bot theo brain, trả lời khách
+  từ app), form tạo bot 2 bước, tab Kênh→Tài khoản bot, chatbot chạy model Agent; **trang Mức dùng hết
+  lag** (đọc tiếp transcript, phân trang server); trợ lý có tủ tài liệu riêng; Nhật ký cache+phân trang.
+- Rebase 121 commit (39 patch [me] sau khi thêm P043). Xung đột giải: P012 (CLAUDE.md: giữ đoạn ".html
+  app to SHARE" mới của upstream + rebrand "Thansa generates images"), P022 (console.js: upstream viết
+  lại phân trang nhật ký server-paging `_clFetchPage`/`_clPages`/`total` → GIỮ + bảo tồn `_clThansa`
+  nhật ký song ngữ, render dòng 836 vẫn tra theo version), P025 (main.py: giữ paging `changelog_index`
+  của upstream + áp `_ver_thansa`/`_ver_javis` hiển thị semver Thansa), P027 (docs 25-chatbot vi+en:
+  lấy HEAD + rebrand 89 chuỗi), P035 (studio.model_hint: lấy HEAD bản mở rộng chatbot/workflow +
+  rebrand; cb.zalo_* HEAD trống → giữ P035), P036 (chatbots.js: --ours + regex), P038 (union khoá an
+  toàn cs.si_* + khoá cb.* chatbot mới), P039 (**ht.kenh_* cũ upstream ĐÃ BỎ (làm lại thành ht.kenh_intro2)
+  → lấy HEAD bỏ khoá chết**, không phải neo P039).
+- **P043 mới:** rebrand bề mặt hiển thị mới 0.61-0.62 (i18n ht.* "Trả lời từ Thansa", channels/__init__.py
+  lỗi+mô tả, routes/packs.py author fallback+lỗi, routes/channels.py mô tả kênh). so_patch 38→39.
+- VERSION neo `1.9.0-javis-0.62.5`. moc-goc f1a5891/0.62.5/so_patch 39. tu-kiem-chung 5/5 XANH. backup
+  me-backup-0.60.1. **CHƯA đẩy remote** — chờ chủ bấm.
