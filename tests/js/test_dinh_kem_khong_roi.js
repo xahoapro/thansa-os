@@ -74,7 +74,7 @@ check("tên có khoảng trắng được mã hoá trong url",
 
 // Khối GHIM đứng trước khối đính kèm (file đang mở trong trình sửa + dán thêm ảnh).
 const tinGhim =
-  "[FILE ĐANG MỞ trong trình sửa của Javis: /brain/wiki/a.md\nĐọc nó trước khi trả lời.]\n\n"
+  "[FILE ĐANG MỞ trong trình sửa của Thansa: /brain/wiki/a.md\nĐọc nó trước khi trả lời.]\n\n"
   + "[File đính kèm (đường dẫn), Sources=\"/x/Sources\", Attachments=\"/x/attachments\":\n- /tmp/up/hinh.jpg]\n\n"
   + "/notes lưu lại";
 a = fn.docDinhKem(tinGhim);

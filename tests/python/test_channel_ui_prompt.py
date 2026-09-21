@@ -38,7 +38,7 @@ check("telegram: KHÔNG có đoạn điều khiển dashboard", "javis_ui" not i
 msg = ('[NGỮ CẢNH GIAO DIỆN: trang=kanban; chọn="đoạn abc"]\n\n'
        "Tóm tắt giúp mình việc đang chạy")
 check("tiêu đề: lột khối ngữ cảnh UI", sessions.title_from_message(msg) == "Tóm tắt giúp mình việc đang chạy")
-msg2 = ("[FILE ĐANG MỞ trong trình sửa của Javis: /b/a.md\nĐây là file]\n\n"
+msg2 = ("[FILE ĐANG MỞ trong trình sửa của Thansa: /b/a.md\nĐây là file]\n\n"
         '[NGỮ CẢNH GIAO DIỆN: trang=files; ngắt_lời="Doanh thu tháng này"]\n\n'
         "Viết tiếp phần kết luận")
 check("tiêu đề: lột cả ghim lẫn ngữ cảnh UI", sessions.title_from_message(msg2) == "Viết tiếp phần kết luận")
