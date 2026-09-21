@@ -8104,12 +8104,15 @@ def _tien_cache(by_model: list, prices: dict) -> float:
     return round(tong, 4)
 
 
-def _cau_mo_dau(d: dict) -> str:
+def _cau_mo_dau(d: dict, en: bool = False) -> str:
     """Một câu tiếng người tóm tắt cả trang. Không bảng, không phần trăm trần trụi.
 
     Vì sao câu này đáng có: sáu ô số ngang hàng nhau bắt người đọc tự ghép nghĩa, và con số
     to nhất trên trang ("chi phí quy đổi") lại là con số KHÔNG phải tiền thật - đọc lướt thì
     y như một hoá đơn. Một câu nói thẳng ai trả gì cho cái gì thì không đọc nhầm được.
+
+    Câu này server GHÉP nên overlay dịch-en (khớp text-node) không phủ được: dịch tại nguồn
+    theo `en` (đọc từ cookie thansa_lang ở endpoint) - fork thêm nhánh EN.
     """
     t = d.get("tien") or {}
     goi = t.get("goi") or {}
@@ -8152,6 +8155,17 @@ def _cau_mo_dau(d: dict) -> str:
     return " ".join(ve)
 
 
+def _fmt_tok_en(n) -> str:
+    n = int(n or 0)
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K"
+    return str(n)
+
+
 def _fmt_tok_vn(n) -> str:
     n = int(n or 0)
     if n >= 1_000_000_000:
@@ -8184,7 +8198,8 @@ _TEN_KY_EN = {"today": "Today", "yesterday": "Yesterday", "this_week": "This wee
 
 
 @app.get("/usage/tong-quan")
-async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0):
+async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0,
+                          request: Request = None):
     """Khối ĐẦU trang Mức dùng: tiền thật vs tiền quy đổi, trần gói, tiết kiệm, dự báo.
 
     Tách khỏi `/usage/summary` có chủ ý. Endpoint kia là số liệu thô theo chiều (model, dự
@@ -8267,6 +8282,7 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
     ns["dang_phanh"] = usage_saving.dang_phanh()
 
     usd_cache = _tien_cache(s.get("by_model") or [], prices)
+    en = _lang_en(request) if request is not None else False
     d = {
         "period": period, "range": s.get("range"),
         "ten_ky": localefmt.chu(_TEN_KY.get(period, "Kỳ này"), _TEN_KY_EN.get(period, "This period")),
@@ -8288,7 +8304,7 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
         "moc": usage_saving.doc_moc((s.get("range") or ["", ""])[0],
                                     (s.get("range") or ["", ""])[1]),
     }
-    d["cau"] = _cau_mo_dau(d)
+    d["cau"] = _cau_mo_dau(d, en)
     return d
 
 
