@@ -533,3 +533,7 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   lỗi+mô tả, routes/packs.py author fallback+lỗi, routes/channels.py mô tả kênh). so_patch 38→39.
 - VERSION neo `1.9.0-javis-0.62.5`. moc-goc f1a5891/0.62.5/so_patch 39. tu-kiem-chung 5/5 XANH. backup
   me-backup-0.60.1. **CHƯA đẩy remote** — chờ chủ bấm.
+- **NGHIỆM THU:** suite 429 test qua goc/.venv → 425 xanh, 4 ĐỎ {form_chuoi_rong, route_table,
+  terminal, terminal_cmd_goc} = Y HỆT bộ sandbox nền upstream (PTY/route/network perms), 0 hồi quy fork.
+  test_prompt_budget lúc đầu đỏ (upstream 0.61-0.62 thêm nội dung CLAUDE.md → 33.814 vượt 114) → nâng
+  trần 33_700→33_900 (thuế cấu trúc, như lần 33_600→33_700). Secret-scan cây = sạch. me tip cuối abdc808.
