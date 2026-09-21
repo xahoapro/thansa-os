@@ -142,6 +142,40 @@ def _ghi_cache(d: dict) -> None:
         pass
 
 
+# Bản dịch EN cho catalog Store. Catalog upstream (javis-store) chỉ có mô tả 'vi'; fork tự
+# dịch sang 'en' để packs.js nn() (v[lang]||v.en||...) hiện English khi giao diện EN. Không
+# đụng catalog gốc, không cần overlay. File: system/store-en.json = {id: {name, desc}}.
+_STORE_EN_CACHE = None
+
+
+def _store_en() -> dict:
+    global _STORE_EN_CACHE
+    if _STORE_EN_CACHE is None:
+        try:
+            from pathlib import Path
+            p = Path(__file__).resolve().parent.parent / "system" / "store-en.json"
+            _STORE_EN_CACHE = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            _STORE_EN_CACHE = {}
+    return _STORE_EN_CACHE
+
+
+def _them_en(goi):
+    """Chèn bản dịch EN (fork) vào map name/description mỗi gói khi upstream chỉ có 'vi'."""
+    tr = _store_en()
+    if not tr:
+        return goi
+    for g in goi or []:
+        t = tr.get(g.get("id"))
+        if not t:
+            continue
+        for truong, khoa in (("name", "name"), ("description", "desc")):
+            m = g.get(truong)
+            if isinstance(m, dict) and not m.get("en") and t.get(khoa):
+                m["en"] = t[khoa]
+    return goi
+
+
 def url_kho() -> str:
     try:
         import config as cfgmod
@@ -159,7 +193,7 @@ async def lay(lam_moi: bool = False) -> dict:
     cache = _doc_cache()
     con_han = (time.time() - float(cache.get("fetched_at") or 0)) < TTL
     if cache.get("packs") and con_han and not lam_moi:
-        return {"ok": True, "packs": cache["packs"], "store": cache.get("store") or {},
+        return {"ok": True, "packs": _them_en(cache["packs"]), "store": cache.get("store") or {},
                 "stale": False, "fetched_at": cache.get("fetched_at"), "url": url_kho()}
 
     import packs_fetch
@@ -193,12 +227,13 @@ async def lay(lam_moi: bool = False) -> dict:
                 g["icon"] = tuyet_doi if urlparse(tuyet_doi).netloc == urlparse(u).netloc else ""
         store = {"name": _chuoi((d.get("store") or {}).get("name"), 80),
                  "url": _chuoi((d.get("store") or {}).get("url"), 300)}
+        goi = _them_en(goi)
         _ghi_cache({"fetched_at": time.time(), "packs": goi, "store": store, "url": u})
         return {"ok": True, "packs": goi, "store": store, "stale": False,
                 "fetched_at": time.time(), "url": u}
     except Exception as e:
         loi = str(e) or type(e).__name__
         if cache.get("packs"):
-            return {"ok": True, "packs": cache["packs"], "store": cache.get("store") or {},
+            return {"ok": True, "packs": _them_en(cache["packs"]), "store": cache.get("store") or {},
                     "stale": True, "error": loi, "fetched_at": cache.get("fetched_at"), "url": u}
         return {"ok": False, "packs": [], "store": {}, "stale": False, "error": loi, "url": u}
