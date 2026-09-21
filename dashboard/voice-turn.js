@@ -156,7 +156,7 @@
     this.background = 0;
     this.slow = false;
     this.deferred = [];
-    this.interruptedAt = "";   // câu Javis đọc tới lúc bị ngắt, đi vào tin kế tiếp
+    this.interruptedAt = "";   // câu Thansa đọc tới lúc bị ngắt, đi vào tin kế tiếp
     this.history = [];
     this.turnAt = 0;           // mốc ms lượt hiện tại bắt đầu xử lý (V3: câu tiến độ)
     this.spoke = false;        // lượt này đã có chữ THẬT ra loa chưa
@@ -279,7 +279,7 @@
     return this._recompute();
   };
 
-  // Bộ rình RMS đủ 500 ms tiếng nói trong lúc Javis đang đọc.
+  // Bộ rình RMS đủ 500 ms tiếng nói trong lúc Thansa đang đọc.
   VoiceTurn.prototype.bargeStart = function () {
     if (!this.speaking || this.interrupted) return [];
     this.interrupted = true;

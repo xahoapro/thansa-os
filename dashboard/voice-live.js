@@ -93,7 +93,7 @@
     if (ws && ws.readyState === WebSocket.OPEN) { try { ws.send(JSON.stringify(obj)); } catch (e) {} }
   }
 
-  // Báo trạng thái "Javis đang nói" theo hàng đợi phát thật (không có sự kiện nào khác đáng tin).
+  // Báo trạng thái "Thansa đang nói" theo hàng đợi phát thật (không có sự kiện nào khác đáng tin).
   function tickSpeaking() {
     clearTimeout(speakTimer);
     var now = !!playing.length;

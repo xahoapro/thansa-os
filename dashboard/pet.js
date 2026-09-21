@@ -1,6 +1,6 @@
-/* pet.js - LINH VẬT của Javis: một khuôn mặt nhỏ nép ở mép màn hình, lấp ló nửa người.
+/* pet.js - LINH VẬT của Thansa: một khuôn mặt nhỏ nép ở mép màn hình, lấp ló nửa người.
 
-   Đây KHÔNG phải đồ trang trí. Nó là "sự hiện diện" của Javis ở mọi trang: nhìn theo con trỏ,
+   Đây KHÔNG phải đồ trang trí. Nó là "sự hiện diện" của Thansa ở mọi trang: nhìn theo con trỏ,
    chớp mắt, và đổi biểu cảm theo đúng trạng thái thật của lượt trả lời (nghe / nghĩ / nói /
    lỗi). Trạng thái không tự bịa: app.js gọi JavisPet.setState() ngay trong setOrbState(), tức
    là pet và chữ trên orb luôn nói cùng một điều.
@@ -304,7 +304,7 @@
     el.dataset.out = "0";
     el.dataset.menu = "0";
     el.innerHTML =
-      '<button type="button" class="pet-body" aria-label="Javis">' +
+      '<button type="button" class="pet-body" aria-label="Thansa">' +
         '<svg viewBox="0 0 320 320" aria-hidden="true">' +
           '<g class="pet-rig">' +
             '<path class="pet-ring" pathLength="360"></path>' +
