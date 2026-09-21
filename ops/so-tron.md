@@ -501,3 +501,16 @@ chỉ ~64-177 chuỗi còn phủ RIÊNG thật. GC (P041): giữ entry còn tron
 server py) + number-template ◆ + mọi entry mapping neo tới → **3220→918 cặp (385KB→46KB)**.
 Không đổi hành vi runtime (chuỗi bỏ đều đã có native i18n hoặc không còn trong app). so_patch 37.
 CHƯA bỏ hẳn overlay (còn ~vài chục chuỗi live cần) - mốc khai tử ghi ở dieu_kien_bo P041.
+
+### Bổ sung P042 (chủ báo 2026-09-21): dịch EN chỗ runtime còn thiếu
+Chủ phát hiện ở chế độ EN còn hiện tiếng Việt: (1) mô tả gói Store (tts-dropship, hostinger,
+facebook/meta ads...) và (2) tab thời kỳ + câu "lượng việc đã chạy" trang usage. ĐIỀU TRA:
+- Store: catalog upstream javis-store trả mô tả dạng map {'vi':...} CHỈ có vi (54/54 gói).
+  packs.js nn() đã hỗ trợ v[lang]||v.en → fix bằng system/store-en.json (54 gói dịch, subagent
+  dịch, rebrand Javis→Thansa) + packs_store._them_en chèn 'en'. KHÔNG cần overlay.
+- Usage: tab (usage.ky.*) THỰC RA đã dịch đủ trong en.json; chỗ VN là câu tóm SERVER GHÉP
+  (_cau_mo_dau) + _TEN_KY, nhiều biến (kỳ+số) → overlay khớp-node bó tay. Server đã có sẵn
+  helper _lang_en(cookie thansa_lang) (tiền lệ) → dịch tại nguồn: thêm nhánh EN + _TEN_KY_EN
+  + _fmt_tok_en, usage_tong_quan nhận request. Báo cáo Telegram/Zalo GIỮ (theo ngôn ngữ chat).
+so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - native i18n (en.json), overlay
+(dich-en/en-goi cho chuỗi cứng), và SERVER-COMPOSED/CATALOG (phải sửa nguồn: _lang_en hoặc map .en).
