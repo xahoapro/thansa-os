@@ -493,3 +493,11 @@ Sau khi trình 2 quyết định hành vi, chủ CHỌN giữ sở thích fork t
   về bản bạn/mình-default; upstream đã xoá test_xung_ho nên fork không có test ép (chỉ prompt rule).
 - Nhãn trang đầu: GIỮ "Thansa" (vi+en), không theo "Đồ thị/Graph" của upstream. test_linh_vat.js
   cập nhật assert "Thansa". so_patch 34→36 (thêm P039 + P040). me tip mới sau P040.
+
+### Bổ sung P041 (chủ hỏi 2026-09-21): rút gọn overlay en-goi.json
+Chủ hỏi khối lượng overlay còn phải dịch vs gốc + có nên rút gọn để vòng sau đỡ soát. ĐO:
+overlay 3220 cặp = 47% THỪA (native i18n 2885 khoá đã phủ) + ~1500 rác (chuỗi cũ upstream bỏ),
+chỉ ~64-177 chuỗi còn phủ RIÊNG thật. GC (P041): giữ entry còn trong code (dashboard js/html +
+server py) + number-template ◆ + mọi entry mapping neo tới → **3220→918 cặp (385KB→46KB)**.
+Không đổi hành vi runtime (chuỗi bỏ đều đã có native i18n hoặc không còn trong app). so_patch 37.
+CHƯA bỏ hẳn overlay (còn ~vài chục chuỗi live cần) - mốc khai tử ghi ở dieu_kien_bo P041.
