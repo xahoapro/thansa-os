@@ -1200,3 +1200,29 @@
   dieu_kien_bo: >
     Nếu sau này chủ muốn theo upstream (xưng hô theo người dùng, home = Đồ thị) thì BỎ P040.
     Mỗi vòng rebase, nếu upstream sửa tiếp rule #9 hoặc đổi lại page.home thì giải theo ý_định này.
+
+- id: P041
+  ten: "Rút gọn en-goi.json (bỏ chuỗi native đã phủ + rác), 3220→918"
+  y_dinh: >
+    Overlay dich-en.js chỉ dịch chuỗi CỨNG/runtime chưa có native i18n. Qua các vòng upstream
+    tự i18n-hoá dần (native en.json 76→2885 khoá) nên ~47% en-goi.json thành THỪA (render qua
+    data-i18n, overlay không chạm) + ~1500 rác (chuỗi UI cũ upstream đã bỏ). GC để mỗi vòng sau
+    chỉ phải soát ~900 cặp còn sống. Quy tắc GIỮ: (a) chuỗi còn xuất hiện thật trong code
+    (dashboard/*.js|html + server/*.py), (b) number-template ◆, (c) mọi entry mapping neo tới.
+  commit: "[me] P041: rut gon en-goi.json (bo chuoi native da phu + rac) 3220->918"
+  diem_neo:
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "◆"
+    - file: dashboard/i18n/dich-en.js
+      ky_hieu: "en-goi.json"
+  vung_theo_doi:
+    - dashboard/i18n/en-goi.json
+    - dashboard/i18n/dich-en.js
+  anh_goc: []
+  kiem_chung: >
+    en-goi.json ~918 cặp, JSON hợp lệ; mọi ky_hieu neo en-goi.json của P015/P024/P029/P032 còn
+    tìm thấy (tu-kiem-chung luật 2 XANH); test_da_ngon_ngu + i18n JS xanh; overlay còn dịch được
+    chuỗi live (vd "(bảo mật)"→"(security)").
+  dieu_kien_bo: >
+    Khi phần-riêng-còn-sống < ~vài chục và chấp nhận vài chuỗi lẻ hiện tiếng Việt ở EN, thì BỎ HẲN
+    overlay (xoá dich-en.js + en-goi.json + thẻ script index.html), gộp nốt vào native i18n.
