@@ -270,7 +270,7 @@
           '<div class="ws-list" id="wsList"></div>' +
           '<div class="ws-left-foot"><button type="button" class="ws-btn" id="wsNew">' + ic("plus") + ' ' + esc(t("ws.new_item")) + '</button>' +
           '<button type="button" class="ws-btn" id="wsImport">' + esc(t("ws.upload_agent")) + '</button>' +
-          '<button type="button" class="ws-btn" id="wsStore">' + ic("package") + ' Javis Store</button></div>' +
+          '<button type="button" class="ws-btn" id="wsStore">' + ic("package") + ' Thansa Store</button></div>' +
         '</aside>' +
         '<div class="ws-main">' +
           '<div class="ws-bar">' +
@@ -863,7 +863,7 @@
   }
 
   // ---------- trả khung chat về bộ não chính khi rời trang ----------
-  // Khung chat là node MƯỢN của app: trang Cộng sự, trang Trò chuyện và màn Javis dùng CHUNG
+  // Khung chat là node MƯỢN của app: trang Cộng sự, trang Trò chuyện và màn Thansa dùng CHUNG
   // một khung. Rời trang mà không làm gì thì đoạn chat với trợ lý còn nằm nguyên ở hai chỗ kia
   // - và tệ hơn hiển thị: `savedSessionId` vẫn là phiên agent:<slug>, nên tin gõ tiếp ở trang
   // Trò chuyện BAY VÀO ĐÚNG PHIÊN CỦA TRỢ LÝ. Đó là hai chức năng chat khác nhau, chủ dự án
@@ -995,7 +995,7 @@
       '<div class="ws-ob-acts">' +
         '<button type="button" class="ws-btn primary" id="wsObAgent">' + ic("plus") + ' ' + esc(t("ws.new_agent")) + '</button>' +
         '<button type="button" class="ws-btn primary" id="wsObWf">' + ic("plus") + ' ' + esc(t("ws.new_workflow")) + '</button>' +
-        '<button type="button" class="ws-btn" id="wsObStore">' + ic("package") + ' Javis Store</button>' +
+        '<button type="button" class="ws-btn" id="wsObStore">' + ic("package") + ' Thansa Store</button>' +
       '</div>';
     var nut = function (id, fn) { var b = host.querySelector(id); if (b) b.onclick = fn; };
     nut("#wsObAgent", function () { taoMoi("agent"); });

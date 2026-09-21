@@ -1,6 +1,6 @@
 """Bộ não GIỌNG NÓI riêng (Voice V2, docs/dev/2026-09-voice-v2-spec.md mục 2).
 
-Khi người dùng NÓI với Javis, lượt đi qua một bộ não nhanh và nhẹ ở đây thay vì bộ não chính
+Khi người dùng NÓI với Thansa, lượt đi qua một bộ não nhanh và nhẹ ở đây thay vì bộ não chính
 (vốn dựng tiến trình, nạp MCP và prompt dài, mất 5-10 giây mới ra chữ đầu). Bộ não giọng trả
 lời ngắn, và khi câu hỏi cần dữ liệu, tool, file, ký ức hay hành động thì nó trả đúng một dòng
 `JAVIS_ASK_MAIN: <yêu cầu>`; main.py đọc dòng đó rồi chạy lượt bộ não chính như thường.
@@ -40,7 +40,7 @@ NGHE_MARKER = "JAVIS_NGHE:"
 # CỬA TẠP ÂM: mic bật liên tục nên tiếng TV, người khác trong phòng hay tiếng lẩm bẩm cũng
 # được chép thành chữ rồi chốt thành một lượt. Bộ não giọng đã đọc mọi lượt để viết dòng
 # JAVIS_NGHE, nên nó xét luôn: cắt phần tạp âm ngay trong dòng ấy, còn cả lượt không có gì
-# nói với Javis thì trả đúng một dòng này. Server bỏ lượt, không đọc loa, không để lại bong
+# nói với Thansa thì trả đúng một dòng này. Server bỏ lượt, không đọc loa, không để lại bong
 # bóng (xem run_voice_turn trong main.py).
 BO_QUA_MARKER = "JAVIS_BO_QUA:"
 # Mọi dòng lệnh: không bao giờ ra loa (split_speakable), luôn bị bóc khỏi câu trả lời.
@@ -77,7 +77,7 @@ STT_PROVIDERS = {
 PROVIDERS = tuple(k for k, p in BRAIN_PROVIDERS.items() if p["key_field"])
 
 SYSTEM_PROMPT = (
-    "Bạn là Javis, trợ lý cá nhân, đang NÓI CHUYỆN BẰNG GIỌNG với người dùng. Trả lời như người "
+    "Bạn là Thansa, trợ lý cá nhân, đang NÓI CHUYỆN BẰNG GIỌNG với người dùng. Trả lời như người "
     "đang nói: ngắn (1 đến 3 câu), tự nhiên, không markdown, không gạch đầu dòng, không emoji, "
     "không dấu gạch dài. Mặc định trả lời bằng tiếng Việt. Chỉ đổi ngôn ngữ khi người dùng nói "
     "rõ một câu có nghĩa bằng ngôn ngữ khác hoặc yêu cầu đổi; câu chép âm thanh pha tiếng lạ "
@@ -94,17 +94,17 @@ SYSTEM_PROMPT = (
     "ngay.', 'Rồi, kiểm tra ngay đây.', xưng hô theo người dùng), rồi một dòng riêng bắt đầu bằng "
     + MARKER + " theo sau là "
     "yêu cầu ĐẦY ĐỦ, tự đứng được (bộ não chính không nghe cuộc nói chuyện này) để bộ não chính của "
-    "Javis thực hiện. Không viết gì sau dòng đó. Việc đó chạy NỀN như một việc riêng: kết quả tự "
+    "Thansa thực hiện. Không viết gì sau dòng đó. Việc đó chạy NỀN như một việc riêng: kết quả tự "
     "hiện trong khung chat khi xong, còn bạn vẫn trò chuyện tiếp bình thường. Mỗi lời nhờ chỉ giao "
     "MỘT lần: câu nói tiếp, câu nhắc lại, câu hỏi tiến độ hay câu cảm ơn về một việc đã giao thì "
     "KHÔNG giao lại. Người dùng hỏi tiến độ thì nói việc đang chạy, KHÔNG bịa kết quả.\n"
     "NGOẠI LỆ, làm NGAY không nhờ bộ não chính: khi người dùng chỉ bảo ĐIỀU KHIỂN MÀN HÌNH, hãy "
     "trả lời một câu ngắn xác nhận rồi xuống dòng ghi " + UI_MARKER + " kèm lệnh:\n"
     "  " + UI_MARKER + " open_page <id trang>   (mở một tab. Viết ID tiếng Anh; trong ngoặc là nhãn "
-    "người dùng nhìn thấy và hay đọc lên: home (Javis), chat (trò chuyện), files (tệp tin), "
+    "người dùng nhìn thấy và hay đọc lên: home (Thansa), chat (trò chuyện), files (tệp tin), "
     "learn (tự học), terminal, workspace (cộng sự, trợ lý, quy trình), chatbots (chatbot), "
     "skills (kỹ năng), plugins (công cụ), kanban (việc), selfimprove (việc định kỳ), "
-    "mcp (kết nối), packs (Javis Store), channels (kênh), models, usage (mức dùng), "
+    "mcp (kết nối), packs (Thansa Store), channels (kênh), models, usage (mức dùng), "
     "settings (cài đặt), pet (linh vật), logs (cập nhật), account (tài khoản))\n"
     "  " + UI_MARKER + " open_group <id nhóm>   (BUNG một mục đang gập trên thanh bên mà không đổi "
     "trang: bo_nao (Bộ não), code (Code), nang_luc (Năng lực), viec (Việc), "
@@ -120,7 +120,7 @@ SYSTEM_PROMPT = (
     "không kèm dòng lệnh nào; hệ thống đã tự huỷ trước khi bạn kịp nói.\n"
     "Chuyện trò thường, hỏi ý kiến, giải thích khái niệm, tính nhẩm, chuyển ngữ: trả lời thẳng.\n"
     "Câu của người dùng đến từ MÁY NGHE GIỌNG NÓI, và họ hay nói lẫn tiếng Việt với tiếng "
-    "Anh, nên từ hay bị chép thành từ GẦN ÂM: tên bạn (Javis) thành 'David', 'Jarvis', 'Gia "
+    "Anh, nên từ hay bị chép thành từ GẦN ÂM: tên bạn (Thansa) thành 'David', 'Jarvis', 'Gia "
     "vít'; từ tiếng Anh, tên công cụ, tên dự án, tên sản phẩm thành một từ nghe na ná. Hãy "
     "HIỂU CÂU THEO NGỮ CẢNH cuộc trò chuyện. DÒNG ĐẦU TIÊN luôn là " + NGHE_MARKER + " rồi "
     "câu người dùng ĐÚNG NHƯ HỌ ĐỊNH NÓI trên một dòng, bỏ khối ngữ cảnh giao diện nếu có: "
@@ -356,7 +356,7 @@ def seed_text(history: List[dict], text: str, with_prompt: bool = True) -> str:
     if h:
         parts.append("[MẤY LƯỢT GẦN NHẤT TRONG PHIÊN NÀY]")
         for x in h:
-            ai = "Javis" if x.get("role") == "assistant" else "Người dùng"
+            ai = "Thansa" if x.get("role") == "assistant" else "Người dùng"
             parts.append(f"{ai}: {str(x.get('content'))[:1500]}")
     parts.append("[NGƯỜI DÙNG VỪA NÓI]\n" + str(text or ""))
     return "\n\n".join(parts)
@@ -808,7 +808,7 @@ def pending_tasks(session_id: str) -> List[dict]:
 
 # ---- "Dừng việc nền đi" là LỆNH, không phải một việc mới ----
 # Chủ dự án 15/09 gặp vòng lặp cười ra nước mắt: bảo "tạm dừng cái việc tìm kiếm ngầm đi nhé"
-# thì Javis dạ vâng rồi GIAO THÊM một việc nền mới với nội dung "dừng việc nền đang chạy". Nói
+# thì Thansa dạ vâng rồi GIAO THÊM một việc nền mới với nội dung "dừng việc nền đang chạy". Nói
 # lần nữa lại đẻ thêm một việc nữa. Gốc ở chỗ luật của bộ não giọng bảo mọi thứ cần HÀNH ĐỘNG
 # thì đẩy sang bộ não chính, mà "dừng việc" nghe đúng là một hành động.
 #
@@ -824,7 +824,7 @@ _DUNG_TU = (
 # Cụm chỉ ĐÍCH DANH việc chạy nền. 0.64.48 bỏ các từ đơn "nền", "nen", "đang chạy", "task",
 # "job": chúng làm câu hỏi thường bị nuốt thành lệnh dừng. Chủ repo báo 24/09, dò lại thấy
 # "Thôi được rồi, quảng cáo đang chạy thế nào?", "tắt nhạc nền đi", "bỏ qua chuyện đó, nền
-# tảng nào bán tốt" đều bị coi là lệnh: câu hỏi mất, Javis đáp "không có việc nền nào".
+# tảng nào bán tốt" đều bị coi là lệnh: câu hỏi mất, Thansa đáp "không có việc nền nào".
 _VIEC_TU = (
     "việc nền", "viec nen", "việc ngầm", "viec ngam", "chạy nền", "chay nen", "chạy ngầm",
     "chay ngam", "tác vụ", "tac vu", "background",
@@ -906,7 +906,7 @@ def pending_note(session_id: str, now: Optional[float] = None) -> str:
 # ============================================================
 # Vì sao có (0.59.23): khi bộ não giọng hỏng (chưa cài CLI, hết key, hết hạn mức, mất mạng),
 # run_voice_turn rơi về bộ não chính để lượt không câm. Đúng, nhưng trước đây cú rơi đó chỉ để
-# lại một dòng stderr và một status bị dòng "Javis đang suy nghĩ..." của bộ não chính đè lên
+# lại một dòng stderr và một status bị dòng "Thansa đang suy nghĩ..." của bộ não chính đè lên
 # trong vài mili giây. Người dùng chỉ thấy: bật mic, nói, rồi chờ hàng chục giây như chưa từng
 # có làn nhanh - và không có cách nào biết vì sao (chủ dự án gặp 16/09 sau vài bản cập nhật).
 # Nên giữ lại lỗi gần nhất ở đây: khung chat nói ra ngay lượt đó, và thẻ Giọng nói ở trang
