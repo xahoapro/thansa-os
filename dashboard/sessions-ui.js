@@ -936,7 +936,7 @@
       return hangMuc({ id: f.id, ten: f.label || f.name || f.path,
                        sub: con ? (laCuoc ? (f.brain_path || f.path) : f.path) : pdT("cts.file_gone"),
                        // Chép đường dẫn TRONG BRAIN (brain_path), không phải đường dẫn tuyệt
-                       // đối trên máy chủ: đó mới là chuỗi mọi nơi khác của Javis nhận vào
+                       // đối trên máy chủ: đó mới là chuỗi mọi nơi khác của Thansa nhận vào
                        // (chat, wikilink, tool đọc file).
                        sao: f.brain_path || f.path,
                        icon: f.image ? "image" : icoFile(f.name || f.path), pinned: !!f.pinned,
