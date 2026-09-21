@@ -1258,3 +1258,29 @@
   dieu_kien_bo: >
     Nếu upstream i18n-hoá mô tả catalog (thêm 'en' ở nguồn) thì bỏ store-en.json + _them_en.
     Nếu upstream thêm cơ chế UI-lang cho endpoint usage thì gộp nhánh EN vào đó.
+
+- id: P043
+  ten: "Rebrand nền 0.62.5 - Chatbot/Hội thoại/kênh mới (0.61-0.62)"
+  y_dinh: >
+    Nền 0.61.0-0.62.5 gộp Chatbot vào trang Hội thoại + sổ đăng ký kênh + trả lời khách từ app.
+    Rebrand chuỗi hiển thị Javis->Thansa còn sót trên bề mặt MỚI: i18n ht.* (Trả lời từ Thansa,
+    "{kenh} chưa gửi được tin từ Thansa"), server/channels/__init__.py (lỗi hiển thị + mô tả năng
+    lực), server/routes/packs.py (author fallback + lỗi đăng nhập), routes/channels.py (mô tả loại
+    kênh). Regex an toàn. Server còn lại giữ "Javis" nội bộ (rebrand lúc hiển thị).
+  commit: "[me] P043: rebrand ne 0.62.5 - Chatbot/Hoi thoai/kenh moi (0.61-0.62)"
+  diem_neo:
+    - file: server/channels/__init__.py
+      ky_hieu: "chưa gửi được tin từ Thansa"
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"ht.nl_tra_loi": "Trả lời từ Thansa"'
+  vung_theo_doi:
+    - "dashboard/i18n vi/en.json: khoá ht.* (Hội thoại/kênh)"
+    - "server/channels/ + server/routes/packs.py + channels.py: chuỗi hiển thị"
+  anh_goc:
+    - file: server/channels/__init__.py
+      doan: "chưa gửi được tin từ Javis"
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js+html+i18n + server/channels + routes/packs/channels = 0
+    (regex an toàn); py_compile xanh; JSON hợp lệ; tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa các chuỗi này vào _rebrand_hien_thi hoặc i18n-hoá nốt thì thu hẹp/bỏ P043.
