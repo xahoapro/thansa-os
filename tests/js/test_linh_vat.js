@@ -154,8 +154,8 @@ check("console.js: không còn nhóm tro_ly", !/id: "tro_ly"/.test(console_js));
 check("console.js: home và chat nằm trong nhóm Bộ não",
   /ids: \["home", "chat", "files", "learn"\]/.test(console_js));
 check("i18n: không còn khoá nhóm tro_ly", vi["nav.group.tro_ly"] === undefined && en["nav.group.tro_ly"] === undefined);
-check("i18n: trang home đổi tên thành Đồ thị / Graph",
-  vi["page.home.label"] === "Đồ thị" && en["page.home.label"] === "Graph");
+check("i18n: trang home giữ nhãn thương hiệu Thansa (fork - upstream đổi thành Đồ thị/Graph)",
+  vi["page.home.label"] === "Thansa" && en["page.home.label"] === "Thansa");
 
 // ---- 8. Nạp file và từ điển ----
 const iApp = html.indexOf("/static/app.js"), iPet = html.indexOf("/static/pet.js");
