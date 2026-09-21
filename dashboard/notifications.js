@@ -148,7 +148,7 @@
     closePanel();
     // Hội thoại của một TRỢ LÝ / QUY TRÌNH phải mở ở trang Cộng sự, không đổ vào khung chat
     // của bộ não chính. Đổ nhầm thì hai chuyện xảy ra cùng lúc: người dùng nhìn một đoạn chat
-    // với trợ lý trên màn Javis mà không hiểu vì sao, và phiên đang mở trở thành phiên của
+    // với trợ lý trên màn Thansa mà không hiểu vì sao, và phiên đang mở trở thành phiên của
     // trợ lý - tin gõ tiếp bay thẳng vào đó (đúng lỗi bản 0.59.15 đã chữa cho đường rời
     // trang, hòm thư mở lại nó bằng một cửa khác).
     var cs = congSuCuaThu(item);
