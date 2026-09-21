@@ -78,7 +78,12 @@ def _tok(chars):
 # fork (Thansa dai hon Javis), KHONG phai phinh do minh them noi dung. Nang tran 33_600->33_700
 # (headroom moi ~96) la quyet dinh CO Y THUC, dung nghia "chup thi cat" o tren: khong co gi
 # cua Thansa de cat, phan phinh la cua upstream + thue ten khong tranh duoc.
-CLAUDE_MD_MAX_CHARS = 33_700
+#
+# 21/09 (vong nen 0.62.5, thansa 1.9): upstream 0.61-0.62 them muc Chatbot/kenh + doan ".html app
+# to SHARE" vao CLAUDE.md, cong thue rebrand + chot an toan P038/xung ho P040 -> 33.814, vuot 114.
+# Van la thue cau truc (noi dung phinh la cua upstream, phan Thansa da rut gon het co the o P040)
+# -> nang tran 33_700->33_900 (headroom ~86), cung ly do co y thuc nhu lan truoc.
+CLAUDE_MD_MAX_CHARS = 33_900
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(
