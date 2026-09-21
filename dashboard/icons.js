@@ -24,7 +24,7 @@
   var RAW = window.LucideIcons || {};
   var FALLBACK = "circle-help";
 
-  // ---- Icon RIÊNG của Javis (không có trong Lucide) ----------------------------------
+  // ---- Icon RIÊNG của Thansa (không có trong Lucide) ----------------------------------
   // "javis-pet" là chính khuôn mặt linh vật: thân tròn cam, vành quỹ đạo mảnh, và đôi mắt
   // LIẾC chéo lên phải - đúng dáng của con pet ở mép màn hình và của dấu ấn trên thanh bên.
   // Trước đây trang Linh vật mượn mặt cười chung của Lucide, nên cái tab dẫn tới con pet lại
