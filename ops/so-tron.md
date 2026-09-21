@@ -486,3 +486,10 @@ image GHCR :1.2.0). Xem RELEASES.md.
 - **CHƯA đẩy remote** (origin/me vẫn 327af23, origin/main vẫn e606057=1.6.0) - chờ chủ bấm. Lệnh phát
   hành: secret-scan cây → force-push origin/me → `C=git commit-tree me^{tree} -p origin/main -m
   "release: Thansa OS 1.8.0 (nen Javis 0.60.1)"` → `git push origin $C:main` → tag me-backup-0.60.1.
+
+### Bổ sung P040 (chủ điểm duyệt 2026-09-21): đảo về sở thích fork
+Sau khi trình 2 quyết định hành vi, chủ CHỌN giữ sở thích fork thay vì theo upstream:
+- Xưng hô: GIỮ mặc định "bạn/mình" (đảo lại đề xuất theo-upstream trong P012). CLAUDE.md rule #9
+  về bản bạn/mình-default; upstream đã xoá test_xung_ho nên fork không có test ép (chỉ prompt rule).
+- Nhãn trang đầu: GIỮ "Thansa" (vi+en), không theo "Đồ thị/Graph" của upstream. test_linh_vat.js
+  cập nhật assert "Thansa". so_patch 34→36 (thêm P039 + P040). me tip mới sau P040.
