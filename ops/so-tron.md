@@ -537,3 +537,14 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   terminal, terminal_cmd_goc} = Y HỆT bộ sandbox nền upstream (PTY/route/network perms), 0 hồi quy fork.
   test_prompt_budget lúc đầu đỏ (upstream 0.61-0.62 thêm nội dung CLAUDE.md → 33.814 vượt 114) → nâng
   trần 33_700→33_900 (thuế cấu trúc, như lần 33_600→33_700). Secret-scan cây = sạch. me tip cuối abdc808.
+
+## Vòng 2026-09-22 (goc f1a5891 → 5159f5a, upstream +2 commit, VERSION nền 0.62.5 → 0.63.0, thansa 1.9→1.10)
+- Vòng CỰC NHỎ (2 commit): **mục Coding** (0.63.0 - phiên chat chạy trong repo git, worktree riêng,
+  điểm hồi, tách khỏi khung chat chung) + **PWA bỏ khoá chiều dọc** (0.62.6, tablet xoay ngang).
+- Rebase 126 commit (40 patch [me] sau khi thêm P044). Chỉ 2 xung đột: P025 (VERSION → 1.10.0-javis-
+  0.63.0), P038 (union khoá an toàn cs.si_* + khoá coding.* mới). P039-P043 + test commits (trần
+  prompt 33_900) áp SẠCH. rerere học từ vòng trước giúp.
+- **P044 mới:** rebrand mục Coding (i18n coding.*, coding.js comment, routes/coding.py + coding_store.py
+  docstring). Giữ định danh JavisSessions. so_patch 39→40.
+- VERSION neo `1.10.0-javis-0.63.0`. moc-goc 5159f5a/0.63.0/so_patch 40. tu-kiem-chung 5/5 XANH. backup
+  me-backup-0.62.5 (@ 837160e). **CHƯA đẩy remote** — chờ chủ bấm.
