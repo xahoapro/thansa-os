@@ -2,7 +2,7 @@
 
 Vì sao có file này
 ------------------
-Trước 0.63.0, sai Javis sửa một repo phải nói trong khung chat chung, và engine chạy với
+Trước 0.63.0, sai Thansa sửa một repo phải nói trong khung chat chung, và engine chạy với
 `cwd = <brain>`. Hậu quả: model đọc nhầm cây thư mục, không chỗ nào ghi "đang làm ở repo nào
 nhánh nào", và mở hai việc song song trên cùng repo là giẫm chân nhau.
 
@@ -17,7 +17,7 @@ Kho này giữ đúng ba thứ mà khung chat sẵn có KHÔNG biết:
 
 Ba ranh giới có chủ ý
 ---------------------
-- **Xoá repo khỏi sổ KHÔNG đụng đĩa.** Người dùng bấm xoá là muốn Javis quên nó đi, không phải
+- **Xoá repo khỏi sổ KHÔNG đụng đĩa.** Người dùng bấm xoá là muốn Thansa quên nó đi, không phải
   muốn mất mã nguồn. Nhầm hai thứ này một lần là mất việc thật.
 - **Worktree luôn mở NHÁNH MỚI** `javis/<phiên>` tách từ nhánh gốc, chứ không checkout thẳng
   nhánh gốc. Git từ chối checkout cùng một nhánh ở hai worktree, mà nhánh gốc thì gần như

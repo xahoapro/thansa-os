@@ -236,7 +236,7 @@
   }
 
   async function xoaRepo(rid) {
-    // Nói rõ cái gì mất và cái gì còn. Bỏ một repo khỏi Javis mà người dùng sợ mất mã nguồn
+    // Nói rõ cái gì mất và cái gì còn. Bỏ một repo khỏi Thansa mà người dùng sợ mất mã nguồn
     // thì họ không bấm, và cái nút đó coi như không tồn tại.
     if (!window.confirm(t("coding.remove_confirm"))) return;
     await api("/coding/repos/" + encodeURIComponent(rid) + "/delete", { method: "POST" });

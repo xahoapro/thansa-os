@@ -67,7 +67,7 @@ def _make_router() -> APIRouter:
     @r.post("/coding/repos/{rid}/delete")
     async def coding_repo_xoa(rid: str):
         # Chỉ gỡ khỏi sổ. Nói rõ trong câu trả lời để giao diện nhắc lại được cho người dùng:
-        # "đã bỏ khỏi Javis, mã nguồn còn nguyên trên đĩa".
+        # "đã bỏ khỏi Thansa, mã nguồn còn nguyên trên đĩa".
         if not coding_store.remove_repo(rid):
             return JSONResponse({"ok": False, "error": "Không có repo nào id đó"}, status_code=404)
         return {"ok": True, "con_tren_dia": True}
