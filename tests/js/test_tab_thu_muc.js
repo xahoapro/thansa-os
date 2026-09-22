@@ -79,6 +79,45 @@ check("CANARY: không vô hiệu hoá nút phóng to trình sửa",
   /\.chatpage-edit > \.note-editor:not\(\.ne-full\)/.test(CON));
 
 // ============================================================
+// 2c. Trang Cộng sự cũng mượn được trình sửa VÀ cây Vault (0.59.2)
+// ============================================================
+// Trang Cộng sự mang CÙNG lớp body.on-chat với trang Trò chuyện, nhưng khung sửa của nó tên
+// khác (#wsEdit). Trước 0.59.2 _borrowNoteEditor() tra cứng #chatPageEdit, nên ở trang Cộng sự
+// `into` là null: bấm một file .md trong chat với trợ lý thì KHÔNG CÓ GÌ xảy ra - không lỗi,
+// không toast, chỉ là im lặng. Đó là loại hỏng tệ nhất vì không để lại dấu vết nào.
+const WS = D("workspace.js");
+check("trang Cộng sự có chỗ đứng riêng cho trình sửa", /id="wsEdit"/.test(WS));
+check("CANARY: khung mặc định của _borrowNoteEditor nhận CẢ hai trang",
+  /into = into \|\| document\.getElementById\("chatPageEdit"\) \|\| document\.getElementById\("wsEdit"\)/.test(CON));
+// Ở trang Cộng sự, mở file là TẮT HẲN khung chat và trình sửa chiếm trọn khoang giữa (chủ dự
+// án chốt 16/09). Khác trang Trò chuyện, nơi hai bên vẫn đứng cạnh nhau: khoang giữa trang
+// Cộng sự đã bị cột danh sách và cột phải ăn mất ~570px, chia đôi thì bên nào cũng hẹp.
+const CCSS = fs.readFileSync(path.join(ROOT, "dashboard", "console.css"), "utf8");
+check("khung sửa của trang Cộng sự chỉ hiện khi có file mở",
+  /\.ws-main\.edit-on > \.ws-edit \{ display: flex; \}/.test(CCSS));
+check("CANARY: không vô hiệu hoá nút phóng to trình sửa ở trang Cộng sự",
+  /\.ws-edit > \.note-editor:not\(\.ne-full\)/.test(CCSS));
+check("mở file là trình sửa chiếm chỗ khung chat, ở MỌI khổ màn",
+  /\.ws-main\.edit-on > \.ws-slot \{ display: none; \}/.test(CCSS));
+// Khung chat ẩn bằng display:none nên node chat còn nguyên: đoạn hội thoại, chữ đang gõ dở và
+// phiên đang mở đều không mất, đóng file ra là thấy lại y như lúc rời đi.
+check("CANARY: ẩn bằng display:none chứ không gỡ node chat khỏi khung",
+  /\.ws-main\.edit-on > \.ws-slot \{ display: none; \}/.test(CCSS)
+  && /id="wsSlot"/.test(WS));
+check("trang Trò chuyện vẫn giữ chốt tương ứng",
+  /\.chatpage-slot \.transcript\{ flex:1 1 auto; min-height:0;/.test(CON));
+// Cột phải của trang Cộng sự có tab Thư mục mượn CHÍNH cây đó - cùng một node với tab Thư mục
+// của trang Trò chuyện, nên hai bên phải cùng một luật trả.
+check("cột phải trang Cộng sự có hai tab", /data-rtab="cai"/.test(WS) && /data-rtab="files"/.test(WS));
+check("tab Thư mục ở cột phải mượn chính panel Vault",
+  /S\.tabPhai === "files" && host && window\.JavisVaultPanel\) window\.JavisVaultPanel\.borrow\(host\)/.test(WS));
+check("CANARY: rời tab / rời trang Cộng sự đều trả cây Vault về",
+  /function traCayThuMuc\(\)[^\n]*JavisVaultPanel\.giveBack\(\)/.test(WS)
+  && /function roi\(\)[\s\S]{0,200}traCayThuMuc\(\)/.test(WS));
+check("CANARY: vẽ lại cột phải cũng trả cây về trước khi ghi đè",
+  /function vePhai\(item\)[\s\S]{0,600}traCayThuMuc\(\)/.test(WS));
+
+// ============================================================
 // 3. Nút "Vị trí" ở kết quả tìm kiếm
 // ============================================================
 check("kết quả tìm kiếm có nút Vị trí", /class="vr-loc"/.test(CON));
@@ -163,6 +202,20 @@ function fakeEl(tag) {
 
 const luuTru = {};
 const goi = [];
+// 0.55.14: chữ tiếng Việt của sessions-ui.js đã dời vào từ điển i18n, nên module gọi
+// window.t() ngay lúc nạp (veNhanBtn). Trong app thật i18n/index.js nạp TRƯỚC sessions-ui.js
+// (index.html), nên sandbox phải dựng t() y như thật: tra vi.json, có nội suy {bien} và
+// dạng số nhiều .one/.other, thiếu khoá thì trả về chính khoá.
+const VI = JSON.parse(fs.readFileSync(path.join(ROOT, "dashboard/i18n/vi.json"), "utf8"));
+function tGia(key, bien) {
+  const k = String(key || "");
+  let val = null;
+  if (bien && typeof bien.count === "number") val = VI[k + (bien.count === 1 ? ".one" : ".other")];
+  if (val == null) val = VI[k];
+  if (val == null) val = VI[k + ".other"];
+  if (val == null) return k;
+  return String(val).replace(/\{(\w+)\}/g, (m, ten) => (bien && bien[ten] != null ? String(bien[ten]) : m));
+}
 const sandbox = {
   console, setTimeout, clearTimeout,
   ic: () => "<svg></svg>",
@@ -186,6 +239,7 @@ const sandbox = {
   window: {
     innerWidth: 1400,
     ic: () => "<svg></svg>",
+    t: tGia,
     addEventListener() {},
     JavisSessions: { brain: () => "My Bullet Journal", current: () => null },
     JavisVaultPanel: {

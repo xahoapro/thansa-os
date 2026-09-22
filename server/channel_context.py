@@ -1,11 +1,11 @@
 """
 Ngữ cảnh kênh hội thoại - port ý tưởng gateway của hermes-agent (NousResearch).
 
-Vấn đề: Javis nhận tin từ nhiều "cửa" (Telegram, dashboard web) nhưng model
+Vấn đề: Thansa nhận tin từ nhiều "cửa" (Telegram, dashboard web) nhưng model
 không tự biết mình đang trả lời qua cửa nào, và file tạo ra không quay về
 đúng kênh. Hermes giải bằng cách gateway CHÈN metadata kênh vào context mỗi
 phiên (gateway/session.py: Source + User + Connected Platforms + Delivery
-options). Module này làm đúng việc đó cho Javis:
+options). Module này làm đúng việc đó cho Thansa:
 
 1. build_channel_block()  - block metadata kênh chèn vào system prompt.
 2. collect_turn_files()   - gom file sinh ra trong 1 lượt trả lời để gateway
@@ -188,7 +188,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         ]
     elif source == "zalo":
         # Kênh Zalo Bot. Cố ý KHÔNG gộp vào nhánh Telegram: hai chỗ khác nhau ở đúng những
-        # thứ mà một câu hướng dẫn sai sẽ dạy Javis hứa hão - gửi tài liệu, trần độ dài, và
+        # thứ mà một câu hướng dẫn sai sẽ dạy Thansa hứa hão - gửi tài liệu, trần độ dài, và
         # cách nhắc hẹn tìm đường về.
         who = (meta.get("user_name") or "").strip() or "user"
         conv = (f"nhóm '{meta.get('chat_title') or '?'}', tin nhắn từ {who}"
@@ -223,7 +223,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
         ]
     elif source == "cli":
         # Terminal. Khác web ở chỗ KHÔNG render được gì: không ảnh, không bảng, không link bấm
-        # được. Nói thẳng ra đây, nếu không Javis sẽ trả về markdown của web và người dùng nhận
+        # được. Nói thẳng ra đây, nếu không Thansa sẽ trả về markdown của web và người dùng nhận
         # một đống ký tự gạch dọc.
         who = (meta.get("host") or "").strip()
         lines += [
@@ -263,6 +263,30 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "làm hỏng phần nghe.",
             "- Vẫn giữ giọng người đang nói và vẫn ngắn gọn. Định dạng là để dễ đọc, không phải "
             "cái cớ để viết dài ra hay bẻ một ý nhỏ thành ba gạch đầu dòng.",
+            "",
+            "## Điều khiển dashboard và máy tính bằng lời (Voice V1)",
+            "- User bảo MỞ một trang / file / việc trên Thansa (\"mở trang Việc\", \"mở file X\", "
+            "\"cho xem việc vừa giao\", \"cuộn xuống\"): gọi tool `javis_ui` (action open_page | "
+            "open_file | open_task | scroll) rồi thuật đúng kết quả tool trả về. Không mô tả "
+            "đường bấm tay khi tool làm được.",
+            "- \"cuộn xuống\" là cuộn THỨ HỌ ĐANG NHÌN, không phải lúc nào cũng là khung chat: "
+            "cứ truyền target `top`/`bottom` cho dashboard tự chọn theo trang đang mở. Chỉ dùng "
+            "`chat_top`/`chat_bottom` hay `page_top`/`page_bottom` khi user nói rõ cuộn cái nào. "
+            "Tool trả về đúng thứ vừa cuộn, cứ thuật lại theo đó.",
+            "- User bảo MỞ hay TẮT một app trên máy (\"mở Chrome\", \"tắt Excel\", \"đang mở app "
+            "nào\"): gọi `javis_app_open` / `javis_app_close` / `javis_app_list`. Tool tự nói nếu "
+            "Thansa đang chạy trên máy chủ chứ không phải máy user; khi đó thuật lại đúng câu đó. "
+            "Đóng app là làm ngay theo ý user, chỉ truyền `force=true` khi họ nói ép tắt.",
+            "- Khối `[NGỮ CẢNH GIAO DIỆN: ...]` (nếu có) ở đầu tin là thứ user ĐANG NHÌN: `trang=` là "
+            "trang đang mở, `chọn=` là đoạn họ đang bôi đen. \"cái này\", \"đoạn này\", \"chỗ này\" "
+            "trỏ vào đó, đừng hỏi lại. `ngắt_lời=` nghĩa là họ vừa ngắt bạn khi bạn đọc tới câu đó: "
+            "trả lời tiếp từ chỗ ấy, KHÔNG đọc lại từ đầu.",
+            "- `kênh=giọng` trong khối đó nghĩa là user đang NÓI CHUYỆN BẰNG GIỌNG và câu trả lời "
+            "sẽ được ĐỌC RA LOA ngay khi bạn viết. Khi ấy luật trình bày ở trên NHƯỜNG CHỖ cho luật "
+            "nói: trả lời như người đang nói, 2 đến 4 câu, câu đầu ngắn để tiếng ra nhanh, kết luận "
+            "trước chi tiết sau; không tiêu đề, không bảng, không gạch đầu dòng, không emoji, không "
+            "khối mã trừ khi họ xin đúng thứ đó. Muốn dài hơn thì hỏi họ có cần chi tiết không. "
+            "Việc lâu thì nói ngay một câu ngắn báo mình đang làm gì rồi mới làm.",
         ]
         if web_sid:
             lines += [
@@ -323,7 +347,11 @@ def extract_paths(text: str) -> list:
 # Media/liên kết NHÚNG trong markdown: ![alt](path) hoặc [text](path).
 # Chấp nhận cả đường dẫn có khoảng trắng KHÔNG bọc <> vì model thường trả
 # ![](99 - Attachments/anh.png), dù CommonMark chuẩn yêu cầu <...>.
-_MD_LINK_RE = re.compile(r"(!?)\[([^\]\n]*)\]\(\s*(?:<([^>\n]+)>|([^\n)]*?))\s*\)")
+# Target được phép chứa MỘT tầng ngoặc tròn cân bằng: tên file kiểu "30 Ngày Làm Chủ Antigravity
+# (CES Global).md" là chuyện thường trong wiki, và bản cũ (`[^\n)]*?`) cắt ngay ở dấu ")" đầu tiên,
+# nên link đúng bị coi là "không thấy file" và bị chuẩn hoá hụt đuôi (2026-09-09). Dashboard
+# (chat-render.js) đã nhận ngoặc cân bằng từ trước; hai đầu phải cùng một luật.
+_MD_LINK_RE = re.compile(r"(!?)\[([^\]\n]*)\]\(\s*(?:<([^>\n]+)>|((?:[^\n()]|\([^\n()]*\))*?))\s*\)")
 _MD_TITLE_RE = re.compile(r"""\s+(?:"[^"\n]*"|'[^'\n]*')\s*$""")
 
 
@@ -488,7 +516,7 @@ def collect_turn_files(reply_text: str, written_paths: list, t0: float,
 
     Ứng viên = file agent ghi bằng tool Write (written_paths) + đường dẫn tuyệt đối
     nhắc trong câu trả lời cuối + đường dẫn TƯƠNG ĐỐI trong vault nhúng dạng markdown
-    (![](attachments/x.png) - ảnh Javis tạo) khi có vault_root. Chỉ giữ file THẬT SỰ
+    (![](attachments/x.png) - ảnh Thansa tạo) khi có vault_root. Chỉ giữ file THẬT SỰ
     vừa thay đổi trong lượt (mtime >= t0) - nhắc tới file cũ sẽ không spam gửi lại; muốn
     gửi file cũ thì agent gọi endpoint /telegram/send-file. exclude = set path (normcase)
     đã gửi trong lượt qua endpoint, tránh gửi trùng.
@@ -503,7 +531,7 @@ def collect_turn_files(reply_text: str, written_paths: list, t0: float,
         except Exception:
             continue
     cands += extract_paths(reply_text)
-    # Ảnh/tệp Javis tạo trong lượt thường được NHÚNG dạng path tương đối trong vault
+    # Ảnh/tệp Thansa tạo trong lượt thường được NHÚNG dạng path tương đối trong vault
     # (![](attachments/x.png)); resolve về gốc vault để tự đính kèm về ĐÚNG phiên chat.
     cands += resolve_vault_relative(reply_text, vault_root)
 
@@ -537,7 +565,7 @@ def collect_turn_files(reply_text: str, written_paths: list, t0: float,
 # ============================================================
 # Hạ khối điều khiển xuống chữ cho kênh không phải web
 # ============================================================
-# Javis nhúng khối điều khiển dạng HTML comment ở cuối câu trả lời cho dashboard
+# Thansa nhúng khối điều khiển dạng HTML comment ở cuối câu trả lời cho dashboard
 # đọc (hiện chỉ còn JAVIS_ASK - vẽ nút lựa chọn). Kênh chữ thuần như Telegram không
 # hiểu mấy khối này, mà md_to_mdv2 chỉ escape chứ không bóc, nên không lọc là người
 # dùng nhìn thấy nguyên cụm "<\!\-\- JAVIS\_ASK: ...".
@@ -551,7 +579,7 @@ _MAX_ASK_OPTS = 4
 def _ask_to_text(payload: str) -> str:
     """JSON của khối JAVIS_ASK -> câu hỏi + danh sách đánh số. JSON hỏng -> chuỗi rỗng.
 
-    Người dùng Telegram nhắn lại "1" là xong: Javis đọc "1" trong ngữ cảnh câu hỏi
+    Người dùng Telegram nhắn lại "1" là xong: Thansa đọc "1" trong ngữ cảnh câu hỏi
     vừa hỏi thì tự hiểu, không cần lưu state.
     """
     try:

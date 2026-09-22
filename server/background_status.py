@@ -112,19 +112,21 @@ def promise_note(orchestration: str = "") -> str:
     """Dòng sự thật dán dưới câu trả lời có hứa mà KHÔNG có việc nền nào.
 
     Viết ở ngôi Javis, bằng lời nói, không bảng và không em dash (luật CLAUDE.md).
+
+    NGẮN CÓ CHỦ Ý (chủ repo báo 2026-09-15: "thi thoảng nó thông báo lỗi này không hiểu gì
+    luôn"). Bản cũ dài ba đoạn, giải thích cả cơ chế "lượt trả lời đóng lại khi nói xong" -
+    đúng nhưng là chuyện nội bộ, đọc giữa dòng chat thì chỉ thấy rối. Dòng này chỉ cần trả lời
+    hai câu hỏi của người đọc: có báo cáo nào tự về không, và giờ phải làm gì.
     """
     lines = [
-        "⚠ Thansa tự kiểm: lượt vừa rồi mình có hứa sẽ báo lại, nhưng mình KHÔNG tạo việc nền "
-        "nào nên sẽ không có báo cáo nào tự về đây. Lượt trả lời của mình đóng lại ngay khi "
-        "mình nói xong, không có ai đánh thức mình dậy để làm nốt.",
-        "Bạn nhắn lại một câu là mình làm ngay trong lượt sau, hoặc bảo mình \"giao thành việc "
-        "nền\" để mình đẩy vào hàng đợi và kết quả tự rơi về khung chat này.",
+        "⚠ Mình vừa hẹn sẽ báo lại nhưng KHÔNG đặt việc nền nào, nên sẽ không có báo cáo nào "
+        "tự về đây. Nhắn \"làm luôn\" là mình làm ngay, hoặc \"giao việc nền\" để mình đẩy vào "
+        "hàng đợi và kết quả tự rơi về khung chat này.",
     ]
     if orchestration and orchestration != "auto":
         lines.append(
-            "Nói thêm cho rõ: điều phối việc nền của brain này đang ở mức "
-            f"\"{orchestration}\", nghĩa là việc giao vào cũng chỉ nằm xếp hàng chứ chưa tự "
-            "chạy. Bật \"AI tự vận hành\" ở trang Việc nếu bạn muốn nó chạy một mình."
+            "Lưu ý thêm: việc nền của brain này chưa tự chạy, có giao thì cũng nằm chờ. Bật "
+            "\"AI tự vận hành\" ở trang Việc nếu muốn nó chạy một mình."
         )
     return "\n\n".join(lines)
 
@@ -168,7 +170,7 @@ def _reminder_item(rem: dict, chat_id: str) -> dict:
 
 def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",
                 orchestration: str = "off", running_loop: str = "",
-                now: float = 0.0) -> dict:
+                now: float = 0.0, voice_tasks: list = None) -> dict:
     """Gom việc nền còn sống thành một khung nhìn cho dải trạng thái của khung chat.
 
     Nhận dữ liệu THÔ đã đọc sẵn (không tự đi đọc kho) để test được mà không cần dựng cả server.
@@ -199,6 +201,10 @@ def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",
             items.append(_loop_item(lp, cid, str(running_loop or "")))
     for r in reminders or []:
         items.append(_reminder_item(r, cid))
+    # `voice_tasks` (voice_brain._PENDING) KHÔNG thành mục riêng: từ 0.57.20 mỗi việc nền của
+    # giọng đã là một THẺ THẬT trên trang Việc, nên thêm mục nữa là đếm đôi cùng một việc.
+    # Danh sách này chỉ dùng để đếm: nó là sự thật về việc CÒN SỐNG trong tiến trình (task
+    # asyncio), còn thẻ Kanban là bản ghi để nhìn và để lưu lại.
 
     # Việc CỦA KHUNG CHAT NÀY lên đầu, rồi tới việc đang chạy thật, rồi mới tới phần còn lại.
     order = {"running": 0, "review": 1, "blocked": 2, "ready": 3,
@@ -223,6 +229,9 @@ def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",
         "mine_count": len(mine),
         "running_count": len(running),
         "stalled_count": len(stalled),
+        # Đếm riêng việc nền của bộ não giọng: dashboard dùng số này để biết khi nào nên tự hỏi
+        # thăm "em vẫn đang xem" (chỉ hỏi thăm cho việc của chính cuộc nói chuyện này).
+        "voice_count": len(voice_tasks or []),
         "level": level,
         "orchestration": str(orchestration or "off"),
         "items": items[:MAX_ITEMS],

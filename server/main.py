@@ -6,6 +6,7 @@ Javis KHÔNG gọi Anthropic API trực tiếp. Mọi reasoning + tool calling �
 `claude` CLI đã cài trên máy → tự kế thừa MCP, skills, auth.
 """
 import localefmt   # múi giờ theo cấu hình, thay UTC+7 nhúng cứng
+import posixpath
 import os
 import json
 import math
@@ -20,6 +21,7 @@ import sys
 import uuid
 from pathlib import Path
 import re
+import urllib.parse
 import secrets
 import shutil
 import time
@@ -28,8 +30,9 @@ import yaml
 import fastyaml
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, UploadFile, File, Form, Request, Body, Header
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse, Response
+from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse, FileResponse, Response, RedirectResponse
 # edge_tts CỐ TÌNH không import ở đây mà nạp lười trong _tts_edge và /tts/voices.
 # Nó chiếm 944ms trong 2.263ms nạp main (41%), và kéo theo cả chuỗi aiohttp 212ms vào
 # đường khởi động, trong khi TTS là tính năng TUỲ CHỌN mà đa số phiên không đụng tới.
@@ -77,12 +80,15 @@ import media_gc       # dọn vùng cache media (attachments/ + inbox/) theo h�
 import inbox         # hòm thư: mọi kết quả chạy nền để lại một mẩu thư bền ở server
 import webpush       # thông báo đẩy trình duyệt (Web Push, tự mã hoá - không thêm thư viện)
 import stt            # nghe tin thoại (Whisper qua Groq) -> chữ, cho kênh Telegram/Zalo
+import nghe_sua       # sửa chữ nghe nhầm theo ngữ cảnh (David -> Javis) + hotwords cho Whisper
 import zalo_login
 import oauth_mcp
 import system_sync   # tầng năng lực HỆ THỐNG (skill/loop mặc định) - update theo phiên bản app
 import skill_router   # nguồn chân lý khám phá skill (canonical <brain>/skills) dùng chung mọi engine
 import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua javis_use_skill (tín hiệu DƯƠNG một chiều)
 import share_bundle   # xuất/nhập gói agent/skill/workflow (.zip) để chia sẻ giữa brain/người dùng
+import share_store    # link CHIA SẺ CÔNG KHAI của một file trong brain (/s/<token>)
+import share_render   # dựng trang xem cho link chia sẻ (markdown -> html, khung trang)
 import usage_store   # đếm token/chi phí Javis tự đo (đa nhà cung cấp)
 import usage_index   # dashboard token: index log thô Claude+Codex + query summary/insights
 import usage_parsers as up_parsers   # bảng giá + khớp model, dùng chung với indexer
@@ -114,7 +120,14 @@ import lang_registry      # sổ đăng ký: mọi thứ về một ngôn ngữ 
 import background_status  # việc nền còn sống của một khung chat + bắt lời hứa "xong em báo"
 import chatbot_log       # nhật ký hội thoại khách + thống kê câu bot trả lời không nổi
 import chatbot_runtime   # bộ giám sát Bot chuyên trách (mỗi bot một poller Telegram)
+import agent_avatar
+import agent_assets      # tài liệu & link gắn vào MỘT trợ lý (lưu trong frontmatter agent)
+import workflow_chat     # persona_cua_phien: kênh agent:/workflow: đổi cách _do_turn chạy lượt
 import chatbot_store     # kho bản ghi bot + token qua secrets_store
+import channel_accounts  # tài khoản kênh dạng token (0.61.0), bot chỉ trỏ tới
+import channels          # sổ đăng ký kênh của Hộp thư hội thoại (0.61.0)
+import conversations     # Hộp thư hội thoại khách: kho khách -> hội thoại -> tin (Chatbot V2)
+import zalo_personal_channel   # Hộp thư hội thoại: đọc tin Zalo cá nhân từ MCP theo cursor
 import deploy_info              # Javis đang đứng ở đâu (docker/native) - xem _deploy_mode
 import ollama_catalog           # danh mục model để gợi ý + tìm kiếm
 import ollama_local             # dò/tải/gỡ model trên máy chạy Ollama
@@ -122,9 +135,14 @@ import sessions                  # PROJECT_INSTRUCTIONS_MAX cho khối project t
 from sessions import get_store   # kho phiên hội thoại (sqlite + fts5): list/resume/search
 import compaction   # nén hội thoại dài cho engine API (tóm tắt phần cũ thay vì cắt bỏ)
 from chat_runtime import ChatRuntime
+import ui_bridge   # tool javis_ui bảo dashboard mở trang/file/việc rồi đợi trình duyệt đáp
+import ui_targets   # đổi lời nói ("mở trang công cụ") thành id trang dashboard hiểu
+import voice_brain   # Voice V2: bộ não giọng nói riêng (Antigravity sống lâu / Groq / Gemini...)
+import voice_live    # Voice V2: nghe nói thẳng qua Gemini Live / OpenAI Realtime
 
 app = FastAPI(title="Thansa OS")
 _CHAT_RUNTIME = ChatRuntime()
+ui_bridge.attach(_CHAT_RUNTIME)
 _CONTEXT_RUNTIME = context_runtime.get_runtime()
 _CAPABILITY_REGISTRY = capability_registry.get_registry()
 _CAPABILITY_RESOLVER = capability_resolver.get_resolver()
@@ -157,7 +175,11 @@ app.add_middleware(CORSMiddleware,
 
 # Đường dẫn KHÔNG cần đăng nhập. CHỈ các auth endpoint công khai (status/login/setup) -
 # KHÔNG để cả prefix /auth public vì /auth/disable, /auth/logout phải yêu cầu đăng nhập.
-_AUTH_PUBLIC_PREFIX = ("/static", "/health")
+# "/s/" CÓ GẠCH CHÉO CUỐI, và đó không phải chuyện thẩm mỹ. Hàng rào dưới kia so bằng
+# `path.startswith(p)`, nên khai "/s" sẽ mở công khai LUÔN /settings, /skills, /sessions,
+# /stt và mọi đường bắt đầu bằng chữ s. Xem test_share_link.py, phép thử đó tồn tại chỉ để
+# canh đúng một ký tự này.
+_AUTH_PUBLIC_PREFIX = ("/static", "/health", "/s/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/auth/status", "/auth/login", "/auth/setup",
                       "/brand-logo", "/tls-check",
@@ -176,16 +198,40 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/auth/status", "/auth/login", "/auth
 _AUTH_LOCAL_EXACT = ("/telegram/send-file", "/reminders", "/reminders/cancel", "/reminders/update")
 
 
+def duong_dan_router(request) -> str:
+    """Đường dẫn ĐÚNG NHƯ ROUTER dùng để chọn endpoint. Mọi hàng rào phải hỏi hàm này.
+
+    TUYỆT ĐỐI KHÔNG dùng `request.url.path` cho quyết định quyền. Starlette dựng lại URL
+    bằng cách nối "{scheme}://{header Host}{path}" rồi phân tích lại chuỗi đó, và nó KHÔNG
+    kiểm header Host một chữ nào (PYSEC-2026-161). Nên chỉ cần thêm một dấu "/" vào Host là
+    url.path bị nhét thêm tiền tố, trong khi router vẫn chọn endpoint theo scope["path"]:
+
+        GET /agents  +  Host: vps-cua-toi.com/static
+        -> request.url.path == "/static/agents"   (hàng rào thấy: đường công khai)
+        -> router vẫn chạy                /agents (endpoint thật, cần đăng nhập)
+
+    Đo thật trên chính app này ngày 16/09: request đó trả 200 kèm danh sách trợ lý thay vì
+    401, tức LÁCH HẲN cổng đăng nhập của mọi Javis mở ra Internet. scope["path"] là đường
+    dẫn router dùng, không dính header Host, nên hàng rào và endpoint đọc cùng một thứ.
+    """
+    return request.scope.get("path") or ""
+
+
 @app.middleware("http")
 async def _csrf_guard(request: Request, call_next):
-    """Chống CSRF-to-localhost + DNS-rebinding (xem web_security.py). Chạy TRƯỚC auth guard.
-    Không đụng client không-trình-duyệt (Claude CLI/Codex/curl không gửi Origin) và cùng-origin."""
+    """Chống CSRF-to-localhost + DNS-rebinding (xem web_security.py).
+    Không đụng client không-trình-duyệt (Claude CLI/Codex/curl không gửi Origin) và cùng-origin.
+
+    THỨ TỰ: middleware thêm SAU thì chạy TRƯỚC (Starlette bọc từ ngoài vào), nên thực tế
+    _auth_guard chạy TRƯỚC hàm này. Đừng đặt hàng rào chặn-mới ở đây rồi tưởng nó gác cho
+    auth: request bị auth trả 401 không bao giờ tới đây."""
     d = web_security.csrf_decision(request.method, request.headers.get("host", ""),
                                    request.headers.get("origin"), cfgmod.gate_active())
     if d:
         return JSONResponse({"error": d[1], "blocked": "web_security"}, status_code=d[0])
     # GET có tác dụng phụ (chạy workflow, duyệt node ghi): Origin không đủ, xem SIDE_EFFECT_GET.
-    n = web_security.navigation_decision(request.url.path, request.headers.get("sec-fetch-site"))
+    n = web_security.navigation_decision(duong_dan_router(request),
+                                         request.headers.get("sec-fetch-site"))
     if n:
         return JSONResponse({"error": n[1], "blocked": "web_security"}, status_code=n[0])
     return await call_next(request)
@@ -197,7 +243,7 @@ async def _auth_guard(request: Request, call_next):
     Khi chạy public (0.0.0.0) lần đầu chưa có mật khẩu → vẫn chặn để ÉP tạo tài khoản trước
     (setup_required), tránh hở dashboard điều khiển Claude full quyền ra Internet."""
     if cfgmod.gate_active():
-        path = request.url.path
+        path = duong_dan_router(request)   # KHÔNG phải request.url.path - xem duong_dan_router
         client_host = request.client.host if request.client else ""
         public = (path in _AUTH_PUBLIC_EXACT
                   or any(path.startswith(p) for p in _AUTH_PUBLIC_PREFIX)
@@ -243,6 +289,45 @@ mimetypes.add_type("image/webp", ".webp")
 app.mount("/static", StaticFiles(directory=str(DASHBOARD_PATH)), name="static")
 
 
+class _NenTinh:
+    """Nén gzip CHỈ cho `/static/`, không đụng bất cứ đường nào khác.
+
+    Vì sao cần nén: dashboard nạp 42 file js/css. Đo trên repo này 1.631 KB không nén, gzip
+    xuống 496 KB (giảm 69%). Mà `root()` đóng dấu `?v=<phiên bản>` lên MỌI file, nên mỗi bản
+    cập nhật là 42 URL đổi một lượt, cache `immutable` trượt sạch, trình duyệt kéo lại trọn
+    1,6 MB. Đó đúng là câu "update Javis xong vào chậm" người dùng báo (06/09).
+
+    VÌ SAO KHÔNG `app.add_middleware(GZipMiddleware)` THẲNG - đây là phần dễ làm sai nhất:
+    GZipMiddleware của Starlette NUỐT TRỌN response streaming rồi mới trả một cục. Đo thật
+    trên một SSE 5 chunk cách nhau 0,3 giây:
+
+        không nén : chunk về ở 0,01s / 0,31s / 0,61s / 0,91s / 1,21s
+        có nén    : CẢ NĂM chunk cùng về ở 1,50s
+
+    Javis có 4 endpoint `text/event-stream` (chat, terminal, việc nền). Bật nén toàn cục là
+    người dùng gõ câu hỏi rồi nhìn màn hình trống tới khi câu trả lời xong hẳn - đổi một lỗi
+    chậm lấy một lỗi nặng hơn hẳn.
+
+    Cổng chặn theo ĐƯỜNG DẪN chứ không theo content-type, và đó là cố ý: `/static/` chắc
+    chắn không bao giờ là stream, còn mọi đường khác thì có thể - kể cả route ai đó thêm vào
+    ngày mai. Lọc theo đường dẫn thì route mới mặc định AN TOÀN; lọc theo content-type thì
+    route mới mặc định dính bẫy.
+    """
+
+    def __init__(self, app, minimum_size: int = 1024):
+        self.app = app
+        self._gzip = GZipMiddleware(app, minimum_size=minimum_size)
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http" and scope.get("path", "").startswith("/static/"):
+            await self._gzip(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(_NenTinh, minimum_size=1024)
+
+
 @app.middleware("http")
 async def _phuc_vu_en(request: Request, call_next):
     """Nếu chọn English và có bản dịch dashboard/en/<file> thì phục vụ nó thay bản gốc.
@@ -269,16 +354,17 @@ async def _static_cache_headers(request: Request, call_next):
     Không có ?v= thì giữ nguyên (ETag/Last-Modified của StaticFiles vẫn lo revalidate).
     Thiếu header này trình duyệt phải hỏi lại ~27 file JS/CSS mỗi lần mở trang."""
     resp = await call_next(request)
-    if request.url.path == "/static/freshness.js":
+    duong = duong_dan_router(request)   # KHÔNG phải request.url.path - xem duong_dan_router
+    if duong == "/static/freshness.js":
         # Người gác cổng mà cũ theo thì nó gác cái gì. Nạp KHÔNG kèm `?v=` và luôn hỏi lại.
         resp.headers["Cache-Control"] = "no-cache"
-    elif request.url.path.startswith("/static/i18n/") and request.url.path.endswith(".json"):
+    elif duong.startswith("/static/i18n/") and duong.endswith(".json"):
         # Từ điển i18n được fetch KHÔNG có ?v= (i18n/index.js nạp trước khi biết phiên bản).
         # Không đóng dấu gì là trình duyệt cache theo heuristic và giữ từ điển CŨ qua cả bản
         # cập nhật - code mới gọi khoá mới, màn hình in nguyên mã khoá (khách báo 2026-08-30).
         # no-cache = được cache nhưng PHẢI hỏi lại mỗi lần (ETag/304 của StaticFiles lo phần rẻ).
         resp.headers["Cache-Control"] = "no-cache"
-    elif request.url.path.startswith("/static/") and request.query_params.get("v"):
+    elif duong.startswith("/static/") and request.query_params.get("v"):
         resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
     return resp
 
@@ -323,16 +409,125 @@ def _atomic_write_text(path, content: str, encoding: str = "utf-8"):
         raise
 
 
+# Chuẩn hoá: `memory` chữ thường. `Memory` chữ hoa chỉ còn là bố cục CŨ.
+_MEM_LINK_HOA_RE = re.compile(r"(?<![\w/])Memory/")
+
+
+def _thu_muc_bo_nho(root: Path) -> Path:
+    """Thư mục bộ nhớ của một brain. CHỈ ĐỌC - không tạo, không sửa gì.
+
+    Chuẩn là `memory` chữ thường. `Memory` chữ hoa là bố cục cũ chưa migrate, vẫn được tôn
+    trọng KHI ĐÓ LÀ BẢN DUY NHẤT - brain cũ không phải đổi mới dùng được. Đây là bản gốc của
+    luật "bộ nhớ nằm ở đâu"; mọi nơi khác phải hỏi qua đây chứ đừng chép lại.
+    """
+    mem = root / "memory"
+    if not mem.is_dir() and (root / "Memory").is_dir():
+        return root / "Memory"
+    return mem
+
+
+def _gop_chi_muc_bo_nho(src: Path, dst: Path) -> None:
+    """Nối các dòng của một MEMORY.md lạc vào bản chuẩn, bỏ dòng đã có sẵn.
+
+    MEMORY.md là DANH SÁCH ký ức chứ không phải nội dung một ký ức, nên xử như file thường
+    (đổi tên bản đến) là để lại hai chỉ mục rời nhau, mà chỉ một cái được nạp vào prompt.
+    Link trong dòng cũng đổi `Memory/` thành `memory/` cho khớp chỗ file vừa được chuyển tới.
+    """
+    them = [_MEM_LINK_HOA_RE.sub("memory/", l).rstrip()
+            for l in src.read_text(encoding="utf-8", errors="replace").splitlines()]
+    cu = dst.read_text(encoding="utf-8", errors="replace") if dst.exists() else ""
+    da_co = {l.strip() for l in cu.splitlines()}
+    moi = [l for l in them if l.strip() and l.strip() not in da_co]
+    if not moi:
+        return
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    with open(dst, "a", encoding="utf-8") as fh:
+        if cu and not cu.endswith("\n"):
+            fh.write("\n")
+        fh.write("\n".join(moi) + "\n")
+
+
+def _ten_khong_dung_hang(dst: Path) -> Path:
+    """Tên trống cạnh `dst` để giữ bản đến mà không đè bản đang có."""
+    for i in range(1, 100):
+        hau = " (từ Memory hoa)" if i == 1 else f" (từ Memory hoa {i})"
+        p = dst.with_name(f"{dst.stem}{hau}{dst.suffix}")
+        if not p.exists():
+            return p
+    return dst.with_name(f"{dst.stem} (từ Memory hoa {int(time.time())}){dst.suffix}")
+
+
+def _gop_memory_lac_chu_hoa(root: Path, mem: Path) -> None:
+    """Gộp `<root>/Memory` lạc chữ hoa vào thư mục bộ nhớ chuẩn. KHÔNG đè file nào.
+
+    VÌ SAO CÓ HÀM NÀY (vụ 06/09/2026)
+    Linux phân biệt hoa thường, nên `Memory/` và `memory/` là HAI thư mục thật sự khác nhau -
+    trên máy Mac thì không, nên lỗi này không bao giờ lộ ra lúc chạy thử. Tài liệu của chính
+    Javis lại dạy sai đường: CLAUDE.md và AGENTS.md seed vào mỗi brain đều viết `Memory/` hoa,
+    trong khi MỌI đường đọc đều lấy `memory/` thường. Model làm theo tài liệu, ghi ký ức vào
+    `Memory/`, và ký ức đó BIẾN MẤT: không vào chỉ mục nạp mỗi lượt, không vào memory_index,
+    còn `/brain/migrate` thì từ chối gộp vì "memory đã tồn tại". Không một dòng lỗi nào.
+
+    Hàm này chữa các brain đã dính; phần dạy sai đường đã sửa ở CLAUDE.md và SCHEMA_SEED.
+    Gọi từ `_brain_memory_dir` - cửa duy nhất mà mọi đường đọc/ghi bộ nhớ đều đi qua - nên
+    brain tự lành ở lượt chat kế tiếp, không cần ai bấm gì.
+
+    Va chạm thì GIỮ CẢ HAI BẢN: thừa một file dễ dọn, mất một ký ức thì không lấy lại được.
+    """
+    lac = root / "Memory"
+    if mem.name == "Memory" or not lac.is_dir():
+        return                      # brain cũ chỉ có bản hoa: bố cục hợp lệ, không đụng vào
+    try:
+        if lac.samefile(mem):
+            return                  # macOS/Windows: hai tên, MỘT thư mục - "gộp" là tự dẫm chân
+    except OSError:
+        return
+    chuyen, ca_hai, loi = [], [], []
+    for src in sorted(p for p in lac.rglob("*") if p.is_file()):
+        rel = src.relative_to(lac)
+        try:
+            dst = mem / rel
+            if rel.name == "MEMORY.md":
+                _gop_chi_muc_bo_nho(src, dst)
+                src.unlink()
+            elif dst.exists() and dst.read_bytes() == src.read_bytes():
+                src.unlink()        # trùng khít từng byte: bỏ bản thừa, không sinh rác
+            else:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                if dst.exists():
+                    dst = _ten_khong_dung_hang(dst)
+                    ca_hai.append(str(rel).replace("\\", "/"))
+                shutil.move(str(src), str(dst))
+            chuyen.append(str(rel).replace("\\", "/"))
+        except Exception as e:
+            loi.append(f"{rel}: {e}")
+    for d in sorted((p for p in lac.rglob("*") if p.is_dir()), key=lambda p: -len(p.parts)):
+        try:
+            d.rmdir()
+        except OSError:
+            pass
+    try:
+        lac.rmdir()
+    except OSError:
+        loi.append("Memory/ còn file lạ nên giữ nguyên thư mục")
+    if chuyen or loi:
+        print(f"[memory hoa-thường] {root}: gộp {len(chuyen)} file từ Memory/ vào {mem.name}/"
+              + (f"; giữ cả hai bản do trùng tên: {ca_hai}" if ca_hai else "")
+              + (f"; lỗi: {loi}" if loi else ""), file=__import__('sys').stderr)
+
+
 def _brain_memory_dir(brain: str) -> Path:
-    """Folder bộ nhớ TRONG brain đang chọn. Cấu trúc mới: <root>/memory; fallback cũ <root>/Memory."""
+    """Folder bộ nhớ TRONG brain đang chọn, đã tạo sẵn khung và tự lành nếu lạc chữ hoa."""
     base = Path(__file__).parent.parent
     if not brain or brain == "brain":
         root = _default_brain_dir()
     else:
         root = Path(brain) if os.path.isdir(brain) else _default_brain_dir()
-    mem = root / "memory"
-    if not mem.is_dir() and (root / "Memory").is_dir():
-        mem = root / "Memory"   # vault cũ chưa migrate
+    mem = _thu_muc_bo_nho(root)
+    try:
+        _gop_memory_lac_chu_hoa(root, mem)
+    except Exception as e:
+        print(f"[memory hoa-thường] {e}", file=__import__('sys').stderr)
     try:
         (mem / "facts").mkdir(parents=True, exist_ok=True)
         (mem / "conversations").mkdir(parents=True, exist_ok=True)
@@ -342,7 +537,6 @@ def _brain_memory_dir(brain: str) -> Path:
     except Exception as e:
         print(f"[memory dir error] {e}", file=__import__('sys').stderr)
     return mem
-
 # Trần cho chỉ mục bộ nhớ nạp vào MỌI lượt chat. Đo trên brain thật: 87 ký ức = 18.363 ký tự
 # (~5,7k token) và tăng tuyến tính theo số ký ức - đúng cái bệnh curator vừa mắc, không có gì
 # chặn. Trần này chưa cắt gì hôm nay (18.363 < 20.000), nó biến đường dốc thành đường phẳng.
@@ -355,7 +549,7 @@ def _fit_memory_index(mem: str, cap: int = None) -> str:
 
     Hạ dần theo bậc: giữ nguyên -> rút mô tả còn 100 ký tự -> còn 60 -> chỉ còn tiêu đề+link
     -> (cùng lắm) cắt bớt dòng kèm lời chỉ đường. Rút mô tả KHÔNG mất năng lực nhớ: tiêu đề và
-    đường dẫn file vẫn còn nguyên, chi tiết đầy đủ vẫn nằm trong Memory/facts/*.md và đọc được
+    đường dẫn file vẫn còn nguyên, chi tiết đầy đủ vẫn nằm trong memory/facts/*.md và đọc được
     bất cứ lúc nào. Mất hẳn dòng mới là mất trí nhớ, nên đó là bậc CUỐI.
     """
     cap = cap or MEMORY_INDEX_MAX
@@ -385,7 +579,7 @@ def _fit_memory_index(mem: str, cap: int = None) -> str:
         got = rebuild(desc_cap)
         if len(got) <= cap:
             note = ("\n\n> (Mô tả trong chỉ mục đã rút gọn cho vừa ngữ cảnh. Chi tiết đầy đủ của "
-                    "từng ký ức nằm trong file tương ứng ở Memory/facts/ - cứ đọc khi cần.)")
+                    "từng ký ức nằm trong file tương ứng ở memory/facts/ - cứ đọc khi cần.)")
             return got + note
 
     # Bậc cuối: buộc phải bỏ bớt dòng. Giữ các dòng ĐẦU (ký ức nền tảng ghi sớm nhất) và nói rõ
@@ -402,7 +596,7 @@ def _fit_memory_index(mem: str, cap: int = None) -> str:
     con_lai = sum(1 for l in lines if _MEM_ITEM_RE.match(l)) - items
     return "\n".join(kept) + (
         f"\n\n> (Chỉ mục quá dài nên còn {con_lai} ký ức chưa liệt kê ở đây. "
-        "Đọc Memory/MEMORY.md để xem đủ danh sách, và Memory/facts/ để xem chi tiết.)")
+        "Đọc memory/MEMORY.md để xem đủ danh sách, và memory/facts/ để xem chi tiết.)")
 
 
 # ── Khối PROJECT ghép vào system prompt ──────────────────────────────────────
@@ -455,7 +649,24 @@ def _project_block(project_id: str, chi_huong_dan: bool = False) -> str:
     if not files and not links:
         return ra
 
-    brain = p.get("brain") or "brain"
+    dong, da_nap = _liet_ke_tai_lieu(p.get("brain") or "brain", files, links)
+    if dong:
+        ra += ("\n\n# === TÀI LIỆU & LINK CỦA PROJECT ===\n"
+               "Đây là DANH SÁCH, không phải nội dung: mở file bằng tool đọc file khi cần, "
+               "đừng đoán nội dung từ cái tên. Link chỉ mở được nếu lượt này có tool duyệt web; "
+               "không có thì nói thẳng chứ đừng đoán nội dung trang.\n" + "\n".join(dong))
+    if da_nap:
+        ra += ("\n\n# === NỘI DUNG FILE ĐÃ GHIM (nạp sẵn, không cần mở lại) ===" + "".join(da_nap))
+    return ra
+
+
+def _liet_ke_tai_lieu(brain: str, files: list, links: list):
+    """(dòng liệt kê, nội dung file đã ghim) cho một danh sách tài liệu + link.
+
+    Tách khỏi `_project_block` vì khung "file & link của CUỘC TRÒ CHUYỆN" gắn tay dùng lại
+    nguyên bộ luật này. Hai chỗ mà chép đôi thì trần token trôi lệch, và trần token trôi lệch
+    là kiểu hỏng không ai thấy cho tới lúc hoá đơn hoặc lỗi quá hạn mức xuất hiện.
+    """
     dong, da_nap, con_lai = [], [], PROJECT_GHIM_TONG_MAX
     for f in files[:PROJECT_FILES_LIET_KE]:
         ten, duong = f.get("name") or "", f.get("path") or ""
@@ -490,24 +701,87 @@ def _project_block(project_id: str, chi_huong_dan: bool = False) -> str:
     for l in links[:PROJECT_FILES_LIET_KE]:
         dong.append(f"- [link] {l.get('label') or l.get('url')} - {l.get('url')}"
                     + (" (ghim)" if l.get("pinned") else ""))
+    return dong, da_nap
+
+
+def _session_block(session_id: str) -> str:
+    """Tài liệu & link người dùng TỰ GẮN vào CUỘC TRÒ CHUYỆN này. "" nếu chưa gắn gì.
+
+    Song sinh với `_project_block`, và cố ý cùng trần token: project là "luôn dùng cho mọi
+    cuộc trong nhóm", còn cái này là "chỉ cuộc này". Không có nó thì nút thêm file chỉ là một
+    danh sách để ngắm - người dùng gắn bảng giá vào cuộc rồi hỏi ngay, và Javis trả lời như
+    chưa hề thấy gì.
+
+    Ghim thì NẠP NỘI DUNG, y như project: gắn tên vào cho biết chỗ mà tìm, ghim vào là bảo
+    Javis đọc sẵn.
+    """
+    if not session_id:
+        return ""
+    try:
+        store = get_store()
+        sess = store.get_session(session_id)
+        if not sess:
+            return ""
+        files = store.list_session_files(session_id)
+        links = store.list_session_links(session_id)
+    except Exception:
+        return ""
+    if not files and not links:
+        return ""
+    dong, da_nap = _liet_ke_tai_lieu(sess.get("brain") or "brain", files, links)
+    ra = ""
     if dong:
-        ra += ("\n\n# === TÀI LIỆU & LINK CỦA PROJECT ===\n"
-               "Đây là DANH SÁCH, không phải nội dung: mở file bằng tool đọc file khi cần, "
-               "đừng đoán nội dung từ cái tên. Link chỉ mở được nếu lượt này có tool duyệt web; "
-               "không có thì nói thẳng chứ đừng đoán nội dung trang.\n" + "\n".join(dong))
+        ra += ("\n\n# === TÀI LIỆU & LINK NGƯỜI DÙNG GẮN VÀO CUỘC NÀY ===\n"
+               "Người dùng tự gắn tay ở khung \"Trong cuộc trò chuyện này\", nên đây là thứ họ "
+               "coi là quan trọng cho ĐÚNG cuộc này. Vẫn là DANH SÁCH chứ không phải nội dung: "
+               "mở file bằng tool đọc file khi cần, đừng đoán nội dung từ cái tên.\n"
+               + "\n".join(dong))
     if da_nap:
-        ra += ("\n\n# === NỘI DUNG FILE ĐÃ GHIM (nạp sẵn, không cần mở lại) ===" + "".join(da_nap))
+        ra += ("\n\n# === NỘI DUNG FILE ĐÃ GHIM TRONG CUỘC NÀY (nạp sẵn, không cần mở lại) ==="
+               + "".join(da_nap))
+    return ra
+
+
+def _agent_assets_block(brain: str, meta: dict) -> str:
+    """Tài liệu & link gắn vào MỘT trợ lý, ghép vào system prompt của chính trợ lý đó.
+
+    Em út của `_project_block` và `_session_block`, và cố ý cùng trần token (chúng dùng
+    chung `_liet_ke_tai_lieu`). Khác về PHẠM VI: project là "mọi cuộc trong nhóm này", cuộc
+    là "chỉ cuộc này", còn cái này là "mọi lần trợ lý này làm việc" - chat trực tiếp ở trang
+    Cộng sự lẫn mỗi bước quy trình gọi tới nó. Đó là lý do nó đứng ở đây chứ không nhồi vào
+    build_system_prompt: trợ lý có prompt riêng, KHÔNG đi qua CLAUDE.md của chủ.
+    """
+    try:
+        kho = agent_assets.doc(meta)
+    except Exception:
+        return ""
+    files, links = kho["files"], kho["links"]
+    if not files and not links:
+        return ""
+    dong, da_nap = _liet_ke_tai_lieu(brain, files, links)
+    ra = ""
+    if dong:
+        ra += ("\n# === TÀI LIỆU & LINK CỦA BẠN ===\n"
+               "Chủ gắn sẵn cho vai này, nên đây là thứ bạn được coi là ĐÃ BIẾT CHỖ. Vẫn là "
+               "DANH SÁCH chứ không phải nội dung: mở file bằng tool đọc file khi cần, đừng "
+               "đoán nội dung từ cái tên. Link chỉ mở được nếu lượt này có tool duyệt web.\n"
+               + "\n".join(dong) + "\n")
+    if da_nap:
+        ra += ("\n# === NỘI DUNG FILE ĐÃ GHIM (nạp sẵn, không cần mở lại) ===" + "".join(da_nap)
+               + "\n")
     return ra
 
 
 def build_system_prompt(brain: str = "brain", include_memory: bool = True,
                         include_skills: bool = True,
                         lang: "lang_mod.LangDecision | str | None" = None,
-                        project_id: str = "") -> str:
+                        project_id: str = "", session_id: str = "") -> str:
     """CLAUDE.md + nạp MEMORY.md của vault đang chọn → Javis luôn nhớ ngữ cảnh.
 
     `project_id`: hội thoại đang nằm trong project nào. Có thì ghép thêm hướng dẫn riêng +
-    danh sách tài liệu của project đó (xem `_project_block`)."""
+    danh sách tài liệu của project đó (xem `_project_block`).
+    `session_id`: cuộc trò chuyện đang chạy. Có thì ghép thêm tài liệu & link người dùng tự
+    gắn vào ĐÚNG cuộc đó (xem `_session_block`)."""
     base = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exists() else ""
     # Chốt ngôn ngữ NGAY đầu hàm: khối NGÔN NGỮ ở cuối cần nó, mà danh sách skill ở giữa cũng
     # cần (mô tả skill là bề mặt ĐỐI CHIẾU với câu người dùng vừa gõ, nên nó phải cùng thứ
@@ -528,6 +802,13 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
     if project_id:
         try:
             base += _project_block(project_id)
+        except Exception:
+            pass
+    # Ngay sau khối project, vì cùng loại: project là tài liệu của cả NHÓM, cái này là tài
+    # liệu của riêng CUỘC đang chạy - hẹp hơn nên đứng sau, gần câu hỏi hơn.
+    if session_id:
+        try:
+            base += _session_block(session_id)
         except Exception:
             pass
     # Đường dẫn lớp Agentic của vault đang làm việc (để Javis tạo agent/workflow/loop qua chat)
@@ -555,6 +836,15 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
         f"- WORKFLOW: tạo/sửa tại `{wf}/<slug>.md`\n"
         f"- LOOP (nhiệm vụ lặp vô hạn): tạo/sửa tại `{lp}/<slug>.md`\n"
         f"- SKILL: tạo/sửa tại `{sk}/<slug>/SKILL.md` (tự mirror sang .claude/skills cho Claude native)\n"
+        f"- FILE KHÁC (bài viết, báo cáo, nháp, dữ liệu): ghi VÀO TRONG vault root ở trên bằng đường "
+        f"dẫn TUYỆT ĐỐI `{root}/<thư mục>/<tên file>`. TUYỆT ĐỐI không ghi tương đối theo thư mục "
+        "làm việc và không ghi ra ngoài vault: file ngoài vault không hiện ở trang Tệp tin và mất "
+        "khi cập nhật. Trong câu trả lời, dẫn link bằng đường dẫn TƯƠNG ĐỐI so với vault root "
+        "(vd `bai-viet/bai-1.txt`), KHÔNG dùng giao thức `file://` và không mã hoá %20 dù harness "
+        "có dặn khác (khung chat và Telegram mở không được), và CHỈ dẫn link tới file đã ghi xong "
+        "thật. Khi đếm hay liệt kê "
+        "file (vd \"còn bao nhiêu bài chưa xong\"), liệt kê lại thư mục bằng tool ngay lúc đó, "
+        "đừng nhớ lại từ lượt trước.\n"
         "Khi user yêu cầu tạo/sửa agent, workflow hoặc loop qua chat, ghi file .md đúng định dạng "
         "(xem mục 'Tạo/sửa Agent & Workflow qua chat' và 'Điều phối' trong system prompt) bằng "
         "ĐƯỜNG DẪN TUYỆT ĐỐI ở trên. Trang Agents/Workflows/Việc định kỳ sẽ tự nhận file mới."
@@ -644,7 +934,7 @@ def build_adaptive_source_prompt(brain: str = "brain", include_memory: bool = Fa
 
 # Redaction patterns - port subset từ hermes-agent/agent/redact.py.
 # Bảo vệ log_conversation() khỏi việc ghi vĩnh viễn API key / Telegram bot token /
-# JWT vào brain/Memory/conversations/*.md khi user vô tình paste vào chat
+# JWT vào brain/memory/conversations/*.md khi user vô tình paste vào chat
 # (file này thường bị commit lên git → leak vĩnh viễn).
 _SECRET_PREFIX_RE = re.compile(
     r"(?<![A-Za-z0-9_-])("
@@ -839,7 +1129,26 @@ async def root(request: Request = None):
     ver = _app_version() or "0"
     # Vân tay tính TRƯỚC khi đổi `?v=` - regex tìm theo `?v=` nên thứ tự này bắt buộc.
     fps = _asset_fps(html)
-    html = re.sub(r'(/static/[\w./-]+\.(?:js|css))\?v=[\w.]+', r'\1?v=' + ver, html)
+    # Khoá cache theo VÂN TAY TỪNG FILE, không theo số phiên bản chung.
+    #
+    # Trước đây mọi file mang `?v=<phiên bản app>`, nên bump VERSION là 42 URL đổi MỘT LƯỢT
+    # dù phần lớn file không hề sửa. Cộng với `max-age=31536000, immutable` ở middleware trên,
+    # mỗi bản cập nhật bắt trình duyệt tải lại trọn bộ tài sản tĩnh - đúng câu người dùng báo
+    # 06/09: "update Javis xong nó load vào chậm". Sửa một dòng lỗi chính tả trong console.js
+    # không có lý do gì bắt tải lại cả graph.js lẫn lucide-icons.js.
+    #
+    # `fps` ngay dòng trên đã có sẵn crc32 từng file (dùng cho freshness.js), nên đổi khoá
+    # sang nó là miễn phí. File nào thật sự đổi mới đổi URL; file không đổi giữ nguyên cache.
+    # Rơi về `ver` khi không băm được (file lạ, lỗi đọc) - thà bể cache còn hơn phục vụ đồ cũ.
+    html = re.sub(r'(/static/([\w./-]+\.(?:js|css)))\?v=[\w.]+',
+                  lambda m: m.group(1) + "?v=" + (fps.get(m.group(2)) or ver), html)
+    # /brand-logo cũng phải bể cache theo phiên bản. Nó KHÔNG nằm dưới /static nên không lọt
+    # vào regex trên, và nó được phục vụ kèm max-age=60 - nghĩa là đổi logo mặc định trong
+    # một bản cập nhật xong người dùng vẫn thấy logo cũ cho tới khi tự bấm Ctrl+Shift+R.
+    # Con số `?v=` trong index.html trước đây gõ tay, và đúng như mọi con số gõ tay khác,
+    # nó đứng yên ở 5 qua hàng chục bản.
+    html = html.replace("/brand-logo?v=5", "/brand-logo?v=" + ver).replace(
+        'src="/brand-logo"', 'src="/brand-logo?v=' + ver + '"')
     # Nhúng phiên bản + vân tay vào chính trang. index.html luôn tải mới (no-store) nên khối
     # này LUÔN đúng, kể cả khi mọi file JS quanh nó đã cũ - đó chính là điểm tựa để
     # freshness.js phát hiện ra chuyện đó.
@@ -1570,6 +1879,47 @@ def _tg_ghim(mcfg) -> dict:
     """{'provider','model'} đang GHIM cho kênh Telegram, hoặc {} nếu đang theo model chính."""
     tg = (mcfg or {}).get("telegram") or {}
     return {"provider": tg["provider"], "model": tg.get("model") or ""} if tg.get("provider") else {}
+
+
+def _model_cua_agent(brain: str, slug: str) -> dict:
+    """{'provider','model'} mà file Agent tự chọn, hoặc {} nếu nó để "Mặc định".
+
+    Agent CŨ chỉ lưu tên model (chưa có trường `model_provider`): suy nhà từ chính tên model
+    bằng `_agent_model_provider`, đúng cách mà bước workflow vẫn suy - chứ không bỏ qua, kẻo
+    agent cũ thành ra không có model trong khi người dùng đã chọn hẳn hoi.
+    """
+    slug = (slug or "").strip()
+    if not slug:
+        return {}
+    try:
+        meta, _ = _read_md(_agents_dir(brain or "brain") / f"{slug}.md")
+    except Exception:      # noqa: BLE001 - agent bị xoá/đổi slug: coi như không chọn model
+        return {}
+    mdl = (meta.get("model") or "").strip()
+    if not mdl:
+        return {}
+    return {"provider": _agent_model_provider(mdl, (meta.get("model_provider") or "").strip()),
+            "model": mdl}
+
+
+def _chat_provider_bot(mcfg, bot):
+    """Provider cho một lượt của BOT CHUYÊN TRÁCH (chatbot nói với khách ngoài).
+
+    Bot mượn prompt của một Agent, nên nó phải mượn luôn MODEL của Agent đó: chủ vào Cài đặt
+    trợ lý chọn model nào thì bot chạy đúng model ấy ra ngoài. Trước 0.62.3 bot luôn chạy model
+    CHÍNH, nên chọn model cho agent xong bật bot lên là chạy một model khác hẳn mà không có
+    dấu hiệu nào - chủ repo hỏi thẳng 21/09.
+
+    Agent để "Mặc định" thì về model chính, y như chat trên dashboard. Luật rơi-về vẫn là của
+    `_chat_provider_for_session`: nhà đã gỡ hay key đã bị xoá thì lui về model chính chứ không
+    để bot chết câm trước mặt khách.
+    """
+    a = (bot or {}).get("agent") or {}
+    g = _model_cua_agent(a.get("brain") or "brain", a.get("slug") or "")
+    if not g:
+        return _chat_provider(mcfg)
+    return _chat_provider_for_session(mcfg, {"pinned_provider": g["provider"],
+                                             "pinned_model": g["model"]})
 
 
 def _chat_provider_kenh(mcfg, channel):
@@ -2833,7 +3183,15 @@ def _cli_do_sau_khac(cli, mod, reasoning, message):
     `mod` là module của engine (`grok_cli` / `antigravity_cli`) - chính nó giữ `co_effort`, và
     chính nó biết bản CLI trên máy này khai những gì. Hai đường KHÔNG cộng dồn, cùng lý do đã
     ghi ở `_cli_do_sau`.
+
+    Chốt chặn ĐẦU TIÊN cho ca "model tự mang mức nghĩ trong tên" (Antigravity:
+    `gemini-3.8-flash-medium`): với model đó, cờ `--effort` đúng cú pháp vẫn làm CLI thoát mã 1
+    kèm "conflicts with --effort", mất trọn lượt chat. Nên hỏi module trước, và rơi về câu nhắc
+    trong prompt y như mọi bản CLI không có cờ - chọn model coi như đã chọn mức nghĩ rồi.
     """
+    khoa = getattr(mod, "model_khoa_effort", None)
+    if khoa and khoa(getattr(cli, "model", "") or ""):
+        return _nhac_suy_nghi(reasoning, message)
     co = _co_effort_lui(mod, reasoning)
     if co:
         try:
@@ -2986,9 +3344,9 @@ def _apply_mcp(cli, mode="full", brain=None):
     không cần --disallowedTools. Hub tắt: per-server + --disallowedTools như cũ."""
     try:
         cli.javis_mode = mode   # engine SDK dùng để enforce min_mode plugin in-process
-        # Brain đang làm việc → engine truyền xuống ctx của plugin. KHÔNG suy từ cwd: chat chạy
-        # với cwd=CLAUDE_CWD (gốc project, main.py:318) chứ không phải thư mục brain, nên suy từ
-        # cwd là luôn trượt đúng ở đường chat - nơi bug thật sự xảy ra.
+        # Brain đang làm việc → engine truyền xuống ctx của plugin. Đặt TƯỜNG MINH, không suy từ
+        # cwd: trước 0.55.58 chat chạy với cwd=CLAUDE_CWD (gốc project) nên suy từ cwd từng trượt
+        # đúng ở đường chat; nay chat đã chạy cwd=brain, nhưng đặt rõ thì đúng ở MỌI chỗ dựng engine.
         cli.javis_vault = _brain_root(brain) if brain else None
         if _hub_enabled():
             cli.mcp_config = mcp_hub.claude_config_path(mode)
@@ -3389,6 +3747,15 @@ packs_routes.register(app, packs_routes.PacksDeps(
     # main.py, mà lời gọi register phải nằm đúng chỗ này để giữ thứ tự route. Lambda hoãn
     # việc tra tên tới lúc thật sự gọi, khi đó hàm đã tồn tại.
     brain_root=lambda b: _brain_root(b),
+))
+
+# Công cụ TUỲ CHỌN (trình duyệt cho Javis tự kiểm thử giao diện). Đăng ký NGAY SAU trang Gói vì
+# cùng một họ: cả hai đều mang thứ mới về máy, nên dùng chung đúng một luật xác thực.
+import routes.tools as tools_routes   # noqa: E402
+
+tools_routes.register(app, tools_routes.ToolsDeps(
+    co_phien=lambda r: cfgmod.valid_session(r.cookies.get("javis_session", "")),
+    lam_moi_hub=lambda: (mcp_hub.invalidate_cache(), _write_codex_profile()),
 ))
 
 
@@ -3869,6 +4236,31 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             cfg["dashboard"]["graph_enabled"] = bool(patch["graph_enabled"])
         if "auto_resume" in patch:
             cfg["dashboard"]["auto_resume"] = bool(patch["auto_resume"])
+        if "pet" in patch:
+            # Linh vật góc màn hình (dashboard/pet.js). LỌC TỪNG KHOÁ chứ không nuốt cả
+            # object: đây là thứ được ghi từ trình duyệt, và một object tự do trong
+            # settings.json là chỗ để rác lọt vào rồi ở lại mãi.
+            pet_cu = cfg["dashboard"].get("pet") or {}
+            pet_moi = patch.get("pet") or {}
+            if not isinstance(pet_moi, dict):
+                pet_moi = {}
+            pet = dict(pet_cu)
+            if "enabled" in pet_moi:
+                pet["enabled"] = bool(pet_moi["enabled"])
+            for k in ("shape", "palette", "side", "size", "eye", "eyeSize"):
+                v = pet_moi.get(k)
+                # Gạch dưới cũng là ký tự HỢP LỆ: khoá cỡ lớn nhất tên là "rat_lon", mà luật
+                # cũ chỉ tha dấu gạch ngang nên isalnum() trả False và cỡ đó bị loại LẶNG LẼ -
+                # người dùng chọn "Rất lớn", màn hình đổi ngay, F5 xong về cỡ cũ mà không có
+                # một dòng lỗi nào (chủ dự án báo 15/09).
+                if isinstance(v, str) and 0 < len(v) <= 24 and v.replace("-", "").replace("_", "").isalnum():
+                    pet[k] = v
+            if "pos" in pet_moi:
+                try:
+                    pet["pos"] = max(0.0, min(1.0, float(pet_moi["pos"])))
+                except (TypeError, ValueError):
+                    pass
+            cfg["dashboard"]["pet"] = pet
     elif section == "image":
         cfg.setdefault("image", {})
         if "strip_c2pa" in patch:
@@ -3884,6 +4276,32 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # /settings rồi POST nguyên object về) mà lưu thì đè mất key thật.
         if patch.get("elevenlabs_key") and not patch["elevenlabs_key"].strip().startswith("••••"):
             v["elevenlabs_key"] = patch["elevenlabs_key"].strip()
+        # Voice V2 (chế độ nói chuyện, bộ não giọng, nghe bằng gì, nhà cung cấp Live). Ô CHỌN chỉ
+        # nhận giá trị có trong danh sách gốc (voice_brain / voice_live) để giá trị lạ không âm
+        # thầm làm hỏng lượt nói; ô GÕ nhận cả chuỗi rỗng vì "để trống" là lựa chọn THẬT (bỏ bộ
+        # não giọng, hay dùng tên model mặc định của hãng).
+        # Thêm ô mới ở thẻ cài đặt giọng nói thì PHẢI nối thêm vào đây: endpoint này dùng
+        # allowlist từng key, quên là người dùng bấm Lưu thấy báo xong mà F5 là mất sạch
+        # (test_luu_cai_dat_giong.py canh đúng chuyện đó).
+        if patch.get("mode") in voice_brain.MODES:
+            v["mode"] = patch["mode"]
+        if "brain_provider" in patch and str(patch["brain_provider"] or "") in voice_brain.BRAIN_PROVIDERS:
+            v["brain_provider"] = str(patch["brain_provider"] or "")
+        if patch.get("stt_provider") in voice_brain.STT_PROVIDERS:
+            v["stt_provider"] = patch["stt_provider"]
+        if patch.get("live_provider") in voice_live.PROVIDERS:
+            v["live_provider"] = patch["live_provider"]
+        # Lọc tạp âm (ô gạt, mặc định bật). Bật thì bộ não giọng cắt phần không nói với Javis
+        # khỏi câu, và bỏ hẳn lượt nào chỉ toàn tiếng TV hay người khác trong phòng.
+        if "loc_tap_am" in patch:
+            v["loc_tap_am"] = bool(patch["loc_tap_am"])
+        for k in ("brain_model", "stt_model", "live_model", "live_voice"):
+            if k in patch:
+                v[k] = str(patch[k] or "").strip()
+        # Từ hay nghe nhầm (hotwords): chuỗi tự do, chuẩn hoá qua nghe_sua để lưu gọn; rỗng là
+        # xoá hết từ người dùng khai (tên trợ lý vẫn luôn có, không cần lưu).
+        if "hotwords" in patch:
+            v["hotwords"] = ", ".join(nghe_sua.tach_tu_vung(patch.get("hotwords")))
     elif section == "password":
         # Đổi mật khẩu KHÔNG đi qua đây nữa - xem /auth/password. Đường này không đòi mật khẩu
         # hiện tại VÀ nhận cả token API scope `full`, nghĩa là một token rò ra là đổi được mật
@@ -4332,7 +4750,7 @@ async def reflect(brain: str = Form("brain")):
     qua git (git-init khi bấm) + secret-scan trước commit. force_write=True vì đây là chủ đích
     của user (ghi bất kể mode dry-run), caps = memory+wiki (skill giữ off, dựng ở Phase 3)."""
     if not find_claude_cli():
-        return {"ok": False, "error": "Claude CLI chưa cài"}
+        return {"ok": False, "error": claude_cli.cau_thieu_cli("claude", "Claude")}
     g = git_brain.ensure_git_repo(_brain_root(brain))   # consent thủ công → git-init để undo được
     res = await learn_feature.run_once(
         brain, reason="reflect", force_write=True,
@@ -4652,10 +5070,14 @@ def _check_structure(root: Path):
     for it in STANDARD_STRUCTURE:
         present, where = False, None
         if it["kind"] == "dir":
-            for d in top_dirs:
-                if re.match(it["detect"], d.strip(), re.IGNORECASE):
-                    present, where = True, d
-                    break
+            # `detect` khớp KHÔNG phân biệt hoa thường (vault ngoài đời có cả "Sources" lẫn
+            # "sources"), nên trên Linux nó khớp được CẢ HAI thư mục khi chỉ khác mỗi chữ hoa.
+            # Trước đây lấy bản nào `os.listdir` trả trước, tức bảng Cấu trúc có thể chỉ vào
+            # `Memory/` trong khi app đọc `memory/` - đúng thư mục đang bị bỏ quên (vụ 06/09).
+            # Ưu tiên bản ĐÚNG CHÍNH TẢ CHUẨN để bảng nói cùng một thứ với `_thu_muc_bo_nho`.
+            hop = sorted(d for d in top_dirs if re.match(it["detect"], d.strip(), re.IGNORECASE))
+            if hop:
+                present, where = True, (it["create"] if it["create"] in hop else hop[0])
             if not present and it.get("alt") and (root / it["alt"]).exists():
                 present, where = True, it["alt"]   # vị trí cũ chưa migrate vẫn tính là có
         elif it["kind"] == "exact":
@@ -4702,7 +5124,7 @@ SCHEMA_SEED = (
     "- `01 - Daily Log/` → `04 - Future Log/` - bộ sổ bullet journal (nhật ký ngày/tuần/tháng/tương lai, chứa task `- [ ]`; khối dataview kéo việc từ đây)\n"
     "- `06 - Sources/` - ghi chú thô (source of truth)\n"
     "- `07 - Wiki/` - tri thức đã chưng cất, có `[[wikilink]]`\n"
-    "- `Memory/` - bộ nhớ dài hạn của Thansa (facts + conversations)\n"
+    "- `memory/` - bộ nhớ dài hạn của Thansa (facts + conversations)\n"
     "- `Javis/` - agents + workflows\n\n"
     "Nguyên lý: Sources → (ingest) → Wiki. Tri thức tích luỹ, không tái phát hiện.\n"
 )
@@ -5145,7 +5567,18 @@ def agents_index(brain: str) -> list:
         out.append({"slug": f.stem, "name": meta.get("name", f.stem),
                     "role": meta.get("role", ""), "skills": meta.get("skills", []) or [],
                     "model": meta.get("model", ""), "group": _nhom_cua(meta),
-                    "model_provider": meta.get("model_provider", ""), "prompt": body})
+                    "model_provider": meta.get("model_provider", ""), "prompt": body,
+                    "pinned": bool(meta.get("pinned")),
+                    "avatar": agent_avatar.for_agent(meta, f.stem)})
+    # last_chat_at: mốc chat gần nhất với agent này. `moc_cap_nhat_theo_kenh` là hàm của
+    # Task 3 (SessionStore), CHƯA tồn tại nếu Task 2 chạy trước - try/except rơi về {} để
+    # Task 2 tự đứng vững một mình; nhớ quay lại kiểm khi Task 3 xong.
+    try:
+        moc = get_store().moc_cap_nhat_theo_kenh(_brain_keys(brain), "agent:")
+    except Exception:
+        moc = {}
+    for a in out:
+        a["last_chat_at"] = float(moc.get("agent:" + a["slug"], 0) or 0)
     return out
 
 @app.get("/agents")
@@ -5156,7 +5589,8 @@ async def list_agents(brain: str = Query("brain")):
 async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = Form(""),
                      model: str = Form(""), slug: str = Form(""), prompt: str = Form(""),
                      brain: str = Form("brain"), model_provider: str = Form(""),
-                     group: str = Form(NHOM_MAC_DINH)):
+                     group: str = Form(None), avatar_shape: str = Form(None),
+                     avatar_palette: str = Form(None)):
     slug = slug or _slugify(name)
     skills_list = [s.strip() for s in re.split(r"[,\n]", skills) if s.strip()]
     # `model_provider` nói RÕ model thuộc nhà nào - cùng một tên model có thể có ở hai nhà
@@ -5164,11 +5598,25 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
     # Giá trị lạ (client cũ, gõ tay) bị loại về "" để _agent_model_provider suy như agent cũ,
     # chứ không ghi vào file một nhà mà server không chạy được.
     mp = (model_provider or "").strip()
-    meta = {"type": "agent", "name": name, "slug": slug, "role": role,
-            "group": (group or "").strip() or NHOM_MAC_DINH,
-            "skills": skills_list, "model": model,
-            "model_provider": mp if mp in AGENT_PROVIDERS else "",
-            "updated": _today()}  # "" = mặc định theo CLI
+    path = _agents_dir(brain) / f"{slug}.md"
+    previous = _read_md(path)[0] if path.is_file() else None
+    try:
+        avatar = agent_avatar.for_save(previous, slug, avatar_shape, avatar_palette)
+    except ValueError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+    # GIỮ mọi khoá frontmatter KHÔNG nằm trong form. Trước đây meta được dựng lại từ đầu, nên
+    # mỗi lần bấm Lưu trong trình sửa là xoá sạch những khoá do chỗ khác ghi - `pinned` (ghim ở
+    # trang Cộng sự) mất ngay lần sửa kế tiếp, và mọi khoá tương lai cũng vậy.
+    # NHÓM: form sửa trợ lý KHÔNG còn ô nhóm (0.62.0 - gom nhóm nay nằm ở thanh nhóm cột
+    # trái và menu "Chuyển sang nhóm"), nên `group` không gửi lên nghĩa là GIỮ NGUYÊN nhóm
+    # đang có. Mặc định cũ là "Chung", tức mỗi lần bấm Lưu là ném trợ lý về Chung, lặng lẽ.
+    # Client cũ vẫn gửi group thì vẫn theo nó.
+    meta = dict(previous or {})
+    meta.update({"type": "agent", "name": name, "slug": slug, "role": role,
+                 "group": (group or "").strip() or _nhom_cua(previous),
+                 "skills": skills_list, "model": model, "avatar": avatar,
+                 "model_provider": mp if mp in AGENT_PROVIDERS else "",
+                 "updated": _today()})  # "" = mặc định theo CLI
     _write_md(_agents_dir(brain) / f"{slug}.md", meta, (prompt.strip() or role))
     return {"ok": True, "slug": slug}
 
@@ -5178,6 +5626,118 @@ async def delete_agent(slug: str = Form(...), brain: str = Form("brain")):
     if f.exists():
         f.unlink()
     return {"ok": True}
+
+
+# ── Tài liệu & link của MỘT trợ lý ───────────────────────────────────────────
+#
+# Cùng hình dạng route với project (`/projects/{id}/files...`) và với cuộc trò chuyện
+# (`/sessions/{id}/assets/...`) - CỐ Ý: dashboard vẽ cả ba bằng MỘT ngăn kéo, nên ba bộ API
+# mà lệch nhau về hình dạng là chỗ nào trên client cũng phải rẽ nhánh.
+#
+# Khác một điểm: trợ lý là file trong brain, nên `brain` phải đi theo mọi lời gọi (project
+# và hội thoại nằm trong DB nên server tự tra ra brain của chúng). Đường dẫn file vẫn qua
+# `_safe_path` TRƯỚC khi ghi, y như bên project.
+
+def _agent_md_path(brain: str, slug: str):
+    """Path file trợ lý, hoặc None nếu slug không hợp lệ / chưa có file.
+
+    `valid_slug` là bắt buộc chứ không phải cho đẹp: slug ở đây đến từ URL, mà đường đi tiếp
+    là ghép thẳng vào tên file - một slug kiểu `../../x` là ghi đè file ngoài thư mục agents.
+    """
+    if not skill_router.valid_slug(slug):
+        return None
+    f = _agents_dir(brain) / f"{slug}.md"
+    return f if f.is_file() else None
+
+
+def _agent_assets_sua(brain: str, slug: str, doi):
+    """Đọc trợ lý, để `doi(meta)` sửa danh sách, ghi lại. Trả (ket_qua, loi_JSONResponse).
+
+    Gom một chỗ vì cả sáu route thêm/gỡ/ghim đều làm đúng ba bước này; chép sáu lần thì lần
+    thứ bảy sẽ quên bước ghi hoặc quên giữ phần thân file.
+    """
+    f = _agent_md_path(brain, slug)
+    if not f:
+        return None, JSONResponse({"error": "not found"}, status_code=404)
+    meta, body = _read_md(f)
+    try:
+        meta_moi, ket_qua = doi(meta)
+    except ValueError as e:
+        return None, JSONResponse({"error": str(e)}, status_code=400)
+    _write_md(f, meta_moi, body)
+    return ket_qua, None
+
+
+@app.get("/agents/{slug}/assets")
+async def agent_assets_list(slug: str, brain: str = Query("brain")):
+    f = _agent_md_path(brain, slug)
+    if not f:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    meta, _body = _read_md(f)
+    kho = agent_assets.doc(meta)
+    return {"ok": True, "slug": slug, "name": meta.get("name", slug),
+            "files": kho["files"], "links": kho["links"]}
+
+
+@app.post("/agents/{slug}/assets/files")
+async def agent_assets_add_file(slug: str, path: str = Form(...), name: str = Form(""),
+                                brain: str = Form("brain")):
+    try:
+        # Kiểm đường dẫn TRƯỚC khi ghi vào frontmatter: không có bước này thì lưu được một
+        # path trèo ra ngoài brain rồi mới vỡ lúc nạp nội dung vào prompt.
+        alo = _safe_path(brain, path)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    # `is_file` chứ không phải `exists`: một đường dẫn rỗng giải ra chính thư mục trần, mà
+    # thư mục thì "có tồn tại" - gắn được một hàng trỏ vào thư mục, ghim vào là đọc lỗi.
+    if not alo.is_file():
+        return JSONResponse({"error": "Không tìm thấy file trong brain này"}, status_code=404)
+    fid, loi = _agent_assets_sua(
+        brain, slug, lambda m: agent_assets.them_file(m, path, name or alo.name))
+    return loi or {"ok": True, "id": fid}
+
+
+@app.post("/agents/{slug}/assets/files/{file_id}/delete")
+async def agent_assets_del_file(slug: str, file_id: str, brain: str = Form("brain")):
+    """GỠ KHỎI TRỢ LÝ, KHÔNG xoá file trên đĩa (xem agent_assets.go_file)."""
+    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.go_file(m, file_id))
+    return loi or {"ok": bool(ok)}
+
+
+@app.post("/agents/{slug}/assets/files/{file_id}/pin")
+async def agent_assets_pin_file(slug: str, file_id: str, pinned: str = Form("1"),
+                                brain: str = Form("brain")):
+    on = str(pinned).strip() in ("1", "true", "True", "on")
+    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.ghim_file(m, file_id, on))
+    return loi or {"ok": bool(ok), "pinned": on}
+
+
+@app.post("/agents/{slug}/assets/links")
+async def agent_assets_add_link(slug: str, url: str = Form(...), label: str = Form(""),
+                                brain: str = Form("brain")):
+    u = (url or "").strip()
+    # Chỉ nhận http/https, cùng rào với link của project: `javascript:` hay `file:` lọt vào
+    # danh sách là thành một liên kết bấm được ngay trong giao diện.
+    if not re.match(r"^https?://", u, re.I):
+        return JSONResponse({"error": "URL phải bắt đầu bằng http:// hoặc https://"},
+                            status_code=400)
+    lid, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.them_link(m, u, label))
+    return loi or {"ok": True, "id": lid}
+
+
+@app.post("/agents/{slug}/assets/links/{link_id}/delete")
+async def agent_assets_del_link(slug: str, link_id: str, brain: str = Form("brain")):
+    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.go_link(m, link_id))
+    return loi or {"ok": bool(ok)}
+
+
+@app.post("/agents/{slug}/assets/links/{link_id}/pin")
+async def agent_assets_pin_link(slug: str, link_id: str, pinned: str = Form("1"),
+                                brain: str = Form("brain")):
+    on = str(pinned).strip() in ("1", "true", "True", "on")
+    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.ghim_link(m, link_id, on))
+    return loi or {"ok": bool(ok), "pinned": on}
+
 
 # ---- Skills ----
 
@@ -5963,6 +6523,320 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
     return raw_file_response(brain, path, dl=bool(dl))
 
 
+# ---- CHIA SẺ CÔNG KHAI một file (nút Chia sẻ trong trình sửa) ----
+# Người cầm link KHÔNG đăng nhập, nên đây là mặt tiền công khai duy nhất chạm vào file trong
+# brain. Ba điều giữ nó lành:
+#   1. token 144 bit, không đoán được (share_store);
+#   2. CHỈ ĐỌC, và chỉ đọc đúng file đã chia sẻ cộng tài nguyên quanh nó (_share_asset);
+#   3. mọi trang trả về đều mang header cách ly (share_render.CSP_*), nên nội dung không với
+#      được cookie đăng nhập của người mở.
+
+
+def _share_chan(ban) -> str:
+    """Dòng chân trang: nói rõ đây là file được chia sẻ, để người xem biết mình đang xem gì."""
+    ten = os.path.basename(str(ban.get("path") or "")) or "file"
+    return share_render.esc(ten) + " · được chia sẻ từ Javis OS"
+
+
+def _share_file(ban):
+    """File THẬT mà token trỏ tới. None nếu nó đã bị xoá hoặc đổi tên."""
+    try:
+        f = _safe_serve_path(ban.get("brain") or "brain", ban.get("path") or "")
+    except ValueError:
+        return None
+    return f if f.is_file() else None
+
+
+def _ung_vien_tai_nguyen(duong_dan_file: str, p: str):
+    """Các chỗ CÓ THỂ chứa tấm ảnh `p` được nhắc trong file `duong_dan_file`, theo thứ tự thử.
+
+    Cùng một thứ tự với `ungVienAnh` trong dashboard/chat-render.js, và cùng một lý do:
+
+      1. THEO THƯ MỤC CỦA CHÍNH FILE .md - cách Obsidian, VS Code và GitHub hiểu một đường dẫn
+         tương đối, tức cái người viết note mong đợi. Trước bản này cả hai phía chỉ phân giải
+         theo GỐC BRAIN, nên note nằm trong thư mục con mà viết ![](anh.jpg) là ảnh không bao
+         giờ hiện (chủ dự án báo 18/09).
+      2. THEO GỐC BRAIN - hành vi cũ, giữ để note đang trỏ kiểu đó vẫn chạy.
+      3. attachments/<tên file> - nơi Javis tự cất ảnh nó sinh ra.
+
+    Hàng rào phạm vi KHÔNG đổi: mỗi ứng viên vẫn phải qua đủ hai cổng của _share_asset, nên
+    thêm ứng viên ở đây không mở rộng thêm thứ gì đọc được.
+    """
+    raw = (p or "").replace("\\", "/").strip().lstrip("/")
+    if raw.startswith("./"):
+        raw = raw[2:]
+    if not raw:
+        return []
+    thu_muc = posixpath.dirname((duong_dan_file or "").replace("\\", "/"))
+    ra = []
+    for ban_sao in (posixpath.normpath(posixpath.join(thu_muc, raw)) if thu_muc else None,
+                    posixpath.normpath(raw),
+                    "attachments/" + posixpath.basename(raw)):
+        # normpath để lại ".." khi đường dẫn vượt lên trên gốc; bỏ hẳn ứng viên đó thay vì
+        # đưa một đường dẫn nửa vời cho _safe_serve_path.
+        if not ban_sao or ban_sao.startswith("..") or ban_sao in ra:
+            continue
+        ra.append(ban_sao)
+    return ra
+
+
+def _share_asset(ban, p: str):
+    """File TÀI NGUYÊN kèm theo (ảnh trong .md, css/js cạnh file .html).
+
+    HAI hàng rào cùng lúc, và cần cả hai:
+
+    1. VỊ TRÍ: trong thư mục chứa file được chia sẻ (kể cả thư mục con), hoặc trong
+       `attachments` của brain - nơi Javis cất ảnh theo quy ước.
+    2. LOẠI FILE: phải nằm trong `DUOI_TAI_NGUYEN`, tức chỉ ảnh, css, js, phông, âm thanh,
+       phim. Không tài liệu.
+
+    Thiếu hàng rào thứ hai thì có một lỗ thật, và test_share_link.py đã bắt được nó lúc vừa
+    viết xong: file .md chia sẻ nằm ngay GỐC BRAIN thì "thư mục chứa nó" chính là cả brain,
+    nên một token lẻ đọc được mọi ghi chú khác trong đó. Bó theo LOẠI FILE đóng cửa ấy lại mà
+    vẫn giữ nguyên hai nhu cầu thật: .md cần ảnh, trang .html cần css/js của nó.
+    """
+    goc = _share_file(ban)
+    if goc is None:
+        return None
+    brain = ban.get("brain") or "brain"
+    thu_muc = goc.parent
+    dinh_kem = (Path(_brain_root(brain)).resolve() / "attachments")
+
+    def _qua_cong(f) -> bool:
+        """Đúng hai hàng rào ở trên, hỏi cho MỘT ứng viên."""
+        if not f.is_file() or f.suffix.lower() not in share_render.DUOI_TAI_NGUYEN:
+            return False
+        if thu_muc in f.parents or f.parent == thu_muc:
+            return True
+        return dinh_kem.is_dir() and (dinh_kem == f.parent or dinh_kem in f.parents)
+
+    for ung_vien in _ung_vien_tai_nguyen(str(ban.get("path") or ""), p or ""):
+        try:
+            f = _safe_serve_path(brain, ung_vien)
+        except ValueError:
+            continue
+        if _qua_cong(f):
+            return f
+    return None
+
+
+@app.post("/share/create")
+async def share_create(body: dict = Body(...)):
+    """Bật chia sẻ cho một file. Gọi lại trên cùng file thì trả đúng link cũ, không đẻ link mới."""
+    try:
+        ban = share_store.tao(body.get("brain") or "brain", body.get("path") or "",
+                              body.get("nhan") or "")
+    except ValueError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
+    # Trả ĐƯỜNG DẪN TƯƠNG ĐỐI, để trình duyệt tự ghép với location.origin. Dựng URL tuyệt đối ở
+    # đây nghĩa là tin vào header Host, thứ mà chính repo này đã ghi chú là không được tin.
+    return {"ok": True, "token": ban["token"], "path": "/s/" + ban["token"]}
+
+
+@app.post("/share/revoke")
+async def share_revoke(body: dict = Body(...)):
+    """Thu hồi. Sau lệnh này link cũ trả 404 cho tất cả mọi người."""
+    return {"ok": share_store.xoa(body.get("token") or "")}
+
+
+@app.get("/share/of")
+async def share_of(brain: str = Query("brain"), path: str = Query(...)):
+    """File này đã có link chưa? Nút Chia sẻ hỏi câu này để biết mình đang bật hay tắt."""
+    ban = share_store.cua_file(brain, path)
+    return {"ok": True, "share": ({"token": ban["token"], "path": "/s/" + ban["token"]}
+                                  if ban else None)}
+
+
+@app.get("/share/list")
+async def share_list(brain: str = Query("")):
+    ds = share_store.danh_sach(brain)
+    return {"ok": True, "items": [{"token": b["token"], "brain": b.get("brain"),
+                                   "path": b.get("path"), "tao_luc": b.get("tao_luc"),
+                                   "url": "/s/" + b["token"]} for b in ds]}
+
+
+@app.get("/s/{token}")
+async def share_xem(token: str):
+    """TRANG XEM công khai. Không cần đăng nhập - xem chú thích đầu khối."""
+    ban = share_store.doc(token)
+    if not ban:
+        return HTMLResponse(share_render.trang_loi("Link không tồn tại hoặc đã bị thu hồi."),
+                            status_code=404)
+    f = _share_file(ban)
+    if f is None:
+        return HTMLResponse(share_render.trang_loi("File đã bị xoá hoặc đổi tên."), status_code=404)
+    duoi = f.suffix.lower()
+    goc_asset = "/s/" + ban["token"] + "/asset"
+    chan = _share_chan(ban)
+    if duoi in share_render.DUOI_HTML:
+        # Trang .html sống ở `/s/<token>/` (CÓ dấu gạch cuối) chứ không phải `/s/<token>`.
+        # Lý do là cách trình duyệt phân giải đường dẫn tương đối: trang mở ở `/s/abc` mà
+        # gọi fetch("data.json") thì trình duyệt xin `/s/data.json`, không có gì ở đó; mở ở
+        # `/s/abc/` thì xin `/s/abc/data.json`, đúng route `_share_sibling` phục vụ file cạnh
+        # trang. Link đã gửi đi vẫn là `/s/<token>` nên chuyển hướng thay vì bắt gửi lại.
+        return RedirectResponse(url="/s/" + ban["token"] + "/", status_code=307)
+    if duoi in share_render.DUOI_XEM_THANG:
+        resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0]
+                            or "application/octet-stream")
+        resp.headers["Content-Disposition"] = "inline"
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["Content-Security-Policy"] = share_render.CSP_HTML
+        return resp
+    try:
+        noi = f.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return HTMLResponse(share_render.trang_loi("Không đọc được file."), status_code=404)
+    if duoi in share_render.DUOI_MD:
+        trang = share_render.trang_markdown(f.stem, noi, goc_asset, chan)
+    else:
+        trang = share_render.trang_van_ban(f.name, noi, chan)
+    # Trang này do CHÍNH server dựng và không có một dòng script nào, nên cách ly chặt hơn.
+    return HTMLResponse(trang, headers={"Content-Security-Policy": share_render.CSP_TINH,
+                                        "X-Content-Type-Options": "nosniff",
+                                        "Referrer-Policy": "no-referrer"})
+
+
+@app.get("/s/{token}/raw")
+async def share_raw(token: str, dl: int = Query(0)):
+    """File gốc, để tải về hoặc để trang .html nhúng thẳng."""
+    ban = share_store.doc(token)
+    if not ban:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    f = _share_file(ban)
+    if f is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    if dl:
+        return FileResponse(str(f), filename=f.name)
+    resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0] or "text/plain")
+    resp.headers["Content-Disposition"] = "inline"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Content-Security-Policy"] = share_render.CSP_HTML
+    return resp
+
+
+@app.get("/s/{token}/asset")
+async def share_asset(token: str, p: str = Query(...)):
+    """Ảnh và tài nguyên kèm theo. Phạm vi bó hẹp, xem _share_asset."""
+    ban = share_store.doc(token)
+    if not ban:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    f = _share_asset(ban, p)
+    if f is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0]
+                        or "application/octet-stream")
+    resp.headers["Content-Disposition"] = "inline"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Content-Security-Policy"] = share_render.CSP_HTML
+    return resp
+
+
+def _share_sibling(ban, p: str):
+    """File CẠNH trang .html được chia sẻ mà app đó xin bằng đường dẫn tương đối (data.json,
+    style.css, trang2.html, con/bang.csv...). None = không phục vụ.
+
+    Chỉ tồn tại cho file chia sẻ là .html: ghi chú .md lấy ảnh qua `/asset` với hai hàng rào
+    riêng, không đi đường này. Ba hàng rào ở đây:
+
+    1. VỊ TRÍ: đường dẫn tương đối tính từ THƯ MỤC CHỨA TRANG, thu gọn tại chỗ; leo lên trên
+       (`..` còn sót sau normpath) hay đi vào thư mục ẩn (`.git`, `.claude`) là bỏ. File thật
+       phải nằm trong thư mục đó hoặc thư mục con của nó.
+    2. LOẠI FILE: tài nguyên trình bày (DUOI_TAI_NGUYEN) luôn được; FILE DỮ LIỆU và trang phụ
+       (DUOI_DU_LIEU) chỉ được khi trang .html nằm trong MỘT THƯ MỤC RIÊNG, không phải gốc
+       brain. Trang ở gốc brain thì "thư mục chứa nó" là cả kho ghi chú, mở .md/.txt/.json ở
+       đó là một token lẻ đọc được mọi ghi chú - đúng lỗ mà DUOI_TAI_NGUYEN được viết ra để
+       đóng. App đọc dữ liệu thì cất vào một thư mục riêng (apps/ten-app/) là đủ.
+    3. Trang được chia sẻ phải còn tồn tại (token trỏ tới file đã xoá thì mọi thứ cạnh nó
+       cũng đóng theo).
+    """
+    goc = _share_file(ban)
+    if goc is None or goc.suffix.lower() not in share_render.DUOI_HTML:
+        return None
+    raw = (p or "").replace("\\", "/").strip().lstrip("/")
+    if not raw:
+        return None
+    thu_muc_rel = posixpath.dirname(str(ban.get("path") or "").replace("\\", "/"))
+    ung_vien = posixpath.normpath(posixpath.join(thu_muc_rel, raw) if thu_muc_rel else raw)
+    if ung_vien.startswith("..") or ung_vien.startswith("/"):
+        return None
+    if any(phan.startswith(".") for phan in ung_vien.split("/") if phan):
+        return None
+    brain = ban.get("brain") or "brain"
+    try:
+        f = _safe_serve_path(brain, ung_vien)
+    except ValueError:
+        return None
+    if not f.is_file():
+        return None
+    thu_muc = goc.parent
+    if not (f.parent == thu_muc or thu_muc in f.parents):
+        return None
+    duoi = f.suffix.lower()
+    if duoi in share_render.DUOI_TAI_NGUYEN:
+        return f
+    if duoi in share_render.DUOI_DU_LIEU:
+        goc_brain = Path(_brain_root(brain)).resolve()
+        if thu_muc == goc_brain:
+            return None
+        return f
+    return None
+
+
+@app.get("/s/{token}/")
+async def share_xem_html(token: str):
+    """Trang .html chia sẻ, ở địa chỉ có dấu gạch cuối (xem share_xem vì sao)."""
+    ban = share_store.doc(token)
+    if not ban:
+        return HTMLResponse(share_render.trang_loi("Link không tồn tại hoặc đã bị thu hồi."),
+                            status_code=404)
+    f = _share_file(ban)
+    if f is None:
+        return HTMLResponse(share_render.trang_loi("File đã bị xoá hoặc đổi tên."), status_code=404)
+    if f.suffix.lower() not in share_render.DUOI_HTML:
+        return RedirectResponse(url="/s/" + ban["token"], status_code=307)
+    # Nội dung của NGƯỜI DÙNG, có script: phục vụ nguyên văn nhưng trong hộp cách ly.
+    try:
+        noi = f.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return HTMLResponse(share_render.trang_loi("Không đọc được file."), status_code=404)
+    # Thứ DUY NHẤT được thêm vào trang của người dùng: bản vá kho lưu trữ. Hộp cách ly cho
+    # trang gốc "null", mà gốc null thì localStorage ném SecurityError ngay dòng đầu chạm vào
+    # nó và giết cả script - trang trắng dù dữ liệu đã tải xong. Xem share_render.
+    noi = share_render.chen_polyfill_luu_tru(noi)
+    return HTMLResponse(noi, headers={"Content-Security-Policy": share_render.CSP_HTML,
+                                      "X-Content-Type-Options": "nosniff",
+                                      "Referrer-Policy": "no-referrer",
+                                      "Cache-Control": "no-cache"})
+
+
+@app.get("/s/{token}/{p:path}")
+async def share_sibling(token: str, p: str):
+    """File cạnh trang .html chia sẻ, theo đường dẫn tương đối app đó xin. Phạm vi: _share_sibling.
+
+    Header `Access-Control-Allow-Origin: *` là BẮT BUỘC chứ không phải cho rộng rãi: trang chạy
+    trong hộp cách ly `sandbox` không có `allow-same-origin`, nên với trình duyệt nó có origin
+    "null" và mọi fetch() của nó là yêu cầu chéo nguồn. Thiếu header này thì file vẫn tải về
+    nhưng trình duyệt chặn không cho script đọc, app hiện trống trơn mà Network tab lại xanh.
+    Không có gì để lộ thêm: cùng file đó ai có link cũng xin được bằng cách gõ thẳng URL.
+    """
+    ban = share_store.doc(token)
+    if not ban:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    f = _share_sibling(ban, p)
+    if f is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    duoi = f.suffix.lower()
+    kieu = share_render.KIEU_DU_LIEU.get(duoi) or mimetypes.guess_type(f.name)[0] \
+        or "application/octet-stream"
+    resp = FileResponse(str(f), media_type=kieu)
+    resp.headers["Content-Disposition"] = "inline"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Content-Security-Policy"] = share_render.CSP_HTML
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.get("/brains/{brain_name}/{path:path}")
 async def brain_file_compat(brain_name: str, path: str, dl: int = Query(0)):
     """Tương thích link file cũ do chat/AI đã xuất dạng ``/brains/<tên>/<path>``.
@@ -6285,7 +7159,17 @@ def workflows_index(brain: str) -> list:
                     "status": meta.get("status", "off"),
                     "description": meta.get("description", ""),
                     "group": _nhom_cua(meta),
+                    "pinned": bool(meta.get("pinned")),
                     "steps": meta.get("steps", []) or []})
+    # Mốc chạy gần nhất để trang Cộng sự/Studio biết workflow nào còn "sống": đọc một lần
+    # cho CẢ danh sách (moc_moi_nhat_theo_slug group theo brain) thay vì N lần lay() riêng lẻ.
+    try:
+        import workflow_runs
+        moc = workflow_runs.get_store().moc_moi_nhat_theo_slug(_brain_key(brain))
+    except Exception:
+        moc = {}
+    for w in out:
+        w["last_run_at"] = float(moc.get(w["slug"], 0) or 0)
     return out
 
 def _get_workflow_canary(brain):
@@ -6343,10 +7227,13 @@ async def save_workflow(name: str = Form(...), description: str = Form(""), step
         steps_list = json.loads(steps)
     except Exception:
         steps_list = []
-    meta = {"type": "workflow", "name": name, "slug": slug, "status": status,
-            "group": (group or "").strip() or NHOM_MAC_DINH,
-            "description": description, "steps": steps_list, "updated": _today()}
-    _write_md(_workflows_dir(brain) / f"{slug}.md", meta, description)
+    # Giữ khoá frontmatter lạ, cùng lý do với save_agent ở trên (vd `pinned`).
+    _wf_path = _workflows_dir(brain) / f"{slug}.md"
+    meta = dict(_read_md(_wf_path)[0] or {}) if _wf_path.is_file() else {}
+    meta.update({"type": "workflow", "name": name, "slug": slug, "status": status,
+                 "group": (group or "").strip() or NHOM_MAC_DINH,
+                 "description": description, "steps": steps_list, "updated": _today()})
+    _write_md(_wf_path, meta, description)
     return {"ok": True, "slug": slug}
 
 @app.post("/workflows/toggle")
@@ -6358,6 +7245,53 @@ async def toggle_workflow(slug: str = Form(...), brain: str = Form("brain")):
     meta["status"] = "off" if meta.get("status") == "active" else "active"
     _write_md(f, meta, body)
     return {"ok": True, "status": meta["status"]}
+
+# ---- Sửa MỘT PHẦN frontmatter của agent/workflow (ghim, đổi nhóm) ----
+# Vì sao có đường riêng thay vì dùng POST /agents và POST /workflows: hai endpoint đó nhận
+# TOÀN BỘ nội dung (prompt, skills, steps...) và ghi lại cả file. Muốn ghim một agent mà phải
+# gửi lại nguyên prompt của nó là mời gọi mất dữ liệu - client cũ, form thiếu một field, hay
+# một lỗi mạng giữa đường là agent bị ghi lại thiếu. Đường này ĐỌC file, sửa đúng khoá được
+# nêu, rồi ghi lại; khoá nào không gửi thì không đụng tới.
+_META_KIND = {"agent": _agents_dir, "workflow": _workflows_dir}
+
+
+@app.post("/capability/meta")
+async def capability_meta(kind: str = Form(...), slug: str = Form(...),
+                          brain: str = Form("brain"),
+                          pinned: str = Form(None), group: str = Form(None)):
+    """Ghim / bỏ ghim và chuyển nhóm cho một agent hoặc workflow.
+
+    `pinned`: "1"/"true" = ghim, "0"/"false" = bỏ ghim, không gửi = không đụng.
+    `group`: tên nhóm mới, rỗng = về nhóm mặc định. Không gửi = không đụng.
+    """
+    thu_muc = _META_KIND.get((kind or "").strip())
+    if not thu_muc:
+        return JSONResponse({"ok": False, "error": "kind phải là agent hoặc workflow"},
+                            status_code=400)
+    f = thu_muc(brain) / f"{slug}.md"
+    if not f.is_file():
+        return JSONResponse({"ok": False, "error": f"không thấy {kind} '{slug}'"},
+                            status_code=404)
+    # Gọi THẲNG hàm này từ Python (test, Telegram) thì tham số không truyền vẫn là object
+    # `Form(...)` chứ không phải None - truthy, nên nhánh "không gửi thì không đụng" bên dưới
+    # sẽ hiểu sai. Quy về None ngay: chỉ CHUỖI mới là giá trị người dùng gửi.
+    pinned = pinned if isinstance(pinned, str) else None
+    group = group if isinstance(group, str) else None
+    meta, body = _read_md(f)
+    meta = dict(meta or {})
+    if pinned is not None:
+        bat = str(pinned).strip().lower() in ("1", "true", "yes", "on")
+        if bat:
+            meta["pinned"] = True
+        else:
+            meta.pop("pinned", None)      # bỏ ghim thì XOÁ khoá, không để lại `pinned: false`
+    if group is not None:
+        meta["group"] = (group or "").strip() or NHOM_MAC_DINH
+    meta["updated"] = _today()
+    _write_md(f, meta, body)
+    return {"ok": True, "slug": slug, "pinned": bool(meta.get("pinned")),
+            "group": _nhom_cua(meta)}
+
 
 @app.post("/workflows/delete")
 async def delete_workflow(slug: str = Form(...), brain: str = Form("brain")):
@@ -6562,43 +7496,73 @@ def _tien_cache(by_model: list, prices: dict) -> float:
     return round(tong, 4)
 
 
-def _cau_mo_dau(d: dict) -> str:
+def _cau_mo_dau(d: dict, en: bool = False) -> str:
     """Một câu tiếng người tóm tắt cả trang. Không bảng, không phần trăm trần trụi.
 
     Vì sao câu này đáng có: sáu ô số ngang hàng nhau bắt người đọc tự ghép nghĩa, và con số
     to nhất trên trang ("chi phí quy đổi") lại là con số KHÔNG phải tiền thật - đọc lướt thì
     y như một hoá đơn. Một câu nói thẳng ai trả gì cho cái gì thì không đọc nhầm được.
+
+    Câu này server GHÉP nên overlay dịch-en (khớp text-node) không phủ được: dịch tại nguồn
+    theo `en` (đọc từ cookie thansa_lang ở endpoint) - fork thêm nhánh EN.
     """
     t = d.get("tien") or {}
     goi = t.get("goi") or {}
     that = float((t.get("that") or {}).get("usd") or 0)
     quy = float((t.get("quy_doi") or {}).get("usd") or 0)
-    ky = d.get("ten_ky") or "Kỳ này"
+    ky = d.get("ten_ky") or ("This period" if en else "Kỳ này")
     ve = []
     if goi.get("so_duoc"):
         lan = goi.get("roi_lan") or 0
         # Nói đủ cả ba ca. Chỉ khoe khi thật sự lời, và dám nói khi gói đang đắt hơn API -
         # một trang chỉ biết khen thì lần sau không ai tin nó nữa.
-        if lan >= 1.2:
-            ket = f", tức gói đang lời {lan:g} lần."
-        elif lan >= 0.8:
-            ket = ", tức gói đang hoà vốn so với giá API."
-        elif lan > 0:
-            ket = ", tức với nhịp dùng này thì gói đang đắt hơn trả theo API."
+        if en:
+            if lan >= 1.2:
+                ket = f", i.e. the plan is paying off {lan:g}x."
+            elif lan >= 0.8:
+                ket = ", i.e. the plan breaks even versus API pricing."
+            elif lan > 0:
+                ket = ", i.e. at this usage rate the plan costs more than paying per API."
+            else:
+                ket = "."
+            ve.append(f"{ky} you paid ${goi['gia_thang_usd']:g} for the plan; "
+                      f"the work run would cost about ${quy:,.0f} at API prices" + ket)
         else:
-            ket = "."
-        ve.append(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
-                  f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}" + ket)
+            if lan >= 1.2:
+                ket = f", tức gói đang lời {lan:g} lần."
+            elif lan >= 0.8:
+                ket = ", tức gói đang hoà vốn so với giá API."
+            elif lan > 0:
+                ket = ", tức với nhịp dùng này thì gói đang đắt hơn trả theo API."
+            else:
+                ket = "."
+            ve.append(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
+                      f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}" + ket)
     elif quy > 0:
-        ve.append(f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.")
+        ve.append(f"{ky} the work run comes to about ${quy:,.2f} at API prices." if en
+                  else f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.")
     if that > 0:
-        ve.append(f"Tiền mặt thật đã tiêu: ${that:,.2f}.")
+        ve.append((f"Real cash spent: ${that:,.2f}." if en
+                   else f"Tiền mặt thật đã tiêu: ${that:,.2f}."))
     else:
-        ve.append("Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.")
+        ve.append("No branch charges per token, so real cash spent is $0." if en
+                  else "Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.")
     tk = d.get("tiet_kiem") or {}
     if tk.get("token"):
-        ve.append(f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token.")
+        ve.append((f"Saver mode avoided {_fmt_tok_en(tk['token'])} tokens." if en
+                   else f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token."))
     return " ".join(ve)
+
+
+def _fmt_tok_en(n) -> str:
+    n = int(n or 0)
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K"
+    return str(n)
 
 
 def _fmt_tok_vn(n) -> str:
@@ -6615,10 +7579,15 @@ def _fmt_tok_vn(n) -> str:
 _TEN_KY = {"today": "Hôm nay", "yesterday": "Hôm qua", "this_week": "Tuần này",
            "last_week": "Tuần trước", "this_month": "Tháng này", "last_month": "Tháng trước",
            "last_3_months": "3 tháng qua", "this_year": "Năm nay"}
+# Bản EN cho tên kỳ (fork): câu tóm tắt server ghép nên overlay không phủ được, dịch tại nguồn.
+_TEN_KY_EN = {"today": "Today", "yesterday": "Yesterday", "this_week": "This week",
+              "last_week": "Last week", "this_month": "This month", "last_month": "Last month",
+              "last_3_months": "Last 3 months", "this_year": "This year"}
 
 
 @app.get("/usage/tong-quan")
-async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0):
+async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refresh: int = 0,
+                          request: Request = None):
     """Khối ĐẦU trang Mức dùng: tiền thật vs tiền quy đổi, trần gói, tiết kiệm, dự báo.
 
     Tách khỏi `/usage/summary` có chủ ý. Endpoint kia là số liệu thô theo chiều (model, dự
@@ -6701,8 +7670,11 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
     ns["dang_phanh"] = usage_saving.dang_phanh()
 
     usd_cache = _tien_cache(s.get("by_model") or [], prices)
+    en = _lang_en(request) if request is not None else False
     d = {
-        "period": period, "ten_ky": _TEN_KY.get(period, "Kỳ này"), "range": s.get("range"),
+        "period": period,
+        "ten_ky": (_TEN_KY_EN if en else _TEN_KY).get(period, "This period" if en else "Kỳ này"),
+        "range": s.get("range"),
         "engine": _engine_runtime_view(cfgmod.read_settings().get("context_runtime") or {}),
         "tien": {
             "that": {"usd": tien_that, "usd_thang": tien_that_thang, "openrouter": orb},
@@ -6721,7 +7693,7 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
         "moc": usage_saving.doc_moc((s.get("range") or ["", ""])[0],
                                     (s.get("range") or ["", ""])[1]),
     }
-    d["cau"] = _cau_mo_dau(d)
+    d["cau"] = _cau_mo_dau(d, en)
     return d
 
 
@@ -6837,7 +7809,10 @@ async def _kiem_ngan_sach(nhac: bool = True) -> dict:
                 tin = (f"Ngân sách API tháng này đã dùng {ns['ty_le'] * 100:.0f}%: "
                        f"${da:.2f} trên trần ${tran:.2f}. Còn ${ns['con']:.2f}.")
             try:
-                await _notify_owner("", tin)
+                # kind="system": Javis TỰ nói, không phải trả lời câu ai hỏi. Đúng nhãn mà
+                # inbox.py đặt tên sẵn cho ca này ("cảnh báo hết hạn mức"), và nhãn đó là thứ
+                # người dùng đọc trên thẻ thư để biết tin này từ đâu ra.
+                await _notify_owner("", tin, kind="system")
             except Exception:  # noqa: BLE001 - không gửi được thì thôi, đừng làm hỏng vòng lặp
                 pass
     return ns
@@ -7013,6 +7988,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
     while True:
         gcli = mk(sysprompt, agent_model, agent_prov)
         out = ""
+        loi_engine = ""
         async for ev in gcli.query(cur_prompt):
             if ev["type"] == "text":
                 await sink({"type": "step_text", "i": index, "node": node.id,
@@ -7023,8 +7999,20 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
             elif ev["type"] == "final":
                 out = ev.get("content") or out
             elif ev["type"] == "error":
+                loi_engine = ev["content"] or loi_engine
                 await sink({"type": "step_error", "i": index, "node": node.id,
                             "content": ev["content"]})
+        # HẾT LƯỢT GÓI THUÊ BAO: nhà cung cấp không báo như một lỗi, nó in nguyên văn câu tiếng
+        # Anh ra đúng chỗ câu trả lời ("You've hit your session limit - resets 12pm (UTC)").
+        # Không soi ở đây thì bước coi như xong, câu tiếng Anh đó thành KẾT QUẢ của quy trình,
+        # và agent kiểm chứng còn bị gọi để đốt thêm một lượt của đúng cái gói vừa hết. Runner
+        # cũ đã chặn từ 0.59.2; đường graph dùng chung hàm chặn ấy để hai đường không lệch
+        # nhau - nguyên tắc ghi ở _workflow_agent_helpers.
+        loi_het_luot = _loi_het_luot_cua_buoc(out, loi_engine, agent_prov, agent_name)
+        if loi_het_luot:
+            await sink({"type": "step_error", "i": index, "node": node.id,
+                        "content": loi_het_luot})
+            return {"output": "", "error": loi_het_luot, "agent_name": agent_name}
         if not node.verify_agent:
             break
         v_name, v_body, v_model, v_prov = agent_sysprompt(node.verify_agent)
@@ -7144,6 +8132,7 @@ def _workflow_agent_helpers(brain, tools):
         sysprompt = (
             f"Bạn là agent **{ameta.get('name', aslug)}**.\nVai trò: {ameta.get('role','')}\n{abody}\n\n"
             f"Skills khả dụng: {', '.join(ameta.get('skills', []) or []) or '(không)'}. Dùng skill khi cần.\n"
+            + _agent_assets_block(brain, ameta)
             + f"\n# Bộ nhớ của bạn (file: {mem_path}):\n{amem or '(chưa có ký ức nào)'}\n"
             + "\n# Tự bồi đắp lúc dùng: nếu cuối nhiệm vụ rút ra được bài học TÁI DÙNG cho vai này "
               "(cách làm tốt hơn, lỗi cần tránh, ngữ cảnh riêng đã học được), KẾT THÚC câu trả lời "
@@ -7152,6 +8141,7 @@ def _workflow_agent_helpers(brain, tools):
               f"{_BAI_HOC_TRAN} dòng mới nhất). KHÔNG tự sửa file bộ nhớ trực tiếp - phần ngoài mục "
               "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát JAVIS_LESSON, và đừng "
               "lặp lại bài học đã có trong bộ nhớ.\n"
+            + _AGENT_TOOLKIT_BLOCK
             + "\nLàm việc trong vault. Tập trung hoàn thành nhiệm vụ, trả kết quả rõ ràng, ngắn gọn."
         )
         return (ameta.get("name", aslug), sysprompt,
@@ -7171,6 +8161,60 @@ def _workflow_agent_helpers(brain, tools):
         return sach
 
     return _mk, _agent_sysprompt, _log_run, _learn
+
+
+# Khối chèn vào prompt của MỌI agent (chat trực tiếp lẫn bước workflow). Sinh ra từ một cuộc
+# chat thật 2026-09-18: agent "Biên tập viên" từ chối đẩy file lên Drive vì "ngoài phạm vi Biên
+# tập viên", bảo chủ "tự copy lệnh sang agent Đăng tải"; khi chủ nới prompt thì nó BỊA rằng đã
+# "bàn giao cho chuyên viên dang_tai" (không có agent nào tên vậy, không gọi tool nào) và hẹn
+# "có kết quả em báo lại ngay". Vai chuyên môn chỉ là CÁCH LÀM, không phải hàng rào công cụ:
+# agent chạy trên cùng hub tool với Javis. Ba luật dưới chốt đúng ba lỗi đó.
+_AGENT_TOOLKIT_BLOCK = (
+    "\n# Công cụ và giới hạn thật của bạn\n"
+    "- Vai trò ở trên là CHUYÊN MÔN CHÍNH, không phải hàng rào. Bạn có TOÀN BỘ bộ công cụ của "
+    "Javis qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
+    "`javis_list_dir`), gọi các kết nối ngoài đã nối như Google Drive, Composio, POS, Zalo... "
+    "(`javis_connections` để xem đang nối gì, `javis_search_tools` rồi `javis_run_tool` để gọi), "
+    "chạy skill (`javis_use_skill`), giao việc nền Kanban (`javis_task`), đặt nhắc hẹn "
+    "(`javis_schedule`). Việc ngoài chuyên môn mà công cụ làm được (đẩy file lên Drive, đăng "
+    "bài, gửi tin) thì LÀM LUÔN bằng tool, hoặc giao thành việc nền; KHÔNG từ chối vì \"không "
+    "phải việc của vai này\" và KHÔNG bảo chủ tự đi copy lệnh sang agent khác.\n"
+    "- KHÔNG có cơ chế \"gọi agent khác\" hay \"bàn giao cho đồng nghiệp\". Chỉ được nói đã giao "
+    "việc khi CHÍNH BẠN vừa gọi `javis_task` trong lượt này và đọc được kết quả tool trả về. "
+    "Tuyệt đối không bịa tên agent, không kể rằng một agent khác \"đang làm\" hay \"vừa phản "
+    "hồi\". Thiếu kết nối (ví dụ chưa nối Drive) thì kiểm tra bằng `javis_connections` trước, "
+    "rồi nói đúng cái đang thiếu.\n"
+    "- Lượt trả lời của bạn KẾT THÚC khi bạn nói xong, không ai đánh thức bạn làm nốt. Không hẹn "
+    "\"có kết quả em báo lại\", \"sếp chờ em chút\". Chỉ hai lối đúng: làm xong ngay trong lượt và "
+    "trả kết quả thật, hoặc giao việc nền / nhắc hẹn rồi nói rõ đã giao gì, kết quả về đâu. "
+    "Không làm được cả hai thì nói thẳng là chưa làm.\n"
+)
+
+
+def _agent_chat_prompt(brain, slug) -> str:
+    """System prompt khi CHỦ chat trực tiếp với một trợ lý ở trang Cộng sự.
+
+    Là ĐÚNG prompt mà workflow dùng cho trợ lý đó (vai, thân file, kỹ năng, bộ nhớ riêng, luật
+    JAVIS_LESSON), cộng một câu nói rõ đây là trò chuyện chứ không phải một bước quy trình.
+    Cố ý KHÔNG nối CLAUDE.md, bộ nhớ của chủ hay khối kênh: người dùng đang muốn nói chuyện với
+    "Người viết", không phải với Javis đội mũ Người viết.
+    """
+    if not (_agents_dir(brain) / f"{slug}.md").exists():
+        raise FileNotFoundError(slug)
+    _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
+    _name, sysprompt, _model, _prov = _agent_sysprompt(slug)
+    return (sysprompt + "\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ trên dashboard Javis "
+            "(trang Cộng sự). Trả lời như đang nói chuyện, theo ngôn ngữ chủ đang dùng; "
+            "không cần báo cáo dạng nhiệm vụ trừ khi được giao việc cụ thể.")
+
+
+def _ket_luot_agent(brain, slug, user_message, final_text) -> str:
+    """Cuối một lượt chat với trợ lý: bóc JAVIS_LESSON vào bộ nhớ trợ lý, ghi nhật ký chạy của
+    trợ lý (memory/agents/<slug>/runs), trả về text SẠCH để lưu phiên và hiện lên chat."""
+    _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
+    sach = _learn(slug, final_text or "")
+    _log(slug, user_message or "", sach or "")
+    return sach
 
 
 async def execute_workflow_graph(brain, slug, input="", tools=None, session_id=""):
@@ -7334,7 +8378,7 @@ async def execute_workflow_graph(brain, slug, input="", tools=None, session_id="
                "task_id": result.task_id, "reason": result.stop_reason}
 
 
-async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
+async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""):
     """Chạy workflow nhiều agent tuần tự, YIELD event dict (KHÔNG bọc SSE). Dùng CHUNG cho:
       - /workflows/run  : user bấm ở Studio (full quyền, stream SSE).
       - dispatcher Kanban: chạy nền không người xem → truyền tools=SAFE_FILE_TOOLS để agent
@@ -7391,9 +8435,11 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
         out = ""
         verified = None
         attempt = 0
+        loi_buoc = ""      # bước này HỎNG vì sao. "" = bước chạy được.
         while True:
             gcli = _mk(sysprompt, agent_model, agent_prov)   # áp model agent đã chọn
             out = ""
+            loi_engine = ""
             async for ev in gcli.query(cur_prompt):
                 if ev["type"] == "text":
                     yield {"type": "step_text", "i": i, "content": ev["content"]}
@@ -7402,7 +8448,17 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
                 elif ev["type"] == "final":
                     out = ev.get("content") or out
                 elif ev["type"] == "error":
+                    loi_engine = ev["content"] or loi_engine
                     yield {"type": "step_error", "i": i, "content": ev["content"]}
+
+            # Chốt "bước này hỏng hay không" NGAY ĐÂY, trước cả vòng kiểm chứng. Trước 0.59.2
+            # engine báo lỗi xong vẫn chảy thẳng xuống `step_done` ở cuối, nên một bước chết
+            # vẫn hiện tích xanh "Đã hoàn tất" ở cột phải và câu lỗi thô thành kết quả quy
+            # trình. Đưa câu "hết lượt gói" cho agent kiểm chứng còn tệ hơn: đốt thêm một lượt
+            # của đúng cái gói vừa hết để hỏi một câu vô nghĩa.
+            loi_buoc = _loi_het_luot_cua_buoc(out, loi_engine, agent_prov, agent_name) or loi_engine
+            if loi_buoc:
+                break
 
             if not verify_slug:
                 break
@@ -7453,11 +8509,93 @@ async def execute_workflow(brain, slug, input="", tools=None, session_id=""):
                 "CẢI THIỆN kết quả lần trước theo phản hồi: giữ phần đã tốt, sửa đúng chỗ bị chê. Làm cho ĐẠT."
             )
 
+        # Bước hỏng thì DỪNG CẢ LẦN CHẠY ở đây: không `step_done` (bước hỏng không phải bước
+        # xong), không `done` (kết quả hỏng không phải kết quả), và không đẩy `out` sang
+        # {{prev}} cho bước sau nhai lại một câu báo lỗi. Sự kiện `error` mang theo `i` và
+        # `agent` để khung chat nói được HỎNG Ở BƯỚC NÀO, AI CHẠY (workflow_chat.tin_loi).
+        if loi_buoc:
+            # `step_error` TRƯỚC rồi mới tới `error`. Nhánh hết lượt về theo đường câu trả lời
+            # nên chưa hề phát step_error nào, mà đó mới là sự kiện ghi lý do vào ĐÚNG DÒNG
+            # BƯỚC của kho lần chạy (_ghi_lich_su) và là thứ bảng chạy của Studio chờ để tắt
+            # vòng quay của bước. Thiếu nó thì bước đó lưu lại với error rỗng và quay mãi.
+            # Không sợ đếm hai lần: workflow_chat.chay và workspace.js chỉ ghi đè cùng một ô,
+            # còn tasks.py gộp step_error và error vào chung một biến.
+            if loi_buoc != loi_engine:
+                yield {"type": "step_error", "i": i, "content": loi_buoc}
+            yield {"type": "error", "i": i, "agent": agent_name, "content": loi_buoc}
+            return
         out = _learn(agent_slug, out)   # bóc JAVIS_LESSON + ghi bộ nhớ trước khi out thành {{prev}}
         prev = out
         yield {"type": "step_done", "i": i, "agent": agent_name, "output": out, "verified": verified}
         _log(agent_slug, task_f, out)
     yield {"type": "done", "result": prev}
+
+
+async def _ghi_lich_su(gen, *, brain, slug, name, input, source, session_id, run_id=None):
+    """Bọc luồng sự kiện của một lần chạy workflow để ghi kho lịch sử (workflow_runs).
+
+    Không nuốt, không đổi sự kiện nào; chỉ gắn thêm `run_id` vào sự kiện `start`. Đặt ở đây
+    (chứ không ở từng chỗ gọi) để trang Cộng sự, Kanban, nhắc hẹn và loop đều được ghi mà
+    không ai phải nhớ. `run_id` truyền vào khi chạy TIẾP một lần đang chờ duyệt: cập nhật
+    đúng bản ghi cũ thay vì đẻ bản mới.
+
+    Luồng bị đóng giữa chừng (người dùng dừng, client rớt) thì `finally` chốt bản ghi là
+    lỗi "dừng giữa chừng", không để nó kẹt ở "đang chạy" mãi.
+    """
+    import workflow_runs
+    st = workflow_runs.get_store()
+    rid = run_id or st.bat_dau(brain=brain, slug=slug, name=name, input=input or "",
+                               source=source or "other", session_id=session_id or "")
+    ket = None
+    try:
+        async for ev in gen:
+            t = ev.get("type")
+            if t == "start":
+                ev = dict(ev, run_id=rid)
+            elif t == "step_start":
+                st.ghi_buoc(rid, int(ev.get("i", 0)), agent=ev.get("agent", ""), task=ev.get("task", ""))
+            elif t == "step_done":
+                st.ghi_buoc(rid, int(ev.get("i", 0)), output=ev.get("output", ""), verified=ev.get("verified"))
+            elif t == "step_error":
+                st.ghi_buoc(rid, int(ev.get("i", 0)), error=ev.get("content", ""))
+            elif t == "wait_user":
+                ket = "waiting"
+                st.ket_thuc(rid, "waiting", task_id=str(ev.get("task_id") or ""))
+            elif t == "error":
+                ket = "error"
+                st.ket_thuc(rid, "error", error=str(ev.get("content") or ""))
+            elif t == "done":
+                ket = "done"
+                st.ket_thuc(rid, "done", output=str(ev.get("result") or ""))
+            yield ev
+    finally:
+        if ket is None:
+            try:
+                st.ket_thuc(rid, "error", error="dừng giữa chừng")
+            except Exception:
+                pass
+
+
+async def execute_workflow(brain, slug, input="", tools=None, session_id="", source="other",
+                           input_luu=None):
+    """Chạy workflow và GHI LỊCH SỬ. Mọi chỗ gọi (trang Cộng sự, Kanban, nhắc hẹn) đi qua đây.
+    `source`: web | kanban | reminder | loop | other, chỉ để lọc khi đọc lại.
+
+    `input_luu`: câu GHI VÀO LỊCH SỬ khi khác thứ đưa cho động cơ. Ngữ cảnh tự động (tài liệu
+    người dùng gắn vào cuộc, nội dung file đã ghim) phải tới được động cơ, nhưng nó không phải
+    lời người dùng gõ: lưu nguyên vào cột `input` là dòng lịch sử chạy và bảng lần chạy hiện
+    nguyên khối tài liệu thay cho câu yêu cầu. None = lưu đúng thứ đã đưa cho động cơ."""
+    wf_file = _workflows_dir(brain) / f"{slug}.md"
+    if not wf_file.exists():
+        yield {"type": "error", "content": "workflow not found"}
+        return
+    meta, _ = _read_md(wf_file)
+    async for ev in _ghi_lich_su(
+            _execute_workflow_raw(brain, slug, input, tools, session_id),
+            brain=_brain_key(brain), slug=slug, name=meta.get("name", slug),
+            input=input if input_luu is None else input_luu,
+            source=source, session_id=session_id):
+        yield ev
 
 
 def workflow_capability_guard(node, route_entry, approved: bool) -> str:
@@ -7477,8 +8615,8 @@ def workflow_capability_guard(node, route_entry, approved: bool) -> str:
     return ""
 
 
-async def execute_workflow_resume(brain, slug, task_id, node_id, code, tools=None,
-                                  session_id=""):
+async def _execute_workflow_resume_raw(brain, slug, task_id, node_id, code, tools=None,
+                                       session_id=""):
     """Duyệt xong thì chạy tiếp workflow đang dừng. Yield event như /workflows/run."""
     graph = load_workflow_graph(brain, slug)
     if graph is None:
@@ -7545,6 +8683,21 @@ async def execute_workflow_resume(brain, slug, task_id, node_id, code, tools=Non
                "task_id": task_id, "reason": result.stop_reason}
 
 
+async def execute_workflow_resume(brain, slug, task_id, node_id, code, tools=None,
+                                  session_id="", source="other"):
+    """Chạy tiếp lần đang chờ duyệt, ghi vào ĐÚNG bản ghi lịch sử đang `waiting`."""
+    import workflow_runs
+    cu = workflow_runs.get_store().tim_theo_task(task_id)
+    wf_file = _workflows_dir(brain) / f"{slug}.md"
+    meta, _ = _read_md(wf_file) if wf_file.exists() else ({}, "")
+    async for ev in _ghi_lich_su(
+            _execute_workflow_resume_raw(brain, slug, task_id, node_id, code, tools, session_id),
+            brain=_brain_key(brain), slug=slug, name=meta.get("name", slug), input=(cu or {}).get("input", ""),
+            source=source, session_id=session_id or (cu or {}).get("session_id", ""),
+            run_id=(cu or {}).get("id")):
+        yield ev
+
+
 @app.get("/workflows/resume")
 async def resume_workflow(task_id: str = Query(...), node: str = Query(...),
                           code: str = Query(...), slug: str = Query(...),
@@ -7559,6 +8712,23 @@ async def resume_workflow(task_id: str = Query(...), node: str = Query(...),
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.get("/workflows/runs")
+async def workflow_runs_list(brain: str = Query("brain"), slug: str = Query(""), limit: int = Query(20)):
+    """Lịch sử chạy quy trình, mới nhất trước, bản gọn (không kèm kết quả đầy đủ)."""
+    import workflow_runs
+    return {"runs": workflow_runs.get_store().gan_nhat(
+        _brain_key(brain), slug=slug or None, limit=max(1, min(int(limit or 20), 100)))}
+
+
+@app.get("/workflows/runs/{run_id}")
+async def workflow_runs_get(run_id: str):
+    import workflow_runs
+    r = workflow_runs.get_store().lay(run_id)
+    if not r:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return r
 
 
 @app.get("/workflows/run")
@@ -7707,6 +8877,48 @@ async def push_to_chat(session_id, text) -> bool:
 
 WEB_CHAT_PREFIX = "web:"   # owner_chat của việc giao từ dashboard: "web:<mã phiên chat>"
 
+# Kết quả của một cộng sự gửi NGƯỢC về khung Trò chuyện đã gọi nó. Cắt ở đây chứ không đẩy
+# nguyên: bản đầy đủ nằm sẵn trong hội thoại của cộng sự và link ngay bên trên trỏ tới đó,
+# nên khung Trò chuyện chỉ cần đủ để đọc lướt mà biết việc đã xong hay hỏng.
+TRAN_BAO_KHUNG_GOC = 2000
+
+
+def _ten_cong_su(brain, loai: str, slug: str) -> str:
+    """Tên người-đọc-được của một trợ lý / quy trình. Không tra ra thì trả slug."""
+    try:
+        ds = agents_index(brain) if loai == "agent" else workflows_index(brain)
+        for x in ds:
+            if x.get("slug") == slug:
+                return str(x.get("name") or slug)
+    except Exception:
+        pass
+    return slug
+
+
+async def _bao_ve_khung_goc(goc_sid: str, brain, loai: str, slug: str, conv_sid: str,
+                            text: str) -> bool:
+    """Cộng sự chạy xong sau một lệnh "/" gõ ở khung Trò chuyện: đẩy kết quả NGƯỢC về đúng
+    khung đó, kèm link mở lại cuộc hội thoại đã làm việc.
+
+    Vì sao cần: gõ "/quy-trinh" ở khung Trò chuyện là trang nhảy hẳn sang Cộng sự và mọi thứ
+    diễn ra ở đó. Quay lại khung cũ thì nó vẫn y nguyên như lúc rời đi, không một dòng nào nói
+    rằng mình vừa sai một quy trình đi làm việc, càng không có kết quả. Chủ dự án yêu cầu
+    15/09: kết quả phải về khung đã gọi, hoặc chí ít là đường dẫn tới chỗ có nó. Đây làm cả hai.
+
+    Link "#cs=..." do chat-render.js dựng thành nút bấm được (mở đúng cộng sự + đúng phiên).
+    """
+    goc = str(goc_sid or "").strip()
+    than = str(text or "").strip()
+    if not goc or not than or goc == conv_sid:
+        return False
+    if len(than) > TRAN_BAO_KHUNG_GOC:
+        than = than[:TRAN_BAO_KHUNG_GOC].rstrip() + "\n\n... (còn nữa, mở hội thoại bên trên để đọc đủ)"
+    nhan = "Trợ lý" if loai == "agent" else "Quy trình"
+    ten = _ten_cong_su(brain, loai, slug)
+    link = f"#cs={loai}:{slug}:{conv_sid}"
+    dau = f"**{nhan} {ten}** vừa chạy xong việc bạn giao từ đây. [Mở hội thoại]({link})"
+    return await push_to_chat(goc, dau + "\n\n" + than)
+
 
 async def _zalo_send_to(chat_id, text) -> tuple:
     """Gửi 1 tin Zalo tới ĐÚNG chat_id. Trả (ok, error). Đối xứng với `_tg_send_to`."""
@@ -7741,6 +8953,40 @@ async def _zalo_send_to(chat_id, text) -> tuple:
 
 _PUSH_TASKS = set()   # giữ tham chiếu task đẩy đang bay (xem chú thích trong _bo_vao_hom_thu)
 
+# Việc nền do bộ não giọng giao (Voice V3, "tách nói khỏi làm"). Giữ ref mạnh vì asyncio chỉ
+# giữ ref YẾU tới task đang chờ: thả trôi là có thể bị gom rác giữa chừng, việc chết lặng.
+# Gom THEO PHIÊN để còn huỷ được đúng việc của khung chat đang nói.
+_VOICE_BG_TASKS: dict = {}
+VOICE_BG_TIMEOUT = 600.0   # giây. Quá hạn thì báo một câu thật, không treo im vô hạn.
+
+
+def _nho_viec_nen_giong(conv_sid: str, task) -> None:
+    _VOICE_BG_TASKS.setdefault(str(conv_sid), set()).add(task)
+
+    def _xong(t):
+        s = _VOICE_BG_TASKS.get(str(conv_sid))
+        if s is None:
+            return
+        s.discard(t)
+        if not s:
+            _VOICE_BG_TASKS.pop(str(conv_sid), None)
+    task.add_done_callback(_xong)
+
+
+def huy_viec_nen_giong(conv_sid: str) -> int:
+    """Huỷ MỌI việc nền của một phiên nói. Trả về số việc đã huỷ.
+
+    Đường huỷ trong `_voice_bg_task` lo phần còn lại: gạch tên khỏi sổ, đóng thẻ Việc sang
+    CHẶN kèm lý do, và đẩy một câu về khung chat. Nên ở đây chỉ cần cancel.
+    """
+    tasks = list(_VOICE_BG_TASKS.get(str(conv_sid)) or [])
+    n = 0
+    for t in tasks:
+        if not t.done():
+            t.cancel()
+            n += 1
+    return n
+
 
 async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="",
                           quiet=False) -> bool:
@@ -7758,8 +9004,21 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
     try:
         cid = str(owner_chat or "").strip()
         sid = cid[len(WEB_CHAT_PREFIX):] if cid.startswith(WEB_CHAT_PREFIX) else ""
+        # KÊNH của hội thoại đích, đọc từ chính kho phiên. Dashboard cần nó để bấm vào mẩu thư
+        # là về ĐÚNG TRANG: hội thoại "agent:<slug>" / "workflow:<slug>" mở ở trang Cộng sự,
+        # còn lại mở ở khung chat thường. Thiếu nó thì mọi mẩu thư đều đổ vào khung chat của
+        # bộ não chính, và tin gõ tiếp bay vào phiên của trợ lý (đúng lỗi 0.59.15 đã chữa cho
+        # đường rời trang). Hỏng thì bỏ qua - kênh là thứ làm ĐẸP đường về, không phải điều
+        # kiện để lưu thư.
+        kenh = ""
+        if sid:
+            try:
+                kenh = str((get_store().get_session(sid) or {}).get("channel") or "")
+            except Exception as e:
+                print(f"[inbox] không đọc được kênh của phiên {sid[:8]}: "
+                      f"{type(e).__name__}: {e}", file=sys.stderr)
         item = inbox.add(text, kind=kind, session_id=sid, source=source, label=label,
-                         read=bool(quiet))
+                         read=bool(quiet), channel=kenh)
     except Exception as e:
         print(f"[inbox] bỏ thư lỗi: {type(e).__name__}: {e}", file=sys.stderr)
         return False
@@ -7793,7 +9052,7 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
 
 
 async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="",
-                        quiet=False) -> tuple:
+                        quiet=False, ngan="") -> tuple:
     """Báo cáo cho NGƯỜI YÊU CẦU loop/task (mặc định của Javis). Quy tắc:
       - owner_chat dạng "web:<sid>" → đẩy thẳng vào ĐÚNG khung chat web đã giao việc.
       - owner_chat dạng "zalo:<id>" → gửi qua bot Zalo cho ĐÚNG người đó.
@@ -7814,12 +9073,19 @@ async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="",
     chỉ bỏ hai thứ GỌI người dùng dậy: chấm đỏ trên chuông và thông báo đẩy của trình duyệt.
     Dành cho tin đáng lưu mà không đáng làm phiền - xem `_bo_vao_hom_thu` và `TaskRunner._report`.
 
+    `ngan` (thêm 0.55.57): bản RÚT GỌN chỉ dùng cho kênh NGOÀI (Telegram/Zalo). Khung chat web
+    và hòm thư luôn nhận bản ĐẦY ĐỦ. Chủ repo báo 2026-09-08: "việc ngầm chạy xong nó không đẩy
+    hết kết quả lên màn chat hiện tại, và nó để luôn ở trang Việc" - đúng vậy, `TaskRunner._report`
+    cắt kết quả còn 240 ký tự cho MỌI kênh. Cắt như thế đúng với Telegram (một cái liếc trên
+    điện thoại) nhưng sai hẳn với khung chat: người ta vừa ngồi đó giao việc, kết quả phải rơi
+    về nguyên vẹn, không phải một mẩu cụt kèm lời mời đi sang trang khác đọc nốt.
+
     Trả (ok, error). `ok` là ĐÃ TỚI ĐƯỢC NGƯỜI DÙNG, và hòm thư tính là tới: nó nằm ở
     server, còn sau F5, thấy được từ máy khác. Nhờ vậy một cái nhắc hẹn trên máy chưa đấu
     Telegram không còn bị ghi là "failed" trong khi nội dung đang nằm sẵn trong hòm."""
     vao_hom = await _bo_vao_hom_thu(owner_chat, text, kind=kind, label=label, source=source,
                                     quiet=quiet)
-    ok, err = await _gui_qua_kenh(owner_chat, text)
+    ok, err = await _gui_qua_kenh(owner_chat, text, ngan=ngan)
     if ok or not vao_hom:
         return ok, ("" if ok else err)
     # Kênh hỏng nhưng hòm thư đã giữ tin: với NGƯỜI DÙNG đây là thành công, nên đừng trả lỗi
@@ -7831,15 +9097,37 @@ async def _notify_owner(owner_chat, text, *, kind="answer", label="", source="",
     return True, ""
 
 
-async def _gui_qua_kenh(owner_chat, text) -> tuple:
+# Trần một tin Telegram là 4096 ký tự; dài hơn là API trả 400 và tin KHÔNG tới, im lặng.
+_TRAN_TIN_TG = 3900
+
+
+def _cat_cho_tg(text: str) -> str:
+    """Cắt cho vừa trần Telegram, và NÓI RA là đã cắt.
+
+    Cắt lặng thì người đọc tưởng mình đã đọc hết. Kết quả đầy đủ luôn còn trong hòm thư và
+    trang Việc, nên câu đuôi chỉ cần chỉ đường về đó.
+    """
+    t = str(text or "")
+    if len(t) <= _TRAN_TIN_TG:
+        return t
+    return t[:_TRAN_TIN_TG].rstrip() + "\n\n… (còn nữa - xem đầy đủ trong hòm thư của Javis)"
+
+
+async def _gui_qua_kenh(owner_chat, text, *, ngan="") -> tuple:
     """Gửi qua ĐÚNG kênh đã giao việc. Tách khỏi `_notify_owner` để chỗ đó chỉ còn lo việc
-    ghép hai đường (hòm thư + kênh), không lẫn với chi tiết của từng nhà."""
+    ghép hai đường (hòm thư + kênh), không lẫn với chi tiết của từng nhà.
+
+    Đây cũng là nơi DUY NHẤT biết mỗi kênh chịu được gì, nên bản rút gọn `ngan` được chọn ở
+    đây chứ không ở nơi sinh việc: khung chat web không có trần và người dùng đang ngồi đó -
+    trả về đủ; Telegram/Zalo là một cái liếc trên điện thoại và có trần thật - trả bản gọn.
+    """
     cid = str(owner_chat or "").strip()
     if cid.startswith(WEB_CHAT_PREFIX):
         sid = cid[len(WEB_CHAT_PREFIX):]
         if await push_to_chat(sid, text):
             return True, ""
         return False, "Không tìm thấy phiên chat web để báo"
+    text = str(ngan or text or "")
     # Việc giao TỪ Zalo phải báo VỀ Zalo. Không có nhánh này thì kết quả rơi sang Telegram của
     # chủ, tức là người giao việc không bao giờ thấy nó, còn chủ thì nhận một báo cáo không
     # rõ của ai - và máy chưa đấu Telegram thì mất hút hoàn toàn.
@@ -7855,7 +9143,7 @@ async def _gui_qua_kenh(owner_chat, text) -> tuple:
     try:
         async with httpx.AsyncClient(timeout=15) as c:
             r = await c.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                             json={"chat_id": target, "text": text})
+                             json={"chat_id": target, "text": _cat_cho_tg(text)})
             d = r.json() if r.content else {}
             if d.get("ok"):
                 return True, ""
@@ -7977,6 +9265,11 @@ tasks_feature = tasks_mod.register(app, tasks_mod.TasksDeps(
 # Nối learn → Kanban: engine học đề xuất việc nền → enqueue vào backlog.
 # Gate ở learn.py (cap "task" mặc định off + chỉ enqueue khi allow_write); dedup ở tasks.enqueue.
 learn_feature.deps.enqueue_task = tasks_feature.enqueue
+
+# Nối ngược Kanban → learn: việc nền chạy xong (hoặc vướng) thì xếp vào hàng đợi tự học.
+# Không có nhánh này thì Javis chỉ học được từ những gì NÓI trong chat, còn những gì nó TỰ LÀM
+# trong nền - phần kinh nghiệm thực chiến - trôi qua không để lại bài học nào.
+tasks_feature.deps.learn_hook = learn_feature.enqueue_job
 
 
 # ============================================================
@@ -8198,9 +9491,17 @@ def _viec_nen_view(brain: str, chat_id: str = "") -> dict:
         running_slug = loop_feature._running[1] if loop_feature._running else ""
     except Exception:
         pass
+    # Việc nền do bộ não GIỌNG giao: sổ đánh theo mã phiên chat, còn dải trạng thái gọi tới đây
+    # bằng "web:<mã phiên>", nên bóc tiền tố ra mới tra được.
+    vsid = chat_id[len(WEB_CHAT_PREFIX):] if str(chat_id or "").startswith(WEB_CHAT_PREFIX) else ""
+    try:
+        voice_tasks = voice_brain.pending_tasks(vsid) if vsid else []
+    except Exception:
+        voice_tasks = []
     return background_status.active_view(
         tasks, loops, rems, chat_id=chat_id,
         orchestration=orchestration, running_loop=running_slug,
+        voice_tasks=voice_tasks,
     )
 
 
@@ -8247,6 +9548,229 @@ async def _canh_bao_hua_suong(brain: str, chat_id: str, final_text: str,
     return background_status.promise_note(view.get("orchestration") or "")
 
 
+# ---- Link file trong câu trả lời: đưa về ĐÚNG đường dẫn mà khung chat mở được ----
+#
+# Chủ repo báo (2026-09-08): "tạo file trong đoạn chat nhưng sai link, ấn vào không ra file
+# cũ"; file "đã viết" mà mở thư mục không thấy; đếm bài chưa hoàn thiện lúc 3 lúc 5. Cả ba
+# cùng một gốc: Claude Code trong chat chạy với cwd = GỐC PROJECT (/app trong Docker) chứ không
+# phải thư mục brain, nên đường dẫn tương đối mà model ghi/đọc rơi ra ngoài brain - và trong
+# Docker thì /app bay theo mỗi lần dựng lại container. cwd đã sửa ở nhánh chat (xem chỗ dựng
+# engine); ba hàm dưới là LƯỚI cho phần còn lại: model vẫn có thể dẫn link bằng đường dẫn
+# tuyệt đối của máy (khung chat không mở được), hoặc dẫn tới một file không hề tồn tại.
+#
+# Nguyên tắc: chỉ ĐỔI CÁCH VIẾT của link, không đổi câu chữ; và KHÔNG BỊA - link nào không thấy
+# file thì nói ra trong một dòng riêng, thà thừa một dòng còn hơn một cái link câm.
+_LINK_BO_QUA = ("#", "mailto:", "data:", "tel:", "blob:", "/files/raw", "/files/download")
+_BACKTICK_RE = re.compile(r"`([^`\n]+)`")
+# `file:///brains/Brain%20Default/wiki/x.md`, `file://localhost/...`, `file:/C:/...`. Harness của
+# Antigravity dặn model "dùng link markdown kiểu GitHub với giao thức file://" (bug 2026-09-09:
+# bấm link wiki vừa ingest thì 404), nên dạng này sẽ còn về đều; gỡ giao thức rồi xử lý như
+# đường dẫn tuyệt đối bình thường.
+_FILE_URI_RE = re.compile(r"^file:(?://[^/\\]*)?(?=[/\\])", re.IGNORECASE)
+
+
+def _go_file_uri(t: str):
+    """`file:///a/b` → `/a/b` (đã giải mã %xx, `/C:/x` → `C:/x`). Không phải file URI → None."""
+    t = str(t or "").strip()
+    if not _FILE_URI_RE.match(t):
+        return None
+    duong = _FILE_URI_RE.sub("", t, count=1)
+    try:
+        duong = urllib.parse.unquote(duong)
+    except Exception:
+        pass
+    duong = duong.replace("\\", "/")
+    if re.match(r"^/[A-Za-z]:/", duong):
+        duong = duong[1:]
+    return duong
+
+
+def _files_vua_ghi(brain_root: str, ung_vien, t0: float) -> list:
+    """Từ đường dẫn moi được trong tool call → danh sách file CÓ THẬT, NẰM TRONG brain và VỪA
+    ĐỔI trong lượt (mtime >= t0). Tương đối thì ghép với gốc brain (cwd của lượt chat)."""
+    ra, seen = [], set()
+    try:
+        broot = Path(brain_root).resolve()
+    except Exception:
+        return ra
+    for c in (ung_vien or []):
+        try:
+            pp = Path(str(c).replace("\\", "/"))
+            if not pp.is_absolute():
+                pp = broot / pp
+            pp = pp.resolve()
+            if pp in seen or not pp.is_file():
+                continue
+            pp.relative_to(broot)          # ngoài brain → ValueError → bỏ
+            if pp.stat().st_mtime < float(t0) - 2:
+                continue
+            seen.add(pp)
+            ra.append(str(pp))
+        except Exception:
+            continue
+    return ra
+
+
+def _link_muc_tieu_moi(brain_root: str, raw: str, files_written=None):
+    """Cách viết MỚI cho một target link, hoặc None nếu giữ nguyên.
+
+    - Tuyệt đối (POSIX/Windows, kể cả %20) mà nằm TRONG brain → tương đối theo gốc brain.
+    - Tuyệt đối ngoài brain, URL, anchor, link /files/raw → không đụng.
+    - Tương đối mà không có file, nhưng trùng TÊN với một file vừa ghi trong lượt → trỏ sang
+      file đó (model hay dẫn sai thư mục nhưng đúng tên file).
+    """
+    t = str(raw or "").strip().strip("<>").strip()
+    file_uri = _go_file_uri(t)
+    if file_uri is not None:
+        t = file_uri
+    elif not t or "://" in t or t.lower().startswith(_LINK_BO_QUA):
+        return None
+    if re.search(r"%[0-9a-fA-F]{2}", t):
+        try:
+            t = urllib.parse.unquote(t)
+        except Exception:
+            pass
+    try:
+        broot = Path(brain_root).resolve()
+    except Exception:
+        return None
+    tuyet_doi = t.startswith("/") or t.startswith("~") or re.match(r"^[A-Za-z]:[\\/]", t) is not None
+    if tuyet_doi:
+        try:
+            cand = Path(t.replace("\\", "/")).expanduser().resolve()
+            rel = cand.relative_to(broot).as_posix()
+        except Exception:
+            # Ngoài brain: khung chat không mở được, để nguyên. Riêng `file:///wiki/x.md` (model
+            # viết đường tương đối theo brain nhưng vẫn khoác giao thức) thì thử theo gốc brain.
+            if file_uri is None:
+                return None
+            rel = t.lstrip("/")
+            if not rel or not (broot / rel).exists():
+                return None
+        return rel if rel != str(raw).strip() else None
+    rel = re.sub(r"^(\./)+", "", t.replace("\\", "/")).lstrip("/")
+    if not rel or (broot / rel).exists():
+        return (rel if rel != str(raw).strip() and re.search(r"%[0-9a-fA-F]{2}", str(raw)) else None)
+    base = rel.rsplit("/", 1)[-1].lower()
+    for f in (files_written or []):
+        try:
+            fp = Path(str(f)).resolve()
+            if fp.name.lower() == base:
+                return fp.relative_to(broot).as_posix()
+        except Exception:
+            continue
+    return None
+
+
+def _chuan_hoa_link_file(brain_root: str, text: str, files_written=None) -> str:
+    """Viết lại link/ảnh markdown, đường dẫn trong backtick và đường dẫn tuyệt đối trần trong
+    câu trả lời về dạng khung chat mở được (tương đối theo gốc brain). Không thấy gì để đổi
+    thì trả nguyên văn."""
+    if not text or not brain_root:
+        return text
+    try:
+        broot = Path(brain_root).resolve()
+    except Exception:
+        return text
+
+    def _md(m):
+        raw = channel_context._md_link_target(m)
+        moi = _link_muc_tieu_moi(brain_root, raw, files_written)
+        if moi is None:
+            return m.group(0)
+        return f"{m.group(1)}[{m.group(2)}]({moi})"
+
+    ra = channel_context._MD_LINK_RE.sub(_md, text)
+
+    def _bt(m):
+        raw = m.group(1).strip()
+        # Chỉ đụng tới thứ trông như đường dẫn TUYỆT ĐỐI (backtick còn chứa lệnh, tên tool...).
+        if not (raw.startswith("/") or re.match(r"^[A-Za-z]:[\\/]", raw) or _go_file_uri(raw) is not None):
+            return m.group(0)
+        moi = _link_muc_tieu_moi(brain_root, raw, files_written)
+        return f"`{moi}`" if moi else m.group(0)
+
+    ra = _BACKTICK_RE.sub(_bt, ra)
+
+    # Đường dẫn tuyệt đối TRẦN (không backtick, không link) nằm trong brain → bọc backtick
+    # dạng tương đối để khung chat biến thành link bấm được. Chỉ khi resolve được vào brain,
+    # nên không đụng nhầm chữ thường.
+    def _tran(m):
+        raw = m.group(1).rstrip(".,;:!?…")
+        duoi = m.group(1)[len(raw):]
+        try:
+            rel = Path(raw).resolve().relative_to(broot).as_posix()
+        except Exception:
+            return m.group(0)
+        if not (broot / rel).exists():
+            return m.group(0)
+        return m.group(0)[:m.start(1) - m.start(0)] + f"`{rel}`" + duoi
+
+    ra = re.sub(r"(?<![`\[(/\w])(/[^\s`\"'()\[\]<>|*?:]+)", _tran, ra)
+
+    def _uri_tran(m):
+        moi = _link_muc_tieu_moi(brain_root, m.group(0), files_written)
+        if not moi or "://" in moi or not (broot / moi).exists():
+            return m.group(0)
+        return f"`{moi}`"
+
+    ra = re.sub(r"(?<![`\[(<\w])file:(?://[^/\s]*)?/[^\s`\"'<>()\[\]]+", _uri_tran, ra, flags=re.IGNORECASE)
+    return ra
+
+
+def _link_file_khong_thay(brain_root: str, text: str) -> list:
+    """Những target link/ảnh markdown trong câu trả lời mà KHÔNG có file trong brain (tối đa 5).
+    Bỏ qua URL, anchor, link /files/raw. Tuyệt đối ngoài brain cũng tính là không mở được."""
+    if not text or not brain_root:
+        return []
+    try:
+        broot = Path(brain_root).resolve()
+    except Exception:
+        return []
+    thieu, seen = [], set()
+    for muc in channel_context.markdown_targets(text):
+        raw = str(muc.get("raw") or "").strip().strip("<>")
+        file_uri = _go_file_uri(raw)
+        if file_uri is not None:
+            raw = file_uri
+        elif not raw or "://" in raw or raw.lower().startswith(_LINK_BO_QUA):
+            continue
+        # Chỉ xét thứ TRÔNG NHƯ đường dẫn file (có thư mục hoặc có đuôi). `[Models](models)` hay
+        # `[xem](muc-2)` là chữ, không phải file - báo "không thấy" cho chúng là báo động giả.
+        if "/" not in raw and "\\" not in raw and not re.search(r"\.[A-Za-z0-9]{1,6}$", raw):
+            continue
+        t = raw
+        if re.search(r"%[0-9a-fA-F]{2}", t):
+            try:
+                t = urllib.parse.unquote(t)
+            except Exception:
+                pass
+        try:
+            if t.startswith("/") or t.startswith("~") or re.match(r"^[A-Za-z]:[\\/]", t):
+                cand = Path(t.replace("\\", "/")).expanduser().resolve()
+                cand.relative_to(broot)
+            else:
+                cand = (broot / re.sub(r"^(\./)+", "", t.replace("\\", "/")).lstrip("/")).resolve()
+            co = cand.exists()
+        except Exception:
+            co = False
+        if not co and raw not in seen:
+            seen.add(raw)
+            thieu.append(raw)
+        if len(thieu) >= 5:
+            break
+    return thieu
+
+
+def _cau_link_khong_thay(thieu: list) -> str:
+    """Dòng sự thật khi câu trả lời dẫn link tới file không có trong brain. Không đổ lỗi, không
+    đoán nguyên nhân; chỉ nói mình không thấy và chỉ chỗ tự kiểm."""
+    ds = ", ".join(f"`{x}`" for x in thieu[:5])
+    return ("⚠ Câu trả lời có dẫn link tới file mà mình không tìm thấy trong brain: " + ds +
+            ". Có thể file được ghi ở chỗ khác hoặc chưa được ghi thật. Kiểm tra ở trang Tệp tin "
+            "trước khi tin vào link đó.")
+
+
 @app.get("/lint")
 async def lint(brain: str = Query("brain")):
     """LINT - health-check Wiki (chỉ đọc, không sửa). Trả danh sách 8 loại vấn đề."""
@@ -8257,7 +9781,7 @@ async def lint(brain: str = Query("brain")):
         cli.mcp_config = _mcpf; cli.mcp_strict = True
     cli.disallowed_tools = ["Bash", "WebFetch", "WebSearch", "Task"]
     if not cli.is_available():
-        return {"ok": False, "error": "Claude CLI chưa cài"}
+        return {"ok": False, "error": claude_cli.cau_thieu_cli("claude", "Claude")}
     prompt = (
         "LINT - quét folder Wiki của vault, tìm 8 loại vấn đề: mâu thuẫn, stale claim, orphan page, "
         "missing page, broken wikilink, trùng lặp, gap (vùng kiến thức mỏng), open-question chưa lấp.\n"
@@ -8459,6 +9983,29 @@ def rebuild_javis_index(brain: str) -> dict:
         return {"ok": False, "error": f"{type(e).__name__}: {e}"}
 
 
+def _dong_lan_chay_gan_nhat(brain) -> str:
+    """Một dòng cho system prompt: lần chạy quy trình gần nhất của brain, rỗng nếu chưa có.
+    Nhờ dòng này, hỏi "quy trình chạy gần nhất ra sao" ở khung chat chính là Javis biết ngay
+    có gì để tra và tra bằng tool nào."""
+    try:
+        import workflow_runs
+        from datetime import datetime
+        ds = workflow_runs.get_store().gan_nhat(_brain_key(brain), limit=1)
+    except Exception:
+        return ""
+    if not ds:
+        return ""
+    r = ds[0]
+    try:
+        # Docker chạy giờ UTC chứ không phải giờ Việt Nam, nên phải gắn múi giờ người dùng đã
+        # chọn (localefmt) - dùng datetime.fromtimestamp trần là lệch đúng offset VN lúc deploy.
+        luc = datetime.fromtimestamp(float(r["started_at"]), tz=localefmt.now().tzinfo).strftime("%H:%M %d/%m")
+    except Exception:
+        luc = "?"
+    return (f"Lần chạy quy trình gần nhất: {r['name']} lúc {luc} ({r['nhan']}). "
+            "Chi tiết hay các lần khác: tool javis_workflow (op=runs, op=show).")
+
+
 def _javis_capability_summary(brain: str, skills=None) -> str:
     """Bản LIVE gọn (capped) chèn vào system prompt: để engine nào cũng biết Javis có gì.
     Skill nhiều -> chỉ đếm + nhóm (chi tiết ở Javis/index.md), tránh phình context.
@@ -8477,6 +10024,9 @@ def _javis_capability_summary(brain: str, skills=None) -> str:
         parts.append(f"Skills: {sum(1 for s in c['skills'] if s['enabled'])} kỹ năng (nhóm: {', '.join(groups[:12])})")
     if c["workflows"]:
         parts.append("Workflows: " + ", ".join(w["name"] for w in c["workflows"][:20] if w["status"] == "active"))
+    _lc = _dong_lan_chay_gan_nhat(brain)
+    if _lc:
+        parts.append(_lc)
     if c["loops"]:
         parts.append("Loops: " + ", ".join(f"{l['name']}({'bật' if l['enabled'] else 'tắt'})" for l in c["loops"][:20]))
     live_plugins = [p for p in c.get("plugins", []) if p.get("loaded")]
@@ -8735,8 +10285,12 @@ async def _start_scheduler():
                             # khung Project trỏ vào hư không. Đường dẫn lưu ở dạng tương đối
                             # nên ghép với CẢ trần duyệt lẫn gốc brain - thừa một ứng viên
                             # không tồn tại thì vô hại, thiếu một cái là mất file thật.
+                            # Cùng luật cho tài liệu người dùng gắn tay vào một CUỘC TRÒ
+                            # CHUYỆN: gắn vào là để dùng lâu dài, dọn mất thì khung "Trong
+                            # cuộc trò chuyện này" còn lại một hàng trỏ vào hư không.
                             try:
-                                _rel_proj = get_store().all_project_file_paths()
+                                _rel_proj = (get_store().all_project_file_paths()
+                                             | get_store().all_session_file_paths())
                             except Exception:
                                 _rel_proj = set()
                             for _mb in loop_feature.scheduler_brains():
@@ -8787,6 +10341,19 @@ async def _start_scheduler():
     except Exception as e:
         print(f"[zalo start] {e}", file=__import__('sys').stderr)
     try:
+        # DI TRÚ 0.62.4: tài khoản kênh có trước bản này chưa có trường `brain`. Suy từ con bot
+        # đang trực nó; không bot nào trực thì để rỗng (= hiện ở mọi brain) chứ không đoán đại.
+        # Làm ở đây vì chỉ main mới thấy được cả hai kho - `channel_accounts` không import ngược
+        # `chatbot_store` được (vòng import).
+        def _brain_cua_tk(aid):
+            ds = chatbot_store.bots_using_account(aid)
+            return (ds[0].get("brain") or "") if ds else ""
+        n = channel_accounts.dien_brain_con_thieu(_brain_cua_tk)
+        if n:
+            print(f"[channel_accounts] điền brain cho {n} tài khoản cũ")
+    except Exception as e:
+        print(f"[channel_accounts brain] {type(e).__name__}: {e}", file=__import__('sys').stderr)
+    try:
         # Bot chuyên trách: nối bộ giám sát rồi bật những con đang để BẬT. Nối ở đây chứ không
         # để module tự import main - vòng import là thứ byte-compile không thấy, chỉ chết lúc
         # khởi động (xem bước "Import thật main" trong CI).
@@ -8797,6 +10364,12 @@ async def _start_scheduler():
             print(f"[chatbot] bật lỗi: {kq['errors']}", file=__import__('sys').stderr)
     except Exception as e:
         print(f"[chatbot start] {type(e).__name__}: {e}", file=__import__('sys').stderr)
+    try:
+        # Hộp thư hội thoại: vòng đọc Zalo cá nhân. Chạy nhẹ khi chưa bật tài khoản nào (chỉ
+        # đọc cấu hình mỗi nhịp), để bật từ trang Hội thoại là có tác dụng ngay.
+        zalo_personal_channel.start()
+    except Exception as e:
+        print(f"[zalo-personal start] {type(e).__name__}: {e}", file=__import__('sys').stderr)
 
 
 _BROWSE_MD_CAP = 500        # trần đếm .md cho mỗi thư mục con
@@ -8987,13 +10560,20 @@ async def _watchtower_ly_do() -> str:
     theo thiết kế, nhưng app trước nay gộp chúng vào một câu chung chung nên nhìn hệt như máy
     hỏng - và không có cách nào tự biết máy mình thiếu gì.
 
-    - no_token: WATCHTOWER_TOKEN không được set. Đây là stack Hostinger, nơi CỐ TÌNH không
-      kèm Watchtower (nó không đụng được Docker socket, bị Restarting liên tục). Đường cập
-      nhật ở đây là Redeploy, không có gì để bật thêm.
-    - watchtower_off: token có (docker-compose.yml luôn đặt sẵn) nhưng không nối được tới
-      container. Gần như luôn là vì Watchtower nằm trong `profiles: ["update"]`, tức là
-      `docker compose up -d` KHÔNG bật nó. Đây mới là trường hợp bật được, và bật bằng đúng
-      một lệnh - nên phải nói ra lệnh đó.
+    Từ 0.55.56 Watchtower BẬT SẴN trong cả hai file compose (VPS lẫn Hostinger), nên hai mã
+    dưới đây đổi NGHĨA - đọc kỹ trước khi sửa câu chữ ở dashboard theo:
+
+    - no_token: WATCHTOWER_TOKEN không được set, mà mọi file compose của Javis đều đặt sẵn
+      biến này. Nghĩa là stack đang chạy được deploy từ một file compose CŨ (hoặc một file tự
+      viết). Cách ra: lấy compose mới rồi deploy lại - Hostinger bấm Redeploy, VPS chạy
+      `docker compose up -d --pull always`.
+    - watchtower_off: token có nhưng không nối được tới container. Hai khả năng, và câu trả
+      lời cho cả hai đều là "deploy lại bằng compose mới": stack cũ có Watchtower trong
+      `profiles: ["update"]` nên `docker compose up -d` không bật nó; hoặc Watchtower có chạy
+      nhưng không đụng được Docker socket của host (Hostinger từng dính, xem log container
+      `<tên>-watchtower`).
+
+    Điều KHÔNG đổi: cả hai đều là app CÒN SỐNG, chỉ mất cái nút. Không được vẽ chúng như lỗi.
     """
     if not os.getenv("WATCHTOWER_TOKEN", ""):
         return "no_token"
@@ -9466,30 +11046,88 @@ async def _load_community_announcements():
     return list(by_id.values()), err
 
 
-async def changelog_index():
-    """Lõi thuần của GET /changelog. Dùng chung với /notifications (gọi nội bộ)."""
-    """Nhật ký cập nhật: đọc CHANGELOG.md trong bản đang cài + đối chiếu bản trên GitHub để
-    nêu cả phiên bản mới chưa cài. Mất mạng vẫn trả được phần local (bản đã cài)."""
-    cur = _read_version()
+# ── Nhật ký cập nhật: ba lớp cache ───────────────────────────────────────────
+# Vì sao có chúng (đo ngày 2026-09-21, trang Cập nhật "load khá chậm và có vẻ bị lỗi"):
+# CHANGELOG.md đã phình lên 939 KB / 680 phiên bản. Bản cũ của hàm này, MỖI lời gọi, đọc cả
+# file rồi parse (39 ms), TẢI thêm 939 KB nữa từ raw.githubusercontent.com, parse tiếp (39 ms),
+# rồi trả về 923 KB JSON. Không có lấy một lớp cache nào. Mà trang Cập nhật gọi nó HAI lần nối
+# đuôi (khung trên gọi một lần để khoe bản mới, danh sách bên dưới gọi một lần nữa), nên riêng
+# trang đó ngốn ~2,2 giây và 1,8 MB ngay trên máy cục bộ - trên VPS đi xa GitHub thì đủ lâu để
+# người dùng tưởng trang hỏng, và nếu GitHub chậm thì còn ăn trọn hai lần timeout 8 giây.
+#
+# Ba lớp, mỗi lớp chặn một thứ đắt riêng:
+_CL_LOCAL = {"sig": None, "releases": []}      # parse file cục bộ, khoá theo mtime+size
+_CL_REMOTE = {"at": 0.0, "releases": [], "err": None}   # bản GitHub, TTL 10 phút
+_CL_MERGED = {"key": None, "data": None}       # bản đã gộp + xếp hạng + đánh dấu installed
+_CL_REMOTE_TTL = 600
+
+
+def _cl_local_releases():
+    """Nhật ký trong bản đang cài. Parse lại CHỈ KHI file đổi (mtime+size).
+
+    Chạy trong thread (xem `changelog_full`): 39 ms thuần CPU trên event loop là 39 ms mọi
+    lượt chat khác phải đứng chờ.
+    """
     p = PROJECT_ROOT / "CHANGELOG.md"
-    local_md = ""
     try:
-        if p.exists():
-            local_md = p.read_text(encoding="utf-8")
+        st = p.stat()
+        sig = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return []
+    if _CL_LOCAL["sig"] == sig:
+        return _CL_LOCAL["releases"]
+    try:
+        md = p.read_text(encoding="utf-8")
     except Exception:
-        local_md = ""
-    by_ver = {rel["version"]: rel for rel in _parse_changelog(local_md)}
+        return _CL_LOCAL["releases"]
+    rel = _parse_changelog(md)
+    _CL_LOCAL.update({"sig": sig, "releases": rel})
+    return rel
+
+
+async def _cl_remote_releases(refresh: bool = False):
+    """Nhật ký trên nhánh main của GitHub (để nêu cả bản CHƯA cài). Cache 10 phút.
+
+    Hỏng mạng thì GIỮ bản cũ đã tải được thay vì trả rỗng: mất mạng năm phút không phải lý do
+    để danh sách phiên bản mới biến mất khỏi trang.
+    """
+    now = time.monotonic()
+    if not refresh and _CL_REMOTE["releases"] and now - _CL_REMOTE["at"] < _CL_REMOTE_TTL:
+        return _CL_REMOTE["releases"], _CL_REMOTE["err"]
     err = None
     try:
         import httpx
         url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/CHANGELOG.md"
         async with httpx.AsyncClient(timeout=8) as client:
             r = await client.get(url)
-            if r.status_code == 200:
-                for rel in _parse_changelog(r.text):
-                    by_ver.setdefault(rel["version"], rel)   # bản GitHub chưa có local = bản mới
+        if r.status_code == 200:
+            rel = await asyncio.to_thread(_parse_changelog, r.text)
+            _CL_REMOTE.update({"at": now, "releases": rel, "err": None})
+            return rel, None
+        err = f"HTTP {r.status_code}"
     except Exception as e:
         err = type(e).__name__
+    # Thất bại: lùi mốc thời gian lại để lượt sau thử lại sớm, nhưng vẫn trả bản cũ.
+    _CL_REMOTE["err"] = err
+    _CL_REMOTE["at"] = now - _CL_REMOTE_TTL + 30
+    return _CL_REMOTE["releases"], err
+
+
+async def changelog_full(refresh: bool = False):
+    """Nhật ký cập nhật ĐẦY ĐỦ: bản đang cài gộp với bản trên GitHub, mới nhất lên đầu.
+
+    Mất mạng vẫn trả được phần local (bản đã cài).
+    """
+    cur = _read_version()
+    local = await asyncio.to_thread(_cl_local_releases)
+    remote, err = await _cl_remote_releases(refresh)
+    # Khoá gộp: đổi bản đang cài, đổi file cục bộ, hoặc vừa tải lại bản GitHub thì gộp lại.
+    key = (cur, _CL_LOCAL["sig"], len(local), _CL_REMOTE["at"], len(remote))
+    if not refresh and _CL_MERGED["key"] == key and _CL_MERGED["data"] is not None:
+        return _CL_MERGED["data"]
+    by_ver = {rel["version"]: rel for rel in local}
+    for rel in remote:
+        by_ver.setdefault(rel["version"], rel)   # bản GitHub chưa có local = bản mới
     merged = sorted(by_ver.values(), key=lambda r: _ver_tuple(r["version"]) or (0, 0, 0), reverse=True)
     # CHANGELOG đánh số theo NỀN JAVIS (vd 0.40.0), còn VERSION nay là semver Thansa mang neo.
     # So "đã cài" phải dùng phần NEO javis, không phải semver Thansa, kẻo (1,2,0) > (0,40,0) làm
@@ -9500,16 +11138,40 @@ async def changelog_index():
         rel["installed"] = vt <= ct
         rel["is_current"] = (vt == ct)
     latest = merged[0]["version"] if merged else None
-    # current HIỂN THỊ theo semver Thansa (cắt neo); "latest" ở đây là số nền Javis mới nhất trong
-    # changelog nên update_available so theo NEO javis (đồng bộ với cột installed ở trên).
-    return {"current": _ver_thansa(cur), "latest": latest,
+    # current HIỂN THỊ theo semver Thansa (cắt neo); update_available so theo NEO javis (đồng bộ
+    # với cột installed ở trên). Giữ paging của upstream (total + changelog_index).
+    data = {"current": _ver_thansa(cur), "latest": latest,
             "update_available": bool(_ver_newer(latest, _ver_javis(cur))),
-            "releases": merged, "error": err}
+            "releases": merged, "total": len(merged), "error": err}
+    _CL_MERGED.update({"key": key, "data": data})
+    return data
+
+
+async def changelog_index(limit: int = 0, offset: int = 0, refresh: bool = False):
+    """Lõi thuần của GET /changelog. Dùng chung với /notifications (gọi nội bộ).
+
+    `limit` cắt bớt danh sách trả về (0 = tất cả). `latest`/`update_available`/`total` luôn
+    tính trên danh sách ĐẦY ĐỦ, nên cắt không làm sai phần đầu trang.
+    """
+    d = await changelog_full(refresh)
+    rels = d["releases"]
+    if limit and limit > 0:
+        offset = max(0, offset)
+        rels = rels[offset:offset + limit]
+    else:
+        offset = 0
+    return dict(d, releases=rels, offset=offset)
 
 
 @app.get("/changelog")
-async def changelog_info():
-    return await changelog_index()
+async def changelog_info(limit: int = 20, offset: int = 0, refresh: int = 0):
+    """Nhật ký cập nhật, TRẢ THEO TRANG.
+
+    Mặc định 20 bản (đúng một trang của giao diện) thay vì cả 680 bản: trả hết là 923 KB mỗi
+    lời gọi cho một trang chỉ vẽ 20 dòng. `limit=0` vẫn lấy được tất cả cho ai cần.
+    """
+    return await changelog_index(limit=max(0, min(int(limit or 0), 200)),
+                                 offset=int(offset or 0), refresh=bool(refresh))
 
 
 _NOTIFICATION_CACHE = {"at": 0.0, "data": None}
@@ -9790,6 +11452,35 @@ async def _tts_edge(text: str, voice: str, rate: str) -> bytes:
     return bytes(buf)
 
 
+async def _tts_edge_stream(text: str, voice: str, rate: str):
+    """Edge TTS STREAMING: trả (khúc đầu, generator các khúc sau).
+
+    Vì sao tách khúc đầu ra: Voice V1 phát audio ngay khi Edge sinh khúc đầu thay vì gom cả
+    câu (câu 600 ký tự gom xong mất 1-2 giây, người nghe tưởng máy treo). Nhưng lỗi Edge
+    (mạng, giọng không tồn tại) phải thành 502 thật để client còn rơi về đường dự phòng, mà
+    StreamingResponse đã gửi header 200 rồi thì không đổi được nữa. Nên đợi CHO ĐƯỢC khúc đầu
+    trước khi trả response, lỗi thì nổ ở đây, còn các khúc sau mới stream.
+    """
+    import edge_tts   # lazy - xem ghi chú ở đầu file
+    communicate = edge_tts.Communicate(text, voice, rate=rate)
+    it = communicate.stream()
+    first = b""
+    async for chunk in it:
+        if chunk["type"] == "audio" and chunk["data"]:
+            first = chunk["data"]
+            break
+    if not first:
+        raise RuntimeError("Edge TTS không trả audio.")
+
+    async def _rest():
+        yield first
+        async for chunk in it:
+            if chunk["type"] == "audio" and chunk["data"]:
+                yield chunk["data"]
+
+    return first, _rest()
+
+
 async def _tts_openai(text: str, rate: str, cfg: dict) -> bytes:
     import httpx
     key = (cfg.get("model", {}) or {}).get("openai_api_key", "")
@@ -9834,8 +11525,18 @@ async def tts(
     → tự fallback về Edge TTS để giọng không bao giờ tắt hẳn."""
     import sys
     from fastapi import HTTPException, Response
+    from fastapi.responses import StreamingResponse
     cfg = cfgmod.read_settings()
     provider = ((cfg.get("voice", {}) or {}).get("tts_provider") or "edge").lower()
+    # Edge đi đường STREAM (Voice V1): byte đầu tới trình duyệt ngay khi Edge sinh ra, thẻ
+    # <audio> của Chrome phát dần mp3 chunked. `Accept-Ranges: none` để trình duyệt khỏi hỏi
+    # Range trên một stream không có Content-Length.
+    _stream_headers = {"Cache-Control": "no-cache", "Accept-Ranges": "none"}
+
+    async def _edge_streaming():
+        _first, gen = await _tts_edge_stream(text, voice, rate)
+        return StreamingResponse(gen, media_type="audio/mpeg", headers=_stream_headers)
+
     audio = b""
     try:
         if provider == "openai":
@@ -9843,12 +11544,12 @@ async def tts(
         elif provider == "elevenlabs":
             audio = await _tts_elevenlabs(text, cfg)
         else:
-            audio = await _tts_edge(text, voice, rate)
+            return await _edge_streaming()
     except Exception as e:
         print(f"[TTS {provider}] {type(e).__name__}: {e} - thử fallback Edge", file=sys.stderr)
         if provider != "edge":
             try:
-                audio = await _tts_edge(text, voice, rate)
+                return await _edge_streaming()
             except Exception as e2:
                 raise HTTPException(502, f"TTS failed: {type(e2).__name__}: {e2}")
         else:
@@ -9856,6 +11557,345 @@ async def tts(
     if not audio:
         raise HTTPException(502, "TTS không trả audio.")
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-cache"})
+
+
+# ============================================
+# Voice V2 - nghe bằng Groq, tuỳ chọn giọng nói, nghe nói thẳng (Live)
+# ============================================
+@app.post("/stt")
+async def stt_route(file: UploadFile = File(...), lang: str = Form("")):
+    """Dashboard gửi file ghi âm (webm/opus) sau khi hết câu -> chữ qua Groq Whisper.
+
+    Dùng lại đúng `stt.groq_nghe` của kênh Telegram/Zalo. Trả `{"ok": true, "text": ...}` hoặc
+    `{"ok": false, "ly_do": ...}`; trình duyệt lỗi thì giữ chữ của Web Speech, không mất lượt.
+    """
+    cfg = cfgmod.read_settings()
+    key = (cfg.get("model", {}) or {}).get("groq_api_key", "")
+    v = cfg.get("voice", {}) or {}
+    data = await file.read()
+    # "auto" = ô "Ngôn ngữ nghe" chọn Đa ngôn ngữ: truyền "" xuống để Whisper TỰ DÒ tiếng (xem
+    # chú thích ba giá trị trong stt.groq_nghe). Rỗng hay thiếu vẫn là None -> mặc định "vi".
+    lang = (lang or "").strip()
+    ngon_ngu = "" if lang.lower() == "auto" else (lang.split("-")[0].strip() or None)
+    # Bộ từ vựng (tên trợ lý + từ người dùng khai) đi hai đường: mồi cho Whisper viết đúng, rồi
+    # lớp sửa theo ngữ cảnh quét lại chữ nghe được. WebSocket còn quét thêm lần nữa (cho cả chữ
+    # của Web Speech); nghe_sua.sua idempotent nên hai lần không hại gì.
+    _tv = nghe_sua.tu_vung(cfg)
+    res = await stt.groq_nghe(data, file.filename or "voice.webm", key, v.get("stt_model") or "", ngon_ngu,
+                              hotwords=nghe_sua.goi_y_whisper(_tv))
+    _text = nghe_sua.sua(res.get("text", ""), _tv) if res.get("ok") else res.get("text", "")
+    return {"ok": bool(res.get("ok")), "text": _text, "ly_do": res.get("ly_do", ""),
+            "model": res.get("model", "")}
+
+
+@app.get("/voice/options")
+async def voice_options():
+    """Cho thẻ 'Chế độ và bộ não giọng nói' ở trang Cài đặt: cái gì đang sẵn, key nào đã có."""
+    cfg = cfgmod.read_settings()
+    m = cfg.get("model", {}) or {}
+    v = cfg.get("voice", {}) or {}
+    agy_models = None
+    try:
+        agy_models = antigravity_cli.list_models()
+    except Exception:
+        agy_models = None
+    keys = {k: bool(m.get(k)) for k in ("groq_api_key", "gemini_api_key", "openai_api_key", "openrouter_key")}
+
+    def _san(key_field):
+        return True if not key_field else bool(m.get(key_field))
+
+    # Vẽ từ voice_brain.BRAIN_PROVIDERS / STT_PROVIDERS chứ không chép lại danh sách ở đây:
+    # trang Cài đặt và đường LƯU phải soi CÙNG một danh sách, không thì thêm nhà cung cấp mới
+    # là giao diện cho chọn mà server lặng lẽ bỏ.
+    def _models_items(lst):
+        return [{"id": x.get("id") or x.get("name") or x, "label": x.get("label") or x.get("name") or x}
+                if isinstance(x, dict) else {"id": str(x), "label": str(x)} for x in (lst or [])]
+
+    brain_list = []
+    for pid, p in voice_brain.BRAIN_PROVIDERS.items():
+        item = {"id": pid, "label": p["label"], "available": _san(p["key_field"])}
+        if p["default_model"]:
+            item["default_model"] = p["default_model"]
+        if pid == "antigravity":
+            item["available"] = agy_models is not None
+            item["models"] = _models_items(agy_models)
+            item["hint"] = "" if agy_models is not None else "Chưa cài agy. Cài rồi Re-check ở trang Models."
+        # Ba bộ não trên gói (Voice V3): sẵn hay không đọc từ CHÍNH trạng thái đăng nhập của
+        # trang Models, không hỏi mạng ở đây (trang Cài đặt vẽ thẻ này mỗi lần mở).
+        elif pid == "codex":
+            o = m.get("openai_oauth") or {}
+            item["available"] = bool(o.get("access_token") or o.get("refresh_token"))
+            item["models"] = _models_items((m.get("catalog", {}) or {}).get("openai-oauth") or [])
+            item["hint"] = ("Đi HTTP stream trên gói ChatGPT, không dựng tiến trình: đường gói nhanh nhất."
+                            if item["available"] else "Chưa kết nối ChatGPT. Vào trang Models bấm Kết nối.")
+        elif pid == "claude":
+            try:
+                import claude_sdk_engine as _cse
+                item["available"] = bool(_cse.sdk_available() and claude_cli.find_claude_cli())
+            except Exception:
+                item["available"] = False
+            try:
+                item["models"] = _models_items(claude_cli.list_models() or [])
+            except Exception:
+                item["models"] = []
+            item["hint"] = ("Giữ một phiên Claude Code sống suốt lúc nói, không tool, không MCP. "
+                            "Chọn haiku cho nhanh nhất." if item["available"]
+                            else "Chưa cài hoặc chưa đăng nhập Claude Code. Xem trang Models.")
+        elif pid == "grok":
+            try:
+                item["available"] = bool(grok_cli.find_grok_cli())
+            except Exception:
+                item["available"] = False
+            try:
+                item["models"] = _models_items(grok_cli.list_models() or []) if item["available"] else []
+            except Exception:
+                item["models"] = []
+            item["hint"] = ("Mỗi câu một lượt grok headless, nối lại mạch cũ nên có ký ức. Trả lời về "
+                            "một cục chứ không stream từng chữ." if item["available"]
+                            else "Chưa cài Grok Build (grok). Xem trang Models.")
+        brain_list.append(item)
+    return {
+        "ok": True,
+        "voice": dict(
+            {k: v.get(k, "") for k in ("mode", "brain_provider", "brain_model", "stt_provider",
+                                       "stt_model", "live_provider", "live_model", "live_voice",
+                                       "hotwords")},
+            # Ô gạt, không phải ô chữ: mặc định BẬT, nên brain cũ chưa có khoá vẫn trả về true.
+            loc_tap_am=v.get("loc_tap_am") is not False,
+        ),
+        # Từ luôn có sẵn trong bộ từ vựng nghe (không cần khai): trang Cài đặt hiện cho biết.
+        "hotwords_goc": list(nghe_sua.TU_VUNG_GOC),
+        "brain_providers": brain_list,
+        # Lỗi gần nhất khiến làn nhanh rơi về bộ não chính (rỗng khi chưa có hoặc đã chạy lại tốt).
+        "last_error": voice_brain.loi_lan_nhanh_gan_nhat(),
+        "stt_providers": [{"id": pid, "label": p["label"], "available": _san(p["key_field"])}
+                          for pid, p in voice_brain.STT_PROVIDERS.items()],
+        "live_providers": [
+            {"id": k, "label": p["label"], "available": keys.get(p["key_field"], False),
+             "default_model": p["default_model"], "voices": p["voices"]}
+            for k, p in voice_live.catalog().items()
+        ],
+        "voice_brains_active": voice_brain.active_count(),
+    }
+
+
+async def _voice_ask_javis(request: str, conv_sid: str, brain: str, key: str = "") -> str:
+    """Tool `ask_javis` của phiên Live, và việc nền của làn nhanh (V3): chạy MỘT lượt bộ não
+    chính rồi trả chữ.
+
+    Đi qua `_tg_answer` (vỏ chung của Telegram/CLI) với khoá phiên `voice:<sid>`. `key` riêng
+    (làn nhanh truyền `voice:<sid>:<id>`) để nhiều việc chạy song song không xếp hàng chung
+    một mạch engine. Lỗi thì trả câu lỗi để model nói lại cho người dùng, không ném ra ngoài
+    (ném là rớt cả phiên Live).
+
+    Khoá ấy là khoá của MẠCH ENGINE, không phải của cuộc trò chuyện - và tới 0.59.28 vỏ chung
+    lẫn lộn hai thứ đó. Vì khoá dùng một lần nên vỏ tra ra "chưa có phiên nào cho chat này" và
+    mở một bản ghi hội thoại MỚI cho mỗi việc nền, dán nhãn telegram; nói chuyện một buổi là
+    thanh Lịch sử đầy hội thoại 1-2 tin đeo nhãn TG (chủ dự án báo 17/09). Nay `phien_kho`
+    ghim lượt vào ĐÚNG khung chat đang nói: bộ não chính đọc được mạch hội thoại thật, và
+    `ghi_kho=False` vì phần ghi kết quả đã có `push_to_chat` (làn nhanh) hoặc chính vòng
+    hội thoại Live lo - vỏ chen tin vào nữa là ghi đôi.
+    """
+    key = key or f"voice:{conv_sid}"
+    sess = _tg_session(key)
+    try:
+        root = _brain_root(brain)
+        if os.path.isdir(root):
+            sess["brain"] = root
+    except Exception:
+        pass
+    try:
+        out = await _tg_answer(request, meta={"chat_id": key}, channel="cli",
+                               phien_kho=str(conv_sid or ""), ghi_kho=False)
+    except Exception as e:
+        return f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+    if isinstance(out, dict):
+        return channel_context.strip_control_blocks(str(out.get("text") or ""))[:6000] or "(không có nội dung)"
+    return str(out or "")[:6000]
+
+
+@app.websocket("/ws/voice-live")
+async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str = Query("brain")):
+    """Nghe nói thẳng (Voice V2 bậc Live): trình duyệt đẩy PCM16 16 kHz, nhận PCM16 24 kHz.
+
+    Khung JSON về trình duyệt: ready | interrupted | transcript | tool | turn_done | error.
+    Khung JSON từ trình duyệt: {"type":"text","text":...} | {"type":"stop"}. Byte = audio.
+    """
+    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+        await ws.close(code=1008)
+        return
+    await ws.accept()
+
+    async def _j(obj):
+        try:
+            await ws.send_text(json.dumps(obj, ensure_ascii=False))
+        except Exception:
+            pass
+
+    cfg = cfgmod.read_settings()
+    try:
+        prov = voice_live.make_provider(cfg)
+        await prov.connect()
+    except Exception as e:
+        await _j({"type": "error", "message": f"{type(e).__name__}: {e}" if not isinstance(e, RuntimeError) else str(e)})
+        try:
+            await ws.close()
+        except Exception:
+            pass
+        return
+    store = get_store()
+    try:
+        conv_sid = store.get_or_create(session_id or None, brain=_brain_key(brain),
+                                       engine=f"voice-live:{prov.name}", model=prov.model)
+    except Exception:
+        conv_sid = session_id or ""
+    await _j({"type": "ready", "provider": prov.name, "model": prov.model, "session_id": conv_sid,
+              "async_tools": prov.supports_async_tools()})
+    asst_buf = {"text": ""}
+    ui_ctx = {"text": ""}          # khối [NGỮ CẢNH GIAO DIỆN: ...] mới nhất từ trình duyệt
+    tool_tasks: set = set()
+
+    async def from_client():
+        while True:
+            msg = await ws.receive()
+            if msg.get("type") == "websocket.disconnect":
+                return
+            if msg.get("bytes"):
+                await prov.send_audio(msg["bytes"])
+            elif msg.get("text"):
+                try:
+                    d = json.loads(msg["text"])
+                except Exception:
+                    continue
+                if d.get("type") == "text" and d.get("text"):
+                    try:
+                        store.append_message(conv_sid, "user", str(d["text"]))
+                    except Exception:
+                        pass
+                    await prov.send_text(str(d["text"]))
+                elif d.get("type") == "context":
+                    # Trang đang mở / đoạn bôi đen: kèm vào yêu cầu gửi bộ não chính, và đẩy vào
+                    # kênh im lặng của nhà cung cấp nếu có (GPT-Live thinking.append).
+                    ui_ctx["text"] = str(d.get("text") or "")[:2000]
+                    try:
+                        await prov.send_context(ui_ctx["text"])
+                    except Exception:
+                        pass
+                elif d.get("type") == "played":
+                    # Bị ngắt lời sau khi đã phát N ms: cắt ngữ cảnh đúng chỗ đã nghe (OpenAI Realtime).
+                    try:
+                        await prov.truncate_played(int(d.get("ms") or 0))
+                    except Exception:
+                        pass
+                elif d.get("type") == "stop":
+                    return
+
+    async def _run_tool(ev: dict):
+        """Tool chạy NỀN: vòng đọc sự kiện không đứng lại, model vẫn nghe/nói trong lúc chờ.
+
+        Bộ não chính có thể mất 5 đến 30 giây; nếu await ngay trong from_provider thì suốt lúc đó
+        không audio nào từ hãng về được trình duyệt và cuộc nói chuyện đứng im (bài học GPT-Live:
+        ủy nhiệm phải song song với hội thoại).
+        """
+        name = str(ev.get("name") or "")
+        cid = str(ev.get("id") or "")
+        await _j({"type": "tool", "name": name, "status": "running"})
+        try:
+            await prov.send_tool_running(cid, name)
+        except Exception:
+            pass
+        req = str((ev.get("args") or {}).get("request") or "")
+        if ui_ctx["text"]:
+            req = ui_ctx["text"] + "\n\n" + req
+        try:
+            result = await _voice_ask_javis(req, conv_sid, brain) if name == "ask_javis" \
+                else f"Tool {name} không có."
+        except Exception as e:
+            result = f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+        try:
+            await prov.send_tool_result(cid, name, result)
+        except Exception as e:
+            await _j({"type": "error", "message": f"Không trả được kết quả cho model: {e}"})
+        await _j({"type": "tool", "name": name, "status": "done"})
+
+    async def from_provider():
+        while True:
+            async for ev in prov.events():
+                if ev.get("type") == "goaway":
+                    break   # nhà cung cấp sắp đóng: nối lại NGAY, không đợi nó đóng
+                if not await _handle_provider_event(ev):
+                    return
+            if not prov.wants_reconnect:
+                return
+            try:
+                await prov.reconnect()
+            except Exception as e:
+                await _j({"type": "error", "message": f"Nối lại nhà cung cấp thất bại: {type(e).__name__}: {e}"})
+                return
+            await _j({"type": "reconnected"})
+
+    async def _handle_provider_event(ev: dict) -> bool:
+        """Trả False khi phải dừng phiên (trình duyệt đã đóng)."""
+        if True:
+            t = ev.get("type")
+            if t == "audio":
+                try:
+                    await ws.send_bytes(ev["data"])
+                except Exception:
+                    return False
+            elif t == "tool_call":
+                task = asyncio.create_task(_run_tool(ev))
+                tool_tasks.add(task)
+                task.add_done_callback(tool_tasks.discard)
+            elif t == "transcript":
+                if ev.get("role") == "assistant":
+                    asst_buf["text"] += str(ev.get("text") or "")
+                elif ev.get("final") and ev.get("text"):
+                    try:
+                        store.append_message(conv_sid, "user", str(ev["text"]))
+                    except Exception:
+                        pass
+                await _j(ev)
+            elif t == "turn_done":
+                if asst_buf["text"].strip():
+                    try:
+                        store.append_message(conv_sid, "assistant", asst_buf["text"].strip())
+                    except Exception:
+                        pass
+                asst_buf["text"] = ""
+                await _j(ev)
+            elif t == "interrupted":
+                # Đoạn đã đọc dở vẫn là lời Javis đã nói: chốt vào phiên rồi xoá bộ đệm,
+                # không để nó dính sang lượt sau.
+                if asst_buf["text"].strip():
+                    try:
+                        store.append_message(conv_sid, "assistant", asst_buf["text"].strip())
+                    except Exception:
+                        pass
+                asst_buf["text"] = ""
+                await _j(ev)
+            elif t in ("error", "ready"):
+                await _j(ev)
+            return True
+
+    t1 = asyncio.create_task(from_client())
+    t2 = asyncio.create_task(from_provider())
+    try:
+        done, pending = await asyncio.wait({t1, t2}, return_when=asyncio.FIRST_COMPLETED)
+        for t in done:
+            exc = t.exception() if not t.cancelled() else None
+            if exc and t is t2:
+                await _j({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
+        for t in pending:
+            t.cancel()
+    finally:
+        for task in list(tool_tasks):
+            task.cancel()
+        await prov.close()
+        try:
+            await ws.close()
+        except Exception:
+            pass
 
 
 @app.get("/tts/voices")
@@ -9883,6 +11923,76 @@ async def tts_voices(lang: str = Query("")):
 
 
 # ============================================
+# Khối ngữ cảnh "đang mở quy trình nào" cho lượt TRẢ LỜI (không chạy) ở phiên workflow
+# ============================================
+def _khoi_quy_trinh_mo(brain, slug):
+    """(tên quy trình, khối "[QUY TRÌNH ĐANG MỞ...]") cho lượt TRẢ LỜI ở phiên workflow.
+
+    Đọc file quy trình lấy tên + danh sách bước. Đọc trượt (file mất, frontmatter hỏng) thì
+    trả khối rút gọn chỉ có slug và đường dẫn: thiếu tên bước thì bộ não tự đọc file, còn
+    thiếu HẲN khối này thì nó không biết người dùng đang nói về quy trình nào.
+
+    Trả luôn cái TÊN vì câu "mình trả lời chứ không chạy" cũng cần nó: đọc file hai lần cho
+    hai chỗ dùng là hai chỗ có thể lệch nhau."""
+    wf = _workflows_dir(brain) / f"{slug}.md"
+    ten, buoc = slug, []
+    try:
+        meta, _ = _read_md(wf)
+        ten = str((meta or {}).get("name") or slug)
+        buoc = list((meta or {}).get("steps") or [])
+    except Exception as _e:
+        print(f"[khoi quy trinh] {type(_e).__name__}: {_e}", file=sys.stderr)
+    return ten, workflow_chat.khoi_quy_trinh_dang_mo(ten, slug, str(wf), len(buoc), buoc)
+
+
+# ============================================
+# Lượt ở phiên workflow:<slug> - LÕI module-level để test gọi thẳng được (xem run_workflow_turn)
+# ============================================
+async def _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resume=None) -> str:
+    """LÕI của một lượt ở phiên workflow:<slug>: chạy quy trình, đẩy khung về trình duyệt, lưu
+    tin trả lời. Trả về text đã lưu. Không đăng ký job, không gửi turn_done: closure trong
+    websocket_endpoint lo, để hàm này gọi được từ test với execute_workflow giả.
+
+    `resume` = {"task_id","node","code"} khi người dùng bấm Duyệt: chạy tiếp lần đang chờ.
+    Tra `execute_workflow` qua globals() LÚC GỌI để test thay được.
+    """
+    import workflow_runs
+    st = workflow_runs.get_store()
+    t0 = time.time()
+    if resume:
+        events = globals()["execute_workflow_resume"](
+            brain, slug, resume["task_id"], resume["node"], resume["code"],
+            session_id=conv_sid, source="web")
+    else:
+        truoc = st.gan_nhat(_brain_key(brain), slug=slug, session_id=conv_sid, status="done", limit=1)
+        ket_truoc = ""
+        if truoc:
+            day_du = st.lay(truoc[0]["id"]) or {}
+            ket_truoc = day_du.get("output", "")
+        # Khối tài liệu gắn vào cuộc đi SAU CÙNG và KHÔNG vào cột `input` của kho lần chạy:
+        # dòng lịch sử ở cột phải cắt 60 ký tự đầu của `input`, nên câu ngắn mà dính khối này
+        # là lịch sử toàn đề mục "TÀI LIỆU & LINK..." chứ không thấy người dùng đã yêu cầu gì.
+        dau_vao = workflow_chat.ghep_dau_vao(user_message, ket_truoc)
+        events = globals()["execute_workflow"](
+            brain, slug, dau_vao + _session_block(conv_sid), session_id=conv_sid, source="web",
+            input_luu=dau_vao)
+    kq = await workflow_chat.chay(events, emit)
+    giay = int(time.time() - t0)
+    if kq["trang_thai"] == "done":
+        so_lan = st.dem_theo_phien(conv_sid) or 1
+        text = workflow_chat.tin_xong(so_lan, kq["so_buoc"], giay, kq["ket_qua"])
+    elif kq["trang_thai"] == "waiting":
+        w = kq["wait"] or {}
+        text = workflow_chat.tin_cho_duyet(str(w.get("node") or ""), str(w.get("prompt") or ""))
+    else:
+        loi = kq["loi"] or {}
+        text = workflow_chat.tin_loi(loi.get("i"), loi.get("agent", ""), loi.get("content", ""))
+    await emit({"type": "stream", "content": text})
+    await _persist_turn(store, conv_sid, brain, user_message, text)
+    return text
+
+
+# ============================================
 # Lưu MỘT lượt hội thoại - đường DUY NHẤT, dùng chung cho mọi kênh (dashboard, Telegram)
 # ============================================
 async def _persist_turn(store, conv_sid, brain, user_message, final_text):
@@ -9894,7 +12004,7 @@ async def _persist_turn(store, conv_sid, brain, user_message, final_text):
     lịch sử, nên bóc khối không mất gì cả.)
 
     Vì sao là hàm chung: trước 0.9.244 chỉ nhánh dashboard lưu, nên hội thoại Telegram vắng
-    mặt ở `/sessions`, ở `brain/Memory/conversations`, và ở vòng tự học.
+    mặt ở `/sessions`, ở `brain/memory/conversations`, và ở vòng tự học.
 
     Trả về text đã bóc khối (rỗng/None thì KHÔNG lưu gì - lượt lỗi hoặc bị huỷ).
     """
@@ -9915,7 +12025,11 @@ async def _persist_turn(store, conv_sid, brain, user_message, final_text):
 
 
 def _persist_limit_notice(store, conv_sid, user_message, notice):
-    """Lưu câu "hết lượt gói thuê bao" của một lượt KHÔNG có câu trả lời.
+    """Lưu câu BÁO LỖI của một lượt KHÔNG có câu trả lời.
+
+    Hai chỗ dùng: lượt vấp hạn mức gói thuê bao (dashboard), và lượt Telegram/CLI mà lõi trả
+    về chuỗi lỗi (xem `_tg_answer`). Cùng một nhu cầu: mở lại hội thoại phải đọc được chuyện
+    gì đã xảy ra, thay vì thấy một phiên trơ mỗi câu mình hỏi.
 
     Cố ý KHÔNG đi qua _persist_turn: một câu báo lỗi không đáng vào nhật ký Memory hay hàng
     đợi tự học. Chỉ ghi vào kho phiên (để F5 còn thấy) và đặt tên phiên (phiên mới vẫn có
@@ -9926,6 +12040,30 @@ def _persist_limit_notice(store, conv_sid, user_message, notice):
         store.auto_title(conv_sid, user_message)
     except Exception as _e:
         print(f"[limit notice] {type(_e).__name__}: {_e}", file=sys.stderr)
+
+
+# Tin từ MIC mà không đi làn nhanh: ghi log MỘT LẦN cho mỗi cấu hình (chế độ, bộ não giọng).
+# Không rẽ vào làn nhanh khi chế độ là "standard" là ĐÚNG THIẾT KẾ, nên không báo gì lên khung
+# chat; nhưng lúc người dùng than "mic đi thẳng vào bộ não chính" thì đọc log phải thấy ngay
+# server đang thấy cấu hình nào, thay vì phải đoán giữa "cài đặt trôi" và "bộ não giọng hỏng".
+_LAN_NHANH_DA_BAO: set = set()
+
+
+def _bao_lan_nhanh_bo_qua(vconf) -> bool:
+    """True nếu tin từ mic này KHÔNG đi làn nhanh (và đã ghi log lần đầu gặp cấu hình đó)."""
+    mode = str((vconf or {}).get("mode") or "")
+    prov = str((vconf or {}).get("provider") or "")
+    if vconf and mode == "fast" and prov:
+        return False
+    khoa = (mode, prov)
+    if khoa not in _LAN_NHANH_DA_BAO:
+        _LAN_NHANH_DA_BAO.add(khoa)
+        ly_do = ("không đọc được cài đặt giọng nói" if not vconf
+                 else f"chế độ giọng nói = {mode or 'standard'!r}" if mode != "fast"
+                 else "chế độ Làn nhanh nhưng chưa chọn bộ não giọng")
+        print(f"[voice lane] tin từ mic đi bộ não chính: {ly_do}. "
+              f"Chỉnh ở Cài đặt, mục Giọng nói.", file=sys.stderr)
+    return True
 
 
 # ============================================
@@ -10026,6 +12164,13 @@ async def websocket_endpoint(ws: WebSocket):
                 pass
             # Đọc row phiên TRƯỚC khi chọn provider: phiên có thể đã ghim model riêng.
             _row0 = store.get_session(conv_sid) or {}
+            # Phiên cộng sự (trang Cộng sự, 0.59): kênh agent:<slug> đổi system prompt sang prompt
+            # của trợ lý đó. Đọc MỘT lần ở đây, mọi chỗ chọn prompt bên dưới đều hỏi `_persona`.
+            _persona = workflow_chat.persona_cua_phien(_row0)
+            if _persona and _persona[0] == "agent" and not (_agents_dir(brain) / f"{_persona[1]}.md").exists():
+                await ws.send_text(json.dumps({"type": "error",
+                    "content": f"Trợ lý '{_persona[1]}' không còn trong brain này. Mở trang Cộng sự để chọn trợ lý khác."}))
+                return ""
             prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _row0)
             reasoning = _reasoning_level(mcfg)
             _CONTEXT_RUNTIME.set_route(
@@ -10040,7 +12185,19 @@ async def websocket_endpoint(ws: WebSocket):
                     api_model or mcfg.get("claude_model") or "mặc định", kind,
                 )
             _ctx_in = 0        # token VÀO của lượt này, để khung chat nói được nó tốn bao nhiêu
-            cli = claude_engine(system_prompt=SYSTEM_PROMPT, cwd=CLAUDE_CWD, tag=turn_tag)
+            # cwd = THƯ MỤC BRAIN, không phải gốc project (0.55.58). Trước đó nhánh này là chỗ
+            # DUY NHẤT trong bốn engine chat còn chạy cwd=CLAUDE_CWD (/app trong Docker) - Codex,
+            # Antigravity, Grok và mọi workflow/loop/lint đều đã cwd=brain. Hậu quả chủ repo báo
+            # 2026-09-08: model ghi "bai-viet/x.md" là rơi vào /app (bay theo lần dựng lại
+            # container kế tiếp), link trong chat trỏ vào brain nên bấm không ra, còn "đếm bài
+            # chưa xong" lúc nhìn /app lúc nhìn brain nên lúc 3 lúc 5. Hai lý do từng giữ
+            # CLAUDE_CWD đều hết: skill hệ thống nay được cài vào từng brain rồi mirror
+            # (system_sync), còn vault_root của plugin đã đặt tường minh qua _apply_mcp.
+            #
+            # Cái giá: transcript Claude Code nằm theo cwd, nên MỌI phiên cũ resume trượt đúng
+            # một lần sau bản này. Nhánh bên dưới bắt cờ `resume_failed` rồi mồi lại từ kho phiên
+            # (cùng cách Codex), người dùng thấy một dòng báo chứ không mất mạch.
+            cli = claude_engine(system_prompt=SYSTEM_PROMPT, cwd=_brain_root(brain), tag=turn_tag)
             cli.session_id = _row0.get("cli_session_id") or None    # --resume đúng mạch phiên này
             final_text = ""
             used_fast_path = False
@@ -10056,12 +12213,16 @@ async def websocket_endpoint(ws: WebSocket):
             def _legacy_system_prompt():
                 nonlocal sysprompt
                 if sysprompt is None:
-                    sysprompt = build_system_prompt(
-                        brain, lang=_lang_qd, project_id=_row0.get("project_id") or ""
-                    ) + channel_context.build_channel_block(
-                        "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
-                        port=_javis_port(), brain_root=_brain_root(brain),
-                    )
+                    if _persona and _persona[0] == "agent":
+                        sysprompt = _agent_chat_prompt(brain, _persona[1]) + _session_block(conv_sid)
+                    else:
+                        sysprompt = build_system_prompt(
+                            brain, lang=_lang_qd, project_id=_row0.get("project_id") or "",
+                            session_id=conv_sid or ""
+                        ) + channel_context.build_channel_block(
+                            "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
+                            port=_javis_port(), brain_root=_brain_root(brain),
+                        )
                 return sysprompt
 
             async def _subscription_system_prompt(route_provider, route_model, route_kind):
@@ -10079,10 +12240,14 @@ async def websocket_endpoint(ws: WebSocket):
 
                 Trả về (prompt, plan). plan=None nghĩa là Phase 8 không chạy được lượt này.
                 """
+                if _persona:
+                    return _legacy_system_prompt(), None
+
                 def _base(include_memory: bool, include_skills: bool) -> str:
                     return build_system_prompt(
                         brain, include_memory=include_memory, include_skills=include_skills,
                         lang=_lang_qd, project_id=_row0.get("project_id") or "",
+                        session_id=conv_sid or "",
                     ) + channel_context.build_channel_block(
                         "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
                         port=_javis_port(), brain_root=_brain_root(brain),
@@ -10113,7 +12278,9 @@ async def websocket_endpoint(ws: WebSocket):
             # hẳn nhánh engine chứ không chạy bên trong. Tính ở đây để chuỗi bên dưới chỉ còn
             # là một điều kiện, khỏi phải thụt lề lại cả hai nhánh. None = không đi đường tắt.
             _codex_fast_plan = None
-            if kind in ("oauth", "cli") and not _schedule_action:
+            # Phiên cộng sự: Fast Path bỏ memory và lịch sử, dùng prompt riêng - không hợp
+            # với trợ lý (trợ lý cần ĐÚNG sysprompt của mình, không phải capsule rút gọn).
+            if kind in ("oauth", "cli") and not _schedule_action and not _persona:
                 try:
                     _plan = await asyncio.to_thread(
                         _FAST_PATH.prepare, runtime_trace, user_message, _brain_root(brain),
@@ -10244,6 +12411,7 @@ async def websocket_endpoint(ws: WebSocket):
                         [{"role": "system", "content": sysprompt},
                          {"role": "user", "content": _k_prompt}],
                         provider="grok-cli", model=actual_model or "")
+                    _k_loi = False
                     async for ev in kcli.query(_k_prompt):
                         et = ev.get("type")
                         if et == "tool_call":
@@ -10258,11 +12426,20 @@ async def websocket_endpoint(ws: WebSocket):
                             store.set_last_input_tokens(
                                 conv_sid, int(ev.get("input_tokens") or 0))
                         elif et == "error":
+                            _k_loi = True
                             await ws.send_text(_limit_frame(
                                 ev.get("content") or "", "grok-cli", actual_model or ""))
+                    if _k_mach and _k_loi and not final_text:
+                        # `--resume <id>` mà CLI trả lỗi và không một chữ: mạch đó đã mất trên
+                        # máy (sau cập nhật/dọn dẹp/đổi cwd). Bản trước ghi lại đúng id chết ấy
+                        # nên MỌI lượt sau đều đỏ cho tới khi đổi engine. Xoá đi để lượt sau
+                        # mồi lại từ lịch sử đã lưu, như nhánh Codex/Claude đã làm.
+                        store.clear_grok_session_id(conv_sid)
+                        kcli.session_id = None
                     # CLI phát id mạch trong dòng sự kiện; lưu lại để lượt sau `--resume`.
-                    if kcli.session_id:
+                    elif kcli.session_id:
                         store.set_grok_session_id(conv_sid, kcli.session_id)
+                    final_text = _chuan_hoa_link_file(_brain_root(brain), final_text)
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text, "engine": "grok-cli",
                         "model": actual_model or "", "session_id": conv_sid,
@@ -10296,8 +12473,12 @@ async def websocket_endpoint(ws: WebSocket):
                     _a_raw = [{"role": _m["role"], "content": _m["content"]}
                               for _m in store.get_messages(conv_sid)[:-1]
                               if _m["role"] in ("user", "assistant") and _m.get("content")]
+                    # Ngân sách RIÊNG cho agy (xem compaction.AGY_BOOTSTRAP_MAX_CHARS): gói này
+                    # gửi lại nguyên mỗi lượt, và trên Windows nó thành file ngữ cảnh mà model
+                    # phải tự đọc - dài quá là đọc cụt rồi trả lời câu hỏi cũ.
                     _a_prompt = compaction.bootstrap_prompt(
-                        _a_raw, _a_cur, summary=_row0.get("compact_summary") or "")
+                        _a_raw, _a_cur, max_chars=compaction.AGY_BOOTSTRAP_MAX_CHARS,
+                        summary=_row0.get("compact_summary") or "")
                     _CONTEXT_RUNTIME.observe_payload(
                         runtime_trace,
                         [{"role": "system", "content": sysprompt},
@@ -10317,6 +12498,7 @@ async def websocket_endpoint(ws: WebSocket):
                         elif et == "error":
                             await ws.send_text(_limit_frame(
                                 ev.get("content") or "", "antigravity-cli", actual_model or ""))
+                    final_text = _chuan_hoa_link_file(_brain_root(brain), final_text)
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text, "engine": "antigravity-cli",
                         "model": actual_model or "", "session_id": conv_sid,
@@ -10329,6 +12511,10 @@ async def websocket_endpoint(ws: WebSocket):
                     # Tự chữa: model đã lưu không hợp lệ cho Codex → ghi lại model đúng (converge sau 1 lượt)
                     try:
                         _fix = cfgmod.read_settings(); _set_main_model(_fix, "openai-oauth", actual_model); cfgmod.write_settings(_fix)
+                        if (_row0.get("pinned_model") or "").strip():
+                            # Phiên ghim một model đã bị gỡ khỏi catalog: sửa luôn cái ghim, nếu
+                            # không lượt nào cũng đọc lại ghim cũ và nhắc câu này lần nữa.
+                            store.set_pinned_model(conv_sid, "openai-oauth", actual_model)
                         await ws.send_text(json.dumps({"type": "system", "content": f"⚠ Model '{api_model}' không chạy được qua Codex (tài khoản ChatGPT) - đã tự đổi sang '{actual_model}'. Đổi model khác ở trang Models nếu muốn."}))
                     except Exception as _e:
                         print(f"[codex model self-heal] {_e}", file=__import__('sys').stderr)
@@ -10432,6 +12618,13 @@ async def websocket_endpoint(ws: WebSocket):
                             _codex_raw, _codex_current,
                             summary=_row0.get("compact_summary") or "")
                         await _consume_codex(_fallback)
+                    # Cùng lưới với nhánh Claude ở dưới: Codex in câu hết lượt như một
+                    # agent_message thường chứ không phải turn.failed.
+                    if final_text and _het_luot_ap_dao(final_text) \
+                            and _subscription_limit_event(final_text, "codex")[0]:
+                        await ws.send_text(_limit_frame(final_text, "codex", actual_model or ""))
+                        final_text = ""
+                    final_text = _chuan_hoa_link_file(_brain_root(brain), final_text)
                     await ws.send_text(json.dumps({
                         "type": "response", "content": final_text, "engine": "codex",
                         "model": actual_model, "session_id": conv_sid,
@@ -10442,7 +12635,14 @@ async def websocket_endpoint(ws: WebSocket):
                 fast_plan = None
                 write_plan = None
                 confirm_plan = None
-                if kind == "api" and api_key:
+                # Phiên cộng sự (kênh agent:<slug>) đi engine kiểu "api": cả cụm canary Phase 9
+                # (xác nhận/đề xuất ghi) và canary đọc/Fast Path dưới đây đều dùng prompt RIÊNG
+                # của chính canary đó, không phải prompt trợ lý - để chúng tự trả lời là bỏ mất
+                # tính cách trợ lý ngay từ lượt đó. `and not _persona` ở cả hai cửa vào (đây và
+                # elif kind == "api" and api_key: bên dưới) ép toàn cụm rơi thẳng xuống nhánh
+                # Phase 8 API/OAuth cuối cùng, nơi đã đọc `_persona` để dùng `_legacy_system_prompt()`
+                # (chính là `_agent_chat_prompt`). Mất mấy đường tắt rẻ tiền, đổi lại đúng vai.
+                if kind == "api" and api_key and not _persona:
                     # Phase 9 xét TRƯỚC: lượt này có thể là câu xác nhận cho một hành
                     # động ghi đã đề xuất ở lượt trước, không phải một yêu cầu mới.
                     try:
@@ -10493,7 +12693,7 @@ async def websocket_endpoint(ws: WebSocket):
                         "session_id": conv_sid,
                         **_ctx_frame(runtime_trace, _ctx_in),
                     }))
-                elif kind == "api" and api_key:
+                elif kind == "api" and api_key and not _persona:
                     # Mọi exception trong prepare của canary phải rơi tiếp xuống nhánh
                     # sau (cuối cùng là legacy), không được phá lượt chat (spec mục 23).
                     try:
@@ -10608,16 +12808,22 @@ async def websocket_endpoint(ws: WebSocket):
                             brain_root=_brain_root(brain),
                         )
 
-                    try:
-                        _phase8_plan = await asyncio.to_thread(
-                            _get_adaptive_context().prepare,
-                            runtime_trace, user_message, _brain_root(brain), conv_sid,
-                            store.get_messages(conv_sid), "dashboard", prov,
-                            api_model or "?", kind, _phase8_base,
-                        )
-                    except Exception as _exc:
+                    if _persona:
+                        # Phiên cộng sự: prompt luôn là _agent_chat_prompt, không cần tốn công
+                        # dựng capsule Phase 8 rồi bỏ nó ngay dưới.
                         _phase8_plan = adaptive_context_runtime.AdaptiveContextPlan(
-                            "legacy", f"prepare_error:{type(_exc).__name__}")
+                            "legacy", "persona_agent_chat")
+                    else:
+                        try:
+                            _phase8_plan = await asyncio.to_thread(
+                                _get_adaptive_context().prepare,
+                                runtime_trace, user_message, _brain_root(brain), conv_sid,
+                                store.get_messages(conv_sid), "dashboard", prov,
+                                api_model or "?", kind, _phase8_base,
+                            )
+                        except Exception as _exc:
+                            _phase8_plan = adaptive_context_runtime.AdaptiveContextPlan(
+                                "legacy", f"prepare_error:{type(_exc).__name__}")
                     if _phase8_plan.action == "reject":
                         # Rơi về legacy ở đây là SAI CHIỀU. Phase 8 tồn tại để thay
                         # CLAUDE.md bằng capsule nhỏ; legacy gửi nguyên CLAUDE.md cộng
@@ -10636,7 +12842,8 @@ async def websocket_endpoint(ws: WebSocket):
                         }))
                     else:
                         sysprompt = (_phase8_plan.system_prompt
-                                     if _phase8_plan.action == "use" else _legacy_system_prompt())
+                                     if _phase8_plan.action == "use" and not _persona
+                                     else _legacy_system_prompt())
                         label = _api_label(prov)
                         actual_model = api_model or "?"
                         _ident = (
@@ -10735,6 +12942,7 @@ async def websocket_endpoint(ws: WebSocket):
                             await ws.send_text(json.dumps({
                                 "type": "error", "content": final_text,
                             }))
+                        final_text = _chuan_hoa_link_file(_brain_root(brain), final_text)
                         await ws.send_text(json.dumps({
                             "type": "response", "content": final_text, "engine": prov,
                             "model": actual_model, "session_id": conv_sid,
@@ -10805,42 +13013,96 @@ async def websocket_endpoint(ws: WebSocket):
                      {"role": "user", "content": _cli_prompt}],
                     provider="cli", model=cli.model or mcfg.get("claude_model") or "mặc định",
                 )
-                async for event in cli.query(_cli_prompt):
-                    etype = event["type"]
-                    if etype == "tool_call":
-                        await ws.send_text(json.dumps({"type": "tool_call", "tool": event["name"], "content": f"⚙ Đang gọi: {event['name']}"}))
-                    elif etype == "tool_result":
-                        await ws.send_text(json.dumps({"type": "tool_result", "content": event["content"][:200]}))
-                    elif etype == "text":
-                        _streamed += event["content"]
-                        await ws.send_text(json.dumps({"type": "stream", "content": event["content"]}))
-                    elif etype == "final":
-                        final_text = event.get("content") or final_text
-                        _cli_sid = event.get("session_id")
-                        _cost = event.get("cost_usd")
-                        if _cli_sid:
-                            store.set_cli_session_id(conv_sid, _cli_sid)
-                        _ctx_in += int(event.get("tokens_in", 0) or 0)
-                        usage_store.record("cli", cli.model or mcfg.get("claude_model") or "mặc định",
-                                           event.get("tokens_in", 0), event.get("tokens_out", 0), event.get("cost_usd") or 0)
-                        _CONTEXT_RUNTIME.record_usage(
-                            runtime_trace, event.get("tokens_in", 0), event.get("tokens_out", 0))
-                    elif etype == "error":
-                        # Hết lượt gói Claude thì Claude Code in nguyên văn câu tiếng Anh (có khi
-                        # là dạng máy "…reached|<epoch>"). Dịch sang câu nói được TRƯỚC khi đẩy
-                        # ra khung chat; cuối lượt lưu câu đó và hẹn tự chạy lại (xem _limit_state).
-                        await ws.send_text(_limit_frame(
-                            event.get("content") or "", "claude-code",
-                            cli.model or mcfg.get("claude_model") or "mặc định"))
+                _t0_cli = time.time()
+                _da_ghi: list = []      # đường dẫn moi từ tham số tool trong lượt (Write/Edit/Bash...)
+
+                async def _consume_claude(prompt, suppress_resume_error=False):
+                    """Một lần gọi `claude`. Trả True nếu mạch cũ không còn (resume trượt)."""
+                    nonlocal final_text, _streamed, _cli_sid, _cost, _ctx_in
+                    resume_failed = False
+                    async for event in cli.query(prompt):
+                        etype = event["type"]
+                        if etype == "tool_call":
+                            await ws.send_text(json.dumps({"type": "tool_call", "tool": event["name"], "content": f"⚙ Đang gọi: {event['name']}"}))
+                            # Nhặt mọi thứ trông giống đường dẫn trong tham số tool (Write/Edit có
+                            # file_path, Bash thì lẫn trong lệnh). Lọc "có thật + vừa đổi" ở dưới.
+                            try:
+                                _da_ghi.extend(channel_context.candidate_paths_from_tool(event.get("input") or {}))
+                            except Exception:
+                                pass
+                        elif etype == "tool_result":
+                            await ws.send_text(json.dumps({"type": "tool_result", "content": event["content"][:200]}))
+                        elif etype == "text":
+                            _streamed += event["content"]
+                            await ws.send_text(json.dumps({"type": "stream", "content": event["content"]}))
+                        elif etype == "final":
+                            final_text = event.get("content") or final_text
+                            _cli_sid = event.get("session_id")
+                            _cost = event.get("cost_usd")
+                            if _cli_sid:
+                                store.set_cli_session_id(conv_sid, _cli_sid)
+                            _ctx_in += int(event.get("tokens_in", 0) or 0)
+                            usage_store.record("cli", cli.model or mcfg.get("claude_model") or "mặc định",
+                                               event.get("tokens_in", 0), event.get("tokens_out", 0), event.get("cost_usd") or 0)
+                            _CONTEXT_RUNTIME.record_usage(
+                                runtime_trace, event.get("tokens_in", 0), event.get("tokens_out", 0))
+                        elif etype == "error":
+                            if event.get("resume_failed"):
+                                resume_failed = True
+                                if suppress_resume_error:
+                                    continue      # sẽ mồi lại ngay dưới, không bắn câu lỗi ra
+                            # Hết lượt gói Claude thì Claude Code in nguyên văn câu tiếng Anh (có khi
+                            # là dạng máy "…reached|<epoch>"). Dịch sang câu nói được TRƯỚC khi đẩy
+                            # ra khung chat; cuối lượt lưu câu đó và hẹn tự chạy lại (xem _limit_state).
+                            await ws.send_text(_limit_frame(
+                                event.get("content") or "", "claude-code",
+                                cli.model or mcfg.get("claude_model") or "mặc định"))
+                    return resume_failed
+
+                _co_mach = bool(cli.session_id)
+                _resume_failed = await _consume_claude(_cli_prompt, suppress_resume_error=_co_mach)
+                if _co_mach and _resume_failed and not (final_text or _streamed):
+                    # Mạch cũ không còn trên máy (đổi thư mục làm việc ở 0.55.58, hoặc update/
+                    # restart dọn mất transcript). Không bỏ luôn ngữ cảnh: mồi lại từ kho phiên
+                    # SQLite rồi chạy lại, lượt sau resume mạch mới. Cùng cách nhánh Codex.
+                    await ws.send_text(json.dumps({
+                        "type": "system",
+                        "content": "Phiên Claude cũ không còn trên máy - Javis đang khôi phục ngữ cảnh từ lịch sử đã lưu."
+                    }))
+                    cli.session_id = None
+                    _cli_raw2 = [{"role": _m["role"], "content": _m["content"]}
+                                 for _m in store.get_messages(conv_sid)[:-1]
+                                 if _m["role"] in ("user", "assistant") and _m.get("content")]
+                    await _consume_claude(compaction.bootstrap_prompt(
+                        _cli_raw2, _cli_prompt, summary=_row0.get("compact_summary") or ""))
                 # Khung `response` PHẢI nằm NGOÀI vòng lặp. Trước đây nó nằm trong nhánh
                 # `final`, nên luồng đứt trước khi có `final` (engine chết, mạng rớt) là client
                 # không nhận `response` nào cả và bong bóng chat treo mãi - trong khi phần chữ
                 # đã stream ra thì vẫn còn đó. Ba nhánh engine kia vốn đã gửi ngoài vòng lặp.
                 final_text = final_text or _streamed
+                # Claude Code hay in câu hết lượt ("Claude AI usage limit reached|<epoch>",
+                # "You've hit your session limit · resets 12pm") ngay ở CÂU TRẢ LỜI chứ không phải
+                # sự kiện error. Bản trước để nguyên: người dùng nhận một bong bóng tiếng Anh như
+                # thể đó là câu trả lời, không có thẻ hẹn chạy lại, và câu đó còn được lưu vào
+                # phiên/nhật ký như một lượt thường. Workflow và Kanban đã soi chỗ này từ 15/09,
+                # khung chat thì chưa. Soi bằng cùng bộ nhận dạng, đủ cả điều kiện "chiếm cả
+                # output" để không nhận nhầm một bài viết có trích câu đó.
+                if final_text and _het_luot_ap_dao(final_text) \
+                        and _subscription_limit_event(final_text, "claude-code")[0]:
+                    await ws.send_text(_limit_frame(final_text, "claude-code",
+                                                    cli.model or mcfg.get("claude_model") or ""))
+                    final_text = ""      # khối _limit_state bên dưới lưu câu báo + hẹn chạy lại
+                # Link file → dạng khung chat mở được, ưu tiên file vừa ghi trong lượt này.
+                try:
+                    final_text = _chuan_hoa_link_file(
+                        _brain_root(brain), final_text,
+                        _files_vua_ghi(_brain_root(brain), _da_ghi, _t0_cli))
+                except Exception as _e:
+                    print(f"[link file] {type(_e).__name__}: {_e}", file=sys.stderr)
                 await ws.send_text(json.dumps({
                     "type": "response", "content": final_text, "session_id": conv_sid,
                     "cli_session_id": _cli_sid, "cost_usd": _cost, "engine": "cli",
-                    "model": (mcfg.get("claude_model") or "mặc định"),
+                    "model": (cli.model or mcfg.get("claude_model") or "mặc định"),
                     **_ctx_frame(runtime_trace, _ctx_in)}))
 
             # Token VÀO của lượt vừa xong. Với engine gói thuê bao đây là DẤU HIỆU DUY NHẤT
@@ -10873,6 +13135,28 @@ async def websocket_endpoint(ws: WebSocket):
                     "type": "resume", "state": "scheduled" if _item.auto else "off",
                     **_item.payload()}))
 
+            if _persona and _persona[0] == "agent":
+                # Cuối lượt chat trợ lý: bóc JAVIS_LESSON vào bộ nhớ TRỢ LÝ (không phải bộ
+                # nhớ Javis) và ghi nhật ký chạy của trợ lý, trước khi lượt được lưu như
+                # một lượt chat bình thường.
+                _final_truoc_boc = final_text
+                final_text = _ket_luot_agent(brain, _persona[1], user_message, final_text)
+                if final_text != _final_truoc_boc:
+                    # Mọi nhánh engine ở trên (cli/grok-cli/antigravity-cli/codex/API) đã gửi
+                    # khung "response" RAW còn dòng JAVIS_LESSON trước khi luồng chạy tới đây
+                    # (bong bóng chat đã hiện chữ thô, và loa CÓ THỂ đã đọc luôn bản thô đó).
+                    # dashboard/app.js coi khung "response" là THAY HẲN nội dung bong bóng bằng
+                    # `data.content` (xem `data.type === "response"` trong app.js: `t.text =
+                    # shownText` rồi ghi lại `innerHTML` của `.bubble`), nên gửi thêm MỘT khung
+                    # "response" nữa với text đã sạch để ép vẽ lại đúng chữ - không cần đổi gì
+                    # ở app.js cho phần chữ. Riêng loa: PHẢI kèm "tts": false, nếu không app.js
+                    # gọi voice.speak() lần hai, cắt ngang rồi đọc lại từ đầu.
+                    await ws.send_text(json.dumps({
+                        "type": "response", "content": final_text, "session_id": conv_sid,
+                        "tts": False,
+                        **_ctx_frame(runtime_trace, _ctx_in),
+                    }))
+
             # Lưu lượt assistant: kho phiên + title + log Memory + hàng đợi tự học.
             # Đường lưu DÙNG CHUNG với Telegram (_persist_turn) - nó tự bóc khối điều khiển.
             if final_text:
@@ -10888,6 +13172,14 @@ async def websocket_endpoint(ws: WebSocket):
                         await push_to_chat(conv_sid, _canh_bao)
                 except Exception as _e:
                     print(f"[hua suong] {type(_e).__name__}: {_e}", file=sys.stderr)
+                # Link file trỏ vào hư không → nói ra bằng một dòng riêng, cùng cách với lời hứa
+                # suông: không sửa câu của model, chỉ thêm sự thật ở dưới.
+                try:
+                    _thieu = _link_file_khong_thay(_brain_root(brain), final_text)
+                    if _thieu:
+                        await push_to_chat(conv_sid, _cau_link_khong_thay(_thieu))
+                except Exception as _e:
+                    print(f"[link file] {type(_e).__name__}: {_e}", file=sys.stderr)
                 # Nén NỀN phần lịch sử cũ sắp rơi khỏi cửa sổ (chỉ engine API - CLI tự quản
                 # context). Lỗi nén không ảnh hưởng lượt chat; lượt sau vẫn còn fallback trim.
                 if (not used_fast_path and kind == "api" and api_key and
@@ -10900,13 +13192,23 @@ async def websocket_endpoint(ws: WebSocket):
             return final_text
 
         async def run_turn(conv_sid, user_message, brain, turn_tag, runtime_trace=None,
-                           has_attachments=False, resume_attempt=0):
+                           has_attachments=False, resume_attempt=0, goc_chat=""):
             _trace_token = context_runtime.bind_trace(runtime_trace)
             try:
                 final_text = await _do_turn(
                     conv_sid, user_message, brain, turn_tag, runtime_trace, has_attachments,
                     resume_attempt=resume_attempt,
                 )
+                # Phiên TRỢ LÝ mở từ một lệnh "/" gõ ở khung Trò chuyện: câu trả lời quay về
+                # đúng khung đó, kèm link mở lại cuộc hội thoại (cùng luật với quy trình).
+                if goc_chat:
+                    _p = workflow_chat.persona_cua_phien(store.get_session(conv_sid) or {})
+                    if _p:
+                        try:
+                            await _bao_ve_khung_goc(goc_chat, brain, _p[0], _p[1], conv_sid,
+                                                    final_text or "")
+                        except Exception as _e:
+                            print(f"[bao khung goc] {type(_e).__name__}: {_e}", file=sys.stderr)
                 _record_quality_shadow(
                     runtime_trace, user_message, final_text or "", "dashboard")
                 _CONTEXT_RUNTIME.finish(
@@ -10927,6 +13229,381 @@ async def websocket_endpoint(ws: WebSocket):
                 await send_raw({"type": "turn_done", "session_id": conv_sid,
                                 **context_runtime.event_fields(runtime_trace)})
                 _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+
+        async def run_workflow_turn(conv_sid, user_message, brain, turn_tag, runtime_trace, slug,
+                                    resume=None, goc_chat=""):
+            """Lượt ở phiên workflow:<slug>. Cùng khung với run_turn (trace, Dừng, turn_done)
+            nhưng thân là _luot_quy_trinh. Lỗi bất ngờ vẫn thành một tin trong chat: luật của
+            trang Cộng sự là chạy quy trình không bao giờ kết thúc trong im lặng."""
+            ws = _SendProxy(conv_sid, runtime_trace)
+            _trace_token = context_runtime.bind_trace(runtime_trace)
+
+            async def emit(frame):
+                await ws.send_text(json.dumps(frame, ensure_ascii=False))
+            try:
+                _kq = await _luot_quy_trinh(store, conv_sid, user_message, brain, slug, emit, resume=resume)
+                _CONTEXT_RUNTIME.finish(runtime_trace, "COMPLETED")
+                # Gọi từ khung Trò chuyện bằng lệnh "/" thì kết quả phải quay VỀ khung đó.
+                try:
+                    await _bao_ve_khung_goc(goc_chat, brain, "workflow", slug, conv_sid, _kq)
+                except Exception as _e:
+                    print(f"[bao khung goc] {type(_e).__name__}: {_e}", file=sys.stderr)
+            except asyncio.CancelledError:
+                _CONTEXT_RUNTIME.finish(runtime_trace, "CANCELLED", "cancelled")
+                _cau = "Đã dừng lần chạy này theo yêu cầu."
+                # Cột phải (và icon quay ở cột trái) sống bằng luồng `wf_event`, KHÔNG đọc tin
+                # chat. Bỏ khung này thì tiến độ đứng mãi ở "Đang chạy - Bước 1/3" cho một lần
+                # chạy vừa bị người dùng dừng: màn hình nói một đằng, sự thật một nẻo.
+                try:
+                    await send_raw({"type": "wf_event", "session_id": conv_sid,
+                                    "event": {"type": "stopped"}})
+                except Exception:
+                    pass
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, _cau)
+                except Exception:
+                    pass
+                await send_raw({"type": "system", "content": _cau, "session_id": conv_sid,
+                                **context_runtime.event_fields(runtime_trace)})
+            except Exception as e:
+                _CONTEXT_RUNTIME.note_error(runtime_trace, type(e).__name__)
+                _CONTEXT_RUNTIME.finish(runtime_trace, "FAILED", type(e).__name__)
+                _cau = workflow_chat.tin_loi(None, "", f"{type(e).__name__}: {e}")
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, _cau)
+                except Exception:
+                    pass
+                # Hỏng cũng phải báo về khung đã gọi: im lặng khi hỏng là kiểu hỏng tệ nhất,
+                # người dùng ngồi đợi một kết quả không bao giờ tới.
+                try:
+                    await _bao_ve_khung_goc(goc_chat, brain, "workflow", slug, conv_sid, _cau)
+                except Exception:
+                    pass
+                await send_raw({"type": "error", "content": _cau, "session_id": conv_sid,
+                                **context_runtime.event_fields(runtime_trace)})
+            finally:
+                context_runtime.reset_trace(_trace_token)
+                await send_raw({"type": "turn_done", "session_id": conv_sid,
+                                **context_runtime.event_fields(runtime_trace)})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+
+        async def run_voice_turn(conv_sid, user_message, brain, turn_tag, runtime_trace, conf):
+            """LÀN NHANH giọng nói (Voice V2, docs/dev/2026-09-voice-v2-spec.md mục 2).
+
+            Tin đến từ mic đi qua bộ não giọng (voice_brain) thay vì bộ não chính: trả lời
+            ngắn trong 1-2 giây. Câu nào cần dữ liệu, tool hay hành động thì bộ não giọng trả
+            dòng `JAVIS_ASK_MAIN:`; khi đó câu chờ được đọc ra loa rồi lượt chuyển sang
+            run_turn như thường, CÙNG phiên, nên kho phiên vẫn một mạch.
+
+            Bộ não giọng hỏng (chưa cài agy, hết key, hết giờ) thì rơi về run_turn, không để
+            lượt câm. Chỉ stream từng DÒNG đã khép: dòng marker không bao giờ ra loa.
+            """
+            # "Dừng việc nền đi" là LỆNH, xử NGAY TẠI ĐÂY, không hỏi model.
+            #
+            # Chủ dự án 15/09 gặp vòng lặp: bảo "tạm dừng cái việc tìm kiếm ngầm đi nhé" thì
+            # Javis dạ vâng rồi GIAO THÊM một việc nền mới mang nội dung "dừng việc nền đang
+            # chạy"; nói lần nữa lại đẻ thêm một việc nữa. Dặn model thôi thì không đủ chắc,
+            # vì luật của nó là "cần hành động thì giao bộ não chính", mà dừng việc nghe đúng
+            # là một hành động. Nên chốt cứng ở đây: nhận ra câu lệnh là huỷ luôn rồi trả lời,
+            # vừa đúng vừa tức thì (không mất một lượt model nào).
+            if voice_brain.la_lenh_dung_viec(user_message):
+                _n = huy_viec_nen_giong(conv_sid)
+                _cau = (f"Rồi, em dừng {_n} việc nền đang chạy." if _n
+                        else "Hiện không có việc nền nào đang chạy đâu.")
+                await send_raw({"type": "stream", "content": _cau, "session_id": conv_sid, "lane": "voice"})
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, _cau)
+                except Exception:
+                    pass
+                await send_raw({"type": "response", "content": _cau, "session_id": conv_sid,
+                                "lane": "voice", "engine": "voice:local", "model": "lenh"})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+
+            hist = []
+            try:
+                hist = [m for m in store.get_messages(conv_sid)
+                        if m.get("role") in ("user", "assistant")][-(voice_brain.HISTORY_N + 1):-1]
+            except Exception:
+                pass
+            text, sent_upto, brain_obj = "", 0, None
+            _nghe_xong = False      # đã xét dòng đầu (JAVIS_NGHE) của lượt này chưa
+
+            async def _ap_dien_giai(nghe):
+                """Bộ não giọng vừa diễn giải câu nói: thay tin người dùng trong kho phiên và
+                báo khung chat đổi bong bóng. Trả câu sẽ dùng làm user_message từ đây."""
+                nonlocal user_message
+                nghe = (nghe or "").strip()
+                if not nghe or nghe == user_message.strip():
+                    return
+                print(f"[voice nghe] {user_message[:80]!r} -> {nghe[:80]!r}", file=sys.stderr)
+                try:
+                    store.replace_last_message(conv_sid, "user", nghe)
+                except Exception as e:
+                    print(f"[voice nghe] không thay được tin trong kho phiên: {e}", file=sys.stderr)
+                await send_raw({"type": "user_text", "session_id": conv_sid,
+                                "text": nghe, "raw": user_message})
+                user_message = nghe
+
+            # Chỉ đẩy phần ĐỌC ĐƯỢC: câu đã khép hoặc dòng đã khép (voice_brain.split_speakable).
+            # Trình duyệt đọc mỗi khung là một yêu cầu TTS riêng, nên đẩy từng delta vài từ là
+            # nghe giật, cà nhắc (bài học 0.57.1). Dòng marker không bao giờ ra loa.
+            async def _flush(final=False):
+                nonlocal sent_upto
+                chunks, sent_upto = voice_brain.split_speakable(text, sent_upto, final)
+                for chunk in chunks:
+                    await send_raw({"type": "stream", "content": chunk, "session_id": conv_sid, "lane": "voice"})
+
+            try:
+                brain_obj = await voice_brain.get_brain(conv_sid, conf)
+                await send_raw({"type": "status", "content": "Javis đang trả lời nhanh...", "session_id": conv_sid})
+                # Đang có việc nền thì dặn bộ não giọng (V3): kết quả tự hiện, đừng bịa, đừng giao lại.
+                _dan = [x for x in (voice_brain.pending_note(conv_sid),
+                                    # Ô lọc tạp âm TẮT: dặn theo từng lượt thay vì đổi SYSTEM_PROMPT,
+                                    # vì prompt đã nướng vào bộ não lúc dựng (tiến trình agy sống
+                                    # suốt phiên), gạt ô mà phải giết rồi dựng lại là mất mấy giây.
+                                    "" if conf.get("loc_tap_am", True) else voice_brain.GHI_CHU_TAT_LOC)
+                        if x]
+                _hoi = "\n\n".join([user_message] + _dan)
+                async for delta in brain_obj.stream(_hoi, hist):
+                    text += delta
+                    # Dòng đầu là JAVIS_NGHE (câu đã diễn giải): bóc ra NGAY khi nó khép, trước
+                    # mọi lần flush, để bong bóng người dùng đổi trước khi loa bắt đầu đọc và
+                    # để mốc sent_upto không bao giờ tính qua dòng đó.
+                    if not _nghe_xong and "\n" in text:
+                        _nghe_xong = True
+                        text, _nghe = voice_brain.tach_nghe_dau(text)
+                        if _nghe:
+                            await _ap_dien_giai(_nghe)
+                    await _flush()
+            except asyncio.CancelledError:
+                await send_raw({"type": "system", "content": "Đã dừng lượt này.", "session_id": conv_sid})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+            except Exception as e:
+                # Rơi về bộ não chính thì phải NÓI RA NGAY TRONG KHUNG CHAT, không chỉ stderr.
+                # Trước 0.59.23 chỗ này chỉ gửi một `status`, mà status bị dòng "Javis đang suy
+                # nghĩ..." của run_turn đè lên trong vài mili giây: người dùng bật mic, nói, rồi
+                # chờ hàng chục giây như thể chưa từng có làn nhanh, và không có gì trên màn hình
+                # cho biết vì sao. Bong bóng `system` thì ở lại (như "Đã dừng lượt này."), và lỗi
+                # được nhớ để thẻ Giọng nói ở trang Cài đặt hiện lại (xem /voice/options).
+                print(f"[voice lane] {conf.get('provider')}: {type(e).__name__}: {e} - rơi về bộ não chính",
+                      file=sys.stderr)
+                voice_brain.ghi_loi_lan_nhanh(conf.get("provider"), e)
+                await send_raw({"type": "system", "session_id": conv_sid,
+                                "content": voice_brain.cau_roi_ve_bo_nao_chinh(conf.get("provider"), e)})
+                await send_raw({"type": "status", "content": f"Bộ não giọng nói lỗi ({e}), dùng bộ não chính...",
+                                "session_id": conv_sid})
+                await run_turn(conv_sid, user_message, brain, turn_tag, runtime_trace)
+                return
+            # Bộ não giọng vừa trả lời trót lọt: lỗi cũ (nếu có) không còn đúng, thôi khoe ở Cài đặt.
+            voice_brain.xoa_loi_lan_nhanh()
+            # CỬA TẠP ÂM: cả lượt chỉ là tiếng TV, người khác trong phòng hay tiếng lẩm bẩm, không
+            # có câu nào nói với Javis. Không đọc loa (split_speakable đã giữ dòng marker lại),
+            # không trả lời, và XOÁ HẲN tin khỏi kho phiên - để lại thì đoạn tạp âm đi vào lịch sử
+            # của lượt sau, vào chỉ mục tìm kiếm và vào vòng tự học. Khung chat gỡ luôn bong bóng
+            # (chủ dự án chốt 17/09: ẩn hẳn để mắt chỉ còn nội dung đang bàn), chỉ để lại một dòng
+            # ghi chú thoáng qua rồi tự tắt, đủ để biết Javis có nghe và đã quyết bỏ.
+            _ly_do = voice_brain.parse_bo_qua(text) if conf.get("loc_tap_am", True) else None
+            if _ly_do is not None:
+                print(f"[voice tạp âm] bỏ lượt ({_ly_do or 'không nêu lý do'}): "
+                      f"{user_message[:160]!r}", file=sys.stderr)
+                try:
+                    # pop_last_message chứ không phải một hàm xoá riêng: nó trừ cả msg_count,
+                    # không thì danh sách Lịch sử khoe "1 tin" cho một cuộc rỗng không.
+                    store.pop_last_message(conv_sid, "user")
+                except Exception as e:
+                    print(f"[voice tạp âm] không xoá được tin khỏi kho phiên: {e}", file=sys.stderr)
+                await send_raw({"type": "user_text", "session_id": conv_sid,
+                                "bo_qua": True, "ly_do": _ly_do, "raw": user_message})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+            # Lưới sau: marker không ở dòng đầu, hoặc cả lượt chỉ có một dòng không xuống dòng
+            # (split_speakable đã giữ dòng đó lại, chưa đọc). Bóc nốt, kéo mốc đã đọc về theo nếu
+            # dòng nằm trước mốc để _flush(final) không đọc lặp.
+            if voice_brain.NGHE_MARKER in text:
+                _idx = text.find(voice_brain.NGHE_MARKER)
+                _rest, _nghe = voice_brain.parse_nghe(text)
+                if _idx < sent_upto:
+                    sent_upto = max(0, sent_upto - (len(text) - len(_rest)))
+                text = _rest
+                if _nghe:
+                    await _ap_dien_giai(_nghe)
+            # ĐƯỜNG TẮT giao diện: mở tab, bung nhóm, cuộn. Không cần dữ liệu gì nên không đánh
+            # thức bộ não chính (lượt đó mang cả ngữ cảnh hội thoại, có lúc hơn 200 nghìn token,
+            # nên "mở trang Models" mất hàng chục giây). Gọi thẳng dashboard ngay tại đây.
+            noi, ui = voice_brain.parse_ui(text)
+            if ui is not None:
+                act, tgt = ui
+                # Bộ não giọng là model NHỎ: nó hay viết nhãn người dùng vừa nói ("công cụ",
+                # "kỹ năng") thay vì id trang. Dashboard chỉ nhận id chuẩn, nên tra bí danh ở
+                # đây - đúng bảng mà tool javis_ui dùng. Tra không ra thì nói thật, đừng bắn
+                # chữ lạ sang trình duyệt rồi nhận câu lỗi khó hiểu.
+                dung = ui_targets.normalize_target(act, tgt)
+                if act in ("open_page", "open_group") and not dung:
+                    res = {"ok": False, "detail": f"không có {'trang' if act == 'open_page' else 'nhóm'} '{tgt}'"}
+                else:
+                    try:
+                        res = await ui_bridge.request(act, dung or tgt, session_id=conv_sid)
+                    except Exception as e:
+                        res = {"ok": False, "detail": f"{type(e).__name__}: {e}"}
+                text = noi or ("Xong." if res.get("ok") else "")
+                if not res.get("ok"):
+                    text = (noi + " " if noi else "") + f"(chưa làm được: {res.get('detail') or 'dashboard không trả lời'})"
+                sent_upto = 0
+                await _flush(final=True)
+                clean = text.strip()
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, clean)
+                except Exception:
+                    pass
+                await send_raw({"type": "response", "content": clean, "session_id": conv_sid,
+                                "lane": "voice", "engine": f"voice:{brain_obj.provider}",
+                                "model": brain_obj.model})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+            filler, ask = voice_brain.parse_marker(text)
+            if ask is None:
+                await _flush(final=True)
+                clean = text.strip()
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, clean)
+                except Exception:
+                    pass
+                await send_raw({"type": "response", "content": clean, "session_id": conv_sid,
+                                "lane": "voice", "engine": f"voice:{brain_obj.provider}",
+                                "model": brain_obj.model})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+            # Cần bộ não chính: V3 TÁCH NÓI KHỎI LÀM (spec mục 14). Trước đây `await run_turn`
+            # ngay tại đây nên phiên bị khoá tới khi bộ não chính xong (hàng chục giây), người
+            # dùng nói gì cũng bị "phiên đang trả lời". Nay lượt giọng KẾT THÚC NGAY sau câu xác
+            # nhận, phiên rảnh để nói tiếp; yêu cầu chạy nền như một việc riêng (nhiều việc song
+            # song được), xong thì push_to_chat đẩy kết quả vào khung chat và loa đọc khi rảnh.
+            # LƯỚI THỨ HAI: model vẫn cố giao một việc để đi DỪNG việc khác. Giao việc để dừng
+            # việc là đẻ thêm đúng thứ người dùng đang muốn bỏ, nên chặn tại đây chứ không chỉ
+            # dựa vào lời dặn trong prompt.
+            if voice_brain.la_lenh_dung_viec(ask):
+                _n = huy_viec_nen_giong(conv_sid)
+                _cau = (f"Rồi, em dừng {_n} việc nền đang chạy." if _n
+                        else "Hiện không có việc nền nào đang chạy đâu.")
+                sent_upto = 0
+                await _flush(final=True)
+                await send_raw({"type": "stream", "content": _cau, "session_id": conv_sid, "lane": "voice"})
+                try:
+                    await _persist_turn(store, conv_sid, brain, user_message, _cau)
+                except Exception:
+                    pass
+                await send_raw({"type": "response", "content": _cau, "session_id": conv_sid,
+                                "lane": "voice", "engine": f"voice:{brain_obj.provider}",
+                                "model": brain_obj.model})
+                await send_raw({"type": "turn_done", "session_id": conv_sid})
+                _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+                return
+
+            if not (filler or "").strip():
+                filler = "Ừ, để xem ngay."
+                await send_raw({"type": "stream", "content": filler, "session_id": conv_sid, "lane": "voice"})
+            await _flush(final=True)
+            clean = filler.strip()
+            try:
+                await _persist_turn(store, conv_sid, brain, user_message, clean)
+            except Exception:
+                pass
+            await send_raw({"type": "response", "content": clean, "session_id": conv_sid,
+                            "lane": "voice", "engine": f"voice:{brain_obj.provider}",
+                            "model": brain_obj.model, "background": ask})
+            await send_raw({"type": "turn_done", "session_id": conv_sid})
+            _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
+            voice_brain.note_task_start(conv_sid, ask)
+            # GIỮ REF MẠNH. asyncio chỉ giữ tham chiếu YẾU tới task đang chờ, nên một task thả
+            # trôi như `asyncio.create_task(...)` không gán vào đâu có thể bị gom rác ngay giữa
+            # chừng: việc nền chết lặng, không kết quả, không lỗi, không cả `note_task_done`.
+            # Đúng cảnh chủ dự án gặp 15/09 ("có chạy nền nhưng không thấy nó trả về kết quả",
+            # hai việc treo mãi). Repo đã biết bẫy này ở _UPDATE_TASKS / _PUSH_TASKS, riêng chỗ
+            # này bỏ sót.
+            _nho_viec_nen_giong(conv_sid, asyncio.create_task(_voice_bg_task(ask, conv_sid, brain)))
+
+        async def _voice_bg_task(request, conv_sid, brain):
+            """Một việc nền do bộ não giọng giao: chạy bộ não chính rồi đẩy kết quả vào khung chat.
+
+            Khoá phiên RIÊNG cho mỗi việc (`voice:<sid>:<id>`) để hai việc giao liên tiếp chạy
+            song song thật, không xếp hàng sau nhau; yêu cầu đã tự đứng được nên không cần mạch
+            chung. Kết quả ghi vào kho phiên web (push_to_chat) nên bộ não giọng thấy ở lượt sau.
+            """
+            # Mọi đường ra đều PHẢI báo về khung chat. Bản trước để `await push_to_chat` NGOÀI
+            # try/finally, nên việc bị huỷ (đổi bộ não, tắt phiên) là chết lặng: người dùng
+            # ngồi đợi một kết quả không bao giờ tới và không có gì nói cho họ biết.
+            # Kèm hạn giờ: bộ não chính treo (engine CLI không thoát, mạng đứng) thì trước đây
+            # task nằm đó vĩnh viễn, `note_task_done` cũng không chạy nên hàng đợi báo "đang
+            # chạy" mãi mãi. Thà báo một câu thật còn hơn im lặng vô hạn.
+            # Một THẺ THẬT trên trang Việc cho mỗi việc nền của giọng (0.57.20). Trước đó loại
+            # việc này chỉ sống trong bộ nhớ tiến trình: xong là bay hơi, không để lại dấu, và
+            # trong lúc chạy người dùng không nhìn thấy nó ở đâu để biết còn sống hay đã chết
+            # (chủ dự án 15/09: "việc ngầm chạy thì cập nhật vào trang việc luôn nhé").
+            #
+            # Thẻ tạo thẳng ở trạng thái `running` nên bộ điều phối KHÔNG bao giờ nhặt lên chạy
+            # lần nữa: `next_candidate` chỉ lấy triage/ready, còn `reclaim_stale` chỉ đụng thẻ
+            # có hạn giữ chỗ (claim_expires_at > 0), mà thẻ này chưa từng được ai giữ chỗ.
+            tid = ""
+            try:
+                tid = tasks_feature.store.enqueue(
+                    _brain_root(brain), title=str(request)[:160], intent=str(request),
+                    status="running", created_by="voice",
+                    chat_id=f"{WEB_CHAT_PREFIX}{conv_sid}",
+                )
+            except Exception as e:
+                print(f"[voice bg] không tạo được thẻ Việc: {type(e).__name__}: {e}", file=sys.stderr)
+
+            def _dong_the(ket_qua: str, hong: str = "") -> None:
+                """Đóng thẻ khi việc xong. Hỏng thì để trạng thái CHẶN chứ không phải xong: thẻ
+                xanh cho một việc thất bại là nói dối ngay trên màn hình."""
+                if not tid:
+                    return
+                try:
+                    if hong:
+                        tasks_feature.store.block(tid, "", "voice_bg", hong[:2000], result=ket_qua[:20000])
+                    else:
+                        tasks_feature.store.complete(tid, "", ket_qua[:20000])
+                except Exception as e:
+                    print(f"[voice bg] không đóng được thẻ Việc: {type(e).__name__}: {e}", file=sys.stderr)
+
+            # Khoá MẠCH ENGINE của riêng việc này (dùng một lần, để hai việc chạy song song
+            # không xếp hàng chung một mạch). Nó KHÔNG phải khoá của cuộc trò chuyện - lượt
+            # vẫn ghim vào khung chat đang nói qua `conv_sid`.
+            khoa_mach = f"voice:{conv_sid}:{uuid.uuid4().hex[:8]}"
+            out = ""
+            try:
+                out = await asyncio.wait_for(
+                    _voice_ask_javis(request, conv_sid, brain, key=khoa_mach),
+                    timeout=VOICE_BG_TIMEOUT,
+                )
+            except asyncio.TimeoutError:
+                out = (f"Việc nền chạy quá {int(VOICE_BG_TIMEOUT // 60)} phút mà chưa xong nên em dừng lại: "
+                       f"{str(request)[:160]}. Anh thử giao lại, hoặc hỏi thẳng ở khung chat để chạy trực tiếp.")
+                _dong_the(out, hong="quá hạn giờ")
+            except asyncio.CancelledError:
+                voice_brain.note_task_done(conv_sid, request)
+                _dong_the("", hong="bị dừng giữa chừng")
+                await push_to_chat(conv_sid, f"Việc nền bị dừng giữa chừng: {str(request)[:160]}")
+                raise
+            except Exception as e:
+                out = f"Việc nền lỗi: {type(e).__name__}: {e}"
+                _dong_the(out, hong=f"{type(e).__name__}: {e}")
+            else:
+                _dong_the(out or "(việc nền xong nhưng không có nội dung)")
+            finally:
+                voice_brain.note_task_done(conv_sid, request)
+                # Khoá dùng một lần thì phiên RAM của nó cũng phải chết theo. `_TG_SESS` chỉ
+                # được dọn khi bot Telegram khởi động lại, nên nói chuyện cả buổi là cả trăm
+                # khoá chết nằm lại, mỗi khoá còn ôm một đối tượng engine CLI.
+                _TG_SESS.pop(khoa_mach, None)
+            await push_to_chat(conv_sid, out or "(việc nền xong nhưng không có nội dung)")
 
         async def _start_resumed_turn(conv_sid, user_message, brain, attempt, notice):
             """Chạy lại một lượt đã vấp hạn mức gói thuê bao (limit_resume gọi tới, khi tới mốc
@@ -10961,11 +13638,42 @@ async def websocket_endpoint(ws: WebSocket):
             action = payload.get("action")
             if action == "reset":
                 continue                        # client tự quản phiên; reset KHÔNG còn giết lượt nào
+            if action == "ui_result":
+                # Dashboard vừa làm xong (hoặc từ chối) một `ui_action` do tool javis_ui bắn
+                # ra. Giải future đang đợi trong ui_bridge để tool trả lời model ngay trong lượt.
+                ui_bridge.resolve(str(payload.get("id") or ""), bool(payload.get("ok")),
+                                  str(payload.get("detail") or ""), skipped=bool(payload.get("skipped")))
+                continue
             if action == "stop":
                 _sid = payload.get("session_id") or ""
                 _tag = _CHAT_RUNTIME.cancel_session(_sid)
                 if _tag:
                     cancel_all(_tag)     # giết subprocess engine của đúng lượt đó
+                continue
+            if action == "wf_resume":
+                # Nút Duyệt ở cột phải trang Cộng sự: chạy tiếp lần đang chờ, kết quả về cùng phiên.
+                _sid = str(payload.get("session_id") or "")
+                _row = store.get_session(_sid) or {}
+                _pers = workflow_chat.persona_cua_phien(_row)
+                if not (_pers and _pers[0] == "workflow"):
+                    await send_raw({"type": "error", "session_id": _sid, "content": "Phiên này không phải phiên quy trình."})
+                    continue
+                if _CHAT_RUNTIME.get_job(_sid):
+                    await send_raw({"type": "error", "session_id": _sid, "content": "Quy trình đang chạy, đợi xong đã."})
+                    continue
+                _node = str(payload.get("node") or "")
+                _msg = f"Đã duyệt bước \"{_node}\"."
+                store.append_message(_sid, "user", _msg)
+                _brain_r = _row.get("brain") or payload.get("brain") or "brain"
+                _tag = f"chat:{_sid[:12]}:{uuid.uuid4().hex[:8]}"
+                _trace = _CONTEXT_RUNTIME.start_turn(_sid, _brain_r, "dashboard")
+                task = asyncio.create_task(run_workflow_turn(
+                    _sid, _msg, _brain_r, _tag, _trace, _pers[1],
+                    resume={"task_id": str(payload.get("task_id") or ""), "node": _node,
+                            "code": str(payload.get("code") or "")}))
+                _CHAT_RUNTIME.register_job(_sid, task, _tag,
+                    runtime_task_id=_trace.task_id if _trace else "",
+                    runtime_step_id=_trace.step_id if _trace else "")
                 continue
             if action == "resume_now":
                 # Nút "Chạy lại ngay" trên thẻ hết lượt: không đợi mốc reset.
@@ -10998,7 +13706,20 @@ async def websocket_endpoint(ws: WebSocket):
             if not user_message:
                 continue
             brain = payload.get("brain", "brain")
-            mcfg = cfgmod.read_settings().get("model", {})
+            _cfg_luot = cfgmod.read_settings()
+            mcfg = _cfg_luot.get("model", {})
+            # Tin từ MIC (`voice: true`): sửa chữ nghe nhầm theo ngữ cảnh TRƯỚC khi vào bộ não và
+            # trước khi lưu phiên - phủ cả chữ của Web Speech (không qua /stt) lẫn chữ Groq. Chỉ
+            # tin từ mic: chữ gõ tay là chữ người dùng chọn, không sửa.
+            _nghe_tho = ""      # chữ thô của máy nghe, khi lớp sửa có đổi (báo lại cho khung chat)
+            if payload.get("voice"):
+                try:
+                    _sua = nghe_sua.sua(user_message, nghe_sua.tu_vung(_cfg_luot))
+                    if _sua != user_message:
+                        print(f"[voice nghe_sua] {user_message[:80]!r} -> {_sua[:80]!r}", file=sys.stderr)
+                        _nghe_tho, user_message = user_message, _sua
+                except Exception as e:
+                    print(f"[voice nghe_sua] lỗi, giữ nguyên câu: {e}", file=sys.stderr)
             # Phiên đã ghim model riêng thì engine_label phải suy từ provider HIỆU LỰC
             # của phiên, không phải từ mặc định chung - nhãn sai là clear_codex_thread_id
             # dọn nhầm/không dọn mạch native khi đổi engine.
@@ -11045,11 +13766,71 @@ async def websocket_endpoint(ws: WebSocket):
             if limit_resume.REGISTRY.cancel(conv_sid):
                 await send_raw({"type": "resume", "session_id": conv_sid, "state": "cancelled"})
             store.append_message(conv_sid, "user", user_message)
+            # Khung chat đang hiện chữ THÔ của máy nghe (trình duyệt vẽ bong bóng trước khi gửi).
+            # Câu Javis thật sự đọc là câu đã sửa, nên báo lại để bong bóng đổi theo: người dùng
+            # phải nhìn thấy Javis hiểu câu nào, không phải đoán (chủ dự án 16/09).
+            if _nghe_tho:
+                await send_raw({"type": "user_text", "session_id": conv_sid,
+                                "text": user_message, "raw": _nghe_tho})
             turn_tag = f"chat:{conv_sid[:12]}:{uuid.uuid4().hex[:8]}"
             runtime_trace = _CONTEXT_RUNTIME.start_turn(conv_sid, brain, "dashboard")
+            # Phiên workflow:<slug>: mỗi tin là một lần chạy quy trình, không phải một lượt
+            # hỏi bộ não chính - rẽ nhánh TRƯỚC cả Voice V2, vì trang Cộng sự không có mic.
+            # Khung Trò chuyện đã GỌI cộng sự này bằng lệnh "/" (dashboard gửi kèm mỗi tin).
+            # Chỉ nhận khi phiên hiện tại là phiên cộng sự, và không tự trỏ về chính nó.
+            _goc = str(payload.get("origin_chat") or "").strip()
+            if _goc == conv_sid:
+                _goc = ""
+            _pers = workflow_chat.persona_cua_phien(store.get_session(conv_sid) or {})
+            if not _pers:
+                _goc = ""
+            if _pers and _pers[0] == "workflow":
+                # Tin nói VỀ chính quy trình ("cập nhật lại workflow...", "gộp bớt bước") đi
+                # BỘ NÃO CHÍNH để đọc/sửa file quy trình, không nhồi vào `{{input}}` của một
+                # lần chạy. Nhồi vào là chuyện đã xảy ra 16/09: câu "đánh giá lại quy trình 7
+                # bước, giảm số bước" thành đề bài, quy trình chạy 640 giây rồi trả về một bản
+                # kiểm duyệt bài viết chẳng liên quan, mà vẫn tiêu hạn mức gói thuê bao.
+                # Nút "Chạy" ở cột phải gửi cờ `wf_run` nên nó luôn chạy, không bị đoán lại.
+                _viec, _msg_wf = workflow_chat.quyet_dinh_luot(
+                    user_message, ep_chay=bool(payload.get("wf_run")))
+                if _viec == "tra_loi":
+                    _ten_wf, _khoi_wf = _khoi_quy_trinh_mo(brain, _pers[1])
+                    # Nói NGAY là lần chạy không khởi động: cột phải vẫn đứng ở tiến độ lần
+                    # chạy trước, nên im lặng thì người dùng ngồi đợi một lần chạy không có.
+                    await send_raw({"type": "system", "session_id": conv_sid,
+                                    "content": workflow_chat.tin_khong_chay(_ten_wf)})
+                    task = asyncio.create_task(run_turn(
+                        conv_sid, _khoi_wf + "\n\n" + _msg_wf,
+                        brain, turn_tag, runtime_trace,
+                        bool(payload.get("attachments") or payload.get("files")),
+                        goc_chat=_goc))
+                else:
+                    task = asyncio.create_task(run_workflow_turn(
+                        conv_sid, _msg_wf, brain, turn_tag, runtime_trace, _pers[1],
+                        goc_chat=_goc))
+                _CHAT_RUNTIME.register_job(
+                    conv_sid, task, turn_tag,
+                    runtime_task_id=runtime_trace.task_id if runtime_trace else "",
+                    runtime_step_id=runtime_trace.step_id if runtime_trace else "",
+                )
+                continue
             has_attachments = bool(payload.get("attachments") or payload.get("files"))
-            task = asyncio.create_task(run_turn(
-                conv_sid, user_message, brain, turn_tag, runtime_trace, has_attachments))
+            # Voice V2: tin đến từ MIC (`voice: true`) và cài đặt ở chế độ Làn nhanh có bộ não
+            # giọng riêng thì đi run_voice_turn; còn lại đi run_turn như cũ.
+            _vconf = None
+            if payload.get("voice") and not has_attachments:
+                try:
+                    _vconf = voice_brain.config_from_settings(cfgmod.read_settings())
+                except Exception:
+                    _vconf = None
+                _bao_lan_nhanh_bo_qua(_vconf)
+            if _vconf and _vconf.get("mode") == "fast" and _vconf.get("provider"):
+                task = asyncio.create_task(run_voice_turn(
+                    conv_sid, user_message, brain, turn_tag, runtime_trace, _vconf))
+            else:
+                task = asyncio.create_task(run_turn(
+                    conv_sid, user_message, brain, turn_tag, runtime_trace, has_attachments,
+                    goc_chat=_goc))
             _CHAT_RUNTIME.register_job(
                 conv_sid, task, turn_tag,
                 runtime_task_id=runtime_trace.task_id if runtime_trace else "",
@@ -11208,25 +13989,94 @@ async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Quer
 # ============================================================
 @app.get("/sessions")
 async def sessions_list(brain: str = Query(None), limit: int = Query(50),
-                        project: str = Query("")):
-    """project: bỏ trống = mọi hội thoại; "none" = cuộc chưa xếp nhóm; còn lại = id project."""
+                        project: str = Query(""), channel: str = Query("")):
+    """project: bỏ trống = mọi hội thoại; "none" = cuộc chưa xếp nhóm; còn lại = id project.
+    channel: bỏ trống = loại các kênh cộng sự (agent:/workflow:); có giá trị = đúng kênh đó
+    (trang Cộng sự mở một trợ lý/quy trình)."""
     return {"sessions": get_store().list_sessions(limit=limit, brain=_brain_keys(brain),
-                                                  project=project or None)}
+                                                  project=project or None,
+                                                  channel=channel or None)}
+
+
+# Slug của agent/workflow KHÔNG phải chỉ [a-z0-9-]: _slugify giữ nguyên chữ tiếng Việt, nên
+# brain thật có hẳn "javis-vũ.md" và "kiểm-chứng-viên.md". Khuôn cũ chặn đúng những file đó,
+# và trang Cộng sự bấm vào là ăn 400 - mở hội thoại không được mà không hiểu vì sao. Ở đây chỉ
+# cần chặn thứ có thể leo ra khỏi thư mục hay cắt nhầm kênh: dấu gạch chéo hai chiều, dấu hai
+# chấm (ngăn "agent:a:b") và khoảng trắng. Tồn tại file hay không thì kiểm ngay bên dưới.
+_KENH_CONG_SU_RE = re.compile(r"^(agent|workflow):([^\s/\\:]+)$")
+
+
+@app.post("/sessions/new")
+async def sessions_new(brain: str = Form("brain"), channel: str = Form("web")):
+    """Mở một phiên TRỐNG với kênh định trước. Trang Cộng sự gọi trước tin đầu tiên: kho phiên
+    phải biết phiên này là chat với trợ lý/quy trình nào thì lượt đầu mới đi đúng đường.
+    Phiên chat thường vẫn mint id ở client như cũ; route này chỉ cho kênh cộng sự."""
+    ch = (channel or "").strip()
+    m = _KENH_CONG_SU_RE.match(ch)
+    if not m:
+        return JSONResponse({"error": "channel phải là agent:<slug> hoặc workflow:<slug>"}, status_code=400)
+    loai, slug = m.group(1), m.group(2)
+    thu_muc = _agents_dir(brain) if loai == "agent" else _workflows_dir(brain)
+    if not (thu_muc / f"{slug}.md").exists():
+        return JSONResponse({"error": f"{loai} '{slug}' không có trong brain này"}, status_code=404)
+    store = get_store()
+    sid = store.create_session(brain=_brain_key(brain), engine="cli", channel=ch)
+    if loai == "agent":
+        meta, _ = _read_md(thu_muc / f"{slug}.md")
+        mdl, prov = (meta.get("model") or "").strip(), (meta.get("model_provider") or "").strip()
+        if mdl and prov:
+            try:
+                store.set_pinned_model(sid, prov, mdl)
+            except Exception:
+                pass
+    return {"id": sid, "channel": ch}
 
 
 @app.get("/sessions/search")
-async def sessions_search(q: str = Query(...), brain: str = Query(None), limit: int = Query(30)):
-    return {"results": get_store().search(q, limit=limit, brain=_brain_keys(brain))}
+async def sessions_search(q: str = Query(...), brain: str = Query(None), limit: int = Query(30),
+                          channel: str = Query("")):
+    """channel: bỏ trống = tìm mọi kênh (thanh tìm trang Trò chuyện); có giá trị = chỉ kênh đó
+    (ô tìm ở cột lịch sử của một trợ lý / quy trình trên trang Cộng sự)."""
+    return {"results": get_store().search(q, limit=limit, brain=_brain_keys(brain),
+                                          channel=channel or None)}
 
 
 @app.get("/sessions/{session_id}")
-async def sessions_get(session_id: str):
+async def sessions_get(session_id: str, limit: int = Query(0)):
+    """`limit=0` (mặc định) trả CẢ hội thoại - khuôn cũ, mọi chỗ gọi cũ giữ nguyên hành vi.
+
+    `limit=N` trả N tin CUỐI kèm `has_more` + `total`: khung chat mở hội thoại dài thì chỉ
+    dựng phần đuôi rồi rơi thẳng xuống câu trả lời gần nhất, phần cũ để cuộn lên mới kéo về
+    qua `/sessions/{id}/messages`.
+    """
     store = get_store()
     sess = store.get_session(session_id)
     if not sess:
         return JSONResponse({"error": "not found"}, status_code=404)
-    sess["messages"] = store.get_messages(session_id)
+    if limit and limit > 0:
+        khuc = store.get_messages_page(session_id, limit=limit)
+        sess["messages"] = khuc["messages"]
+        sess["has_more"] = khuc["has_more"]
+        sess["total"] = store.count_messages(session_id)
+    else:
+        sess["messages"] = store.get_messages(session_id)
     return sess
+
+
+@app.get("/sessions/{session_id}/messages")
+async def sessions_messages(session_id: str, limit: int = Query(30),
+                            before_ts: float = Query(None), before_id: int = Query(None)):
+    """Khúc tin CŨ HƠN con trỏ (before_ts, before_id) - khung chat cuộn lên thì gọi đường này.
+
+    Thiếu con trỏ thì trả khúc cuối, y như `/sessions/{id}?limit=N`.
+    """
+    store = get_store()
+    if not store.get_session(session_id):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    truoc = None
+    if before_ts is not None and before_id is not None:
+        truoc = (float(before_ts), int(before_id))
+    return store.get_messages_page(session_id, limit=max(1, min(int(limit), 200)), before=truoc)
 
 
 # ============================================================
@@ -11325,12 +14175,177 @@ async def sessions_assets(session_id: str, brain: str = Query("")):
             "exists": co,
             "size": st.st_size if st else 0,
             "ts": v["ts"],
+            "manual": False,
+            "_that": str(rp),
         })
     ra_file.sort(key=lambda x: x["ts"], reverse=True)
     ra_link = sorted(links.values(), key=lambda x: x["ts"], reverse=True)
+    for l in ra_link:
+        l["manual"] = False
+
+    # ── Phần NGƯỜI DÙNG tự gắn ────────────────────────────────────────────────
+    # Trộn lúc ĐỌC chứ không ghi đè: máy vẫn đoán như cũ, người vẫn thêm được thứ máy không
+    # đoán ra. Trùng nhau thì bản TỰ GẮN thắng - chỉ nó mới có id để gỡ và ghim, nên để bản
+    # đoán được thắng là người dùng thấy file mình vừa thêm mà không bấm gỡ được.
+    tay_file, tay_link = _cuoc_tai_lieu_tay(session_id, sess)
+    da_co = {os.path.normcase(f["_that"]) for f in tay_file}
+    ra_file = tay_file + [f for f in ra_file
+                          if os.path.normcase(f.get("_that") or "") not in da_co]
+    url_tay = {l["url"] for l in tay_link}
+    ra_link = tay_link + [l for l in ra_link if l["url"] not in url_tay]
+    for f in ra_file:
+        f.pop("_that", None)
     return {"ok": True, "brain": b,
             "files": ra_file[:PHIEN_TS_MAX_FILE],
             "links": ra_link[:PHIEN_TS_MAX_LINK]}
+
+
+def _cuoc_tai_lieu_tay(session_id: str, sess: dict):
+    """Tài liệu & link người dùng TỰ GẮN vào cuộc này, đã dựng đúng khuôn hàng của danh sách.
+
+    Trả về (files, links). Mỗi file mang thêm `_that` = đường dẫn thật đã giải, để bên gọi
+    khử trùng với danh sách máy đoán rồi mới bỏ đi trước khi trả cho giao diện.
+
+    Brain lấy từ PHIÊN chứ không phải tham số `brain` của URL (khác nhánh máy tự dò ở trên).
+    Đường dẫn ở đây được rào `_safe_path` duyệt theo brain của phiên lúc GẮN, nên giải nó
+    theo một brain khác là ra một file khác hoặc ra không có gì.
+
+    File đã dời/xoá vẫn Ở LẠI danh sách với `exists: false`, đúng luật của link markdown:
+    gắn tay là một cử chỉ cố ý, im lặng bỏ đi thì người dùng tưởng thao tác của mình bị nuốt.
+    """
+    store = get_store()
+    brain = (sess.get("brain") or "brain").strip() or "brain"
+    broot = Path(_brain_root(brain)).resolve()
+    ra_f = []
+    for f in store.list_session_files(session_id):
+        duong = f.get("path") or ""
+        rp, co = None, False
+        try:
+            # `_safe_serve_path` (không phải `_safe_path`): đây là đường ĐỌC, và trần duyệt có
+            # thể cao hơn gốc brain nên đường dẫn lưu theo trần lẫn theo gốc đều phải giải
+            # được. Cùng lý do như chỗ nạp file ghim của project.
+            rp = Path(_safe_serve_path(brain, duong))
+            co = rp.is_file()
+        except Exception:
+            rp = None
+        ten = f.get("name") or duong.replace("\\", "/").split("/")[-1]
+        # Trần duyệt có thể CAO hơn gốc brain, nên file gắn tay chưa chắc nằm trong gốc brain.
+        # `_files_rel` ném ValueError ở đúng ca đó; rơi về đường dẫn đã lưu là đủ để hiện.
+        try:
+            hien = _files_rel(broot, rp) if rp else duong
+        except ValueError:
+            hien = duong
+        ra_f.append({
+            "id": f.get("id"),
+            "path": duong,
+            "brain_path": hien,
+            "name": rp.name if rp else ten,
+            "label": ten,
+            "image": os.path.splitext(duong)[1].lower() in IMG_EXTS,
+            "exists": co,
+            "size": 0,
+            "ts": f.get("added_at") or 0,
+            "pinned": bool(f.get("pinned")),
+            "manual": True,
+            "_that": str(rp) if rp else duong,
+        })
+    ra_l = [{
+        "id": l.get("id"),
+        "url": l.get("url") or "",
+        "label": l.get("label") or "",
+        "ts": l.get("added_at") or 0,
+        "vai": "",
+        "pinned": bool(l.get("pinned")),
+        "manual": True,
+    } for l in store.list_session_links(session_id)]
+    return ra_f, ra_l
+
+
+# ── Thêm/gỡ/ghim tài liệu & link của MỘT cuộc trò chuyện ─────────────────────
+#
+# Brain LẤY TỪ PHIÊN (`sess["brain"]`), tuyệt đối không nhận từ client - y hệt luật của route
+# project: phiên thuộc đúng một brain và đường dẫn chỉ có nghĩa trong brain đó.
+
+def _cuoc_or_404(session_id: str):
+    s = get_store().get_session(session_id)
+    return s, (None if s else JSONResponse({"error": "not found"}, status_code=404))
+
+
+@app.post("/sessions/{session_id}/assets/files")
+async def sessions_add_file(session_id: str, path: str = Form(...), name: str = Form("")):
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    b = (sess.get("brain") or "brain").strip() or "brain"
+    try:
+        alo = _safe_path(b, path)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    # `is_file()` chứ không phải `exists()`: đường dẫn RỖNG giải ra chính thư mục trần, mà thư
+    # mục thì "có tồn tại" - thế là gắn được một hàng trỏ vào một cái thư mục, ghim vào thì
+    # đọc lỗi. Ở đây chỉ nhận đúng file.
+    if not alo.is_file():
+        return JSONResponse({"error": "Không tìm thấy file trong brain này"}, status_code=404)
+    fid = get_store().add_session_file(session_id, path, name or alo.name)
+    if not fid:
+        return JSONResponse(
+            {"error": f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} tài liệu"},
+            status_code=400)
+    return {"ok": True, "id": fid}
+
+
+@app.post("/sessions/{session_id}/assets/files/{file_id}/delete")
+async def sessions_del_file(session_id: str, file_id: str):
+    """GỠ KHỎI CUỘC, KHÔNG xoá file trên đĩa. File nằm trong brain và có đời sống riêng."""
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    return {"ok": get_store().remove_session_file(session_id, file_id)}
+
+
+@app.post("/sessions/{session_id}/assets/files/{file_id}/pin")
+async def sessions_pin_file(session_id: str, file_id: str, pinned: str = Form("1")):
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    on = str(pinned).strip() in ("1", "true", "True", "on")
+    return {"ok": get_store().set_session_file_pinned(session_id, file_id, on), "pinned": on}
+
+
+@app.post("/sessions/{session_id}/assets/links")
+async def sessions_add_link(session_id: str, url: str = Form(...), label: str = Form("")):
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    u = (url or "").strip()
+    # Chỉ nhận http/https, cùng lý do như route link của project: không rào thì `javascript:`
+    # hay `file:` lọt vào danh sách rồi hiện thành liên kết bấm được ngay trong giao diện.
+    if not re.match(r"^https?://", u, re.I):
+        return JSONResponse({"error": "URL phải bắt đầu bằng http:// hoặc https://"},
+                            status_code=400)
+    lid = get_store().add_session_link(session_id, u, label)
+    if not lid:
+        return JSONResponse(
+            {"error": f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} link"},
+            status_code=400)
+    return {"ok": True, "id": lid}
+
+
+@app.post("/sessions/{session_id}/assets/links/{link_id}/delete")
+async def sessions_del_link(session_id: str, link_id: str):
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    return {"ok": get_store().remove_session_link(session_id, link_id)}
+
+
+@app.post("/sessions/{session_id}/assets/links/{link_id}/pin")
+async def sessions_pin_link(session_id: str, link_id: str, pinned: str = Form("1")):
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    on = str(pinned).strip() in ("1", "true", "True", "on")
+    return {"ok": get_store().set_session_link_pinned(session_id, link_id, on), "pinned": on}
 
 
 @app.post("/sessions/{session_id}/rename")
@@ -12155,11 +15170,13 @@ def _engine_runtime_view(settings: dict) -> dict:
                           "nên thực tế chưa tiết kiệm được gì.")
         return {"provider": prov, "nhan": label, "kind": kind, "model": model or "",
                 "loai": "Gói thuê bao" if thue_bao else "API key",
+                # Cờ máy đọc: `loai` là nhãn tiếng Việt, giao diện không được so chuỗi với nó.
+                "thue_bao": bool(thue_bao),
                 "duong_hop": sorted(hop), "duong_khong_hop": sorted(khong),
                 "giai_thich": giai_thich}
     except Exception:   # noqa: BLE001 - xem docstring
         return {"provider": "", "nhan": "", "kind": "", "model": "", "loai": "",
-                "duong_hop": [], "duong_khong_hop": [],
+                "thue_bao": False, "duong_hop": [], "duong_khong_hop": [],
                 "giai_thich": "Chưa đọc được cấu hình bộ não."}
 
 
@@ -12292,6 +15309,60 @@ def _subscription_limit_event(raw: str, engine_hint: str):
         return model_limits.subscription_blocked_hint(hit, _configured_api_providers()), hit
     except Exception:   # noqa: BLE001 - không được để câu báo lỗi tự nó nổ
         return "", None
+
+
+# Nhà chạy agent (AGENT_PROVIDERS) -> tên engine mà limit_learner hiểu. Nhà không có trong
+# bảng (API key thuần) thì để rỗng: gói thuê bao chỉ là chuyện của bốn nhà dưới đây, gán bừa
+# một cái tên là câu báo lỗi nói sai tên gói người dùng phải đi gia hạn.
+# Bảng thật nằm ở limit_learner.ENGINE_HINT_BY_PROVIDER để hàng đợi Kanban (tasks.py) dùng
+# chung; tên cũ giữ lại cho các chỗ gọi trong file này.
+_NHA_SANG_ENGINE = limit_learner.ENGINE_HINT_BY_PROVIDER
+
+
+# Tên cũ, giữ cho test và chỗ gọi; giá trị thật ở limit_learner.
+_TRAN_OUT_HET_LUOT = limit_learner.DOMINATES_MAX_CHARS
+_DAU_DONG_HET_LUOT = limit_learner.DOMINATES_LINE_START
+
+
+def _het_luot_ap_dao(raw: str) -> bool:
+    """Câu báo hết lượt có CHIẾM output này không, hay chỉ được trích trong một bài viết?
+
+    Đây là hàng rào chống chính cái loại hỏng mà bản vá hết lượt sinh ra để dập. Một agent viết
+    bài hoàn toàn có thể viết: Khi gặp thông báo "You have reached your session limit" thì nên
+    chờ. Nhận nhầm câu đó là bước bị vứt nguyên bài viết thật (không có step_done nên không
+    sang {{prev}}) và người dùng bị báo là hết gói trong khi gói vẫn còn - tệ hơn hẳn lỗi cũ.
+
+    Ba điều kiện, phải đúng cả: output ngắn (bài thật thì dài hơn nhiều), câu báo mở đầu dòng
+    của nó HOẶC chiếm quá nửa dòng đó. Câu nhà cung cấp in ra luôn thoả; câu trích giữa một câu
+    văn thì không. Thân hàm nay ở `limit_learner.subscription_dominates` để việc Kanban dùng
+    chung một bộ nhận dạng (tasks.py không import được main).
+    """
+    return limit_learner.subscription_dominates(raw or "")
+
+
+def _loi_het_luot_cua_buoc(out: str, loi: str, provider: str, agent_name: str) -> str:
+    """Câu tiếng Việt khi một BƯỚC workflow dừng vì gói thuê bao hết lượt. "" = không phải.
+
+    Vì sao phải soi cả `out` chứ không chỉ `loi`: nhà cung cấp thường KHÔNG báo hết lượt như
+    một lỗi, mà in nguyên văn câu tiếng Anh ra đúng chỗ câu trả lời ("You've hit your session
+    limit - resets 12pm (UTC)"). Không soi `out` thì bước coi như chạy xong, và người dùng đọc
+    được câu tiếng Anh đó như thể nó là KẾT QUẢ của quy trình - đúng cái đã xảy ra 15/09.
+
+    Dùng lại bộ nhận dạng của khung chat (`_subscription_limit_event`) chứ không viết bộ thứ
+    hai: hai bộ nhận dạng thì mẫu câu mới chỉ được thêm vào một chỗ."""
+    hint = _NHA_SANG_ENGINE.get(str(provider or "").strip(), "")
+    for raw, phai_ap_dao in ((out, True), (loi, False)):
+        if phai_ap_dao and not _het_luot_ap_dao(raw or ""):
+            continue
+        noi, _lim = _subscription_limit_event(raw or "", hint)
+        if not noi:
+            continue
+        ten = str(agent_name or "").strip()
+        if ten:
+            noi += (f" Bước này chạy bằng trợ lý \"{ten}\", nên muốn chạy tiếp ngay thì trỏ "
+                    "riêng trợ lý đó sang model khác ở trang Models.")
+        return noi
+    return ""
 
 
 def _subscription_limit_message(raw: str, engine_hint: str) -> str:
@@ -13009,8 +16080,15 @@ _TG_CONV_MAX_MSGS = 200          # ~100 lượt hỏi-đáp/phiên → mở phi�
 _TG_CONV_ARCHIVE_DAYS = 30       # phiên Telegram nguội quá ngần này → tự cất vào kho lưu
 
 
-def _tg_conv_sid(store, sess, brain, engine_label, model):
-    """Phiên kho cho lượt Telegram này, tự xoay theo hai ngưỡng trên.
+def _tg_conv_sid(store, sess, brain, engine_label, model, channel="telegram"):
+    """Phiên kho cho lượt này, tự xoay theo hai ngưỡng trên.
+
+    `channel` là KÊNH THẬT của lượt, và phải được truyền vào: vỏ `_tg_answer` phục vụ bốn kênh
+    (Telegram, Zalo, CLI, bot chuyên trách), nhưng tới 0.59.28 hàm này đóng cứng
+    `channel="telegram"` cho MỌI bản ghi nó mở. Hậu quả nhìn thấy ở thanh Lịch sử: hội thoại
+    Zalo, hội thoại gõ từ terminal và việc nền của giọng nói đều đeo nhãn "TG" (chủ dự án báo
+    17/09: "chạy nền xong đang trả lời tag là TG thì không đúng"), còn bộ lọc theo kênh và
+    nhãn riêng `bot:<slug>` thì không bao giờ khớp được cái gì.
 
     sess['sid'] chỉ sống trong RAM, nên sau restart phải hỏi lại map BỀN `_TG_SID_MAP` (lý do
     đầy đủ ở chú thích `_TG_SID_PATH`) mới nối được vào đúng bản ghi cũ. Trước 0.50.1 chỗ này
@@ -13023,9 +16101,11 @@ def _tg_conv_sid(store, sess, brain, engine_label, model):
     luật xoay. Đổi brain và /reset gọi `_tg_quen_sid` nên xoá luôn cả liên kết bền.
     """
     sid = sess.get("sid") or _TG_SID_MAP.get(str(sess.get("key") or ""))
+    ly_do = "chưa có phiên nào cho chat này"
     if sid:
         row = store.get_session(sid)
         if not row:
+            ly_do = f"bản ghi {sid[:8]} không còn trong kho (đã xoá trên dashboard?)"
             sid = None      # user đã xoá hội thoại đó trên dashboard → đừng hồi sinh id cũ
         elif (row.get("brain") or "") and row["brain"] not in _brain_keys(brain):
             # Brain đổi lúc server tắt (Settings, hoặc brain bị đổi tên). Nối tiếp thì
@@ -13037,12 +16117,16 @@ def _tg_conv_sid(store, sess, brain, engine_label, model):
             # có từ trước bản chuẩn hoá đều bị coi là "khác brain" và bị bỏ - MỖI LƯỢT một
             # phiên mới, đúng cái hỏng mà khối ngay dưới đang canh. Cột rỗng cũng tha, vì rỗng
             # là không biết chứ không phải là khác.
+            ly_do = (f"brain của bản ghi {sid[:8]} là {row.get('brain')!r}, "
+                     f"lượt này là {_brain_key(brain)!r}")
             sid = None
         else:
             # Chỉ xoay khi có BẰNG CHỨNG phiên đã cũ/đã dài. Thiếu số liệu thì giữ nguyên,
             # kẻo một cột rỗng bất ngờ làm mỗi lượt đẻ một phiên.
             nghi = time.time() - float(row.get("updated_at") or time.time())
-            if nghi >= _TG_CONV_IDLE_S or int(row.get("msg_count") or 0) >= _TG_CONV_MAX_MSGS:
+            so_tin = int(row.get("msg_count") or 0)
+            if nghi >= _TG_CONV_IDLE_S or so_tin >= _TG_CONV_MAX_MSGS:
+                ly_do = f"phiên cũ nghỉ {nghi / 3600:.1f} tiếng, dài {so_tin} tin"
                 sid = None      # nghỉ lâu / đã dài → sang khúc mới
     if sid:
         # Còn dùng tiếp: đồng bộ engine/model vì người dùng có thể vừa đổi bằng /model.
@@ -13053,17 +16137,24 @@ def _tg_conv_sid(store, sess, brain, engine_label, model):
     # `_brain_key`: Telegram cầm ĐƯỜNG DẪN brain, dashboard gửi tên gọi tắt "brain" - ghi
     # nguyên văn thì hai bên lệch khoá và thanh bên không thấy hội thoại Telegram đâu.
     sess["sid"] = store.create_session(brain=_brain_key(brain), engine=engine_label, model=model,
-                                       channel="telegram")
+                                       channel=channel or "telegram")
     _tg_nho_sid(sess, sess["sid"])
+    # VÌ SAO mở phiên mới - in ra mỗi lần, vì đây là thứ không tài nào đoán được từ giao diện:
+    # ở Lịch sử chỉ thấy một loạt hội thoại ngắn mà không biết chúng bị cắt ra bởi luật nghỉ
+    # 12 tiếng, bởi brain lệch, hay bởi liên kết bền không ghi được (chủ dự án báo 16/09).
+    print(f"[{channel or 'telegram'}] mở phiên mới {sess['sid'][:8]} cho chat "
+          f"{sess.get('key')}: {ly_do}", file=__import__('sys').stderr)
     # Dọn theo nhịp XOAY (hiếm, cỡ vài ngày một lần) chứ không mỗi lượt - đủ để thanh bên
-    # không ngập dần vì các khúc cũ.
+    # không ngập dần vì các khúc cũ. Dọn ĐÚNG kênh vừa xoay, không phải cứ thế quét Telegram.
     try:
-        n = store.archive_stale("telegram", time.time() - _TG_CONV_ARCHIVE_DAYS * 86400)
+        n = store.archive_stale(channel or "telegram",
+                                time.time() - _TG_CONV_ARCHIVE_DAYS * 86400)
         if n:
-            print(f"[telegram] cất {n} phiên nguội quá {_TG_CONV_ARCHIVE_DAYS} ngày vào kho lưu",
-                  file=__import__('sys').stderr)
+            print(f"[{channel or 'telegram'}] cất {n} phiên nguội quá {_TG_CONV_ARCHIVE_DAYS} "
+                  f"ngày vào kho lưu", file=__import__('sys').stderr)
     except Exception as e:
-        print(f"[telegram archive] {type(e).__name__}: {e}", file=__import__('sys').stderr)
+        print(f"[{channel or 'telegram'} archive] {type(e).__name__}: {e}",
+              file=__import__('sys').stderr)
     return sess["sid"]
 
 
@@ -13108,7 +16199,8 @@ def _tg_lich_su_kho(store, conv_sid, text):
     return msgs, tom_tat
 
 
-async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=None):
+async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=None,
+                     phien_kho="", ghi_kho=True):
     """Vỏ ngoài một lượt KHÔNG-WEBSOCKET: khớp phiên trong kho -> chạy engine -> LƯU lượt.
 
     `channel` mở hàm này cho kênh thứ ba là CLI (xem docs/dev/2026-08-cli-spec.md). Cố ý
@@ -13118,11 +16210,21 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
     trước 0.9.244, chỉ khác là lần này biết trước mà vẫn làm.
 
     Vì sao tách vỏ khỏi lõi: trước 0.9.244 nhánh Telegram không lưu gì cả, nên hội thoại
-    Telegram vắng mặt ở `/sessions`, ở `brain/Memory/conversations`, và ở vòng tự học -
+    Telegram vắng mặt ở `/sessions`, ở `brain/memory/conversations`, và ở vòng tự học -
     lỗ hổng chức năng lớn nhất trong danh sách trôi lệch giữa hai bản dispatch.
 
     Quy ước trả về của lõi: **dict = câu trả lời thật** (đáng lưu), **chuỗi = thông báo lỗi**
     (không lưu). Đó là lý do nhánh gateway lịch cũng trả dict chứ không trả chuỗi như trước.
+
+    `phien_kho` + `ghi_kho`: cho người gọi MƯỢN vỏ này mà không để nó tự khớp phiên. Mặc định
+    vỏ tra `chat_id` -> phiên kho và tự mở phiên mới khi chưa có, đúng cho Telegram/Zalo/CLI
+    nơi chat_id là một cuộc trò chuyện bền. Việc nền của giọng nói thì KHÔNG: mỗi việc mang
+    một `chat_id` dùng một lần (`voice:<sid>:<uuid>`, cố ý, để hai việc chạy song song không
+    xếp hàng chung một mạch engine), nên vỏ tưởng lượt nào cũng là một cuộc trò chuyện mới và
+    mở cho nó một bản ghi riêng - chủ dự án 17/09 thấy hàng loạt hội thoại chỉ 1-2 tin sinh ra
+    trong lúc nói chuyện. Truyền `phien_kho` = phiên chat đang nói để lượt chạy NGAY TRONG đó,
+    và `ghi_kho=False` khi người gọi tự lo phần ghi (việc nền ghi bằng `push_to_chat`), nên
+    lịch sử chỉ được ĐỌC làm ngữ cảnh chứ không bị chèn thêm tin nào.
     """
     # ĐA PHIÊN: định tuyến theo chat_id → ngữ cảnh của mỗi tài khoản tách biệt.
     chat_id = str((meta or {}).get("chat_id") or "default")
@@ -13137,9 +16239,9 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
         sess = _tg_session(chat_id)
         brain = _tg_brain(chat_id)   # brain riêng của phiên (đổi bằng /brain), mặc định theo Settings
     mcfg = cfgmod.read_settings().get("model", {})
-    # Chủ chat trên Telegram thì theo ghim của kênh (nếu có). Bot chuyên trách KHÔNG: nó
-    # phục vụ khách, model của nó là chuyện cấu hình bot, không ăn theo ghim của chủ.
-    prov, kind, api_key, api_model = (_chat_provider(mcfg) if bot
+    # Chủ chat trên Telegram thì theo ghim của kênh (nếu có). Bot chuyên trách KHÔNG ăn theo
+    # ghim của chủ: nó phục vụ khách, và model của nó là model của chính Agent nó trỏ tới.
+    prov, kind, api_key, api_model = (_chat_provider_bot(mcfg, bot) if bot
                                       else _chat_provider_kenh(mcfg, channel))
     # Nhãn engine phải do VỎ quyết định rồi truyền xuống lõi: hai bên tự suy ra độc lập là
     # có ngày phiên bị dán nhãn 'cli' trong khi lượt thật chạy qua OpenRouter.
@@ -13161,11 +16263,16 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
     store = get_store()
     conv_sid = ""
     try:
-        conv_sid = _tg_conv_sid(store, sess, brain, engine_label,
-                                api_model or mcfg.get("claude_model"))
-        store.append_message(conv_sid, "user", text)
+        conv_sid = str(phien_kho or "")
+        if not conv_sid and ghi_kho:
+            # Chỉ TỰ MỞ phiên khi vỏ này còn là nơi ghi. Không ghi mà vẫn mở là để lại một bản
+            # ghi hội thoại rỗng tanh trong thanh Lịch sử - đúng thứ đang phải dọn.
+            conv_sid = _tg_conv_sid(store, sess, brain, engine_label,
+                                    api_model or mcfg.get("claude_model"), channel=channel)
+        if conv_sid and ghi_kho:
+            store.append_message(conv_sid, "user", text)
     except Exception as e:
-        print(f"[telegram session] {e}", file=__import__('sys').stderr)
+        print(f"[{channel} session] {e}", file=__import__('sys').stderr)
 
     runtime_trace = _CONTEXT_RUNTIME.start_turn(
         conv_sid or f"{channel}:{chat_id}", brain, channel)
@@ -13190,12 +16297,31 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
                     out["text"] = (out.get("text") or "") + "\n\n" + _canh_bao
             except Exception as e:
                 print(f"[hua suong telegram] {type(e).__name__}: {e}", file=__import__('sys').stderr)
-        if conv_sid and isinstance(out, dict):
+            # Cùng luật với dashboard: link trỏ vào hư không thì nói ra, nối vào cuối tin.
+            try:
+                _thieu = _link_file_khong_thay(_brain_root(brain), out.get("text") or "")
+                if _thieu:
+                    out["text"] = (out.get("text") or "") + "\n\n" + _cau_link_khong_thay(_thieu)
+            except Exception as e:
+                print(f"[link file telegram] {type(e).__name__}: {e}", file=__import__('sys').stderr)
+        if conv_sid and ghi_kho and isinstance(out, dict):
             try:
                 await _persist_turn(store, conv_sid, brain, text, out.get("text") or "")
             except Exception as e:
-                print(f"[telegram persist] {e}", file=__import__('sys').stderr)
+                print(f"[{channel} persist] {e}", file=__import__('sys').stderr)
         if isinstance(out, str):
+            # Lượt HỎNG: lõi trả chuỗi, và tới 0.59.20 vỏ này KHÔNG lưu gì cả - câu lỗi bay
+            # thẳng ra Telegram rồi biến mất. Hậu quả nhìn thấy ở Lịch sử: một hội thoại đúng
+            # MỘT TIN (câu người dùng), không tên, không câu trả lời, mở ra chẳng hiểu vì sao
+            # (chủ dự án báo 16/09: "một loạt tin từ telegram chỉ có 1 tin"). Nay ghi câu lỗi
+            # vào kho như một tin của trợ lý, y hệt cách `_persist_limit_notice` làm cho lượt
+            # vấp hạn mức: đủ để mở lại còn đọc được chuyện gì đã xảy ra.
+            #
+            # Cố ý KHÔNG đi qua `_persist_turn`: câu lỗi không đáng vào nhật ký Memory lẫn
+            # hàng đợi tự học. `ghi_kho=False` thì cũng không ghi ở đây: người gọi đang tự lo
+            # phần ghi, và câu lỗi này được TRẢ VỀ cho họ nên không mất đi đâu cả.
+            if conv_sid and ghi_kho:
+                _persist_limit_notice(store, conv_sid, text, str(out))
             _CONTEXT_RUNTIME.note_error(runtime_trace, f"{channel}_error_response")
         _record_quality_shadow(
             runtime_trace, text,
@@ -13657,7 +16783,8 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
     # dashboard (bản đầy đủ còn TO HƠN cái vừa bị từ chối vì quá to), nhưng ở kênh này ta chưa
     # có đường nào khác để đi, nên cứ chạy tiếp và để nhà cung cấp nói nếu thật sự quá hạn mức.
     if not sysprompt:
-        sysprompt = build_system_prompt(brain, lang=_lang_qd, project_id=_pid)
+        sysprompt = build_system_prompt(brain, lang=_lang_qd, project_id=_pid,
+                                        session_id=conv_sid or "")
     sysprompt += channel_context.build_channel_block(
         channel, meta, telegram_running=(channel == "telegram"), port=_javis_port(),
         brain_root=_brain_root(brain))
@@ -13860,13 +16987,18 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
                     _CONTEXT_RUNTIME.note_error(runtime_trace, "codex_error_event")
             return resume_hong
 
-        # Lịch sử để dựng lại thread khi cần. Bỏ lượt cuối vì đó chính là câu đang hỏi.
+        # Lịch sử để dựng lại thread khi cần. Bỏ lượt cuối NẾU nó đúng là câu đang hỏi, chứ
+        # không cắt cứng phần tử cuối: vỏ chung có chế độ không ghi câu hỏi vào kho
+        # (`ghi_kho=False`, việc nền của giọng), và khi đó cắt bừa là ăn mất một tin thật.
+        # Cùng cách so khớp với `_tg_lich_su_kho`.
         _raw = []
         if store is not None and conv_sid:
             try:
                 _raw = [{"role": m["role"], "content": m["content"]}
-                        for m in store.get_messages(conv_sid)[:-1]
+                        for m in store.get_messages(conv_sid)
                         if m.get("role") in ("user", "assistant") and m.get("content")]
+                if _raw and _raw[-1]["role"] == "user" and _raw[-1]["content"] == text:
+                    _raw.pop()
             except Exception:
                 _raw = []
         _hien_tai = _codex_do_sau(ccli, reasoning, text)
@@ -13958,9 +17090,13 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         )
         return _tg_ket(clean_out, files, "", loi)
     else:
-        if sess["cli"] is None:
-            # tag riêng theo chat → /stop chỉ giết đúng subprocess của chat này, không đụng người khác
-            sess["cli"] = claude_engine(system_prompt=sysprompt, cwd=CLAUDE_CWD, tag=f"telegram:{chat_id}")
+        _goc = _brain_root(brain)
+        if sess["cli"] is None or getattr(sess["cli"], "cwd", None) != _goc:
+            # tag riêng theo chat → /stop chỉ giết đúng subprocess của chat này, không đụng người khác.
+            # cwd = thư mục brain (0.55.58, cùng lý do với nhánh dashboard). Đổi brain bằng /brain
+            # thì `_tg_ngat_mach` chỉ cắt mạch mà giữ đối tượng engine, nên phải dựng lại ở đây
+            # khi cwd không còn khớp brain - không thì lượt sau vẫn ghi file vào brain cũ.
+            sess["cli"] = claude_engine(system_prompt=sysprompt, cwd=_goc, tag=f"telegram:{chat_id}")
         cli = sess["cli"]
         cli.system_prompt = sysprompt
         # Cùng luật với nhánh CLI của web: tên model nhà khác không đưa cho `claude`.
@@ -13986,42 +17122,71 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
              {"role": "user", "content": _cli_prompt}],
             provider="cli", model=cli.model or mcfg.get("claude_model") or "mặc định",
         )
-        async for ev in cli.query(_cli_prompt):
-            et = ev["type"]
-            if et == "final":
-                out = ev.get("content") or out
-                # Thiếu dòng này tới 0.9.244 (xem nhánh API ngay trên): lượt Telegram qua
-                # Claude Code không được tính vào bảng Mức dùng.
-                usage_store.record("cli", cli.model or mcfg.get("claude_model") or "mặc định",
-                                   ev.get("tokens_in", 0), ev.get("tokens_out", 0),
-                                   ev.get("cost_usd") or 0)
-                _CONTEXT_RUNTIME.record_usage(
-                    runtime_trace, ev.get("tokens_in", 0), ev.get("tokens_out", 0))
-            elif et == "tool_call":
-                nm = ev.get("name", "")
-                if nm in ("Write", "NotebookEdit"):
-                    fp = (ev.get("input") or {}).get("file_path") or (ev.get("input") or {}).get("notebook_path")
-                    if fp:
-                        written.append(str(fp))
-                await _p(f"⚙ Đang gọi: {nm}")
-            elif et == "tool_result":
-                await _p("✓ Nhận kết quả - đang phân tích…")
-            elif et == "text":
-                _streamed += ev.get("content") or ""
-                if not _pinged:
-                    _pinged = True; await _p("✍ Đang soạn câu trả lời…")
-            elif et == "error":
-                # Xem nhánh API: lỗi giữa lượt không chí mạng, cứ chạy tiếp rồi báo ở cuối.
-                loi.append(str(ev.get("content") or "lỗi không rõ"))
-                _CONTEXT_RUNTIME.note_error(runtime_trace, "cli_error_event")
+        async def _chay_claude(prompt):
+            """Một lần gọi `claude`. Trả True nếu mạch cũ không còn (resume trượt)."""
+            nonlocal out, _streamed, _pinged
+            resume_failed = False
+            async for ev in cli.query(prompt):
+                et = ev["type"]
+                if et == "final":
+                    out = ev.get("content") or out
+                    # Thiếu dòng này tới 0.9.244 (xem nhánh API ngay trên): lượt Telegram qua
+                    # Claude Code không được tính vào bảng Mức dùng.
+                    usage_store.record("cli", cli.model or mcfg.get("claude_model") or "mặc định",
+                                       ev.get("tokens_in", 0), ev.get("tokens_out", 0),
+                                       ev.get("cost_usd") or 0)
+                    _CONTEXT_RUNTIME.record_usage(
+                        runtime_trace, ev.get("tokens_in", 0), ev.get("tokens_out", 0))
+                elif et == "tool_call":
+                    nm = ev.get("name", "")
+                    if nm in ("Write", "NotebookEdit"):
+                        fp = (ev.get("input") or {}).get("file_path") or (ev.get("input") or {}).get("notebook_path")
+                        if fp:
+                            written.append(str(fp))
+                    # Nhặt rộng cả đường dẫn lẫn trong lệnh Bash; tầng sau lọc "có thật + vừa đổi".
+                    try:
+                        written.extend(channel_context.candidate_paths_from_tool(ev.get("input") or {}))
+                    except Exception:
+                        pass
+                    await _p(f"⚙ Đang gọi: {nm}")
+                elif et == "tool_result":
+                    await _p("✓ Nhận kết quả - đang phân tích…")
+                elif et == "text":
+                    _streamed += ev.get("content") or ""
+                    if not _pinged:
+                        _pinged = True; await _p("✍ Đang soạn câu trả lời…")
+                elif et == "error":
+                    if ev.get("resume_failed"):
+                        resume_failed = True      # mồi lại ngay dưới, không tính là lỗi của lượt
+                        continue
+                    # Xem nhánh API: lỗi giữa lượt không chí mạng, cứ chạy tiếp rồi báo ở cuối.
+                    loi.append(str(ev.get("content") or "lỗi không rõ"))
+                    _CONTEXT_RUNTIME.note_error(runtime_trace, "cli_error_event")
+            return resume_failed
+
+        _co_mach = bool(getattr(cli, "session_id", None))
+        _rf = await _chay_claude(_cli_prompt)
+        if _co_mach and _rf and not (out or _streamed):
+            # Mạch cũ không còn (đổi thư mục làm việc ở 0.55.58, hoặc transcript bị dọn): mồi lại
+            # từ kho phiên rồi chạy lại - cùng cách nhánh dashboard và Codex.
+            await _p("↻ Phiên Claude cũ không còn trên máy - đang khôi phục ngữ cảnh từ lịch sử đã lưu…")
+            cli.session_id = None
+            _raw_cu2, _tom_cu2 = _tg_lich_su_kho(store, conv_sid, text)
+            await _chay_claude(compaction.bootstrap_prompt(_raw_cu2, _cli_prompt, summary=_tom_cu2))
         out = out or _streamed
         if not out:
             return "⚠ " + (loi[0] if loi else "Engine không trả về nội dung nào.")
+        # Link file → dạng khung chat/Telegram mở được, ưu tiên file vừa ghi trong lượt này.
+        try:
+            out = _chuan_hoa_link_file(_brain_root(brain), out,
+                                       _files_vua_ghi(_brain_root(brain), written, t0))
+        except Exception as _e:
+            print(f"[link file telegram] {type(_e).__name__}: {_e}", file=sys.stderr)
         # File sinh ra trong lượt → bot gửi đính kèm SAU câu trả lời (xem telegram_bot._handle_turn).
         # vault_root = brain phiên này: ảnh Javis tạo nhúng dạng ![](attachments/x.png) (path tương
         # đối) được resolve về gốc vault để tự đính kèm về ĐÚNG người đang chat, khỏi phải curl.
         files = channel_context.collect_turn_files(out, written, t0,
-                                                   cwd=CLAUDE_CWD, exclude=sess["sent"],
+                                                   cwd=_brain_root(brain), exclude=sess["sent"],
                                                    vault_root=_brain_root(brain))
         # Lọc SAU collect_turn_files: hàm đó dò đường dẫn file trong text gốc, lọc trước là mất dấu.
         clean_out = channel_context.strip_attached_media(
@@ -14461,9 +17626,18 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
     # /<slug> khác → coi là gọi skill (cần CLI)
     if cfgmod.read_settings().get("model", {}).get("engine") == "openrouter":
         return {"reply": f"⚠ Skill cần engine Claude CLI. Gửi /cli để đổi, rồi /{cmd} lại."}
-    ask = (f"Hãy dùng skill `{cmd}`" + (f" với yêu cầu: {arg}" if arg else "")
-           + ". Nếu không có skill tên này thì cứ xử lý yêu cầu của tôi bình thường.")
-    return {"ask": ask}
+    # KHỐI NGỮ CẢNH đặt trước câu người dùng, KHÔNG viết lại câu đó. Phải khớp đúng mẫu của
+    # dashboard (chat-slash.js: buildSkillInvocation) để hai kênh nói cùng một thứ - chuỗi cũ
+    # nhồi câu của người dùng vào giữa một câu của máy rồi lưu nguyên thế làm tin của họ, nên
+    # mở lại hội thoại là đọc được một câu mình chưa từng gõ (khách báo 16/09).
+    dan = "Hãy dùng skill này để làm việc dưới đây."
+    try:
+        co_that = any((x or {}).get("slug") == cmd for x in skills_index(_tg_brain(chat)))
+    except Exception:
+        co_that = False
+    if not co_that:
+        dan += " Brain không có skill tên này thì cứ xử lý yêu cầu bên dưới như bình thường."
+    return {"ask": f"[SKILL: {cmd}\n{dan}]\n\n" + (arg.strip() if arg else f"/{cmd}")}
 
 
 def _tg_inbox_dir(chat=None):
@@ -14495,8 +17669,15 @@ async def _stt_nghe(data, ten=""):
     # này tồn tại từ đầu.
     _ma = (lang_registry.chuan_hoa(_lc2.get("reply_lang") or "")
            or lang_registry.chuan_hoa(_lc2.get("ui_lang") or ""))
-    return await stt.groq_nghe(data, ten, key,
-                               ngon_ngu=(lang_registry.get(_ma).stt if _ma else ""))
+    # Cùng bộ từ vựng và lớp sửa nghe nhầm như mic trên dashboard (nghe_sua): tin thoại Telegram
+    # hay Zalo nói "David" cũng phải ra "Javis" trước khi vào bộ não.
+    _tv = nghe_sua.tu_vung(_cfg)
+    res = await stt.groq_nghe(data, ten, key,
+                              ngon_ngu=(lang_registry.get(_ma).stt if _ma else ""),
+                              hotwords=nghe_sua.goi_y_whisper(_tv))
+    if res.get("ok") and res.get("text"):
+        res["text"] = nghe_sua.sua(res["text"], _tv)
+    return res
 
 
 # ============================================================
@@ -14746,6 +17927,11 @@ async def chatbots_list(brain: str = ""):
         meta, _ = _read_md(_agents_dir(a.get("brain") or "brain") / f"{a.get('slug')}.md")
         b["agent_name"] = meta.get("name") or ""
         b["agent_missing"] = not bool(meta)   # Agent bị xoá/đổi slug -> thẻ phải báo, đừng im
+        # Model bot CHẠY THẬT ra ngoài = model của Agent nó trỏ tới (rỗng = Agent để Mặc định,
+        # tức theo model chính). Thẻ phải nói ra: từ 0.62.3 bot mượn model của Agent, mà không
+        # hiện thì đổi model cho trợ lý xong không có cách nào biết bot đã đổi theo hay chưa.
+        b["agent_model"] = _model_cua_agent(a.get("brain") or "brain",
+                                            a.get("slug") or "").get("model") or ""
         # Poller sống KHÔNG có nghĩa là bot trả lời được: model gọi hỏng thì thẻ vẫn chấm xanh
         # trong khi khách nhận toàn câu xin lỗi. Lấy lỗi của lượt gần nhất lên thẻ luôn.
         b["loi_luot"] = chatbot_log.loi_gan_nhat(b["id"])
@@ -14756,6 +17942,12 @@ async def chatbots_list(brain: str = ""):
         # không tự nhận việc trong nhóm lạ") trông hệt hành vi hỏng: gọi tên bot trong nhóm và
         # không có gì xảy ra, không chỗ nào nói vì sao.
         b["nhom_cho"] = chatbot_runtime.nhom_cho(b["id"])
+        # Hộp thư hội thoại: vài con số cho thẻ (tổng, hôm nay, chưa đọc). Kho hỏng thì thẻ
+        # chỉ thiếu dòng này chứ không được làm đỏ cả trang Chatbot.
+        try:
+            b["hoi_thoai"] = conversations.thong_ke(bot_id=b["id"])
+        except Exception:
+            b["hoi_thoai"] = {}
         out.append(b)
     # Nhãn + cảnh báo rủi ro của từng mức quyền đi kèm luôn: giao diện KHÔNG được giữ bản chép
     # riêng. Chép riêng thì một hôm server siết thêm một rào mà ô cảnh báo vẫn hứa như cũ, và
@@ -14766,13 +17958,17 @@ async def chatbots_list(brain: str = ""):
          "can_xac_nhan": m in chatbot_store.MUC_NANG}
         for m in chatbot_store.MUC_QUYEN
     ], "kenh": [
-        # Cùng lý do với mức quyền: giao diện KHÔNG giữ bản chép riêng. Chỗ lấy token và những
-        # thứ kênh đó KHÔNG làm được là kiến thức của server, và nó sẽ đổi khi Zalo mở thêm API.
-        {"id": k, "nhan": chatbot_store.KENH_NHAN.get(k, k),
-         "lay_token": chatbot_store.KENH_NGUON_TOKEN.get(k, ""),
-         "co_nhom": k == "telegram",
-         "gui_tai_lieu": k == "telegram"}
-        for k in chatbot_store.KENH
+        # Cùng lý do với mức quyền: giao diện KHÔNG giữ bản chép riêng. Từ 0.61.0 danh sách
+        # kênh gắn được bot và năng lực của chúng đọc từ SỔ ĐĂNG KÝ KÊNH (server/channels).
+        k for k in channels.cho_giao_dien() if k.get("kind") == "bot"
+    ], "tai_khoan": [
+        # Tài khoản kênh chưa bot nào trực (0.61.0): form tạo bot cho CHỌN thay vì bắt dán token.
+        # Lọc theo BRAIN đang mở (0.62.4) đúng như danh sách bot ngay trên: bot thuộc một brain,
+        # nên nó chỉ được chọn tài khoản của brain đó. Không lọc thì form vẫn bày tài khoản của
+        # brain khác, gắn vào là tạo ra một liên kết chéo brain mà tab Tài khoản bot không hiện.
+        # `loc` rỗng (lời gọi nội bộ) thì trả hết như cũ.
+        a for a in channel_accounts.list_accounts(brain=loc)
+        if not chatbot_store.bots_using_account(a["id"])
     ]}
 
 
@@ -14781,53 +17977,10 @@ async def chatbots_verify_token(token: str = Form(...), bot_id: str = Form(""),
                                 channel: str = Form("")):
     """Hỏi nền tảng xem token này là con bot nào (getMe), và chặn trùng.
 
-    Chặn theo tên tài khoản chứ không so chuỗi token: cùng một token dán hai lần với khoảng
-    trắng khác nhau vẫn là hai chuỗi khác nhau. Một token chỉ được MỘT tiến trình long-polling;
-    hai poller cùng token thì máy chủ trả 409 và CẢ HAI cùng chết.
-
-    Hỏi ĐÚNG nền tảng theo `channel`. Dán token Zalo vào đường Telegram (hoặc ngược lại) chỉ
-    ra 401, và câu "token không hợp lệ" khi token hoàn toàn hợp lệ là chỗ người dùng mắc kẹt
-    lâu nhất - họ đi kiểm tra lại token thay vì kiểm tra lại kênh.
+    Từ 0.61.0 việc hỏi đúng nền tảng nằm ở module kênh trong sổ đăng ký (`channels`), và đường
+    này chỉ là bí danh của `POST /channels/verify-token` để giao diện cũ và bookmark cũ chạy.
     """
-    tok = (token or "").strip()
-    if not tok:
-        return JSONResponse({"ok": False, "error": "Thiếu token"}, status_code=400)
-    kenh = str(channel or "").strip().lower()
-    kenh = kenh if kenh in chatbot_store.KENH else chatbot_store.KENH_DEFAULT
-    nhan = chatbot_store.KENH_NHAN.get(kenh, kenh)
-    import httpx   # main.py không import httpx ở mức module (xem telegram_test làm y hệt)
-    url = (f"https://api.telegram.org/bot{tok}/getMe" if kenh == "telegram"
-           else f"https://bot-api.zaloplatforms.com/bot{tok}/getMe")
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = (await client.get(url)) if kenh == "telegram" else (await client.post(url, json={}))
-        d = r.json()
-    except Exception as e:
-        return {"ok": False, "error": f"Không nối được {nhan}: {e}"}
-    if not d.get("ok"):
-        return {"ok": False, "error": f"Token không hợp lệ ({nhan} từ chối). Kiểm lại xem token "
-                                      f"này có đúng là token {nhan} không."}
-    info = d.get("result") or {}
-    # Telegram gọi là `username`, Zalo gọi là `account_name`. Bản ghi bot chỉ có một trường nên
-    # quy về một tên ngay tại cửa vào.
-    username = info.get("username") or info.get("account_name") or ""
-    if kenh == "telegram":
-        chu = cfgmod.read_settings().get("telegram", {})
-        if chu.get("token", "").strip() == tok:
-            return {"ok": False, "error": "Đây là token bot chính của bạn. Bot chuyên trách phải "
-                                          "dùng một bot Telegram RIÊNG (tạo thêm ở BotFather)."}
-    trung = chatbot_store.token_owner(username, exclude_id=bot_id, channel=kenh)
-    if trung:
-        return {"ok": False, "error": f"Bot {nhan} \"{username}\" đã được bot \"{trung['name']}\" "
-                                      f"dùng rồi. Mỗi bot phải một token riêng."}
-    ra = {"ok": True, "username": username,
-          "bot_name": info.get("first_name") or info.get("account_name") or ""}
-    # Gói BASIC của Zalo không cho bot vào nhóm. Nói NGAY lúc kiểm token, để người dùng không
-    # ngồi khai id nhóm trong form rồi chờ mãi một con bot không bao giờ vào được nhóm nào.
-    if kenh == "zalo":
-        ra["vao_duoc_nhom"] = bool(info.get("can_join_groups"))
-        ra["account_type"] = info.get("account_type") or ""
-    return ra
+    return await channels_routes.verify_token(channel, token, bot_id=bot_id)
 
 
 def _chan_nang_quyen(muc, xac_nhan):
@@ -14854,7 +18007,8 @@ async def chatbots_create(name: str = Form(...), agent_slug: str = Form(...),
                           nguon_tra_loi: str = Form(""), muc_quyen: str = Form(""),
                           groups: str = Form(""), reply_when: str = Form(""),
                           channel: str = Form(""), xac_nhan_rui_ro: str = Form(""),
-                          ngon_ngu: str = Form("")):
+                          ngon_ngu: str = Form(""), account_ids: str = Form(""),
+                          account_label: str = Form("")):
     # Bot sống TRONG một brain: Agent nó dùng và tài liệu nó đọc là cùng một chỗ. Nhận cả hai
     # tên tham số và tự bù cho nhau, nên người gọi chỉ cần gửi một cái.
     br = (brain or agent_brain or "").strip()
@@ -14867,6 +18021,8 @@ async def chatbots_create(name: str = Form(...), agent_slug: str = Form(...),
         "icon": icon, "token": token, "bot_username": bot_username, "handoff_to": handoff_to,
         "nguon_tra_loi": nguon_tra_loi, "muc_quyen": muc_quyen, "xac_nhan_rui_ro": ack,
         "channel": channel,
+        # Tài khoản kênh (0.61.0): chọn tài khoản có sẵn ở tab Tài khoản bot, hoặc dán token mới (ở trên).
+        "account_ids": account_ids, "account_label": account_label,
         # Nhóm khai được NGAY LÚC TẠO. Bản trước chỉ cho khai ở form Sửa, nên đường đi tự nhiên
         # nhất ("tạo bot, thả vào nhóm, gọi tên") luôn kết thúc bằng một con bot im lặng.
         "groups": groups, "reply_when": reply_when,
@@ -14978,6 +18134,26 @@ async def chatbots_delete(bot_id: str):
         return JSONResponse({"ok": False, "error": err}, status_code=404)
     chatbot_log.xoa(bot_id)   # nhật ký của một bot không còn tồn tại thì không ai đọc được nữa
     return {"ok": True}
+
+
+# Hộp thư hội thoại khách (Chatbot V2): kho `conversations` gom tin của bot chuyên trách
+# (Telegram, Zalo Bot) và tài khoản Zalo cá nhân về một chỗ. Đăng ký NGAY SAU khối Chatbot vì
+# cùng một họ: đây là mặt "đọc lại hội thoại" của chính những bot ở trên.
+import routes.channels as channels_routes   # noqa: E402
+import routes.conversations as conversations_routes   # noqa: E402
+
+# Kênh và tài khoản kênh (0.61.0): một API cho mọi kênh, đọc sổ đăng ký `channels`.
+channels_routes.register(app, channels_routes.ChannelsDeps(
+    bot_status=chatbot_runtime.status,
+    main_bot_token=lambda: str(cfgmod.read_settings().get("telegram", {}).get("token", "")).strip(),
+))
+channels_routes._DEPS.restart_bot = chatbot_runtime.start_bot   # đổi token thì poller nạp lại
+# Gỡ tài khoản CUỐI CÙNG của một bot thì bot đó bị tắt: phải dừng poller thật, không thì nó
+# vẫn gọi nền tảng bằng một token vừa bị xoá cho tới lần khởi động lại server.
+channels_routes._DEPS.stop_bot = chatbot_runtime.stop_bot
+conversations_routes.register(app, conversations_routes.ConversationsDeps(
+    bot_status=chatbot_runtime.status,
+))
 
 
 @app.post("/telegram/test")
@@ -15219,6 +18395,42 @@ async def _soat_secret_hong():
 
 
 @app.on_event("startup")
+async def _don_the_viec_giong_mo_coi():
+    """Thẻ Việc của việc nền GIỌNG còn "đang chạy" sau khi tiến trình chết.
+
+    Việc nền của giọng là một task asyncio sống trong tiến trình, không phải job có worker giữ
+    chỗ, nên không có cơ chế nào nhặt nó lên chạy tiếp. Server khởi động lại giữa chừng là thẻ
+    nằm đó "đang chạy" vĩnh viễn: đúng kiểu kẹt mà đợt này đang đi dọn, chỉ đổi chỗ từ khung
+    chat sang trang Việc. Đánh dấu CHẶN kèm lý do thật để người dùng biết mà giao lại.
+    """
+    # Tên biến đếm KHÔNG được trùng với biến của hàm cha: bộ quét tĩnh (test_bien_chua_gan.py)
+    # coi "hàm con cộng dồn vào biến trùng tên của hàm cha" là dấu hiệu quên `nonlocal`, và đó
+    # là một lỗi có thật từng xảy ra nên chốt ấy đáng giữ. Đặt tên khác cho khỏi mập mờ.
+    def _don():
+        try:
+            store = tasks_feature.store
+        except Exception:
+            return 0
+        dem = 0
+        for root in (store.board_roots() or []):
+            for t in store.list_tasks(root, limit=500):
+                if str(t.get("created_by")) == "voice" and str(t.get("status")) == "running":
+                    try:
+                        store.block(str(t["id"]), "", "voice_bg",
+                                    "server khởi động lại nên việc nền không còn chạy")
+                        dem += 1
+                    except Exception:
+                        pass
+        return dem
+    try:
+        so_the = await asyncio.to_thread(_don)
+        if so_the:
+            print(f"[voice bg] dọn {so_the} thẻ Việc mồ côi sau khi khởi động lại", file=sys.stderr)
+    except Exception as e:
+        print(f"[voice bg] dọn thẻ mồ côi lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+@app.on_event("startup")
 async def _warm_mcp_hub():
     """Làm nóng hub sau khi boot: mở sẵn session MCP (stdio npx lần đầu phải tải package)
     để tin nhắn/tool call đầu tiên không phải chờ.
@@ -15281,6 +18493,10 @@ async def _shutdown_mcp_pool():
         await tasks_feature.shutdown()
     except Exception as e:
         print(f"[kanban shutdown] {e}", file=__import__('sys').stderr)
+    try:
+        zalo_personal_channel.stop()
+    except Exception:
+        pass
     try:
         await mcp_client.pool.close_all()
     except Exception:

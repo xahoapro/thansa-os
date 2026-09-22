@@ -86,8 +86,10 @@ check("CANARY: gỡ ngay đầu appendUserMessage - cửa duy nhất dựng bong
       _ham.index("chuNguoiGo(text)") < _ham.index("dataset.text"))
 check("CANARY: dataset.text cũng sạch - thanh mốc, gửi lại, sửa câu hỏi đều đọc ké nó",
       "div.dataset.text = text" in _ham)
+# veTinDaLuu dựng lại MỘT tin đã lưu và trả về mục cho convo; dùng chung cho lượt mở hội
+# thoại lẫn lượt cuộn lên tải tin cũ (0.59.32), nên soi nó là soi cả hai đường.
 check("lượt nạp hội thoại cũ ghi bản SẠCH vào convo (localStorage), không để lỗi sống qua F5",
-      'convo.push({ role: "user", text: _sach' in APP)
+      'return { role: "user", text: _sach' in APP)
 check("nhận cả hai loại khối",
       "[FILE ĐANG MỞ trong trình sửa của Thansa:" in APP and '"[File đính kèm"' in APP)
 
@@ -100,9 +102,18 @@ if shutil.which("node"):
     _i, _j = APP.index("const _KHOI_NGU_CANH"), APP.index("window.JavisChuNguoiGo")
     _js = APP[_i:_j] + "\nconst ca = JSON.parse(process.argv[1]);" \
           "\nconsole.log(JSON.stringify(ca.map(chuNguoiGo)));"
+    # Khối SKILL (chat-slash.js dựng khi người dùng gõ lệnh "/"). Khách báo 16/09: mẫu cũ
+    # nhồi câu của họ vào giữa một câu của máy và server lưu nguyên thế làm tin của NGƯỜI
+    # DÙNG, nên mở lại hội thoại là đọc được một câu mình chưa từng gõ. Nay là khối ngữ cảnh,
+    # và chỗ này canh việc nó ĐƯỢC GỠ RA trước khi vẽ bong bóng.
+    SKILL = ("[SKILL: viet-bai-trang-chu-igaming\n"
+             "Người dùng có nhắc tên skill này trong câu. Dùng nó nếu phù hợp, còn lại cứ làm "
+             "đúng yêu cầu bên dưới.]\n\n")
+    _cau_skill = ("vậy hãy tạo cho tôi 1 workflow riêng. Skill viet-bai-trang-chu-igaming sẽ "
+                  "là skill chính.")
     _ca = [GHIM + CAU_THAT, GHIM + DINH_KEM + "tóm tắt giúp anh", DINH_KEM + "đọc giúp em",
            "chào em", "[FILE ĐANG MỞ trong trình sửa của Thansa: a.md chưa đóng khối",
-           "[ghi chú] nhớ mua sữa", ""]
+           "[ghi chú] nhớ mua sữa", "", SKILL + _cau_skill, GHIM + SKILL + "viết tiếp giúp anh"]
     _ra = _json.loads(subprocess.run(["node", "-e", _js, _json.dumps(_ca)],
                                      capture_output=True, text=True, timeout=30).stdout)
     check("ghim -> còn đúng câu hỏi", _ra[0] == CAU_THAT, _ra[0])
@@ -115,6 +126,9 @@ if shutil.which("node"):
     check("CANARY: câu người dùng tự gõ mở bằng ngoặc vuông KHÔNG bị đụng",
           _ra[5] == "[ghi chú] nhớ mua sữa", _ra[5])
     check("rỗng -> rỗng", _ra[6] == "")
+    check("khối SKILL -> còn đúng câu người dùng gõ", _ra[7] == _cau_skill, _ra[7])
+    check("ghim + SKILL chồng nhau -> vẫn còn đúng câu hỏi",
+          _ra[8] == "viết tiếp giúp anh", _ra[8])
 else:
     print("bỏ qua  chạy thật bằng node (máy này không có node)")
 

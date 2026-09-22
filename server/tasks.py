@@ -22,6 +22,7 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Iterable, List, Optional
 
@@ -30,6 +31,9 @@ from fastapi import APIRouter, Form, Query
 from claude_cli import claude_engine, cancel_all, _empty_mcp_file
 import aux_engine
 import channel_context
+import localefmt          # giờ hiển thị theo múi giờ người dùng, không phải giờ máy chủ
+import limit_learner      # nhận diện "gói thuê bao hết lượt" - CÙNG bộ mẫu với khung chat
+import limit_resume       # mượn hằng trừ hao / trần chờ của khung chat, không đẻ bộ số thứ hai
 from task_store import TaskStore, VALID_STATUS
 
 
@@ -41,6 +45,23 @@ SPECIFIER_TIMEOUT_SECONDS = 180
 WORKER_TIMEOUT_SECONDS = 900
 # Việc đã kết thúc (done/cancelled) quá số ngày này tự chuyển archived (rời bảng, còn tra được).
 ARCHIVE_TERMINAL_AFTER_DAYS = 3.0
+# Việc vấp "gói thuê bao hết lượt" (Claude Code / Codex / Grok Build / Antigravity). Khung chat
+# đã có limit_resume.py hẹn đúng mốc reset; hàng đợi này trước đây chỉ có `_is_transient` khớp
+# "429"/"rate limit" rồi trả việc về ready NGAY, dispatcher nhặt lại sau 5 giây, đốt hết 3 lượt
+# thử trong vài phút trong khi gói còn 47 phút nữa mới mở (task t_305e712a90f4, 2026-09-19).
+# Nay: biết mốc reset thì hoãn tới đúng mốc (+ trừ hao như chat) và KHÔNG tính lượt; không biết
+# thì hoãn một khoảng cố định và có tính lượt; xa quá thì chặn hẳn kèm lý do, chờ người bấm.
+LIMIT_GRACE_SECONDS = limit_resume.GRACE_SECONDS
+LIMIT_MAX_WAIT_SECONDS = limit_resume.MAX_WAIT_SECONDS
+LIMIT_UNKNOWN_WAIT_SECONDS = 30 * 60
+# Tên gói để câu báo trên thẻ việc nói đúng gói nào hết lượt.
+_TEN_GOI = {
+    "claude-code": "Claude (Pro/Max)",
+    "codex": "ChatGPT",
+    "grok-cli": "SuperGrok / X Premium",
+    "antigravity-cli": "Google Antigravity",
+    "gemini-cli": "Google",
+}
 CAPABILITIES = {"auto", "files", "research", "mcp-read", "code", "external-write"}
 EXECUTION_MODES = {"suggest", "auto", "full"}
 # Gom thông báo việc KẸT: chờ ngần này giây kể từ việc kẹt đầu tiên rồi mới bắn MỘT tin cho
@@ -79,6 +100,9 @@ class TasksDeps:
     mcp_allow_patterns: Optional[Callable[[], List[str]]] = None
     report: Optional[Callable] = None
     aux_swap: Optional[Callable] = None
+    # Nối Kanban → tự học: việc nền chạy xong/vướng thì xếp vào hàng đợi học (learn.enqueue_job).
+    # Tiêm sau khi learn_feature sẵn sàng (main gán). None = chưa nối → bỏ qua, worker chạy như cũ.
+    learn_hook: Optional[Callable] = None
 
 
 class TasksFeature:
@@ -388,7 +412,10 @@ class TasksFeature:
                 spec, error = await asyncio.wait_for(
                     self._specify(task), timeout=SPECIFIER_TIMEOUT_SECONDS
                 )
-                if error:
+                het_luot = self._het_luot(error, "") if error else None
+                if het_luot:
+                    final_task = self._hoan_vi_het_luot(tid, worker_id, het_luot)
+                elif error:
                     final_task = self.store.block(
                         tid, worker_id, "transient", error, transient=True
                     )
@@ -400,7 +427,7 @@ class TasksFeature:
                         spec["capability"],
                         # Kẹp ở ĐÂY, chỗ DUY NHẤT mức quyền của specifier đi vào kho - đặt trong
                         # `_specify` thì nhánh heuristic (trả thẳng "auto") đi vòng qua được.
-                        self._kep_quyen(task.get("execution_mode"), spec["execution_mode"]),
+                        self._muc_chay(task.get("execution_mode"), spec["execution_mode"]),
                         metadata={
                             "acceptance": spec.get("acceptance", []),
                             "specifier": spec.get("specifier", "ai"),
@@ -418,9 +445,14 @@ class TasksFeature:
                 return
 
             result, error, needs_input, metadata = await asyncio.wait_for(
-                self._execute(task), timeout=WORKER_TIMEOUT_SECONDS
+                self._execute(task), timeout=self._tran_giay_viec()
             )
-            if error:
+            # Soi CẢ result: nhà cung cấp hay in câu hết lượt ngay chỗ câu trả lời chứ không
+            # báo lỗi, và bản trước coi đó là việc XONG với "kết quả" là một câu tiếng Anh.
+            het_luot = self._het_luot(error, "" if error else result)
+            if het_luot:
+                final_task = self._hoan_vi_het_luot(tid, worker_id, het_luot)
+            elif error:
                 final_task = self.store.block(
                     tid,
                     worker_id,
@@ -448,22 +480,41 @@ class TasksFeature:
                 )
                 self.store.promote_dependencies(root)
         except asyncio.CancelledError:
-            self.store.cancel_running(tid, "worker cancelled")
+            cancel_all(f"dispatch:{tid}")
+            if self._closing:
+                # Máy chủ tắt/cập nhật giữa chừng: KHÔNG huỷ việc. Trước đây nhánh này ghi
+                # `cancelled` câm cho việc đang chạy, nên mỗi lần bấm Cập nhật là việc nền dở
+                # dang biến mất, không thông báo, không chạy lại. Trả về ready (không tính lượt)
+                # để dispatcher nhặt lại sau khi khởi động.
+                self.store.block(tid, worker_id, "transient",
+                                 "Máy chủ khởi động lại giữa chừng, việc sẽ tự chạy lại.",
+                                 transient=True, keep_attempt=True)
+            else:
+                self.store.cancel_running(tid, "worker cancelled")
             raise
         except Exception as exc:
-            final_task = self.store.block(
-                tid,
-                worker_id,
-                "transient",
-                f"{type(exc).__name__}: {exc}",
-                transient=True,
-            )
+            # Hết giờ (TimeoutError) hay lỗi lạ: GIẾT tiến trình engine của việc này trước khi
+            # ghi kho. Không giết thì engine CLI (Codex/Grok/Antigravity là Popen rời) vẫn chạy
+            # tiếp và gửi/ghi thật, trong khi dispatcher đã nhặt lại việc và chạy bản thứ hai.
+            cancel_all(f"dispatch:{tid}")
+            het_luot = self._het_luot(str(exc), "")
+            if het_luot:
+                final_task = self._hoan_vi_het_luot(tid, worker_id, het_luot)
+            else:
+                final_task = self.store.block(
+                    tid,
+                    worker_id,
+                    "transient",
+                    f"{type(exc).__name__}: {exc}",
+                    transient=True,
+                )
         finally:
             heartbeat.cancel()
             await asyncio.gather(heartbeat, return_exceptions=True)
             await self._asnapshot(root)
             if final_task and final_task.get("status") in ("done", "review", "blocked"):
                 await self._report(final_task)
+                await self._hoc_tu_viec(root, final_task)
 
     # ------------------------------------------------------------------
     # AI specification and execution lanes
@@ -714,7 +765,7 @@ nói rõ đã được phép tự hành động; nếu không thì để auto đ
             error = ""
             try:
                 async for event in self.deps.execute_workflow(
-                    task["brain_root"], slug, intent, tools
+                    task["brain_root"], slug, intent, tools, source="kanban"
                 ):
                     kind = event.get("type")
                     if kind == "done":
@@ -782,6 +833,85 @@ gì, dữ liệu/file/artifact nào được tạo và cách đã kiểm chứng
                 "tool_calls": tool_calls[-100:],
                 "provider": aux_engine.read_spec().get("provider"),
             },
+        )
+
+    @staticmethod
+    def _tran_giay_viec() -> float:
+        """Trần thời gian MỘT lần chạy việc. Phải KHÔNG nhỏ hơn trần của chính engine
+        (`aux_engine.bg_max_wall_s`, mặc định 1 giờ): bản trước cắt cứng ở 900 giây trong khi
+        engine được phép chạy 60 phút, nên việc thật dài 20-30 phút bị TimeoutError ở phút 15,
+        về ready, chạy lại từ đầu, và cháy hết 3 lượt cho một việc vốn đang làm tốt."""
+        try:
+            return float(max(WORKER_TIMEOUT_SECONDS, int(aux_engine.bg_max_wall_s()) + 60))
+        except Exception:
+            return float(WORKER_TIMEOUT_SECONDS)
+
+    @staticmethod
+    def _muc_chay(tran, xin) -> str:
+        """Mức quyền việc chạy thật. Người dùng đã đặt `full` lúc giao việc (qua javis_task
+        hay trang Việc) thì GIỮ full: specifier là một model, nó không bao giờ đề xuất full,
+        nên kẹp theo nó là việc "toàn quyền, tự gửi" lặng lẽ tụt xuống auto rồi dừng lại xin
+        phép ở bước ra ngoài - đúng ngược lời đã hứa với người dùng. Mọi mức khác vẫn kẹp
+        xuống không quá mức đã chốt (specifier không tự nâng quyền được)."""
+        if str(tran or "").strip().lower() == "full":
+            return "full"
+        return TasksFeature._kep_quyen(tran, xin)
+
+    @staticmethod
+    def _het_luot(error: str, result: str):
+        """`SubscriptionLimit` nếu lượt vừa rồi vấp "gói thuê bao hết lượt", None nếu không.
+
+        Dùng lại bộ nhận dạng của khung chat (`limit_learner.parse_subscription_limit`) chứ
+        không viết bộ thứ hai. `error` được tin thẳng; `result` chỉ được tính khi câu báo CHIẾM
+        cả output (`subscription_dominates`), vì một bài viết thật có thể trích câu đó."""
+        provider = str(aux_engine.read_spec().get("provider") or "")
+        hint = limit_learner.ENGINE_HINT_BY_PROVIDER.get(provider, "")
+        for raw, phai_ap_dao in ((error, False), (result, True)):
+            raw = str(raw or "")
+            if not raw.strip():
+                continue
+            if phai_ap_dao and not limit_learner.subscription_dominates(raw):
+                continue
+            try:
+                hit = limit_learner.parse_subscription_limit(raw, engine_hint=hint)
+            except Exception:   # noqa: BLE001 - bộ nhận dạng không được làm việc chết thêm
+                hit = None
+            if hit:
+                return hit
+        return None
+
+    def _hoan_vi_het_luot(self, tid: str, worker_id: str, hit) -> Optional[dict]:
+        """Hoãn việc tới lúc gói mở lại. Trả task sau khi ghi kho (ready + not_before, hoặc
+        blocked nếu mốc quá xa). Việc về ready lặng lẽ: thẻ trên trang Việc hiện lý do và giờ
+        chạy lại, không bắn thông báo vì chưa có gì cần người dùng làm."""
+        ts = time.time()
+        moc_nha = float(getattr(hit, "reset_epoch", 0) or 0)
+        biet_moc = moc_nha > ts
+        moc = (moc_nha + LIMIT_GRACE_SECONDS) if biet_moc else (ts + LIMIT_UNKNOWN_WAIT_SECONDS)
+        ten = _TEN_GOI.get(str(getattr(hit, "engine", "") or ""), "") or "thuê bao đang dùng"
+        # Giờ theo múi giờ NGƯỜI DÙNG (localefmt), không phải giờ máy chủ: VPS/Docker thường
+        # chạy UTC, in "03:15" cho một mốc 10:15 ở Việt Nam là người dùng đợi sai giờ.
+        try:
+            gio = datetime.fromtimestamp(moc, localefmt.tz()).strftime("%H:%M ngày %d/%m")
+        except Exception:
+            gio = time.strftime("%H:%M ngày %d/%m", time.localtime(moc))
+        nha_noi = str(getattr(hit, "reset_text", "") or "").strip()
+        if moc - ts > LIMIT_MAX_WAIT_SECONDS:
+            ly_do = (f"Gói {ten} hết lượt, mốc mở lại quá xa để tự đợi"
+                     f" ({nha_noi or gio}). Kéo việc về Sẵn sàng khi gói mở lại.")
+            print(f"[kanban] {tid}: {ly_do}", file=sys.stderr)
+            return self.store.block(tid, worker_id, "limit", ly_do)
+        if biet_moc:
+            ly_do = (f"Gói {ten} hết lượt"
+                     + (f" (nhà cung cấp báo: {nha_noi})" if nha_noi else "")
+                     + f". Tự chạy lại lúc {gio}, không tính vào số lần thử.")
+        else:
+            ly_do = (f"Gói {ten} hết lượt, nhà cung cấp không nói mở lại lúc nào."
+                     f" Thử lại lúc {gio}.")
+        print(f"[kanban] {tid}: {ly_do}", file=sys.stderr)
+        return self.store.block(
+            tid, worker_id, "limit", ly_do, transient=True,
+            not_before=moc, keep_attempt=biet_moc,
         )
 
     @staticmethod
@@ -897,6 +1027,38 @@ gì, dữ liệu/file/artifact nào được tạo và cách đã kiểm chứng
             self._hen_bao.pop(cid, None)
             await self._xa_bao(cid)
 
+    async def _hoc_tu_viec(self, root: str, task: dict) -> None:
+        """Đẩy MỘT việc nền vừa kết thúc sang hàng đợi tự học.
+
+        Trước đây tự học chỉ nghe luồng chat (`_persist_turn`), nên mọi thứ Javis tự làm trong
+        nền trôi qua không để lại gì - kể cả việc BỊ CHẶN, thứ đáng học nhất vì nó chỉ đúng chỗ
+        hệ thống còn thiếu. Ở đây chỉ XẾP HÀNG; mẻ học thật vẫn chạy trong `learn.tick` với đủ
+        debounce, rate-limit, fork read-only và vòng verify như luồng chat.
+
+        BEST-EFFORT tuyệt đối: hàm này nằm trong `finally` của worker, một lỗi ở đây mà ném lên
+        là nuốt mất đường báo kết quả vừa chạy ngay phía trên.
+        """
+        hook = getattr(self.deps, "learn_hook", None)
+        if not hook:
+            return
+        try:
+            ket = str(task.get("result") or "")
+            if task.get("status") == "blocked":
+                # Việc vướng: `result` là tường thuật dở dang, LÝ DO mới là bài học.
+                ket = (str(task.get("block_reason") or task.get("block_kind") or "").strip()
+                       or ket)
+            await hook(
+                root,
+                title=str(task.get("title") or ""),
+                intent=str(task.get("intent") or ""),
+                result=ket,
+                status=str(task.get("status") or ""),
+                created_by=str(task.get("created_by") or ""),
+            )
+        except Exception as e:
+            print(f"[kanban] xếp việc {task.get('id', '')} vào hàng đợi học lỗi: "
+                  f"{type(e).__name__}: {e}", file=sys.stderr)
+
     async def _report(self, task: dict) -> None:
         if not self.deps.report:
             return
@@ -910,20 +1072,31 @@ gì, dữ liệu/file/artifact nào được tạo và cách đã kiểm chứng
             "blocked": "bị chặn, cần bạn xem",
         }
         icon = "✅" if status in ("review", "done") else "⚠"
-        parts = [f"{icon} Việc '{task.get('title', '')}' {labels.get(status, status)}."]
-        # Tin nhắn PHẢI ngắn - đây là cái liếc trên điện thoại, chi tiết đã nằm ở trang Việc.
-        # Việc bị chặn: chỉ cần LÝ DO (result lúc này là tường thuật dở dang, dán vào chỉ
-        # tổ thành bức tường văn và lặp lại chính lý do). Việc xong: vài dòng đầu của kết quả.
+        dau = f"{icon} Việc '{task.get('title', '')}' {labels.get(status, status)}."
+        # HAI bản, vì hai kênh chịu được hai thứ khác nhau - và bản trước chỉ có một, nên ai
+        # ngồi trên web cũng chỉ nhận được mẩu 240 ký tự dành cho Telegram (chủ repo báo
+        # 2026-09-08: "việc ngầm chạy xong nó không đẩy hết kết quả lên màn chat hiện tại").
+        #
+        #   day_du - cho khung chat web (nơi vừa giao việc) và hòm thư: KHÔNG cắt. Người ta
+        #            đang ngồi ngay đó, kết quả phải rơi về nguyên vẹn.
+        #   ngan   - cho Telegram/Zalo: một cái liếc trên điện thoại, chi tiết ở trang Việc.
+        #
+        # `_notify_owner` chọn bản nào theo kênh; ở đây chỉ dựng nội dung.
         if status == "blocked":
             reason = str(task.get("block_reason") or task.get("block_kind") or "").strip()
-            parts.append("Lý do: " + (reason[:240] or "không rõ"))
+            than = "Lý do: " + (reason or "không rõ")
+            # Việc bị chặn: chỉ cần LÝ DO (result lúc này là tường thuật dở dang, dán vào chỉ
+            # tổ thành bức tường văn và lặp lại chính lý do).
+            parts = [dau, than]
+            parts_ngan = [dau, "Lý do: " + (reason[:240] or "không rõ")]
         else:
-            head = "\n".join(
+            ket_qua = "\n".join(
                 ln for ln in str(task.get("result") or "").strip().splitlines() if ln.strip()
-            )[:240].strip()
-            if head:
-                parts.append(head)
+            ).strip()
+            parts = [dau] + ([ket_qua] if ket_qua else [])
+            parts_ngan = [dau] + ([ket_qua[:240].strip()] if ket_qua else [])
         parts.append("Xem chi tiết ở trang Việc.")
+        parts_ngan.append("Xem chi tiết ở trang Việc.")
         # Việc chạy xong TRÓT LỌT thì báo LẶNG: kết quả vẫn rơi vào khung chat đã giao việc và
         # vẫn vào hòm thư, nhưng không nổi chấm đỏ trên chuông và không rung thông báo đẩy.
         # Chỉ `blocked` (kẹt, cần gỡ) và `review` (chờ duyệt) mới kêu, vì đó là thứ CẦN người
@@ -934,6 +1107,7 @@ gì, dữ liệu/file/artifact nào được tạo và cách đã kiểm chứng
                 task.get("chat_id", ""),
                 channel_context.strip_control_blocks("\n\n".join(parts)),
                 quiet=(status == "done"),
+                ngan=channel_context.strip_control_blocks("\n\n".join(parts_ngan)),
             )
         except Exception as e:
             # KHÔNG nuốt im: đây là đường DUY NHẤT để kết quả việc nền quay về với người dùng,

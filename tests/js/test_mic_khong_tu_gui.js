@@ -48,11 +48,19 @@ check("onstart hạ cờ _starting", /onstart = \(\) => \{\s*\n\s*this\._startin
 check("onend hạ cờ _starting", /onend = \(\) => \{\s*\n\s*this\._starting = false;/.test(voice));
 check("onerror hạ cờ _starting", /onerror = \(event\) => \{\s*\n\s*this\._starting = false;/.test(voice));
 
-// ---- 2. Barge-in chỉ rình khi mic đang thật sự mở ----
-// _resumeAfterTTS chỉ bật trong _muteRecognition, mà chỗ đó đòi isListening === true.
-// Vậy điều kiện này đúng bằng "người dùng đang trong phiên nói chuyện bằng giọng".
-check("_startBargeMonitor thoát sớm khi mic không mở (!_resumeAfterTTS)",
-  /_startBargeMonitor\(\) \{[\s\S]{0,900}if \(!this\._resumeAfterTTS\) return;/.test(voice));
+// ---- 2. Barge-in chỉ rình khi người dùng ĐANG nói chuyện bằng giọng ----
+// Bản cũ suy: "_resumeAfterTTS chỉ bật trong _muteRecognition, mà chỗ đó đòi isListening ===
+// true, vậy cờ ấy đúng bằng đang-nói-chuyện-bằng-giọng". SUY SAI, và nó khoá luôn cái sai vào
+// test: trong hội thoại rảnh tay, nói xong là đồng hồ im lặng ĐÓNG mic trước khi câu trả lời
+// kịp đọc, nên tới lượt đọc thì isListening đã false, _muteRecognition thoát ngay và cờ không
+// bao giờ bật. Ngắt lời vì thế chưa từng chạy một lần nào (chủ dự án thử thật 15/09).
+// Chốt đúng là cờ `handsFree` do app.js đồng bộ. Ý ĐỊNH của mục này giữ nguyên: rảnh tay tắt
+// thì Javis đọc trong im lặng, không được tự nghe rồi biến tiếng TV thành tin nhắn.
+check("_startBargeMonitor thoát sớm khi KHÔNG trong cuộc nói chuyện bằng giọng",
+  /_startBargeMonitor\(\) \{[\s\S]{0,1800}if \(!this\._resumeAfterTTS && !this\.handsFree\) return;/.test(voice));
+check("app.js đồng bộ handsFree sang voice.js (và tắt ngay khi mic hỏng)",
+  /voice\.handsFree = handsFree && voiceMode !== "live";/.test(app)
+  && /function tatRanhTay\(\) \{[\s\S]{0,200}voice\.handsFree = false;/.test(app));
 check("_muteRecognition vẫn là chỗ duy nhất bật _resumeAfterTTS khi đang nghe",
   /_muteRecognition\(\) \{\s*\n\s*if \(!this\.recognition \|\| !this\.isListening\) return;\s*\n\s*this\._resumeAfterTTS = true;/.test(voice));
 
@@ -61,26 +69,52 @@ check("_muteRecognition vẫn là chỗ duy nhất bật _resumeAfterTTS khi đa
 // hễ ai bỏ chốt ở mục 1-2 thì tin nhắn ma quay lại ngay.
 check("onTranscript vẫn gửi thẳng, không qua bước xác nhận",
   /onTranscript: \(text\) => \{[\s\S]{0,200}if \(text\) sendMessage\(text\);/.test(app));
+// Chỗ thứ 5 (0.55.63) là sendMessage TỰ GỌI LẠI CHÍNH NÓ sau khi file đính kèm tải lên
+// xong - cùng một lượt Enter của người dùng bị hoãn, không phải một đường gửi mới.
+// Chỗ thứ 6 (0.57.17) cùng kiểu HOÃN chứ không phải đường mới: người dùng nói chen ngang lúc
+// Javis đang trả lời thì phải dừng lượt cũ trước, mà server chỉ nhận tin mới khi job cũ đã
+// dừng hẳn, nên câu ấy được gửi lại khi `turn_done` về (guiTinCho).
+// Chỗ thứ 7 (0.58.2) VẪN là hoãn: mất WebSocket thì câu được giữ lại rồi gửi khi nối lại
+// (guiTinDutMang). Trước đó chỗ này vứt tin lặng lẽ - trên iPhone là câu nói bốc hơi.
 const goiGui = (app.match(/(?<!function )\bsendMessage\(/g) || []).length;
-check("chỉ có 4 chỗ gọi sendMessage (giọng nói, thử lại, Enter, nút gửi)", goiGui === 4, goiGui);
+check("chỉ có 8 chỗ gọi sendMessage (giọng nói, thử lại, Enter, nút gửi, sau khi tải file xong, sau khi dừng lượt cũ, sau khi nối lại mạng, sau khi mở agent/workflow)",
+  goiGui === 8, goiGui);
+check("chỗ thứ 7 là hàng đợi mất mạng, chỉ gửi sau khi socket nối lại",
+  /function guiTinDutMang\(\)[\s\S]{0,400}setTimeout\(\(\) => sendMessage\(t\)/.test(app));
+check("chỗ thứ 5 nằm TRONG sendMessage và chỉ chạy sau Promise.all của file đang tải",
+  /Promise\.all\(dangTai\.map\(a => a\.xong[\s\S]{0,300}sendMessage\(text, opts\);/.test(app));
+check("chỗ thứ 6 là tin hoãn, chỉ gửi sau khi lượt cũ đã dừng",
+  /function guiTinCho\(\) \{[\s\S]{0,300}if \(t\) sendMessage\(t\);/.test(app)
+  && /if \(isActive && _tinChoLuot\) guiTinCho\(\);/.test(app));
 
 // ---- 4. Server không tự nhập liệu: việc nền luôn là tin của Javis ----
 check("push_to_chat ghi vai assistant, không bao giờ là user",
   /def push_to_chat[\s\S]{0,1400}append_message\(sid, "assistant", clean\)/.test(server));
-// Đúng HAI chỗ ghi vai "user", cả hai đều là lượt hỏi có thật của người dùng: WebSocket của
-// dashboard, và tin nhắn đến từ Telegram/Zalo (phiên riêng theo chat_id, không dùng chung id
-// với hội thoại web). Con số này nhích lên là có đường mới đẻ ra tin của người dùng - phải
-// đọc lại xem nó đến từ đâu trước khi sửa test.
+// Năm chỗ ghi vai "user": bốn đường nhập liệu và một thao tác duyệt quy trình.
+// Bốn đường nhập liệu là: WebSocket của dashboard,
+// tin nhắn đến từ Telegram/Zalo (phiên riêng theo chat_id), và HAI chỗ trong phiên nghe nói
+// thẳng `/ws/voice-live` (Voice V2, 0.57.0): chữ người dùng gõ vào phiên Live, và bản ghi CUỐI
+// của câu họ vừa NÓI do nhà cung cấp trả về - đó là giọng thật của họ, không phải máy tự nhập.
+// Con số này nhích lên là có đường mới đẻ ra tin của người dùng - phải đọc lại xem nó đến từ
+// đâu trước khi sửa test.
 const ghiUser = (server.match(/append_message\([^)]*"user"/g) || []).length;
-check("chỉ 2 chỗ trong server ghi vai user, đều là lượt hỏi thật (web + bot)", ghiUser === 2, ghiUser);
+check("chỉ 5 chỗ ghi vai user (web + bot + 2 Live + duyệt quy trình)", ghiUser === 5, ghiUser);
+const approvalBody = server.slice(server.indexOf('if action == "wf_resume":'), server.indexOf('if action == "resume_now":'));
+check("đường ghi thứ năm chỉ thuộc thao tác duyệt quy trình",
+  (approvalBody.match(/append_message\([^)]*"user"/g) || []).length === 1
+  && approvalBody.includes('store.append_message(_sid, "user", _msg)'));
+const liveBody = (server.match(/async def voice_live_ws\([\s\S]*?\n@app\./) || [""])[0];
+check("hai chỗ mới nằm TRONG voice_live_ws", (liveBody.match(/append_message\([^)]*"user"/g) || []).length === 2);
 
 // ---- 5. cache-bust ----
 const v = (f) => Number((html.match(new RegExp(f.replace(/\./g, "\\.") + "\\?v=(\\d+)")) || [])[1] || 0);
 check("voice.js đã bump ?v= (>= 16)", v("voice.js") >= 16, v("voice.js"));
 
 console.log();
+check("slash only sends after opening the selected session", /if \(\!opened\) return;[\s\S]{0,150}if \(_slash.message\) sendMessage\(_slash.message\)/.test(app));
 if (fails.length) {
   console.log("THAT BAI " + fails.length + ": " + fails.join(", "));
   process.exit(1);
 }
 console.log("OK - test_mic_khong_tu_gui: tat ca pass");
+

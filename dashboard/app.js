@@ -39,6 +39,7 @@ function syncActiveUI() {
 }
 
 function stopCurrent() {
+  try { ketThucTheoLoi(false); } catch (e) {}
   voice.stopSpeaking();
   const sid = savedSessionId;
   // Dừng ĐÚNG phiên đang xem (phiên nền khác vẫn chạy). Server huỷ lượt + gửi turn_done về.
@@ -53,9 +54,11 @@ function stopCurrent() {
     }).catch(() => {});
   }
   hideActivity();
+  // Nhớ lượt vừa dừng: turn_done của nó có thể về SAU khi lượt mới đã chạy (xem _luotDaDung).
+  if (sid && turns[sid] && turns[sid].running && turns[sid].id) _luotDaDung[sid] = turns[sid].id;
   if (sid && turns[sid]) turns[sid].running = false;
   setSessionRunning(sid, false);
-  if (!handsFreeActive()) setOrbState("", "SẴN SÀNG");
+  try { runActions(turn.turnDone()); } catch (e) {}   // bấm Dừng: hết lượt, orb theo đạo diễn
   syncActiveUI();
 }
 function handsFreeActive() { return typeof handsFree !== "undefined" && handsFree; }
@@ -70,6 +73,29 @@ const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
 const voiceBtn = document.getElementById("voiceBtn");
 const voiceInterim = document.getElementById("voiceInterim");
+
+// ---- Voice V3: chữ đang nghe hiện NGAY TRONG KHUNG CHAT (chủ dự án 2026-09-14) ----
+// Trước đây chữ tạm đè lên khối não (#voiceInterim), xa cột hội thoại. Nay nó là một bong bóng
+// NHÁP ở cuối cột chat, cùng vị trí tin thật sẽ xuất hiện khi gửi, như ChatGPT Voice. Rỗng thì
+// gỡ bong bóng. Bong bóng nháp không vào convo, không lưu; khi gửi thì appendUserMessage thay nó.
+let _nhapGiongEl = null;
+function nhapGiong(text) {
+  text = String(text || "").trim();
+  if (voiceInterim) voiceInterim.textContent = "";
+  if (!text) {
+    if (_nhapGiongEl) { try { _nhapGiongEl.remove(); } catch (e) {} _nhapGiongEl = null; }
+    return;
+  }
+  if (!_nhapGiongEl || !_nhapGiongEl.isConnected) {
+    const div = document.createElement("div");
+    div.className = "msg msg-user msg-nhap-giong";
+    div.innerHTML = '<div class="bubble"><div class="utext"></div></div>';
+    chatAppend(div);
+    _nhapGiongEl = div;
+  }
+  _nhapGiongEl.querySelector(".utext").textContent = text;
+  scrollBottom();
+}
 const orbState = document.getElementById("orbState");
 
 // Thanh trạng thái đã bỏ tên workspace + ngày tháng (0.9.195) - element có thể không còn,
@@ -88,6 +114,11 @@ function setOrbState(state, label) {
   const thinking = state === "thinking";
   _thinkingActive = thinking;
   if (javisGraph) javisGraph.setThinking(thinking);
+  // Linh vật ở mép màn hình diễn theo ĐÚNG trạng thái này, không có nguồn riêng: nếu chữ
+  // trên orb nói "đang nghĩ" mà pet vẫn ngồi chớp mắt thì một trong hai đang nói dối.
+  // Lớp rỗng "" của orb là trạng thái nghỉ.
+  try { if (window.JavisPet) window.JavisPet.setState(state || "idle"); } catch (e) {}
+  try { if (window.JavisWorkspace) window.JavisWorkspace.onChatState(state || "idle"); } catch (e) {}
 }
 
 // ============================================
@@ -97,30 +128,336 @@ const voice = new JavisVoice({
   lang: "vi-VN",
   onStart: () => {
     voiceBtn.classList.add("recording");
-    setOrbState("listening", handsFree ? "ĐANG NGHE • LUÔN" : "ĐANG NGHE");
-    voiceInterim.textContent = "";
+    nhapGiong("");
+    runActions(turn.micOn());
   },
-  onInterim: (text) => { voiceInterim.textContent = text; },
+  onInterim: (text) => {
+    nhapGiong(text);
+    // Đang tạm dừng vì nghi chen ngang mà có chữ -> chen ngang THẬT: đạo diễn trả stop_tts.
+    // Đọc phần Thansa đã đọc ra tiếng TRƯỚC khi dừng, để tin kế tiếp mang ngắt_lời=.
+    if (turn.interrupted && text) turn.setInterruptedAt(voice.lastSpokenPrefix());
+    runActions(turn.interim(text));
+  },
   onTranscript: (text) => {
     voiceBtn.classList.remove("recording");
-    voiceInterim.textContent = "";
+    nhapGiong("");
+    text = veTinTuGiong(text);   // luật CHỜ / DỪNG của đạo diễn: trả "" khi không gửi
     if (text) sendMessage(text);
   },
   onEnd: () => {
     voiceBtn.classList.remove("recording");
-    // Hands-free: giữ trạng thái chờ nghe lại, đừng reset về SẴN SÀNG cho đỡ nháy
-    if (!isProcessing && !handsFree) setOrbState("", "SẴN SÀNG");
+    // Hands-free: giữ trạng thái chờ nghe lại, đừng reset về SẴN SÀNG cho đỡ nháy.
+    // Phiên nghe kết thúc mà không có chữ (tiếng ồn rồi im) thì vẫn phải hạ cờ "đang nói":
+    // endpoint("") không gửi gì, chỉ trả đạo diễn về listening để tin nền được đọc tiếp.
+    if (!handsFree) runActions(turn.micOff());
+    else runActions(turn.endpoint(""));
   },
   onError: (err) => {
     voiceBtn.classList.remove("recording");
-    setOrbState("", "SẴN SÀNG");
     // Mic hỏng hẳn thì TẮT chế độ rảnh tay. Không tắt thì vòng giữ mic 500ms bên dưới cứ mở
     // lại mãi, mỗi lần một hộp thoại chặn - người dùng bấm OK xong nửa giây sau nó nổ tiếp,
-    // không còn đường nào bấm vào trang nữa. Đúng cảnh người dùng báo ngày 04/09.
-    if (voice.micHong && voice.micHong()) tatRanhTay();
+    // không còn đường nào bấm vào trang nữa. Đúng cảnh người dùng báo 04/09.
+    if (voice.micHong && voice.micHong()) { tatRanhTay(); runActions(turn.errorMic(err)); }
+    else runActions(turn.micOff());
     alertMic(err);
-  }
+  },
+  // ---- Voice V1: móc nối đạo diễn (voice-turn.js) ----
+  endpointDelay: (text) => turn.delayFor(text),
+  onBargeStart: () => runActions(turn.bargeStart()),
+  // Nhá tiếng xong, chắc là người thật: dừng hẳn và mở tai ngay, không qua cửa sổ chờ chữ.
+  onBargeConfirm: () => runActions(turn.bargeConfirmed(voice.lastSpokenPrefix())),
+  onSpeakStart: () => runActions(turn.ttsStart()),
+  onSpeakEnd: () => runActions(turn.ttsEnd()),
+  onSlow: (cham) => runActions(turn.setSlow(cham)),
 });
+
+// ============================================
+// Voice V1 - đạo diễn hội thoại (docs/dev/2026-09-voice-v1-spec.md mục 3 và 4)
+// ============================================
+// voice-turn.js giữ toàn bộ luật (chờ bao lâu rồi gửi, "khoan" nghĩa là gì, chen ngang thật
+// hay giả); app.js chỉ THỰC HIỆN mảng hành động nó trả về và vẽ orb theo trạng thái thật.
+const turn = new window.JavisVoiceTurn.VoiceTurn({
+  minDelay: parseInt(localStorage.getItem("javis.endpoint") || "1200", 10) || 1200,
+});
+let _bargeTimer = null;   // 2 giây sau khi tạm dừng mà không có chữ -> chen ngang giả
+let _waitTimer = null;    // "khoan" rồi im lâu -> thôi chờ
+let _ngatLoiTai = "";     // câu Thansa bị ngắt lúc đọc, đi vào tin kế tiếp rồi xoá
+
+// ---- Voice V3: cắt cụm cho loa + câu tiến độ (docs/dev/2026-09-voice-v2-spec.md mục 11) ----
+// Chữ stream của MỌI làn đi qua voice-chunker.js rồi mới ra loa: đọc theo cụm tự nhiên (hết
+// câu, hoặc phẩy/liên từ khi cụm đầu, hoặc im lâu mà loa đang im) thay vì đọc từng mẩu vài từ.
+const cum = new window.JavisVoiceChunker.Chunker();
+let _cumTimer = null;
+function docCum(chunks, t) {
+  (chunks || []).forEach((c) => {
+    if (!c || !c.trim()) return;
+    voice.enqueueSpeak(c);
+    if (t) t.spoke = true;
+    turn.noteSpoke();
+  });
+}
+// Đồng hồ 150 ms chạy suốt lượt: đẩy cụm dở khi im lâu mà loa im, và nói câu tiến độ khi xử lý
+// quá lâu chưa có chữ nào (chỉ trong phiên nói chuyện bằng giọng, tức đang rảnh tay).
+function batDongHoCum() {
+  if (_cumTimer) return;
+  _cumTimer = setInterval(() => {
+    const t = savedSessionId ? turns[savedSessionId] : null;
+    if (!t || !t.running) { clearInterval(_cumTimer); _cumTimer = null; return; }
+    if (!voice.ttsEnabled) return;
+    docCum(cum.tick(Date.now(), !voice.isSpeaking()), t);
+    if (handsFree) runActions(turn.fillerCheck(Date.now()));
+  }, 150);
+}
+function noiTienDo() {
+  const opts = String(window.t("app.voice_filler") || "").split("|").map(s => s.trim()).filter(Boolean);
+  // uncounted: câu tiến độ không thuộc câu trả lời, không tính vào số từ đã đọc (chữ theo lời).
+  if (opts.length) voice.enqueueSpeak(opts[Math.floor(Math.random() * opts.length)], { uncounted: true });
+}
+
+// ---- Voice V3: chữ hiện THEO LỜI ĐỌC (karaoke), như ChatGPT Voice ----
+// Đang nói chuyện bằng giọng thì hiện trọn cụm đang đọc để chữ không chạy sau loa
+// (voice.visibleWords); ở Live thì theo tỉ lệ ms đã phát trên ms
+// đã xếp lịch (JavisVoiceLive.progress). Bị ngắt lời thì bong bóng dừng đúng chỗ đã nói kèm "…".
+// Đọc xong hết mới vẽ markdown đầy đủ (ảnh, link, bảng, chip hỏi lại). Chữ đã về từ model mà
+// chưa tới lượt phát thì chưa hiện.
+let _theoLoi = null;   // { el, text, ask, live, shown, chuaXong }
+function dangTheoLoi() { return handsFree && voice.ttsEnabled; }
+function batTheoLoi(el, text, ask, live) {
+  if (!el) return;
+  if (_theoLoi && _theoLoi.el !== el) ketThucTheoLoi(false);
+  const cu = (_theoLoi && _theoLoi.el === el) ? _theoLoi : null;
+  _theoLoi = { el, text: String(text || ""), ask: ask || (cu && cu.ask) || null, live: !!live,
+               shown: cu ? cu.shown : -1, chuaXong: cu ? cu.chuaXong : true };
+  veTheoLoi();
+}
+function _chuTheoLoi(s) { return s.live ? s.text : voice._cleanForTTS(s.text); }
+function veTheoLoi() {
+  const s = _theoLoi; if (!s) return;
+  const C = window.JavisVoiceChunker;
+  const full = _chuTheoLoi(s), tong = C.countWords(full);
+  let n;
+  if (s.live) {
+    const p = window.JavisVoiceLive ? window.JavisVoiceLive.progress() : null;
+    n = (p && p.total > 0) ? Math.round(tong * Math.min(1, p.played / p.total)) : Math.max(0, s.shown);
+  } else n = voice.visibleWords();
+  n = Math.max(s.shown, Math.min(n, tong));
+  if (n === s.shown) return;
+  s.shown = n;
+  s.el.querySelector(".bubble").innerHTML = n > 0 ? escapeHtml(C.takeWords(full, n)) : '<span class="theo-loi-cho">…</span>';
+  scrollBottom();
+}
+// Kết thúc: vẽ đầy đủ (đọc xong hoặc chuyển lượt) hoặc đóng băng ở chỗ đã nói (bị ngắt lời).
+function ketThucTheoLoi(biNgat) {
+  const s = _theoLoi; if (!s) return;
+  _theoLoi = null;
+  const host = s.el.querySelector(".bubble");
+  const full = _chuTheoLoi(s), tong = window.JavisVoiceChunker.countWords(full);
+  if (biNgat && s.shown > 0 && s.shown < tong) {
+    host.innerHTML = escapeHtml(window.JavisVoiceChunker.takeWords(full, s.shown)) + " …";
+  } else {
+    host.innerHTML = markdownToHtml(s.text);
+  }
+  if (s.ask) window.JavisAsk.render(s.el, s.ask, true);
+  if (s.live && window.JavisVoiceLive) window.JavisVoiceLive.resetProgress();
+}
+// Gọi ~20 lần/giây từ vòng vẽ orb: cập nhật chữ, và khi lượt xong + loa im thì vẽ đầy đủ.
+function nhipTheoLoi() {
+  const s = _theoLoi; if (!s) return;
+  veTheoLoi();
+  let dangChay, loaIm;
+  if (s.live) {
+    dangChay = s.chuaXong;
+    loaIm = !(window.JavisVoiceLive && window.JavisVoiceLive.isSpeaking());
+  } else {
+    const t = savedSessionId ? turns[savedSessionId] : null;
+    dangChay = !!(t && t.running);
+    loaIm = !voice.isSpeaking() && !voice.isPaused() && !(voice.speechQueue && voice.speechQueue.length);
+  }
+  if (!dangChay && loaIm) ketThucTheoLoi(false);
+}
+
+const ORB_LABEL = {
+  idle: ["", "orb.ready"],
+  listening: ["listening", null],
+  user_speaking: ["listening", null],
+  waiting_for_user: ["waiting", "app.orb_waiting"],
+  processing: ["thinking", "app.orb_thinking"],
+  speaking: ["speaking", "app.orb_speaking"],
+  interrupted: ["paused", "app.orb_paused"],
+  reconnecting: ["reconnecting", "app.orb_reconnecting"],
+  error: ["error", "app.orb_mic_error"],
+};
+function capNhatOrb() {
+  const [cls, key] = ORB_LABEL[turn.state] || ORB_LABEL.idle;
+  let label;
+  if (turn.state === "listening" || turn.state === "user_speaking") {
+    label = handsFree ? window.t("app.orb_listening_always") : window.t("app.orb_listening");
+  } else if (turn.state === "processing" && turn.tool) {
+    label = window.t("app.orb_tool", { tool: compactToolLabel(turn.tool).label });
+  } else {
+    label = window.t(key);
+  }
+  if (turn.slow) label += " · " + window.t("app.orb_slow");
+  if (turn.background > 0 && (turn.state === "idle" || turn.state === "listening")) {
+    label += " · " + window.t("app.orb_background", { n: turn.background });
+  }
+  setOrbState(cls, label);
+}
+
+function runActions(acts) {
+  (acts || []).forEach((a) => {
+    switch (a.type) {
+      case "state": capNhatOrb(); break;
+      case "arm_endpoint": break;                    // voice.js tự đặt đồng hồ qua endpointDelay()
+      case "commit": _ngatLoiTai = a.interruptedAt || _ngatLoiTai; break;   // sendMessage đọc rồi xoá
+      case "hold":
+        clearTimeout(_waitTimer);
+        _waitTimer = setTimeout(() => runActions(turn.waitTimeout()), turn.opts.waitTimeoutMs);
+        break;
+      case "stop_tts":
+        if (a.interrupted) { clearTimeout(_bargeTimer); _bargeTimer = null; ketThucTheoLoi(true); }   // V3: đóng băng chỗ đã nói
+        voice.stopSpeaking();
+        break;
+      case "pause_tts":
+        voice.pauseSpeaking();
+        clearTimeout(_bargeTimer);
+        _bargeTimer = setTimeout(() => { _bargeTimer = null; runActions(turn.bargeTimeout()); }, turn.opts.falseInterruptMs);
+        break;
+      case "resume_tts": voice.resumeSpeaking(); break;
+      case "listen": voice.startListening(true, true); break;       // giữ tiếng đang tạm dừng
+      case "abort_listen": voice._muteRecognition(); break;         // đóng recognition, mic mở lại sau khi đọc xong
+      case "stop_turn": stopCurrent(); break;
+      case "flush_deferred": (a.texts || []).forEach(t => { if (voice.ttsEnabled) voice.enqueueSpeak(t, { uncounted: true }); }); break;
+      case "speak_filler": noiTienDo(); break;                    // V3: "để mình xem nhé" khi việc lâu
+      default: break;
+    }
+  });
+}
+
+// Chữ nghe xong -> đạo diễn quyết: gửi (trả lại chữ), chờ, hay dừng (trả "").
+function veTinTuGiong(text) {
+  const acts = turn.endpoint(text || "");
+  runActions(acts);
+  const c = acts.find(a => a.type === "commit");
+  if (c) _tuGiong = true;   // sendMessage kế tiếp là tin từ mic
+  return c ? c.text : "";
+}
+let _tuGiong = false;
+
+// ============================================
+// Voice V2 - cài đặt giọng nói (chế độ, nghe bằng Groq) và bậc Live
+// ============================================
+let voiceMode = "standard";   // standard | fast | live (đọc từ /settings)
+async function napCaiDatGiong() {
+  try {
+    const s = await (await fetch("/settings")).json();
+    const v = (s && s.voice) || {};
+    voiceMode = v.mode || "standard";
+    voice.sttUpload = v.stt_provider === "groq";
+  } catch (e) {}
+}
+napCaiDatGiong();
+window.JavisVoiceMode = { refresh: napCaiDatGiong, get: () => voiceMode };
+
+// Bậc Live: mic bấm là mở phiên nghe nói thẳng thay cho Web Speech. Bản ghi chữ hai chiều
+// vào khung chat như tin thường; orb theo cùng đạo diễn (nói / nghe / gọi tool).
+let _liveUserBubble = null, _liveJavisText = "", _liveJavisBubble = null, _liveCtxTimer = null;
+// Ngữ cảnh giao diện vào phiên Live (GPT-Live gọi là "share UI context"): cùng khối V1 gửi cho
+// bộ não chính, đẩy khi ĐỔI (sendContext tự lọc trùng), dò 1,5 s một lần trong lúc mic mở.
+function guiNguCanhLive() {
+  try {
+    if (!window.JavisVoiceLive || !window.JavisVoiceLive.isOn()) return;
+    const ctx = window.JavisUiContext ? window.JavisUiContext.build({ page: nguCanhTrang(), selection: nguCanhChon() }) : "";
+    window.JavisVoiceLive.sendContext(ctx);
+  } catch (e) {}
+}
+async function batLive() {
+  if (!window.JavisVoiceLive) { alert(window.t("app.live_missing")); return false; }
+  const ok = await window.JavisVoiceLive.start({
+    sessionId: () => savedSessionId,
+    brain: () => currentBrainPath(),
+    onStarted: () => {
+      voiceBtn.classList.add("recording"); runActions(turn.micOn());
+      clearInterval(_liveCtxTimer); _liveCtxTimer = setInterval(guiNguCanhLive, 1500); guiNguCanhLive();
+    },
+    onStopped: () => { clearInterval(_liveCtxTimer); _liveCtxTimer = null; voiceBtn.classList.remove("recording"); runActions(turn.micOff()); },
+    onReady: (d) => { if (d && d.session_id && !savedSessionId) { savedSessionId = d.session_id; persistSession(); } },
+    onSpeakStart: () => runActions(turn.ttsStart()),
+    onSpeakEnd: () => runActions(turn.ttsEnd()),
+    onInterrupted: () => { ketThucTheoLoi(true); _liveJavisText = ""; _liveJavisBubble = null; },
+    onTool: (name, status) => { if (status === "running") runActions(turn.toolCall(name)); else runActions(turn.turnDone()); },
+    onTranscript: (role, text, final) => {
+      if (role === "user") {
+        if (final && text.trim()) { nhapGiong(""); appendUserMessage(text.trim(), []); recordTurn("user", text.trim(), []); }
+        else nhapGiong(text);
+        return;
+      }
+      _liveJavisText += text;
+      if (!_liveJavisBubble) _liveJavisBubble = createStreamingBubble();
+      if (dangTheoLoi()) batTheoLoi(_liveJavisBubble, _liveJavisText, null, true);   // V3: chữ theo tiếng
+      else { _liveJavisBubble.querySelector(".bubble").innerHTML = markdownToHtml(_liveJavisText); scrollBottom(); }
+    },
+    onTurnDone: () => {
+      if (_liveJavisText.trim()) recordTurn("javis", _liveJavisText.trim(), null, null);
+      if (_theoLoi && _theoLoi.live && _theoLoi.el === _liveJavisBubble) _theoLoi.chuaXong = false;   // vẽ đủ khi loa im
+      _liveJavisText = ""; _liveJavisBubble = null;
+      runActions(turn.turnDone());
+    },
+    onError: (msg) => {
+      appendJavisError(String(msg || "").startsWith("mic:") ? window.t("app.mic_denied") : (window.t("app.live_error") + " " + msg));
+      runActions(turn.turnDone());
+    },
+    onClosed: () => { handsFree = false; voiceBtn.classList.remove("handsfree"); if (window.JavisTts) window.JavisTts.set(false); },
+  });
+  return ok;
+}
+function tatLive() { try { if (window.JavisVoiceLive) window.JavisVoiceLive.stop(); } catch (e) {} }
+
+// Dải việc nền (background-strip.js) báo số việc đang chạy để orb ghi hậu tố thật.
+window.JavisOrb = {
+  setBackground: (n) => runActions(turn.setBackground(n)),
+  setVoiceJobs: (n) => datSoViecGiong(n),
+};
+
+// ---- Voice V3: Thansa TỰ HỎI THĂM khi việc nền chạy lâu ----
+// Chủ dự án 15/09: giao việc xong thì im lặng hàng phút, "anh không rõ nó có chạy nền thật hay
+// không"; anh ấy muốn nó nói kiểu "để em xem nhé", "chờ em tý", "em vẫn chưa xong". Người thật
+// nhận việc lâu thì thỉnh thoảng ngẩng lên nói một câu, chứ không ngồi câm.
+//
+// Ba luật giữ cho nó không thành phiền:
+//   - THƯA DẦN: 25 giây, rồi 60, rồi 120, rồi mỗi 180 giây. Nhắc dày là tra tấn.
+//   - Chỉ nói khi RẢNH THẬT (đạo diễn cho phép: không ai đang nói, loa đang im). Chen một câu
+//     hỏi thăm vào giữa lời người dùng là đúng cái tội mà ngắt lời sinh ra để chữa.
+//   - Chỉ khi đang rảnh tay và loa đang bật. Gõ chữ thì màn hình đã có dải việc nền rồi.
+// Số việc đến từ /background (sổ thật của server), không phải đếm mò ở trình duyệt.
+let _soViecGiong = 0, _mocViecGiong = 0, _lanHoiTham = 0, _hoiThamTimer = null;
+const NHIP_HOI_THAM = [25000, 60000, 120000];   // sau đó lặp lại 180 giây một lần
+function datSoViecGiong(n) {
+  const so = Math.max(0, parseInt(n, 10) || 0);
+  if (so === _soViecGiong) return;
+  const truoc = _soViecGiong;
+  _soViecGiong = so;
+  if (so > 0 && truoc === 0) { _mocViecGiong = Date.now(); _lanHoiTham = 0; }
+  if (so === 0) { _mocViecGiong = 0; _lanHoiTham = 0; }
+}
+function nhipHoiTham() {
+  return _lanHoiTham < NHIP_HOI_THAM.length ? NHIP_HOI_THAM[_lanHoiTham] : 180000;
+}
+function hoiThamViecNen() {
+  if (!_soViecGiong || !_mocViecGiong) return;
+  if (!handsFree || !voice.ttsEnabled) return;
+  if (!turn.canSpeakNow()) return;              // đang nghe người dùng nói, hay loa đang bận
+  if (Date.now() - _mocViecGiong < nhipHoiTham()) return;
+  // Quá hai phút thì đổi giọng điệu: thừa nhận là lâu, đừng "sắp xong rồi" mãi.
+  const key = (Date.now() - _mocViecGiong) > 120000 ? "app.voice_cho_viec_lau" : "app.voice_cho_viec";
+  const opts = String(window.t(key) || "").split("|").map(s => s.trim()).filter(Boolean);
+  if (!opts.length) return;
+  _lanHoiTham++;
+  _mocViecGiong = Date.now();
+  // uncounted: câu hỏi thăm không thuộc câu trả lời nào, không tính vào chữ hiện theo lời đọc.
+  voice.enqueueSpeak(opts[Math.floor(Math.random() * opts.length)], { uncounted: true });
+}
+_hoiThamTimer = setInterval(hoiThamViecNen, 2000);
 
 // ============================================
 // WebSocket
@@ -131,7 +468,12 @@ function connect() {
   // không có chốt này là hai socket song song, mọi tin nhắn về gấp đôi.
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
   ws = new WebSocket(WS_URL);
-  ws.onclose = () => { setTimeout(connect, 3000); };
+  // Mất socket là trạng thái THẬT người dùng cần thấy ("ĐANG KẾT NỐI LẠI"), không phải đoán.
+  ws.onclose = () => {
+    try { runActions(turn.wsDown()); } catch (e) {}
+    baoDutMang(true);
+    setTimeout(connect, 3000);
+  };
   ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
 }
 
@@ -165,6 +507,8 @@ function handleMessage(data) {
     stopTag = data.stop_tag || null;
     if (window.JavisRunning) window.JavisRunning.clear();
     Object.keys(turns).forEach(sid => { if (turns[sid]) turns[sid].running = false; });
+    _luotDaDung = {};   // socket mới: turn_done của lượt đã dừng trên socket cũ không còn tới
+
     (data.running || []).forEach(job => {
       const sid = job.session_id;
       if (!sid) return;
@@ -181,6 +525,15 @@ function handleMessage(data) {
     notifySessions();
     // Lượt đang chờ gói thuê bao mở lại hạn mức: dựng lại thẻ "tự chạy lại" cho phiên đang xem.
     try { if (window.JavisResume) window.JavisResume.fromHello(data.resumes || [], savedSessionId); } catch (e) {}
+    runActions(turn.wsUp());   // socket đã nối: orb thôi "ĐANG KẾT NỐI LẠI"
+    baoDutMang(false);
+    guiTinDutMang();           // và những câu nói lúc mất mạng được gửi đi, không bốc hơi
+    return;
+  }
+  if (data.type === "ui_action") {
+    // Tool javis_ui (server) bảo dashboard mở trang / file / việc. ui-actions.js kiểm rồi làm
+    // và tự trả ui_result về server để tool trả lời model ngay trong lượt.
+    try { if (window.JavisUiActions) window.JavisUiActions.handle(data); } catch (e) {}
     return;
   }
 
@@ -188,7 +541,22 @@ function handleMessage(data) {
   // chỉ tích luỹ vào buffer + đánh dấu "đang chạy" ở Lịch sử (server đã tự lưu vào DB).
   const sid = data.session_id || null;
   const isActive = !!sid && sid === savedSessionId;
-  const t = sid ? (turns[sid] || (turns[sid] = { text: "", bubble: null, spoke: false, running: true })) : null;
+  // CHỈ khung của một LƯỢT mới được dựng bộ đệm và đánh dấu phiên "đang chạy". Khung NGOÀI
+  // lượt (push của việc nền, inbox...) tuyệt đối không được: `turn_done` đã xoá turns[sid] khi
+  // lượt kết thúc, nên dựng lại ở đây là HỒI SINH một lượt đã chết với cờ running=true mà
+  // không còn turn_done nào tới để hạ nó xuống. Hậu quả dây chuyền: syncActiveUI khoá nút gửi,
+  // sendMessage nuốt lặng mọi tin sau đó, và vòng giữ mic không mở lại vì tưởng đang xử lý -
+  // khung chat chết cứng ở "đang suy nghĩ" ngay sau khi một việc nền báo xong. Chủ dự án gặp
+  // 15/09: "sau khi có đoạn chạy nền thì không nói nữa luôn, không nhắn tiếp vào khung chat".
+  const KHUNG_LUOT = ["status", "tool_call", "tool_result", "stream", "response", "error", "turn_done"];
+  const t = !sid ? null
+    : (turns[sid] || (KHUNG_LUOT.includes(data.type)
+        ? (turns[sid] = { text: "", bubble: null, spoke: false, running: true })
+        : null));
+  // Khung của lượt MỚI đã về: server chỉ nhận tin mới khi job cũ đã dứt, và turn_done của job
+  // cũ đi trước trên cùng socket, nên nó không thể còn tới nữa - thôi chờ (xem _luotDaDung).
+  if (sid && _luotDaDung[sid] != null && data.type !== "turn_done" && KHUNG_LUOT.includes(data.type)
+      && t && t.id && t.id !== _luotDaDung[sid]) delete _luotDaDung[sid];
 
   if (data.type === "push") {
     // Tin do việc chạy NỀN đẩy vào (việc Kanban / loop / nhắc hẹn xong), không thuộc lượt
@@ -198,7 +566,12 @@ function handleMessage(data) {
       const el = appendJavisMessage(data.content || "");
       recordTurn("javis", data.content || "", null, null);
       scrollBottom();
-      if (voice.ttsEnabled) voice.enqueueSpeak(data.content || "");
+      // Đọc tin nền chỉ khi người dùng KHÔNG đang nói hay đang nghe Thansa nói dở (Voice V1):
+      // chen một bản tin vào giữa câu người dùng là cắt ngang họ. Hoãn tới lúc rảnh.
+      if (voice.ttsEnabled) {
+        if (turn.canSpeakNow()) voice.enqueueSpeak(data.content || "", { uncounted: true });
+        else turn.defer(data.content || "");
+      }
       try { if (el) el.scrollIntoView({ block: "nearest" }); } catch (e) {}
     }
     // Đang xem phiên KHÁC thì tin vẫn nằm trong kho phiên (server ghi trước khi bắn), chỉ là
@@ -225,58 +598,82 @@ function handleMessage(data) {
   if (data.type === "status") {
     if (t) t.running = true;
     setSessionRunning(sid, true);
-    if (isActive) { setOrbState("thinking", "ĐANG SUY NGHĨ"); showActivity(escapeHtml(data.content || "")); syncActiveUI(); }
+    if (isActive) { runActions(turn.turnStart()); showActivity(escapeHtml(data.content || "")); syncActiveUI(); }
   } else if (data.type === "tool_call") {
     if (data.tool) trackMCP(data.tool);
-    if (isActive) showActivity(escapeHtml(data.content || ""));
+    if (isActive) { runActions(turn.toolCall(data.tool || "")); showActivity(escapeHtml(data.content || "")); }
   } else if (data.type === "tool_result") {
-    if (isActive) showActivity(Icons.msg("check", "Nhận data - đang phân tích...", { cls: "ic-ok" }));
+    if (isActive) showActivity(Icons.msg("check", window.t("app.act_analyzing"), { cls: "ic-ok" }));
   } else if (data.type === "stream") {
     if (!t) return;
     t.text += (data.content || "");
     if (isActive) {
-      if (!t.bubble) { t.bubble = createStreamingBubble(); showActivity(Icons.msg("pen-line", "Đang soạn câu trả lời...")); }
-      t.bubble.querySelector(".bubble").innerHTML = markdownToHtml(t.text);
-      scrollBottom();
-      // Đọc NGAY đoạn trung gian (chỉ đọc phiên đang xem). OpenRouter gửi tts:false → đọc 1 lần ở cuối.
+      if (!t.bubble) { t.bubble = createStreamingBubble(); showActivity(Icons.msg("pen-line", window.t("app.act_writing"))); }
+      // V3: đang nói chuyện bằng giọng thì chữ hiện THEO LỜI ĐỌC, không hiện trước loa.
+      if (dangTheoLoi() && data.tts !== false) batTheoLoi(t.bubble, t.text, null, false);
+      else { t.bubble.querySelector(".bubble").innerHTML = markdownToHtml(t.text); scrollBottom(); }
+      // Voice V3: gom chữ stream thành CỤM đọc được (voice-chunker.js) thay vì đọc từng mẩu.
+      // Trước đây mỗi khung stream của bộ não chính (vài từ) là một yêu cầu TTS riêng nên nghe
+      // cà nhắc; làn nhanh gửi nguyên câu thì qua đây vẫn phát ngay. OpenRouter gửi tts:false
+      // -> đọc 1 lần ở cuối.
       if (voice.ttsEnabled && data.tts !== false) {
-        setOrbState("speaking", "ĐANG NÓI");
-        const safeChunk = (data.content || "").replace(/<!--[\s\S]*/, "");
-        if (safeChunk) voice.enqueueSpeak(safeChunk);
-        t.spoke = true;
+        docCum(cum.push(data.content || "", Date.now()), t);
+        batDongHoCum();
       }
     }
   } else if (data.type === "response") {
     // Lượt vấp hạn mức gói thuê bao: câu báo đã hiện ở bong bóng lỗi (kèm thẻ tự chạy lại) và
     // server không có câu trả lời nào, nên không vẽ thêm bong bóng "(không có nội dung)".
-    if (t && t.limit && !(data.content || "").trim()) {
-      if (isActive) { hideActivity(); setOrbState("", "SẴN SÀNG"); }
+    // Cùng luật cho MỌI lỗi engine (sai key, model 404, CLI thoát 1): bong bóng đỏ đã nói rõ,
+    // vẽ thêm một bong bóng xám "(không có nội dung)" ngay dưới chỉ làm người dùng tưởng lỗi kép.
+    if (t && (t.limit || (t.errored && !(t.text || "").trim())) && !(data.content || "").trim()) {
+      if (isActive) { hideActivity(); runActions(turn.turnDone()); }
       refreshUsage();
       return;
     }
     const { clean: askClean, ask } = window.JavisAsk.extract(data.content || "");
     const finalText = askClean || (t && t.text) || "";
-    const shownText = finalText || "_(không có nội dung trả về - thử lại hoặc đổi model)_";
+    const shownText = finalText || window.t("app.no_content");
     if (t) t.text = shownText;
     if (isActive) {
       hideActivity();
       let msgEl = t && t.bubble;
       if (!msgEl) msgEl = appendJavisMessage(shownText);
-      else msgEl.querySelector(".bubble").innerHTML = markdownToHtml(shownText);
-      if (ask) window.JavisAsk.render(msgEl, ask, true);   // chip chỉ mọc khi lượt xong
+      if (dangTheoLoi() && t && finalText) {
+        batTheoLoi(msgEl, shownText, ask, false);        // V3: chữ theo lời tới khi đọc xong, rồi vẽ đủ + chip
+      } else {
+        if (t && t.bubble) msgEl.querySelector(".bubble").innerHTML = markdownToHtml(shownText);
+        if (ask) window.JavisAsk.render(msgEl, ask, true);   // chip chỉ mọc khi lượt xong
+      }
       _renderCtxLine(msgEl, data);   // lượt này đi đường nào, tốn bao nhiêu
+      // V3: bộ não giọng vừa giao một việc chạy NỀN (tách nói khỏi làm). Ghi rõ dưới câu xác
+      // nhận để người dùng biết việc đã nhận; kết quả về sau bằng khung push (tự đọc khi loa rảnh).
+      if (data.background) {
+        const nen = document.createElement("div");
+        nen.className = "voice-nen";
+        nen.textContent = window.t("app.voice_bg_task", { task: String(data.background).slice(0, 160) });
+        msgEl.appendChild(nen);
+      }
       if (finalText.trim()) recordTurn("javis", finalText, null, ask);
-      if (voice.ttsEnabled && t && !t.spoke && finalText) { setOrbState("speaking", "ĐANG NÓI"); voice.speak(finalText); }
-      else if (!voice.ttsEnabled) setOrbState("", "SẴN SÀNG");
+      // data.tts === false: khung "response" này KHÔNG được đọc (vd bản sửa lại sau khi bóc
+      // JAVIS_LESSON của phiên trợ lý) - giống hệt cách nhánh "stream" đã tôn trọng data.tts.
+      if (voice.ttsEnabled && t && data.tts !== false) {
+        docCum(cum.flush(), t);                              // đẩy nốt phần đuôi chưa khép câu
+        // Đánh dấu ĐÃ ĐỌC ngay sau khi gọi, không chỉ đọc điều kiện: thiếu dòng này thì một
+        // khung "response" thứ hai của CÙNG lượt (vd bản sửa lại) sẽ gọi speak() lần nữa,
+        // cắt ngang rồi phát lại từ đầu.
+        if (!t.spoke && finalText) { voice.speak(finalText); t.spoke = true; }   // engine gửi tts:false: đọc 1 lần ở cuối
+      } else cum.reset();
       maybeAutoLearn();
     }
     refreshUsage();     // cập nhật panel Mức dùng sau mỗi lượt
   } else if (data.type === "error") {
     if (t && data.limit) t.limit = data.limit;
+    if (t) t.errored = true;   // khung response rỗng theo sau không vẽ thêm "(không có nội dung)"
     if (isActive) {
       hideActivity();
       const errEl = appendJavisError(data.content);
-      setOrbState("", "SẴN SÀNG");
+      runActions(turn.turnDone());   // lỗi cũng là hết lượt; turn_done theo sau chỉ lặp lại
       if (data.limit) {
         // Hết lượt gói thuê bao: câu báo là tin cuối của lượt (server không trả gì thêm), ghi
         // vào convo để F5 còn thấy, rồi gắn thẻ "tự chạy lại" dưới nó (limit-resume.js).
@@ -287,15 +684,47 @@ function handleMessage(data) {
   } else if (data.type === "resume") {
     // Trạng thái lịch tự chạy lại (hẹn / tắt / đang chạy / huỷ) - thẻ tự vẽ lại.
     try { if (window.JavisResume) window.JavisResume.onFrame(data); } catch (e) {}
+  } else if (data.type === "wf_event") {
+    // Tiến độ từng bước của một lần chạy quy trình (trang Cộng sự vẽ ở cột phải). Khung chat
+    // không vẽ gì: chip trạng thái đã đi bằng khung status riêng.
+    try { if (window.JavisWorkspace) window.JavisWorkspace.onWfEvent(data); } catch (e) {}
+  } else if (data.type === "user_text") {
+    // Lượt nói: server đã DIỄN GIẢI câu máy nghe (lớp sửa theo ngữ cảnh, hoặc bộ não giọng
+    // viết lại dòng JAVIS_NGHE). Bong bóng người dùng đang hiện chữ thô của máy nghe, nên thay
+    // bằng câu đã diễn giải và ghi chữ thô nhỏ bên dưới để đối chiếu. Chủ dự án 16/09: nói
+    // "Thansa" mà bong bóng vẫn "David" thì không biết Thansa đã hiểu đúng chưa.
+    // CỬA TẠP ÂM: bộ não giọng xét ra cả lượt chỉ là tiếng TV hay người khác trong phòng,
+    // không có câu nào nói với Thansa. Gỡ HẲN bong bóng (chủ dự án chốt 17/09: ẩn luôn để mắt
+    // chỉ còn nội dung đang bàn), server đã xoá tin khỏi kho phiên nên F5 cũng không thấy lại.
+    // Chỉ để lại một dòng ghi chú tự tắt: im hoàn toàn thì lúc cửa xét NHẦM, người dùng nói mà
+    // không có gì xảy ra, trông y hệt mic hỏng và không có đầu mối nào để đi tắt bớt lọc.
+    if (data.bo_qua) {
+      if (isActive) { goTinNguoiDungCuoi(); ghiChuThoang(window.t("app.tap_am_bo_qua")); }
+    } else if (isActive) capNhatTinNguoiDung(data.text || "", data.raw || "");
   } else if (data.type === "system") {
     if (isActive) appendJavisMessage(data.content);
   } else if (data.type === "turn_done") {
     // Lượt của phiên này kết thúc (xong / lỗi / bị dừng): bỏ cờ chạy, dọn buffer, refresh Lịch sử.
+    // turn_done của lượt ĐÃ DỪNG mà về sau khi lượt mới đã gửi (câu nói chen ngang, lưới thời
+    // gian nổ trước) thì chỉ là tiếng vọng: bỏ qua, không xoá trạng thái lượt mới đang chạy.
+    const _idDung = _luotDaDung[sid];
+    if (_idDung != null) {
+      delete _luotDaDung[sid];
+      if (t && t.id && t.id !== _idDung) return;
+    }
     try { if (window.JavisResume) window.JavisResume.turnDone(sid); } catch (e) {}
+    // Trang Cộng sự phải biết lượt đã đóng: tiến độ quy trình còn kẹt ở "đang chạy" thì icon
+    // quay mãi ở cột trái, kể cả khi lượt chết theo đường không kịp phát sự kiện nào.
+    try { if (window.JavisWorkspace) window.JavisWorkspace.onTurnDone(sid); } catch (e) {}
     if (t) t.running = false;
     setSessionRunning(sid, false);
-    if (isActive) syncActiveUI();
+    // Chip "Đang soạn câu trả lời..." phải TẮT ở đây chứ không chỉ ở nhánh `response`: lượt
+    // của phiên quy trình (trang Cộng sự) kết thúc bằng `stream` + `turn_done`, không có
+    // `response` nào, nên trước đây chip đứng lại đếm giờ mãi dù kết quả đã in xong. Gọi thêm
+    // một lần ở đây vô hại với lượt thường - hideActivity() là thao tác không cộng dồn.
+    if (isActive) { hideActivity(); syncActiveUI(); runActions(turn.turnDone()); cum.reset(); }
     if (sid) delete turns[sid];
+    if (isActive && _tinChoLuot) guiTinCho();   // câu người dùng chen ngang: lượt cũ dừng hẳn rồi thì gửi
     notifySessions();
     // Lượt vừa xong có thể đã giao việc nền. Đây là ĐÚNG khoảnh khắc người dùng đọc câu trả
     // lời "em đã giao 3 việc" và tự hỏi nó có chạy thật không - dải phải trả lời được ngay.
@@ -306,18 +735,173 @@ function handleMessage(data) {
 // ============================================
 // Messages
 // ============================================
-function sendMessage(text) {
+// Lượt Enter đang ĐỢI file tải lên xong. Chỉ giữ một lượt: bấm Enter hai lần trong lúc chờ
+// không được thành hai tin.
+let _choTaiLen = null;
+
+// ---- Tin đang đợi lượt cũ dừng HẲN rồi mới gửi ----
+// Server từ chối tin mới khi phiên còn job đang chạy ("Phiên này đang trả lời - đợi lượt hiện
+// tại xong đã"), mà lệnh Dừng chỉ HUỶ job chứ không kết thúc nó tức thì: engine CLI có thể mất
+// cả giây mới thật sự dừng. Gửi ngay sau stopCurrent() là rơi đúng vào lời từ chối đó, và câu
+// người dùng vừa nói biến mất không dấu vết. Nên đợi `turn_done` rồi gửi, kèm lưới thời gian
+// phòng khi lượt cũ chết mà không kịp báo.
+//
+// Lưới ấy từng là 1,5 giây (0.57.17) và đó là một trong hai "trục trặc nhỏ lúc chèn câu" chủ
+// dự án báo 15/09: engine CLI bị giết có khi mất hơn thế mới thật sự dừng, lưới nổ trước
+// `turn_done` là tin gửi đi đúng lúc server còn job và bị trả về lời từ chối; hoặc gửi được
+// rồi `turn_done` của lượt CŨ mới về và xoá sạch trạng thái lượt MỚI (chữ stream không hiện,
+// loa câm). Nay lưới rộng 5 giây, `turn_done` vẫn là tín hiệu chính, và lượt cũ được đánh dấu
+// (xem _luotDaDung) để turn_done muộn của nó không đụng vào lượt mới.
+let _tinChoLuot = null, _tinChoTimer = null;
+function datTinCho(text) {
+  _tinChoLuot = String(text || "");
+  clearTimeout(_tinChoTimer);
+  _tinChoTimer = setTimeout(guiTinCho, 5000);
+  // Trong lúc chờ, câu vừa nói vẫn phải Ở LẠI trên màn hình (bong bóng nháp), không thì
+  // người dùng thấy chữ biến mất vài giây rồi mới hiện lại và tưởng đã mất.
+  try { nhapGiong(_tinChoLuot); } catch (e) {}
+}
+function guiTinCho() {
+  clearTimeout(_tinChoTimer); _tinChoTimer = null;
+  const t = _tinChoLuot; _tinChoLuot = null;
+  // Lưới nổ mà turn_done chưa về: coi như lượt cũ không còn báo gì nữa, thôi chờ nó.
+  try { if (savedSessionId) delete _luotDaDung[savedSessionId]; } catch (e) {}
+  if (t) sendMessage(t);       // stopCurrent() đã hạ cờ running nên lần này không quay lại đây
+}
+// Lượt bị bấm Dừng (hay bị câu nói chen ngang dừng) mà chưa nhận turn_done: sid -> id lượt.
+// turn_done về sau khi lượt MỚI đã chạy thì thuộc về lượt cũ, không được xoá trạng thái lượt mới.
+let _luotDaDung = {}, _luotSeq = 0;
+
+// Báo mất mạng NGAY TRONG KHUNG CHAT. Orb đã có chữ "ĐANG KẾT NỐI LẠI", nhưng orb nằm
+// trong .hud-body và khối đó bị ẩn hẳn khi đang ở trang Trò chuyện, nên ở đúng chỗ người
+// dùng đang gõ thì không có dấu hiệu nào. Khung chat thì trang nào cũng thấy.
+//
+// Chờ 2,5 giây mới báo: iOS đóng socket mỗi lần trang bị ẩn rồi nối lại sau một nhịp, báo
+// ngay là nhấp nháy suốt ngày vì một chuyện tự khỏi.
+let _dutMangTimer = null, _dangBaoDutMang = false;
+function baoDutMang(dut) {
+  if (dut) {
+    if (_dutMangTimer || _dangBaoDutMang) return;
+    _dutMangTimer = setTimeout(() => {
+      _dutMangTimer = null;
+      if (!ws || ws.readyState !== WebSocket.OPEN) { _dangBaoDutMang = true; showActivity(Icons.warn(window.t("app.ws_mat_ket_noi"))); }
+    }, 2500);
+    return;
+  }
+  clearTimeout(_dutMangTimer); _dutMangTimer = null;
+  // Chỉ dọn dòng CỦA MÌNH: lượt đang chạy cũng dùng activity, xoá bừa là mất dấu "đang nghĩ".
+  if (_dangBaoDutMang) { _dangBaoDutMang = false; hideActivity(); }
+}
+
+// ---- Tin gửi lúc WebSocket đang đứt ----
+// Chỗ này TRƯỚC ĐÂY là một `return` trần, và đó là một lỗi mất chữ im lặng: đứt socket thì
+// câu vừa nói biến mất không dấu vết. Trên iPhone nó xảy ra thường xuyên, vì Safari đóng
+// WebSocket mỗi lần trang bị ẩn hay bị đóng băng nền (xem chú thích ở connect()), và người
+// dùng chỉ đổi khung chat là dính. Tệ hơn nữa: trạng thái "ĐANG KẾT NỐI LẠI" nằm trên orb,
+// mà orb bị ẩn hẳn khi đang ở trang Trò chuyện (body.on-chat .hud-body{visibility:hidden}) -
+// nên không có một dấu hiệu nào cho biết vì sao câu nói bốc hơi. Đúng lỗi chủ repo báo 15/09.
+//
+// Nay: giữ câu lại, báo NGAY trong khung chat (chỗ này thì trang nào cũng thấy), gửi khi nối
+// lại được. Quá lâu thì TRẢ CHỮ VỀ ô nhập - thà bắt người dùng bấm gửi lại còn hơn để họ
+// tưởng đã gửi rồi ngồi đợi một câu trả lời không bao giờ tới.
+const CHO_NOI_LAI_MS = 25000;
+let _tinDutMang = [], _tinDutMangTimer = null;
+function giuTinKhiDutMang(msg) {
+  const t = String(msg || "").trim();
+  if (!t) return;
+  if (_tinDutMang.length >= 5) _tinDutMang.shift();   // trần: đứt mạng lâu thì giữ 5 câu gần nhất
+  _tinDutMang.push(t);
+  chatInput.value = ""; chatInput.style.height = "auto";
+  clearTimeout(_dutMangTimer); _dutMangTimer = null;
+  _dangBaoDutMang = true;
+  showActivity(Icons.warn(window.t("app.ws_giu_tin")));
+  clearTimeout(_tinDutMangTimer);
+  _tinDutMangTimer = setTimeout(traTinDutMang, CHO_NOI_LAI_MS);
+}
+// Nối lại được: gửi lần lượt. Gọi từ nhánh `hello` chứ không từ onopen - hello mới là lúc
+// server đã dựng xong phiên và sẵn sàng nhận tin.
+function guiTinDutMang() {
+  clearTimeout(_tinDutMangTimer); _tinDutMangTimer = null;
+  const ds = _tinDutMang; _tinDutMang = [];
+  if (!ds.length) return;
+  hideActivity();
+  ds.forEach((t, i) => setTimeout(() => sendMessage(t), i * 150));
+}
+// Chờ mãi không nối lại: trả chữ về ô nhập, nói thẳng là chưa gửi được.
+function traTinDutMang() {
+  clearTimeout(_tinDutMangTimer); _tinDutMangTimer = null;
+  const ds = _tinDutMang; _tinDutMang = [];
+  if (!ds.length) return;
+  const con = chatInput.value.trim();
+  chatInput.value = ds.concat(con ? [con] : []).join("\n");
+  chatInput.style.height = "auto";
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 200) + "px";
+  showActivity(Icons.warn(window.t("app.ws_tra_tin")));
+}
+
+// Phiên cộng sự (agent:/workflow:) -> phiên Trò chuyện đã GỌI nó bằng lệnh "/". Sống trong
+// bộ nhớ trang: tải lại trang là quên, và như vậy là đúng - lúc đó người dùng không còn đang
+// theo dõi cuộc gọi ấy nữa.
+const _gocCongSu = {};
+
+// `opts.wfRun`: tin này đến từ nút CHẠY của trang Cộng sự. Server dùng cờ đó để không
+// đoán lại ý người dùng (xem workflow_chat.quyet_dinh_luot): bấm đúng nút Chạy thì chạy,
+// dù câu trong ô nhập có nghe như đang nói về chính quy trình.
+function sendMessage(text, opts) {
+  if (window.JavisWorkspace && !window.JavisWorkspace.canSend()) return;
   const msg = (text || chatInput.value).trim();
-  const atts = pendingAttachments.filter(a => a.path);  // chỉ file đã upload xong
   // Lệnh / : session-command chạy tại chỗ; skill-command bung thành lời gọi skill.
   const _slash = (window.JavisSlash && msg) ? window.JavisSlash.route(msg) : { type: "passthrough" };
+  if (_slash.type === "agent" || _slash.type === "workflow") {
+    if (!window.JavisWorkspace) return;
+    // Khung chat NGƯỜI DÙNG đang đứng lúc gõ lệnh. Gõ "/quy-trinh" là trang nhảy hẳn sang
+    // Cộng sự, việc chạy ở đó, và khung Trò chuyện vừa rời đi không bao giờ biết kết quả ra
+    // sao - đúng chỗ chủ dự án thấy vô lý. Nhớ lại nguồn rồi gửi kèm mỗi tin, để server đẩy
+    // kết quả NGƯỢC về đây kèm link mở lại cuộc hội thoại đã làm việc đó.
+    const goc = savedSessionId;
+    window.JavisWorkspace.openCommand(_slash.type, _slash.slug).then(function (opened) {
+      if (!opened) return;
+      if (goc && savedSessionId && savedSessionId !== goc) _gocCongSu[savedSessionId] = goc;
+      chatInput.value = _slash.message || "";
+      if (_slash.message) sendMessage(_slash.message);
+      else chatInput.focus();
+    });
+    return;
+  }
   if (_slash.type === "session") {
     chatInput.value = ""; chatInput.style.height = "auto";
     if (_slash.cmd === "stop") { try { stopCurrent(); } catch (e) {} }
     else { try { newChat(); } catch (e) {} }   // new | reset -> hội thoại mới trên web
     return;
   }
-  if ((!msg && atts.length === 0) || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) { giuTinKhiDutMang(msg); return; }
+  // File còn ĐANG TẢI LÊN thì đợi nó xong rồi gửi, KHÔNG gửi thiếu. Trước đây dòng lọc
+  // `a.path` bên dưới lặng lẽ bỏ file chưa tải xong: dán ảnh hay một đoạn văn dài rồi gõ câu
+  // hỏi và Enter ngay là tin bay đi tay không, bong bóng không có ảnh, Thansa cũng không nhận
+  // được file - đúng lỗi chủ repo báo 2026-09-10. Chip trên thanh đính kèm vẫn hiện "đang
+  // tải..." nên người dùng thấy vì sao tin chưa đi.
+  const dangTai = pendingAttachments.filter(a => a.uploading);
+  if (dangTai.length) {
+    if (!_choTaiLen) {
+      showActivity(escapeHtml(window.t("app.att_wait_send")));
+      _choTaiLen = Promise.all(dangTai.map(a => a.xong || Promise.resolve())).then(() => {
+        _choTaiLen = null;
+        const _t = savedSessionId && turns[savedSessionId];
+        if (!(_t && _t.running)) hideActivity();
+        sendMessage(text, opts);
+      });
+    }
+    return;
+  }
+  // File tải lên HỎNG cũng không được lặng lẽ bỏ qua: chip đã ghi lý do, thêm một dòng nói
+  // thẳng để người dùng gỡ file lỗi hoặc thử lại, rồi mới gửi.
+  if (pendingAttachments.some(a => !a.uploading && !a.path)) {
+    attachNote = window.t("app.att_failed_send");
+    renderChips();
+    return;
+  }
+  const atts = pendingAttachments.filter(a => a.path);
+  if (!msg && atts.length === 0) return;
   if (!savedSessionId) {
     savedSessionId = newSid();                           // hội thoại mới → mint id để định tuyến
     // Đang mở một project ở cột Lịch sử thì hội thoại mới rơi thẳng vào project đó, khỏi phải
@@ -327,7 +911,17 @@ function sendMessage(text) {
     try { if (window.JavisModelBar) window.JavisModelBar.claimPending(savedSessionId); } catch (e) {}
   }
   const sid = savedSessionId;
-  if (turns[sid] && turns[sid].running) return;          // phiên này đang trả lời → chưa gửi tiếp
+  // Phiên đang trả lời thì không gửi chồng lượt. NHƯNG tin từ MIC (hay gõ trong lúc rảnh tay)
+  // là người dùng CHEN NGANG: họ vừa cắt lời Thansa rồi nói câu mới, nên câu mới phải thắng -
+  // dừng lượt cũ rồi gửi. Nuốt lặng như trước là kẹt cứng: đạo diễn đã bật `processing` trong
+  // endpoint() TRƯỚC khi gọi vào đây, mà lượt bị nuốt thì không bao giờ có turn_done để hạ nó,
+  // nên orb đứng mãi ở "đang suy nghĩ" và người dùng không thấy tin mình vừa nói ở đâu cả.
+  if (turns[sid] && turns[sid].running) {
+    if (!(_tuGiong || handsFree)) return;   // gõ chữ lúc không rảnh tay: giữ chốt cũ
+    stopCurrent();
+    datTinCho(msg);   // gửi khi lượt cũ dừng HẲN, không gửi ngay (xem chú thích ở datTinCho)
+    return;
+  }
   // Đang BUNG NÃO toàn màn (mobile) mà gửi tin thì thu lại: ở trạng thái đó khung chat bị
   // ẩn hẳn, không thu thì người dùng gõ xong không thấy câu trả lời hiện ở đâu cả. Bấm hộ
   // đúng cái nút để đi chung một đường (đổi aria + canh lại khung đồ thị).
@@ -335,6 +929,19 @@ function sendMessage(text) {
     try { document.getElementById("brainMaxBtn").click(); } catch (e) {}
   }
   voice.stopSpeaking();
+  cum.reset();
+  ketThucTheoLoi(false);       // bong bóng trước vẽ đủ
+  voice.resetSpokenWords();    // lượt mới đếm từ đã đọc lại từ 0
+  nhapGiong("");               // bong bóng nháp (chữ đang nghe) nhường chỗ cho tin thật
+  // Voice V3: đang ở phiên Live mà GÕ chữ thì đẩy thẳng vào phiên Live (cùng một cuộc nói
+  // chuyện, Thansa đáp bằng giọng), không mở lượt chat riêng. Có file đính kèm thì đi đường thường.
+  if (voiceMode === "live" && !atts.length && window.JavisVoiceLive && window.JavisVoiceLive.isOn()) {
+    chatInput.value = ""; chatInput.style.height = "auto";
+    appendUserMessage(msg, []);
+    recordTurn("user", msg, []);
+    window.JavisVoiceLive.sendText(msg);
+    return;
+  }
   window.JavisAsk.freezeAll();   // trả lời rồi thì chip của lượt trước hết bấm được
   appendUserMessage(msg, atts);
   // Lưu cả `url` (đường /upload/raw của file stage): thiếu nó thì F5 xong ảnh trong tin cũ
@@ -364,6 +971,18 @@ function sendMessage(text) {
   // File đang ghim đi TRƯỚC mọi thứ: nó là ngữ cảnh nền của cả lượt, không phải dữ liệu
   // đính kèm một lần. Gửi lại mỗi lượt vì engine API dựng lại payload từ SQLite mỗi lần,
   // không giữ trạng thái "đang mở file nào" giữa các lượt.
+  // Ngữ cảnh giao diện (Voice V1, spec mục 5): trang đang mở, đoạn đang bôi đen, câu Thansa bị
+  // ngắt lời. Đứng SAU khối file ghim và TRƯỚC câu hỏi; rỗng thì không chèn gì.
+  try {
+    // `voice`: đang nói chuyện bằng giọng (tin từ mic, HAY gõ chữ khi mic rảnh tay đang bật):
+    // câu trả lời sẽ đọc ra loa nên model phải trả lời ngắn như người đang nói (V3).
+    const ctxUi = window.JavisUiContext ? window.JavisUiContext.build({
+      page: nguCanhTrang(), selection: nguCanhChon(), interruptedAt: _ngatLoiTai,
+      voice: _tuGiong || handsFree,
+    }) : "";
+    if (ctxUi) outMsg = `${ctxUi}\n\n${outMsg}`;
+  } catch (e) {}
+  _ngatLoiTai = "";
   if (pinnedNote) {
     outMsg = `[FILE ĐANG MỞ trong trình sửa của Thansa: ${pinnedNote.abs}\n`
       + `Đây là file người dùng ĐANG LÀM VIỆC TRÊN ĐÓ - coi như đầu vào của cuộc trò chuyện này. `
@@ -373,14 +992,39 @@ function sendMessage(text) {
 
   chatInput.value = ""; chatInput.style.height = "auto";
   clearAttachments();
-  turns[sid] = { text: "", bubble: null, spoke: false, running: true };
+  turns[sid] = { text: "", bubble: null, spoke: false, running: true, id: ++_luotSeq };
   setSessionRunning(sid, true);
-  setOrbState("thinking", "ĐANG SUY NGHĨ");
-  showActivity("Thansa đang suy nghĩ...");   // hiện NGAY trong khung chat, không đợi server báo
+  runActions(turn.turnStart());
+  showActivity(window.t("app.act_thinking"));   // hiện NGAY trong khung chat, không đợi server báo
   syncActiveUI();
   // Server đóng dấu model đang chạy cho phiên ngay từ tin đầu -> bar hiện "ghim" tại chỗ.
   try { if (window.JavisModelBar) window.JavisModelBar.noteStamped(sid); } catch (e) {}
-  ws.send(JSON.stringify({ message: outMsg, brain: currentBrainPath(), session_id: sid }));
+  // Voice V2: tin đến từ MIC mang cờ `voice` để server đưa qua làn nhanh (bộ não giọng nói)
+  // khi cài đặt bật. V3: đang rảnh tay mà GÕ chữ thì cũng đi làn nhanh, vì đó vẫn là cuộc nói
+  // chuyện bằng giọng (vừa nói vừa gõ bổ sung, một luồng). Mic tắt thì đi bộ não chính như cũ.
+  // `origin_chat` chỉ đi kèm ĐÚNG MỘT tin: tin sinh ra từ cú gõ "/" ở khung Trò chuyện. Sau
+  // đó người dùng đã đứng ở trang Cộng sự và biết kết quả nằm đâu, nên chép mọi lượt tiếp
+  // theo về khung cũ là làm ngập nó bằng một cuộc trò chuyện của người khác.
+  const _goc = _gocCongSu[sid] || "";
+  delete _gocCongSu[sid];
+  ws.send(JSON.stringify({ message: outMsg, brain: currentBrainPath(), session_id: sid,
+                          voice: _tuGiong || handsFree, origin_chat: _goc,
+                          wf_run: !!(opts && opts.wfRun) }));
+  _tuGiong = false;
+}
+// Trang đang mở và đoạn đang bôi đen, cho khối NGỮ CẢNH GIAO DIỆN. Chọn trong ô nhập chat thì
+// không tính (đó là câu đang gõ, không phải thứ đang nhìn).
+function nguCanhTrang() {
+  try { return (window.Alpine && Alpine.store("nav") && Alpine.store("nav").active) || ""; } catch (e) { return ""; }
+}
+function nguCanhChon() {
+  try {
+    const sel = window.getSelection ? window.getSelection() : null;
+    if (!sel || sel.isCollapsed) return "";
+    const node = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+    if (node && node.closest && node.closest("#chatInput, .chat-input, .msg-user")) return "";
+    return String(sel.toString() || "").trim();
+  } catch (e) { return ""; }
 }
 // Chip lựa chọn (chat-ask.js) gửi đáp án qua đây: bấm chip = y như người dùng gõ tay nhãn đó.
 window.JavisSend = sendMessage;
@@ -401,9 +1045,60 @@ function persistSession() {
       // Brain của phiên đang mở. Ảnh trong tin nhắn là đường dẫn TƯƠNG ĐỐI nên phải biết
       // gốc là brain nào; thiếu nó thì F5 xong đổi brain là ảnh cũ tro sai chỗ rồi 404.
       brain: (typeof currentBrainPath === "function" ? currentBrainPath() : ""),
+      // Con trỏ tin cũ, để F5 xong vẫn cuộn lên đọc tiếp được. CHỈ lưu khi convo chưa bị
+      // slice(-200) ở trên cắt bớt: bị cắt thì con trỏ trỏ vào tin đã rụng khỏi khung, lượt
+      // tải sau sẽ chừa ra một lỗ hổng giữa cuộc mà không ai thấy.
+      tinCu: (_tinCu && convo.length <= 200) ? _tinCu : null,
       savedAt: Date.now(),
     }));
   } catch (e) {}
+}
+// Thay chữ của tin NGƯỜI DÙNG cuối cùng bằng câu đã diễn giải (sự kiện user_text), cả trên
+// bong bóng lẫn trong convo để F5 còn đúng. `raw` là chữ thô của máy nghe, hiện nhỏ bên dưới.
+function capNhatTinNguoiDung(text, raw) {
+  if (!text || !text.trim()) return;
+  const nodes = chatArea.querySelectorAll(".msg-user");
+  const div = nodes[nodes.length - 1];
+  if (div) {
+    div.dataset.text = text;
+    const u = div.querySelector(".utext");
+    if (u) u.textContent = text;
+    const bubble = div.querySelector(".bubble");
+    if (bubble && raw && raw.trim() !== text.trim()) {
+      let tho = bubble.querySelector(".nghe-tho");
+      if (!tho) { tho = document.createElement("div"); tho.className = "nghe-tho"; bubble.appendChild(tho); }
+      tho.textContent = window.t("app.nghe_tho", { raw });
+    }
+  }
+  for (let i = convo.length - 1; i >= 0; i--) {
+    if (convo[i].role === "user") { convo[i].text = text; break; }
+  }
+  persistSession();
+}
+// Gỡ bong bóng NGƯỜI DÙNG cuối cùng khỏi khung chat và khỏi convo (cửa tạp âm). Server đã xoá
+// tin khỏi kho phiên, đây là bản sao phía trình duyệt: không gỡ thì phải F5 mới sạch, còn màn
+// hình đang mở vẫn trơ đoạn tạp âm ra đó.
+function goTinNguoiDungCuoi() {
+  const nodes = chatArea.querySelectorAll(".msg-user");
+  const div = nodes[nodes.length - 1];
+  if (div && div.parentNode) div.parentNode.removeChild(div);
+  for (let i = convo.length - 1; i >= 0; i--) {
+    if (convo[i].role === "user") { convo.splice(i, 1); break; }
+  }
+  persistSession();
+}
+// Dòng ghi chú THOÁNG QUA giữa khung chat: hiện rồi tự tắt, không vào convo, không lưu
+// localStorage, không đọc ra loa, không đi vào ngữ cảnh lượt sau. Dùng cho chuyện Thansa vừa
+// quyết mà không đáng để lại một lượt trong hội thoại.
+const GHI_CHU_MS = 6000;
+function ghiChuThoang(text) {
+  if (!text) return;
+  const el = document.createElement("div");
+  el.className = "msg msg-ghichu";
+  el.textContent = text;
+  chatAppend(el);
+  scrollBottom();
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, GHI_CHU_MS);
 }
 function recordTurn(role, text, atts, ask) {
   convo.push({ role, text: text || "", atts: atts || [], ask: ask || null, ts: Date.now() });
@@ -426,37 +1121,166 @@ function restoreSession() {
     // Chip chỉ sống lại ở tin CUỐI: có tin sau nó nghĩa là câu hỏi đã được trả lời rồi.
     if (t.ask) window.JavisAsk.render(el, t.ask, i === convo.length - 1);
   });
-  if (convo.length) scrollBottom(true);
+  if (convo.length) { scrollBottom(true); ghimDay(sessionOpenSeq); }
+  // Con trỏ tin cũ sống sót qua F5 → vẫn cuộn lên đọc tiếp được, không phải bấm lại vào
+  // hội thoại trong danh sách mới có.
+  _tinCu = (s.tinCu && savedSessionId) ? { ...s.tinCu, sid: savedSessionId, dangTai: false } : null;
+  datMoiTinCu();
   // hello thường tới SAU bước này; nếu tới trước (kết nối nhanh) thì thẻ "tự chạy lại" gắn ở đây.
   try { if (window.JavisResume && savedSessionId) window.JavisResume.renderFor(savedSessionId); } catch (e) {}
   notifySessions();   // panel Lịch sử tô đúng phiên đang xem thay vì không tô cái nào
   syncActiveUI();
 }
 
+// ---- Tải dần tin cũ ----------------------------------------------------------------
+// Hội thoại vài trăm lượt mà dựng hết bong bóng một lượt thì mở cuộc nào cũng khựng vài
+// giây, và màn hay đứng lưng chừng thay vì rơi xuống câu trả lời gần nhất (ảnh tải xong mới
+// đẩy chiều cao ra). Nên mở cuộc chỉ kéo TIN_MOI_LUOT tin cuối; cuộn lên chạm mồi thì kéo
+// tiếp khúc cũ hơn.
+const TIN_MOI_LUOT = 30;
+// {sid, brain, ts, id, con, dangTai} - ts/id là con trỏ tới tin GIÀ NHẤT đang hiện.
+let _tinCu = null;
+let _moiTinCu = null, _quanSatMoi = null;
+
+// Dựng lại MỘT tin đã lưu thành bong bóng, trả về mục tương ứng cho convo (null nếu bỏ qua).
+// Dùng chung cho lượt mở hội thoại và lượt chèn ngược, để hai đường không trôi lệch nhau.
+function veTinDaLuu(m, brainCua) {
+  const ts = m.ts ? Math.round(m.ts * 1000) : 0;   // server lưu epoch giây (sessions.py)
+  // convo là thứ được ghi xuống localStorage rồi dựng lại ở lần F5 sau. Nhét bản CÒN khối
+  // vào đây là lỗi sống dai qua mọi lần tải lại, dù bong bóng lượt này đã sạch.
+  if (m.role === "user") {
+    // Server chỉ lưu CHỮ đã gửi (kèm khối ngữ cảnh), không lưu riêng danh sách đính kèm.
+    // Đọc lại từ chính khối đó, không thì mở lại hội thoại là ảnh và file biến mất khỏi
+    // bong bóng, người dùng không xem lại được mình đã gửi gì (chủ repo báo 2026-09-10).
+    const _sach = chuNguoiGo(m.content || "");
+    const _atts = docDinhKem(m.content || "");
+    appendUserMessage(_sach, _atts, ts);
+    return { role: "user", text: _sach, atts: _atts, ts };
+  }
+  // brainCua: server LƯU SẴN brain của phiên (cột brain trong bảng sessions). Trước đây
+  // vứt đi nên ảnh trong hội thoại cũ luôn ghép với brain đang chọn - mở hội thoại của
+  // brain khác là ảnh hỏng hết. Giữ luôn vào convo để lần khôi phục sau còn dùng.
+  if (m.role === "assistant") {
+    appendJavisMessage(m.content || "", ts, brainCua);
+    return { role: "javis", text: m.content || "", atts: [], ts, brain: brainCua };
+  }
+  return null;
+}
+
+// Ghim khung ở ĐÁY trong một quãng ngắn sau lượt mở hội thoại.
+//
+// Đặt scrollTop đúng một lần là không đủ: khung còn cao thêm vài nhịp nữa sau đó. Thanh mốc
+// hội thoại tự chèn nó vào rồi bật lề phải làm bong bóng xuống dòng, ảnh trong tin
+// cũ tải xong mới đẩy chiều cao ra. Đo thật trên cuộc 120 tin: mở xong đứng cách đáy 174px,
+// tức câu trả lời gần nhất - đúng thứ người ta vào để đọc - bị cắt mất một đoạn.
+//
+// Nhả NGAY khi người dùng tự cuộn, để cái ghim này không giành tay lái với họ.
+function ghimDay(ticket, ms) {
+  const het = Date.now() + (ms || 700);
+  let thoi = false;
+  const nhaTay = () => { thoi = true; };
+  chatArea.addEventListener("wheel", nhaTay, { passive: true });
+  chatArea.addEventListener("touchmove", nhaTay, { passive: true });
+  const go = () => {
+    chatArea.removeEventListener("wheel", nhaTay);
+    chatArea.removeEventListener("touchmove", nhaTay);
+  };
+  const nhip = () => {
+    if (thoi || ticket !== sessionOpenSeq) { go(); return; }
+    scrollBottom(true);
+    if (Date.now() < het) requestAnimationFrame(nhip); else go();
+  };
+  requestAnimationFrame(nhip);
+}
+
+// Bong bóng ĐẦU TIÊN trong khung. Chèn ngược phải neo vào nó chứ không vào firstChild: đầu
+// khung còn có đồ nội thất dán sẵn (#chatMarks) tính là mình vẫn đứng đầu, chen lên trước là
+// đẩy nó ra khỏi chỗ. Chưa có tin nào thì trả null, chatAppend rơi về chèn trước #newMsgBtn.
+function dauKhungChat() {
+  return chatArea.querySelector(".msg");
+}
+
+function goMoiTinCu() {
+  if (_quanSatMoi) { try { _quanSatMoi.disconnect(); } catch (e) {} _quanSatMoi = null; }
+  if (_moiTinCu && _moiTinCu.parentNode) _moiTinCu.parentNode.removeChild(_moiTinCu);
+  _moiTinCu = null;
+}
+
+// Mồi đặt ở ĐẦU khung: vừa là điểm quan sát để tự tải, vừa là nút bấm tay. Chỉ chèn khi
+// CHẮC CHẮN còn tin cũ - `.transcript:empty::after` là câu mời "Nói hoặc gõ để bắt đầu", một
+// node con thường trực là câu đó biến mất im lặng (cùng cái bẫy đã ghi cho #newMsgBtn).
+function datMoiTinCu() {
+  goMoiTinCu();
+  if (!_tinCu || !_tinCu.con) return;
+  const d = document.createElement("div");
+  d.className = "older-seed";
+  d.innerHTML = `<button type="button" class="older-btn">${escapeHtml(window.t("app.older_load"))}</button>`;
+  d.querySelector(".older-btn").onclick = () => taiTinCu();
+  chatArea.insertBefore(d, dauKhungChat());
+  _moiTinCu = d;
+  if (typeof IntersectionObserver !== "function") return;   // không có thì còn nút bấm tay
+  _quanSatMoi = new IntersectionObserver((mucs) => {
+    if (mucs.some(m => m.isIntersecting)) taiTinCu();
+  }, { root: chatArea, rootMargin: "240px 0px 0px 0px" });
+  _quanSatMoi.observe(d);
+}
+
+async function taiTinCu() {
+  const st = _tinCu;
+  if (!st || !st.con || st.dangTai) return;
+  st.dangTai = true;
+  const nut = _moiTinCu && _moiTinCu.querySelector(".older-btn");
+  if (nut) { nut.disabled = true; nut.textContent = window.t("app.older_loading"); }
+  try {
+    const u = `/sessions/${encodeURIComponent(st.sid)}/messages?limit=${TIN_MOI_LUOT}` +
+      `&before_ts=${encodeURIComponent(st.ts)}&before_id=${encodeURIComponent(st.id)}`;
+    const d = await (await fetch(u)).json();
+    // Đổi phiên giữa chừng thì khúc vừa về là của cuộc khác - vứt đi, đừng chèn nhầm.
+    if (!_tinCu || _tinCu !== st || st.sid !== savedSessionId || !d || d.error) return;
+    const ds = d.messages || [];
+    if (!ds.length) { st.con = false; goMoiTinCu(); return; }
+    // Giữ chỗ cuộn: đo khoảng cách từ ĐÁY khung trước khi chèn rồi đặt lại sau, vì phần chèn
+    // nằm phía trên nên scrollHeight tăng đúng bằng phần đó. Đo theo scrollTop thì sai.
+    const cachDay = chatArea.scrollHeight - chatArea.scrollTop;
+    _dangChenCu = true;
+    _neoChenCu = _moiTinCu ? _moiTinCu.nextSibling : dauKhungChat();
+    const them = [];
+    ds.forEach(m => { const t = veTinDaLuu(m, st.brain); if (t) them.push(t); });
+    _neoChenCu = null; _dangChenCu = false;
+    convo = them.concat(convo);
+    st.ts = ds[0].ts; st.id = ds[0].id; st.con = !!d.has_more;
+    // Dựng LẠI cái mồi (hoặc gỡ hẳn khi hết tin) TRƯỚC khi đặt lại chỗ cuộn, để chiều cao
+    // chốt xong rồi mới đo - gỡ mồi sau là màn nhích lên đúng bằng chiều cao cái mồi.
+    // Dựng lại chứ không dùng tiếp cái cũ: IntersectionObserver KHÔNG bắn lần nữa khi node
+    // vẫn nằm trong tầm nhìn liên tục, nên khúc vừa chèn mà ngắn hơn khung chat là kẹt luôn,
+    // cuộn thêm cũng không tải tiếp. observe() mới thì luôn có một nhịp đầu.
+    datMoiTinCu();
+    chatArea.scrollTop = chatArea.scrollHeight - cachDay;
+    persistSession();
+  } catch (e) {
+    if (nut) { nut.disabled = false; nut.textContent = window.t("app.older_load"); }
+  } finally { st.dangTai = false; _dangChenCu = false; _neoChenCu = null; }
+}
+
 // ============================================
 // Phiên hội thoại lưu DB (panel Lịch sử - sessions-ui.js gọi qua window.JavisSessions)
 // ============================================
-async function openStoredSession(id) {
+let sessionOpenSeq = 0;
+async function openStoredSession(id, stillCurrent) {
+  const ticket = ++sessionOpenSeq;
   try {
-    const sess = await (await fetch(`/sessions/${encodeURIComponent(id)}`)).json();
-    if (!sess || sess.error) return;
+    const sess = await (await fetch(`/sessions/${encodeURIComponent(id)}?limit=${TIN_MOI_LUOT}`)).json();
+    if (ticket !== sessionOpenSeq || (stillCurrent && !stillCurrent()) || !sess || sess.error) return;
     convo = [];
     hideActivity();
+    goMoiTinCu();
     chatArea.innerHTML = "";
-    (sess.messages || []).forEach(m => {
-      const ts = m.ts ? Math.round(m.ts * 1000) : 0;   // server lưu epoch giây (sessions.py)
-      // convo là thứ được ghi xuống localStorage rồi dựng lại ở lần F5 sau. Nhét bản CÒN khối
-      // vào đây là lỗi sống dai qua mọi lần tải lại, dù bong bóng lượt này đã sạch.
-      if (m.role === "user") {
-        const _sach = chuNguoiGo(m.content || "");
-        appendUserMessage(_sach, [], ts);
-        convo.push({ role: "user", text: _sach, atts: [], ts });
-      }
-      // sess.brain: server LƯU SẴN brain của phiên (cột brain trong bảng sessions). Trước đây
-      // vứt đi nên ảnh trong hội thoại cũ luôn ghép với brain đang chọn - mở hội thoại của
-      // brain khác là ảnh hỏng hết. Giữ luôn vào convo để lần khôi phục sau còn dùng.
-      else if (m.role === "assistant") { appendJavisMessage(m.content || "", ts, sess.brain); convo.push({ role: "javis", text: m.content || "", atts: [], ts, brain: sess.brain }); }
-    });
+    const ds = sess.messages || [];
+    ds.forEach(m => { const t = veTinDaLuu(m, sess.brain); if (t) convo.push(t); });
+    _tinCu = ds.length
+      ? { sid: id, brain: sess.brain, ts: ds[0].ts, id: ds[0].id, con: !!sess.has_more, dangTai: false }
+      : null;
+    datMoiTinCu();
     savedSessionId = id;          // lượt gửi tiếp theo → server resume đúng phiên này
     try { if (window.JavisInbox) window.JavisInbox.docPhien(id); } catch (e) {}
     // Phiên này đang generate NỀN → gắn bong bóng SỐNG (kèm phần đã stream) để xem tiếp trực tiếp.
@@ -464,13 +1288,16 @@ async function openStoredSession(id) {
     if (t && t.running) {
       t.bubble = createStreamingBubble();
       if (t.text) t.bubble.querySelector(".bubble").innerHTML = markdownToHtml(t.text);
-      showActivity(Icons.msg("pen-line", "Đang soạn câu trả lời..."));
-      setOrbState("thinking", "ĐANG SUY NGHĨ");
+      showActivity(Icons.msg("pen-line", window.t("app.act_writing")));
+      runActions(turn.turnStart());
+    } else {
+      runActions(turn.turnDone());   // đổi sang phiên không chạy gì: đừng kẹt ở "ĐANG SUY NGHĨ"
     }
     // Phiên này đang chờ gói thuê bao mở lại hạn mức → gắn thẻ "tự chạy lại" dưới tin cuối.
     try { if (window.JavisResume) window.JavisResume.renderFor(id); } catch (e) {}
     persistSession();
     scrollBottom(true);
+    ghimDay(ticket);
     notifySessions();
     syncActiveUI();
     // Dải việc nền đánh dấu "việc CỦA hội thoại này" theo chat_id, nên đổi phiên là nó sai
@@ -483,6 +1310,7 @@ async function openStoredSession(id) {
 function resetChatView() {
   convo = [];
   hideActivity();          // dọn chip + timer trước khi xoá trắng khung
+  _tinCu = null; goMoiTinCu();
   chatArea.innerHTML = "";
   savedSessionId = null;
   persistSession();
@@ -491,6 +1319,7 @@ function resetChatView() {
   try { if (window.JavisBackground) window.JavisBackground.reset(); } catch (e) {}
 }
 function newChat() {
+  sessionOpenSeq++;
   // KHÔNG reset server, KHÔNG đụng lượt đang chạy của phiên khác - chúng chạy nền + tự lưu; vào
   // Lịch sử bấm lại để xem tiếp. Ở đây chỉ mở một khung trống cho hội thoại mới (mint id khi gửi).
   resetChatView();
@@ -517,7 +1346,10 @@ function lastUserText() {
 // (hoặc 0 nếu tin lưu từ trước bản này chưa có mốc giờ, khi đó phần giờ được ẩn).
 // Khối ngữ cảnh do CHÍNH dashboard chèn vào ĐẦU tin trước khi gửi: file đang ghim trong trình
 // sửa, đường dẫn file đính kèm. Chúng là chỉ dẫn cho model, không phải câu người dùng gõ.
-const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm"];
+// "[SKILL: " là khối do chat-slash.js dựng khi người dùng gõ lệnh "/". Gỡ nó ra thì bong bóng
+// hiện ĐÚNG câu họ đã gõ, thay vì câu máy dựng quanh câu đó - khách báo đúng chuyện này 16/09.
+// Giữ MỘT DÒNG: test_dinh_kem_khong_roi.js bóc đúng dòng này ra để chạy docDinhKem bằng node.
+const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:", "[SKILL: "];
 
 // Gỡ mấy khối đó ra để lấy lại ĐÚNG câu người dùng đã gõ.
 //
@@ -542,6 +1374,38 @@ function chuNguoiGo(text) {
     s = t.slice(i + 3);
   }
   return s;
+}
+// Chiều ngược của chuNguoiGo: đọc lại DANH SÁCH FILE ĐÍNH KÈM từ khối "[File đính kèm ...]"
+// mà sendMessage đã chèn vào đầu tin. Server chỉ lưu chữ đã gửi, không lưu riêng đính kèm,
+// nên đây là nguồn duy nhất để mở lại hội thoại mà bong bóng vẫn còn ảnh và thẻ file.
+//
+// Mỗi dòng "- <đường dẫn stage>" là một file. Tên file = đoạn cuối đường dẫn (nhận cả "/" lẫn
+// "\" vì máy chủ có thể là Windows). Ảnh trỏ về /upload/raw?name=<tên> - đúng URL mà /upload
+// đã trả lúc tải lên, nên xem lại được y như tin vừa gửi; stage bị dọn thì rơi vào khung
+// "không còn xem lại được" như mọi ảnh cũ khác.
+const _ANH_EXT = /\.(png|jpe?g|gif|webp|bmp)$/i;
+function docDinhKem(text) {
+  const out = [];
+  let s = String(text == null ? "" : text);
+  for (let vong = 0; vong < 4; vong++) {
+    const t = s.replace(/^\s+/, "");
+    if (!_KHOI_NGU_CANH.some(k => t.startsWith(k))) break;
+    const i = t.indexOf("]\n\n");
+    if (i < 0) break;
+    const khoi = t.slice(0, i);
+    if (khoi.startsWith("[File đính kèm")) {
+      khoi.split("\n").forEach(dong => {
+        const m = /^- (.+)$/.exec(dong.trim());
+        if (!m) return;
+        const ten = m[1].trim().split(/[\\/]/).pop();
+        if (!ten) return;
+        out.push({ name: ten, kind: _ANH_EXT.test(ten) ? "image" : "file",
+                   url: "/upload/raw?name=" + encodeURIComponent(ten) });
+      });
+    }
+    s = t.slice(i + 3);
+  }
+  return out;
 }
 window.JavisChuNguoiGo = chuNguoiGo;   // console.js dùng lại khi dựng bản xem trước hội thoại
 
@@ -607,7 +1471,7 @@ function appendUserMessage(text, attachments, ts) {
   const isLong = text && (text.split("\n").length > 10 || text.length > 900);
   const textHtml = text
     ? `<div class="utext${isLong ? " clamped" : ""}">${escapeHtml(text)}</div>` +
-      (isLong ? `<button class="clamp-more" type="button">Xem thêm</button>` : "")
+      (isLong ? `<button class="clamp-more" type="button">${window.t("app.show_more")}</button>` : "")
     : "";
   div.innerHTML = `<div class="bubble">${textHtml}${attHtml}</div>` +
     actsHtml("user", ts === undefined ? Date.now() : ts, !!(text || "").trim());
@@ -724,7 +1588,7 @@ function showActivity(html) {
       activityEl.querySelector(".act-time").textContent = s >= 3 ? fmtElapsed(s) : "";
     }, 1000);
   }
-  activityEl.querySelector(".act-text").innerHTML = html || "Đang xử lý...";
+  activityEl.querySelector(".act-text").innerHTML = html || window.t("app.act_processing");
   chatAppend(activityEl);   // re-append → luôn dưới cùng (kể cả dưới bubble đang stream)
   scrollBottom();
 }
@@ -754,15 +1618,21 @@ newMsgBtn.addEventListener("click", () => scrollBottom(true));
 const XUONG_ICON = (typeof ic === "function") ? ic("chevron-down") : "↓";
 function veNutXuong(coTinMoi) {
   newMsgBtn.classList.toggle("has-new", !!coTinMoi);
-  newMsgBtn.innerHTML = coTinMoi ? XUONG_ICON + " Tin mới" : XUONG_ICON;
-  newMsgBtn.title = coTinMoi ? "Có tin mới - xuống cuối" : "Xuống cuối hội thoại";
+  newMsgBtn.innerHTML = coTinMoi ? XUONG_ICON + " " + window.t("app.new_msg") : XUONG_ICON;
+  newMsgBtn.title = coTinMoi ? window.t("app.new_msg_title") : window.t("app.scroll_bottom");
   newMsgBtn.setAttribute("aria-label", newMsgBtn.title);
 }
 veNutXuong(false);
+window.addEventListener("javis:i18n", () => veNutXuong(newMsgBtn.classList.contains("has-new")));
 
+// _neoChenCu: lúc CHÈN NGƯỢC tin cũ (cuộn lên tải tiếp), mọi bong bóng dựng ra phải nằm
+// TRƯỚC tin cũ nhất đang hiện chứ không phải cuối khung. Đặt cái neo ở đây thay vì thêm
+// tham số cho appendUserMessage/appendJavisMessage: hai hàm đó được gọi từ cả chục chỗ, thêm
+// tham số là mười chỗ phải nhớ truyền đúng.
+let _neoChenCu = null, _dangChenCu = false;
 function chatAppend(el) {
   if (newMsgBtn.parentNode !== chatArea) chatArea.appendChild(newMsgBtn);
-  chatArea.insertBefore(el, newMsgBtn);
+  chatArea.insertBefore(el, _neoChenCu || newMsgBtn);
 }
 // Ngưỡng 90px: coi như "đang ở đáy" nên vẫn tự cuộn theo tin mới, và không hiện nút.
 function ganDay() {
@@ -779,6 +1649,9 @@ chatArea.addEventListener("scroll", () => {
   capNhatNutXuong();
 });
 function scrollBottom(force) {
+  // Đang chèn ngược tin cũ: appendUserMessage/appendJavisMessage vẫn gọi vào đây theo thói
+  // quen, mà cuộn xuống đáy lúc này là quăng người đọc khỏi chỗ họ đang đứng.
+  if (_dangChenCu) return;
   if (force) stickBottom = true;
   if (stickBottom) {
     chatArea.scrollTop = chatArea.scrollHeight;
@@ -810,7 +1683,7 @@ function copyText(s) {
 }
 function flashCopied(btn, label) {
   const old = btn.textContent;
-  btn.innerHTML = ic("check", { cls: "ic-ok" }) + " Đã copy";
+  btn.innerHTML = ic("check", { cls: "ic-ok" }) + " " + window.t("app.copied");
   setTimeout(() => { btn.textContent = label || old; }, 1200);
 }
 // Bấm một nút trong hàng .msg-acts. Gửi lại / sửa lại đều lấy chữ GỐC của tin người
@@ -850,7 +1723,7 @@ chatArea.addEventListener("click", (e) => {
     if (pre) copyText(pre.innerText).then(() => flashCopied(t, "⧉ Copy"));
   } else if (t.classList.contains("clamp-more")) {
     const u = t.closest(".bubble") && t.closest(".bubble").querySelector(".utext");
-    if (u) { u.classList.toggle("clamped"); t.textContent = u.classList.contains("clamped") ? "Xem thêm" : "Thu gọn"; }
+    if (u) { u.classList.toggle("clamped"); t.textContent = u.classList.contains("clamped") ? window.t("app.show_more") : window.t("app.show_less"); }
   }
 });
 // Điện thoại không có hover: chạm vào tin để bật/tắt hàng nút của đúng tin đó.
@@ -904,7 +1777,7 @@ function veToolGanNhat(vuaGoi) {
   if (!toolGanNhat.length) {
     const em = document.createElement("div");
     em.className = "mcp-item dim";
-    em.textContent = "Chưa gọi tool nào";
+    em.textContent = window.t("app.no_tool_yet");
     list.appendChild(em);
     return;
   }
@@ -957,7 +1830,7 @@ async function initGraph() {
   const c2d = document.getElementById("graph2d");
   if (c2d) c2d.style.display = "block";   // "" sẽ rơi về CSS #graph2d{display:none} → bị ẩn
   await _ensure2DLib();
-  if (!window.ForceGraph) { graphStats.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " Lỗi tải thư viện đồ thị (kiểm tra mạng)"; return; }
+  if (!window.ForceGraph) { graphStats.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.graph_lib_err"); return; }
   javisGraph = new JavisGraph(c2d);   // resize() gọi bên trong load()
   await reloadGraph();
 }
@@ -998,8 +1871,8 @@ function _ensureNodeModal() {
       '<div class="node-head">' +
         '<span class="node-title" id="nodeTitle"></span>' +
         '<span class="node-actions">' +
-          '<a class="nm-btn" id="nodeOpenTab" target="_blank" rel="noopener">↗ Tab mới</a>' +
-          '<button class="nm-btn" id="nodeSave" type="button">' + ic("save") + ' Lưu</button>' +
+          '<a class="nm-btn" id="nodeOpenTab" target="_blank" rel="noopener">↗ ' + window.t("app.new_tab") + '</a>' +
+          '<button class="nm-btn" id="nodeSave" type="button">' + ic("save") + ' ' + window.t("common.save") + '</button>' +
           '<button class="nm-btn" id="nodeCloseBtn" type="button">' + ic("x") + '</button>' +
         '</span>' +
       '</div>' +
@@ -1024,34 +1897,34 @@ async function openNodePopup(node) {
   const body = m.querySelector("#nodeBody");
   const saveBtn = m.querySelector("#nodeSave");
   saveBtn.style.display = "none";
-  body.innerHTML = '<div class="node-msg">Đang mở…</div>';
+  body.innerHTML = `<div class="node-msg">${window.t("models.opening")}</div>`;
   m.classList.add("open");
   let d = {};
   try { d = await (await fetch(`/files/read?brain=${encodeURIComponent(brain)}&path=${encodeURIComponent(rel)}`)).json(); }
-  catch (e) { body.innerHTML = `<div class="node-msg">Lỗi mở file: ${escapeHtml(String((e && e.message) || e))}</div>`; return; }
+  catch (e) { body.innerHTML = `<div class="node-msg">${window.t("app.file_open_err")} ${escapeHtml(String((e && e.message) || e))}</div>`; return; }
   if (!d || d.error || d.editable === false) {
-    body.innerHTML = `<div class="node-msg">${escapeHtml((d && d.error) || "File này không sửa trực tiếp được.")} · <a href="${rawUrl}" target="_blank" style="color:var(--accent)">Mở trong tab mới</a></div>`;
+    body.innerHTML = `<div class="node-msg">${escapeHtml((d && d.error) || window.t("app.file_not_editable"))} · <a href="${rawUrl}" target="_blank" style="color:var(--accent)">${window.t("app.open_in_new_tab")}</a></div>`;
     return;
   }
   body.innerHTML = '<textarea id="nodeText" spellcheck="false"></textarea>';
   body.querySelector("#nodeText").value = d.content || "";
   saveBtn.style.display = "";
-  saveBtn.innerHTML = ic("save") + " Lưu";
+  saveBtn.innerHTML = ic("save") + " " + window.t("common.save");
   saveBtn.onclick = async () => {
-    saveBtn.textContent = "Đang lưu…";
+    saveBtn.textContent = window.t("settings.saving");
     const fd = new FormData();
     fd.append("brain", brain); fd.append("path", rel);
     fd.append("content", body.querySelector("#nodeText").value);
     let r = {};
-    try { r = await (await fetch("/files/write", { method: "POST", body: fd })).json(); } catch (e) { r = { error: (e && e.message) || "lỗi" }; }
-    saveBtn.innerHTML = (r && r.ok) ? ic("check", { cls: "ic-ok" }) + " Đã lưu" : ic("triangle-alert", { cls: "ic-warn" }) + " Lỗi";
-    setTimeout(() => { saveBtn.innerHTML = ic("save") + " Lưu"; }, 1600);
+    try { r = await (await fetch("/files/write", { method: "POST", body: fd })).json(); } catch (e) { r = { error: (e && e.message) || window.t("app.err_low") }; }
+    saveBtn.innerHTML = (r && r.ok) ? ic("check", { cls: "ic-ok" }) + " " + window.t("proj.instr_saved") : ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.err_cap");
+    setTimeout(() => { saveBtn.innerHTML = ic("save") + " " + window.t("common.save"); }, 1600);
   };
   setTimeout(() => { try { body.querySelector("#nodeText").focus(); } catch (e) {} }, 30);
 }
 async function reloadGraph() {
   if (!javisGraph) return;
-  graphStats.textContent = "Đang tải...";
+  graphStats.textContent = window.t("common.loading");
   const val = graphSource.value;
   const query = val.startsWith("path:")
     ? `path=${encodeURIComponent(val.slice(5))}`
@@ -1059,9 +1932,9 @@ async function reloadGraph() {
   try {
     const data = await javisGraph.load(query);
     const stats = data.stats || {};
-    graphStats.textContent = `${stats.total_notes} note · ${stats.total_links} kết nối`;
+    graphStats.textContent = window.t("app.graph_stats", { n: stats.total_notes, l: stats.total_links });
     renderConceptLabels(data.categories || [], stats.total_notes || 0);
-  } catch (e) { graphStats.textContent = "Lỗi: " + e.message; }
+  } catch (e) { graphStats.textContent = window.t("models.err") + " " + e.message; }
 }
 // Đổi brain → khung chat phải đổi theo brain (vụ Mac 0.9.230: transcript giữ nguyên phiên
 // brain cũ, tưởng mất hội thoại, phải reload mới thấy). Nhớ phiên đang xem của TỪNG brain
@@ -1104,7 +1977,7 @@ function connectGraphWatch() {
     const r = javisGraph.addOrUpdate(m.node, m.linkTargets, m.isNew);
     if (r && r.created) {
       const s = javisGraph.nodeStats();
-      graphStats.textContent = `${s.nodes} note · ${s.links} kết nối`;
+      graphStats.textContent = window.t("app.graph_stats", { n: s.nodes, l: s.links });
       // Nháy nhẹ nhãn để báo có note mới sinh ra
       graphStats.classList.add("pulse");
       setTimeout(() => graphStats.classList.remove("pulse"), 700);
@@ -1131,8 +2004,8 @@ async function checkVault() {
     } else {
       const miss = d.items.filter(i => !i.present).map(i => i.label).join(", ");
       vbText.textContent = d.ok
-        ? `Vault chạy được, nhưng thiếu: ${miss}.`
-        : `Cấu trúc vault chưa chuẩn cho Thansa - thiếu: ${miss}.`;
+        ? window.t("app.vault_ok_missing", { miss: miss })
+        : window.t("app.vault_bad", { miss: miss });
       vaultBanner.classList.add("show");
     }
   } catch (e) {}
@@ -1141,13 +2014,13 @@ async function checkVault() {
 vbInit.addEventListener("click", async () => {
   vbInit.disabled = true;
   const old = vbInit.textContent;
-  vbInit.textContent = "Đang tạo...";
+  vbInit.textContent = window.t("app.creating");
   try {
     const fd = new FormData();
     fd.append("brain", currentBrainPath());
     const d = await (await fetch("/vault/init", { method: "POST", body: fd })).json();
     if (d.ok) {
-      vbText.innerHTML = `${ic("check", { cls: "ic-ok" })} Đã tạo: ${escapeHtml((d.created || []).join(", ") || "(đã đủ)")}`;
+      vbText.innerHTML = `${ic("check", { cls: "ic-ok" })} ${window.t("app.created")} ${escapeHtml((d.created || []).join(", ") || window.t("app.already_full"))}`;
       vbInit.style.display = "none";
       setTimeout(() => { vaultBanner.classList.remove("show"); vbInit.style.display = ""; checkVault(); }, 2500);
     }
@@ -1220,7 +2093,7 @@ function renderConceptLabels(categories, total) {
       `<div class="cl-meta">${c.count} note · <span class="cl-fire"${catCol ? ` style="color:${catCol}"` : ""}>${share}% Vault</span></div>`;
     // Bấm nhãn danh mục → rọi sáng đúng cụm đó trong đồ thị.
     div.style.cursor = "pointer";
-    div.title = "Bấm để rọi sáng cụm " + c.name;
+    div.title = window.t("app.spotlight_cluster", { ten: c.name });
     div.onclick = () => {
       const g = window.__javisGraph;
       if (!g || typeof g.spotlightCategory !== "function") return;
@@ -1259,7 +2132,7 @@ function loadCustomBrains() {
   [...graphSource.querySelectorAll("option[data-custom]")].forEach(o => o.remove());
   if (!brains.length) return;
   const grp = document.createElement("optgroup");
-  grp.label = "Thư mục ngoài";
+  grp.label = window.t("app.external_folder");
   grp.dataset.customGroup = "1";
   brains.forEach(b => {
     const opt = document.createElement("option");
@@ -1299,17 +2172,17 @@ const fmHint = document.getElementById("fmHint");
 let fmCurrent = "";
 
 async function fmBrowse(path) {
-  fmHint.textContent = "Đang tải...";
+  fmHint.textContent = window.t("common.loading");
   try {
     const res = await fetch(`/browse?path=${encodeURIComponent(path || "")}`);
     const data = await res.json();
     fmCurrent = data.path || "";
-    fmPath.textContent = fmCurrent || "Ổ đĩa";
+    fmPath.textContent = fmCurrent || window.t("app.drives");
     fmList.innerHTML = "";
     if (data.parent !== null && data.parent !== undefined) {
       const up = document.createElement("div");
       up.className = "fm-row up";
-      up.innerHTML = `<span class="fm-name">${ic("arrow-up")} .. (lên trên)</span>`;
+      up.innerHTML = `<span class="fm-name">${ic("arrow-up")} ${window.t("app.up_one_level")}</span>`;
       up.onclick = () => fmBrowse(data.parent);
       fmList.appendChild(up);
     }
@@ -1321,9 +2194,9 @@ async function fmBrowse(path) {
       row.onclick = () => fmBrowse(d.path);
       fmList.appendChild(row);
     });
-    fmHint.textContent = data.here_md ? `${data.here_md} file .md ở đây` : (data.error || "Chọn folder chứa ghi chú");
+    fmHint.textContent = data.here_md ? window.t("app.md_here", { count: Number(data.here_md) }) : (data.error || window.t("app.pick_notes_folder"));
   } catch (e) {
-    fmHint.textContent = "Lỗi: " + e.message;
+    fmHint.textContent = window.t("models.err") + " " + e.message;
   }
 }
 
@@ -1347,13 +2220,13 @@ let _stopBtnTick = 0;
 function pumpAudioLevel() {
   if (javisGraph) javisGraph.setLevel(voice.getLevel());
   // Cập nhật hiển thị nút stop ~6 lần/giây (theo dõi cả lúc Thansa đang đọc)
+  if (_theoLoi && (_stopBtnTick % 3) === 0) nhipTheoLoi();   // V3: chữ theo lời ~20 lần/giây
   if ((_stopBtnTick++ % 10) === 0) {
     updateStopBtn();
-    // Đọc xong cả hàng đợi (gồm các bước trung gian) → trả orb về nghỉ.
-    // Hands-free thì để vòng lặp nghe-lại tự chuyển sang trạng thái ĐANG NGHE.
-    if (!isProcessing && !handsFree && !voice.isSpeaking() && orbState.classList.contains("speaking")) {
-      setOrbState("", "SẴN SÀNG");
-    }
+    // (Voice V1) orb do đạo diễn vẽ từ sự kiện thật: voice.js báo onSpeakEnd khi hết hàng đợi.
+    // Chốt an toàn: nếu giọng đã im mà đạo diễn còn tưởng đang nói (vd trình duyệt nuốt sự
+    // kiện ended), ép về đúng sự thật.
+    if (turn.speaking && !voice.isSpeaking() && !voice.isPaused()) runActions(turn.ttsEnd());
   }
   requestAnimationFrame(pumpAudioLevel);
 }
@@ -1585,23 +2458,23 @@ async function doReflect(auto) {
   if (reflecting) return;
   reflecting = true;
   turnsSinceReflect = 0;
-  if (!auto && learnBtn) { learnBtn.disabled = true; learnBtn.innerHTML = ic("brain") + " Đang học..."; }
-  if (memResult) memResult.innerHTML = auto ? ic("brain") + " Đang tự học nền..." : "Thansa đang đọc lại hội thoại và rút ra ký ức...";
+  if (!auto && learnBtn) { learnBtn.disabled = true; learnBtn.innerHTML = ic("brain") + " " + window.t("app.learning"); }
+  if (memResult) memResult.innerHTML = auto ? ic("brain") + " " + window.t("app.learning_bg") : window.t("app.learning_msg");
   try {
     const fd = new FormData();
     fd.append("brain", currentBrainPath());
     const d = await (await fetch("/reflect", { method: "POST", body: fd })).json();
     if (d.ok) {
-      if (memResult) memResult.innerHTML = (auto ? ic("brain") + " Tự học: " : "") + escapeHtml(d.summary || "Đã học xong.");
+      if (memResult) memResult.innerHTML = (auto ? ic("brain") + " " + window.t("app.selflearn_prefix") + " " : "") + escapeHtml(d.summary || window.t("app.learned_done"));
       if (d.facts != null && memCount) memCount.textContent = d.facts;
     } else {
-      if (memResult) memResult.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(d.error || "Học thất bại");
+      if (memResult) memResult.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(d.error || window.t("app.learn_failed"));
     }
   } catch (e) {
-    if (memResult) memResult.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " Lỗi mạng";
+    if (memResult) memResult.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.err_net");
   } finally {
     reflecting = false;
-    if (!auto && learnBtn) { learnBtn.innerHTML = ic("brain") + " Học từ hội thoại"; learnBtn.disabled = false; }
+    if (!auto && learnBtn) { learnBtn.innerHTML = ic("brain") + " " + window.t("app.learn_from_convo"); learnBtn.disabled = false; }
   }
 }
 
@@ -1649,20 +2522,23 @@ function _pinRestore() {
   } catch (e) {}
 }
 
+// Dòng nhắc ngay dưới các chip (vd "có file chưa tải lên được"). Tự xoá ở lần gỡ file hay
+// tải file mới kế tiếp.
+let attachNote = "";
 function renderChips() {
-  attachBar.classList.toggle("has-items", pendingAttachments.length > 0 || !!pinnedNote);
+  attachBar.classList.toggle("has-items", pendingAttachments.length > 0 || !!pinnedNote || !!attachNote);
   attachBar.innerHTML = "";
   if (pinnedNote) {
     const chip = document.createElement("div");
     chip.className = "attach-chip pinned";
     chip.setAttribute("role", "button");
     chip.tabIndex = 0;
-    chip.title = `${pinnedNote.abs}\nThansa đang làm việc trên file này - bấm để mở lại trong trình sửa`;
+    chip.title = `${pinnedNote.abs}\n${window.t("app.pin_title")}`;
     chip.innerHTML = `<div class="chip-ico">${ic("file-text")}</div>`
       + `<div class="chip-info"><span class="chip-name">${escapeHtml(pinnedNote.name)}</span>`
-      + `<span class="chip-meta">đang mở - bấm để sửa tiếp</span></div>`
+      + `<span class="chip-meta">${window.t("app.pin_meta")}</span></div>`
       + `<span class="chip-edit" aria-hidden="true">${ic("pen-line")}</span>`
-      + `<button class="chip-x" data-unpin="1" title="Bỏ ghim file">${ic("x")}</button>`;
+      + `<button class="chip-x" data-unpin="1" title="${window.t("app.unpin_file")}">${ic("x")}</button>`;
     // Bấm vào chip = quay lại đúng chỗ đang sửa. Nút X nằm trong chip nên phải loại nó ra,
     // không thì bỏ ghim xong lại mở file vừa bỏ ra.
     chip.addEventListener("click", (e) => {
@@ -1691,11 +2567,17 @@ function renderChips() {
         + `<img src="${escapeHtml(_tUrl)}" alt=""></a>`
       : `<div class="chip-ico">${a.uploading ? ic("loader", { cls: "ic-spin" }) : ic("file-text")}</div>`;
     const meta = a.uploading
-      ? (a.statusText || "đang xử lý...")
+      ? (a.statusText || window.t("app.att_processing"))
       : (a.statusText ? a.statusText : (fmtSize(a.size) + (a.folder ? ` → ${escapeHtml(a.folder)}` : "")));
     chip.innerHTML = `${thumb}<div class="chip-info"><span class="chip-name">${escapeHtml(a.name)}</span><span class="chip-meta">${meta}</span></div><button class="chip-x" data-i="${i}">${ic("x")}</button>`;
     attachBar.appendChild(chip);
   });
+  if (attachNote) {
+    const note = document.createElement("div");
+    note.className = "attach-note";
+    note.textContent = attachNote;
+    attachBar.appendChild(note);
+  }
   attachBar.querySelectorAll(".chip-x").forEach(b =>
     b.addEventListener("click", () => {
       if (b.dataset.unpin) JavisPin.clear();
@@ -1742,25 +2624,40 @@ function removeAttachment(i) {
   const a = pendingAttachments[i];
   if (a && a.preview) URL.revokeObjectURL(a.preview);
   pendingAttachments.splice(i, 1);
+  attachNote = "";
   renderChips();
 }
 function clearAttachments() {
   pendingAttachments.forEach(a => { if (a.preview) URL.revokeObjectURL(a.preview); });
   pendingAttachments = [];
+  attachNote = "";
   renderChips();
 }
 
 async function uploadFile(file) {
   const isImg = file.type.startsWith("image/");
+  let _xong = null;
   const att = {
     name: file.name || "paste.png",
     kind: isImg ? "image" : "file",
     preview: isImg ? URL.createObjectURL(file) : null,
-    uploading: true, statusText: "đang tải...", path: null, size: file.size,
+    uploading: true, statusText: window.t("app.att_uploading"), path: null, size: file.size,
     sources: null, attachments: null,
   };
+  // Lời hứa "tải xong" (thành hay hỏng đều xong) để sendMessage đợi được thay vì gửi thiếu.
+  att.xong = new Promise(r => { _xong = r; });
   pendingAttachments.push(att);
+  attachNote = "";
   renderChips();
+  try {
+    await _taiLen(file, att);
+  } finally {
+    att.uploading = false;
+    renderChips();
+    if (_xong) _xong();
+  }
+}
+async function _taiLen(file, att) {
   try {
     // Chỉ STAGE để Thansa đọc - KHÔNG tự convert/lưu. Lưu Sources chỉ khi user yêu cầu.
     const fd = new FormData();
@@ -1775,16 +2672,16 @@ async function uploadFile(file) {
     } finally {
       clearTimeout(timer);
     }
-    if (!resp.ok) { att.uploading = false; att.statusText = "lỗi máy chủ (" + resp.status + ")"; renderChips(); return; }
+    if (!resp.ok) { att.uploading = false; att.statusText = window.t("app.att_server_err", { code: resp.status }); renderChips(); return; }
     const up = await resp.json();
-    if (!up.ok) { att.uploading = false; att.statusText = up.error ? ("lỗi: " + up.error) : "lỗi upload"; renderChips(); return; }
+    if (!up.ok) { att.uploading = false; att.statusText = up.error ? (window.t("app.err_low") + ": " + up.error) : window.t("app.att_upload_err"); renderChips(); return; }
     att.path = up.staged; att.name = up.name; att.size = up.size; att.kind = up.kind;
     att.url = up.url || "";   // đường xem lại trên máy chủ (bong bóng chat dùng, không phải blob)
     att.sources = up.sources; att.attachments = up.attachments;
     att.uploading = false; att.statusText = "";
   } catch (e) {
     att.uploading = false;
-    att.statusText = (e && e.name === "AbortError") ? "quá thời gian tải" : "lỗi mạng";
+    att.statusText = (e && e.name === "AbortError") ? window.t("app.att_timeout") : window.t("app.err_net_low");
   }
   renderChips();
 }
@@ -1890,6 +2787,7 @@ let handsFree = false;
 function tatRanhTay() {
   if (!handsFree) return;
   handsFree = false;
+  voice.handsFree = false;        // thôi rình ngắt lời ngay, đừng đợi vòng 500 ms
   voiceBtn.classList.remove("handsfree");
   try { if (window.JavisTts) window.JavisTts.set(false); } catch (e) {}
 }
@@ -1902,46 +2800,92 @@ function alertMic(err) {
     // Bảo họ "cấp quyền" lúc này là chỉ họ đi tìm một cái nút không tồn tại. Hay gặp khi mở
     // Thansa qua địa chỉ LAN hoặc tên miền chưa có HTTPS.
     if (!window.isSecureContext) {
-      alert("Trình duyệt chặn micro vì trang này không chạy qua kết nối bảo mật." + "\n" + "\n"
-        + "Mở Thansa bằng http://localhost:7777 trên chính máy chạy Thansa, hoặc cho tên miền của bạn dùng HTTPS.");
+      alert(window.t("app.mic_insecure") + "\n" + "\n"
+        + window.t("app.mic_insecure_fix"));
     } else {
-      alert("Bạn cần cấp quyền microphone cho trang này." + "\n" + "\n"
-        + "Bấm biểu tượng ổ khoá cạnh thanh địa chỉ để cấp lại, rồi bấm nút mic lần nữa.");
+      alert(window.t("app.mic_denied") + "\n" + "\n"
+        + window.t("app.mic_denied_fix"));
     }
   } else if (err === "audio-capture") {
     // Trước đây lỗi này im lặng hoàn toàn: mic không bao giờ chạy mà không ai nói vì sao.
-    alert("Không tìm thấy microphone nào trên máy này." + "\n" + "\n"
-      + "Nếu bạn đang điều khiển máy từ xa thì mic của máy bạn ngồi thường không đi theo.");
+    alert(window.t("app.mic_none") + "\n" + "\n"
+      + window.t("app.mic_none_fix"));
   } else if (err === "service-not-allowed") {
-    alert("Trình duyệt đang chặn dịch vụ nhận giọng nói." + "\n" + "\n"
-      + "Kiểm tra cài đặt quyền riêng tư của trình duyệt, hoặc thử Chrome/Edge.");
+    alert(window.t("app.mic_service_blocked") + "\n" + "\n"
+      + window.t("app.mic_service_blocked_fix"));
   } else if (err === "not-supported") {
-    alert("Trình duyệt không hỗ trợ nhận giọng. Dùng Chrome/Edge.");
+    alert(window.t("app.mic_unsupported"));
   }
   // Lỗi khác (mạng, start-failed…) KHÔNG hiện hộp thoại: chúng thoáng qua và tự thử lại được,
   // còn hộp thoại thì chặn cứng cả trang.
 }
 voiceBtn.addEventListener("click", () => {
-  if (!voice.isSupported()) { alert("Trình duyệt không hỗ trợ giọng nói. Dùng Chrome/Edge."); return; }
+  if (!voice.isSupported()) { alert(window.t("app.voice_unsupported")); return; }
   handsFree = !handsFree;
   voiceBtn.classList.toggle("handsfree", handsFree);
+  voice.handsFree = handsFree && voiceMode !== "live";   // bật ngay, không đợi vòng 500 ms
   // Loa đi theo mic (chủ repo yêu cầu 02/09): bật nghe là muốn NÓI CHUYỆN bằng giọng, nên
   // Thansa phải đáp bằng giọng; tắt nghe là quay về gõ chữ, Thansa im. Điện thoại từng không
   // có chỗ nào bật loa cả, nên gộp vào mic là một nút lo cả hai chiều.
   try { if (window.JavisTts) window.JavisTts.set(handsFree); } catch (e) {}
+  // Voice V2 bậc Live: nút mic mở phiên nghe nói thẳng thay cho Web Speech + TTS.
+  if (voiceMode === "live") {
+    if (handsFree) { batLive().then(ok => { if (!ok) { handsFree = false; voiceBtn.classList.remove("handsfree"); if (window.JavisTts) window.JavisTts.set(false); } }); }
+    else tatLive();
+    return;
+  }
   if (handsFree) {
     voice.startListening();
   } else {
     voice.stopListening();
-    setOrbState("", "SẴN SÀNG");
+    runActions(turn.micOff());
   }
 });
 
+// ---- Voice V1: hai nút trong Cài đặt nhanh (lưu localStorage, không đụng settings.json) ----
+// Im lặng bao lâu thì gửi (500 / 800 / 1200 ms, mặc định 1200 - chủ dự án chốt 17/09) và có cho ngắt lời Thansa bằng giọng không.
+(function () {
+  // 0.58.8: ba thẻ radio đổi thành một ô chọn (#endpointSel). Giá trị lưu KHÔNG đổi nên
+  // người đang dùng không bị reset về mặc định.
+  const ep = localStorage.getItem("javis.endpoint") || "1200";
+  const epSel = document.getElementById("endpointSel");
+  if (epSel) {
+    epSel.value = ep;
+    if (!epSel.value) epSel.value = "1200";      // giá trị cũ không còn trong danh sách
+    turn.opts.minDelay = parseInt(epSel.value, 10) || 1200;
+    epSel.addEventListener("change", () => {
+      turn.opts.minDelay = parseInt(epSel.value, 10) || 1200;
+      localStorage.setItem("javis.endpoint", epSel.value);
+    });
+  }
+  const barge = localStorage.getItem("javis.bargeIn") !== "0";
+  voice.bargeEnabled = barge;
+  const qb = document.getElementById("qsBarge");
+  if (qb) {
+    qb.checked = barge;
+    qb.addEventListener("change", () => {
+      voice.bargeEnabled = qb.checked;
+      localStorage.setItem("javis.bargeIn", qb.checked ? "1" : "0");
+    });
+  }
+})();
+
 // Tự nghe lại khi rảnh (không đang xử lý, không đang nói) - giữ mic sống ở hands-free
 setInterval(() => {
+  // Cờ rảnh tay cho voice.js: NGẮT LỜI chỉ được rình khi người dùng đang thật sự nói chuyện
+  // bằng giọng. Đồng bộ ở đây chứ không rải theo từng chỗ bật/tắt rảnh tay (nút mic, Esc,
+  // mic hỏng, phiên Live đóng - năm nơi), vì sót một nơi là ngắt lời hoặc chết câm hoặc rình
+  // cả lúc người ta đã quay về gõ chữ. Vòng này chạy hai lần mỗi giây nên lệch không đáng kể.
+  voice.handsFree = handsFree && voiceMode !== "live";
   // `micHong()` là chốt thứ hai (chốt thứ nhất là tatRanhTay() trong onError). Giữ cả hai vì
   // vòng này chạy hai lần mỗi giây: sót một nhịp là một hộp thoại nữa đập vào mặt người dùng.
-  if (handsFree && !voice.isListening && !isProcessing && !voice.isSpeaking()
+  //
+  // KHÔNG còn đòi `!isProcessing`: trong lúc Thansa đang nghĩ, người ta vẫn phải nói chen vào
+  // hay nói thêm ngữ cảnh được, y như nói chuyện với người thật. Chốt cũ đóng mic suốt thời
+  // gian xử lý (có khi vài chục giây) nên nói vào chỗ trống, không ai nghe (chủ dự án báo
+  // 15/09). Tin nói lúc ấy đi qua sendMessage: nó dừng lượt cũ rồi gửi lại câu mới, và tin
+  // đầu đã nằm trong kho phiên nên model vẫn thấy đủ ngữ cảnh.
+  if (handsFree && voiceMode !== "live" && !voice.isListening && !voice.isSpeaking()
       && !(voice.micHong && voice.micHong())) {
     voice.startListening(true);   // true = máy tự gọi, không phải người bấm
   }
@@ -1964,6 +2908,8 @@ document.addEventListener("keydown", (e) => {
     // trả lời hay ngắt Thansa đang nói (đã bỏ theo yêu cầu - đã có nút bật/tắt tiếng và nút Dừng).
     handsFree = false; voiceBtn.classList.remove("handsfree");
     voice.stopListening();
+    tatLive();
+    runActions(turn.micOff());
     try { if (window.JavisTts) window.JavisTts.set(false); } catch (e2) {}   // Esc = thoát nói chuyện bằng giọng
     if (typeof closeNodePopup === "function") closeNodePopup();
   }
@@ -1980,30 +2926,53 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   persistSession();
 });
 
-// Voice picker
-const voicePickerBtn = document.getElementById("voicePickerBtn");
-const voicePopover = document.getElementById("voicePopover");
-const rateSlider = document.getElementById("rateSlider");
-const rateLabel = document.getElementById("rateLabel");
+// ---- Chọn giọng / tốc độ / ngôn ngữ nghe ----
+// 0.58.8: bảy thẻ radio giọng + thanh trượt tốc độ + hai thẻ ngôn ngữ nghe đổi hết thành ô
+// chọn, và popover nổi (di sản từ hồi bộ chọn nằm trên thanh tiêu đề) đã gỡ - mọi thứ nay
+// nằm thẳng trong trang Cài đặt. KHOÁ localStorage giữ nguyên nên không ai bị reset.
+const voiceSel = document.getElementById("voiceSel");
+const rateSel = document.getElementById("rateSel");
+const recLangSel = document.getElementById("recLangSel");
 const savedVoice = localStorage.getItem("javis.voice") || "vi-VN-HoaiMyNeural";
 const savedRate = parseFloat(localStorage.getItem("javis.rate") || "1.10");
-document.querySelector(`input[name="voice"][value="${savedVoice}"]`)?.click();
-rateSlider.value = savedRate; rateLabel.textContent = savedRate.toFixed(2) + "×";
-voice.setVoice(savedVoice); voice.setRate(rateToPct(savedRate));
-function rateToPct(r) { const p = ((r - 1) * 100).toFixed(0); return (p >= 0 ? "+" : "") + p + "%"; }
-voicePickerBtn.addEventListener("click", (e) => { e.stopPropagation(); voicePopover.classList.toggle("open"); });
-document.addEventListener("click", (e) => { if (!voicePopover.contains(e.target) && e.target !== voicePickerBtn) voicePopover.classList.remove("open"); });
-document.querySelectorAll('input[name="voice"]').forEach(r => r.addEventListener("change", () => { voice.setVoice(r.value); localStorage.setItem("javis.voice", r.value); }));
 const savedRecLang = localStorage.getItem("javis.recLang") || "vi-VN";
-const recLangInput = document.querySelector(`input[name="recognitionLang"][value="${savedRecLang}"]`);
-if (recLangInput) recLangInput.checked = true;
-voice.setRecognitionLang(savedRecLang);
-document.querySelectorAll('input[name="recognitionLang"]').forEach(r => r.addEventListener("change", () => { voice.setRecognitionLang(r.value); localStorage.setItem("javis.recLang", r.value); }));
-rateSlider.addEventListener("input", () => { const r = parseFloat(rateSlider.value); rateLabel.textContent = r.toFixed(2) + "×"; voice.setRate(rateToPct(r)); localStorage.setItem("javis.rate", r.toString()); });
-document.getElementById("testVoiceBtn").addEventListener("click", () => {
-  const v = document.querySelector('input[name="voice"]:checked').value;
+function rateToPct(r) { const p = ((r - 1) * 100).toFixed(0); return (p >= 0 ? "+" : "") + p + "%"; }
+// Gán value cho <select> mà giá trị đó không có trong danh sách thì select về RỖNG (ô trắng,
+// không lỗi, không ai biết). Nên mọi chỗ gán đều phải có đường lùi.
+function _chonHoacDau(sel, val) {
+  if (!sel) return val;
+  sel.value = val;
+  if (!sel.value) sel.selectedIndex = 0;
+  return sel.value;
+}
+const voiceNow = _chonHoacDau(voiceSel, savedVoice);
+const recNow = _chonHoacDau(recLangSel, savedRecLang);
+// Tốc độ: thanh trượt cũ đẻ ra giá trị bất kỳ (1,37×) còn ô chọn chỉ có 5 mức, nên phải NÉO
+// về mức gần nhất thay vì bỏ trống ô.
+let rateNow = savedRate;
+if (rateSel) {
+  let gan = null;
+  Array.from(rateSel.options).forEach(o => {
+    const x = parseFloat(o.value);
+    if (gan === null || Math.abs(x - savedRate) < Math.abs(gan - savedRate)) gan = x;
+  });
+  if (gan !== null) { rateNow = gan; rateSel.value = gan.toFixed(2); }
+}
+voice.setVoice(voiceNow); voice.setRate(rateToPct(rateNow)); voice.setRecognitionLang(recNow);
+if (voiceSel) voiceSel.addEventListener("change", () => {
+  voice.setVoice(voiceSel.value); localStorage.setItem("javis.voice", voiceSel.value);
+});
+if (rateSel) rateSel.addEventListener("change", () => {
+  const r = parseFloat(rateSel.value);
+  voice.setRate(rateToPct(r)); localStorage.setItem("javis.rate", r.toString());
+});
+if (recLangSel) recLangSel.addEventListener("change", () => {
+  voice.setRecognitionLang(recLangSel.value); localStorage.setItem("javis.recLang", recLangSel.value);
+});
+document.getElementById("testVoiceBtn")?.addEventListener("click", () => {
+  const v = (voiceSel && voiceSel.value) || savedVoice;
   // force: nghe thử là hành động chủ động của user, phải kêu kể cả khi đang tắt tiếng (mặc định).
-  voice.speak(v.includes("HoaiMy") ? "Xin chào, em là HoaiMy, trợ lý của bạn." : "Xin chào, tôi là NamMinh, trợ lý của bạn.", { force: true });
+  voice.speak(v.includes("HoaiMy") ? window.t("app.voice_sample_hoaimy") : window.t("app.voice_sample_namminh"), { force: true });
 });
 // Nút loa header đã bỏ (0.48.3) - công tắc giọng nay chỉ còn nút trên THANH NHẬP
 // (#ttsToggleBar) và công tắc trong Cài đặt nhanh, cả hai do quick-settings.js lo.
@@ -2041,12 +3010,12 @@ const ENGINE_LABEL = {
 // bị đẩy sang model dự phòng lúc model chính quá tải, thì badge nói sai về mọi tin phía trên.
 // Gắn vào TỪNG TIN thì mỗi tin tự khai đúng bộ não đã sinh ra nó, và đầu khung được trả lại.
 const CTX_PATH_LABEL = {
-  legacy: "Đầy đủ", sources: "Tối ưu", fast: "Tức thì",
-  readonly: "Tra cứu", orchestrator: "Tra cứu sâu", write: "Thực thi",
-  workflow: "Quy trình",
+  legacy: "app.ctx_legacy", sources: "app.ctx_sources", fast: "app.ctx_fast",
+  readonly: "app.ctx_readonly", orchestrator: "app.ctx_orchestrator", write: "app.ctx_write",
+  workflow: "app.ctx_workflow",
   // Bot chuyên trách vốn nhẹ hơn cả mức Siêu tiết kiệm (không CLAUDE.md, không MEMORY.md,
   // không đặc tả tool) nên nó có tên riêng - gộp vào "Đầy đủ" là nói ngược hẳn sự thật.
-  bot: "Bot chuyên trách",
+  bot: "app.ctx_bot",
 };
 function _renderCtxLine(msgEl, data) {
   // Có engine mà chưa có ctx_path thì VẪN vẽ: hai thứ đến từ hai chỗ khác nhau trong payload,
@@ -2069,18 +3038,16 @@ function _renderCtxLine(msgEl, data) {
     phan.push((ENGINE_LABEL[data.engine] || data.engine)
               + (data.model ? " · " + _shortModel(data.model) : ""));
   }
-  if (data.ctx_path) phan.push(CTX_PATH_LABEL[data.ctx_path] || data.ctx_path);
+  if (data.ctx_path) phan.push(CTX_PATH_LABEL[data.ctx_path] ? window.t(CTX_PATH_LABEL[data.ctx_path]) : data.ctx_path);
   if (tok) phan.push(_fmtTok(tok) + " token");
   el.textContent = phan.join(" · ");
   const chuThich = [];
   if (data.engine) {
-    chuThich.push("Bộ não THẬT đã chạy lượt này"
-                  + (data.model ? ": " + data.model : "")
-                  + " (máy chủ khai, không phải model tự nhận).");
+    chuThich.push(window.t("app.ctx_engine", { model: data.model ? ": " + data.model : "" }));
   }
   if (data.ctx_path) {
-    chuThich.push(cu ? "Đang gửi đủ mọi thứ. Bấm để chọn mức tiết kiệm."
-                     : "Đang tiết kiệm token. Bấm để xem chi tiết.");
+    chuThich.push(cu ? window.t("app.ctx_hint_full")
+                     : window.t("app.ctx_hint_saving"));
   }
   el.title = chuThich.join("\n");
   msgEl.appendChild(el);
@@ -2091,9 +3058,9 @@ async function refreshTgStatus() {
   if (!el) return;
   try {
     const s = await (await fetch("/telegram/status")).json();
-    if (!s.enabled) el.innerHTML = ic("circle", { cls: "ic-fill ic-dim" }) + " Tắt";
-    else if (!s.token_set) el.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " Đã bật nhưng chưa có token";
-    else el.innerHTML = s.running ? ic("circle", { cls: "ic-fill ic-ok" }) + " Đang chạy" + (s.chat_id ? " · chỉ chat_id " + s.chat_id : " · MỌI người (nên đặt chat_id)") : ic("loader") + " Chưa chạy (lưu lại)";
+    if (!s.enabled) el.innerHTML = ic("circle", { cls: "ic-fill ic-dim" }) + " " + window.t("settings.tag_off");
+    else if (!s.token_set) el.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.tg_no_token");
+    else el.innerHTML = s.running ? ic("circle", { cls: "ic-fill ic-ok" }) + " " + window.t("kanban.st_running") + (s.chat_id ? " " + window.t("app.tg_only_chat") + " " + s.chat_id : " " + window.t("app.tg_everyone")) : ic("loader") + " " + window.t("app.tg_not_running");
     // Menu lệnh "/" đặt hụt: bot vẫn chạy nên mọi thứ ở trên vẫn xanh, chỉ là gõ "/" trong
     // Telegram không sổ ra danh sách lệnh. Không nói ra thì không ai đoán được vì sao.
     if (s.loi_menu_lenh) el.innerHTML += '<div class="set-note">' + ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(s.loi_menu_lenh) + "</div>";
@@ -2116,14 +3083,14 @@ async function refreshUsage() {
   const el = document.getElementById("usagePanel"); if (!el) return;
   let d; try { d = await (await fetch("/usage")).json(); } catch (e) { return; }
   // Hôm nay chưa có lượt nào → hiện TỔNG tích luỹ để không trống trơn.
-  let src = d.today, scope = "hôm nay";
-  if ((!src || !(src.items || []).length) && d.all_time && (d.all_time.items || []).length) { src = d.all_time; scope = "tổng"; }
+  let src = d.today, scope = window.t("app.usage_today");
+  if ((!src || !(src.items || []).length) && d.all_time && (d.all_time.items || []).length) { src = d.all_time; scope = window.t("app.usage_alltime"); }
   const items = (src && src.items) || [];
   const tot = (src && src.total) || { in: 0, out: 0, cost: 0 };
   const row = (nameHtml, tok, extra) => `<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:1px 0;${extra || ""}"><span style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nameHtml}</span><span style="color:#7aa2ff;white-space:nowrap;font-variant-numeric:tabular-nums">${tok}</span></div>`;
   let html;
   if (!items.length) {
-    html = `<div class="mcp-item dim">Chưa có lượt nào hôm nay</div>`;
+    html = `<div class="mcp-item dim">${window.t("app.usage_none_today")}</div>`;
   } else {
     html = items.map(i => {
       const lbl = _PROV_LABEL[i.provider] || escapeHtml(i.provider);
@@ -2131,11 +3098,11 @@ async function refreshUsage() {
       const nm = `${escapeHtml(lbl)} <span class="dim">${escapeHtml(_shortModel(i.model))}</span>`;
       return row(nm, `${_fmtTok(i.in)}↑ ${_fmtTok(i.out)}↓${cost}`);
     }).join("");
-    html += row(`<b>Tổng ${scope}</b>`, `<b>${_fmtTok(tot.in)}↑ ${_fmtTok(tot.out)}↓${tot.cost > 0 ? " · $" + tot.cost.toFixed(2) : ""}</b>`, "border-top:1px solid var(--hairline);margin-top:2px;padding-top:3px");
+    html += row(`<b>${window.t("app.usage_total")} ${scope}</b>`, `<b>${_fmtTok(tot.in)}↑ ${_fmtTok(tot.out)}↓${tot.cost > 0 ? " · $" + tot.cost.toFixed(2) : ""}</b>`, "border-top:1px solid var(--hairline);margin-top:2px;padding-top:3px");
   }
   html += await _usageSavingRow();
   if (d.openrouter && d.openrouter.remaining != null) {
-    html += row("OpenRouter còn", `$${(+d.openrouter.remaining).toFixed(2)}`, "margin-top:4px;color:var(--green)");
+    html += row(window.t("app.or_remaining"), `$${(+d.openrouter.remaining).toFixed(2)}`, "margin-top:4px;color:var(--green)");
   }
   el.innerHTML = html;
 }
@@ -2156,17 +3123,17 @@ async function _usageSavingRow() {
   try { d = await (await fetch("/runtime/muc")).json(); }
   catch (e) { return _savingCache.html; }
   const ten = ((d.danh_sach || []).find(p => p.id === d.muc) || {}).nhan
-    || (d.muc === "custom" ? "Tự chỉnh" : "?");
+    || (d.muc === "custom" ? window.t("app.saving_custom") : "?");
   const dod = d.do_duoc || {};
   const uoc = ((d.uoc_tinh || {}).muc || {})[d.muc] || {};
   // Ưu tiên số ĐO ĐƯỢC; chưa đủ dữ liệu thì mới dùng ước lượng, và nói rõ là ước lượng.
   let phu;
-  if (dod.du_du_lieu) phu = `giảm ${dod.phan_tram}% (đo thật)`;
-  else if (d.muc === "off") phu = "chưa bật tiết kiệm";
-  else if (uoc.phan_tram) phu = `giảm ~${uoc.phan_tram}% (ước lượng)`;
-  else phu = "chưa đo được";
-  const html = `<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:3px 0 0;margin-top:3px;border-top:1px solid var(--hairline);cursor:pointer" data-usage-goto="usage" title="Mở trang Mức dùng">`
-    + `<span style="color:var(--text2)">Tiết kiệm: <b>${escapeHtml(ten)}</b></span>`
+  if (dod.du_du_lieu) phu = window.t("app.saving_measured", { p: dod.phan_tram });
+  else if (d.muc === "off") phu = window.t("app.saving_off");
+  else if (uoc.phan_tram) phu = window.t("app.saving_est", { p: uoc.phan_tram });
+  else phu = window.t("app.saving_unknown");
+  const html = `<div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;padding:3px 0 0;margin-top:3px;border-top:1px solid var(--hairline);cursor:pointer" data-usage-goto="usage" title="${window.t("app.open_usage_page")}">`
+    + `<span style="color:var(--text2)">${window.t("app.saving_label")} <b>${escapeHtml(ten)}</b></span>`
     + `<span style="color:#7aa2ff;white-space:nowrap">${escapeHtml(phu)}</span></div>`;
   _savingCache = { at: now, html };
   return html;
@@ -2242,7 +3209,7 @@ async function initAuthGate() {
     if (_wizardMandatory) {
       const pass = document.getElementById("wzPass"); if (pass) pass.required = true;
       const tw = document.getElementById("wzTokenWrap"); if (tw) tw.style.display = "";
-      const note = document.getElementById("wzErr"); if (note) note.textContent = "Đặt tài khoản + mật khẩu (≥8 ký tự) + MÃ THIẾT LẬP để bảo vệ Thansa trên server công khai.";
+      const note = document.getElementById("wzErr"); if (note) note.textContent = window.t("app.wz_mandatory");
     }
     wz.classList.add("open");
   } else {
@@ -2267,8 +3234,8 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
       codeWrap.style.display = "";
       if (codeInp) { codeInp.value = ""; codeInp.focus(); }
     }
-    err.textContent = d.error || "Đăng nhập thất bại";
-  } catch (e) { err.textContent = "Lỗi mạng"; }
+    err.textContent = d.error || window.t("app.login_failed");
+  } catch (e) { err.textContent = window.t("app.err_net"); }
 });
 ["authPass", "authCode"].forEach((id) => {
   const el = document.getElementById(id);
@@ -2290,7 +3257,7 @@ async function loadClaudeModels(cur) {
   } catch (e) {}
   if (cur && ids.indexOf(cur) < 0) ids.unshift(cur);   // model đang chạy luôn phải có mặt
   const nhan = (id) => id.charAt(0).toUpperCase() + id.slice(1);
-  sel.innerHTML = '<option value="">Mặc định</option>'
+  sel.innerHTML = '<option value="">' + window.t("common.default") + '</option>'
     + ids.map((id) => `<option value="${id}">${nhan(id)}</option>`).join("");
   sel.value = cur || "";
 }
@@ -2304,10 +3271,10 @@ async function openSettings() {
     document.getElementById("setEngine").value = (s.model && s.model.engine) || "cli";
     await loadClaudeModels((s.model && s.model.claude_model) || "");
     loadOrModels((s.model && s.model.openrouter_model) || "");
-    document.getElementById("setKeyHint").textContent = (s.model && s.model.openrouter_key_set) ? "(đã lưu " + s.model.openrouter_key + ")" : "(chưa có)";
+    document.getElementById("setKeyHint").textContent = (s.model && s.model.openrouter_key_set) ? window.t("app.saved_paren", { v: s.model.openrouter_key }) : window.t("app.none_paren");
     document.getElementById("setTgEnabled").checked = !!(s.telegram && s.telegram.enabled);
     document.getElementById("setTgChat").value = (s.telegram && s.telegram.chat_id) || "";
-    document.getElementById("setTgHint").textContent = (s.telegram && s.telegram.token_set) ? "(đã lưu " + s.telegram.token + ")" : "(chưa có)";
+    document.getElementById("setTgHint").textContent = (s.telegram && s.telegram.token_set) ? window.t("app.saved_paren", { v: s.telegram.token }) : window.t("app.none_paren");
     refreshTgStatus();
     await refreshAuthRow();
   } catch (e) {}
@@ -2323,8 +3290,8 @@ async function refreshAuthRow() {
   try { a = await (await fetch("/auth/status")).json(); } catch (e) { return false; }
   const co = !a.needs_setup;
   st.innerHTML = co
-    ? ic("check", { cls: "ic-ok" }) + " Đã đặt mật khẩu - đăng nhập bắt buộc."
-    : ic("triangle-alert", { cls: "ic-warn" }) + " Chưa đặt mật khẩu - ai mở trang cũng dùng được. Đặt mật khẩu trước khi lên VPS.";
+    ? ic("check", { cls: "ic-ok" }) + " " + window.t("app.pw_set")
+    : ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.pw_unset");
   const u = document.getElementById("setAuthUser");
   if (u && a.username) u.value = a.username;
   const cur = document.getElementById("setAuthCur");
@@ -2332,7 +3299,7 @@ async function refreshAuthRow() {
   if (cur) { cur.hidden = !co; if (!co) cur.value = ""; }
   if (curLbl) curLbl.hidden = !co;
   const p = document.getElementById("setAuthPass");
-  if (p) p.placeholder = co ? "Mật khẩu mới (để trống nếu chỉ đổi tên)" : "Đặt mật khẩu (tối thiểu 8 ký tự)";
+  if (p) p.placeholder = co ? window.t("app.pw_ph_change") : window.t("app.pw_ph_set");
   return co;
 }
 window.__javisRefreshAuthRow = refreshAuthRow;
@@ -2340,9 +3307,9 @@ function _saveSetting(section, dataObj, btn) {
   const fd = new FormData();
   fd.append("section", section);
   fd.append("data", JSON.stringify(dataObj));
-  const old = btn.textContent; btn.disabled = true; btn.textContent = "Đang lưu...";
+  const old = btn.textContent; btn.disabled = true; btn.textContent = window.t("settings.saving");
   return fetch("/settings", { method: "POST", body: fd }).then(r => r.json()).then(d => {
-    btn.innerHTML = d.ok ? ic("check", { cls: "ic-ok" }) + " Đã lưu" : (ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(d.error || "lỗi"));
+    btn.innerHTML = d.ok ? ic("check", { cls: "ic-ok" }) + " " + window.t("proj.instr_saved") : (ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(d.error || window.t("app.err_low")));
     setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1500);
     return d;
   }).catch(() => { btn.textContent = old; btn.disabled = false; });
@@ -2354,7 +3321,7 @@ if (document.getElementById("settingsBtn")) {
 
   document.getElementById("saveGeneral").addEventListener("click", (e) => {
     _saveSetting("general", { workspace_name: document.getElementById("setWsName").value.trim() }, e.target)
-      .then(() => { document.getElementById("workspaceName").textContent = document.getElementById("setWsName").value.trim() || "Thansa OS"; });
+      .then(() => { const wn = document.getElementById("workspaceName"); if (wn) wn.textContent = document.getElementById("setWsName").value.trim() || "Thansa OS"; });
   });
   document.getElementById("saveModel").addEventListener("click", (e) => {
     const sel = document.getElementById("setOrModelSel");
@@ -2385,13 +3352,13 @@ if (document.getElementById("settingsBtn")) {
     setTimeout(refreshTgStatus, 600);
   });
   document.getElementById("testTelegram").addEventListener("click", async (e) => {
-    const btn = e.target; btn.disabled = true; const old = btn.textContent; btn.textContent = "Đang gửi...";
+    const btn = e.target; btn.disabled = true; const old = btn.textContent; btn.textContent = window.t("app.sending");
     try {
       const r = await (await fetch("/telegram/test", { method: "POST" })).json();
       btn.innerHTML = r.ok
-        ? (r.total > 1 ? `${ic("check", { cls: "ic-ok" })} Đã gửi ${Number(r.sent) || 0}/${Number(r.total) || 0} ID` + (r.error ? " (có lỗi)" : "") : ic("check", { cls: "ic-ok" }) + " Đã gửi (xem Telegram)")
-        : (ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(r.error || "lỗi"));
-    } catch (e) { btn.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " lỗi mạng"; }
+        ? (r.total > 1 ? `${ic("check", { cls: "ic-ok" })} ${window.t("app.tg_sent_n", { sent: Number(r.sent) || 0, total: Number(r.total) || 0 })}` + (r.error ? " " + window.t("app.tg_has_err") : "") : ic("check", { cls: "ic-ok" }) + " " + window.t("app.tg_sent"))
+        : (ic("triangle-alert", { cls: "ic-warn" }) + " " + escapeHtml(r.error || window.t("app.err_low")));
+    } catch (e) { btn.innerHTML = ic("triangle-alert", { cls: "ic-warn" }) + " " + window.t("app.err_net_low"); }
     setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 2500);
   });
   document.getElementById("savePassword").addEventListener("click", async (e) => {
@@ -2408,43 +3375,43 @@ if (document.getElementById("settingsBtn")) {
     // openSettings(), nên tin vào _settingsCache là đi nhầm nhánh và bấm Lưu không ăn.
     let hasPw = false;
     try { hasPw = !(await (await fetch("/auth/status")).json()).needs_setup; }
-    catch (err) { bao(false, "Không đọc được trạng thái đăng nhập."); return; }
-    btn.disabled = true; btn.textContent = "Đang lưu...";
+    catch (err) { bao(false, window.t("app.auth_status_err")); return; }
+    btn.disabled = true; btn.textContent = window.t("settings.saving");
     if (!hasPw) {
       // Lần đầu đặt mật khẩu → /auth/setup (cấp cookie luôn)
-      if (!pass || pass.length < 8) { bao(false, "Mật khẩu tối thiểu 8 ký tự."); return; }
+      if (!pass || pass.length < 8) { bao(false, window.t("app.pw_min8")); return; }
       const fd = new FormData(); fd.append("username", user || "admin"); fd.append("password", pass);
       try {
         const d = await (await fetch("/auth/setup", { method: "POST", body: fd })).json();
-        bao(!!d.ok, d.ok ? "Đã đặt mật khẩu" : (d.error || "lỗi"));
+        bao(!!d.ok, d.ok ? window.t("app.pw_set_ok") : (d.error || window.t("app.err_low")));
         if (d.ok) { document.getElementById("setAuthPass").value = ""; openSettings(); }
-      } catch (err) { bao(false, "lỗi mạng"); }
+      } catch (err) { bao(false, window.t("app.err_net_low")); }
       return;
     }
     // Đã có tài khoản → ĐỔI qua /auth/password (đòi mật khẩu hiện tại). /auth/setup là đường
     // lần-đầu, gọi nó ở đây chỉ nhận về "Đã có tài khoản - hãy đăng nhập".
     const cur = curEl ? curEl.value : "";
-    if (!cur) { bao(false, "Nhập mật khẩu hiện tại."); return; }
-    if (pass && pass.length < 8) { bao(false, "Mật khẩu mới tối thiểu 8 ký tự."); return; }
-    if (!pass && !user) { bao(false, "Chưa đổi gì cả."); return; }
+    if (!cur) { bao(false, window.t("app.pw_need_cur")); return; }
+    if (pass && pass.length < 8) { bao(false, window.t("app.pw_new_min8")); return; }
+    if (!pass && !user) { bao(false, window.t("app.nothing_changed")); return; }
     const fd = new FormData();
     fd.append("current_password", cur); fd.append("username", user);
     if (pass) fd.append("password", pass);
     try {
       const d = await (await fetch("/auth/password", { method: "POST", body: fd })).json();
-      bao(!!d.ok, d.ok ? (pass ? "Đã đổi mật khẩu" : "Đã đổi tên đăng nhập") : (d.error || "lỗi"));
+      bao(!!d.ok, d.ok ? (pass ? window.t("app.pw_changed") : window.t("app.user_changed")) : (d.error || window.t("app.err_low")));
       if (d.ok) {
         document.getElementById("setAuthPass").value = "";
         if (curEl) curEl.value = "";
         refreshAuthRow();
       }
-    } catch (err) { bao(false, "lỗi mạng"); }
+    } catch (err) { bao(false, window.t("app.err_net_low")); }
   });
   document.getElementById("logoutBtn").addEventListener("click", async () => {
     await fetch("/auth/logout", { method: "POST" }); location.reload();
   });
   document.getElementById("disableAuthBtn").addEventListener("click", async () => {
-    if (!confirm("Tắt đăng nhập? Ai mở trang cũng dùng được (chỉ nên dùng khi chạy máy cá nhân, không phải VPS).")) return;
+    if (!confirm(window.t("app.disable_auth_confirm"))) return;
     await fetch("/auth/disable", { method: "POST" }); location.reload();
   });
 }
@@ -2463,10 +3430,10 @@ async function loadOrModels(saved, force) {
   const input = document.getElementById("setOrModel");
   if (!sel) return;
   if (!_orModelsLoaded || force) {
-    sel.innerHTML = '<option value="__custom__">Nhập tên model khác (custom)…</option><option disabled>đang tải…</option>';
+    sel.innerHTML = `<option value="__custom__">${window.t("app.or_custom_model")}</option><option disabled>${window.t("models.mp_loading_tag")}</option>`;
     try {
       const d = await (await fetch("/openrouter/models")).json();
-      sel.innerHTML = '<option value="__custom__">Nhập tên model khác (custom)…</option>';
+      sel.innerHTML = `<option value="__custom__">${window.t("app.or_custom_model")}</option>`;
       (d.models || []).forEach(m => {
         const o = document.createElement("option");
         o.value = m.id; o.textContent = m.id;
@@ -2474,7 +3441,7 @@ async function loadOrModels(saved, force) {
       });
       _orModelsLoaded = (d.models || []).length > 0;
     } catch (e) {
-      sel.innerHTML = '<option value="__custom__">Nhập tên model khác (custom)…</option>';
+      sel.innerHTML = `<option value="__custom__">${window.t("app.or_custom_model")}</option>`;
     }
   }
   // Chọn model đã lưu nếu có trong list, ngược lại dùng custom
@@ -2500,38 +3467,49 @@ async function initSetup() {
   } catch (e) { return false; }
 }
 if (document.getElementById("wzFinish")) {
+  // Công cụ tuỳ chọn trong trình hướng dẫn: chỉ HỎI khi máy thật sự thiếu. Máy cá nhân
+  // thường đã có sẵn Chrome, mời họ tải thêm cả trăm MB là mời một việc vô nghĩa.
+  (async () => {
+    try {
+      const d = await (await fetch("/tools/optional")).json();
+      const ct = ((d && d.tools) || []).find(x => x.id === "browser");
+      if (ct && ct.trang_thai === "chua_cai") {
+        const o = document.getElementById("wzCongCu");
+        if (o) o.style.display = "";
+      }
+    } catch (e) {}
+  })();
   document.getElementById("wzFinish").addEventListener("click", async () => {
     const err = document.getElementById("wzErr"); err.textContent = "";
     const ws = document.getElementById("wzWsName").value.trim();
     const user = document.getElementById("wzUser").value.trim();
     const pass = document.getElementById("wzPass").value;
     const prov = (document.querySelector('input[name="wzprov"]:checked') || {}).value || "anthropic-cli";
-    const btn = document.getElementById("wzFinish"); btn.disabled = true; btn.textContent = "Đang lưu…";
+    const btn = document.getElementById("wzFinish"); btn.disabled = true; btn.textContent = window.t("settings.saving");
     // Ô mã thiết lập nằm ở mục 2, còn nút bấm và dòng báo lỗi nằm tít dưới đáy. Bỏ trống rồi
     // bấm thì người dùng chỉ thấy một dòng đỏ ở đáy, không thấy ô nào đang trống - có người
     // còn không biết là CÓ một ô như vậy. Nên khi lỗi phải KÉO MÀN HÌNH tới đúng ô đó.
     const _soiOTrong = (o, cau) => {
       err.textContent = cau;
-      btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →";
+      btn.disabled = false; btn.textContent = window.t("app.wz_start");
       if (o) { try { o.scrollIntoView({ block: "center", behavior: "smooth" }); o.focus(); } catch (e) {} }
     };
     if (_wizardMandatory && !pass) {
       return _soiOTrong(document.getElementById("wzPass"),
-                        "Bắt buộc đặt mật khẩu khi chạy trên server công khai.");
+                        window.t("app.wz_pw_required"));
     }
     // Chặn ngay ở đây thay vì để server trả 403: cùng một câu lỗi, nhưng người dùng thấy con
     // trỏ nhảy vào đúng ô đang trống nên hiểu ngay phải làm gì.
     const _tokO = document.getElementById("wzToken");
     if (_wizardMandatory && _tokO && !_tokO.value.trim()) {
-      return _soiOTrong(_tokO, "Thiếu MÃ THIẾT LẬP. Lấy mã bằng lệnh ngay dưới ô này, "
-                               + "rồi dán chuỗi đó vào đây.");
+      return _soiOTrong(_tokO, window.t("app.wz_token_missing"));
     }
     try {
       if (pass) {
         const d = await (await fetch("/auth/setup", { method: "POST", body: _fd({ username: user || "admin", password: pass, setup_token: _tokO ? _tokO.value.trim() : "" }) })).json();
         // Server từ chối vì mã sai (403) thì cũng kéo về đúng ô mã, đừng để người dùng tự dò.
         if (!d.ok) { return _soiOTrong(/MÃ THIẾT LẬP/i.test(d.error || "") ? _tokO : null,
-                                       d.error || "Đặt mật khẩu lỗi"); }
+                                       d.error || window.t("app.wz_pw_err")); }
       }
       await fetch("/settings", { method: "POST", body: _fd({ section: "general", data: JSON.stringify({ workspace_name: ws, setup_done: true }) }) });
       const _PM = { "anthropic-cli": "sonnet", "openai-oauth": "gpt-5.5", "openrouter": "openai/gpt-4o-mini" };
@@ -2539,8 +3517,20 @@ if (document.getElementById("wzFinish")) {
       const _ork = (document.getElementById("wzOrKeyInput") || {}).value;
       if (prov === "openrouter" && _ork && _ork.trim()) _mp.openrouter_key = _ork.trim();
       await fetch("/settings", { method: "POST", body: _fd({ section: "model", data: JSON.stringify(_mp) }) });
+      // Người dùng đã tick "cài trình duyệt": khởi động việc tải ở NỀN rồi vào app luôn. Không
+      // bắt họ ngồi nhìn thanh tiến độ cả trăm MB ngay phút đầu tiên; trang Công cụ có đủ
+      // trạng thái để xem sau. Hỏng thì cũng không chặn đường vào app.
+      const _ctB = document.getElementById("wzCtBrowser");
+      if (_ctB && _ctB.checked) {
+        try {
+          await fetch("/tools/optional/install", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: "browser" }),
+          });
+        } catch (e) {}
+      }
       location.reload();
-    } catch (e) { err.textContent = "Lỗi mạng"; btn.disabled = false; btn.textContent = "Bắt đầu dùng Thansa →"; }
+    } catch (e) { err.textContent = window.t("app.err_net"); btn.disabled = false; btn.textContent = window.t("app.wz_start"); }
   });
 }
 
@@ -2551,18 +3541,22 @@ if (document.getElementById("wzFinish")) {
   const orKey = document.getElementById("wzOrKey");
   const hint = document.getElementById("wzProvHint");
   const HINTS = {
-    "anthropic-cli": "Sau khi vào: đăng nhập Claude 1 lần - chạy <code>claude auth login --claudeai</code> trong terminal (Hostinger: App terminal).",
-    "openai-oauth": "Sau khi vào: mục <b>Models</b> → đăng nhập ChatGPT (hoặc <code>codex login</code> trong terminal).",
-    "openrouter": "Lấy key tại <a href='https://openrouter.ai/keys' target='_blank' style='color:var(--link-ink)'>openrouter.ai/keys</a> rồi dán ở trên (hoặc sau ở Models).",
+    "anthropic-cli": () => window.t("app.wz_hint_cli_1") + "<code>claude auth login --claudeai</code>" + window.t("app.wz_hint_cli_2"),
+    "openai-oauth": () => window.t("app.wz_hint_gpt_1") + "<b>Models</b>" + window.t("app.wz_hint_gpt_2") + "<code>codex login</code>" + window.t("app.wz_hint_gpt_3"),
+    "openrouter": () => window.t("app.wz_hint_or_1") + "<a href='https://openrouter.ai/keys' target='_blank' style='color:var(--link-ink)'>openrouter.ai/keys</a>" + window.t("app.wz_hint_or_2"),
   };
   function pick(prov) {
     cards.forEach(c => c.classList.toggle("sel", c.dataset.prov === prov));
     const r = document.querySelector('input[name="wzprov"][value="' + prov + '"]'); if (r) r.checked = true;
     if (orKey) orKey.style.display = prov === "openrouter" ? "" : "none";
-    if (hint) hint.innerHTML = HINTS[prov] || "";
+    if (hint) hint.innerHTML = HINTS[prov] ? HINTS[prov]() : "";
   }
   cards.forEach(c => c.addEventListener("click", () => pick(c.dataset.prov)));
   pick("anthropic-cli");
+  window.addEventListener("javis:i18n", () => {
+    const da = document.querySelector('input[name="wzprov"]:checked');
+    pick((da && da.value) || "anthropic-cli");
+  });
 })();
 
 // ============================================

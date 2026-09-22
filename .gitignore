@@ -58,9 +58,15 @@ server/packs-store-cache.json
 # ghi ra để gỡ lỗi. Sinh ra lúc chạy nên không thuộc về repo lẫn image.
 server/conversation_state.db*
 server/memory_index.db*
+# Bản nhớ đường dẫn binary CLI (claude_cli.tim_binary). State chạy theo từng MÁY:
+# STATE_DIR mặc định là chính thư mục server/, nên không che thì mỗi lần chạy app là
+# cây git bẩn thêm một file, và `git add -A` commit đường dẫn máy người khác.
+server/bin_paths.json
 server/antigravity-duong-prompt.json
 server/usage-marks.jsonl*
 server/conversations.db
+server/conversations.db.bak-*
+server/md_hong_da_soi.json
 server/conversations.db-wal
 server/conversations.db-shm
 server/runtime.db
@@ -73,6 +79,10 @@ server/capability_registry.db*.corrupt-*
 # Bổ sung 0.9.241: 6 artifact dưới đây vừa KHÔNG track vừa KHÔNG ignore, nên một cú
 # `git add -A` là commit thẳng dữ liệu chạy + trạng thái deploy vào repo.
 server/kanban.sqlite3*
+# workflow_runs.sqlite3: kho lịch sử chạy quy trình (Task 2 Cộng sự), cùng lớp với
+# kanban.sqlite3* trên - test không đặt JAVIS_STATE_DIR sẽ ghi rơi vào server/ vì
+# execute_workflow giờ luôn chạm workflow_runs.get_store().
+server/workflow_runs.sqlite3*
 server/tg_brain.json
 server/update_state.json
 server/logs/
@@ -149,6 +159,12 @@ Thumbs.db
 desktop.ini
 server/stop-last.log
 
+# Playwright MCP ghi snapshot/console vào cwd khi kiểm tra dashboard
+.playwright-mcp/
+server/.mcp_agy_*.json
+server/settings.json.bak*
+# File ngữ cảnh Antigravity CLI sinh ra mỗi lượt chạy (rác của máy đang chạy, không phải mã)
+server/.javis-agy/
 # Bi mat Telegram (muc 5.3) - khong bao gio vao git
 ops/.telegram
 

@@ -8,8 +8,9 @@ Trang này liệt kê các biến môi trường mà Thansa OS đọc lúc khở
 
 Riêng khi cài bằng **Hostinger Docker Manager**, không cần nhìn thấy toàn bộ danh
 sách nâng cao bên dưới. Compose Hostinger chỉ đưa 3 trường người dùng lên ô
-Environment: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. Các biến
-nội bộ về cổng, state, brain và thư mục làm việc nằm sẵn trong Docker image.
+Environment: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, cộng một
+trường tuỳ chọn `JAVIS_AUTO_UPDATE`. Các biến nội bộ về cổng, state, brain và thư
+mục làm việc nằm sẵn trong Docker image.
 
 ## Tính năng này là gì
 
@@ -85,7 +86,7 @@ Về tên miền riêng và HTTPS: VPS dùng Caddy nhập tên miền ngay trong
 
 | Biến | Ý nghĩa | Mặc định | Khi nào đổi |
 |---|---|---|---|
-| `CLAUDE_CWD` | Thư mục làm việc của engine CLI (nơi đọc file `CLAUDE.md` và kế thừa MCP) | Thư mục gốc dự án (Docker: `/app`) | Muốn engine làm việc trong một thư mục khác. |
+| `CLAUDE_CWD` | Thư mục dự phòng cho vài việc phụ của engine Claude (nhập nguồn, terminal khi chưa chọn brain). Từ 0.55.58 **chat luôn chạy trong thư mục brain đang chọn** và không đọc biến này nữa, nên file Thansa tạo từ chat nằm đúng trong brain | Thư mục gốc dự án (Docker: `/app`) | Hầu như không cần đặt. |
 | `BRAINS_DIR` | Thư mục cha chứa mọi brain, mỗi thư mục con là một Second Brain. Brain mặc định là `<BRAINS_DIR>/Brain Default` | `brains/` trong dự án (Docker: `/brains`) | Muốn để nhiều brain ở nơi khác (ví dụ ổ dữ liệu riêng, mount git-backup). |
 | `OBSIDIAN_VAULT_PATH` | Đường dẫn vault Second Brain chính | `vault/` trong dự án (Docker: `/data/vault`) | Trên server đã có vault Obsidian thật thì trỏ biến này vào đó. Để trống thì Thansa dùng vault mẫu trong repo (máy mới chạy được ngay). |
 | `BRAIN_PATH` | Thư mục brain kiểu cũ, thời một-brain. Chỉ còn để migrate dữ liệu cũ | `brain/` trong dự án (Docker: `/data/brain`) | Hầu như không cần đụng. Đừng dùng cho cài mới. |
@@ -114,6 +115,8 @@ Lưu ý: hai biến TTS này áp cho giọng Edge TTS miễn phí mặc định.
 | `DOMAIN_NAME` | Tên miền mà reverse proxy (Traefik của Hostinger) định tuyến về Thansa. Thansa đọc để đối chiếu với tên miền bạn nhập trong app và biết có cần Redeploy không | (trống; compose Hostinger đặt `localhost`) | Deploy Hostinger: đặt bằng tên miền của bạn trong Docker Manager rồi Redeploy. Wizard trong app có nút **Sao chép biến** để copy sẵn dòng này. |
 | `JAVIS_DEPLOY_TARGET` | Khai rõ đang chạy ở môi trường nào: `hostinger`, `vps`, `native`, `windows` | Tự đoán (hostname `.hstgr.cloud` = hostinger; chạy Docker = vps) | Hầu như không cần đặt tay. Compose Hostinger đã đặt sẵn `hostinger`. Đặt khi Thansa đoán sai môi trường và wizard tên miền hiện sai hướng dẫn. |
 | `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" (trang **Cập nhật**) gọi Watchtower khi chạy Docker | Trong `docker-compose.yml`: `javis-update`. Ngoài Docker: trống (không có biến thì Thansa coi như Watchtower không chạy) | Muốn chặt hơn: đổi thành chuỗi ngẫu nhiên, đặt cùng giá trị cho cả app lẫn service watchtower. |
+| `JAVIS_AUTO_UPDATE` | Cho Watchtower TỰ đi tìm bản mới rồi dựng lại container, khỏi cần bấm nút | `false` | Mặc định tắt có chủ ý: bật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền và phiên chat đang chạy. Đặt trong `.env` (Hostinger: ô Environment) rồi dựng lại stack. |
+| `JAVIS_AUTO_UPDATE_INTERVAL` | Chu kỳ Watchtower đi tìm bản mới, tính bằng GIÂY | `86400` (24 giờ) | Chỉ có tác dụng khi `JAVIS_AUTO_UPDATE=true`. Đừng đặt quá ngắn: mỗi lần có bản mới là một lần app khởi động lại. |
 
 ### Nhóm 7: Biến nâng cao (hiếm khi cần đụng)
 

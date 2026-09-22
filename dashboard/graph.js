@@ -1,3 +1,17 @@
+// Chữ hiện ra lấy từ từ điển. Trong trình duyệt là window.t (i18n/index.js nạp trước mọi
+// module này); dưới node - nơi test require() thẳng file này - `window` CHƯA KHAI BÁO nên
+// đọc window.t là ReferenceError chứ không phải undefined, phải hỏi bằng typeof. Ở đó đọc
+// thẳng vi.json để hàm vẫn trả về chữ thật, không phải mã khoá trần.
+function graphTw(khoa, bien) {
+  if (typeof window !== "undefined" && window.t) return window.t(khoa, bien);
+  try {
+    var s = require("./i18n/vi.json")[khoa] || khoa;
+    return String(s).replace(/\{(\w+)\}/g, function (m, ten) {
+      return (bien && bien[ten] != null) ? String(bien[ten]) : m;
+    });
+  } catch (e) { return khoa; }
+}
+
 // ============================================
 // JAVIS OS - Knowledge graph "Tinh vân bộ não" (force-graph / d3-force, kiểu Obsidian)
 // Engine d3-force. Thiết kế: node = sao phát sáng, TÔ MÀU THEO DANH MỤC
@@ -178,7 +192,7 @@ class JavisGraph {
   async load(query = "source=all") {
     const res = await fetch(`/graph?${query}&orphans=1`);   // 2D hiện CẢ note cô đơn (như graph view Obsidian)
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Không tải được đồ thị (${res.status})`);
+    if (!res.ok) throw new Error(data.error || graphTw("graph.load_failed", { status: res.status }));
     const nodes = Array.isArray(data.nodes) ? data.nodes : [];
     this._catMap = null;                     // gán lại màu danh mục tươi cho mỗi lần nạp
     this._prep(nodes);
@@ -187,7 +201,7 @@ class JavisGraph {
     const links = (data.edges || []).map(e => ({ source: e.source, target: e.target }));
 
     if (!this.graph) {
-      if (!window.ForceGraph) throw new Error("Thư viện đồ thị 2D chưa tải (kiểm tra mạng)");
+      if (!window.ForceGraph) throw new Error(graphTw("graph.lib_2d_missing"));
       const self = this;
       this.graph = ForceGraph()(this.container)
         .backgroundColor("rgba(0,0,0,0)")
@@ -260,7 +274,13 @@ class JavisGraph {
     const catDim = this._catFilter && n.__cat !== this._catFilter && !isHover && !isNbr;
     const dim = (hovering && !isHover && !isNbr) || catDim;
     const breathe = 1 + 0.05 * Math.sin(t / 650 + (n.__ph || 0));       // thở nhẹ, lệch pha
-    const pulse = this._thinking ? (1 + (0.16 + 0.3 * this.level) * Math.sin(t / 220)) : (1 + 0.25 * this.level);
+    // Nhịp thở theo giọng. Biên độ GIỮ NHỎ và nhịp CHẬM: mức âm đã được làm trơn ở setLevel,
+    // nhưng biên độ cũ (0,46 lúc nghĩ, chu kỳ 1,4 giây) vẫn làm cả quả cầu phình co như bơm
+    // hơi. Nay lúc nghĩ tối đa 0,16 với chu kỳ ~2,6 giây, lúc đọc tối đa 0,12 - thấy là nó
+    // đang sống theo tiếng nói, chứ không thấy nó giật.
+    const pulse = this._thinking
+      ? (1 + (0.06 + 0.10 * this.level) * Math.sin(t / 420))
+      : (1 + 0.12 * this.level);
     let born = 1;
     if (n.__born) { const age = (t - n.__born) / 500; born = age < 1 ? age : 1; if (age >= 1) n.__born = 0; }  // nảy sinh
     const r = (n.__r || 5) * (isHover ? 1.35 : 1) * breathe * pulse * (0.4 + 0.6 * born);
@@ -361,7 +381,23 @@ class JavisGraph {
   wake() { if (this.graph) { try { this.graph.resumeAnimation(); } catch (e) {} } }
   resume() { this.wake(); }
   setThinking(active) { this._thinking = !!active; }
-  setLevel(l) { this.level = l || 0; }
+
+  // Mức âm để thổi vào nhịp thở của quả cầu. LÀM TRƠN trước khi dùng.
+  //
+  // `voice.getLevel()` là trung bình phổ THÔ, đọc lại 60 lần mỗi giây. Tiếng nói vốn lên
+  // xuống liên tục, nên con số ấy nhảy loạn từng khung hình; nhân thẳng vào bán kính mỗi
+  // chấm là cả quả cầu rung bần bật (chủ dự án 15/09: "nói nhiều lúc quả cầu bị giựt không
+  // cố định"). Tệ hơn, ở nhịp NGHĨ biên độ cũ tới 0,46 nên có lúc MỌI chấm cùng co còn 0,54
+  // lần - nhìn y như quả cầu tự thu nhỏ lại, đúng cái "tự zoom out ra luôn" anh ấy tả, dù
+  // camera không hề đổi.
+  //
+  // Lên NHANH, xuống CHẬM (như đồng hồ VU của bàn trộn âm): bắt kịp lúc bật tiếng mà không
+  // rơi thẳng đứng lúc ngắt quãng giữa hai từ.
+  setLevel(l) {
+    const raw = Math.max(0, Math.min(1, l || 0));
+    const cu = this.level || 0;
+    this.level = cu + (raw - cu) * (raw > cu ? 0.30 : 0.06);
+  }
 
   // Rọi sáng một danh mục (bấm nhãn PERSONAL/SALES... quanh não). null = bỏ lọc.
   spotlightCategory(cat) {
@@ -431,7 +467,14 @@ class JavisGraph {
       Object.assign(n, { label: node.label, path: node.path, links: node.links, color: node.color });
       this._prep([n]);
     }
+    // CHỈ nối tới node CÓ THẬT trong đồ thị. force-graph ném "node not found" và chết cả vòng
+    // vẽ khi gặp một đầu dây trỏ vào hư không - mà chuyện đó xảy ra thường xuyên một cách rất
+    // đời: note bị lọc khỏi đồ thị vì không có liên kết nào, note vừa bị xoá, hay một đoạn mã
+    // bash `[[ ... ]]` bị đọc nhầm thành wikilink. Phía server đã thôi gửi rác (bỏ khối mã
+    // trước khi dò), nhưng chốt phải có ở đây: một đầu dây hỏng không được phép giết đồ thị.
+    const coNode = new Set(d.nodes.map(x => x.id));
     (linkTargets || []).forEach(tid => {
+      if (!coNode.has(tid)) return;
       const dup = d.links.some(l => {
         const s = (l.source && l.source.id) || l.source, t = (l.target && l.target.id) || l.target;
         return (s === node.id && t === tid) || (s === tid && t === node.id);

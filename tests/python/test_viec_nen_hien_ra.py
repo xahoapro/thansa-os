@@ -27,6 +27,7 @@ Ba gốc rễ, test này canh cả ba:
 Chạy:
     python tests/python/test_viec_nen_hien_ra.py
 """
+import json
 import os
 import re
 import sys
@@ -158,11 +159,16 @@ check("mục đứng im được đánh dấu sẵn để dải khỏi đoán l�
       v_moi["items"][0]["stalled"] is True and v_nhac["items"][0]["stalled"] is False)
 
 note = bg.promise_note("off")
-check("dòng đính chính nói rõ KHÔNG có việc nền nào", "KHÔNG tạo việc nền nào" in note)
+check("dòng đính chính nói rõ KHÔNG có việc nền nào", "KHÔNG đặt việc nền nào" in note)
 check("dòng đính chính nêu luôn chuyện điều phối tắt", "trang Việc" in note)
 check("dòng đính chính không dùng em dash (luật CLAUDE.md)", "\u2014" not in note)
 check("promise_note khi điều phối auto thì không đổ lỗi cho điều phối",
       "trang Việc" not in bg.promise_note("auto"))
+# Dòng này đọc giữa dòng chat nên phải NGẮN: bản cũ ba đoạn làm chủ repo không hiểu gì
+# (2026-09-15). Giữ trần để lần sau có ai nới câu thì test chặn lại.
+check("đính chính ngắn, đọc là hiểu", len(bg.promise_note("auto")) <= 260)
+check("đính chính vẫn chỉ được việc cần làm tiếp",
+      "làm luôn" in note and "giao việc nền" in note)
 
 
 # ─────────── 3. Server: endpoint + móc nối ───────────
@@ -216,6 +222,9 @@ STRIP = (DASHBOARD / "background-strip.js").read_text(encoding="utf-8")
 APPJS = (DASHBOARD / "app.js").read_text(encoding="utf-8")
 CONSOLE = (DASHBOARD / "console.js").read_text(encoding="utf-8")
 CSS = (DASHBOARD / "style.css").read_text(encoding="utf-8")
+# Từ 0.55.14 câu tiếng Việt của dải dời vào từ điển i18n, .js chỉ còn gọi khoá.
+# Nên soi CẢ HAI vế: dải gọi đúng khoá, và khoá đó trong vi.json nói đúng câu.
+_VI = json.loads((DASHBOARD / "i18n" / "vi.json").read_text(encoding="utf-8"))
 
 check("index.html có ô dải việc nền, mặc định ẩn",
       'id="bgStrip"' in HTML and re.search(r'id="bgStrip"[^>]*hidden', HTML) is not None)
@@ -235,7 +244,10 @@ check("dải có trần số chip", "MAX_CHIP" in STRIP)
 check("phần quyết định là hàm thuần, test bằng node được (tests/js/test_dai_viec_nen.js)",
       "module.exports = { quyetDinh: quyetDinh }" in STRIP)
 check("dải nói thẳng khi việc KHÔNG tự chạy",
-      "KHÔNG tự chạy" in STRIP and "AI tự vận hành" in STRIP)
+      "bgs.dau_stall" in STRIP
+      and "KHÔNG tự chạy" in _VI.get("bgs.dau_stall", "")
+      and "bgs.warn_xep_hang" in STRIP
+      and "AI tự vận hành" in _VI.get("bgs.warn_xep_hang", ""))
 check("dải không vẽ lại DOM khi trạng thái không đổi (đỡ nháy)",
       "lastKey" in STRIP and "if (key === lastKey) return;" in STRIP)
 check("app.js làm tươi dải khi lượt xong và khi việc nền báo về",

@@ -215,8 +215,13 @@ check("lưới kho có ô tìm kiếm", 'id="pkQ"' in src_js)
 check("và cột nhóm bấm lọc được", "data-kho-nhom" in src_js)
 check("gói đã cài hiện 'Đã cài' thay vì mời cài lại", "Đã cài" in src_js)
 check("có bản mới thì đổi nhãn nút", "Có bản mới" in src_js)
+# Từ 0.55.54 câu này dời vào từ điển i18n, giao diện chỉ còn gọi tw("store.catalog_failed_hint").
+# Soi đủ hai vế: packs.js gọi đúng khoá, VÀ vi.json giữ đúng câu trấn an ("cài từ tệp .zip vẫn
+# chạy"). Chỉ kiểm một vế thì gỡ chữ khỏi giao diện, hoặc đổi nội dung khoá, vẫn xanh.
+_VI = json.loads((DASHBOARD / "i18n" / "vi.json").read_text(encoding="utf-8"))
 check("kho hỏng KHÔNG làm hỏng phần gói đã cài",
-      "Bạn vẫn cài được gói từ tệp" in src_js)
+      'tw("store.catalog_failed_hint")' in src_js
+      and "Bạn vẫn cài được gói từ tệp" in _VI.get("store.catalog_failed_hint", ""))
 
 
 # ============================================================
@@ -279,10 +284,11 @@ check("loại lọc sẵn bị XOÁ ngay sau khi dùng, không dính lại lần
       '_loaiCho = "";' in src_js.split("const loaiDau = _loaiCho;")[-1][:200])
 
 src_con = (DASHBOARD / "console.js").read_text(encoding="utf-8")
-check("năm trang năng lực đều có đường sang kho",
-      all(x in src_con for x in ('agents: "agent"', 'skills: "skill"',
-                                 'workflows: "workflow"', 'plugins: "tool"',
-                                 'mcp: "connector"')))
+src_ws = (DASHBOARD / "workspace.js").read_text(encoding="utf-8")
+check("mọi loại năng lực có đường sang kho, trợ lý và quy trình đi qua Cộng sự",
+      all(x in src_con for x in ('skills: "skill"', 'plugins: "tool"', 'mcp: "connector"'))
+      and 'window.JavisPacks.moKho(S.loai, "workspace",' in src_ws
+      and 'data-loai="agent"' in src_ws and 'data-loai="workflow"' in src_ws)
 # Năm bản sao của lưới kho là năm thứ sẽ lệch nhau sau vài tháng. Tab chỉ ĐIỀU HƯỚNG.
 check("tab kho điều hướng sang kho chứ không nhúng bản sao lưới",
       "JavisPacks.moKho(kind" in src_con and "veKho" not in src_con)
@@ -312,7 +318,11 @@ check("CANARY: vẽ lại sau khi cài/gỡ KHÔNG đi qua render (đường v�
 # Kho có mặt trên thanh bên từ 0.55.37. Lý do ẩn nó trước đây - "đường vào đúng là cái tab
 # trên chính trang bạn đang đứng" - sai ngay khi kho thành chỗ chứa phần lớn kết nối của
 # Javis: người mới cài chưa đấu gì thì không có trang nào để mà bấm tab.
-check("kho hiện trên thanh bên", "const RAIL_AN = new Set();" in src_con)
+# 0.61.0: RAIL_AN không còn rỗng (id trang cũ "chatbots" ẩn đi vì đã gộp vào trang Hội thoại),
+# nên canh đúng ý: "packs" KHÔNG nằm trong tập ẩn.
+import re as _re
+_an = _re.search(r"const RAIL_AN = new Set\((.*?)\);", src_con)
+check("kho hiện trên thanh bên", _an is not None and '"packs"' not in _an.group(1))
 check("và nằm trong nhóm Kết nối", '"mcp", "packs", "channels", "models"' in src_con)
 check("vẫn giữ trong danh sách trang (nguồn icon và nhãn)",
       '"packs", "logs", "account", "usage",' in src_con)

@@ -57,6 +57,18 @@ _DEFAULT = {
         "elevenlabs_key": "",
         "elevenlabs_voice": "21m00Tcm4TlvDq8ikWAM",   # Rachel (premade, đa ngôn ngữ) - đổi được
         "elevenlabs_model": "eleven_multilingual_v2",
+        # --- Voice V2 (docs/dev/2026-09-voice-v2-spec.md) ---
+        # standard | fast | live. Mặc định Làn nhanh (chủ dự án chốt 17/09). Chưa chọn bộ não
+        # giọng thì tin từ mic vẫn đi bộ não chính y như chế độ chuẩn (xem _bao_lan_nhanh_bo_qua
+        # trong main.py), nên cài đặt cũ thiếu khoá này không đổi hành vi.
+        "mode": "fast",
+        "brain_provider": "",          # "" = bộ não chính | antigravity | groq | gemini | openai | openrouter
+        "brain_model": "",             # rỗng = mặc định của provider (antigravity: gemini flash low)
+        "stt_provider": "browser",     # browser (Web Speech) | groq (Whisper, key model.groq_api_key)
+        "stt_model": "",               # rỗng = whisper-large-v3-turbo
+        "live_provider": "gemini",     # gemini | openai (đều cần API key ở trang Models)
+        "live_model": "",              # rỗng = gợi ý trong voice_live.PROVIDERS
+        "live_voice": "",
     },
     "model": {
         # --- Mô hình MAIN MODEL theo provider (mới) ---

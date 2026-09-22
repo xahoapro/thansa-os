@@ -43,7 +43,13 @@
       "circle-user",
       "sliders-horizontal",
       "clipboard-check",
-      "headset"
+      "headset",
+      "messages-square",
+      "inbox",
+      "user-round",
+      "users",
+      "arrow-left",
+      "hand"
     ],
     "hanh-dong": [
       "save",
@@ -118,6 +124,7 @@
       "history",
       "volume-2",
       "link",
+      "share-2",
       "quote",
       "circle-help",
       "star",
@@ -128,6 +135,7 @@
       "wrench",
       "sparkles",
       "sparkle",
+      "smile",
       "lightbulb",
       "alarm-clock",
       "calendar",

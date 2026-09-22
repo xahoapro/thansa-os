@@ -32,8 +32,8 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=82">
-  <link rel="stylesheet" href="/static/console.css?v=51">
+  <link rel="stylesheet" href="/static/style.css?v=88">
+  <link rel="stylesheet" href="/static/console.css?v=63">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại. -->
   <script>(function(){try{if(localStorage.getItem('javis.theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
@@ -200,7 +200,9 @@
         </div>
         <div class="vault-search">
           <i class="vs-ico" data-ic="search"></i>
-          <input id="vaultSearch" type="text" placeholder="Tìm note..." data-i18n-ph="vault.search_ph" spellcheck="false" autocomplete="off">
+          <!-- data-esc: ô này TỰ xử Esc (xoá chữ, về lại cây). Trình sửa note bắt Esc ở mức
+               document + capture, nên không khai dấu này thì Esc ở đây đóng mất file đang mở. -->
+          <input id="vaultSearch" type="text" data-esc placeholder="Tìm note..." data-i18n-ph="vault.search_ph" spellcheck="false" autocomplete="off">
           <button class="vs-clear" id="vaultSearchClear" title="Xoá tìm kiếm" data-i18n-title="vault.search_clear" hidden><i data-ic="x"></i></button>
         </div>
         <div class="vault-modes">
@@ -289,6 +291,9 @@
             <span class="ne-title" id="neTitle">note.md</span>
             <span class="ne-actions" id="neActions"></span>
           </div>
+          <!-- Thanh link chia se: an cho toi khi bam nut Chia se tren thanh cong cu.
+               Lop .jvfe-share dung chung CSS voi trinh sua modal (file-editor.js). -->
+          <div class="ne-share jvfe-share" id="neShare" hidden></div>
           <div class="ne-body" id="neBody"></div>
         </div>
       </div>
@@ -333,63 +338,110 @@
               <span class="toggle"><input type="checkbox" id="qsTts"><span></span></span>
             </label>
 
-            <!-- Nhà cung cấp giọng đọc: console.js render vào đây khi mở trang Cài đặt (gộp cùng nhóm giọng nói) -->
-            <!-- Ngôn ngữ trả lời: console.js render vào đây khi mở trang Cài đặt.
+            <!-- MỘT CỘT, mỗi thẻ một việc (0.58.8). Bản trước xếp lưới HAI cột: các thẻ cao
+                 thấp chênh nhau rất xa (thẻ giọng nói 1200px nằm cạnh thẻ ảnh đại diện 150px)
+                 nên ô ngắn bị ô dài kéo giãn theo, để lại mảng trống gần một màn hình - chủ
+                 repo gọi đúng tên là "rất rỗi". Một cột thì không còn ô nào phải chờ ô nào.
+                 Trong mỗi thẻ, bề ngang được dùng bằng hàng "nhãn trái, ô chọn phải" (.qs-field)
+                 thay vì xếp chồng dọc, nên thẻ ngắn lại mà không phải bỏ bớt nội dung. -->
+
+            <!-- Ngôn ngữ: console.js render vào đây khi mở trang Cài đặt.
                  Đặt TRÊN nhóm giọng nói vì giọng đọc phụ thuộc ngôn ngữ, không ngược lại. -->
             <div id="replyLangHost"></div>
 
-            <div id="ttsProviderHost"></div>
+            <!-- GIỌNG ĐỌC. Nhà cung cấp do console.js đổ vào #ttsProviderHost (nằm TRONG thẻ
+                 này, không tách thẻ riêng nữa: chọn nhà cung cấp rồi chọn giọng là một việc).
+                 Bảy giọng trước đây là bảy thẻ radio xếp dọc, cao gần 600px cho một lựa chọn
+                 duy nhất; nay là một ô chọn cao một hàng. Tốc độ cũng vậy: thanh trượt đổi
+                 thành ô chọn có tên mức, vì không ai cần 1.37× mà cần "hơi nhanh". -->
+            <div class="qs-block">
+              <div class="popover-label" data-i18n="qs.voice">GIỌNG ĐỌC</div>
+              <div id="ttsProviderHost"></div>
+              <!-- #edgeVoiceSection: console.js ẩn khối này khi nhà cung cấp không phải Edge
+                   (OpenAI/ElevenLabs chọn giọng ngay trong khối nhà cung cấp ở trên). -->
+              <div id="edgeVoiceSection">
+                <div class="qs-field">
+                  <label class="qs-lbl" for="voiceSel" data-i18n="qs.voice_pick">Giọng Edge</label>
+                  <select class="js-input" id="voiceSel" name="voice">
+                    <option value="vi-VN-HoaiMyNeural" data-i18n="qs.voice_opt_hoaimy">Hoài My · Nữ, tự nhiên ấm áp</option>
+                    <option value="vi-VN-NamMinhNeural" data-i18n="qs.voice_opt_namminh">Nam Minh · Nam, trầm</option>
+                    <option value="en-US-AvaMultilingualNeural" data-i18n="qs.voice_opt_ava">Ava · Nữ, dịu và biểu cảm · đa ngôn ngữ</option>
+                    <option value="en-US-EmmaMultilingualNeural" data-i18n="qs.voice_opt_emma">Emma · Nữ, vui tươi rõ chữ · đa ngôn ngữ</option>
+                    <option value="en-US-AndrewMultilingualNeural" data-i18n="qs.voice_opt_andrew">Andrew · Nam, ấm và tự tin · đa ngôn ngữ</option>
+                    <option value="en-US-BrianMultilingualNeural" data-i18n="qs.voice_opt_brian">Brian · Nam, gần gũi đời thường · đa ngôn ngữ</option>
+                    <option value="en-AU-WilliamMultilingualNeural" data-i18n="qs.voice_opt_william">William · Nam, thân thiện giọng Úc · đa ngôn ngữ</option>
+                  </select>
+                </div>
+                <div class="qs-hint" data-i18n="qs.voice_ml_note">Giọng đa ngôn ngữ: đọc tiếng Việt mượt hơn, có thể lơ lớ vài chữ</div>
+              </div>
+              <div class="qs-field">
+                <label class="qs-lbl" for="rateSel" data-i18n="qs.rate_lbl">Tốc độ đọc</label>
+                <select class="js-input" id="rateSel">
+                  <option value="0.85" data-i18n="qs.rate_opt_slow">Chậm · 0,85×</option>
+                  <option value="1.00" data-i18n="qs.rate_opt_normal">Bình thường · 1,00×</option>
+                  <option value="1.10" data-i18n="qs.rate_opt_default">Hơi nhanh · 1,10× (mặc định)</option>
+                  <option value="1.25" data-i18n="qs.rate_opt_fast">Nhanh · 1,25×</option>
+                  <option value="1.45" data-i18n="qs.rate_opt_veryfast">Rất nhanh · 1,45×</option>
+                </select>
+              </div>
+              <div class="js-actions qs-foot">
+                <button class="gcard-btn ghost" id="testVoiceBtn" data-i18n="qs.test_voice">▶ Nghe thử</button>
+                <button class="gcard-btn" id="vpSave" data-i18n="qs.voice_save">Lưu giọng đọc</button>
+              </div>
+              <div class="gcard-meta" id="vpStatus"></div>
+            </div>
 
-            <!-- Giọng đọc + ngôn ngữ nghe + tốc độ (dời từ header xuống, giữ nguyên id/name) -->
-            <div class="voice-picker-wrap">
-              <button id="voicePickerBtn" style="display:none" aria-hidden="true"></button>
-              <div class="voice-popover" id="voicePopover">
-                <div class="popover-section">
-                  <div class="popover-label" data-i18n="qs.rec_lang">NGÔN NGỮ NGHE</div>
-                  <div class="voice-options">
-                    <label class="voice-opt">
-                      <input type="radio" name="recognitionLang" value="vi-VN" checked>
-                      <div><strong data-i18n="qs.rec_vi">Tiếng Việt</strong><div class="opt-sub" data-i18n="qs.rec_vi_sub">vi-VN · mặc định</div></div>
-                    </label>
-                    <label class="voice-opt">
-                      <input type="radio" name="recognitionLang" value="en-US">
-                      <div><strong data-i18n="qs.rec_en">Tiếng Anh</strong><div class="opt-sub" data-i18n="qs.rec_en_sub">en-US · khi nói toàn Anh</div></div>
-                    </label>
-                  </div>
+            <!-- CHẾ ĐỘ NÓI CHUYỆN (Voice V2): console.js renderVoiceV2Card() đổ vào đây.
+                 Là thẻ RIÊNG chứ không lồng trong thẻ giọng đọc, vì nó có nút Lưu của chính
+                 nó - luật của trang này: một thẻ, một nút Lưu, luôn ở góc dưới phải. -->
+            <div id="vpV2Host"></div>
+
+            <!-- MICRO (Voice V1): ba mục ghi thẳng localStorage của máy đang dùng. Từ 0.59.27
+                 chúng nằm CÙNG THẺ với "Chế độ nói chuyện" (chủ dự án chốt 17/09): console.js
+                 renderVoiceV2Card() DỜI #qsMicFields vào thẻ đó, ngay trên nút Lưu chế độ, rồi
+                 ẩn cái nhà này. Là node tĩnh chứ không vẽ bằng JS vì app.js gắn tay bắt cho ba
+                 ô này đúng một lần lúc tải trang. Nhà mang lớp .qs-block để lỡ thẻ kia không
+                 vẽ được (máy chủ cũ) thì ba mục vẫn đứng trong một thẻ tử tế. -->
+            <div class="qs-block" id="qsMicHome">
+              <div id="qsMicFields">
+                <div class="qs-sub" data-i18n="qs.mic">MICRO</div>
+                <div class="qs-field">
+                  <label class="qs-lbl" for="recLangSel" data-i18n="qs.rec_lang">Ngôn ngữ nghe</label>
+                  <select class="js-input" id="recLangSel" name="recognitionLang">
+                    <option value="vi-VN" data-i18n="qs.rec_vi_opt">Tiếng Việt · vi-VN</option>
+                    <option value="en-US" data-i18n="qs.rec_en_opt">Tiếng Anh · en-US</option>
+                    <option value="auto" data-i18n="qs.rec_auto_opt">Đa ngôn ngữ · không cố định</option>
+                  </select>
                 </div>
-                <div class="popover-section" id="edgeVoiceSection">
-                  <div class="popover-label"><span data-i18n="qs.voice">GIỌNG ĐỌC</span> <span class="dim" style="text-transform:none;letter-spacing:0">(Edge)</span></div>
-                  <div class="voice-options">
-                    <label class="voice-opt">
-                      <input type="radio" name="voice" value="vi-VN-HoaiMyNeural" checked>
-                      <div><strong>Ngọc Thu</strong><div class="opt-sub" data-i18n="qs.voice_f_sub">Nữ · tự nhiên, ấm áp</div></div>
-                    </label>
-                    <label class="voice-opt">
-                      <input type="radio" name="voice" value="vi-VN-NamMinhNeural">
-                      <div><strong>Nam Minh</strong><div class="opt-sub" data-i18n="qs.voice_m_sub">Nam · trầm</div></div>
-                    </label>
-                  </div>
+                <div class="qs-hint" data-i18n="qs.rec_auto_hint">Đa ngôn ngữ: máy nghe Groq Whisper tự nhận ra tiếng đang nói; máy nghe của trình duyệt chỉ theo được ngôn ngữ của trình duyệt.</div>
+                <div class="qs-field">
+                  <label class="qs-lbl" for="endpointSel" data-i18n="qs.endpoint">Im lặng rồi gửi</label>
+                  <select class="js-input" id="endpointSel" name="endpoint">
+                    <option value="500" data-i18n="qs.endpoint_fast_opt">Nhanh · 0,5 giây</option>
+                    <option value="800" data-i18n="qs.endpoint_mid_opt">Vừa · 0,8 giây</option>
+                    <option value="1200" data-i18n="qs.endpoint_slow_opt">Chậm · 1,2 giây (mặc định)</option>
+                  </select>
                 </div>
-                <div class="popover-section">
-                  <div class="popover-label"><span data-i18n="qs.rate">TỐC ĐỘ</span> <span id="rateLabel" style="float:right;color:var(--accent);font-family:var(--font)">1.10×</span></div>
-                  <input type="range" id="rateSlider" min="0.7" max="1.8" step="0.05" value="1.1" style="width:100%">
-                  <div class="rate-marks"><span data-i18n="qs.rate_slow">Chậm</span><span data-i18n="qs.rate_mid">BT</span><span data-i18n="qs.rate_fast">Nhanh</span></div>
-                </div>
-                <div class="popover-section">
-                  <button class="test-btn" id="testVoiceBtn" data-i18n="qs.test_voice">▶ Nghe thử</button>
-                </div>
+                <div class="qs-hint" data-i18n="qs.endpoint_hint">Câu kết bằng "và", "nhưng", dấu phẩy thì Thansa tự chờ lâu hơn. Nói "khoan" hay "đợi chút" là Thansa im chờ bạn.</div>
+                <label class="qs-field">
+                  <span class="qs-lbl" data-i18n="qs.barge">Ngắt lời Thansa bằng giọng</span>
+                  <span class="toggle"><input type="checkbox" id="qsBarge" checked><span></span></span>
+                </label>
+                <div class="gcard-meta" data-i18n="qs.mic_local">Ba mục micro áp dụng ngay trên máy đang dùng, không cần bấm Lưu; nút Lưu chế độ chỉ lưu phần chế độ và bộ não giọng.</div>
               </div>
             </div>
 
+            <!-- THƯƠNG HIỆU. Hai nút trước đây là hai thanh tràn ngang (một tím đặc, một
+                 viền mờ) xếp chồng cạnh ảnh 48px, to hơn cả nội dung chúng phục vụ. Nay là
+                 hai nút cỡ thường, cùng họ .gcard-btn với mọi nút khác trên trang Cài đặt. -->
             <div class="qs-block">
               <div class="popover-label" data-i18n="qs.avatar">ẢNH ĐẠI DIỆN</div>
-              <div style="display:flex;align-items:center;gap:12px;margin:6px 0">
-                <img id="brandLogoPreview" src="/brand-logo" alt="logo"
-                     style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--border)">
-                <div style="display:flex;flex-direction:column;gap:6px;flex:1">
-                  <label class="s-btn" style="cursor:pointer;display:block;text-align:center"><span data-i18n="qs.avatar_upload">Tải ảnh lên</span>
+              <div class="qs-avatar">
+                <img id="brandLogoPreview" src="/brand-logo" alt="logo">
+                <div class="js-actions qs-foot">
+                  <label class="gcard-btn ghost qs-file"><span data-i18n="qs.avatar_upload">Tải ảnh lên</span>
                     <input type="file" id="brandLogoInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label>
-                  <button class="s-btn-ghost" id="brandLogoReset" data-i18n="qs.avatar_reset">Khôi phục mặc định</button>
+                  <button class="gcard-btn ghost" id="brandLogoReset" data-i18n="qs.avatar_reset">Khôi phục mặc định</button>
                 </div>
               </div>
               <div class="opt-sub" id="brandLogoStatus"></div>
@@ -400,15 +452,18 @@
               <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Thansa kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
               <div class="dom-field">
                 <input id="setDomain" placeholder="Ví dụ: thansa.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
-                <button class="s-btn" id="saveDomain" data-i18n="qs.domain_save">Lưu &amp; kiểm tra</button>
+                <button class="gcard-btn" id="saveDomain" data-i18n="qs.domain_save">Lưu &amp; kiểm tra</button>
               </div>
               <div class="dom-status" id="domStatusRow" style="display:none">
                 <span class="dom-badge" id="dnsBadge" data-i18n="qs.dns_checking">DNS: đang kiểm tra</span>
                 <span class="dom-badge" id="sslBadge" data-i18n="qs.ssl_checking">SSL: đang kiểm tra</span>
               </div>
               <div class="dom-ssl" id="domSslRow" style="display:none">
-                <button class="s-btn" id="sslToggle" data-i18n="qs.ssl_on">Bật SSL</button>
-                <button class="s-btn-ghost" id="checkDomain" data-i18n="qs.recheck">Kiểm tra lại</button>
+                <!-- Nhãn nút này do branding.js đặt theo trạng thái (Bật SSL / Kích hoạt lại), nên
+                     KHÔNG gắn data-i18n: applyDom() quét lại DOM mỗi lần đổi ngôn ngữ và sẽ ghi đè
+                     nhãn động bằng nhãn tĩnh, tức nút nói sai một nửa thời gian. Giống nút #themeToggle. -->
+                <button class="gcard-btn" id="sslToggle">Bật SSL</button>
+                <button class="gcard-btn ghost" id="checkDomain" data-i18n="qs.recheck">Kiểm tra lại</button>
               </div>
               <div id="domainGuide" class="dom-guide" style="display:none"></div>
               <div class="opt-sub" id="domainStatus"></div>
@@ -484,7 +539,10 @@
        x-effect="document.body.classList.toggle('rail-collapsed', $store.nav.collapsed)">
     <!-- ĐỈNH cố định -->
     <div class="rail-top">
-      <div class="rail-brand"><img src="/brand-logo" alt="Thansa" style="width:30px;height:30px;border-radius:8px;display:block;object-fit:cover"></div>
+      <!-- Dấu ấn và CHỮ tách làm hai ô: pet.js thay ruột của .brand-mark bằng khuôn mặt linh
+           vật (xem veDauAn), nên chữ phải nằm ngoài ô đó, không thì mỗi lần đổi hình dáng hay
+           bảng màu là chữ bị xoá theo. .brand .brand-icon trên thanh trên cũng cùng vai trò. -->
+      <div class="rail-brand"><span class="brand-mark"><img src="/brand-logo" alt="Thansa" style="width:30px;height:30px;border-radius:8px;display:block;object-fit:cover"></span><span class="rail-brand-text">THANSA <i>OS</i></span></div>
     </div>
     <!-- GIỮA cuộn được - gom theo nhóm; nhóm foot (Hệ thống) tự ghim xuống đáy -->
     <div class="rail-nav">
@@ -651,6 +709,15 @@
           </div>
           <div id="wzProvHint"></div>
         </div>
+        <!-- Công cụ tuỳ chọn: hỏi NGAY LÚC ĐẦU như trình cài của Hermes, thay vì để người
+             dùng tự phát hiện ra mình thiếu vài tuần sau. Khối này tự ẩn nếu máy đã có sẵn. -->
+        <div id="wzCongCu" style="display:none;margin-top:14px">
+          <label data-i18n="wz.ct_head">Công cụ tuỳ chọn</label>
+          <label class="wz-ct-dong" style="display:flex;gap:9px;align-items:flex-start;font-weight:400;cursor:pointer">
+            <input type="checkbox" id="wzCtBrowser" style="margin-top:3px;width:auto">
+            <span data-i18n="wz.ct_browser">Cài trình duyệt để Thansa tự kiểm thử giao diện sau khi sửa code (khoảng 100 MB, tải ở nền)</span>
+          </label>
+        </div>
         <div class="set-actions"><button class="s-btn" id="wzFinish" data-i18n="wz.start">Bắt đầu dùng Thansa →</button></div>
         <div class="auth-err" id="wzErr"></div>
       </div>
@@ -771,52 +838,75 @@
   <script src="/static/i18n/index.js?v=2"></script>
   <!-- Thansa: lop phu dich EN cho cac chuoi con nam cung trong code (chi chay khi ui_lang=en) -->
   <script src="/static/i18n/dich-en.js?v=1"></script>
-  <script src="/static/vendor/lucide-icons.js?v=4"></script>
+  <script src="/static/vendor/lucide-icons.js?v=5"></script>
   <script src="/static/icons.js?v=2"></script>
 
   <!-- theme.js phải nạp TRƯỚC mọi file khác: graph.js / app.js đăng ký
        hàm vẽ lại theo tông ngay lúc parse, nếu window.javisTheme chưa có thì chúng
        đăng ký hụt và các lớp canvas kẹt ở bảng màu tối. -->
   <script src="/static/theme.js?v=2"></script>
-  <script src="/static/voice.js?v=18"></script>
+  <!-- Voice V1: đạo diễn hội thoại (thuần) phải nạp TRƯỚC voice.js và app.js. -->
+  <script src="/static/voice-turn.js?v=1"></script>
+  <script src="/static/voice-chunker.js?v=1"></script>
+  <script src="/static/voice.js?v=23"></script>
   <script src="/static/graph.js?v=16"></script>
-  <script src="/static/chat-render.js?v=11"></script>
+  <script src="/static/chat-render.js?v=14"></script>
   <script src="/static/code-hl.js?v=1"></script>
   <script src="/static/dataview.js?v=1"></script>
+  <!-- window.JavisCopy: chép một chuỗi vào bảng nhớ tạm, có đường lui cho http trần. Đứng
+       sớm vì nhiều màn dùng chung (ngăn kéo File & link, thanh trình sửa file). -->
+  <script src="/static/copy-path.js?v=1"></script>
   <script src="/static/task-suggest.js?v=1"></script>
   <!-- Bảng lệnh của trình soạn .md (nút thanh công cụ + phím tắt + menu "/"). PHẢI đứng
        trước console.js: _neBuildToolbar đọc window.JavisEditorCmds để vẽ nút. -->
   <script src="/static/editor-cmds.js?v=1"></script>
-  <script src="/static/file-editor.js?v=8"></script>
+  <script src="/static/file-editor.js?v=11"></script>
   <script src="/static/chat-ask.js?v=1"></script>
   <script src="/static/limit-resume.js?v=1"></script>
-  <script src="/static/chat-slash.js?v=1"></script>
+  <script src="/static/chat-slash.js?v=3"></script>
   <script src="/static/chat-acts.js?v=2"></script>
   <script src="/static/chat-marks.js?v=3"></script>
-  <script src="/static/app.js?v=102"></script>
+  <!-- Voice V1: khối ngữ cảnh giao diện + bộ nhận lệnh ui_action, nạp TRƯỚC app.js. -->
+  <script src="/static/ui-context.js?v=1"></script>
+  <script src="/static/ui-actions.js?v=1"></script>
+  <!-- Voice V2: nghe nói thẳng (Live), app.js gọi lười khi bấm mic ở chế độ Live. -->
+  <script src="/static/voice-live.js?v=2"></script>
+  <script src="/static/app.js?v=109"></script>
   <!-- Sau app.js: dải việc nền đọc window.JavisSessions (app.js dựng) để biết phiên + brain. -->
-  <script src="/static/background-strip.js?v=1"></script>
-  <script src="/static/model-picker.js?v=7"></script>
+  <script src="/static/background-strip.js?v=2"></script>
+  <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
+       studio.js (ô Model của trợ lý) vì cả hai gọi window.JavisModelList lúc vẽ. -->
+  <script src="/static/model-list.js?v=1"></script>
+  <script src="/static/model-picker.js?v=8"></script>
   <script src="/static/branding.js?v=7"></script>
-  <script src="/static/quick-settings.js?v=8"></script>
+  <script src="/static/quick-settings.js?v=10"></script>
   <script src="/static/chat-zoom.js?v=6"></script>
   <script src="/static/brains-ui.js?v=7"></script>
-  <script src="/static/sessions-ui.js?v=17"></script>
-  <script src="/static/studio.js?v=30"></script>
+  <script src="/static/sessions-ui.js?v=18"></script>
+  <script src="/static/studio.js?v=39"></script>
+  <!-- Trang Cộng sự: nạp SAU studio.js (mượn trình sửa agent/workflow của Studio) và TRƯỚC
+       console.js (renderWorkspace ủy quyền cho window.JavisWorkspace). -->
+  <script src="/static/workspace.js?v=10"></script>
   <script src="/static/packs.js?v=1"></script>
-  <script src="/static/chatbots.js?v=10"></script>
+  <script src="/static/chatbots.js?v=16"></script>
+  <!-- Trang Hội thoại (hộp thư khách): nạp TRƯỚC console.js để renderConversations uỷ quyền được. -->
+  <script src="/static/conversations.js?v=6"></script>
   <!-- Dashboard Token (trang Mức dùng nâng cấp): nạp TRƯỚC console.js để renderUsage ủy quyền được. -->
   <script src="/static/usage.js?v=1"></script>
   <!-- Trang Code (terminal): nạp TRƯỚC console.js để renderCode ủy quyền được. File này CHỈ có
        phần khung - xterm.js (285KB) nạp lười ở lần đầu mở tab, không nằm trong đường khởi động. -->
   <script src="/static/code-term.js?v=2"></script>
   <!-- Console layer: console.js đăng ký store TRƯỚC khi Alpine khởi động (defer) -->
-  <script src="/static/console.js?v=132"></script>
+  <script src="/static/console.js?v=145"></script>
   <script src="/static/mobile-chat.js?v=8"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=2"></script>
   <script src="/static/install-nudge.js?v=1"></script>
   <script src="/static/notifications.js?v=3"></script>
+  <!-- Linh vật ở mép màn hình. Nạp SAU app.js vì nó chỉ được app.js gọi vào
+       (setOrbState -> JavisPet.setState), và sau console.js để trang Cài đặt vẽ được thẻ chọn. -->
+  <script src="/static/pet.js?v=1"></script>
+  <script src="/static/agent-avatar.js?v=2"></script>
   <!-- (Nút đổi tông TỐI ↔ SÁNG: theme.js đã nạp ở đầu khối script phía trên) -->
   <!-- Alpine self-host (dashboard/vendor): bản unpkg đo được 2.1s lúc first load + chết khi offline -->
   <script defer src="/static/vendor/alpinejs-3.14.1.min.js?v=1"></script>

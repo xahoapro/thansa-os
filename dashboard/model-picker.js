@@ -10,10 +10,8 @@
 
   // Thang độ sâu suy nghĩ - phải KHỚP engine.REASONING_LEVELS bên server, nếu không người dùng
   // chọn xong server lọc về "off" mà giao diện vẫn khoe đang bật.
-  const EFFORT = [["off", "Tắt"], ["low", "Thấp"], ["medium", "Vừa"],
-                  ["high", "Cao"], ["xhigh", "Rất cao"], ["ultra", "Tối đa"]];
-  const modelCache = {};   // provider id -> {models, ts}; không giữ catalog cũ suốt cả tab
-  const MODEL_CACHE_MS = 5 * 60 * 1000;
+  const EFFORT = [["off", "models.r_off"], ["low", "models.r_low"], ["medium", "models.r_med"],
+                  ["high", "models.r_high"], ["xhigh", "models.r_xhigh"], ["ultra", "models.r_ultra"]];
   let state = { providers: [], main: { provider: "", model: "" }, reasoning: "off" };
   let sessionPin = null;   // {provider, model} phiên đang mở đã ghim; null = theo mặc định chung
   let pinBroken = false;   // phiên có ghim nhưng ghim HỎNG (provider mất key) - server đang chạy mặc định chung
@@ -22,7 +20,7 @@
   let expanded = null;     // provider đang mở rộng trong popover
   let filter = "";
 
-  const short = (m) => (m || "").split("/").pop().replace(/^(claude-|gpt-)/, "").slice(0, 26) || "mặc định";
+  const short = (m) => (m || "").split("/").pop().replace(/^(claude-|gpt-)/, "").slice(0, 26) || window.t("models.mp_default");
   const provShort = (lbl) => (lbl || "").split(" ")[0];
   const $ = (id) => document.getElementById(id);
   const curSid = () => { try { return (window.JavisSessions && window.JavisSessions.current()) || null; } catch (e) { return null; } };
@@ -80,53 +78,33 @@
     const mt = $("mbModelTxt"), et = $("mbEffortTxt");
     if (mt) {
       mt.textContent = (p ? provShort(p.label) : "Model") + " · " + short(eff.model)
-        + (sessionPin ? " · ghim" : pinBroken ? " · ghim hỏng" : "");
+        + (sessionPin ? " · " + window.t("mpick.pin") : pinBroken ? " · " + window.t("mpick.pin_broken") : "");
       mt.title = sessionPin
-        ? "Model ghim riêng cho phiên chat này (đổi ở phiên khác không ảnh hưởng)"
+        ? window.t("mpick.pin_title")
         : pinBroken
-          ? "Model ghim của phiên không còn dùng được (provider đã bị gỡ key) - đang chạy model mặc định chung"
-          : "Theo model mặc định chung";
+          ? window.t("mpick.pin_broken_title")
+          : window.t("mpick.follow_default");
     }
-    if (et) et.textContent = "Effort: " + (EFFORT.find((e) => e[0] === state.reasoning) || EFFORT[0])[1];
-  }
-
-  async function fetchModels(pid) {
-    const cached = modelCache[pid];
-    if (cached && Date.now() - cached.ts < MODEL_CACHE_MS) return cached.models;
-    try {
-      const force = pid === "openai-oauth" ? "&refresh=1" : "";
-      const d = await (await fetch("/provider/models?provider=" + encodeURIComponent(pid) + force)).json();
-      modelCache[pid] = { models: d.models || [], ts: Date.now() };
-    } catch (e) { modelCache[pid] = { models: [], ts: Date.now() }; }
-    return modelCache[pid].models;
+    if (et) et.textContent = "Effort: " + window.t((EFFORT.find((e) => e[0] === state.reasoning) || EFFORT[0])[1]);
   }
 
   async function renderPop() {
     const pop = $("mbPop");
     if (!pop) return;
     if (!expanded) expanded = state.main.provider || "anthropic-cli";
-    let html = `<input class="mb-search" id="mbSearch" placeholder="Tìm model..." value="${filter.replace(/"/g, "&quot;")}">`;
-    for (const p of state.providers) {
-      const on = !!p.configured;
-      html += `<div class="mb-prov ${on ? "" : "off"}" data-prov="${on ? p.id : ""}">
-                 <span>${p.label}${p.is_main ? " " + ic("check", { cls: "ic-ok" }) : ""}</span><span>${on ? ic(p.id === expanded ? "chevron-down" : "chevron-right") : ic("lock", { cls: "ic-dim" })}</span></div>`;
-      if (!on) { html += `<div class="mb-link" data-goto="models">+ Thêm API key ở trang Models để mở khoá</div>`; continue; }
-      if (p.id === expanded) {
-        let ids = await fetchModels(p.id);
-        if (filter) ids = ids.filter((id) => id.toLowerCase().includes(filter.toLowerCase()));
-        if (!ids.length) {
-          html += `<div class="mb-empty">${filter ? "Không có model khớp." : "Chưa lấy được danh sách model."}</div>`;
-        }
-        for (const id of ids.slice(0, 60)) {
-          const _eff = effective();
-          const cur = p.id === _eff.provider && id === _eff.model;
-          html += `<div class="mb-item ${cur ? "cur" : ""}" data-prov="${p.id}" data-model="${id.replace(/"/g, "&quot;")}">
-                     <span class="tick">${cur ? ic("check", { cls: "ic-ok" }) : ""}</span><span>${short(id)}</span></div>`;
-        }
-      }
-    }
+    // Thân bảng (ô tìm + nhà + model + hàng khoá) dựng bởi model-list.js, dùng CHUNG với ô
+    // Model của trợ lý bên Studio. Ở đây chỉ nối thêm hàng Effort - thứ duy nhất riêng của
+    // thanh chat.
+    let html = await window.JavisModelList.render({
+      providers: state.providers,
+      expanded, filter,
+      selected: effective(),
+      searchId: "mbSearch",
+      short,
+      mark: (p) => (p.is_main ? " " + ic("check", { cls: "ic-ok" }) : ""),
+    });
     html += `<div class="mb-eff-row"><span class="lbl">Effort</span>` +
-      EFFORT.map(([v, l]) => `<button class="mb-eff-btn ${state.reasoning === v ? "cur" : ""}" data-eff="${v}">${l}</button>`).join("") +
+      EFFORT.map(([v, l]) => `<button class="mb-eff-btn ${state.reasoning === v ? "cur" : ""}" data-eff="${v}">${window.t(l)}</button>`).join("") +
       `</div>`;
     pop.innerHTML = html;
     const se = $("mbSearch");
@@ -209,6 +187,13 @@
 
   // Đổi phiên (mở phiên cũ, chat mới, xoá phiên) → hỏi lại ghim của phiên rồi vẽ lại.
   window.addEventListener("javis:sessions-changed", async () => { await loadSessionPin(); renderBar(); });
+
+  // Từ điển về (fetch bất đồng bộ, thường SAU khi chip model đã vẽ) hoặc người dùng đổi
+  // ngôn ngữ giao diện: vẽ lại chip, và vẽ lại cả bảng chọn nếu nó đang mở.
+  window.addEventListener("javis:i18n", () => {
+    renderBar();
+    if (isOpen()) renderPop();
+  });
 
   if (document.readyState !== "loading") window.initModelBar();
   else document.addEventListener("DOMContentLoaded", () => window.initModelBar());

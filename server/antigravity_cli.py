@@ -169,6 +169,123 @@ def co_effort(muc: Optional[str]) -> list:
     return []
 
 
+# ---- Model TỰ MANG mức nghĩ trong tên: truyền thêm `--effort` là XUNG ĐỘT ----
+#
+# `agy models` trả về tên model đã gắn sẵn mức nghĩ ở đuôi: `gemini-3.8-flash-medium`,
+# `gemini-3.6-flash-high`... Với những model đó, CHỌN MODEL CHÍNH LÀ CHỌN MỨC NGHĨ, nên `agy`
+# từ chối chạy khi còn kèm cờ (chủ repo báo 2026-09-08, ảnh chụp màn hình):
+#
+#     invalid model selection (--model "gemini-3.8-flash-medium" --effort "high"):
+#     --model gemini-3.8-flash-medium conflicts with --effort=high
+#
+# `co_effort` KHÔNG bắt được ca này, và đó là chỗ đáng ghi lại: nó hỏi `--help` xem cờ có tồn
+# tại không, mà cờ tồn tại thật, giá trị "high" cũng được khai thật. Cái sai nằm ở chỗ GHÉP cờ
+# đúng với một model đã khoá - một điều kiện chỉ đọc được từ TÊN MODEL. Và nó hỏng nặng chứ
+# không nhẹ: CLI chết ngay lúc đọc cờ, chưa gọi tới model, nên MỌI lượt chat trên model đó đều
+# mất trắng cho tới khi người dùng tự đổi model hoặc hạ độ sâu suy nghĩ.
+_DUOI_KHOA_EFFORT = ("low", "medium", "high", "xhigh", "max", "minimal")
+_MODEL_XUNG_EFFORT: set = set()   # model bị CHÍNH CLI báo xung đột - nhớ để lượt sau khỏi thử
+
+
+def nho_model_xung_effort(model) -> None:
+    """Nhớ trong phiên: model này bị `agy` từ chối khi kèm `--effort`.
+
+    Để lượt sau đi thẳng đường không cờ thay vì tốn thêm một tiến trình hỏng nữa. Chỉ nhớ trong
+    RAM: một bản `agy` mới có thể bỏ luật xung đột, mà ghi ra đĩa thì cái nhớ sai sống dai hơn
+    cái sai nó vá.
+    """
+    ten = str(model or "").strip().lower()
+    if ten:
+        _MODEL_XUNG_EFFORT.add(ten)
+
+
+def model_khoa_effort(model) -> bool:
+    """Tên model này đã tự mang sẵn mức nghĩ -> KHÔNG được truyền `--effort` nữa.
+
+    Nói thẳng cái giá của cách nhận diện bằng đuôi tên: một model thật sự tên đuôi `-max` mà
+    vẫn nhận `--effort` sẽ bị bỏ cờ oan, và độ sâu rơi về câu nhắc trong prompt. Đó là hướng
+    sai ĐÚNG - bỏ sót một tuỳ chọn thì người dùng vẫn có câu trả lời, còn ghép sai là mất trọn
+    lượt chat kèm một câu lỗi tiếng Anh họ không sửa được gì.
+    """
+    ten = str(model or "").strip().lower()
+    if not ten:
+        return False
+    if ten in _MODEL_XUNG_EFFORT:
+        return True
+    duoi = ten.rsplit("-", 1)[-1] if "-" in ten else ""
+    return duoi in _DUOI_KHOA_EFFORT
+
+
+def _la_loi_xung_effort(loi: str) -> bool:
+    """Câu lỗi này có phải là "model đã khoá mức nghĩ mà còn kèm --effort" không.
+
+    Lưới an toàn cho những hình dạng xung đột CHƯA ĐO ĐƯỢC (model không hỗ trợ suy nghĩ, bản
+    CLI đổi câu chữ, đuôi tên model kiểu mới). Nhận rộng có chủ đích: đoán nhầm thì cùng lắm
+    chạy lại một lượt không cờ, còn bỏ sót là người dùng mất câu trả lời.
+    """
+    l = (loi or "").lower()
+    if "effort" not in l:
+        return False
+    return any(k in l for k in ("conflict", "invalid model selection", "cannot be used with",
+                                "incompatible", "not supported", "not compatible"))
+
+
+# ---- Nhà cung cấp gãy TẠM THỜI: chờ một nhịp rồi hỏi lại, đừng giết cả lượt ----
+#
+# Chủ repo gửi ảnh (2026-09-08), nguyên văn thứ `agy` in ra rồi thoát mã 1:
+#
+#     failed to send message: send failed; already reported to the user: Eligibility check
+#     failed: failed to get load code assist response: UNAVAILABLE (code 503): The service is
+#     currently unavailable.
+#
+# 503 là phía Google đang trục trặc, KHÔNG phải cấu hình sai và cũng không phải hết hạn mức.
+# Việc đúng là chờ rồi hỏi lại - đúng cách `engine.py` đã đối xử với 429/503 của các API từ
+# lâu (xem `_RETRY_STATUS`). Đường CLI thì chưa có gì cả: gãy một cái là người dùng lãnh trọn
+# một câu tiếng Anh sáu dòng và mất lượt chat, dù chỉ cần đợi vài giây.
+_LOI_TAM_THOI = (
+    "unavailable", "temporarily", "try again", "timeout", "timed out", "deadline exceeded",
+    "connection reset", "connection refused", "eof", "bad gateway", "service unavailable",
+    "internal error", "overloaded", "too many requests",
+)
+_MA_TAM_THOI = ("code 429", "code 500", "code 502", "code 503", "code 504",
+                "429", "500 ", "502 ", "503", "504 ")
+
+
+def _la_loi_tam_thoi(loi: str) -> bool:
+    """Câu lỗi này có phải kiểu CHỜ MỘT NHỊP LÀ HẾT không (nhà cung cấp gãy, không phải ta sai).
+
+    Nhận theo câu chữ vì `agy` không trả mã máy đọc được: nó gói lỗi upstream thành một chuỗi
+    tiếng Anh rồi thoát mã 1. Cố tình KHÔNG nhận những thứ chờ mãi cũng không hết (chưa đăng
+    nhập, hết hạn mức, model không tồn tại, xung đột cờ) - thử lại mấy cái đó chỉ tổ chậm gấp
+    đôi rồi vẫn hỏng.
+    """
+    l = (loi or "").lower()
+    if not l:
+        return False
+    if _la_loi_chua_dang_nhap(l) or _la_loi_xung_effort(l):
+        return False
+    if any(k in l for k in ("quota", "exhausted", "rate limit exceeded", "insufficient",
+                            "not found", "invalid", "permission denied", "unauthor")):
+        # "resource exhausted"/"quota" là hết phần được cấp - chờ vài giây không đổi được gì.
+        return False
+    return any(k in l for k in _LOI_TAM_THOI) or any(k in l for k in _MA_TAM_THOI)
+
+
+# Chờ bao lâu trước mỗi lần hỏi lại. Ngắn thôi: người dùng đang ngồi nhìn màn hình chat, chờ
+# quá nửa phút thì thà báo lỗi để họ tự quyết còn hơn. Hai nhịp là đủ vượt một cơn 503 chớp
+# nhoáng, mà tổng thời gian xấu nhất vẫn dưới 10 giây cộng thời gian chạy.
+_NHIP_THU_LAI = (2.0, 6.0)
+
+
+def _cau_bao_tam_thoi(loi: str) -> str:
+    """Câu nói cho người dùng khi thử lại hết nhịp mà vẫn gãy. Nói rõ LỖI CỦA AI."""
+    return ("Google (Antigravity) đang trục trặc tạm thời nên lượt này không gửi đi được. "
+            "Javis đã tự thử lại " + str(len(_NHIP_THU_LAI)) + " lần, vẫn chưa được.\n\n"
+            "Chờ một lát rồi nhắn lại, hoặc đổi sang bộ não khác ở trang Models. Đây là lỗi "
+            "phía Google, không phải cấu hình của bạn.\n\n"
+            "_Nguyên văn:_ " + (loi or "")[:400])
+
+
 def nhan_prompt_qua_stdin() -> bool:
     """`--help` của bản này có TỰ KHAI là đọc prompt từ stdin không.
 
@@ -435,21 +552,63 @@ def _viet_file_ngu_canh(cwd: str, noi_dung: str) -> tuple[str, str]:
     return str(p), str(p)
 
 
+def cau_hoi_moi_nhat(prompt: str) -> str:
+    """Bóc ĐÚNG tin nhắn mới nhất của người dùng ra khỏi gói prompt Javis gửi cho `agy`.
+
+    Vì `agy` không nối lại mạch, mỗi lượt Javis gửi cả lịch sử hội thoại đã gói bằng
+    `compaction.bootstrap_prompt`: lịch sử cũ ở trên, rồi một dòng đánh dấu, rồi câu hỏi hiện
+    tại ở CUỐI. Chỗ nào cần "câu hỏi thật" (lời nhắc trên dòng lệnh khi đi đường file) phải lấy
+    phần SAU dấu đó. Bản trước lấy 1500 ký tự ĐẦU của cả gói, tức là tiêu đề khối lịch sử cộng
+    một câu hỏi CŨ, rồi dán lên dòng lệnh dưới nhãn "tin nhắn mới nhất của người dùng". Model
+    nào không đọc hết file ngữ cảnh (file dài hàng trăm nghìn ký tự, tool đọc file cắt cụt) là
+    trả lời đúng câu hỏi cũ đó - chính cảnh "chat dài thì trả lời không liên quan, mở chat mới
+    thì lại bình thường" mà người dùng báo 2026-09-18/19.
+    Không có dấu (phiên mới, chưa có lịch sử) thì cả prompt là câu hỏi.
+    """
+    raw = str(prompt or "")
+    try:
+        import compaction
+        dau = compaction.CURRENT_REQUEST_MARKER
+    except Exception:
+        dau = "[YÊU CẦU HIỆN TẠI]"
+    i = raw.rfind(dau)
+    if i < 0:
+        return raw.strip()
+    return raw[i + len(dau):].strip()
+
+
+# Câu hỏi chép lại trên dòng lệnh khi đi đường file được dài tới đâu. Trần thật là dòng lệnh
+# Windows (~30.000 đơn vị, xem `_tran_argv`) trừ đi phần lời nhắc và các cờ, nên 6.000 còn xa
+# trần; 1.500 của bản trước quá ít, dán một bài viết là mất luôn câu chốt ở cuối (chủ repo
+# 2026-09-20). Dài hơn trần thì giữ đầu + đuôi, lược đoạn giữa.
+_TRAN_NHAC_CAU_HOI = 6000
+_DAU_NHAC_CAU_HOI = 4000
+_DUOI_NHAC_CAU_HOI = 2000
+
+
 def _loi_nhac_file(duong_dan: str, cau_hoi: str) -> str:
     """Prompt NGẮN thay cho cả gói: bảo model tự mở file ngữ cảnh ra đọc.
 
     Câu hỏi thật vẫn được nhắc lại ở đây (cắt ngắn) chứ không chỉ nằm trong file. Đó là lưới an
     toàn: bản CLI nào bướng không chịu đọc file thì ít ra vẫn trả lời đúng câu người dùng hỏi,
-    chỉ thiếu luật riêng của Javis, chứ không trả lời trống trơn.
+    chỉ thiếu luật riêng của Javis, chứ không trả lời trống trơn. Phải là câu hỏi MỚI NHẤT
+    (xem `cau_hoi_moi_nhat`), không phải đoạn đầu của gói lịch sử.
     """
-    hoi = (cau_hoi or "").strip()
-    if len(hoi) > 1500:
-        hoi = hoi[:1500] + " [...]"
+    hoi = cau_hoi_moi_nhat(cau_hoi)
+    if len(hoi) > _TRAN_NHAC_CAU_HOI:
+        # Giữ CẢ ĐẦU LẪN ĐUÔI chứ không chỉ đầu: người dùng dán một bài dài thì chỉ dẫn hay
+        # nằm ở câu mở ("viết lại đoạn sau") hoặc ở câu chốt cuối ("đoạn trên hãy tóm tắt").
+        # Cắt đầu là mất câu chốt, cắt đuôi là mất câu mở; đoạn giữa mới là phần ít quan
+        # trọng nhất và vẫn có đủ trong file ngữ cảnh.
+        hoi = (hoi[:_DAU_NHAC_CAU_HOI].rstrip()
+               + "\n[... đoạn giữa đã lược, bản đầy đủ nằm trong file ngữ cảnh ...]\n"
+               + hoi[-_DUOI_NHAC_CAU_HOI:].lstrip())
     return (
         f"BẮT BUỘC LÀM TRƯỚC: mở và đọc HẾT file `{duong_dan}`.\n"
         "File đó chứa toàn bộ chỉ dẫn hệ thống, bộ nhớ và lịch sử hội thoại của bạn. Đọc xong "
-        "thì hành xử đúng theo nó và trả lời tin nhắn mới nhất của người dùng (nằm ở cuối file). "
-        "Không nhắc tới file này trong câu trả lời, không tóm tắt nó.\n"
+        "thì hành xử đúng theo nó và trả lời tin nhắn mới nhất của người dùng (nằm ở cuối file, "
+        "và được chép lại ở cuối lời nhắc này). Các câu hỏi cũ hơn trong file ĐÃ được trả lời "
+        "rồi, không trả lời lại. Không nhắc tới file này trong câu trả lời, không tóm tắt nó.\n"
         "Nếu KHÔNG mở được file (không có quyền, không tìm thấy), đừng im lặng và cũng đừng đoán: "
         "trả lời câu hỏi dưới đây rồi nói thẳng ở cuối là bạn không đọc được file ngữ cảnh.\n"
         "(Phải đi qua file vì hệ điều hành chặn độ dài dòng lệnh, không nhét thẳng vào đây được.)\n\n"
@@ -531,17 +690,26 @@ def co_quyen_cho_mode(mode: Optional[str]) -> list[str]:
     """
     m = str(mode or "").strip().lower()
     co: list[str] = []
-    if m == "full":
+    if m in ("full", "auto"):
+        # auto = được ghi file nháp trong brain. Headless mà dừng lại hỏi duyệt là treo tới hết
+        # giờ, nên vẫn phải tự duyệt; rào tiền/đơn/đăng bài nằm ở MCP Hub chứ không ở đây.
+        #
+        # auto KHÔNG còn kèm `--sandbox` (đo 2026-09-19 trên agy 1.2.7, task t_305e712a90f4):
+        # `agy --sandbox --dangerously-skip-permissions -p "ls"` in "root agent idle; waiting up
+        # to 5s for 1 background task(s)" rồi "terminating 1 background task(s) on exit" mà KHÔNG
+        # có kết quả nào. Hai cờ đi cùng nhau khiến tool shell của agy chạy như một việc nền, và
+        # chế độ in một lượt (-p) tự huỷ nó sau 5 giây trước khi tool kịp trả lời. Bỏ `--sandbox`
+        # là chạy đúng (đo 4 lần mỗi bên). Mọi việc Kanban/Loop/Workflow ở mức auto cần shell
+        # hay ghi file thật đều chết câm vì tổ hợp này, còn model vẫn trả lời trôi chảy nên log
+        # không có lấy một dòng lỗi. Rào hành động ra ngoài vốn nằm ở MCP Hub chứ không ở
+        # `--sandbox`, nên bỏ cờ không mất lớp phòng vệ thật nào.
         if co_co("--dangerously-skip-permissions"):
             co.append("--dangerously-skip-permissions")
         return co
-    # suggest + auto + mọi giá trị lạ: bật sandbox nếu bản CLI có.
+    # suggest + mọi giá trị lạ: bật sandbox nếu bản CLI có. suggest không tự duyệt tool nên
+    # không dính tổ hợp hỏng ở trên.
     if co_co("--sandbox"):
         co.append("--sandbox")
-    if m == "auto" and co_co("--dangerously-skip-permissions"):
-        # auto = được ghi file nháp trong brain. Headless mà dừng lại hỏi duyệt là treo tới hết
-        # giờ, nên vẫn phải tự duyệt; rào tiền/đơn/đăng bài nằm ở MCP Hub chứ không ở đây.
-        co.append("--dangerously-skip-permissions")
     return co
 
 
@@ -989,7 +1157,10 @@ class AntigravityCLI:
         if self.model and co_co("--model"):
             args += ["--model", self.model]
         args += co_quyen_cho_mode(self.mode)
-        args += co_effort(self.effort)
+        # Hai điều kiện, thiếu một là hỏng lượt chat: `co_effort` biết bản CLI này CÓ cờ hay
+        # không, `model_khoa_effort` biết model đang chọn đã tự mang mức nghĩ trong tên chưa.
+        if not model_khoa_effort(self.model):
+            args += co_effort(self.effort)
         if self.mcp_config and co_co("--mcp-config", "--mcp-config-file"):
             args += ["--mcp-config", self.mcp_config]
         if co_co("--output-format"):
@@ -1052,9 +1223,45 @@ class AntigravityCLI:
         # ra màn hình. Chủ repo đã thấy đúng cảnh ngược lại: hai bong bóng đỏ "Error: empty
         # prompt" và "thoát với mã 1" hiện lên, rồi mới tới câu trả lời - người dùng không có
         # cách nào biết cái đỏ đó Javis đã tự xử xong.
-        async for ev in self._mot_luot(full, prompt, duong, ket,
-                                       giu_loi=(duong != "file")):
+        # `giu_loi=True` cho MỌI đường, kể cả đường file. Trước 0.55.x chỗ này truyền
+        # `giu_loi=(duong != "file")`, và nó đẻ ra lỗi kép: đường file vừa bắn lỗi ra ngay tại
+        # chỗ, vừa gom vào `cac_loi` để nhánh `else` cuối hàm bắn ra LẦN NỮA - người dùng nhận
+        # hai bong bóng đỏ y hệt nhau cho cùng một sự cố. Giữ hết ở `cac_loi` thì chỉ còn đúng
+        # một chỗ phát lỗi, mà lượt thử lại bên dưới cũng không bị lộ câu lỗi của lượt hỏng.
+        async for ev in self._mot_luot(full, prompt, duong, ket, giu_loi=True):
             yield ev
+        # Model đã khoá mức nghĩ mà Javis còn kèm `--effort`: `agy` chết ngay lúc đọc cờ (xem
+        # `model_khoa_effort`). Bỏ cờ rồi chạy lại NGAY trong lượt này - người dùng vẫn nhận
+        # câu trả lời, chỉ mất phần độ sâu mà chính tên model đã ấn định sẵn.
+        if self.effort and any(_la_loi_xung_effort(x) for x in ket.get("cac_loi") or []):
+            print(f"[antigravity] model {self.model} không nhận --effort, chạy lại không cờ",
+                  file=sys.stderr)
+            nho_model_xung_effort(self.model)
+            self.effort = None
+            ket = {}
+            async for ev in self._mot_luot(full, prompt, duong, ket, giu_loi=True):
+                yield ev
+        # Nhà cung cấp gãy TẠM THỜI (503 UNAVAILABLE, timeout, bad gateway...): chờ một nhịp rồi
+        # hỏi lại. Ba điều kiện, thiếu một là không thử:
+        #   - lỗi thuộc loại chờ-là-hết (xem `_la_loi_tam_thoi`), không phải chưa đăng nhập/hết
+        #     hạn mức - mấy cái đó thử lại chỉ tổ chậm gấp đôi rồi vẫn hỏng;
+        #   - lượt đó KHÔNG lấy được chữ nào (đã nhả chữ mà chạy lại là câu trả lời hiện hai lần);
+        #   - lượt đó KHÔNG chạy tool nào (đã gửi tin, đã ghi file, đã đặt lịch thì chạy lại là
+        #     làm hai lần) - cùng luật với đường API trong `engine.py`.
+        for _nhip in _NHIP_THU_LAI:
+            if ket.get("text") or ket.get("co_tool"):
+                break
+            if not any(_la_loi_tam_thoi(x) for x in ket.get("cac_loi") or []):
+                break
+            print(f"[antigravity] nhà cung cấp gãy tạm thời, chờ {_nhip}s rồi hỏi lại",
+                  file=sys.stderr)
+            await asyncio.sleep(_nhip)
+            _ket_hong = ket
+            ket = {}
+            async for ev in self._mot_luot(full, prompt, duong, ket, giu_loi=True):
+                yield ev
+            if not ket.get("text") and not (ket.get("cac_loi") or []):
+                ket = _ket_hong      # lượt sau câm hẳn thì giữ câu lỗi cũ, đừng để trắng tay
         # Vượt trần dòng lệnh: chạy lại NGAY bằng đường không có trần. Không có nhánh này thì
         # người dùng nhận nguyên "OSError: [Errno 7] Argument list too long" - một câu họ không
         # sửa được gì, và lượt chat coi như mất trắng (báo 2026-08-30, chat dài tiếng Việt).
@@ -1065,8 +1272,7 @@ class AntigravityCLI:
             print(f"[antigravity] prompt vượt trần dòng lệnh, chuyển sang {_duong_lui}",
                   file=sys.stderr)
             ket = {}
-            async for ev in self._mot_luot(full, prompt, _duong_lui, ket,
-                                           giu_loi=(_duong_lui != "file")):
+            async for ev in self._mot_luot(full, prompt, _duong_lui, ket, giu_loi=True):
                 yield ev
             duong = _duong_lui
         # Prompt KHÔNG TỚI NƠI có hai hình dạng, và bản trước chỉ bắt được một:
@@ -1104,7 +1310,11 @@ class AntigravityCLI:
             await asyncio.to_thread(nho_duong, self.cli_path, duong, "đã chạy được")
         else:
             for _l in ket.get("cac_loi") or []:      # không thử lại thì phải đưa lỗi ra
-                yield {"type": "error", "content": _l}
+                # Gãy tạm thời mà thử lại hết nhịp vẫn không xong: người dùng cần biết ĐÂY LÀ
+                # LỖI PHÍA GOOGLE và Javis đã tự thử lại rồi, chứ không phải một câu tiếng Anh
+                # sáu dòng nghe như mình cấu hình sai (chủ repo gửi đúng ảnh đó, 2026-09-08).
+                yield {"type": "error",
+                       "content": _cau_bao_tam_thoi(_l) if _la_loi_tam_thoi(_l) else _l}
         text = ket.get("text") or ""
         if text:
             # Không nuốt chuyện này: trả lời mà thiếu system prompt thì vẫn trôi chảy, người dùng
@@ -1245,6 +1455,7 @@ class AntigravityCLI:
 
         cac_manh: list[str] = []
         cac_loi: list[str] = []
+        chan: dict = {}          # trạng thái phụ của vòng đọc; hiện giữ "toan_van" (xem _chot_van)
         da_loi = False
         # Đi đường file thì phải biết model có ĐỌC ĐƯỢC file không, và phải phân biệt cho đúng ba
         # trạng thái chứ không phải hai. Bản đầu chỉ dò tên file trong bất kỳ sự kiện nào, và nó
@@ -1265,6 +1476,7 @@ class AntigravityCLI:
         co_stream = co_co("--output-format")
         co_json = False
         qua_tran_argv = False
+        co_tool = False
         while True:
             ev = await hang.get()
             if ev is HET:
@@ -1284,19 +1496,22 @@ class AntigravityCLI:
                             doc_duoc = True
                     else:
                         da_thu_doc = True
-            for ra in self._doi_su_kien(ev, cac_manh):
+            for ra in self._doi_su_kien(ev, cac_manh, chan):
+                if ra.get("type") == "tool_call":
+                    co_tool = True      # đã đụng thế giới bên ngoài -> KHÔNG được chạy lại
                 if ra.get("type") == "error":
                     da_loi = True
                     cac_loi.append(str(ra.get("content") or ""))
                     if giu_loi:
                         continue      # lượt này còn có thể thử lại bằng đường khác
                 yield ra
-        ket.update(text="".join(cac_manh).strip(), loi=da_loi, cac_loi=cac_loi,
+        ket.update(text=_chot_van("".join(cac_manh).strip(), chan.get("toan_van", "")),
+                   loi=da_loi, cac_loi=cac_loi,
                    ten_ngu_canh=ten_ngu_canh, qua_tran_argv=qua_tran_argv,
-                   doc_duoc=doc_duoc, da_thu_doc=da_thu_doc,
+                   doc_duoc=doc_duoc, da_thu_doc=da_thu_doc, co_tool=co_tool,
                    biet_doc_hay_khong=(duong != "file") or (co_stream and co_json))
 
-    def _doi_su_kien(self, ev: dict, cac_manh: list) -> list:
+    def _doi_su_kien(self, ev: dict, cac_manh: list, chan: Optional[dict] = None) -> list:
         """Một dòng NDJSON của `agy` -> 0..n sự kiện theo hợp đồng của Javis.
 
         CHƯA ĐO được tên trường thật, nên nhận rộng: gom mọi hình dạng "có chữ để hiện" mà một
@@ -1389,6 +1604,13 @@ class AntigravityCLI:
             # không có delta nào. Nên chỉ lấy khi tay trắng - đúng một lần, và không bao giờ
             # rỗng vì lý do "đã bỏ qua chỗ duy nhất có chữ".
             if cac_manh:
+                # Vẫn GIỮ LẠI toàn văn để `_chot_van` gọt phần chữ thừa đứng trước nó.
+                if chan is not None:
+                    for k in ("response", "content", "text", "output"):
+                        v = ev.get(k)
+                        if isinstance(v, str) and v.strip():
+                            chan["toan_van"] = v.strip()
+                            break
                 return ra
 
         # Còn lại: mọi thứ trông như chữ của trợ lý đều gom vào câu trả lời. Đây là chỗ hứng
@@ -1405,6 +1627,30 @@ class AntigravityCLI:
                         cac_manh.append(vv)
                         break
         return ra
+
+
+def _chot_van(gom: str, toan_van: str) -> str:
+    """Bỏ phần chữ TRUNG GIAN lọt vào TRƯỚC câu trả lời cuối.
+
+    Sự cố 13/09/2026: bản tin giá vàng gửi ra Telegram mở đầu bằng "The task has been started
+    in the background. Waiting for results." Không phải lỗi dữ liệu - đó là câu model tự nói
+    ở bước chờ tác vụ nền, và vòng đọc sự kiện dưới kia cố ý gom RỘNG ("mọi thứ trông như chữ
+    của trợ lý"), nên câu trạng thái đó bị nối thẳng vào đầu câu trả lời thật.
+
+    Trọng tài là `response` của sự kiện `result`: `agy` mang TOÀN VĂN câu trả lời cuối ở đó.
+    Chỗ gom mà KẾT THÚC bằng đúng toàn văn ấy nhưng dài hơn thì phần dôi ra nằm ở ĐẦU, và
+    theo định nghĩa nó không thuộc câu trả lời -> cắt.
+
+    Cố ý chỉ xét `endswith`, KHÔNG xét "toàn văn nằm đâu đó trong chỗ gom": bản `agy` nào cắt
+    ngắn `response` cho câu trả lời dài thì bản cắt ngắn ấy vẫn là chuỗi con, và tin theo nó
+    là tự tay xén mất phần đuôi. Không khớp thì giữ nguyên chỗ gom - thà thừa một dòng lạ
+    người đọc nhận ra ngay, còn hơn thiếu một đoạn không ai biết là đã mất.
+    """
+    if not toan_van or not gom or gom == toan_van:
+        return gom
+    if gom.endswith(toan_van):
+        return toan_van
+    return gom
 
 
 def _la_loi_chua_dang_nhap(loi: str) -> bool:

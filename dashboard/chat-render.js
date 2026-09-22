@@ -17,6 +17,20 @@
 (function () {
   "use strict";
 
+  // Chữ hiện ra lấy từ từ điển. Trong trình duyệt là window.t (i18n/index.js nạp trước mọi
+  // module này); dưới node - nơi test require() thẳng file này - `window` CHƯA KHAI BÁO nên
+  // đọc window.t là ReferenceError chứ không phải undefined, phải hỏi bằng typeof. Ở đó đọc
+  // thẳng vi.json để hàm vẫn trả về chữ thật, không phải mã khoá trần.
+  function tw(khoa, bien) {
+    if (typeof window !== "undefined" && window.t) return window.t(khoa, bien);
+    try {
+      var s = require("./i18n/vi.json")[khoa] || khoa;
+      return String(s).replace(/\{(\w+)\}/g, function (m, ten) {
+        return (bien && bien[ten] != null) ? String(bien[ten]) : m;
+      });
+    } catch (e) { return khoa; }
+  }
+
   var OPEN = String.fromCharCode(0xE000), CLOSE = String.fromCharCode(0xE001);   // sentinel placeholder (private-use, khong xuat hien trong text)
 
   // ---------------------------------------------------------------- helpers
@@ -56,10 +70,62 @@
     s = String(s || "").trim();
     return /^(https?:|data:|blob:|\/)/i.test(s) ? s : fileUrl(s);
   }
+  // Ghep thu muc + duong dan tuong doi, thu gon "." va ".." NGAY TAI DAY. Khong thu gon thi
+  // chuoi ".." di thang toi server, va server dung tu choi no nhu mot cu vuot thu muc - anh
+  // hien ra o xam. Vuot len TREN goc brain thi tra null (bo ung vien do), khong tra mot duong
+  // dan nua voi.
+  function ghepDuong(thuMuc, rel) {
+    var manh = String(thuMuc || "").split("/").concat(String(rel || "").split("/"));
+    var ra = [];
+    for (var i = 0; i < manh.length; i++) {
+      var m = manh[i];
+      if (!m || m === ".") continue;
+      if (m === "..") { if (!ra.length) return null; ra.pop(); continue; }
+      ra.push(m);
+    }
+    return ra.length ? ra.join("/") : null;
+  }
+  // Cac cho CO THE chua tam anh, theo thu tu thu. Trinh duyet tai anh dau, hong thi jvImgGone
+  // thu cai ke tiep - khong phai hoi may chu truoc, va mot note tro dung duong van tai mot lan.
+  //
+  //   1. THEO THU MUC CUA CHINH FILE .md  - dung cach Obsidian, VS Code va GitHub hieu mot
+  //      duong dan tuong doi. Day la cai ma nguoi viet note mong doi, va la cai Thansa thieu
+  //      truoc ban nay: no phan giai MOI duong dan theo GOC BRAIN, nen note nam trong thu muc
+  //      con ma viet ![](anh.jpg) thi di tim <brain>/anh.jpg, khong bao gio co.
+  //   2. THEO GOC BRAIN - dung hanh vi cu. Giu lai de note nao dang tro kieu do van chay.
+  //   3. attachments/<ten file> - cho Thansa tu cat anh no sinh ra (quy uoc trong CLAUDE.md).
+  function ungVienAnh(src) {
+    var ra = [];
+    var raw = String(src || "").trim().replace(/^\.\//, "");
+    if (!raw) return ra;
+    function them(p) {
+      if (!p) return;
+      var u = fileUrl(p);
+      if (ra.indexOf(u) < 0) ra.push(u);
+    }
+    if (_thuMucForRender) them(ghepDuong(_thuMucForRender, raw));
+    them(ghepDuong("", raw));
+    var ten = raw.split("/").pop();
+    if (ten) them("attachments/" + ten);
+    return ra;
+  }
   // Path tro toi file/thu muc TRONG vault (khong phai URL ngoai / data / o dia)?
   function isVaultRel(p) {
     p = String(p == null ? "" : p).trim();
-    return !!p && !/^(https?:|mailto:|data:|blob:|\/)/i.test(p);
+    return !!p && !/^(https?:|mailto:|data:|blob:|file:|\/)/i.test(p);
+  }
+  // Link `file:///brains/Brain%20Default/wiki/x.md` (hay file://localhost/..., file:/C:/...):
+  // harness cua Antigravity dan model "dung link markdown voi giao thuc file://", nen dang nay
+  // ve deu (bug 2026-09-09: bam link wiki vua ingest thi 404). Truoc day no lot qua isVaultRel
+  // (khong khop nhanh nao) roi thanh data-vault-path="file:///..." - server di tim mot file ten
+  // "file:" va tra 404. Tra ve duong dan da go giao thuc + giai ma %xx; khong phai file URI -> null.
+  var FILE_URI_RE = /^file:(?:\/\/[^/\\]*)?(?=[/\\])/i;
+  function fileUriPath(href) {
+    href = String(href == null ? "" : href).trim();
+    if (!FILE_URI_RE.test(href)) return null;
+    var p = decodeVaultPath(href.replace(FILE_URI_RE, "")).replace(/\\/g, "/");
+    if (/^\/[A-Za-z]:\//.test(p)) p = p.slice(1);          // /C:/x -> C:/x
+    return p;
   }
   function decodeQueryPart(s) {
     try { return decodeURIComponent(String(s || "").replace(/\+/g, " ")); }
@@ -80,16 +146,35 @@
     if (!/%[0-9a-f]{2}/i.test(s)) return s;
     try { return decodeURIComponent(s); } catch (e) { return s; }
   }
-  function currentBrainMatches(name) {
+  function currentBrainBase() {
     var b = String(brainPath() || "").replace(/\\/g, "/").replace(/\/+$/, "");
-    var base = b === "brain" ? "Brain Default" : b.split("/").pop();
-    return String(base || "").toLowerCase() === String(name || "").toLowerCase();
+    return b === "brain" ? "Brain Default" : (b.split("/").pop() || "");
+  }
+  function currentBrainMatches(name) {
+    return String(currentBrainBase() || "").toLowerCase() === String(name || "").toLowerCase();
   }
   // Link file noi bo co the do server tao dung (/files/raw), do AI ghi sai theo duong dan dia
   // (/brains/<ten brain>/<file>), hoac la URL day du cung origin. Chuan hoa ve {brain,path};
   // link /brains chi doi khi dung CHINH brain dang chat, tranh mo nham file trung ten o brain khac.
   function appFileRef(href) {
     href = String(href == null ? "" : href).trim();
+    var fu = fileUriPath(href);
+    if (fu != null) {
+      // Duong dan dia day du tren MAY CHU (Docker: /brains/<brain>/..., cai tay: /home/x/brains/
+      // <brain>/..., Windows: C:/.../<brain>/...). Tim ten brain dang chat trong duong dan roi
+      // lay phan sau no; khong thay ten brain nao khac thi coi ca chuoi la duong tuong doi
+      // (model hay viet file:///wiki/x.md) - sai thi server 404 va khung "khong thay file" da
+      // co goi y ten gan dung, van hon mot cai link cam.
+      var base = currentBrainBase();
+      var idx = base ? fu.toLowerCase().indexOf("/" + base.toLowerCase() + "/") : -1;
+      if (idx >= 0) {
+        var sau = fu.slice(idx + base.length + 2).replace(/^\/+/, "");
+        return sau ? { path: sau, brain: brainPath() } : null;
+      }
+      if (/^\/brains\/[^/]+\//i.test(fu)) return null;   // brain KHAC: dung mo nham file trung ten
+      var rel0 = fu.replace(/^[A-Za-z]:/, "").replace(/^\/+/, "");
+      return rel0 ? { path: rel0, brain: brainPath() } : null;
+    }
     if (/^https?:\/\//i.test(href) && typeof window !== "undefined" && window.location) {
       try {
         var u = new URL(href, window.location.href);
@@ -138,7 +223,7 @@
     var clean = String(rawpath || "").replace(/^\.?\//, "");
     return 'href="' + esc(fileUrl(clean, brainOverride) + "&dl=1") + '" data-vault-path="' + esc(clean) +
       '" class="jv-fdownload' + (extraCls ? " " + extraCls : "") +
-      '" download title="Tải file về"';
+      '" download title="' + esc(tw("crender.dl_file")) + '"';
   }
   // Thuoc tinh <a> mo trang Tep tin dung vi tri file/thu muc. Giu href deep-link (#open=..) de
   // Ctrl/giua chuot mo tab trinh duyet moi cung nhay dung cho; bam thuong -> mo trong app.
@@ -150,7 +235,7 @@
     // Noi dung chuot dung viec cu bam do LAM: file sua duoc thi mo trinh sua, thu muc thi ve
     // trang Tep tin. Chu cu ghi "Mo vi tri trong Tep tin" cho MOI thu, nen bam vao mot file
     // .html roi thay trinh sua bung ra la mot bat ngo - dung huong nhung sai loi hua.
-    var tit = EDIT_EXT_RE.test(clean.split(/[?#]/)[0]) ? "Mở ra sửa" : "Mở vị trí trong Tệp tin";
+    var tit = EDIT_EXT_RE.test(clean.split(/[?#]/)[0]) ? tw("crender.open_edit") : tw("crender.open_loc");
     return 'href="#open=' + esc(encodeURIComponent(clean)) + '" data-vault-path="' + esc(clean) +
       '" class="jv-floc' + (extraCls ? " " + extraCls : "") + '" title="' + tit + '"';
   }
@@ -164,6 +249,7 @@
   // Windows (":" loai luon URL va lenh co cong cu), khong leo thang "..".
   function codeFilePath(c) {
     var t = String(c == null ? "" : c).trim().replace(/\\/g, "/").replace(/^\.?\//, "");
+    if (fileUriPath(t) != null) { var fr = appFileRef(t); if (!fr) return ""; t = fr.path; }
     if (t.length < 4 || t.length > 240) return "";
     if (!isVaultRel(t)) return "";
     if (/[:<>"|?*\[\]]/.test(t)) return "";
@@ -178,7 +264,7 @@
     var label = (alias != null && alias.trim()) ? alias.trim() : target;
     return '<a href="#open=' + esc(encodeURIComponent(target)) + '" data-vault-path="' + esc(target) + '"' +
       (label !== target ? ' data-wiki-alias="' + esc(label) + '"' : "") +
-      ' class="jv-wikilink" title="Mở note: ' + esc(target) + '">' + esc(label) + "</a>";
+      ' class="jv-wikilink" title="' + esc(tw("crender.open_note", { ten: target })) + '">' + esc(label) + "</a>";
   }
   // FNV-1a -> id ngan on dinh cho artifact (cung noi dung -> cung id qua cac lan re-render khi stream)
   function hashId(s) {
@@ -217,6 +303,7 @@
   // ---------------------------------------------------------------- artifact registry + phat hien
   var registry = {};   // id -> { type, lang, code }
   var _choTrinhSua = false;   // dang render cho trinh sua .md (xem mdToHtml)
+  var _thuMucForRender = "";  // thu muc chua file .md dang render (xem mdToHtml / ungVienAnh)
   function fenceType(lang, code) {
     lang = (lang || "").trim().toLowerCase();
     var head = code.slice(0, 400).replace(/^\s+/, "").toLowerCase();
@@ -228,10 +315,10 @@
     return "";   // code ngan -> khoi code inline
   }
   function artTitle(type, lang) {
-    if (type === "html") return "Trang HTML";
-    if (type === "svg") return "Anh SVG";
-    if (type === "mermaid") return "So do";
-    return "Ma " + ((lang || "text").toUpperCase());
+    if (type === "html") return tw("crender.art_html");
+    if (type === "svg") return tw("crender.art_svg");
+    if (type === "mermaid") return tw("crender.art_mermaid");
+    return tw("crender.art_code", { lang: (lang || "text").toUpperCase() });
   }
   function artIcon(type) {
     return ic(type === "html" ? "globe" : type === "svg" ? "image" : type === "mermaid" ? "chart-column" : "file");
@@ -239,12 +326,12 @@
   function artifactCard(type, lang, code) {
     var id = hashId(type + "" + code);
     registry[id] = { type: type, lang: lang, code: code };
-    var sub = code.split("\n").length + " dong · bam de xem";
+    var sub = tw("crender.art_lines", { count: code.split("\n").length });
     return '<div class="jv-art" role="button" tabindex="0" data-art="' + id + '">' +
       '<span class="jv-art-ic">' + artIcon(type) + "</span>" +
       '<span class="jv-art-meta"><span class="jv-art-title">' + esc(artTitle(type, lang)) + "</span>" +
       '<span class="jv-art-sub">' + esc(sub) + "</span></span>" +
-      '<span class="jv-art-open">Mo ▸</span></div>';
+      '<span class="jv-art-open">' + esc(tw("crender.art_open")) + ' ▸</span></div>';
   }
 
   function codeBlockHtml(lang, code, streaming) {
@@ -258,11 +345,11 @@
   // attribute), dataview.js tu phat hien va chay. contenteditable=false de trong WYSIWYG khong sua
   // nham ket qua; turndown rule (console.js) tra lai dung fence goc khi luu.
   function dataviewHtml(lang, code) {
-    var title = lang === "tasks" ? ic("list-todo") + " Việc (tasks)" : ic("table-2") + " Dataview";
+    var title = lang === "tasks" ? ic("list-todo") + " " + esc(tw("crender.dv_tasks")) : ic("table-2") + " Dataview";
     return '<div class="jv-dataview" contenteditable="false" data-dv-lang="' + esc(lang) +
       '" data-dv-q="' + esc(encodeURIComponent(code)) + '">' +
       '<div class="jv-dv-head"><span class="jv-dv-title">' + title + "</span></div>" +
-      '<div class="jv-dv-body"><span class="jv-dv-wait">Đang chạy truy vấn…</span></div></div>';
+      '<div class="jv-dv-body"><span class="jv-dv-wait">' + esc(tw("crender.dv_running")) + '</span></div></div>';
   }
   function renderFence(info, code, streaming) {
     var lang = (info || "").trim().split(/\s+/)[0] || "";
@@ -288,6 +375,22 @@
   // cu trong khi dang chon brain khac). Cau cu do het cho "het han" nen nguoi dung tuong file
   // da bi xoa va di tim nham cho. Noi trung tinh + kem ten file de con lan ra.
   function imgGone(el) {
+    // Con cho khac de thu thi THU, dung bo cuoc ngay: mot duong dan tuong doi co the nam o thu
+    // muc cua note, o goc brain, hay trong attachments (xem ungVienAnh). Doi src la trinh duyet
+    // tai lai, va tai hong lan nua thi chinh ham nay chay tiep voi danh sach da ngan di.
+    try {
+      var con = String(el.getAttribute("data-jv-thu") || "").split("|").filter(Boolean);
+      if (con.length) {
+        var ke = con.shift();
+        if (con.length) el.setAttribute("data-jv-thu", con.join("|"));
+        else el.removeAttribute("data-jv-thu");
+        // The <a> boc ngoai phai di theo, khong thi bam vao anh lai mo dung cai URL vua hong.
+        var a = el.parentNode;
+        if (a && a.tagName === "A" && a.className === "jv-img-link") a.setAttribute("href", ke);
+        el.setAttribute("src", ke);
+        return;
+      }
+    } catch (e) {}
     var box = document.createElement("span");
     box.className = "chat-img-gone";
     var ten = "";
@@ -296,12 +399,15 @@
       var m = src.match(/[?&]path=([^&]*)/);
       ten = m ? decodeQueryPart(m[1]).split("/").pop() : src.split("/").pop();
     } catch (e) { ten = ""; }
-    box.textContent = ten ? "Không mở được ảnh: " + ten : "Không mở được ảnh";
-    box.title = "File có thể đã bị xoá, hoặc hội thoại này thuộc brain khác với brain đang chọn.";
+    box.textContent = ten ? tw("crender.img_gone_ten", { ten: ten }) : tw("crender.img_gone");
+    box.title = tw("crender.img_gone_hint");
     el.replaceWith(box);
   }
-  function imgHtml(u, alt, rawpath) {
+  // duPhong (tuy chon): cac URL thu TIEP THEO neu URL dau tai hong. Xem ungVienAnh.
+  function imgHtml(u, alt, rawpath, duPhong) {
+    var con = (duPhong || []).filter(function (x) { return x && x !== u; });
     var img = '<img class="chat-img" src="' + esc(u) + '" alt="' + esc(alt || "") + '"' +
+      (con.length ? ' data-jv-thu="' + esc(con.join("|")) + '"' : "") +
       ' loading="lazy" onerror="jvImgGone(this)">';
     // Bam vao anh = XEM PHONG TO (lightbox), khong phai tai ve. Truoc day anh trong vault duoc
     // boc trong <a download> nen bam mot cai la file rot xuong may - muon xem cho ro thi phai
@@ -314,7 +420,7 @@
     var vp = (rawpath && isVaultRel(rawpath))
       ? ' data-vault-path="' + esc(String(rawpath).replace(/^\.?\//, "")) + '"' : "";
     return '<a class="jv-img-link" href="' + esc(h) + '"' + vp +
-      ' target="_blank" rel="noopener" title="Bấm để xem phóng to">' + img + "</a>";
+      ' target="_blank" rel="noopener" title="' + esc(tw("chat.att_zoom")) + '">' + img + "</a>";
   }
   // ---------------------------------------------------------------- frontmatter YAML
   // Khoi `---\n...\n---` o DAU mot file .md la METADATA (type, status, created...), khong phai
@@ -332,7 +438,7 @@
       .replace(/^\uFEFF?---[ \t]*\r?\n/, "")
       .replace(/\r?\n---[ \t]*\r?\n?$/, "");
     return '<div class="jv-fm" contenteditable="false" data-fm="' + esc(encodeURIComponent(block)) + '">' +
-      '<div class="jv-fm-head">' + ic("tag") + " Thuộc tính</div>" +
+      '<div class="jv-fm-head">' + ic("tag") + " " + esc(tw("crender.fm_title")) + "</div>" +
       '<pre class="jv-fm-body">' + esc(than) + "</pre></div>";
   }
   function tableHtml(tbl) {
@@ -448,11 +554,14 @@
   // artifact (xem renderFence) - trong mot trinh sua thi noi dung phai NHIN THAY va sua
   // duoc, khong phai nam sau mot cai the.
   function mdToHtml(raw, brain, opts) {
-    var truoc = _brainForRender, truocTS = _choTrinhSua;
+    var truoc = _brainForRender, truocTS = _choTrinhSua, truocTM = _thuMucForRender;
     _brainForRender = (brain == null || brain === "") ? null : String(brain);
     _choTrinhSua = !!(opts && opts.trinhSua);
+    // opts.thuMuc: thu muc chua CHINH file .md nay, de duong dan tuong doi trong no phan giai
+    // dung nhu Obsidian/VS Code. Bo trong = giu hanh vi cu (phan giai theo goc brain).
+    _thuMucForRender = String((opts && opts.thuMuc) || "").replace(/^\.?\//, "").replace(/\/+$/, "");
     try { return _mdToHtmlThan(raw); }
-    finally { _brainForRender = truoc; _choTrinhSua = truocTS; }
+    finally { _brainForRender = truoc; _choTrinhSua = truocTS; _thuMucForRender = truocTM; }
   }
   function _mdToHtmlThan(raw) {
     raw = String(raw == null ? "" : raw);
@@ -484,7 +593,8 @@
     // 3) anh vault ![[..]] + anh markdown ![]() (giu URL qua placeholder de khong bi escape)
     raw = raw.replace(/!\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]/g, function (_m, name) {
       name = name.trim();
-      return put(imgHtml(resolveSrc(name), name, name));
+      var uvW = ungVienAnh(name);
+      return put(imgHtml(uvW[0] || resolveSrc(name), name, name, uvW.slice(1)));
     });
     // 3b) wikilink [[target]] / [[target|alias]] (anh ![[..]] da an o tren) -> link dieu huong nhu Wikipedia
     raw = raw.replace(/\[\[([^\[\]\n|]+?)(?:\|([^\[\]\n]*))?\]\]/g, function (_m, target, alias) {
@@ -494,7 +604,15 @@
     // Bat ca cap ngoac can bang 1 tang, roi cat title markdown tuy chon o duoi ( "tieu de" / 'tieu de').
     raw = raw.replace(/!\[([^\]]*)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g, function (_m, alt, src) {
       src = src.replace(/\s+(["']).*\1\s*$/, "").trim();
-      if (isVaultRel(src)) src = decodeVaultPath(src);   // %20 -> khoang trang; xem decodeVaultPath
+      if (fileUriPath(src) != null) {
+        var iref = appFileRef(src);
+        if (iref) return put(imgHtml(fileUrl(iref.path, iref.brain), alt, iref.path));
+      }
+      if (isVaultRel(src)) {
+        src = decodeVaultPath(src);   // %20 -> khoang trang; xem decodeVaultPath
+        var uv = ungVienAnh(src);
+        if (uv.length) return put(imgHtml(uv[0], alt, src, uv.slice(1)));
+      }
       return put(imgHtml(resolveSrc(src), alt, src));
     });
     // 4) link []() : URL ngoai -> tab moi; file/thu muc vault -> mo dung vi tri trong Tep tin; con lai giu cu
@@ -502,6 +620,21 @@
       href = href.replace(/\s+(["']).*\1\s*$/, "").trim();
       var appRef = appFileRef(href);
       if (appRef) return put('<a ' + vaultLink(appRef.path, "", appRef.brain) + ">" + esc(t) + "</a>");
+      // file:// tro sang brain khac / khong suy ra duoc: van la link vault de cu bam ra khung
+      // "khong thay file" (co goi y ten gan dung), thay vi mo tab moi 404 hay khong lam gi ca.
+      var fu = fileUriPath(href);
+      if (fu != null) return put('<a ' + vaultLink(fu.replace(/^\/+/, "")) + ">" + esc(t) + "</a>");
+      // Link tro toi mot cong su: "#cs=<agent|workflow>:<slug>[:<ma phien>]". Server dat link
+      // nay khi mot quy trinh / tro ly chay xong tu khung Tro chuyen, de nguoi doc nhay thang
+      // toi dung cuoc hoi thoai da lam viec do. KHONG phai URL ngoai, khong mo tab moi.
+      if (/^#cs=/.test(href)) {
+        var spec = href.slice(4);
+        // decodeURIComponent nem loi voi mot dau % le loi - va nem o day la HONG CA TIN NHAN,
+        // vi chuoi thay the nay dang chay giua .replace(). Giai ma duoc thi dung, khong thi
+        // giu nguyen chuoi tho (slug va ma phien deu la ASCII nen van mo dung).
+        try { spec = decodeURIComponent(spec); } catch (err) {}
+        return put('<a class="jv-cs" href="' + esc(href) + '" data-cs="' + esc(spec) + '">' + esc(t) + "</a>");
+      }
       if (/^(https?:|mailto:)/i.test(href)) return put('<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(t) + "</a>");
       // URL that thi GIU nguyen ma hoa (do la duong dan mang); chi duong dan trong vault moi go
       // ra, vi no se di thang toi ten file tren dia. Xem decodeVaultPath.
@@ -533,28 +666,48 @@
   }
 
   // ================================================================ ARTIFACT PANEL (chi trong trinh duyet)
-  var panel = null, elTitle = null, elBody = null, curArt = null, curTab = "preview";
+  // Tu 0.62.1 day la HOP THOAI GIUA MAN HINH chu khong con la ngan keo ep sat le phai.
+  // Chu repo bao 21/09: mo mot khoi ma trong file .md thi khung nam dinh mep phai, chu chay
+  // thang sang phai vo han va phai keo ngang tung dong de doc. Ba thu doi cung luc:
+  //   - .jv-artpanel thanh LOP PHU (overlay) toan man, hop that la .jv-ap-box o giua.
+  //   - Ma XUONG DONG theo be ngang hop (nut "Xuong dong" tat di neu can doc nguyen dong).
+  //   - Bam ra ngoai hop la dong, dung thoi quen cua moi hop thoai khac trong app.
+  var panel = null, elTitle = null, elBody = null, elSub = null, curArt = null, curTab = "preview";
+  // Xuong dong BAT san: mot khoi ma trong note thuong la van ban de doc, khong phai file
+  // nguon dang sua. Nguoi can doc nguyen dong (bang log, cot canh nhau) tat no o nut.
+  var wrapMa = true;
 
   function buildPanel() {
     if (panel) return panel;
     panel = document.createElement("div");
     panel.className = "jv-artpanel";
     panel.innerHTML =
-      '<div class="jv-ap-head">' +
-        '<span class="jv-ap-title">Artifact</span>' +
-        '<span class="jv-ap-tabs">' +
-          '<button class="jv-ap-tab active" data-tab="preview">Xem truoc</button>' +
-          '<button class="jv-ap-tab" data-tab="code">Ma nguon</button>' +
-        "</span>" +
-        '<span class="jv-ap-actions">' +
-          '<button class="jv-ap-btn" data-act="copy" title="Copy ma nguon">⧉</button>' +
-          '<button class="jv-ap-btn" data-act="download" title="Tai ve">⇩</button>' +
-          '<button class="jv-ap-btn jv-ap-close" data-act="close" title="Dong (Esc)">' + ic("x") + '</button>' +
-        "</span>" +
-      "</div>" +
-      '<div class="jv-ap-body"></div>';
+      '<div class="jv-ap-box" role="dialog" aria-modal="true">' +
+        '<div class="jv-ap-head">' +
+          '<span class="jv-ap-meta">' +
+            '<span class="jv-ap-title">Artifact</span>' +
+            '<span class="jv-ap-sub"></span>' +
+          "</span>" +
+          '<span class="jv-ap-tabs">' +
+            '<button class="jv-ap-tab active" data-tab="preview">' + esc(tw("crender.ap_preview")) + "</button>" +
+            '<button class="jv-ap-tab" data-tab="code">' + esc(tw("crender.ap_source")) + "</button>" +
+          "</span>" +
+          '<span class="jv-ap-actions">' +
+            // Nut XUONG DONG mang CHU chu khong phai icon: bo icon dong goi san khong co
+            // "wrap-text", ma them icon moi phai chay gen_icons (can mang). Mot cai nhan
+            // hai chu con ro nghia hon bat ky icon muon tam nao.
+            '<button class="jv-ap-tog" data-act="wrap" aria-pressed="true" title="' +
+              esc(tw("crender.ap_wrap_hint")) + '">' + esc(tw("crender.ap_wrap")) + "</button>" +
+            '<button class="jv-ap-btn" data-act="copy" title="' + esc(tw("crender.ap_copy")) + '">' + ic("copy") + "</button>" +
+            '<button class="jv-ap-btn" data-act="download" title="' + esc(tw("common.download")) + '">' + ic("download") + "</button>" +
+            '<button class="jv-ap-btn jv-ap-close" data-act="close" title="' + esc(tw("crender.close_esc")) + '">' + ic("x") + '</button>' +
+          "</span>" +
+        "</div>" +
+        '<div class="jv-ap-body"></div>' +
+      "</div>";
     document.body.appendChild(panel);
     elTitle = panel.querySelector(".jv-ap-title");
+    elSub = panel.querySelector(".jv-ap-sub");
     elBody = panel.querySelector(".jv-ap-body");
     panel.addEventListener("click", onPanelClick);
     return panel;
@@ -564,6 +717,11 @@
     panel.querySelectorAll(".jv-ap-tab").forEach(function (b) {
       b.classList.toggle("active", b.dataset.tab === curTab);
     });
+    // Nut "Xuong dong" chi hien khi dang nhin MA (the loai "code" khong co tab nao khac).
+    // O tab xem truoc no khong doi duoc gi, ma mot nut bam vao khong thay gi xay ra con te
+    // hon la khong co nut.
+    panel.classList.toggle("jv-ap-oncode",
+                           curTab === "code" || (curArt && curArt.type === "code"));
   }
   function openArtifact(id) {
     var art = registry[id];
@@ -571,13 +729,19 @@
     buildPanel();
     curArt = art;
     elTitle.textContent = artTitle(art.type, art.lang);
+    // Dong phu nhac lai dung so dong ghi tren the vua bam, de nguoi mo biet minh mo trung
+    // cai minh dinh mo - mot note co the co nam sau khoi ma giong het nhau ve tieu de.
+    if (elSub) elSub.textContent = tw("crender.art_lines_n", { count: art.code.split("\n").length });
     var hasPreview = art.type !== "code";
     panel.classList.toggle("no-preview", !hasPreview);
     curTab = hasPreview ? "preview" : "code";
     syncTabs();
+    syncWrap();
     renderTab();
     panel.classList.add("open");
     document.body.classList.add("jv-artpanel-open");
+    var x = panel.querySelector(".jv-ap-close");
+    if (x) x.focus();   // tieu diem vao trong hop: Esc va Tab khong con lac ra trang dang bi che
   }
   function closePanel() {
     if (!panel) return;
@@ -585,6 +749,14 @@
     document.body.classList.remove("jv-artpanel-open");
     if (elBody) elBody.innerHTML = "";   // don iframe/srcdoc
     curArt = null;
+  }
+  /** Nut "Xuong dong": chi doi mot lop tren than, khong ve lai noi dung. Ve lai mot khoi ma
+   *  dai chi de doi cach ngat dong la nhay mat cho cuon dang doc. */
+  function syncWrap() {
+    if (!panel) return;
+    panel.classList.toggle("jv-ap-nowrap", !wrapMa);
+    var b = panel.querySelector(".jv-ap-tog");
+    if (b) b.setAttribute("aria-pressed", wrapMa ? "true" : "false");
   }
   function frame(sandbox, srcdoc) {
     var f = document.createElement("iframe");
@@ -613,17 +785,21 @@
       return;
     }
     if (art.type === "mermaid") {
-      elBody.innerHTML = '<div class="jv-ap-mermaid">Dang ve so do...</div>';
+      elBody.innerHTML = '<div class="jv-ap-mermaid">' + esc(tw("crender.mm_drawing")) + "</div>";
       renderMermaid(art.code, elBody.querySelector(".jv-ap-mermaid"));
       return;
     }
   }
   function onPanelClick(e) {
+    // Bam vao chinh LOP PHU (ngoai hop) la dong. An toan tuyet doi o day: khung nay chi de
+    // XEM, khong co nhanh nao "dong tuc la dong y" nhu mot hop thoai xac nhan.
+    if (e.target === panel) { closePanel(); return; }
     var t = e.target.closest ? e.target.closest("[data-tab],[data-act]") : null;
     if (!t) return;
     if (t.dataset.tab) { curTab = t.dataset.tab; syncTabs(); renderTab(); return; }
     var act = t.dataset.act;
     if (act === "close") closePanel();
+    else if (act === "wrap") { wrapMa = !wrapMa; syncWrap(); }
     else if (act === "copy" && curArt) copyText(curArt.code, t);
     else if (act === "download" && curArt) downloadArt(curArt);
   }
@@ -637,7 +813,10 @@
       try { document.execCommand("copy"); } catch (e) {}
       ta.remove();
     }).then(function () {
-      if (btn) { var o = btn.textContent; btn.innerHTML = ic("check", { cls: "ic-ok" }); setTimeout(function () { btn.textContent = o; }, 1000); }
+      // Nho lai innerHTML chu KHONG phai textContent: tu 0.62.1 nut Copy la mot icon SVG, ma
+      // textContent cua no la chuoi rong - tra lai bang textContent thi sau mot giay nut
+      // trong khong, khong con gi de bam.
+      if (btn) { var o = btn.innerHTML; btn.innerHTML = ic("check", { cls: "ic-ok" }); setTimeout(function () { btn.innerHTML = o; }, 1000); }
     });
   }
   function extFor(art) {
@@ -679,16 +858,16 @@
     if (!host) return;
     loadMermaid(function (ok) {
       if (!ok || !window.mermaid) {
-        host.innerHTML = '<div class="jv-ap-note">Khong tai duoc thu vien so do (co the dang offline). Xem ma o tab Ma nguon.</div>' +
+        host.innerHTML = '<div class="jv-ap-note">' + esc(tw("crender.mm_offline")) + "</div>" +
           '<pre class="code-block">' + esc(code) + "</pre>";
         return;
       }
       var id = "jvmm" + (++mmSeq);
       try {
         window.mermaid.render(id, code).then(function (res) { host.innerHTML = res.svg; })
-          .catch(function () { host.innerHTML = '<div class="jv-ap-note">So do sai cu phap mermaid.</div><pre class="code-block">' + esc(code) + "</pre>"; });
+          .catch(function () { host.innerHTML = '<div class="jv-ap-note">' + esc(tw("crender.mm_bad")) + '</div><pre class="code-block">' + esc(code) + "</pre>"; });
       } catch (e) {
-        host.innerHTML = '<div class="jv-ap-note">So do sai cu phap mermaid.</div><pre class="code-block">' + esc(code) + "</pre>";
+        host.innerHTML = '<div class="jv-ap-note">' + esc(tw("crender.mm_bad")) + '</div><pre class="code-block">' + esc(code) + "</pre>";
       }
     });
   }
@@ -764,7 +943,7 @@
       wl.classList.remove("jv-wl-busy");
       if (!hit) {
         wl.classList.add("jv-wl-miss");
-        wl.title = "Không tìm thấy note này trong vault";
+        wl.title = tw("crender.wl_miss");
         setTimeout(function () { wl.classList.remove("jv-wl-miss"); }, 1500);
         return;
       }
@@ -772,7 +951,7 @@
     }).catch(function () {
       wl.classList.remove("jv-wl-busy");
       wl.classList.add("jv-wl-miss");
-      wl.title = "Không mở được note này - thử lại";
+      wl.title = tw("crender.wl_err");
       setTimeout(function () { wl.classList.remove("jv-wl-miss"); }, 1500);
     });
   }
@@ -813,7 +992,7 @@
   // Bam anh trong chat -> mo lop xem phong to (kieu ChatGPT): anh vua man, co nut Tai ve,
   // Mo tab moi, Dong; bam nen den hoac Esc de dong; bam vao anh de doi qua lai giua "vua man"
   // va "co that" (1:1) roi keo xem chi tiet.
-  var _lb = null, _lbUrl = "", _lbTen = "";
+  var _lb = null, _lbUrl = "", _lbTen = "", _lbDayLichSu = false;
 
   function _lbTaiVe() {
     if (!_lbUrl) return;
@@ -827,13 +1006,28 @@
     a.click();
     a.remove();
   }
-  function dongLightbox() {
+  // Go lop phu khoi DOM. KHONG dung vao lich su - dung cho luc THAY anh nay bang anh khac,
+  // noi buoc lich su da chen phai duoc GIU lai cho lan dong that. Bo qua cho nay la mo anh thu
+  // hai se history.back() roi pushState lai, va popstate cham chan sinh ra sau do dong nham
+  // dung cai vua mo.
+  function _goLopPhu() {
     if (!_lb) return;
     _lb.remove(); _lb = null; _lbUrl = ""; _lbTen = "";
     document.body.classList.remove("jv-lb-open");
   }
+  function dongLightbox() {
+    if (!_lb) return;
+    _goLopPhu();
+    // Dong bang nut X / Esc / bam nen: nha luon buoc lich su da chen, khong thi nguoi dung phai
+    // bam Back mot cai "khong lam gi" truoc khi thuc su roi trang. (Cung thanh ngu voi
+    // file-editor.js - xem chu thich ben do.)
+    if (_lbDayLichSu) {
+      _lbDayLichSu = false;
+      try { history.back(); } catch (e) {}
+    }
+  }
   function moLightbox(url, ten) {
-    dongLightbox();
+    _goLopPhu();
     _lbUrl = url; _lbTen = ten || "";
     _lb = document.createElement("div");
     _lb.className = "jv-lb";
@@ -841,9 +1035,9 @@
       '<div class="jv-lb-bar">' +
         '<span class="jv-lb-ten"></span>' +
         '<span class="jv-lb-nut">' +
-          '<button type="button" data-lb="tai" title="Tải ảnh về">' + ic("download") + " Tải về</button>" +
-          '<button type="button" data-lb="tab" title="Mở ảnh ở tab mới">' + ic("external-link") + "</button>" +
-          '<button type="button" data-lb="dong" title="Đóng (Esc)">' + ic("x") + "</button>" +
+          '<button type="button" data-lb="tai" title="' + esc(tw("crender.lb_dl_title")) + '">' + ic("download") + " " + esc(tw("common.download")) + "</button>" +
+          '<button type="button" data-lb="tab" title="' + esc(tw("crender.lb_tab")) + '">' + ic("external-link") + "</button>" +
+          '<button type="button" data-lb="dong" title="' + esc(tw("crender.close_esc")) + '">' + ic("x") + "</button>" +
         "</span>" +
       "</div>" +
       '<div class="jv-lb-khung"><img class="jv-lb-img" alt=""></div>';
@@ -870,6 +1064,13 @@
     });
     document.body.appendChild(_lb);
     document.body.classList.add("jv-lb-open");
+    // Nut Back cua dien thoai (va cu vuot canh man hinh) phai DONG anh, khong phai roi khoi
+    // Thansa. Chu repo bao 2026-09-13: dang xem anh thi vuot canh trai khong an gi, ma nut X thi
+    // bi thanh trang thai che - khong con duong nao ra. Chen mot buoc lich su o day de cu Back
+    // co cho ma lui ve.
+    if (!_lbDayLichSu) {
+      try { history.pushState({ jvlb: 1 }, ""); _lbDayLichSu = true; } catch (e) {}
+    }
   }
   // ---------------------------------------------------------------- wiring (chi khi co DOM)
   if (typeof document !== "undefined") {
@@ -878,6 +1079,11 @@
     window.JavisLightbox = { open: moLightbox, close: dongLightbox };
     document.addEventListener("keydown", function (e) {
       if (_lb && e.key === "Escape") { e.preventDefault(); dongLightbox(); }
+    });
+    window.addEventListener("popstate", function () {
+      if (!_lb) return;
+      _lbDayLichSu = false;     // buoc vua bi go chinh la buoc minh chen -> dung back() them lan nua
+      dongLightbox();
     });
     // Bam anh trong chat -> lightbox. Dang ky o pha CAPTURE va dat TRUOC cac handler khac de
     // an chac khong bi handler link vault (jv-floc/jv-fdownload) cuop mat.
@@ -915,6 +1121,15 @@
       try { wys.dispatchEvent(new CustomEvent("jv-task-toggle", { bubbles: true })); } catch (err) {}
     });
     document.addEventListener("click", function (e) {
+      // Link toi mot cong su (#cs=...): mo trang Cong su dung tro ly / quy trinh, va dung cuoc
+      // hoi thoai da chay viec do. Bat TRUOC cac nhanh khac vi no khong phai link vault.
+      var cs = e.target.closest ? e.target.closest("a.jv-cs") : null;
+      if (cs && cs.getAttribute("data-cs")) {
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
+        e.preventDefault();
+        if (typeof window.JavisOpenCongSu === "function") window.JavisOpenCongSu(cs.getAttribute("data-cs"));
+        return;
+      }
       // Wikilink [[..]]: bam la DI CHUYEN toi note dich - chay CA trong ban render dang sua (ne-wys/.jvfe-modal),
       // vi y nghia cua wikilink la dieu huong; muon sua chu cua link thi dung che do Nguon.
       var wl = e.target.closest ? e.target.closest("a.jv-wikilink") : null;
@@ -994,9 +1209,15 @@
     // get(id): cho turndown (console.js) tra artifact card ve lai dung fence ``` khi luu note WYSIWYG
     window.JavisArtifacts = { open: openArtifact, close: closePanel,
       get: function (id) { return registry[id] || null; } };
+    // console.js goi lai khi mot duong dan file:// lot toi openVaultPath/JavisOpenNote (deep-link,
+    // chip file dang mo...) - mot luat go giao thuc, nam o mot cho.
+    window.JavisFileRef = appFileRef;
   }
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { mdToHtml: mdToHtml, highlight: highlight, wkResolve: wkResolve,
-      appFilePath: appFilePath, isDownloadFile: isDownloadFile };
+      appFilePath: appFilePath, appFileRef: appFileRef, fileUriPath: fileUriPath,
+      isDownloadFile: isDownloadFile,
+      // Xuat them de test chay THAT chuoi du phong cua anh (xem ungVienAnh / imgGone).
+      ungVienAnh: ungVienAnh, ghepDuong: ghepDuong, imgGone: imgGone };
   }
 })();

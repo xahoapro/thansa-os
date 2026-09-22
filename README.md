@@ -10,11 +10,26 @@
 
 ---
 
+## Cài nhanh bằng chính AI của bạn
+
+Đưa link repo này cho **Claude Code** hoặc **Codex** đang chạy trên máy bạn và nói "cài Thansa OS giúp tôi". Nó chỉ cần chạy **một lệnh duy nhất**:
+
+| Máy | Một lệnh cài hết |
+|---|---|
+| **Windows** | `powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `chmod +x install.sh && ./install.sh` |
+
+Lệnh đó cài trọn gói: Python + thư viện, **bốn bộ não CLI chạy bằng gói thuê bao bạn đang có** (`claude`, `codex`, `agy`, `grok`), `.env`, rồi bật server ở `http://localhost:7777`. Sau đó đăng nhập từng bộ não **ngay trong trang Models** của dashboard, không phải gõ lệnh nữa.
+
+> ⚠️ Cài thêm một CLI **sau khi** Thansa đã chạy thì **khởi động lại Thansa**. Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó chưa thấy.
+
+---
+
 ## Thansa là gì?
 
 Thansa OS **không phải** một chatbot. Nó là một **AI agentic tự host** chạy trên máy/VPS của bạn: đọc/ghi file, gọi công cụ (MCP), chạy skill, giao việc chạy nền, tự đặt lịch - rồi gói tất cả vào một **dashboard đẹp, điều khiển bằng giọng nói**, kèm một **Second Brain** (bộ nhớ + wiki) tích luỹ tri thức theo thời gian.
 
-**Bộ não thì bạn chọn, và đổi lúc nào cũng được.** Mười đường dùng được ngay: **Claude Code**, **ChatGPT/Codex** và **Antigravity CLI** (dùng chính gói subscription bạn đang trả, không cần mua API riêng), **Gemini CLI · OpenRouter · OpenAI API · Google Gemini · Anthropic API · Groq · Ollama Cloud** (chỉ cần API key).
+**Bộ não thì bạn chọn, và đổi lúc nào cũng được.** Mười đường dùng được ngay: **Claude Code**, **ChatGPT/Codex**, **Grok Build** và **Antigravity CLI** (dùng chính gói subscription bạn đang trả, không cần mua API riêng), **OpenRouter · OpenAI API · Google Gemini · Anthropic API · Groq · Ollama Cloud** (chỉ cần API key).
 
 > ⚠️ **Đọc trước khi cho gói subscription chạy việc nền.** Anthropic chỉ tính gói Claude Pro/Max cho việc dùng **cá nhân, thông thường** của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm ngoài phạm vi đó, và đã có người **bị khoá tài khoản** vì lý do này. Thansa không tự đọc token đăng nhập của bạn (đường đó đã gỡ ở 0.26.17) - nó chạy qua đúng binary `claude`, nhưng như vậy vẫn không làm việc chạy nền 24/7 trở thành hợp lệ. Muốn yên tâm: ở trang **Models**, đặt Claude Code chạy bằng **API key**, hoặc trỏ **model việc nền** sang một provider khác. Xem `server/claude_auth.py`.
 
@@ -70,8 +85,10 @@ VPS Hostinger → **Docker Manager → Compose → URL** → dán **file Hosting
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 Ô **Environment** của mẫu mới chỉ còn 3 trường cần thiết: `DOMAIN_NAME`,
-`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. Các biến kỹ thuật về cổng, state,
-brain và thư mục chạy đã được ẩn vì Docker image tự đặt đúng.
+`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, cộng một trường tuỳ chọn
+`JAVIS_AUTO_UPDATE` (đặt `true` là Thansa tự cập nhật mỗi ngày, bỏ trống thì cập
+nhật bằng nút trong app). Các biến kỹ thuật về cổng, state, brain và thư mục chạy
+đã được ẩn vì Docker image tự đặt đúng.
 
 Đặt `DOMAIN_NAME` để Traefik của Hostinger cấp HTTPS:
 - **Link miễn phí** (không cần mua tên miền): `DOMAIN_NAME=javis.<hostname-vps>.hstgr.cloud`
@@ -113,13 +130,25 @@ Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv
 
 ### Cách 4 - Windows (máy cá nhân)
 
+**Một lệnh, cài hết:**
+
+```powershell
+git clone https://github.com/blogminhquy/javis-os.git javis; cd javis
+powershell -ExecutionPolicy Bypass -File install.ps1
 ```
-1. Cài Python 3.12 (tick "Add to PATH") + Node.js LTS
-2. Double-click  setup.bat   (chạy hiện cửa sổ - tự cài Claude Code + Codex)
-   Lần sau muốn chạy ngầm: start-javis.vbs   (log ở server\javis.log)
-3. Mở http://localhost:7777 → trang Models, đăng nhập bộ não muốn dùng
-4. Dừng: stop-javis.bat
+
+`install.ps1` làm trọn một lượt: Python + venv + thư viện, rồi **cả bốn bộ não CLI chạy bằng gói thuê bao** (`claude`, `codex`, `agy`, `grok`), tạo `.env`, giải phóng port 7777 và bật server. Cuối cùng nó in một bảng cho biết bộ não nào đã sẵn sàng. Đăng nhập từng bộ não ngay trong **trang Models** của dashboard, không cần gõ lệnh.
+
+Không có `winget` để tự cài Python/Node thì cài tay trước: Python 3.12 (tick "Add python.exe to PATH") và Node.js LTS, rồi chạy lại.
+
 ```
+Chạy hiện cửa sổ (xem log trực tiếp):  setup.bat
+Chạy ngầm từ lần sau:                  start-javis.vbs   (log ở server\javis.log)
+Dừng:                                  stop-javis.bat
+Mở dashboard:                          http://localhost:7777
+```
+
+> ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-javis.bat` rồi `start-javis.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
 
 > 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`JAVIS OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `javis-autostart.bat install` (gỡ: `uninstall`).
 
@@ -155,13 +184,13 @@ Mở Thansa → bộ cài đặt sẽ dẫn bạn qua:
 
 > 📚 **Tài liệu chi tiết:** xem thư mục **[docs/](docs/README.md)** - hướng dẫn từng chức năng (mở ở đâu, bấm gì, dùng thế nào). Bảng dưới là bản đồ nhanh; cột **Chi tiết** dẫn tới trang hướng dẫn tương ứng.
 
-Thanh điều hướng bên trái gom **19 trang** thành **7 nhóm** (bấm tên nhóm để mở):
+Thanh điều hướng bên trái gom **22 trang** thành **6 nhóm** (bấm tên nhóm để mở):
 
 | Nhóm | Mục | Làm gì | Chi tiết |
 |---|---|---|---|
-| **Trợ lý** | **Thansa** | Màn chính: trò chuyện (gõ hoặc nói), đồ thị tri thức, cây thư mục brain bên trái. | [Trò chuyện & giọng nói](docs/02-tro-chuyen-va-giong-noi.md) · [Đồ thị tri thức](docs/03-do-thi-tri-thuc.md) |
+| **Bộ não** | **Đồ thị** | Màn chính khi mở app: đồ thị tri thức, trò chuyện (gõ hoặc nói), cây thư mục brain bên trái. | [Trò chuyện & giọng nói](docs/02-tro-chuyen-va-giong-noi.md) · [Đồ thị tri thức](docs/03-do-thi-tri-thuc.md) |
 | | **Trò chuyện** | Khung chat rộng toàn màn hình kèm cột lịch sử hội thoại. | [Phiên hội thoại](docs/04-phien-hoi-thoai.md) |
-| **Bộ não** | **Tệp tin** | Duyệt brain, **sửa `.md`/`.txt` trực tiếp**, tìm file theo tên/nội dung, tải lên/về. | [Quản lý tệp tin](docs/05-quan-ly-tep-tin.md) |
+| | **Tệp tin** | Duyệt brain, **sửa `.md`/`.txt` trực tiếp**, tìm file theo tên/nội dung, tải lên/về. | [Quản lý tệp tin](docs/05-quan-ly-tep-tin.md) |
 | | **Tự học** | Thansa tự rút ký ức, đúc Wiki, kỹ năng sau mỗi hội thoại; hoàn tác được. | [Tự học](docs/22-tu-hoc.md) |
 | **Code** | **Terminal** | **Dòng lệnh thật** của máy chạy Thansa, mở ngay trong trình duyệt - khỏi mở SSH. | [Nhóm Code: Terminal](docs/27-tab-code-terminal.md) |
 | **Năng lực** | **Agents** | Tạo trợ lý chuyên biệt (vai trò + skill + bộ nhớ riêng). | [Agents & Workflows](docs/07-agents-va-workflows.md) |
@@ -169,6 +198,7 @@ Thanh điều hướng bên trái gom **19 trang** thành **7 nhóm** (bấm tê
 | | **Workflows** | Tạo/chạy chuỗi tự động (agent → agent), có bước kiểm chứng. | [Agents & Workflows](docs/07-agents-va-workflows.md) |
 | | **Plugins** | Thêm tool/hook native cho mọi engine bằng một thư mục Python. | [Plugins](docs/20-plugins.md) |
 | | **Chatbot** | Đem Agent ra trả lời khách qua bot Telegram/Zalo riêng, brain riêng. | [Chatbot](docs/25-chatbot.md) |
+| | **Hội thoại** | Hộp thư gom mọi cuộc chat khách nhắn cho bot và Zalo cá nhân; đọc lại, tiếp quản khi cần người thật. | [Hội thoại khách](docs/28-hoi-thoai-khach.md) |
 | **Việc** | **Việc** | Hàng đợi task nền do AI tự đặc tả và tự chạy; bạn chỉ xử lý ngoại lệ. | [Việc (Kanban)](docs/21-viec-kanban.md) |
 | | **Việc định kỳ** | Nhiều vòng lặp chạy nền + nhắc hẹn theo giờ hoặc cron. | [Việc định kỳ & Nhắc hẹn](docs/08-viec-dinh-ky.md) |
 | **Kết nối** | **Kết nối** | Kho dịch vụ ngoài, đa tài khoản cùng một dịch vụ, phân quyền 3 mức. | [Kết nối & số liệu](docs/09-mcp-va-so-lieu.md) |
@@ -177,6 +207,7 @@ Thanh điều hướng bên trái gom **19 trang** thành **7 nhóm** (bấm tê
 | | **Models** | Main model + các provider + mức suy nghĩ + model việc nền. | [Models & engine](docs/10-models-va-engine.md) |
 | **Hệ thống** | **Mức dùng** | Token và chi phí theo ngày, theo nhà cung cấp, theo nguồn phát sinh. | [Mức dùng](docs/23-muc-dung-token.md) |
 | | **Cài đặt** | Trạng thái hệ thống, giao diện & brain, giọng nói, thương hiệu, tên miền. | [Bắt đầu & thiết lập](docs/01-bat-dau-thiet-lap.md) |
+| | **Linh vật** | Hình dáng, bảng màu và bật tắt con pet nép ở mép màn hình. | [Bắt đầu & thiết lập](docs/01-bat-dau-thiet-lap.md) |
 | | **Cập nhật** | Phiên bản hiện tại, cập nhật/Redeploy, tiến trình và nhật ký tính năng mới. | [Khắc phục sự cố](docs/17-khac-phuc-su-co.md) |
 | | **Tài khoản** | Workspace, đăng nhập/đăng xuất, đổi/tắt mật khẩu, token API cho CLI. | [Bảo mật & tài khoản](docs/14-bao-mat-tai-khoan.md) · [Thansa CLI](docs/24-cli-terminal.md) |
 
@@ -207,7 +238,7 @@ Mọi dòng để trống vẫn chạy được. Sao chép `env.example` → `.e
 | `JAVIS_STATE_DIR` | Nơi ghi state (settings, sessions, khoá mã hoá, cấu hình việc định kỳ) | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Thư mục CHA chứa mọi brain | `brains/` (Docker: `/brains`) |
 | `OBSIDIAN_VAULT_PATH` | Vault Second Brain ngoài (nếu bạn đã có vault sẵn) | `vault/` (Docker: `/data/vault`) |
-| `CLAUDE_CWD` | Thư mục làm việc của bộ não Claude | repo root |
+| `CLAUDE_CWD` | Thư mục dự phòng của bộ não Claude (chat chạy trong thư mục brain) | repo root |
 | `JAVIS_ENABLE_USER_PLUGINS` | `true` mới cho phép chạy plugin do bạn cài (code Python thật trong server) | *(tắt)* |
 | `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" trên bản Docker | `javis-update` |
 | `TTS_VOICE` / `TTS_RATE` | Giọng đọc + tốc độ (Edge TTS) | `vi-VN-HoaiMyNeural` / `+5%` |

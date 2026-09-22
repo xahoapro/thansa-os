@@ -80,9 +80,25 @@ Nút mic (hình micro to, bên trái thanh nhập) bật **chế độ luôn ngh
 3. Sau khi trả lời xong, Thansa tự bật mic nghe lại, không cần bạn bấm.
 4. Muốn tắt chế độ này: bấm lại nút mic, hoặc nhấn phím **Esc**.
 
-Trong chế độ rảnh tay, khi bạn bắt đầu nói thì Thansa tự ngắt phần nó đang đọc để lắng nghe, nên bạn có thể chen ngang bất cứ lúc nào. Cơ chế này đo độ to của giọng qua luồng mic đã khử vọng (nói liên tục khoảng 0,3 giây, to hơn hẳn nền), nên tiếng loa của chính Thansa không tự làm nó ngắt lời.
+Trong chế độ rảnh tay, khi bạn bắt đầu nói thì Thansa **tạm dừng** phần nó đang đọc để lắng nghe. Nếu trong 2 giây bạn thật sự nói thành câu, Thansa dừng hẳn và tin kế tiếp của bạn mang theo câu nó đang đọc dở, nên nó trả lời tiếp từ chỗ đó chứ không đọc lại từ đầu. Nếu chỉ là tiếng ho hay tiếng động, Thansa đọc tiếp từ chỗ dừng. Cơ chế đo độ to của giọng qua luồng mic đã khử vọng (nói liên tục khoảng 0,5 giây, to hơn hẳn nền), nên tiếng loa của chính Thansa không tự làm nó ngắt lời. Tắt cơ chế này bằng công tắc **Ngắt lời Thansa bằng giọng** trong Cài đặt nhanh.
 
 Chen ngang chỉ hoạt động khi **mic đang mở**. Mic đã tắt thì dù Thansa đang đọc, một tiếng động trong phòng cũng không bật mic trở lại.
+
+### Nói "khoan", "thôi": Thansa hiểu
+
+- **"Khoan"**, **"đợi chút"**, **"từ từ"**, **"để mình nghĩ"** (hoặc "wait", "hold on"): Thansa không gửi gì, dừng đọc nếu đang đọc, và hiện **ĐANG CHỜ BẠN**. Nói tiếp câu thật là nó gửi bình thường. Im lặng 90 giây thì nó thôi chờ.
+- **"Thôi"**, **"dừng lại"**, **"đủ rồi"** (hoặc "stop"): đang đọc thì im ngay, đang suy nghĩ thì bấm hộ nút Dừng. Không gửi gì.
+- Chỉ những câu **ngắn đúng cụm đó** mới được hiểu là lệnh. "Khoan, mở Chrome" là một tin nhắn bình thường.
+
+Thansa cũng tự chờ lâu hơn khi câu bạn nói kết bằng "và", "nhưng", "thì" hay dấu phẩy, vì lúc đó bạn thường chưa nói xong. Chỉnh mức im lặng trước khi gửi (Nhanh 0,5 giây, Vừa 0,8 giây, Chậm 1,2 giây) trong Cài đặt nhanh, mục **Im lặng rồi gửi**.
+
+### Điều khiển Thansa và máy tính bằng lời
+
+Nói (hoặc gõ) là được, Thansa dùng đúng công cụ và báo lại kết quả thật:
+
+- **"Mở trang Việc"**, **"mở file tên X"**, **"cho xem việc vừa giao"**, **"cuộn xuống"**: dashboard tự mở đúng chỗ và Thansa nói "đã mở". Việc này chỉ chạy khi có một tab Thansa đang mở.
+- **"Mở Chrome"**, **"bật Excel lên"**, **"mở trang youtube.com"**, **"tắt Chrome"**, **"đang mở app nào"**: Thansa mở hay đóng app trên **chính máy đang chạy Thansa**. Đóng app là đóng lịch sự (app có tài liệu chưa lưu sẽ tự hỏi lưu); nói "ép tắt" thì Thansa tắt hẳn. Nếu Thansa chạy trong Docker trên máy chủ thì nó nói rõ là không điều khiển được máy bạn.
+- Đang bôi đen một đoạn chữ rồi nói "tóm tắt đoạn này": Thansa biết bạn đang chỉ đoạn nào, không hỏi lại.
 
 ### Bước 4 - Nghe Thansa trả lời bằng giọng
 
@@ -300,6 +316,16 @@ Các kênh chữ thuần thì siết hơn vì bản thân chúng không vẽ đ�
 
 > Nếu Thansa vẫn trả lời bằng văn xuôi dài: nhiều khả năng bộ nhớ dài hạn của brain còn một ký ức cũ kiểu "không thích bảng markdown, thích văn nói ngắn" từ thời bạn dùng bằng giọng nói, và ký ức đó được nạp vào **mọi** lượt chat. Mở `memory/MEMORY.md` trong trang **Tệp tin**, tìm dòng nói về cách trả lời rồi xoá dòng đó cùng file tương ứng trong `memory/facts/`. Xem [Second Brain, bộ nhớ & wiki](13-second-brain-bo-nho-wiki.md).
 
+## Ba chế độ nói chuyện (Cài đặt → Giọng nói)
+
+Thẻ **Chế độ và bộ não giọng nói** có ba lựa chọn:
+
+- **Chuẩn**: nghe bằng trình duyệt, bộ não chính trả lời. Đúng như trước.
+- **Làn nhanh**: khi bạn nói, một bộ não giọng riêng trả lời trong 1 đến 2 giây. Chọn được **Antigravity** (chạy trên gói Google đã đăng nhập, không tốn key; Thansa giữ một phiên `agy` sống suốt lúc bạn nói và tắt sau 5 phút im), hoặc Groq, Gemini, OpenAI, OpenRouter bằng key ở trang Models. Câu nào cần số liệu, file, việc, mở app thì bộ não giọng nói "để mình xem" rồi chuyển cho bộ não chính, tất cả trong cùng một hội thoại.
+- **Live**: nghe nói thẳng qua **Gemini Live**, **OpenAI Realtime** hoặc **OpenAI GPT-Live** (cần API key của hãng). Giọng có cảm xúc, ngắt lời tự nhiên, bản ghi chữ hai chiều hiện trong khung chat. Khi cần dữ liệu thật, model giao cho bộ não chính chạy nền rồi vẫn trò chuyện tiếp, có kết quả thì thuật lại (Gemini dòng 3.1 còn im chờ vì Google chưa hỗ trợ việc nền). Phiên Live cũng biết bạn đang mở trang nào, bôi đen đoạn nào.
+
+Ngoài ra ô **Nghe bằng** cho chọn **Groq Whisper** nếu đã có key Groq: chữ chính xác hơn với tiếng Việt, chữ tạm trên màn hình vẫn hiện tức thì.
+
 ## Giọng đọc: nhà cung cấp, giọng, tốc độ
 
 Mọi thứ về giọng nằm trong **Cài đặt → Giọng nói, thương hiệu & truy cập**.
@@ -316,21 +342,22 @@ Khối **NHÀ CUNG CẤP GIỌNG ĐỌC** có ba lựa chọn:
 
 Chọn xong bấm **Lưu nhà cung cấp**. Dòng trạng thái bên dưới ghi đang dùng cái nào. Nếu nhà cung cấp trả phí gặp lỗi (hết hạn mức, sai key, mất mạng), Thansa **tự quay về Edge TTS** để giọng không bao giờ tắt hẳn.
 
-Khi chọn OpenAI hoặc ElevenLabs, khối hai giọng Edge (Ngọc Thu / Nam Minh) tự ẩn đi vì lúc đó giọng chọn ngay trong khối của nhà cung cấp.
+Khi chọn OpenAI hoặc ElevenLabs, khối giọng Edge (Hoài My, Nam Minh và 5 giọng đa ngôn ngữ) tự ẩn đi vì lúc đó giọng chọn ngay trong khối của nhà cung cấp.
 
 ### Chọn giọng Edge và tốc độ
 
 | Tuỳ chọn | Giá trị | Ghi chú |
 |---|---|---|
-| Giọng đọc | **Ngọc Thu** | Nữ, tự nhiên và ấm áp (mặc định; mã Edge: `vi-VN-HoaiMyNeural`) |
+| Giọng đọc | **Hoài My** | Nữ, tự nhiên và ấm áp (mặc định; mã Edge: `vi-VN-HoaiMyNeural`) |
 | Giọng đọc | **Nam Minh** | Nam, trầm (mã Edge: `vi-VN-NamMinhNeural`) |
+| Giọng đọc | **Ava, Emma** (nữ), **Andrew, Brian, William** (nam) | 5 giọng đa ngôn ngữ thế hệ mới của Edge: tự nhận tiếng Việt, ngữ điệu mượt hơn hai giọng trên nhưng có thể lơ lớ vài chữ. Nghe thử rồi chọn. |
 | Tốc độ | Thanh trượt 0.70× đến 1.80× | Mặc định 1.10× |
 | Ngôn ngữ nghe | **Tiếng Việt** (vi-VN) | Mặc định |
 | Ngôn ngữ nghe | **Tiếng Anh** (en-US) | Dùng khi bạn nói toàn tiếng Anh |
 
 Các bước:
 
-1. Chọn Ngọc Thu hoặc Nam Minh.
+1. Chọn Hoài My, Nam Minh hoặc một trong 5 giọng đa ngôn ngữ.
 2. Kéo thanh **TỐC ĐỘ** để chỉnh nhanh/chậm; số bên cạnh hiện tốc độ hiện tại (ví dụ 1.10×).
 3. Bấm **▶ Nghe thử** để nghe một câu chào mẫu bằng giọng vừa chọn.
 4. "Ngôn ngữ nghe" là ngôn ngữ Thansa dùng để nhận diện lời bạn nói, khác với giọng đọc trả lời. Để mặc định Tiếng Việt trừ khi bạn quen nói tiếng Anh.
@@ -373,7 +400,13 @@ Dòng chữ ngay dưới quả cầu cho biết Thansa đang làm gì:
 | ĐANG NGHE | Đang nghe bạn nói (giữ phím Cách) |
 | ĐANG NGHE • LUÔN | Chế độ rảnh tay đang bật |
 | ĐANG SUY NGHĨ | Bộ não đang xử lý câu hỏi |
+| ĐANG GỌI <tên tool> | Bộ não đang gọi một công cụ (POS, lịch, mở trang...) |
 | ĐANG NÓI | Thansa đang đọc câu trả lời |
+| ĐANG CHỜ BẠN | Bạn vừa nói "khoan" / "đợi chút", Thansa im chờ bạn nói tiếp |
+| TẠM DỪNG, ĐANG NGHE BẠN | Nghi bạn chen ngang, Thansa dừng đọc 2 giây xem bạn có nói thật không |
+| ĐANG KẾT NỐI LẠI | Mất kết nối với máy chủ, đang nối lại |
+| · MẠNG CHẬM | Hậu tố: một khúc giọng đọc mất hơn 2,5 giây mới phát được |
+| · N VIỆC NỀN | Hậu tố: đang có N việc chạy nền ở trang Việc |
 
 ## Bảng tra nhanh nút và phím tắt
 

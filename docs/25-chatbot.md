@@ -21,10 +21,11 @@ Bot chuyên trách **làm việc thật được** nếu bạn nâng mức quy�
 - Hai rào **không đổi theo mức**, và khoá bằng mã nguồn chứ không bằng câu dặn: **bot chỉ thấy brain của chính nó**, và **không chạy được lệnh máy**.
 - Câu ngoài tầm hiểu biết thì bot chuyển cho người trực bạn chỉ định.
 - Trang Chatbot dựng theo hướng **nhiều bot** ngay từ đầu: lưới thẻ, ô tìm, thêm/sửa/xoá, bật/tắt tại chỗ. Chạy một con hay mười con đều cùng một giao diện.
+- Mọi cuộc chat khách nhắn cho bot được lưu vào **hộp thư hội thoại** (trang **Hội thoại**): đọc lại, thấy cuộc nào bot bí, bấm Tiếp quản để tự trả lời khi cần. Xem [Hội thoại khách](28-hoi-thoai-khach.md).
 
 ## Mở ở đâu trong Thansa
 
-Thanh điều hướng bên trái, nhóm **Năng lực**, mục **Chatbot**.
+Thanh điều hướng bên trái, nhóm **Năng lực**, mục **Chatbot**, tab **Tạo chatbot** (từ 0.61.0 cả ba việc ở chung một trang: Hòm thư bot, Tài khoản bot, Tạo chatbot). Nói "mở chatbot" là tới thẳng tab này.
 
 ## Chuẩn bị trước khi tạo bot
 
@@ -48,7 +49,9 @@ Vào trang **Agents** tạo một Agent cho đúng việc bot sẽ làm. Viết 
 
 Bot **đọc Agent lúc chạy**, không chép lại. Sau này sửa Agent ở trang Agents là bot đổi theo ngay, không phải sửa hai chỗ. Chi tiết cách viết Agent ở [Agents & Workflows](07-agents-va-workflows.md).
 
-### 3. Một token riêng, lấy đúng chỗ theo kênh
+### 3. Một tài khoản kênh: token riêng, lấy đúng chỗ theo kênh
+
+Từ 0.61.0 token là một **tài khoản bot** ở tab **Tài khoản bot**, bot chỉ **trỏ tới** nó. Bạn thêm tài khoản ở tab Tài khoản bot trước rồi tích chọn khi tạo bot, hoặc dán token ngay trong form tạo bot; hai đường cho cùng một kết quả. Một bot trực được **nhiều** tài khoản (một vai trả lời ở cả Telegram lẫn Zalo Bot), còn mỗi tài khoản chỉ **một** bot trực.
 
 Nếu bot chạy trên **Telegram**: vào **@BotFather** gõ `/newbot`, đặt tên và username, lấy chuỗi token dạng `123456789:ABCdef...`.
 
@@ -96,21 +99,20 @@ Bấm **Bot mới**, điền:
 
 | Ô | Điền gì |
 |---|---|
-| Bot này nói chuyện ở đâu | **Telegram** hay **Zalo**. Ô đầu tiên vì nó đổi cả phần còn lại của form. Xem [Chọn Telegram hay Zalo](#chọn-telegram-hay-zalo) |
+| Bot trực tài khoản kênh nào | Tích một hay nhiều tài khoản ở tab Tài khoản bot (chỉ hiện tài khoản của brain này mà chưa bot nào trực). Chưa có thì mở **Thêm tài khoản mới bằng token**: chọn loại kênh, dán token, Kiểm tra. Xem [Chọn Telegram hay Zalo](#chọn-telegram-hay-zalo) |
 | Tên bot | Tên bạn nhìn để phân biệt các bot với nhau |
 | Agent làm bộ não | Chọn Agent trong brain đang mở, hoặc bấm **Tạo Agent** |
 | Bot trả lời dựa trên gì | Xem mục hai chế độ ở dưới |
 | Bot được làm gì | Mức quyền. Cứ để **Chỉ đọc** cho lần đầu; xem mục [Ba mức quyền](#ba-mức-quyền---bot-được-làm-gì) trước khi nâng |
-| Token | Dán token của đúng kênh vừa chọn rồi bấm **Kiểm tra** |
 | Chat ID người trực | Số Telegram của người nhận chuyển tiếp (xem bên dưới) |
-| Nhóm được phép | Chỉ hiện với bot Telegram. Để trống cũng được - thả bot vào nhóm rồi cho phép bằng một cú bấm sau (xem Bước 4) |
-| Khi nào bot lên tiếng trong nhóm | Chỉ hiện với bot Telegram. Mặc định chỉ khi được gọi tên hoặc reply vào nó |
+| Nhóm được phép | Chỉ hiện khi có tài khoản ở kênh vào được nhóm (Telegram). Để trống cũng được - thả bot vào nhóm rồi cho phép bằng một cú bấm sau (xem Bước 4) |
+| Khi nào bot lên tiếng trong nhóm | Cùng điều kiện. Mặc định chỉ khi được gọi tên hoặc reply vào nó |
 
-Chọn Zalo thì hai ô cuối **biến mất** thay vì hiện ra rồi vô tác dụng: gói bot cơ bản của Zalo không cho bot vào nhóm, nên khai id nhóm ở đó chỉ là một lời hứa suông nằm lại trong dữ liệu.
+Chỉ có tài khoản Zalo Bot thì hai ô cuối **biến mất** thay vì hiện ra rồi vô tác dụng: gói bot cơ bản của Zalo không cho bot vào nhóm, nên khai id nhóm ở đó chỉ là một lời hứa suông nằm lại trong dữ liệu.
 
 **Không có ô chọn brain**, và đó là cố ý: bot thuộc về brain bạn đang mở. Muốn bot ở brain khác thì đổi brain ở đầu trang rồi tạo lại - một chỗ để nhìn, không có hai lớp phải khớp nhau.
 
-Bấm **Kiểm tra** trước khi lưu: Thansa hỏi thẳng nền tảng bạn vừa chọn xem token có thật không, trả về đúng tên bot, và báo ngay nếu token đó đã có bot khác trong Thansa đang dùng. Với bot Zalo, nếu gói của bạn không cho bot vào nhóm thì nó nói luôn tại đây.
+Dán token mới thì bấm **Kiểm tra** trước khi lưu: Thansa hỏi thẳng nền tảng bạn vừa chọn xem token có thật không, trả về đúng tên bot, và báo ngay nếu token đó đã là một tài khoản trong Thansa (đang rảnh thì chỉ bạn tích tài khoản đó, đang có bot trực thì nói tên bot). Với Zalo Bot, nếu gói của bạn không cho bot vào nhóm thì nó nói luôn tại đây.
 
 **Bot tạo ra luôn ở trạng thái TẮT.** Đây là cố ý: bật lên là bot nói chuyện với người thật ngay lập tức, nên bật phải là một cú bấm có ý thức chứ không phải tác dụng phụ của việc tạo.
 
@@ -304,7 +306,7 @@ Thấy dải vàng đó thì chọn một trong hai: đổi engine ở trang **M
 
 ### Đổi bộ não không đổi trải nghiệm
 
-Bot chạy giống hệt nhau trên **mọi bộ não**: Claude Code, ChatGPT, Grok Build, Antigravity, OpenRouter, OpenAI API, Anthropic API, Gemini, Groq, Ollama. Đổi model ở trang Models thì bot đổi theo, nhưng cách nó làm việc không đổi. Khi công cụ gọi được thì mọi engine cầm **đúng một bộ công cụ** - xem lưu ý ở mục trên về gói ChatGPT.
+Bot chạy giống hệt nhau trên **mọi bộ não**: Claude Code, ChatGPT, Grok Build, Antigravity, OpenRouter, OpenAI API, Anthropic API, Gemini, Groq, Ollama. Đổi model thì bot đổi theo, nhưng cách nó làm việc không đổi. Khi công cụ gọi được thì mọi engine cầm **đúng một bộ công cụ** - xem lưu ý ở mục trên về gói ChatGPT.
 
 Làm được vì lượt của bot đi một đường riêng, chung cho mọi engine: cùng đầu bài từ Agent, cùng tài liệu tra sẵn, cùng lịch sử hội thoại, và công cụ (nếu có) lấy từ cùng một chỗ. Khác biệt còn lại đúng bằng khác biệt giữa các model, không phải giữa các đường ống.
 
@@ -388,7 +390,9 @@ Bấm **Xoá** trên thẻ. Bot ngừng trả lời ngay.
 
 ## Câu hỏi thường gặp
 
-**Bot dùng model nào?** Chính model bạn chọn ở trang Models. Đổi model là bot đổi theo, và cách nó làm việc không đổi - mọi bộ não đi cùng một đường.
+**Bot dùng model nào?** Model trong ô **Model** của chính Agent mà bot trỏ tới (Studio → Trợ lý → Cài đặt trợ lý). Ô đó để **Mặc định** thì bot chạy model chính ở trang Models. Thẻ bot trên trang Chatbot ghi sẵn model đang chạy, nên nhìn là biết. Đổi model là bot đổi theo, và cách nó làm việc không đổi - mọi bộ não đi cùng một đường.
+
+Vì sao theo Agent chứ không theo model chính: bot vốn đã mượn nguyên đầu bài của Agent, nên model cũng phải là của Agent - không thì chọn một model rẻ cho trợ lý đối ngoại xong bot vẫn đốt model đắt, mà không có dấu hiệu nào. Nhà đã chọn bị gỡ key thì bot lui về model chính chứ không chết câm trước mặt khách.
 
 **Bot có gọi được các nguồn dữ liệu tôi đã đấu không?** Mặc định là không - mức Chỉ đọc chỉ có tài liệu trong brain của nó. Nâng lên **Được ghi** thì có, và **Toàn quyền** thì có cả nhóm thao tác ra ngoài. Cân nhắc rằng người điều khiển là người nhắn cho bot; việc chỉ mình bạn cần thì hỏi Thansa ở dashboard hoặc kênh Telegram riêng vẫn an toàn hơn.
 

@@ -297,6 +297,12 @@ _SUB_PATTERNS: tuple[tuple[str, str, str, re.Pattern], ...] = (
      re.compile(r"(you'?ve\s+)?(hit|reached)\s+your\s+(usage|plan|weekly)\s+limit", re.I)),
     ("codex_quota", "codex", "",
      re.compile(r"usage\s+limit\s+reached|quota\s+exceeded\s+for\s+your\s+plan", re.I)),
+    # "You've hit your session limit · resets 12pm (UTC)". Câu này KHÔNG tự nói nhà nào, nên
+    # engine để rỗng: gọi nó là "gói ChatGPT" khi thật ra là gói Claude thì người dùng đi sửa
+    # nhầm chỗ. Rỗng thì `engine_hint` của chỗ gọi quyết, không có hint thì hiện nhãn chung
+    # "gói thuê bao đang dùng" - thà nói ít hơn là nói sai.
+    ("sub_session", "", "",
+     re.compile(r"(you'?ve\s+)?(hit|reached)\s+your\s+session\s+limit", re.I)),
     # Gemini CLI. Câu chữ lấy từ chính bundle @google/gemini-cli và từ lỗi backend Google trả
     # về ("Quota exceeded for quota metric...", RESOURCE_EXHAUSTED). Gói đăng nhập Google có
     # hạn mức theo NGÀY, nên nói được "hết lượt hôm nay" là đúng chuyện đang xảy ra.
@@ -308,9 +314,16 @@ _SUB_PATTERNS: tuple[tuple[str, str, str, re.Pattern], ...] = (
                 r"|RESOURCE_EXHAUSTED", re.I)),
 )
 
-# "resets at 3pm", "resets in 2 hours 15 minutes", "try again in 45 minutes"
+# "resets at 3pm", "resets in 2 hours 15 minutes", "try again in 45 minutes", và dạng KHÔNG có
+# giới từ mà nhà cung cấp hay in: "resets 12pm (UTC)". Bắt buộc có "at|in|on" thì mốc reset duy
+# nhất người dùng được cho biết lại rơi mất, và câu báo hoá ra "không biết lúc nào reset".
+# Nhưng bỏ hẳn giới từ thì "Please reset your API key at console.anthropic.com" cũng lọt, và
+# Javis đi khoe "Nhà cung cấp nói: reset your API key at console" - nên dạng không giới từ phải
+# có NGAY một mốc thời gian đằng sau (số, midnight, noon, tomorrow).
 _RESET_TEXT_RE = re.compile(
-    r"(resets?\s+(?:at|in|on)\s+[^.\n|]{1,60}|try\s+again\s+in\s+[^.\n|]{1,40})", re.I)
+    r"(resets?\s+(?:at|in|on)\s+[^.\n|]{1,60}"
+    r"|resets?\s+(?=\d|midnight|noon|tomorrow)[^.\n|]{1,60}"
+    r"|try\s+again\s+in\s+[^.\n|]{1,40})", re.I)
 _RESET_IN_RE = re.compile(
     r"\b(?:resets?|try\s+again)\s+in\s+"
     r"(?:(\d+)\s*(?:hours?|hrs?|h|giờ)\s*)?(?:(\d+)\s*(?:minutes?|mins?|m|phút))?", re.I)
@@ -324,6 +337,70 @@ def _reset_seconds(text: str) -> float:
     hours = int(m.group(1) or 0)
     minutes = int(m.group(2) or 0)
     return float(hours * 3600 + minutes * 60)
+
+
+def subscription_span(text: str) -> tuple[int, int] | None:
+    """Vị trí (đầu, cuối) của ĐÚNG câu báo hết lượt trong `text`. None = không có.
+
+    Vì sao cần: chỗ gọi phải phân biệt được "cả output là câu báo hết lượt" với "một bài viết
+    có TRÍCH câu đó trong ngoặc kép". Muốn cân được thì phải biết câu ấy chiếm bao nhiêu, nằm
+    ở đâu. Dùng CHUNG bộ mẫu với `parse_subscription_limit` (không đẻ bộ nhận dạng thứ hai),
+    nên thêm mẫu mới là cả hai hàm cùng biết.
+    """
+    raw = str(text or "")
+    if not raw.strip():
+        return None
+    for _name, _engine, _scope, pattern in _SUB_PATTERNS:
+        m = pattern.search(raw)
+        if m:
+            return m.span()
+    m = _CLAUDE_EPOCH_RE.search(raw)
+    return m.span() if m else None
+
+
+# Nhà chạy agent (AGENT_PROVIDERS trong main.py) -> tên engine mà bộ nhận dạng ở đây hiểu. Nhà
+# không có trong bảng (API key thuần) thì để rỗng: gói thuê bao chỉ là chuyện của bốn nhà này,
+# gán bừa một cái tên là câu báo lỗi nói sai tên gói người dùng phải đi gia hạn. Đặt ở đây (chứ
+# không ở main.py) để hàng đợi Kanban (tasks.py, không import được main) dùng CÙNG một bảng.
+ENGINE_HINT_BY_PROVIDER = {
+    "anthropic-cli": "claude-code",
+    "openai-oauth": "codex",
+    "grok-cli": "grok-cli",
+    "antigravity-cli": "antigravity-cli",
+}
+
+# Trần chữ của một output được coi là "chỉ có câu báo hết lượt". Dài hơn thế thì bước đã LÀM
+# RA việc thật, câu tiếng Anh kia chỉ là một đoạn trích trong đó.
+DOMINATES_MAX_CHARS = 400
+# Câu báo được coi là mở đầu dòng nếu nằm trong ngần này ký tự đầu dòng (chừa chỗ cho "Error: ",
+# "⚠ ", dấu đầu dòng).
+DOMINATES_LINE_START = 12
+
+
+def subscription_dominates(raw: str) -> bool:
+    """Câu báo hết lượt có CHIẾM output này không, hay chỉ được trích trong một bài viết?
+
+    Đây là hàng rào chống chính cái loại hỏng mà bản vá hết lượt sinh ra để dập. Một agent viết
+    bài hoàn toàn có thể viết: Khi gặp thông báo "You have reached your session limit" thì nên
+    chờ. Nhận nhầm câu đó là bước bị vứt nguyên bài viết thật và người dùng bị báo là hết gói
+    trong khi gói vẫn còn - tệ hơn hẳn lỗi cũ.
+
+    Ba điều kiện, phải đúng cả: output ngắn (bài thật thì dài hơn nhiều), câu báo mở đầu dòng
+    của nó HOẶC chiếm quá nửa dòng đó. Câu nhà cung cấp in ra luôn thoả; câu trích giữa một câu
+    văn thì không. Dùng chung cho bước workflow (main.py) và việc Kanban (tasks.py).
+    """
+    raw = str(raw or "")
+    span = subscription_span(raw)
+    if not span:
+        return False
+    if len(raw.strip()) > DOMINATES_MAX_CHARS:
+        return False
+    dau_dong = raw.rfind("\n", 0, span[0]) + 1
+    het_dong = raw.find("\n", span[1])
+    dong = raw[dau_dong: het_dong if het_dong >= 0 else len(raw)].strip()
+    if not dong:
+        return False
+    return (span[0] - dau_dong) <= DOMINATES_LINE_START or (span[1] - span[0]) * 2 >= len(dong)
 
 
 def parse_subscription_limit(text: str, engine_hint: str = "",

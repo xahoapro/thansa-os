@@ -169,8 +169,8 @@ check("tìm file trong brain dùng /files/search mode=name", /\/files\/search\?b
 const veNut = (SU.match(/function veNutKetQua\([\s\S]*?\n  \}/) || [""])[0];
 check("kết quả tìm kiếm có nút đổi Thêm / Gỡ", !!veNut
   && /proj\.remove_short/.test(veNut) && /proj\.add/.test(veNut));
-check("nút đọc lại trạng thái từ projChiTiet chứ không đóng cứng lúc vẽ",
-  /\(projChiTiet\.files \|\| \[\]\)\.forEach\(function \(f\) \{ theoDuong\[f\.path\] = f; \}\)/.test(veNut));
+check("nút đọc lại trạng thái từ dữ liệu đang mở chứ không đóng cứng lúc vẽ",
+  /\(p\.files \|\| \[\]\)\.forEach\(function \(f\) \{ if \(f\.id\) theoDuong\[f\.path\] = f; \}\)/.test(veNut));
 check("và gỡ ngay tại kết quả gọi đúng route xoá file khỏi project",
   /async function goNhanhFile\(f, nut\)[\s\S]*?\/files\/" \+\s*\n?\s*encodeURIComponent\(f\.id\) \+ "\/delete"/.test(SU));
 check("thêm hoặc gỡ xong thì vẽ lại nút, không phải tìm lại từ đầu",
@@ -189,7 +189,7 @@ check("có vòng tải lần lượt từng file kèm đếm n/tổng",
   && /\(i \+ 1\) \+ "\/" \+ ds\.length/.test(SU));
 check("một file hỏng không chặn những file còn lại", /loi\.push\(ds\[i\]\.name/.test(SU));
 check("CANARY: cả tấm ngăn kéo là vùng thả, tự chặn bọt lên window",
-  /panel\.setAttribute\("data-localdrop", "1"\)/.test(SU)
+  /\.setAttribute\("data-localdrop", "1"\)/.test(SU)
   && /e\.stopPropagation\(\);\s+\/\/ không để app\.js/.test(SU));
 check("CANARY: app.js bỏ qua drop rơi vào vùng thả riêng",
   /closest\("\[data-localdrop\]"\)/.test(APP)
@@ -215,8 +215,11 @@ check("chú thích nói rõ ghim là nạp sẵn NỘI DUNG, không phải đổ
   /nạp sẵn/.test(VI["proj.pin_on"] || "") && /2000/.test(VI["proj.pin_note"] || ""));
 check("hai trần trong chú thích khớp server", /PROJECT_GHIM_FILE_MAX = 2000/.test(
   fs.readFileSync(path.join(ROOT, "server", "main.py"), "utf8")));
+// pdK() chọn tiền tố khoá theo chế độ đang mở (proj. / cts. / ags.), nên câu hỏi luôn nói
+// đúng tên thứ mà file sắp bị gỡ khỏi.
 check("hỏi lại trước khi gỡ file, và nói rõ file vẫn còn trong brain",
-  /confirm\(pdT\("proj\.confirm_remove_file"/.test(SU) && /vẫn còn trong brain/.test(VI["proj.confirm_remove_file"] || ""));
+  /confirm\(pdT\(pdK\("confirm_remove_file"\)/.test(SU)
+  && /vẫn còn trong brain/.test(VI["proj.confirm_remove_file"] || ""));
 check("link nói rõ chỉ mở được khi bộ não có công cụ duyệt web",
   /duyệt web/.test(VI["proj.link_note"] || ""));
 check("link mở ở tab mới có rel=noopener", /rel="noopener noreferrer"/.test(SU));
@@ -311,8 +314,8 @@ check("gọi endpoint tài sản của phiên", /"\/sessions\/" \+ encodeURIComp
 // dữ liệu là nhân đôi số chỗ phải sửa về sau.
 check("dùng lại vỏ ngăn kéo của project chứ không dựng khung thứ hai",
   (SU.match(/class="pd-panel"/g) || []).length === 1 && /pdCheDo = "cuoc"/.test(SU));
-check("thanh tab dựng động: chế độ cuộc chỉ có File và Link",
-  /if \(pdCheDo === "cuoc"\) return \[tabFile, tabLink\];/.test(SU));
+check("thanh tab dựng động: chế độ cuộc và trợ lý chỉ có File và Link",
+  /if \(pdLaCuoc\(\) \|\| pdLaAgent\(\)\) return \[tabFile, tabLink\];/.test(SU));
 check("mở khung project thì trả chế độ về project", /pdDung\(\);\s*\n\s*pdCheDo = "project";/.test(SU));
 check("file đã dời vẫn hiện, mờ đi và gạch ngang",
   /\.pd-row\.mat \{ opacity/.test(CSS) && /\.pd-row\.mat \.pd-row-name \{ text-decoration: line-through/.test(CSS));
@@ -327,17 +330,28 @@ check("ghi rõ link do ai gửi", !!VI["cts.from_you"] && !!VI["cts.from_javis"]
 // ============================================================
 // Bốn icon hiện-khi-rê-chuột ăn ~100px trong popover 280px, và hover thì KHÔNG tồn tại trên
 // màn cảm ứng - ở đó chúng là bốn chức năng không có đường nào bấm tới.
+// Chữ đã vào từ điển i18n (0.55.14) nên kiểm hai vế: hàng acts gọi đúng khoá, và khoá mang
+// đúng cái nhãn. Vế phủ định giữ nguyên ý: KHÔNG còn act icon trần nào bên cạnh nút ba chấm.
 check("một nút ba chấm thay cho bốn icon hover",
-  /icon: "ellipsis-vertical", title: "Chức năng của project"/.test(SU)
-  && !/\{ icon: "palette", title: "Đổi icon"/.test(SU));
+  /icon: "ellipsis-vertical", title: window\.t\("sess\.proj_acts"\)/.test(SU)
+  && /Chức năng của project/.test(VI["sess.proj_acts"] || "")
+  && !/\{ icon: "palette", title:/.test(SU));
 check("icon ba chấm có thật trong bộ đã vendor",
   /"ellipsis-vertical":/.test(fs.readFileSync(path.join(ROOT, "dashboard", "vendor", "lucide-icons.js"), "utf8")));
 check("và được khai trong manifest (để lần sinh lại còn giữ)",
   JSON.stringify(JSON.parse(D("icons.manifest.json")).groups).includes("ellipsis-vertical"));
+// Mỗi hàng kiểm hai vế (khoá trong .js + câu trong vi.json) từ 0.55.14. Nhân tiện canh đủ
+// cả năm hàng mà tên mục này hứa, chứ bản cũ bỏ sót ghim và đổi icon.
 check("hộp chức năng có đủ ghim, đổi icon, đổi tên, xoá, và lối quay lại",
-  /function openProjActs/.test(SU) && /Quay lại danh sách/.test(SU)
-  && /Đổi tên project/.test(SU) && /Xoá project/.test(SU));
-check("và có cả lối mở khung Hướng dẫn / File / Link", /Mở khung Hướng dẫn/.test(SU));
+  /function openProjActs/.test(SU)
+  && /window\.t\("sess\.proj_pin"\)/.test(SU) && /ghim/i.test(VI["sess.proj_pin"] || "")
+  && /window\.t\("sess\.proj_icon"\)/.test(SU) && /Đổi icon/.test(VI["sess.proj_icon"] || "")
+  && /window\.t\("proj\.rename"\)/.test(SU) && /Đổi tên project/.test(VI["proj.rename"] || "")
+  && /window\.t\("sess\.proj_delete"\)/.test(SU) && /Xoá project/.test(VI["sess.proj_delete"] || "")
+  && /window\.t\("sess\.proj_back"\)/.test(SU) && /Quay lại danh sách/.test(VI["sess.proj_back"] || ""));
+check("và có cả lối mở khung Hướng dẫn / File / Link",
+  /window\.t\("sess\.proj_drawer"\)/.test(SU)
+  && /Mở khung Hướng dẫn/.test(VI["sess.proj_drawer"] || ""));
 // Đi sâu trong CÙNG một popover: hai lớp nổi chồng nhau thì bấm ra ngoài lớp trong đóng
 // nhầm cả hai.
 check("hộp đi sâu trong cùng popover, không bung lớp nổi thứ hai",

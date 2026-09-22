@@ -73,7 +73,13 @@
     if (!ds.length) return Promise.resolve([]);
     var ver = encodeURIComponent(m.version || "0");
     return Promise.all(ds.map(function (rel) {
-      return taiNhuTrang("/static/" + rel + "?v=" + ver).then(function (buf) {
+      // `?v=` phải TRÙNG KHÍT khoá mà trang đã dùng lúc nạp file, nếu không ta đo một URL
+      // khác - cache miss, tải lại từ máy chủ, tức là đo file TRÊN MÁY CHỦ chứ không phải
+      // file trình duyệt ĐANG CHẠY, đúng cái bẫy mà chú thích taiNhuTrang ở trên cảnh báo.
+      // Server đóng dấu bằng vân tay từng file (xem `root()` trong main.py), nên khoá là
+      // chính crc trong `m.assets`; rơi về số phiên bản cho bản server cũ hơn.
+      var khoa = encodeURIComponent(m.assets[rel] || "") || ver;
+      return taiNhuTrang("/static/" + rel + "?v=" + khoa).then(function (buf) {
         if (!buf) return null;                       // không đọc được thì im, đừng báo oan
         return crc32(new Uint8Array(buf)) === m.assets[rel] ? null : rel;
       });
@@ -114,7 +120,7 @@
     ok.onclick = khiBam;
     var x = document.createElement("button");
     x.className = "jf-x";
-    x.textContent = "Để sau";
+    x.textContent = window.t("cs.fm_fix_later");
     x.onclick = function () { bar.remove(); };
     bar.appendChild(txt); bar.appendChild(ok); bar.appendChild(x);
     document.head.appendChild(css);
@@ -124,15 +130,16 @@
   /* KHÔNG tự tải lại trang. Người dùng có thể đang gõ dở một câu dài, và mất chữ đang gõ vì
    * một thứ họ không hề bấm là tệ hơn hẳn cái nó chữa. Chỉ hiện dải và để họ bấm. */
   function baoCoBanMoi(verMoi) {
-    veDai("Thansa vừa cập nhật lên bản " + verMoi + ".",
-          "Tải lại trang để dùng bản mới.", "Tải lại", function () { location.reload(); });
+    veDai(window.t("fresh.new_ver", { ver: verMoi }),
+          window.t("fresh.new_ver_sub"), window.t("fresh.reload"), function () { location.reload(); });
   }
 
   function baoChayBanCu(ds, daThuTaiLai) {
-    var ten = ds.slice(0, 3).join(", ") + (ds.length > 3 ? " và " + (ds.length - 3) + " file nữa" : "");
+    var ten = ds.slice(0, 3).join(", ")
+      + (ds.length > 3 ? " " + window.t("fresh.more_files", { count: ds.length - 3 }) : "");
     if (!daThuTaiLai) {
-      veDai("Trình duyệt đang chạy bản cũ của Thansa.",
-            "Bấm để tải lại. (" + ten + ")", "Tải lại", function () {
+      veDai(window.t("fresh.stale_title"),
+            window.t("fresh.stale_sub", { ds: ten }), window.t("fresh.reload"), function () {
               try { sessionStorage.setItem(KHOA_DA_TAI, "1"); } catch (e) { /* noop */ }
               location.reload();
             });
@@ -140,10 +147,9 @@
     }
     // Tải lại rồi mà vẫn lệch: cache nằm ngoài tầm với của trang (proxy, CDN). Nói THẲNG
     // phải làm gì, đừng để người dùng bấm Tải lại mãi mà không hiểu vì sao không đổi.
-    veDai("Vẫn đang chạy bản cũ dù đã tải lại.",
-          "Bấm Ctrl+Shift+R (máy Mac: Cmd+Shift+R). Vẫn vậy thì có một tầng cache giữa "
-          + "máy bạn và Thansa đang giữ file cũ: " + ten,
-          "Thử lại", function () { location.reload(true); });
+    veDai(window.t("fresh.stuck_title"),
+          window.t("fresh.stuck_sub", { phim: "Ctrl+Shift+R", phim_mac: "Cmd+Shift+R", ds: ten }),
+          window.t("common.retry"), function () { location.reload(true); });
   }
 
   // ── Chạy ──────────────────────────────────────────────────────────────────────

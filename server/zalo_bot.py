@@ -328,6 +328,7 @@ class ZaloBot(HangLuot):
             "chat_title": chat_obj.get("name") or chat_obj.get("title") or "",
             "user_name": frm.get("display_name") or "",
             "username": frm.get("display_name") or "",
+            "user_id": str(frm.get("id") or ""),
             "message_id": msg.get("message_id"),
             "bot_username": self.bot_username,
             "mentioned": self._co_nhac_ten(msg),
@@ -446,6 +447,29 @@ class ZaloBot(HangLuot):
         except Exception as e:
             return _with_cap(f"[Người dùng gửi một ảnh qua Zalo nhưng tải về hỏng: "
                              f"{type(e).__name__}: {e}]")
+
+    async def send_text(self, chat, text):
+        """Gửi MỘT tin chữ và nói kết quả: (ok, lỗi). Cùng lý do với `TelegramBot.send_text`."""
+        text = str(text or "").strip()
+        if not text:
+            return False, "tin rỗng"
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+            for chunk in [text[i:i + MAX_TIN] for i in range(0, len(text), MAX_TIN)]:
+                loi = ""
+                for co_md in (True, False):
+                    payload = {"chat_id": chat, "text": chunk}
+                    if co_md:
+                        payload["parse_mode"] = "markdown"
+                    d = await self._api(client, "sendMessage", **payload)
+                    if d.get("ok"):
+                        loi = ""
+                        break
+                    loi = str(d.get("description") or "Zalo từ chối")
+                    if d.get("loi_mang"):
+                        return False, loi
+                if loi:
+                    return False, loi
+        return True, ""
 
     async def send_file(self, path, caption="", chat=None):
         """Gửi một file ra Zalo. Trả (ok, error).

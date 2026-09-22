@@ -21,6 +21,10 @@ global.currentBrainPath = () => "brains/B";
 const { mdToHtml } = require("../../dashboard/chat-render.js");
 const SRC = fs.readFileSync(path.join(__dirname, "../../dashboard/chat-render.js"), "utf8");
 const CSS = fs.readFileSync(path.join(__dirname, "../../dashboard/style.css"), "utf8");
+// 0.55.14: chu tieng Viet cua giao dien da doi vao tu dien i18n, nen kiem mot chuoi
+// literal trong .js khong con dung. Cach kiem gio phai du HAI VE: file giao dien goi DUNG
+// khoa, va khoa do trong vi.json mang DUNG cau can co.
+const VI = JSON.parse(fs.readFileSync(path.join(__dirname, "../../dashboard/i18n/vi.json"), "utf8"));
 
 let fails = [];
 function check(name, cond, them) {
@@ -54,7 +58,8 @@ check("link file thường không bị biến thành link ảnh", !/jv-img-link/
 // ---- 4. Lightbox có đủ ba việc: xem, tải, đóng ----
 check("có hàm mở lightbox", /function moLightbox\(/.test(SRC));
 check("có hàm đóng lightbox", /function dongLightbox\(/.test(SRC));
-check("có nút Tải về", /data-lb="tai"/.test(SRC) && /Tải về/.test(SRC));
+check("có nút Tải về",
+      /data-lb="tai"/.test(SRC) && SRC.includes("common.download") && VI["common.download"].includes("Tải về"));
 check("có nút mở tab mới", /data-lb="tab"/.test(SRC));
 check("có nút đóng", /data-lb="dong"/.test(SRC));
 check("Esc đóng lightbox", /e\.key === "Escape"/.test(SRC) && /dongLightbox\(\)/.test(SRC));
@@ -90,6 +95,30 @@ check("có chế độ xem cỡ thật", /max-width:\s*none/.test(than(".jv-lb.t
 check("khoá cuộn nền khi đang xem", /overflow:\s*hidden/.test(than("body.jv-lb-open")));
 check("khung ảnh cuộn được khi xem cỡ thật", /overflow:\s*auto/.test(than(".jv-lb-khung")));
 check("con trỏ zoom-in trên ảnh chat vẫn đúng nghĩa", /cursor:\s*zoom-in/.test(than(".chat-img")));
+
+// ---- 6. Trên điện thoại phải THOÁT RA ĐƯỢC (chủ repo báo 2026-09-13, kèm ảnh chụp) ----
+// Bệnh: lớp phủ nằm sát inset:0 nên trên máy có tai thỏ, đồng hồ và vạch pin của hệ điều hành
+// đè lên đúng chỗ nút X; mà vuốt cạnh trái để Back thì lớp phủ không nghe, nên không còn đường
+// nào ra. Hai vế phải cùng có mặt thì mới hết bẫy.
+check("lớp phủ chừa vùng an toàn phía trên (nút X không chui dưới thanh trạng thái)",
+      /padding:\s*env\(safe-area-inset-top/.test(than(".jv-lb")), than(".jv-lb"));
+check("chừa cả bốn cạnh (máy xoay ngang thì tai thỏ sang bên hông)",
+      /safe-area-inset-right/.test(than(".jv-lb")) && /safe-area-inset-bottom/.test(than(".jv-lb"))
+      && /safe-area-inset-left/.test(than(".jv-lb")), than(".jv-lb"));
+check("CANARY: trang vẫn khai viewport-fit=cover, thiếu là env() trả 0 và vùng an toàn thành vô nghĩa",
+      /viewport-fit=cover/.test(fs.readFileSync(path.join(__dirname, "../../dashboard/index.html"), "utf8")));
+check("mở ảnh chèn một bước lịch sử để nút Back có chỗ lui về",
+      /history\.pushState\(\{\s*jvlb/.test(SRC), "không thấy pushState trong moLightbox");
+check("nghe popstate để cử vuốt cạnh / nút Back đóng được ảnh", /popstate/.test(SRC));
+check("popstate KHÔNG gọi back() lần nữa (bước vừa gỡ chính là bước mình chèn)",
+      /_lbDayLichSu = false;[^]{0,200}dongLightbox\(\)/.test(SRC), "thiếu cờ chặn back() kép");
+check("đóng bằng X/Esc/nền đen cũng nhả bước lịch sử (khỏi phải bấm Back một cái vô nghĩa)",
+      /if \(_lbDayLichSu\) \{[^]{0,140}history\.back\(\)/.test(SRC), "dongLightbox không nhả bước lịch sử");
+// Mở ảnh thứ hai khi đang xem ảnh thứ nhất: phải GIỮ bước lịch sử cũ, không back-rồi-push.
+// Nếu không, popstate chậm chân sinh ra sau đó sẽ đóng đúng cái ảnh vừa mở.
+check("thay ảnh này bằng ảnh khác thì không đụng vào lịch sử",
+      /function _goLopPhu\(/.test(SRC) && /function moLightbox\([^)]*\) \{\s*\n\s*_goLopPhu\(\);/.test(SRC),
+      "moLightbox phải gọi _goLopPhu, không gọi dongLightbox");
 
 if (fails.length) {
   console.log("\nFAIL - test_lightbox_anh: " + fails.length + " lỗi: " + fails.join(", "));

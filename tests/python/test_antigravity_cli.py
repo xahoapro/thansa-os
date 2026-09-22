@@ -161,9 +161,45 @@ check("mode rỗng -> siết như suggest",
       antigravity_cli.co_quyen_cho_mode("") == ["--sandbox"])
 check("CANARY: mode gõ sai KHÔNG được thành toàn quyền",
       "--dangerously-skip-permissions" not in antigravity_cli.co_quyen_cho_mode("FULLL"))
-check("mode auto: có sandbox VÀ tự duyệt (headless dừng hỏi là treo)",
-      set(antigravity_cli.co_quyen_cho_mode("auto"))
-      == {"--sandbox", "--dangerously-skip-permissions"})
+check("mode auto: tự duyệt (headless dừng hỏi là treo)",
+      antigravity_cli.co_quyen_cho_mode("auto") == ["--dangerously-skip-permissions"])
+# ĐO 2026-09-19 trên agy 1.2.7: `--sandbox` + `--dangerously-skip-permissions` cùng lúc làm tool
+# shell chạy như việc nền rồi bị agy tự huỷ sau 5 giây khi thoát -p, không bao giờ trả kết quả.
+# Mọi việc Kanban/Loop mức auto cần shell/ghi file chết câm vì tổ hợp này.
+check("CANARY: mode auto KHÔNG được kèm --sandbox (tổ hợp hai cờ làm tool shell chết câm)",
+      "--sandbox" not in antigravity_cli.co_quyen_cho_mode("auto"))
+check("mode suggest vẫn sandbox, không tự duyệt",
+      antigravity_cli.co_quyen_cho_mode("suggest") == ["--sandbox"])
+
+# ---- Lời nhắc đường file phải nhắc ĐÚNG câu hỏi mới nhất, không phải đầu gói lịch sử ----
+import compaction  # noqa: E402
+_goi = compaction.bootstrap_prompt(
+    [{"role": "user", "content": "gửi ảnh favicon cho tôi"},
+     {"role": "assistant", "content": "Bạn chỉ cần gửi trực tiếp file ảnh favicon."}],
+    "kiểm tra penlum xem đã tạo được sitemap.xml động chưa")
+check("cau_hoi_moi_nhat bóc đúng câu hỏi hiện tại khỏi gói lịch sử",
+      antigravity_cli.cau_hoi_moi_nhat(_goi)
+      == "kiểm tra penlum xem đã tạo được sitemap.xml động chưa")
+check("cau_hoi_moi_nhat: không có lịch sử thì trả nguyên prompt",
+      antigravity_cli.cau_hoi_moi_nhat("  xin chào ") == "xin chào")
+_nhac = antigravity_cli._loi_nhac_file("/tmp/ngu-canh.md", _goi)
+check("CANARY: lời nhắc đường file KHÔNG dán câu hỏi CŨ dưới nhãn 'tin nhắn mới nhất' "
+      "(bản trước cắt 1500 ký tự ĐẦU của gói -> model trả lời câu cũ khi chat dài)",
+      "favicon" not in _nhac and "sitemap.xml động" in _nhac, _nhac)
+check("lời nhắc dặn không trả lời lại câu cũ", "không trả lời lại" in _nhac)
+# Câu hỏi DÀI (dán cả bài rồi chốt yêu cầu ở cuối): lời nhắc phải giữ cả câu mở lẫn câu chốt,
+# và không bị cắt ở 1500 ký tự như bản trước.
+_bai = "Viết lại đoạn sau cho gọn:\n" + ("Nội dung bài viết dài. " * 400) + "\nGiữ nguyên các con số."
+_nhac_dai = antigravity_cli._loi_nhac_file("/tmp/ngu-canh.md", _bai)
+check("câu hỏi dài: giữ câu MỞ ĐẦU", "Viết lại đoạn sau cho gọn" in _nhac_dai)
+check("CANARY: câu hỏi dài: giữ câu CHỐT ở cuối (bản trước cắt 1500 ký tự đầu là mất)",
+      "Giữ nguyên các con số." in _nhac_dai)
+check("câu hỏi dài: có báo đã lược đoạn giữa", "đoạn giữa đã lược" in _nhac_dai)
+check("câu hỏi dài: chép hơn 1500 ký tự (trần mới 6000)",
+      len(_nhac_dai) > 1500 + 800 and len(_nhac_dai) < antigravity_cli._TRAN_NHAC_CAU_HOI + 1200)
+_vua = "x" * 5000
+check("câu hỏi dưới trần thì chép nguyên, không lược",
+      "đoạn giữa đã lược" not in antigravity_cli._loi_nhac_file("/tmp/n.md", _vua))
 
 
 # ============================================================
@@ -935,6 +971,201 @@ check("CANARY: bản CLI nhận stdin thì đi stdin, không dựng file ngữ c
       _evs_sd)
 
 antigravity_cli._no_window = _no_window_that
+
+
+# ============================================================
+# 8b. Model TỰ MANG mức nghĩ trong tên: kèm `--effort` là chết cả lượt chat
+# ============================================================
+# Chủ repo báo 2026-09-08 kèm ảnh chụp: đang chat thì nhận hai bong bóng đỏ rồi một dòng
+# "(không có nội dung trả về - thử lại hoặc đổi model)":
+#
+#     invalid model selection (--model "gemini-3.8-flash-medium" --effort "high"):
+#     --model gemini-3.8-flash-medium conflicts with --effort=high
+#     Antigravity CLI thoát với mã 1.
+#
+# `agy models` trả tên model đã gắn sẵn mức nghĩ ở đuôi, nên chọn model CHÍNH LÀ chọn mức nghĩ
+# và `agy` cấm kèm cờ. Hỏng nặng chứ không nhẹ: CLI chết lúc đọc cờ, chưa gọi tới model, nên
+# MỌI lượt chat trên model đó mất trắng cho tới khi người dùng tự đổi model hoặc hạ độ sâu.
+_HELP_EFFORT = (_HELP_MOI + "  --effort <level>   low, medium, high, xhigh\n")
+
+_reset_cache()
+_cli_e, _d_e = _gia([], help_text=_HELP_EFFORT)
+antigravity_cli.find_antigravity_cli = lambda: _cli_e
+_g_khoa = antigravity_cli.AntigravityCLI(cwd="/tmp", model="gemini-3.8-flash-medium")
+_g_khoa.cli_path = _cli_e
+_g_khoa.effort = "high"
+check("CANARY: model đã khoá mức nghĩ thì dòng lệnh KHÔNG được có --effort",
+      "--effort" not in _g_khoa._build_args("hỏi"), _g_khoa._build_args("hỏi"))
+_g_thuong = antigravity_cli.AntigravityCLI(cwd="/tmp", model="claude-sonnet-4-6")
+_g_thuong.cli_path = _cli_e
+_g_thuong.effort = "high"
+check("model thường thì vẫn truyền --effort như cũ (đừng vá quá tay)",
+      "--effort" in _g_thuong._build_args("hỏi"), _g_thuong._build_args("hỏi"))
+
+
+def _gia_xung_effort(dong_ra):
+    """`agy` giả có luật y như bản thật: có `--effort` là từ chối, không có thì trả lời.
+
+    Ghi NỐI TIẾP argv của từng lần chạy để test soi được cả lượt hỏng lẫn lượt chạy lại.
+    """
+    d = Path(tempfile.mkdtemp(prefix="javis-fakeagy-eff-"))
+    p = d / "agy"
+    p.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys\n"
+        "a = sys.argv[1:]\n"
+        f"if '--help' in a:\n    sys.stdout.write({_HELP_EFFORT!r}); sys.exit(0)\n"
+        f"open({str(d / 'argv.txt')!r}, 'a').write('\\x00'.join(a) + '\\n')\n"
+        "if '--effort' in a:\n"
+        "    sys.stderr.write('invalid model selection (--model \"m\" --effort \"high\"): "
+        "--model m conflicts with --effort=high')\n    sys.exit(1)\n"
+        f"for l in {json.dumps(dong_ra)}:\n    print(l, flush=True)\n"
+        "sys.exit(0)\n",
+        encoding="utf-8")
+    p.chmod(p.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+    return str(p), d
+
+
+# Lưới an toàn cho hình dạng CHƯA ĐO ĐƯỢC: model không có đuôi mức nghĩ mà CLI vẫn từ chối
+# (model không biết suy nghĩ, hoặc bản `agy` sau đổi luật). Chính câu lỗi của CLI là dấu hiệu -
+# bỏ cờ rồi chạy lại NGAY trong lượt này, người dùng vẫn có câu trả lời.
+_reset_cache()
+_cli_x, _d_x = _gia_xung_effort([json.dumps({"role": "assistant", "content": "Chào anh."})])
+antigravity_cli.find_antigravity_cli = lambda: _cli_x
+_g_x = antigravity_cli.AntigravityCLI(cwd=str(_d_x), model="model-la")
+_g_x.cli_path = _cli_x
+_g_x.effort = "high"
+_evs_x = chay(_gom(_g_x))
+_lan_chay = [l.split("\x00") for l in
+             (_d_x / "argv.txt").read_text(encoding="utf-8").strip().splitlines()]
+check("CANARY: CLI báo xung đột --effort -> chạy lại KHÔNG cờ, không để mất lượt chat",
+      any(e["type"] == "final" and e["content"] == "Chào anh." for e in _evs_x), _evs_x)
+check("lượt chạy lại đã bỏ hẳn --effort",
+      len(_lan_chay) == 2 and "--effort" not in _lan_chay[1], _lan_chay)
+check("không bắn câu lỗi tiếng Anh của lượt hỏng ra cho người dùng",
+      not any(e["type"] == "error" for e in _evs_x), _evs_x)
+check("nhớ model đó trong phiên để lượt sau khỏi thử lại",
+      antigravity_cli.model_khoa_effort("model-la"))
+
+# Lỗi KHÔNG phải xung đột effort thì vẫn phải hiện ra, và hiện ĐÚNG MỘT LẦN. Đường file trước
+# đây bắn lỗi hai lần (một lần tại chỗ, một lần ở nhánh gom cuối `query`) nên cùng một sự cố
+# hiện hai bong bóng đỏ y hệt nhau - đúng cảnh trong ảnh chủ repo gửi.
+_reset_cache()
+_cli_l, _d_l = _gia([], ma=1, stderr="đứt cáp", help_text=_HELP_MOI)
+antigravity_cli.find_antigravity_cli = lambda: _cli_l
+_g_l = antigravity_cli.AntigravityCLI(cwd=str(_d_l))
+_g_l.cli_path = _cli_l
+_g_l.instructions = "y" * 200000        # đủ dài để phải đi đường file
+_evs_l = chay(_gom(_g_l))
+check("CANARY: một sự cố chỉ hiện ĐÚNG MỘT bong bóng lỗi, không nhân đôi",
+      len([e for e in _evs_l if e["type"] == "error"]) == 1, _evs_l)
+
+
+# ============================================================
+# 8c. Nhà cung cấp gãy TẠM THỜI: chờ một nhịp rồi hỏi lại, đừng giết cả lượt
+# ============================================================
+# Chủ repo gửi ảnh (2026-09-08) đúng nguyên văn thứ `agy` in ra rồi thoát mã 1:
+#
+#     failed to send message: ... Eligibility check failed: failed to get load code assist
+#     response: UNAVAILABLE (code 503): The service is currently unavailable.
+#
+# 503 là Google đang trục trặc, không phải cấu hình sai. Đường API (`engine.py`) đã biết chờ
+# rồi hỏi lại từ lâu; đường CLI thì chưa, nên một cơn 503 chớp nhoáng cũng lấy trọn lượt chat.
+_LOI_503 = ("failed to send message: send failed; already reported to the user: Eligibility "
+            "check failed: failed to get load code assist response: UNAVAILABLE (code 503): "
+            "The service is currently unavailable.")
+
+
+def _gia_gay_roi_hoi(so_lan_gay, dong_ra, stderr=_LOI_503, help_text=None):
+    """`agy` giả: gãy `so_lan_gay` lần đầu, lần sau trả lời bình thường. Đếm bằng file."""
+    d = Path(tempfile.mkdtemp(prefix="javis-fakeagy-503-"))
+    p = d / "agy"
+    p.write_text(
+        "#!/usr/bin/env python3\n"
+        "import sys, os\n"
+        "a = sys.argv[1:]\n"
+        f"if '--help' in a:\n    sys.stdout.write({(help_text or _HELP_MOI)!r}); sys.exit(0)\n"
+        f"dem = {str(d / 'dem.txt')!r}\n"
+        "n = int(open(dem).read()) if os.path.exists(dem) else 0\n"
+        "open(dem, 'w').write(str(n + 1))\n"
+        f"if n < {int(so_lan_gay)}:\n"
+        f"    sys.stderr.write({stderr!r}); sys.exit(1)\n"
+        f"for l in {json.dumps(dong_ra)}:\n    print(l, flush=True)\n"
+        "sys.exit(0)\n",
+        encoding="utf-8")
+    p.chmod(p.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
+    return str(p), d
+
+
+_nhip_that = antigravity_cli._NHIP_THU_LAI
+antigravity_cli._NHIP_THU_LAI = (0.01, 0.01)      # test không ngồi chờ 8 giây thật
+try:
+    # Gãy MỘT lần rồi hết: người dùng phải nhận câu trả lời, không thấy bóng dáng câu lỗi nào.
+    _reset_cache()
+    _cli_503, _d_503 = _gia_gay_roi_hoi(
+        1, [json.dumps({"role": "assistant", "content": "Chào anh."})])
+    antigravity_cli.find_antigravity_cli = lambda: _cli_503
+    _g_503 = antigravity_cli.AntigravityCLI(cwd=str(_d_503))
+    _g_503.cli_path = _cli_503
+    _evs_503 = chay(_gom(_g_503))
+    check("CANARY: 503 chớp nhoáng -> tự hỏi lại, người dùng vẫn nhận câu trả lời",
+          any(e["type"] == "final" and e["content"] == "Chào anh." for e in _evs_503), _evs_503)
+    check("và KHÔNG bắn câu lỗi tiếng Anh của lượt gãy ra màn hình",
+          not any(e["type"] == "error" for e in _evs_503), _evs_503)
+    check("đúng 2 lần chạy (1 gãy + 1 được), không thử lại thừa",
+          (_d_503 / "dem.txt").read_text().strip() == "2",
+          (_d_503 / "dem.txt").read_text())
+
+    # Gãy MÃI: hết nhịp thì phải nói rõ lỗi của AI, không quăng nguyên câu tiếng Anh sáu dòng.
+    _reset_cache()
+    _cli_mai, _d_mai = _gia_gay_roi_hoi(99, [])
+    antigravity_cli.find_antigravity_cli = lambda: _cli_mai
+    _g_mai = antigravity_cli.AntigravityCLI(cwd=str(_d_mai))
+    _g_mai.cli_path = _cli_mai
+    _evs_mai = chay(_gom(_g_mai))
+    _loi_mai = " ".join(str(e.get("content") or "") for e in _evs_mai if e["type"] == "error")
+    check("gãy mãi thì thử đủ nhịp rồi mới thôi (1 + 2 lần)",
+          (_d_mai / "dem.txt").read_text().strip() == "3", (_d_mai / "dem.txt").read_text())
+    check("CANARY: câu báo nói rõ đây là lỗi PHÍA GOOGLE, không phải cấu hình của người dùng",
+          "phía Google" in _loi_mai and "thử lại" in _loi_mai, _loi_mai[:200])
+
+    # Thứ chờ mãi cũng không hết thì TUYỆT ĐỐI không thử lại: chậm gấp ba rồi vẫn hỏng.
+    for _ten, _loi_khac in (("chưa đăng nhập", "Please run `agy` to login first"),
+                            ("hết hạn mức", "RESOURCE_EXHAUSTED: quota exceeded")):
+        _reset_cache()
+        _cli_k, _d_k = _gia_gay_roi_hoi(99, [], stderr=_loi_khac)
+        antigravity_cli.find_antigravity_cli = lambda: _cli_k
+        _g_k = antigravity_cli.AntigravityCLI(cwd=str(_d_k))
+        _g_k.cli_path = _cli_k
+        chay(_gom(_g_k))
+        check(f"CANARY: {_ten} thì KHÔNG thử lại (chạy đúng 1 lần)",
+              (_d_k / "dem.txt").read_text().strip() == "1", (_d_k / "dem.txt").read_text())
+
+    # Đã chạy tool rồi thì thôi: chạy lại là gửi tin/ghi file/đặt lịch HAI LẦN.
+    _reset_cache()
+    _cli_t, _d_t = _gia_gay_roi_hoi(99, [], stderr=_LOI_503)
+    # Lượt này in ra một tool_call rồi mới gãy -> đã đụng thế giới bên ngoài.
+    Path(_cli_t).write_text(
+        "#!/usr/bin/env python3\nimport sys, os\na = sys.argv[1:]\n"
+        f"if '--help' in a:\n    sys.stdout.write({_HELP_MOI!r}); sys.exit(0)\n"
+        f"dem = {str(_d_t / 'dem.txt')!r}\n"
+        "n = int(open(dem).read()) if os.path.exists(dem) else 0\n"
+        "open(dem, 'w').write(str(n + 1))\n"
+        "print(%r, flush=True)\n" % json.dumps(
+            {"type": "tool_use", "tool_name": "zalo_send_message", "tool_id": "t1"}) +
+        f"sys.stderr.write({_LOI_503!r}); sys.exit(1)\n",
+        encoding="utf-8")
+    Path(_cli_t).chmod(Path(_cli_t).stat().st_mode | stat.S_IEXEC)
+    antigravity_cli.find_antigravity_cli = lambda: _cli_t
+    _g_t = antigravity_cli.AntigravityCLI(cwd=str(_d_t))
+    _g_t.cli_path = _cli_t
+    chay(_gom(_g_t))
+    check("CANARY: lượt đã chạy tool thì KHÔNG thử lại (không gửi tin hai lần)",
+          (_d_t / "dem.txt").read_text().strip() == "1", (_d_t / "dem.txt").read_text())
+finally:
+    antigravity_cli._NHIP_THU_LAI = _nhip_that
+
+antigravity_cli.find_antigravity_cli = _that_find
 
 
 # ============================================================

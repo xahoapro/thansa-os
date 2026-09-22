@@ -73,8 +73,10 @@ Hostinger VPS → **Docker Manager → Compose → URL** → paste the **Hosting
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 The **Environment** box on the current template needs only three fields: `DOMAIN_NAME`,
-`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. The technical variables for ports, state,
-brains and working directories are hidden because the Docker image sets them correctly.
+`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, plus one optional `JAVIS_AUTO_UPDATE`
+(set it to `true` and Thansa updates itself daily; leave it empty and you update with
+the button in the app). The technical variables for ports, state, brains and working
+directories are hidden because the Docker image sets them correctly.
 
 Set `DOMAIN_NAME` so Hostinger's Traefik issues HTTPS:
 - **Free link** (no domain purchase needed): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud`
@@ -154,13 +156,13 @@ Open Thansa and the setup wizard walks you through:
 
 > 📚 **Detailed docs:** see the **[docs/](docs/README.md)** folder - a guide per feature (where to open it, what to press, how to use it). Most pages are in Vietnamese; [docs/en/](docs/en/README.md) has the translated ones. The table below is a quick map.
 
-The left navigation rail groups **19 pages** into **7 groups** (click a group name to open it):
+The left navigation rail groups **22 pages** into **6 groups** (click a group name to open it):
 
 | Group | Item | What it does | Guide |
 |---|---|---|---|
-| **Assistant** | **Thansa** | The main screen: chat (typed or spoken), knowledge graph, brain file tree on the left. | [Chat & voice](docs/02-tro-chuyen-va-giong-noi.md) · [Knowledge graph](docs/03-do-thi-tri-thuc.md) |
+| **Brain** | **Graph** | The screen Thansa opens on: knowledge graph, chat (typed or spoken), brain file tree on the left. | [Chat & voice](docs/02-tro-chuyen-va-giong-noi.md) · [Knowledge graph](docs/03-do-thi-tri-thuc.md) |
 | | **Chat** | A full-width chat pane with a conversation-history column. | [Sessions](docs/04-phien-hoi-thoai.md) |
-| **Brain** | **Files** | Browse the brain, **edit `.md`/`.txt` in place**, search by name or content, upload and download. | [File manager](docs/05-quan-ly-tep-tin.md) |
+| | **Files** | Browse the brain, **edit `.md`/`.txt` in place**, search by name or content, upload and download. | [File manager](docs/05-quan-ly-tep-tin.md) |
 | | **Self-learning** | Thansa distils memories, wiki entries and skills after each conversation; undoable. | [Self-learning](docs/22-tu-hoc.md) |
 | **Code** | **Terminal** | A **real shell** on the machine running Thansa, right in the browser - no SSH needed. | [Code group: Terminal](docs/27-tab-code-terminal.md) |
 | **Capabilities** | **Agents** | Build specialist assistants (role + skills + their own memory). | [Agents & workflows](docs/07-agents-va-workflows.md) |
@@ -168,6 +170,7 @@ The left navigation rail groups **19 pages** into **7 groups** (click a group na
 | | **Workflows** | Build and run automation chains (agent → agent) with verification steps. | [Agents & workflows](docs/07-agents-va-workflows.md) |
 | | **Plugins** | Add native tools/hooks for every engine with one Python folder. | [Plugins](docs/20-plugins.md) |
 | | **Chatbot** | Put an agent in front of customers on its own Telegram/Zalo bot and its own brain. | [Chatbot](docs/25-chatbot.md) |
+| | **Conversations** | One inbox for every chat customers have with your bots and personal Zalo; read back, take over when a human is needed. | [Customer conversations](docs/en/28-customer-conversations.md) |
 | **Work** | **Work** | A background task queue the AI specs and runs itself; you only handle exceptions. | [Work (Kanban)](docs/21-viec-kanban.md) |
 | | **Recurring** | Several background loops plus reminders on a clock time or a cron expression. | [Recurring jobs & reminders](docs/08-viec-dinh-ky.md) |
 | **Connections** | **Connections** | The external-service store, several accounts per service, three permission levels. | [Connections & data](docs/09-mcp-va-so-lieu.md) |
@@ -176,6 +179,7 @@ The left navigation rail groups **19 pages** into **7 groups** (click a group na
 | | **Models** | Main model, providers, reasoning depth, background-work model. | [Models & engines](docs/10-models-va-engine.md) |
 | **System** | **Usage** | Tokens and cost per day, per provider, per source. | [Usage](docs/23-muc-dung-token.md) |
 | | **Settings** | System status, interface & brain, voice, branding, custom domain. | [Getting started](docs/en/01-getting-started.md) |
+| | **Mascot** | Shape, palette and on/off switch for the pet tucked at the screen edge. | [Getting started](docs/en/01-getting-started.md) |
 | | **Updates** | Current version, update/Redeploy, progress and the feature changelog. | [Troubleshooting](docs/17-khac-phuc-su-co.md) |
 | | **Account** | Workspace, sign in/out, change or disable the password, API tokens for the CLI. | [Security & accounts](docs/14-bao-mat-tai-khoan.md) · [Thansa CLI](docs/24-cli-terminal.md) |
 

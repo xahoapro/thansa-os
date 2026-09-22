@@ -54,9 +54,12 @@ check("chưa chốt gì thì lấy nguyên final", ghep("", "Ok") === "Ok");
 
 // ---- 2. Phiên tự mở lại không làm mất nửa câu đầu ----
 check("onend tự mở lại thì gói phần đã nghe vào _committed trước",
-  /this\._committed = this\._ghepChuyenBien\(""\);\s*\n\s*this\.recognition\.start\(\);/.test(voice));
+  /this\._committed = JavisVoice\.ghepDuoiTam\(this\.accumulatedTranscript \|\| this\._committed, this\._duoiTam\);\s*\n\s*this\._duoiTam = "";\s*\n\s*this\.recognition\.start\(\);/.test(voice));
 check("mở nghe CHỦ ĐỘNG là lượt mới: xoá _committed", /clearTimeout\(this\._resumeTimer\);\s*\n\s*this\._committed = "";/.test(voice));
-check("gửi xong dọn _committed", /this\._committed = "";\s*\n\s*if \(finalText\) this\.onTranscript\(finalText\);/.test(voice));
+// Luật: hai ô nhớ của lượt phải dọn NGAY TRƯỚC khi gửi, không phải sau (gửi trước rồi dọn thì
+// onTranscript gọi lại startListening là đọc trúng chữ cũ). Khuôn cho phép chèn thêm dòng dọn ô
+// khác (0.59.28 thêm _batDauLuot cho trần một lượt), nhưng chỉ dòng gán field, không gì khác.
+check("gửi xong dọn _committed", /this\._committed = "";\s*\n\s*this\._duoiTam = "";\s*\n(?:\s*this\._\w+ = [^\n]*\n)*\s*if \(finalText\) this\.onTranscript\(finalText\);/.test(voice));
 // Các chốt cũ của test_mic_khong_tu_gui phải còn nguyên (không được phá lúc sửa onresult).
 check("onstart/onend/onerror vẫn hạ _starting ở dòng đầu",
   /onstart = \(\) => \{\s*\n\s*this\._starting = false;/.test(voice)
@@ -75,7 +78,12 @@ check("Esc (thoát rảnh tay): tắt loa", /window\.JavisTts\.set\(false\)/.tes
 const keyup = (app.match(/addEventListener\("keyup"[\s\S]*?\}\);/) || [""])[0];
 check("CANARY: thả Space KHÔNG tắt loa", !/JavisTts/.test(keyup));
 // Không đẻ thêm đường gửi tin (chốt của test_mic_khong_tu_gui).
-check("vẫn đúng 4 chỗ gọi sendMessage", (app.match(/(?<!function )\bsendMessage\(/g) || []).length === 4);
+// 5 từ 0.55.63: chỗ thứ 5 là sendMessage gọi lại chính nó sau khi file đính kèm tải xong
+// (test_mic_khong_tu_gui canh kỹ chỗ đó), không phải một đường gửi tin mới.
+// 6 từ 0.57.17: chỗ thứ 6 cũng là HOÃN - câu nói chen ngang gửi lại sau khi lượt cũ dừng hẳn.
+// 7 từ 0.58.2: chỗ thứ 7 cũng HOÃN - câu gửi lúc mất WebSocket, gửi lại khi nối lại được.
+check("vẫn đúng 8 chỗ gọi sendMessage", (app.match(/(?<!function )\bsendMessage\(/g) || []).length === 8,
+  (app.match(/(?<!function )\bsendMessage\(/g) || []).length);
 
 // ---- 5. Mic là công tắc DUY NHẤT (chủ repo chốt 02/09: "không cần nút bật tắt loa nữa") ----
 check("CANARY: không còn #ttsToggleBar trong HTML", html.indexOf('id="ttsToggleBar"') === -1);
@@ -114,5 +122,6 @@ check("style.css đã bump (>= 81)", v("style.css") >= 81, v("style.css"));
 check("voice.js đã bump lần nữa cho đường iOS (>= 18)", v("voice.js") >= 18, v("voice.js"));
 
 console.log();
+check("slash only sends after opening the selected session", /if \(\!opened\) return;[\s\S]{0,150}if \(_slash.message\) sendMessage\(_slash.message\)/.test(app));
 if (fails.length) { console.log("ĐỎ " + fails.length + " mục: " + fails.join(", ")); process.exit(1); }
 console.log("Tất cả xanh.");

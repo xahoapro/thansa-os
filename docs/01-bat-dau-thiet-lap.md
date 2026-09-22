@@ -142,7 +142,7 @@ Phụ đề: "TTS, avatar và tên miền riêng". Đây là nơi chứa bộ **
 
 - Công tắc **🔊 Đọc trả lời bằng giọng**.
 - Khối **NHÀ CUNG CẤP GIỌNG ĐỌC**: chọn "Edge TTS - miễn phí (mặc định)", "OpenAI - mượt, đa ngôn ngữ" hoặc "ElevenLabs - tự nhiên nhất", dán key tương ứng rồi bấm **Lưu nhà cung cấp**. Provider trả phí lỗi sẽ tự về Edge.
-- **NGÔN NGỮ NGHE** (Tiếng Việt `vi-VN` hoặc Tiếng Anh `en-US`), **GIỌNG ĐỌC (Edge)** (Ngọc Thu hoặc Nam Minh), **TỐC ĐỘ** và nút **▶ Nghe thử**. Khối giọng Edge chỉ hiện khi nhà cung cấp là Edge.
+- **NGÔN NGỮ NGHE** (Tiếng Việt `vi-VN` hoặc Tiếng Anh `en-US`), **GIỌNG ĐỌC (Edge)** (Hoài My, Nam Minh hoặc 5 giọng đa ngôn ngữ), **TỐC ĐỘ** và nút **▶ Nghe thử**. Khối giọng Edge chỉ hiện khi nhà cung cấp là Edge.
 - **ẢNH ĐẠI DIỆN**: **Tải ảnh lên** hoặc **Khôi phục mặc định**.
 - **TÊN MIỀN & SSL**: nhập tên miền, bấm **Lưu & kiểm tra**, xem hai nhãn `DNS:` và `SSL:`, rồi **Bật SSL** hoặc **Kiểm tra lại**.
 
@@ -181,19 +181,24 @@ Nút **⬆ Cập nhật ngay** chỉ hiện khi Thansa tự cập nhật tại c
 | Windows | Có |
 | Linux / macOS chạy trực tiếp | Có |
 | Docker và Watchtower đang chạy | Có |
-| Docker mà không có Watchtower | Không, khung nói rõ vì sao và cách bật |
+| Docker dựng từ compose cũ (chưa có Watchtower) | Không, khung nói rõ vì sao và cách lấy bản mới |
 
-**Vì sao máy này có nút mà máy kia không.** Gần như luôn là vì Watchtower nằm trong `profiles: ["update"]` của `docker-compose.yml`, nên lệnh `docker compose up -d` quen tay **không bật nó**. Bật một lần, ở thư mục chứa file compose:
+**Từ 0.55.56, Watchtower đi kèm sẵn** trong cả `docker-compose.yml` lẫn `docker-compose.hostinger.yml`. Cài mới là có nút ngay, không phải nhớ thêm lệnh nào.
+
+**Vì sao máy này có nút mà máy kia không.** Trước 0.55.56 Watchtower nằm trong `profiles: ["update"]`, nên lệnh `docker compose up -d` quen tay **không bật nó**; còn stack Hostinger thì không kèm nó. Máy nào vẫn thiếu nút là đang chạy bằng file compose cũ đó. Lấy bản mới rồi dựng lại, ở thư mục chứa file compose:
 
 ```bash
-docker compose --profile update up -d
+curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+docker compose up -d --pull always
 ```
 
-Tải lại trang là nút hiện ra. Không muốn bật thì cập nhật tay vẫn được: `docker compose up -d --pull always`.
+Hostinger thì vào Docker Manager bấm **Redeploy** (stack đọc lại compose từ URL). Chưa muốn đổi file compose thì bật riêng Watchtower cũng được: `docker compose --profile update up -d`.
 
-Riêng **stack Hostinger** (`docker-compose.hostinger.yml`) cố tình không kèm Watchtower - trên đó nó không đụng được Docker socket nên chạy là lỗi vòng lặp. Máy Hostinger cập nhật bằng **Redeploy** trong Docker Manager, không có gì để bật thêm.
+Tải lại trang là nút hiện ra. Không muốn có Watchtower thì cập nhật tay vẫn được: `docker compose up -d --pull always`.
 
-Khung Cập nhật tự phân biệt hai trường hợp này và ghi đúng cách xử lý cho máy bạn.
+**Muốn Javis TỰ cập nhật, khỏi bấm nút**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại. Mặc định tắt có chủ ý, vì tự cập nhật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
+
+Khung Cập nhật tự phân biệt các trường hợp này và ghi đúng cách xử lý cho máy bạn.
 
 ### Thanh tiến trình 6 bước
 

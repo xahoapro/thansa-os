@@ -358,7 +358,7 @@
     - file: dashboard/index.html
       ky_hieu: "rf-author"
     - file: dashboard/console.js
-      ky_hieu: "Cách lùi bản Docker"
+      ky_hieu: "ghcr.io/xahoapro/thansa-os"
   vung_theo_doi:
     - "dashboard/index.html: khối rf-meta footer sidebar"
     - "dashboard/console.js: khối cập nhật/lùi bản"
@@ -519,7 +519,7 @@
     JavisSessions/JavisEditorCmds, javis.* localStorage, JAVIS_*.
   commit: "[me] P016: app.js chuoi hien thi + marker file-open Thansa"
   diem_neo:
-    - file: dashboard/app.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "Bắt đầu dùng Thansa"
     - file: dashboard/app.js
       ky_hieu: "trình sửa của Thansa"
@@ -1009,7 +1009,7 @@
   diem_neo:
     - file: dashboard/i18n/vi.json
       ky_hieu: "tool của Thansa đã đấu"
-    - file: dashboard/notifications.js
+    - file: dashboard/i18n/vi.json
       ky_hieu: "Thansa vừa gửi một tin"
   vung_theo_doi:
     - "dashboard/console.js: thẻ Grok + trạng thái tool"
@@ -1094,3 +1094,193 @@
   dieu_kien_bo: >
     Chủ muốn kho gói RIÊNG thì fork blogminhquy/javis-store → xahoapro/thansa-store và đổi
     STORE_MAC_DINH (hoặc URL trong Cài đặt); mặc định giữ kho upstream để gói chạy thật.
+
+# P037 (rebrand sessions-ui vòng 0.55.53) ĐÃ BỎ: vòng 0.55.63 upstream i18n-hoá nốt chuỗi
+# sessions-ui (#304, dịch 1245 chuỗi) + P036 vòng này rebrand lại toàn dashboard → nội dung P037
+# trùng upstream, git rebase tự drop ("patch contents already upstream"). Bài học bảo mật
+# ops/.telegram vẫn giữ ở so-tron + bộ nhớ.
+
+- id: P038
+  ten: "Giữ chốt an toàn (đảo #312) - loop/việc mặc định suggest"
+  y_dinh: >
+    Upstream 0.55.62 (#312) BỎ luật an toàn: loop/việc tạo từ chat mặc định TOÀN QUYỀN (tự tạo
+    đơn/tiêu tiền/đăng/nhắn, không hỏi). Chủ (Duy Quang) CHỌN GIỮ chốt an toàn cho spa thật →
+    P038 đảo ngược #312 (git revert trên cây đã rebrand): loop/việc mặc định mode=suggest (chỉ
+    đọc+đề xuất), việc tiền/đơn/đăng/nhắn CẤM tự chạy trừ khi ra lệnh rõ; giữ hộp cảnh báo đỏ +
+    confirm() trang Việc + câu cảnh báo khi tạo nhắc hẹn; javis_task/javis_schedule mặc định
+    suggest. Khôi phục: CLAUDE.md safety, console.js, plugin javis-task/schedule, skill javis-
+    builder/notes, docs 08/13/20 (vi+en), website, 20 khoá i18n cảnh báo. GIỮ nguyên: quyền
+    từng kết nối MCP, bot chuyên trách chỉ đọc, loop mới enabled:false.
+  commit: "[me] P038: giu chot an toan (dao #312) - loop/viec mac dinh suggest"
+  diem_neo:
+    - file: CLAUDE.md
+      ky_hieu: "money/order/publishing actions are ALWAYS forbidden to self-execute"
+    - file: system/plugins/javis-schedule/plugin.py
+      ky_hieu: "muc_quyen"
+  vung_theo_doi:
+    - "CLAUDE.md mục Safety when orchestrating; console.js hộp cảnh báo + confirm trang Việc"
+    - "system/plugins/javis-task + javis-schedule: mặc định suggest"
+    - "dashboard/i18n/vi.json + en.json: 20 khoá cảnh báo (cs.si_*warn*, *_confirm)"
+    - "docs 08/13/20 (vi+en) + website: wording an toàn"
+  anh_goc:
+    - file: CLAUDE.md
+      doan: "`full`: the DEFAULT. Performs REAL outside actions"
+  kiem_chung: >
+    CLAUDE.md có 'mode: suggest' + 'ALWAYS forbidden to self-execute' (3 chỗ), 0 product-name
+    Javis, dài 33.611 < 33.700; test an toàn xanh (test_javis_schedule/test_nhac_hen_muc_quyen/
+    test_giao_viec_moi_engine/test_prefix_slim); vi/en.json có lại khoá cs.si_fullwarn_*; suite xanh.
+  dieu_kien_bo: >
+    Nếu chủ đổi ý muốn theo upstream (toàn quyền mặc định) thì BỎ P038. Mỗi vòng sau, khi rebase
+    replay P038 (git revert #312) sẽ cần giải lại nếu upstream sửa tiếp vùng an toàn - theo dõi
+    commit upstream đụng loop/mode/mux_quyen.
+
+- id: P039
+  ten: "Rebrand vòng 0.60.1 - Voice/Cộng sự/Chatbot UI + system prompt Voice"
+  y_dinh: >
+    Nền 0.56-0.60 thêm nhiều bề mặt MỚI có tên sản phẩm: Voice V1/V2/Live, linh vật (pet),
+    trang Cộng sự (workspace), Hộp thư Hội thoại + Zalo + CRM. Người dùng phải thấy "Thansa"
+    ở mọi bề mặt hiển thị mới này. Rebrand hiển thị Javis->Thansa trên dashboard/*.js +
+    index.html + i18n vi/en bằng regex an toàn (giữ định danh JS JavisVoice/JavisI18n/JavisPet/
+    JavisSessions/JavisWorkspace..., path Javis/, tag debug [Javis TTS]). Đồng thời bề mặt
+    MODEL-facing MỚI không qua _rebrand_hien_thi phải rebrand SOURCE: system prompt Voice
+    (voice_brain.py/voice_live.py "Bạn là Thansa" + nhãn transcript) và channel_context.py
+    (NGỮ CẢNH GIAO DIỆN). Server còn lại CỐ Ý giữ "Javis" nội bộ (rebrand lúc hiển thị).
+  commit: "[me] P039: rebrand vong 0.60.1 - Voice/Cong su/Chatbot UI + system prompt Voice (thansa)"
+  diem_neo:
+    - file: server/voice_brain.py
+      ky_hieu: "Bạn là Thansa, trợ lý cá nhân"
+    - file: server/voice_live.py
+      ky_hieu: "Bạn là Thansa, trợ lý cá nhân"
+    - file: dashboard/index.html
+      ky_hieu: "THANSA <i>OS</i>"
+  vung_theo_doi:
+    - "dashboard/*.js + index.html + i18n vi/en.json: chuỗi hiển thị tên sản phẩm"
+    - "server/voice_brain.py + voice_live.py: system prompt giọng nói"
+    - "server/channel_context.py: NGỮ CẢNH GIAO DIỆN (giữ path Javis/...)"
+  anh_goc:
+    - file: server/voice_brain.py
+      doan: "Bạn là Javis, trợ lý cá nhân, đang NÓI CHUYỆN BẰNG GIỌNG"
+    - file: dashboard/index.html
+      doan: '<span class="rail-brand-text">JAVIS <i>OS</i></span>'
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js + index.html + i18n vi/en + voice_brain/voice_live/
+    channel_context = 0 (regex an toàn, trừ [Javis TTS]); voice_brain/voice_live có "Bạn là Thansa";
+    channel_context giữ path Javis/reminders|scripts|loops; node --check mọi dashboard/*.js xanh;
+    py_compile 3 file server xanh; định danh JS JavisVoice/JavisI18n... còn nguyên.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào một biến branding/i18n duy nhất cho CẢ Voice/pet/Cộng sự
+    thì thu hẹp P039 về đúng biến đó. Overlay EN (dich-en.js/en-goi.json) gần mốc khai tử khi
+    i18n gốc phủ hết phần thân app - đo lại mỗi vòng.
+
+- id: P040
+  ten: "Giữ mặc định xưng hô bạn/mình + nhãn home Thansa (chủ chọn, đảo upstream 0.60)"
+  y_dinh: >
+    Chủ (Duy Quang) CHỌN giữ sở thích fork thay vì theo upstream 0.60: (1) xưng hô mặc định
+    "bạn"/"mình", chỉ đổi anh/em||chị/em khi BIẾT giới tính chắc chắn - upstream 2026-09-14 bỏ
+    luật này (coi là sở thích cá nhân) + xoá test_xung_ho, Thansa giữ vì spa nhiều khách lạ;
+    (2) nhãn page.home.label giữ "Thansa" (vi+en) làm mục đầu thanh bên - upstream đổi thành
+    "Đồ thị"/"Graph", Thansa ưu tiên thương hiệu (brand hiện cả ở rail-brand THANSA OS).
+  commit: '[me] P040: giu mac dinh xung ho ban/minh + nhan home "Thansa" (chu chon, dao upstream)'
+  diem_neo:
+    - file: CLAUDE.md
+      ky_hieu: 'by default call the user "bạn" and refer to yourself as "mình"'
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"page.home.label": "Thansa"'
+  vung_theo_doi:
+    - "CLAUDE.md rule #9 Address forms (upstream có thể sửa tiếp vùng xưng hô)"
+    - "dashboard/i18n/vi.json + en.json: page.home.label (upstream đặt Đồ thị/Graph)"
+  anh_goc:
+    - file: CLAUDE.md
+      doan: "Address forms (Vietnamese): follow the user."
+    - file: dashboard/i18n/vi.json
+      doan: '"page.home.label": "Đồ thị"'
+  kiem_chung: >
+    CLAUDE.md rule #9 có 'by default call the user "bạn"'; vi/en.json page.home.label == "Thansa";
+    test_linh_vat.js xanh (assert home label "Thansa"); tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu sau này chủ muốn theo upstream (xưng hô theo người dùng, home = Đồ thị) thì BỎ P040.
+    Mỗi vòng rebase, nếu upstream sửa tiếp rule #9 hoặc đổi lại page.home thì giải theo ý_định này.
+
+- id: P041
+  ten: "Rút gọn en-goi.json (bỏ chuỗi native đã phủ + rác), 3220→918"
+  y_dinh: >
+    Overlay dich-en.js chỉ dịch chuỗi CỨNG/runtime chưa có native i18n. Qua các vòng upstream
+    tự i18n-hoá dần (native en.json 76→2885 khoá) nên ~47% en-goi.json thành THỪA (render qua
+    data-i18n, overlay không chạm) + ~1500 rác (chuỗi UI cũ upstream đã bỏ). GC để mỗi vòng sau
+    chỉ phải soát ~900 cặp còn sống. Quy tắc GIỮ: (a) chuỗi còn xuất hiện thật trong code
+    (dashboard/*.js|html + server/*.py), (b) number-template ◆, (c) mọi entry mapping neo tới.
+  commit: "[me] P041: rut gon en-goi.json (bo chuoi native da phu + rac) 3220->918"
+  diem_neo:
+    - file: dashboard/i18n/en-goi.json
+      ky_hieu: "◆"
+    - file: dashboard/i18n/dich-en.js
+      ky_hieu: "en-goi.json"
+  vung_theo_doi:
+    - dashboard/i18n/en-goi.json
+    - dashboard/i18n/dich-en.js
+  anh_goc: []
+  kiem_chung: >
+    en-goi.json ~918 cặp, JSON hợp lệ; mọi ky_hieu neo en-goi.json của P015/P024/P029/P032 còn
+    tìm thấy (tu-kiem-chung luật 2 XANH); test_da_ngon_ngu + i18n JS xanh; overlay còn dịch được
+    chuỗi live (vd "(bảo mật)"→"(security)").
+  dieu_kien_bo: >
+    Khi phần-riêng-còn-sống < ~vài chục và chấp nhận vài chuỗi lẻ hiện tiếng Việt ở EN, thì BỎ HẲN
+    overlay (xoá dich-en.js + en-goi.json + thẻ script index.html), gộp nốt vào native i18n.
+
+- id: P042
+  ten: "Dịch EN bề mặt runtime còn thiếu - catalog Store + câu tóm usage"
+  y_dinh: >
+    Hai chỗ hiện tiếng Việt ở chế độ EN mà i18n gốc + overlay dich-en không phủ được (chuỗi
+    runtime): (1) mô tả gói Store fetch từ catalog upstream javis-store chỉ có 'vi' - thêm
+    system/store-en.json (54 gói) + packs_store._them_en chèn bản 'en' vào map name/description
+    để packs.js nn() tự lấy .en khi giao diện EN; (2) câu tóm tắt server GHÉP trên trang Mức
+    dùng (_cau_mo_dau + _TEN_KY: "{ky} bạn trả $X tiền gói, lượng việc đã chạy...") nhiều biến
+    nên overlay khớp-text-node không phủ - dịch tại nguồn theo _lang_en (cookie thansa_lang).
+  commit: "[me] P042: dich EN cho be mat runtime con thieu - catalog Store + cau tom usage"
+  diem_neo:
+    - file: server/packs_store.py
+      ky_hieu: "def _them_en"
+    - file: system/store-en.json
+      ky_hieu: "javis.tts-dropship"
+    - file: server/main.py
+      ky_hieu: "_TEN_KY_EN"
+  vung_theo_doi:
+    - "server/packs_store.py: lay() + _them_en (upstream đổi cấu trúc catalog/nn)"
+    - "system/store-en.json: catalog upstream thêm gói mới thì bổ sung bản dịch"
+    - "server/main.py: _cau_mo_dau + _TEN_KY + usage_tong_quan (upstream đổi câu tóm/kỳ)"
+  anh_goc:
+    - file: server/main.py
+      doan: "lượng việc đã chạy nếu tính theo giá API đáng"
+  kiem_chung: >
+    packs.js nn() lấy description.en khi lang=en; _them_en inject đúng (unit: tts-dropship →
+    "TTS Dropship..."); /usage/tong-quan trả ten_ky+cau EN khi cookie thansa_lang=en; test
+    kho_goi/cai_go_goi/muc_dung_moi/trang_tiet_kiem/da_ngon_ngu xanh; py_compile xanh.
+  dieu_kien_bo: >
+    Nếu upstream i18n-hoá mô tả catalog (thêm 'en' ở nguồn) thì bỏ store-en.json + _them_en.
+    Nếu upstream thêm cơ chế UI-lang cho endpoint usage thì gộp nhánh EN vào đó.
+
+- id: P043
+  ten: "Rebrand nền 0.62.5 - Chatbot/Hội thoại/kênh mới (0.61-0.62)"
+  y_dinh: >
+    Nền 0.61.0-0.62.5 gộp Chatbot vào trang Hội thoại + sổ đăng ký kênh + trả lời khách từ app.
+    Rebrand chuỗi hiển thị Javis->Thansa còn sót trên bề mặt MỚI: i18n ht.* (Trả lời từ Thansa,
+    "{kenh} chưa gửi được tin từ Thansa"), server/channels/__init__.py (lỗi hiển thị + mô tả năng
+    lực), server/routes/packs.py (author fallback + lỗi đăng nhập), routes/channels.py (mô tả loại
+    kênh). Regex an toàn. Server còn lại giữ "Javis" nội bộ (rebrand lúc hiển thị).
+  commit: "[me] P043: rebrand ne 0.62.5 - Chatbot/Hoi thoai/kenh moi (0.61-0.62)"
+  diem_neo:
+    - file: server/channels/__init__.py
+      ky_hieu: "chưa gửi được tin từ Thansa"
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"ht.nl_tra_loi": "Trả lời từ Thansa"'
+  vung_theo_doi:
+    - "dashboard/i18n vi/en.json: khoá ht.* (Hội thoại/kênh)"
+    - "server/channels/ + server/routes/packs.py + channels.py: chuỗi hiển thị"
+  anh_goc:
+    - file: server/channels/__init__.py
+      doan: "chưa gửi được tin từ Javis"
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js+html+i18n + server/channels + routes/packs/channels = 0
+    (regex an toàn); py_compile xanh; JSON hợp lệ; tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa các chuỗi này vào _rebrand_hien_thi hoặc i18n-hoá nốt thì thu hẹp/bỏ P043.

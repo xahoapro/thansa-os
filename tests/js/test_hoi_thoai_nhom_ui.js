@@ -25,6 +25,9 @@ const SESS = D("sessions-ui.js");
 const APP = D("app.js");
 const CSS = D("style.css");
 const ICONS = D("icons.js");
+// 0.55.14 dời chữ tiếng Việt vào từ điển i18n, nên câu chữ phải tra ở đây chứ không
+// còn nằm literal trong .js nữa.
+const VI = JSON.parse(D(path.join("i18n", "vi.json")));
 
 const fails = [];
 const check = (name, cond) => { console.log((cond ? "ok   " : "FAIL ") + name); if (!cond) fails.push(name); };
@@ -70,18 +73,26 @@ check("project đang mở nhớ ở localStorage theo brain",
 // ============================================================
 // Đây là ràng buộc UX chứ không chỉ là chữ: người dùng sẽ không bấm nếu tưởng mất hội thoại,
 // và tệ hơn là bấm rồi tưởng mất thật.
+// Chữ đã vào từ điển i18n (0.55.14) nên kiểm ĐỦ HAI VẾ: giao diện gọi đúng khoá, VÀ khoá đó
+// mang đúng câu trấn an. Thiếu vế nào cũng là test hở - chỉ kiểm khoá thì đổi nội dung khoá
+// thành câu ngược nghĩa vẫn xanh, chỉ kiểm từ điển thì gỡ hẳn dòng chữ khỏi giao diện vẫn xanh.
 check("CANARY: hộp xác nhận xoá project nói rõ hội thoại KHÔNG bị xoá",
-  /KHÔNG bị xoá/.test(SESS));
+  SESS.indexOf('window.t("sess.proj_del_n"') !== -1
+  && /KHÔNG bị xoá/.test(VI["sess.proj_del_n"] || ""));
 
 // ============================================================
 // 3. Nút mới: có handler riêng + chặn nổi bọt
 // ============================================================
-["pin", "mov"].forEach((cls) => {
-  // stopPropagation phải là việc ĐẦU TIÊN trong handler, không phải đâu đó ở giữa: chỉ cần
-  // một nhánh return sớm nằm trước nó là cú bấm rơi xuống hàng cha và mở nhầm hội thoại.
-  const re = new RegExp('item\\.querySelector\\("\\.' + cls + '"\\)\\.onclick = function \\(ev\\) \\{\\s*ev\\.stopPropagation\\(\\);');
-  check(`nút .${cls} có handler riêng và chặn nổi bọt ngay đầu`, re.test(SESS));
-});
+// stopPropagation phải là việc ĐẦU TIÊN trong handler, không phải đâu đó ở giữa: chỉ cần
+// một nhánh return sớm nằm trước nó là cú bấm rơi xuống hàng cha và mở nhầm hội thoại.
+// `.mov` (xếp vào nhóm) VẮNG MẶT ở chế độ lọc theo kênh của trang Cộng sự - hội thoại của một
+// trợ lý không xếp vào project được - nên handler của nó gắn có điều kiện.
+check("nút .pin có handler riêng và chặn nổi bọt ngay đầu",
+  /item\.querySelector\("\.pin"\)\.onclick = function \(ev\) \{\s*ev\.stopPropagation\(\);/.test(SESS));
+check("nút .mov có handler riêng và chặn nổi bọt ngay đầu",
+  /if \(nutXep\) nutXep\.onclick = function \(ev\) \{\s*ev\.stopPropagation\(\);/.test(SESS));
+check("CANARY: .mov chỉ vắng ở chế độ lọc kênh, chứ không bị gỡ hẳn",
+  /kenhLoc \? "" : '<span class="mov"/.test(SESS));
 
 // ============================================================
 // 4. KHÔNG được nhét nhánh mới vào item.onclick
@@ -101,7 +112,10 @@ if (m) {
 // ============================================================
 // 5. Ghim: nhóm riêng trên đầu, và server sắp trước
 // ============================================================
-check("mục đã ghim gom thành nhóm riêng", SESS.indexOf('"Đã ghim"') !== -1);
+// Hai vế, vì nhãn nhóm đã vào từ điển i18n (0.55.14).
+check("mục đã ghim gom thành nhóm riêng",
+  SESS.indexOf('window.t("sess.grp_pinned")') !== -1
+  && /ghim/i.test(VI["sess.grp_pinned"] || ""));
 // Icon để PHÂN LOẠI thuộc về Project, không phải từng hội thoại: hàng nào trong danh sách
 // cũng là một cuộc trò chuyện nên icon ở đó không phân loại được gì, chỉ thêm một nút phải
 // bấm vào hàng nút vốn đã chật. Chủ repo chốt 2026-08-04, sau khi bản đầu làm ngược lại.
@@ -123,14 +137,22 @@ check("hàng project trong menu dùng icon mặc định", /icon: p\.icon \|\| "
 // 0.54.1 dời bốn icon hover vào một hộp chức năng mở bằng nút ba chấm, nên chỗ này không
 // còn là `title:` một icon trần nữa mà là một hàng có NHÃN CHỮ. Khả năng thì vẫn nguyên -
 // đó mới là thứ mục này canh.
+// Nhãn hàng đã vào từ điển i18n (0.55.14), nên vế "hộp có hàng Đổi icon" kiểm bằng khoá +
+// nội dung khoá; vế "bấm vào thì mở được bộ chọn icon" vẫn là mã nên giữ nguyên.
 check("vẫn đổi được icon của project",
-  /label: "Đổi icon", icon: "palette"/.test(SESS) && /pickIcon\(anchor, p\.icon \|\| ""/.test(SESS));
+  /label: window\.t\("sess\.proj_icon"\), icon: "palette"/.test(SESS)
+  && /Đổi icon/.test(VI["sess.proj_icon"] || "")
+  && /pickIcon\(anchor, p\.icon \|\| ""/.test(SESS));
 // Ghim đổi THỨ TỰ danh sách, mà cache lại giữ thứ tự cũ -> phải bỏ cache rồi tải lại,
 // không thì bấm ghim xong nhìn như không có gì xảy ra.
 check("CANARY: ghim xong thì bỏ cache danh sách (nếu không thứ tự cũ còn nguyên trên màn hình)",
   /async function togglePin[\s\S]{0,320}cached = null;/.test(SESS));
 check("cache phân biệt theo cả bộ lọc project, không chỉ brain",
-  /cached\.project === curProject\(\)/.test(SESS));
+  /cached\.project === \(kenhLoc \? "" : curProject\(\)\)/.test(SESS));
+// Cùng lý do, và là cái bẫy mới của 0.59.4: hai chỗ gắn (cột lịch sử trang Trò chuyện và cột
+// lịch sử của một cộng sự) dùng CHUNG một biến cache, nên thiếu kênh trong khoá là mở trang
+// Cộng sự thấy nháy một nhịp danh sách hội thoại của cả brain rồi mới đúng.
+check("cache phân biệt theo cả KÊNH đang lọc", /cached\.kenh === kenhLoc/.test(SESS));
 
 // ============================================================
 // 6. Chat mới rơi vào project đang mở

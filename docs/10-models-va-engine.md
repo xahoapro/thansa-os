@@ -162,6 +162,7 @@ Vài chỗ đáng biết, nói trước cho khỏi hiểu nhầm:
 
 - **Đăng nhập làm trong terminal, dashboard không có nút** (từ 0.32.2). Bản 0.30.0 từng dựng một luồng đăng nhập ngay trên trang: Thansa mở `agy` trong một terminal giả rồi làm người đưa thư giữa nó và trình duyệt của bạn. Nó chạy được trên Linux, nhưng cái hiện ra trên trang là một ô terminal bấm vào không ăn nên rốt cuộc vẫn phải mở terminal thật, còn Windows thì không có pseudo-terminal nên chưa bao giờ dùng được. Người dùng `agy` đều là dân code sẵn terminal trong tay, nên gõ một lệnh gọn hơn hẳn một luồng UI nửa vời. Đổi lại, Thansa không cầm token của ai - nó nằm trong keyring hệ điều hành.
 - **Mức Chỉ đọc ở đây nhẹ hơn.** Bên Grok Build, mức `suggest` xuống thẳng cờ `--deny` nên chính CLI chặn. `agy` không có nấc tương đương, nên Thansa siết bằng `--sandbox` cộng với lời dặn trong system prompt. Rào tiền/đơn/đăng bài vẫn nằm ở MCP Hub như mọi engine.
+- **Mức `auto` KHÔNG kèm `--sandbox`** (từ 0.59.44). Đo trên agy 1.2.7: `--sandbox` đi cùng `--dangerously-skip-permissions` làm tool shell của agy chạy như một việc nền rồi bị chính agy huỷ sau 5 giây khi thoát chế độ in một lượt, nên việc Kanban/Loop mức auto không đọc thư mục hay ghi file được mà không có lấy một dòng lỗi. Bỏ cờ này không mất lớp phòng vệ nào vì rào hành động ra ngoài nằm ở MCP Hub.
 - **Chưa nối lại mạch hội thoại của CLI.** Mỗi lượt mở mạch mới rồi mồi lại bằng lịch sử đã lưu, nên **không mất ngữ cảnh** nhưng tốn token hơn.
 - Thansa không tự cài `agy` lúc cài đặt (khác ba engine npm): trình cài của Google là một script tải về chạy thẳng, nên để bạn tự chạy khi muốn.
 - **Trên Windows, prompt không đi qua dòng lệnh nữa** (từ 0.33.1, sửa tiếp ở 0.33.2). Windows chặn tổng dòng lệnh ở 32767 ký tự, mà riêng system prompt của Thansa trên một brain trống đã hơn 36.000 - tức bộ não này từng chết hẳn trên Windows, và câu báo lỗi lại đổ cho "hội thoại quá dài" nên mở chat mới bao nhiêu lần cũng không thoát.
@@ -176,6 +177,8 @@ Vài chỗ đáng biết, nói trước cho khỏi hiểu nhầm:
   **Tự kiểm trong 10 giây:** vào **Models**, thẻ **Google Antigravity CLI**, bấm **Kiểm tra lại**. Nó ghi lại cấu hình rồi đọc lại chính file đó, và báo một trong ba câu: *tool của Thansa đã đấu*, *chưa đấu được tool của Thansa*, hoặc *trung tâm kết nối đang tắt*. Xem tận file thì: `cat ~/.gemini/config/mcp_config.json` - phải thấy một entry tên `javis` có `serverUrl` trỏ về `/hub/mcp`.
 
 - **Dấu tiếng Việt không vỡ dọc đường** (từ 0.33.6). Triệu chứng cũ: chữ "gồm" thành `g<?><?>m`, mỗi ký tự tiếng Việt 3 byte hoá đúng 3 dấu `<?>`. Đó là chữ ký của một bên đọc cắt mẩu ống dẫn giữa một ký tự rồi giải mã từng mẩu rời. Đã đo và loại trừ phía Thansa (bộ đọc của nó dùng giải mã tăng dần, cắt byte giữa ký tự vẫn ghép lại đúng), nên chỗ vỡ nằm ở bộ đọc của `agy`. Thansa không vá được CLI, nhưng chỉnh được chỗ mình đặt ranh giới: nay nó bơm prompt theo từng mẩu kết thúc đúng biên ký tự, nên bên kia đọc kiểu gì cũng không vỡ. Chữ về mà vẫn có ký tự hỏng thì Thansa tự đổi sang đường file rồi hỏi lại một lần; vẫn hỏng thì nó nói thẳng là lỗi nằm trong CLI.
+
+- **Model đã kèm sẵn mức nghĩ thì Thansa không gửi thêm Độ sâu suy nghĩ** (từ 0.55.55). `agy models` trả về những tên như `gemini-3.8-flash-medium`, tức chọn model cũng chính là chọn mức nghĩ, và `agy` từ chối chạy nếu nhận thêm mức nghĩ lần nữa: `invalid model selection ... conflicts with --effort=high`, thoát mã 1, cả lượt chat mất trắng chứ không phải chậm hay kém. Nay Thansa nhận ra loại tên đó và bỏ phần gửi thừa, còn độ sâu bạn chọn thì chuyển thành một câu nhắc trong prompt. Bản `agy` nào từ chối vì lý do khác thì Thansa đọc chính câu lỗi đó rồi chạy lại ngay trong lượt, không cờ.
 
 **Nếu vẫn gặp lỗi trên Windows**, đặt biến môi trường `JAVIS_AGY_PROMPT_DAI=file` để ép đi thẳng đường file, rồi báo lại giúp kèm câu lỗi `agy` in ra.
 
@@ -225,6 +228,22 @@ Vài điều cần biết:
 - Nếu bạn chọn một provider **chưa kết nối**, khối này hiện cảnh báo "⚠ nhà cung cấp này chưa kết nối - việc nền sẽ tự dùng lại Claude". Việc nền không chết, chỉ là không tiết kiệm được.
 - **Công cụ không giống nhau giữa các đường.** Claude Code và Codex đọc/ghi file trực tiếp trong brain. Các model API (OpenRouter, OpenAI, Gemini, Anthropic API) đọc/ghi qua công cụ vault của Thansa và **không chạy được lệnh máy**, nên hợp với việc đọc - tổng hợp - ghi ghi chú; việc nền nào cần chạy lệnh thì cứ để Claude.
 - Với đường API, công cụ ghi file tự khoá lại khi loop đang ở mức `suggest`, đúng như khi chạy bằng Claude.
+
+### E1. Chỗ nào chạy model nào (bảng tra)
+
+Javis có ba chỗ đặt model, và câu hỏi hay gặp nhất là "cái nào thắng cái nào". Thứ tự: **model của Agent** (ô Model trong Cài đặt trợ lý) thắng **model chính**, còn **model việc nền** chỉ dùng cho các đường chạy nền.
+
+| Bạn đang ở đâu | Model chạy thật |
+|---|---|
+| Chat thường trên dashboard / Telegram | Model chính (hoặc ghim riêng của phiên, của kênh Telegram) |
+| Chat với một trợ lý ở trang Cộng sự | Model của trợ lý đó; để **Mặc định** thì model chính |
+| **Chatbot** trả lời khách ngoài | Model của trợ lý mà bot trỏ tới; để **Mặc định** thì model chính |
+| Một bước trong quy trình (workflow) | Model của trợ lý ở bước đó; để **Mặc định** thì **model việc nền** |
+| Loop, việc Kanban, nhắc hẹn, tự học, tiêu hoá nguồn | Model việc nền |
+
+Nhà cung cấp mà trợ lý đã chọn nếu bị gỡ key thì Javis lui về model chính, chứ không để trợ lý hay bot chết câm.
+
+Ô **Model** trong Cài đặt trợ lý dùng đúng bảng chọn của thanh model dưới khung chat: gõ để tìm, và nhà chưa cắm API key vẫn hiện ra kèm ổ khoá, bấm vào là sang trang Models để mở.
 
 ### F. Đặt mức Suy nghĩ (reasoning)
 

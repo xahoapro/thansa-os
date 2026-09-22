@@ -11,6 +11,10 @@
    còn trang bên cạnh thì không. Đây đúng là bài học của khối chọn skill trong màn sửa Agent
    (xem test_chon_skill_va_phan_trang.js), nên phần lớn test này canh chuyện dùng chung.
 
+   Từ 0.62.0, trình sửa TRỢ LÝ không còn ô nhóm: gom nhóm trợ lý chỉ còn một chỗ duy nhất là
+   thanh nhóm ở cột trái trang Cộng sự. Phần C canh đúng điều đó, cả hai phía (form không gửi
+   `group`, và trang Cộng sự bỏ miếng vá đồng bộ ngược).
+
    Phần cuối canh một bẫy MẤT CHỮ trong form sửa Workflow: render() chạy lại mỗi lần thêm
    hoặc xoá bước, nên ô nào lấy value từ `w` sẽ bị vẽ đè về giá trị cũ, im lặng. */
 const fs = require("fs");
@@ -18,6 +22,7 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..", "..");
 const SRC = fs.readFileSync(path.join(ROOT, "dashboard", "studio.js"), "utf8");
+const WS = fs.readFileSync(path.join(ROOT, "dashboard", "workspace.js"), "utf8");
 
 const fails = [];
 const check = (name, cond, extra) => {
@@ -31,7 +36,10 @@ const check = (name, cond, extra) => {
 // Bóc đúng khối dùng chung rồi chạy nó với vài hàm giả (t/ic/LOC), để test bắt được lỗi
 // hành vi chứ không chỉ lỗi thiếu chữ.
 const i0 = SRC.indexOf("  const NHOM_MD =");
-const i1 = SRC.indexOf("  function switchTab(");
+// Mốc cuối khối là tiêu đề phần Workflows. Trước đây lấy `function switchTab(`, nhưng hàm đó
+// đã bỏ cùng lúc Studio ba-tab tan thành các trang riêng của rail, và mốc biến mất thì cả khối
+// bóc ra rỗng - test đỏ vì lý do chẳng liên quan gì tới khung nhóm.
+const i1 = SRC.indexOf("  // ===== Workflows =====");
 check("tìm thấy khối khung nhóm dùng chung", i0 !== -1 && i1 > i0);
 
 const esc = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -102,13 +110,26 @@ check("bấm Chọn tất cả chỉ lấy mục ĐANG HIỆN (đúng nhóm + đ
 // ============================================================
 // C. Form: chọn nhóm được, và gửi kèm lúc lưu
 // ============================================================
-for (const [ten, oId, list] of [["Agent", "agGroup", "agGroupList"], ["Workflow", "wfGroup", "wfGroupList"]]) {
+for (const [ten, oId, list] of [["Workflow", "wfGroup", "wfGroupList"]]) {
   check(`form ${ten} có ô nhập nhóm`, SRC.includes(`id="${oId}"`));
   check(`form ${ten} gợi ý nhóm đang có (khỏi đẻ Marketing và marketing song song)`,
     SRC.includes(`nhomDatalist(`) && SRC.includes(`"${list}"`));
 }
-check("lưu Agent gửi kèm group", /group: box\.querySelector\("#agGroup"\)\.value\.trim\(\) \|\| NHOM_MD/.test(SRC));
 check("lưu Workflow gửi kèm group", /group: nhom\.trim\(\) \|\| NHOM_MD/.test(SRC));
+
+// ---- Trình sửa TRỢ LÝ không còn ô nhóm (0.62.0) ----
+// Chủ repo 21/09: "xoá nhóm ở đây vì đã có phần gom nhóm rồi". Hai chỗ cùng đặt một field thì
+// chỗ nào cũng ghi đè được chỗ kia: đổi nhóm ở cột trái rồi bấm Lưu trong form là nhóm nhảy
+// về giá trị cũ, im lặng - đúng lỗi phải vá bằng dongBoNhomForm() suốt từ 0.59.2. Gom nhóm
+// nay chỉ còn MỘT chỗ, nên miếng vá đó cũng phải biến mất theo.
+check("form Agent KHÔNG còn ô nhóm",
+  !SRC.includes('id="agGroupSel"') && !SRC.includes('id="agGroup"'));
+check("lưu Agent KHÔNG gửi group (server giữ nguyên nhóm đang có)",
+  !/group: nhomLuu\(/.test(SRC));
+check("trang Cộng sự bỏ luôn miếng vá đồng bộ nhóm vào form",
+  !WS.includes("function dongBoNhomForm"));
+check("gom nhóm trợ lý vẫn còn NGUYÊN ở cột trái (thanh nhóm + menu Chuyển sang nhóm)",
+  WS.includes('id="wsGroup"') && /nutMenu\("folder", t\("ws\.move_group"\)/.test(WS));
 
 // ---- Bẫy mất chữ trong form Workflow ----
 // render() chạy lại mỗi lần thêm/xoá/đảo bước. Ô nào đọc value từ `w` sẽ bị vẽ đè về giá trị
