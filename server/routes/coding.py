@@ -94,7 +94,7 @@ def _make_router() -> APIRouter:
     @r.post("/coding/folders/{tid}/delete")
     async def coding_thu_muc_bo(tid: str):
         # Chỉ gỡ khỏi sổ. Nói rõ trong câu trả lời để giao diện nhắc lại được cho người dùng:
-        # "đã bỏ khỏi Javis, thư mục còn nguyên trên đĩa".
+        # "đã bỏ khỏi Thansa, thư mục còn nguyên trên đĩa".
         if not coding_store.bo_thu_muc(tid):
             return JSONResponse({"ok": False, "error": "Không có thư mục nào id đó"}, status_code=404)
         return {"ok": True, "con_tren_dia": True}
