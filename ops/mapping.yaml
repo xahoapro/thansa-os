@@ -1284,3 +1284,28 @@
     (regex an toàn); py_compile xanh; JSON hợp lệ; tu-kiem-chung 5/5.
   dieu_kien_bo: >
     Nếu upstream đưa các chuỗi này vào _rebrand_hien_thi hoặc i18n-hoá nốt thì thu hẹp/bỏ P043.
+
+- id: P044
+  ten: "Rebrand nền 0.63.0 - mục Coding (phiên chat trong repo)"
+  y_dinh: >
+    Nền 0.63.0 thêm mục Coding (phiên chat chạy trong repo, worktree, điểm hồi). Rebrand chuỗi
+    hiển thị Javis->Thansa còn sót: i18n coding.* (coding.remove_repo/remove_confirm/ob_note),
+    coding.js (comment), server/routes/coding.py + coding_store.py (comment/docstring). Regex an
+    toàn, giữ định danh JavisSessions. Server còn lại giữ "Javis" nội bộ.
+  commit: "[me] P044: rebrand ne 0.63.0 - muc Coding (phien chat trong repo)"
+  diem_neo:
+    - file: dashboard/i18n/vi.json
+      ky_hieu: '"coding.remove_repo": "Bỏ repo khỏi Thansa"'
+    - file: dashboard/coding.js
+      ky_hieu: "JavisSessions"
+  vung_theo_doi:
+    - "dashboard/i18n vi/en.json: khoá coding.*"
+    - "dashboard/coding.js + server/routes/coding.py + server/coding_store.py"
+  anh_goc:
+    - file: dashboard/i18n/vi.json
+      doan: "Bỏ repo khỏi Javis"
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js+html+i18n + server/routes/coding.py + coding_store.py = 0
+    (regex an toàn, giữ JavisSessions); node --check coding.js xanh; py_compile xanh; tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream i18n-hoá nốt hoặc đưa vào _rebrand_hien_thi thì thu hẹp/bỏ P044.
