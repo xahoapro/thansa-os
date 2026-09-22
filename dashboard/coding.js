@@ -9,7 +9,7 @@
 
    2. **THƯ MỤC chứ không phải REPO.** Bản đầu bắt phải có `.git`, không có thì từ chối kèm
       câu "chạy git init trước đi" - bắt người dùng làm việc vặt cho vừa mô hình dữ liệu của
-      Javis. Nay nhận mọi thư mục; git là thứ ĐỌC RA, và ba chip phụ thuộc git (nhánh,
+      Thansa. Nay nhận mọi thư mục; git là thứ ĐỌC RA, và ba chip phụ thuộc git (nhánh,
       worktree, điểm hồi) chỉ hiện khi thư mục đó thật sự là repo.
 
    3. **Cột trái là DANH SÁCH PHIÊN, không phải danh sách repo.** Câu hỏi người ta mở trang
@@ -422,7 +422,7 @@
     if (loai === "diemhoi") return menuDiemHoi(node);
   }
 
-  /** Menu thư mục: chọn cái đã khai, thêm cái mới, gỡ khỏi phiên, bỏ khỏi Javis.
+  /** Menu thư mục: chọn cái đã khai, thêm cái mới, gỡ khỏi phiên, bỏ khỏi Thansa.
    *
    *  Quản lý thư mục nằm TRONG menu này chứ không thành một cột riêng: cả trang chỉ có một
    *  chỗ nói về thư mục, và nó nằm đúng chỗ người dùng đang nhìn khi cần đổi. */
@@ -493,7 +493,7 @@
       demMd: false,
       brain: brain(),
       // Mở sẵn ở thư mục cha của thư mục đang gắn: mấy dự án thường nằm cạnh nhau, nên đó là
-      // chỗ gần đích nhất mà Javis biết chắc. Chưa gắn gì thì để rỗng, và hộp mở ra ở màn
+      // chỗ gần đích nhất mà Thansa biết chắc. Chưa gắn gì thì để rỗng, và hộp mở ra ở màn
       // ĐIỂM XUẤT PHÁT (bộ não đang mở, thư mục chứa các bộ não, thư mục nhà) chứ không đổ
       // thẳng vào thư mục nhà - trên VPS chỗ đó thường rỗng trơn.
       batDau: chaCuaThuMucDangGan(),
