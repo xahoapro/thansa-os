@@ -85,7 +85,7 @@
           <span class="notification-trigger-label" data-i18n="noti.label">Thông báo</span>
           <span class="notification-badge" id="notificationBadge" hidden>0</span>
         </button>
-        <!-- Cài Javis như app riêng (PWA). Ẩn mặc định: app.js chỉ hiện khi trình duyệt
+        <!-- Cài Thansa như app riêng (PWA). Ẩn mặc định: app.js chỉ hiện khi trình duyệt
              bắn beforeinstallprompt (Chrome/Edge desktop + Android) và chưa chạy standalone.
              Safari/iOS không có event này - bên đó vẫn là Share → Thêm vào MH chính. -->
         <button class="install-app-btn" id="installAppBtn" type="button" hidden
@@ -124,7 +124,7 @@
           </button>
           <!-- Nút loa ở đây đã BỎ (0.48.3): cùng một công tắc mà có tới ba chỗ bấm (header,
                thanh nhập chat, công tắc trong Cài đặt nhanh). Giữ lại đúng nút trên THANH NHẬP
-               (#ttsToggleBar) - nó nằm ngay cạnh chỗ người ta gõ, thấy được ở cả màn Javis lẫn
+               (#ttsToggleBar) - nó nằm ngay cạnh chỗ người ta gõ, thấy được ở cả màn Thansa lẫn
                trang Trò chuyện, và có ở màn hẹp. Chỗ trống này để dành cho hòm thư. -->
           <button class="hud-icon-btn" id="resetBtn" title="Reset hội thoại" data-i18n-title="top.reset">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -173,7 +173,7 @@
       <div class="noti-push" id="notificationPush" hidden>
         <div class="noti-push-main">
           <span class="noti-push-title" data-i18n="noti.push">Thông báo đẩy</span>
-          <span class="noti-push-note" id="notificationPushNote" data-i18n="noti.push_note">Báo cả khi bạn không mở Javis</span>
+          <span class="noti-push-note" id="notificationPushNote" data-i18n="noti.push_note">Báo cả khi bạn không mở Thansa</span>
         </div>
         <button class="noti-text-btn" id="notificationPushTest" type="button" hidden data-i18n="noti.push_test">Gửi thử</button>
         <button class="noti-text-btn primary" id="notificationPushToggle" type="button" data-i18n="noti.push_on">Bật</button>
@@ -511,7 +511,7 @@
 
             <div class="qs-block" data-settings-section="general">
               <div class="popover-label" data-i18n="qs.domain">TÊN MIỀN & SSL</div>
-              <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Javis kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
+              <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Thansa kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
               <div class="dom-field">
                 <input id="setDomain" placeholder="Ví dụ: javis.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
                 <button class="gcard-btn" id="saveDomain" data-i18n="qs.domain_save">Lưu &amp; kiểm tra</button>
@@ -710,7 +710,7 @@
   <!-- Vault structure banner -->
   <div class="vault-banner" id="vaultBanner">
     <i class="vb-icon" data-ic="triangle-alert"></i>
-    <span class="vb-text" id="vbText" data-i18n="vbanner.text">Cấu trúc vault chưa chuẩn cho Javis.</span>
+    <span class="vb-text" id="vbText" data-i18n="vbanner.text">Cấu trúc vault chưa chuẩn cho Thansa.</span>
     <button class="vb-init" id="vbInit" data-i18n="vbanner.init">Khởi tạo cấu trúc</button>
     <button class="vb-close" id="vbClose"><i data-ic="x"></i></button>
   </div>
@@ -842,7 +842,7 @@
   <!-- Cài đặt -->
   <div class="modal-overlay" id="settingsOverlay">
     <div class="settings-modal">
-      <div class="fm-head"><span><i data-ic="settings"></i> <span data-i18n="setm.title">Cài đặt Javis</span></span><button class="fm-close" id="settingsClose"><i data-ic="x"></i></button></div>
+      <div class="fm-head"><span><i data-ic="settings"></i> <span data-i18n="setm.title">Cài đặt Thansa</span></span><button class="fm-close" id="settingsClose"><i data-ic="x"></i></button></div>
       <div class="settings-body">
         <div class="set-sec">
           <h4 data-i18n="setm.general">Chung</h4>
@@ -854,8 +854,8 @@
           <div class="info-body" hidden data-i18n="setm.or_note">Danh sách model tải động từ OpenRouter. Không thấy model cần? Chọn "Nhập tên khác" rồi gõ chính xác id. OpenRouter sẽ kích hoạt ở bản kế (P2).</div>
           <label data-i18n="setm.engine">Engine xử lý chat</label>
           <select id="setEngine">
-            <option value="cli" data-i18n="setm.engine_cli">Claude Code CLI - MCP Javis + skill + loop + lệnh máy</option>
-            <option value="openrouter" data-i18n="setm.engine_or">OpenRouter - MCP Javis + skill + loop (không lệnh máy)</option>
+            <option value="cli" data-i18n="setm.engine_cli">Claude Code CLI - MCP Thansa + skill + loop + lệnh máy</option>
+            <option value="openrouter" data-i18n="setm.engine_or">OpenRouter - MCP Thansa + skill + loop (không lệnh máy)</option>
           </select>
           <label data-i18n="setm.claude_model">Model Claude (khi dùng CLI)</label>
           <!-- Danh sách nạp động từ /provider/models (app.js: loadClaudeModels). Mấy option
