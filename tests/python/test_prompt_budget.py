@@ -77,7 +77,9 @@ def _tok(chars):
 # Đo lại khi cần (chú ý `python -m pip` để chắc chắn cài vào đúng Python đang chạy):
 #     python -m pip install tiktoken
 #     python -c "import tiktoken; print(len(tiktoken.get_encoding('cl100k_base').encode(open('CLAUDE.md', encoding='utf-8').read())))"
-KERNEL_MAX_CHARS = 33_600
+# THUE CAU TRUC FORK (0.64.50): CLAUDE.md rebrand + P038/P040 -> 33.630, vuot tran goc
+# 33.600 dung 30 ky tu. Nang 33_600->33_800 (khop main.PROMPT_KERNEL_MAX_CHARS), co y thuc.
+KERNEL_MAX_CHARS = 33_800
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(
