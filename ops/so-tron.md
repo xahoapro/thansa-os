@@ -548,3 +548,24 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   docstring). Giữ định danh JavisSessions. so_patch 39→40.
 - VERSION neo `1.10.0-javis-0.63.0`. moc-goc 5159f5a/0.63.0/so_patch 40. tu-kiem-chung 5/5 XANH. backup
   me-backup-0.62.5 (@ 837160e). **CHƯA đẩy remote** — chờ chủ bấm.
+
+## Vòng 2026-09-22b (goc fa235a8, upstream +60 commit, VERSION nền 0.63.0 → 0.64.50, thansa 1.10→1.11)
+- Vòng VỪA (60 commit, 0.64.6-0.64.50). Chủ đề: **ChatGPT Web / Javis-in-ChatGPT** (đăng nhập dán
+  cookie chạy VPS, connector OAuth), **linh vật ngôi sao** đại tu, thiết lập lần đầu gọn (BỎ mã thiết
+  lập 0.64.47), font Be Vietnam Pro, việc nền về khung chat + loop/nhắc hẹn thẻ, Composio đọc dữ liệu.
+- Rebase 129 commit (41 patch [me] sau P045). Nhiều xung đột do upstream BỎ tính năng: P001 (env.example
+  upstream bỏ header comment vì Hostinger → lấy HEAD + WORKSPACE_NAME=Thansa), P003 (index.html bỏ khối
+  setup-token; manifest giữ /brand-logo), P007 (main.py clear_setup_token thay khối in token; channel_context
+  giữ dòng ngữ cảnh giọng mới + rebrand), P012 (mcp-catalog: upstream viết lại Composio guide/risk → --ours
+  + rebrand 71 chuỗi), P027 (13 docs → --ours + rebrand 794), P033+ceiling (upstream 0.64.7 ĐỔI TÊN
+  CLAUDE_MD_MAX_CHARS→KERNEL_MAX_CHARS khớp main.PROMPT_KERNEL_MAX_CHARS + trần tổng 50k; lấy HEAD, chỉnh
+  trần fork riêng), P035/P036 (--ours + rebrand; upstream bỏ dải VỪA GỌI + tag [Javis TTS]), P038 (union
+  CHỌN LỌC: giữ coding.* mới upstream + chỉ thêm cs.si_* an toàn), P039 (--ours + rebrand voice prompt +
+  dict 188+184), P044 (--ours + rebrand Coding 0.64.x đổi repo→folder).
+- **P045 mới:** rebrand 60-commit surfaces còn sót (index.html 11 chuỗi, CLAUDE.md, comment js).
+- **Trần prompt:** upstream 0.64.7 đông cứng KERNEL_MAX_CHARS=33_600 khớp server. CLAUDE.md Thansa 33.630
+  (rebrand+P038+P040) vượt 30 → nâng CẢ test lẫn server main.PROMPT_KERNEL_MAX_CHARS lên 33_800.
+- **Sửa 3 neo chết** (upstream dời chuỗi): P044 coding.remove_repo→coding.forget_folder; P033 comment
+  thuế prompt→"THUE CAU TRUC FORK"; P013 vi.json tradingauto.org→image_gen.py BRAND_SOURCE value.
+- VERSION `1.11.0-javis-0.64.50`. moc-goc fa235a8/0.64.50/so_patch 41. tu-kiem-chung 5/5 XANH. backup
+  me-backup-0.63.0. **CHƯA đẩy remote** — chờ chủ bấm.

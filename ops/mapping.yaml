@@ -425,8 +425,10 @@
   diem_neo:
     - file: server/image_gen.py
       ky_hieu: "BRAND_SOURCE"
-    - file: dashboard/i18n/vi.json
-      ky_hieu: "tradingauto.org"
+    # Chuỗi mô tả Content Credentials trong vi.json bị upstream dời/đổi qua các vòng; neo lại vào
+    # chính giá trị BRAND_SOURCE (image_gen.py) - phần functional ổn định của P013.
+    - file: server/image_gen.py
+      ky_hieu: "https://tradingauto.org"
   vung_theo_doi:
     - server/image_gen.py
     - "dashboard/console.js: khối mô tả Content Credentials"
@@ -974,11 +976,11 @@
     (×30+ chỗ) + upstream 0.44-0.47 thêm mục tự-học; 30.009 ký tự là hợp lệ, quyết định CÓ Ý THỨC.
   commit: "[me] P033: va 2 test coupled sau tron 0.47.2 (timing + tran prompt)"
   diem_neo:
-    # Vế test_chat_disconnect nay do UPSTREAM tu vá (0.55.16: bỏ sleep cứng → helper cho_xong,
-    # cùng ý poll của P033) nên đã lấy HEAD, neo cũ chết. Phần P033 còn sống là khối chú thích
-    # giải thích thuế rebrand đẩy CLAUDE.md sát trần trong test_prompt_budget.
+    # Vế test_chat_disconnect do UPSTREAM tự vá (0.55.16). Vế test_prompt_budget bị upstream 0.64.7
+    # TÁI CẤU TRÚC (đổi CLAUDE_MD_MAX_CHARS→KERNEL_MAX_CHARS, khớp main.PROMPT_KERNEL_MAX_CHARS) nên
+    # đã lấy HEAD; neo cũ chết. Ý định "thuế prompt fork" nay sống ở comment trần fork 0.64.50.
     - file: tests/python/test_prompt_budget.py
-      ky_hieu: 'Thue thuong hieu "Javis"->"Thansa"'
+      ky_hieu: "THUE CAU TRUC FORK"
   vung_theo_doi:
     - tests/python/test_chat_disconnect.py
     - tests/python/test_prompt_budget.py
@@ -1295,7 +1297,7 @@
   commit: "[me] P044: rebrand ne 0.63.0 - muc Coding (phien chat trong repo)"
   diem_neo:
     - file: dashboard/i18n/vi.json
-      ky_hieu: '"coding.remove_repo": "Bỏ repo khỏi Thansa"'
+      ky_hieu: '"coding.forget_folder": "Bỏ thư mục khỏi Thansa"'
     - file: dashboard/coding.js
       ky_hieu: "JavisSessions"
   vung_theo_doi:
@@ -1309,3 +1311,29 @@
     (regex an toàn, giữ JavisSessions); node --check coding.js xanh; py_compile xanh; tu-kiem-chung 5/5.
   dieu_kien_bo: >
     Nếu upstream i18n-hoá nốt hoặc đưa vào _rebrand_hien_thi thì thu hẹp/bỏ P044.
+
+- id: P045
+  ten: "Rebrand nền 0.64.50 - chuỗi hiển thị còn sót (ChatGPT Web/linh vật/font/UI mới)"
+  y_dinh: >
+    Nền 0.63.0→0.64.50 (60 commit) thêm/sửa nhiều bề mặt: ChatGPT Web login, linh vật ngôi sao,
+    font Be Vietnam Pro, việc nền về khung chat. Rebrand hiển thị Javis->Thansa còn sót: index.html
+    (11 chuỗi UI), CLAUDE.md ("a Thansa user"), comment chat-render/chat-steps/chat-viec/
+    mcp-form-parse/voice-turn. Regex an toàn giữ path Javis/ + định danh JS. Server giữ Javis nội bộ.
+  commit: "[me] P045: rebrand ne 0.64.50 - chuoi hien thi con sot (ChatGPT Web/mascot/font/UI moi)"
+  diem_neo:
+    - file: dashboard/index.html
+      ky_hieu: "Cài đặt Thansa"
+    - file: CLAUDE.md
+      ky_hieu: "a Thansa user never needs it"
+  vung_theo_doi:
+    - "dashboard/*.js + index.html + i18n: chuỗi hiển thị tên sản phẩm mới"
+    - "CLAUDE.md: prose (giữ path Javis/)"
+  anh_goc:
+    - file: dashboard/index.html
+      doan: "Cài đặt Javis"
+  kiem_chung: >
+    grep display "Javis" trên dashboard/*.js+html+i18n+CLAUDE.md = 0 (regex an toàn, giữ Javis/ +
+    JavisSessions); node --check mọi dashboard js xanh; tu-kiem-chung 5/5; test_prompt_budget xanh
+    (trần 33_800 khớp server+test).
+  dieu_kien_bo: >
+    Nếu upstream đưa hết chuỗi UI vào i18n gốc thì thu hẹp P045 về đúng phần overlay/dict còn lại.
