@@ -528,11 +528,10 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 # nâng trần thì phải sửa HAI chỗ và phải viết ra lý do ở cả hai, đủ ma sát để người sửa dừng
 # lại nghĩ thay vì gõ số mới cho xong.
 #
-# 0.345.0: lowered from 33,600 to 29,200. The plugin, capability-building, attached-file and
-# agent/workflow sections were condensed (their templates and details already live in the
-# javis-builder skill and the tool descriptions), saving about 1,850 tokens on every turn of every
-# engine. The cap moves down with it so the saving is not quietly refilled; same ~600 spare chars.
-PROMPT_KERNEL_MAX_CHARS = 29_200
+# THUẾ CẤU TRÚC FORK (Thansa, vòng nền 0.369.0): upstream 0.345.0 rút CLAUDE.md và hạ trần
+# 33_600 -> 29_200. Bản fork vẫn mang rebrand "Javis"->"Thansa" + chốt an toàn P038 + xưng hô P040
+# nên vượt trần gốc vài trăm ký tự. Nâng 29_200 -> 29_800 CÓ Ý THỨC, khớp KERNEL_MAX_CHARS trong test.
+PROMPT_KERNEL_MAX_CHARS = 29_800
 
 # Bộ nhớ dài hạn - lưu TRONG vault đang chọn để đi theo vault
 MEMORY_SEED = (
