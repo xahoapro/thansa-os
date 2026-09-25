@@ -404,7 +404,13 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 # chính test đó canh sự khớp: sửa một bên mà quên bên kia là đỏ. Đó là cái chặn thật - muốn
 # nâng trần thì phải sửa HAI chỗ và phải viết ra lý do ở cả hai, đủ ma sát để người sửa dừng
 # lại nghĩ thay vì gõ số mới cho xong.
-PROMPT_KERNEL_MAX_CHARS = 33_600
+#
+# THUẾ CẤU TRÚC FORK (Thansa, vòng nền 0.64.50): CLAUDE.md rebrand "Javis"->"Thansa" (+1 ký tự
+# mỗi lần) cộng chốt an toàn P038 + xưng hô bạn/mình P040 đẩy file lên 33.630 - vượt trần gốc
+# 33.600 của upstream đúng 30 ký tự. Không phải phình do thêm nội dung (upstream đã đẩy mục Dev
+# conventions ra docs/ ở 0.64.7); là thuế tên thương hiệu + hai luật fork không cắt được. Nâng
+# 33_600->33_800 (headroom ~170) CÓ Ý THỨC, khớp KERNEL_MAX_CHARS trong test.
+PROMPT_KERNEL_MAX_CHARS = 33_800
 
 # Bộ nhớ dài hạn - lưu TRONG vault đang chọn để đi theo vault
 MEMORY_SEED = (
