@@ -1,4 +1,4 @@
-/* chat-steps.js - khoi "tien trinh tung buoc" trong khung chat Javis.
+/* chat-steps.js - khoi "tien trinh tung buoc" trong khung chat Thansa.
 
    Van de: server DA ban ra su kien tool_call cho moi engine (main.py), nhung dashboard chi co
    MOT dong trang thai (showActivity): buoc moi ghi de buoc cu, het luot thi xoa sach. Luot
