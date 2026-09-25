@@ -1,15 +1,12 @@
-"""install.sh phải đặt SẴN tài khoản quản trị, để không ai phải đi đọc MÃ THIẾT LẬP trong log.
+"""install.sh phải đặt SẴN tài khoản quản trị lúc cài.
 
     python tests/run.py install_admin      (KHÔNG mạng; cần bash + python3)
 
-Bối cảnh: chạy Javis ra công khai mà chưa có admin thì server sinh một MÃ THIẾT LẬP ngẫu nhiên
-và CHỈ in nó vào log lúc khởi động (`config.setup_token_required`, `main.py` mục auth bootstrap).
-Người dùng phải SSH vào máy, đọc log, dán mã vào trình duyệt mới tạo được tài khoản.
-
-Cái mã đó có lý do tồn tại và KHÔNG bị bỏ: nó chặn người lạ chỉ-có-URL chiếm quyền admin trước
-chủ máy, mà thứ họ chiếm được là một máy có Bash, chạy full quyền, cắm sẵn vào POS/quảng cáo/
-email của chủ. Nhưng nó không nên là đường CHÍNH. Người đang chạy `install.sh` vốn đã ngồi trên
-máy chủ rồi, nên hỏi họ một câu là xoá sạch bước đọc-log mà không mở lỗ nào.
+Bối cảnh: chạy Javis ra công khai mà chưa có admin thì ai mở link trước sẽ tạo được admin. Trước
+0.64.47 khoảng trống đó được che bằng MÃ THIẾT LẬP in trong log server; từ 0.64.47 chủ dự án bỏ
+mã (lần đầu chỉ cần tên + mật khẩu, bảo vệ tiếp theo là 2FA). Nên đường tạo admin SẴN từ `.env`
+lúc boot càng là đường CHÍNH: người đang chạy `install.sh` vốn đã ngồi trên máy chủ, hỏi họ một
+câu là server boot lên đã có admin, không còn khoảnh khắc nào để người lạ chen vào.
 
 File này canh đúng hai thứ dễ hỏng khi sửa shell: khối tự sinh có chạy không, và `.env` ghi ra
 có đọc lại được nguyên vẹn không (mật khẩu người ta gõ có thể chứa dấu nháy, gạch đứng, ký tự
@@ -49,11 +46,12 @@ check("đã có sẵn trong .env thì GIỮ NGUYÊN, không ghi đè",
       "_env_has JAVIS_ADMIN_PASSWORD" in SRC)
 check(".env bị siết quyền sau khi ghi mật khẩu vào", "chmod 600 .env" in SRC)
 
-# Cơ chế MÃ THIẾT LẬP vẫn phải còn: đây là lưới cho người deploy bằng cách khác. Bỏ nó là mở
-# toang /auth/setup cho ai gõ trúng URL trước chủ máy.
+# MÃ THIẾT LẬP đã bỏ từ 0.64.47 (chủ dự án chốt 24/09, bảo vệ tài khoản giao cho 2FA). Vì thế
+# đường tạo admin SẴN lúc boot từ .env càng quan trọng: nó đóng khoảng trống "server public
+# vừa dựng, chưa có admin" mà trước đây mã thiết lập che. Khoá: server vẫn tự tạo admin từ env.
 _cfg = (SERVER / "config.py").read_text(encoding="utf-8")
-check("CANARY: cơ chế MÃ THIẾT LẬP vẫn còn nguyên trong server",
-      "def setup_token_required" in _cfg and "def check_setup_token" in _cfg)
+check("CANARY: server vẫn tự tạo admin từ JAVIS_ADMIN_PASSWORD lúc khởi động",
+      "def provision_admin_from_env" in _cfg)
 
 
 # ---- 2. Chạy THẬT khối đó trong thư mục tạm ----
@@ -95,10 +93,19 @@ check("mật khẩu sinh ra đủ dài", len(_pw1 or "") >= 16)
 check("mật khẩu sinh ra chỉ gồm chữ và số (an toàn cho .env của Docker Compose)",
       bool(_pw1) and _pw1.isalnum())
 check("tên đăng nhập mặc định là admin", _doc(_env1, "JAVIS_ADMIN_USER") == "admin")
-# env.example có sẵn hai dòng ĐÃ COMMENT cho hai biến này. Ghi đè nhầm vào dòng comment thì
-# .env có biến nhưng vẫn nằm sau dấu #, tức server không thấy gì và người dùng lại về đọc log.
-check("dòng mẫu đang comment trong env.example KHÔNG bị nhận nhầm là đã đặt",
-      "# JAVIS_ADMIN_PASSWORD=doi-mat-khau-manh-o-day" in _env1)
+# Một `.env` ĐÃ CÓ dòng comment cho hai biến này (file của người dùng cũ, hoặc chép từ tài
+# liệu) không được làm script tưởng là đã đặt rồi bỏ qua; mà ghi đè vào chính dòng comment
+# cũng sai, vì .env có biến nhưng vẫn nằm sau dấu #, server không thấy gì và người dùng lại
+# phải về đọc log. Thử bằng một .env dựng riêng chứ không dựa vào nội dung env.example: từ
+# 0.64.6 file mẫu không còn dòng chú thích nào (xem test_env_example_may_doc_duoc), nên bám
+# vào nó là phép thử xanh vì lý do sai.
+_co_thich = "# JAVIS_ADMIN_USER=admin\n# JAVIS_ADMIN_PASSWORD=doi-mat-khau-manh-o-day\n"
+_env_ct, _ = _chay_khoi(_co_thich)
+_pw_ct = _doc(_env_ct, "JAVIS_ADMIN_PASSWORD")
+check(".env có dòng comment sẵn -> vẫn sinh mật khẩu THẬT (không tưởng là đã đặt)",
+      bool(_pw_ct) and _pw_ct != "doi-mat-khau-manh-o-day")
+check("và KHÔNG ghi đè lên chính dòng comment đó",
+      "# JAVIS_ADMIN_PASSWORD=doi-mat-khau-manh-o-day" in _env_ct)
 
 # Chạy lại lần hai: cài lại / chạy lại script là chuyện thường, không được đổi mật khẩu đang dùng.
 _env2, _out2 = _chay_khoi(_env1)

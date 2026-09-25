@@ -25,7 +25,7 @@ Rất nhiều lỗi biến mất sau một trong hai việc này, nên thử tr�
 | Sửa code (hoặc vừa cập nhật) mà **không thấy đổi** | Nếu đổi file `.py`: **khởi động lại server** (Windows: `stop-javis.bat` rồi `start-javis.vbs`; Docker: `docker compose restart`). Nếu chỉ đổi giao diện: nhấn **Ctrl+Shift+R**. |
 | **Cổng 7777 bị giữ**, bản mới không lên được | Tắt tiến trình cũ TRƯỚC rồi mới bật lại. Windows: chạy `stop-javis.bat`, hoặc `taskkill /F /PID <pid>` với PID đang giữ cổng. Docker: `docker compose down` rồi `docker compose up -d`. |
 | **Hostinger không pull được image** | Đặt package GHCR ở chế độ **Public** (GitHub, repo, mục Packages, chọn `javis-os`, Package settings, Visibility = Public). Sau đó đợi GitHub Action build xong (xem tab Actions của repo) rồi Deploy lại. |
-| Mở app **báo cần MÃ THIẾT LẬP** | Lấy mã trong App terminal của container: `cat /data/state/.setup_token`. Nếu chạy trên host: `docker compose logs javis` rồi tìm dòng có `SETUP TOKEN`. Cách khỏi cần mã: đặt sẵn env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` lúc deploy để đăng nhập luôn. |
+| Mở app ra **màn tạo tài khoản admin** trên server public | Chưa có admin nên ai mở link trước sẽ tạo được admin. Tạo tài khoản ngay (mật khẩu tối thiểu 8 ký tự), hoặc lần sau đặt sẵn env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` lúc deploy để đăng nhập luôn. Vào được rồi thì bật 2FA. |
 | **Claude báo chưa đăng nhập** (Thansa không trả lời được) | Đăng nhập lại "bộ não" Claude 1 lần. Cách trong app: mở **Models**, ở thẻ Claude Code bấm **Đăng nhập Claude**, mở link, dán code nếu được yêu cầu. Cách bằng lệnh: `claude auth login --claudeai` (Docker: chạy trong App terminal). |
 | **Trang Tệp tin báo lỗi ở "Đang tải..."** | Máy chủ chưa có endpoint Tệp tin (báo lỗi 404). **Khởi động lại server** để nạp endpoint mới, rồi nhấn **Ctrl+Shift+R**. |
 | Ảnh trong hội thoại cũ hiện ô xám **Ảnh đã hết hạn** | Đúng thiết kế: `attachments/` và `inbox/` là vùng cache, file quá 30 ngày (hoặc khi vượt trần 300MB) bị dọn. Xem mục "Ảnh và file cũ biến mất" bên dưới để biết cách giữ lại hoặc tắt hẳn. |
@@ -65,13 +65,13 @@ Khi deploy bằng Hostinger Docker Manager mà nó không tải được image, 
 1. **Image ở chế độ riêng tư (Private).** Vào GitHub, mở repo, chọn mục **Packages**, chọn `javis-os`, vào **Package settings**, đặt **Visibility = Public**. Có vậy Hostinger mới pull được mà không cần đăng nhập registry.
 2. **Image chưa build xong.** Mỗi lần đẩy code mới lên nhánh `main`, GitHub Action mới bắt đầu build. Mở tab **Actions** của repo, đợi lượt build gần nhất chạy xong (dấu tích xanh), rồi bấm Deploy lại trên Hostinger.
 
-## Mở app báo cần MÃ THIẾT LẬP
+## Mở app ra màn tạo tài khoản admin trên server public
 
-Khi Thansa chạy public (Docker/VPS/Hostinger), lần đầu mở app sẽ ra màn tạo tài khoản admin và có thể hỏi **MÃ THIẾT LẬP**. Đây là cơ chế chống người lạ chỉ có URL cũng tạo được tài khoản (vì engine chạy toàn quyền trên máy). Lấy mã như sau:
+Khi Thansa chạy public (Docker/VPS/Hostinger) mà chưa có admin, lần đầu mở app sẽ ra màn tạo tài khoản, chỉ hỏi tên đăng nhập và mật khẩu. Nghĩa là **ai mở link trước sẽ tạo được admin** (mà engine chạy toàn quyền trên máy), nên:
 
-1. **Trong App terminal của container** (terminal này ở BÊN TRONG container nên không có lệnh `docker`): chạy `cat /data/state/.setup_token`, copy chuỗi, dán vào ô MÃ THIẾT LẬP.
-2. **Trên host (ngoài container)**: chạy `docker compose logs javis` rồi tìm dòng có chữ `SETUP TOKEN`.
-3. **Khỏi cần mã**: đặt sẵn admin lúc deploy bằng hai env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` trong compose. Khi đó mở app là đăng nhập luôn, không hỏi mã.
+1. **Đặt sẵn admin lúc deploy (khuyến nghị)**: hai env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` trong compose hoặc `.env`. Khi đó mở app là đăng nhập luôn.
+2. **Không đặt env**: tạo tài khoản ngay sau khi deploy, mật khẩu tối thiểu 8 ký tự.
+3. **Vào được rồi**: bật xác thực 2 lớp (2FA) ở trang **Tài khoản**.
 
 Chi tiết bảo mật và cách đặt mật khẩu xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 
@@ -167,9 +167,9 @@ Bản cài trực tiếp trên máy (Windows, Linux, macOS) luôn tự cập nh�
 
 Từ 0.55.56 Watchtower **đi kèm sẵn** trong cả compose VPS lẫn compose Hostinger, nên cài mới là có nút. Còn thiếu nút nghĩa là stack đang chạy bằng file compose cũ: trước đó Watchtower nằm trong `profiles: ["update"]` (lệnh `docker compose up -d` không bật nó) và stack Hostinger thì không kèm nó. Cách ra là lấy compose mới rồi dựng lại - VPS chạy `curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml` rồi `docker compose up -d --pull always`, Hostinger bấm **Redeploy** trong Docker Manager. Chưa muốn đổi file thì bật riêng bằng `docker compose --profile update up -d`. Khung Cập nhật tự nói máy bạn rơi vào trường hợp nào.
 
-**Muốn khỏi bấm nút, để Javis tự cập nhật**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại stack. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
+**Muốn khỏi bấm nút, để Thansa tự cập nhật**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại stack. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
 
-**Stack báo "Partially running" sau khi cập nhật compose**: gần như luôn là container `<tên>-watchtower` không đụng được Docker socket của host (Hostinger từng dính đúng lỗi này). App Javis KHÔNG bị ảnh hưởng - nó là container riêng, vẫn chạy bình thường; chỉ là nút "Cập nhật ngay" không dùng được và bạn quay lại cách Redeploy. Xem lý do thật trong log: `docker logs javis-watchtower`.
+**Stack báo "Partially running" sau khi cập nhật compose**: gần như luôn là container `<tên>-watchtower` không đụng được Docker socket của host (Hostinger từng dính đúng lỗi này). App Thansa KHÔNG bị ảnh hưởng - nó là container riêng, vẫn chạy bình thường; chỉ là nút "Cập nhật ngay" không dùng được và bạn quay lại cách Redeploy. Xem lý do thật trong log: `docker logs javis-watchtower`.
 
 **Gõ lệnh compose mà báo `not found`** - ba kiểu, ba nguyên nhân khác hẳn:
 
@@ -201,11 +201,11 @@ Không. `attachments/` và `inbox/` là vùng cache: mặc định file quá **3
 
 ### Đổi giọng nói của Thansa thế nào?
 
-Giọng đọc mặc định là `vi-VN-HoaiMyNeural` (Edge TTS tiếng Việt), tốc độ `+5%`. Muốn đổi giọng hoặc tốc độ, đặt hai biến trong file `.env` rồi khởi động lại server:
+Giọng đọc mặc định là `en-US-EmmaMultilingualNeural` (Edge TTS đa ngôn ngữ), tốc độ `+5%`. Muốn đổi giọng hoặc tốc độ, đặt hai biến trong file `.env` rồi khởi động lại server:
 
 | Biến | Ý nghĩa | Mặc định |
 |---|---|---|
-| `TTS_VOICE` | Tên giọng đọc | `vi-VN-HoaiMyNeural` |
+| `TTS_VOICE` | Tên giọng đọc | `en-US-EmmaMultilingualNeural` |
 | `TTS_RATE` | Tốc độ đọc | `+5%` |
 
 Xem cách đặt biến ở [Cấu hình .env](16-cau-hinh-env.md). Lưu ý: nút loa trên giao diện chỉ để **bật/tắt** việc đọc trả lời bằng giọng, không phải để đổi giọng. Cách dùng giọng nói trong trò chuyện xem [Trò chuyện & giọng nói](02-tro-chuyen-va-giong-noi.md).

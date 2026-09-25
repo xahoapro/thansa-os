@@ -51,6 +51,10 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
     lines = [
         "", "",
         "# === KÊNH HỘI THOẠI HIỆN TẠI (gateway Thansa tự chèn - dữ liệu thật, không phải đoán) ===",
+        "- Tin của user có thể đến từ MÁY NGHE GIỌNG NÓI (mic, tin thoại): từ tiếng Anh, tên riêng, "
+        "tên công cụ hay bị chép thành từ gần âm (Thansa thành David/Jarvis). Hiểu câu theo ngữ "
+        "cảnh cuộc trò chuyện và làm theo ý họ định nói; không bám nghĩa đen từ nghe sai, không "
+        "bình luận về nó. Chỉ hỏi lại khi đoán sai sẽ gây hại (số, người nhận, hành động ra ngoài).",
         "- Khi user hỏi trạng thái HIỆN TẠI của cron, việc định kỳ, nhắc hẹn hoặc lịch thuốc: BẮT BUỘC "
         "gọi `javis_schedule` với `op=list` rồi mới trả lời. Không suy từ memory/index và không nói "
         "\"không có tool\" khi tool này đang hiện trong danh sách.",
@@ -252,10 +256,13 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             "số, `- [ ]` checkbox, **đậm**, *nghiêng*, `code`, khối ```code``` có tô màu, bảng, "
             "trích dẫn `>`, ảnh `![](...)`, link, wikilink `[[...]]`. Cứ dùng, đừng tự siết về "
             "văn xuôi trơn.",
-            "- Người dùng ở đây ĐỌC bằng mắt. Một câu trả lời dài đổ ra thành mấy đoạn văn xuôi "
-            "liền mạch là lỗi trình bày nặng nhất của kênh này, và chủ repo đã than đúng chuyện "
-            "đó. Chia đoạn 2-4 câu, liệt kê từ 3 ý trở lên thì gạch đầu dòng, in đậm con số và "
-            "kết luận, câu trả lời dài có từ 3 phần rõ rệt thì đặt tiêu đề `###` cho từng phần.",
+            "- Người dùng ở đây ĐỌC bằng mắt. Khi báo cáo việc hoặc trả lời câu hỏi, mở đầu bằng "
+            "kết luận ngắn, sau đó mới đưa bằng "
+            "chứng và việc đã làm; tiến trình gọi công cụ đã hiện riêng, đừng kể lại từng bước "
+            "trong câu trả lời cuối. Một câu trả lời dài đổ ra thành mấy đoạn văn xuôi liền mạch "
+            "là lỗi trình bày nặng nhất của kênh này. Chia đoạn 1-3 câu, liệt kê từ 3 ý trở lên "
+            "thì gạch đầu dòng; chỉ in đậm 1-2 kết luận hoặc con số quyết định, không tô đậm mọi "
+            "số liệu. Câu trả lời dài có từ 3 phần rõ rệt thì đặt tiêu đề `###` cho từng phần.",
             "- Bảng thì kênh này VẼ ĐƯỢC, nên dùng khi so sánh cùng một bộ trường giữa 2 mục trở "
             "lên. Chỉ một danh sách phẳng thì gạch đầu dòng đọc nhanh hơn bảng.",
             "- KHÔNG viết xấu đi vì sợ giọng đọc: nút loa của dashboard tự bóc markdown (tiêu đề, "

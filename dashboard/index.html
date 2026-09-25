@@ -25,15 +25,15 @@
        Chrome/Edge DESKTOP coi trang là cài được (icon "any" trên PNG bị coi là không hợp lệ
        nên trước đây chỉ mobile chạy dạng app, desktop không bao giờ có nút cài). Nút
        "Mở như app" trên thanh trạng thái + icon cài trong thanh địa chỉ ăn theo file này. -->
-  <link rel="manifest" href="/static/manifest.json?v=3">
+  <link rel="manifest" href="/static/manifest.json?v=5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Montserrat:wght@400;500;600;700&amp;display=swap">
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=88">
-  <link rel="stylesheet" href="/static/console.css?v=63">
+  <link rel="stylesheet" href="/static/style.css?v=98">
+  <link rel="stylesheet" href="/static/console.css?v=72">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại. -->
   <script>(function(){try{if(localStorage.getItem('javis.theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
@@ -356,17 +356,16 @@
                  thành ô chọn có tên mức, vì không ai cần 1.37× mà cần "hơi nhanh". -->
             <div class="qs-block">
               <div class="popover-label" data-i18n="qs.voice">GIỌNG ĐỌC</div>
-              <div id="ttsProviderHost"></div>
               <!-- #edgeVoiceSection: console.js ẩn khối này khi nhà cung cấp không phải Edge
                    (OpenAI/ElevenLabs chọn giọng ngay trong khối nhà cung cấp ở trên). -->
               <div id="edgeVoiceSection">
                 <div class="qs-field">
                   <label class="qs-lbl" for="voiceSel" data-i18n="qs.voice_pick">Giọng Edge</label>
                   <select class="js-input" id="voiceSel" name="voice">
+                    <option value="en-US-EmmaMultilingualNeural" data-i18n="qs.voice_opt_emma">Emma · Nữ, vui tươi rõ chữ · đa ngôn ngữ</option>
                     <option value="vi-VN-HoaiMyNeural" data-i18n="qs.voice_opt_hoaimy">Hoài My · Nữ, tự nhiên ấm áp</option>
                     <option value="vi-VN-NamMinhNeural" data-i18n="qs.voice_opt_namminh">Nam Minh · Nam, trầm</option>
                     <option value="en-US-AvaMultilingualNeural" data-i18n="qs.voice_opt_ava">Ava · Nữ, dịu và biểu cảm · đa ngôn ngữ</option>
-                    <option value="en-US-EmmaMultilingualNeural" data-i18n="qs.voice_opt_emma">Emma · Nữ, vui tươi rõ chữ · đa ngôn ngữ</option>
                     <option value="en-US-AndrewMultilingualNeural" data-i18n="qs.voice_opt_andrew">Andrew · Nam, ấm và tự tin · đa ngôn ngữ</option>
                     <option value="en-US-BrianMultilingualNeural" data-i18n="qs.voice_opt_brian">Brian · Nam, gần gũi đời thường · đa ngôn ngữ</option>
                     <option value="en-AU-WilliamMultilingualNeural" data-i18n="qs.voice_opt_william">William · Nam, thân thiện giọng Úc · đa ngôn ngữ</option>
@@ -386,9 +385,14 @@
               </div>
               <div class="js-actions qs-foot">
                 <button class="gcard-btn ghost" id="testVoiceBtn" data-i18n="qs.test_voice">▶ Nghe thử</button>
-                <button class="gcard-btn" id="vpSave" data-i18n="qs.voice_save">Lưu giọng đọc</button>
               </div>
-              <div class="gcard-meta" id="vpStatus"></div>
+              <div class="qs-hint" data-i18n="qs.voice_local">Giọng Edge và tốc độ được lưu ngay trên thiết bị này.</div>
+              <details class="qs-advanced" id="ttsAdvanced">
+                <summary data-i18n="settings.tts_advanced">Nhà cung cấp và kết nối</summary>
+                <div id="ttsProviderHost"></div>
+                <div class="js-actions qs-foot"><button class="gcard-btn" id="vpSave" data-i18n="qs.voice_save">Lưu nhà cung cấp</button></div>
+              </details>
+              <div class="gcard-meta" id="vpStatus" role="status"></div>
             </div>
 
             <!-- CHẾ ĐỘ NÓI CHUYỆN (Voice V2): console.js renderVoiceV2Card() đổ vào đây.
@@ -413,7 +417,12 @@
                     <option value="auto" data-i18n="qs.rec_auto_opt">Đa ngôn ngữ · không cố định</option>
                   </select>
                 </div>
-                <div class="qs-hint" data-i18n="qs.rec_auto_hint">Đa ngôn ngữ: máy nghe Groq Whisper tự nhận ra tiếng đang nói; máy nghe của trình duyệt chỉ theo được ngôn ngữ của trình duyệt.</div>
+                <div class="qs-hint" data-i18n="qs.rec_auto_hint">Đa ngôn ngữ: Groq Whisper tự nhận ra tiếng đang nói; máy nghe của trình duyệt vẫn dùng một ngôn ngữ cố định (mặc định tiếng Việt).</div>
+                <div id="qsBrowserMicFields">
+                  <div class="qs-field"><label class="qs-lbl" for="adaptiveMode" data-i18n="qs.adaptive_mode">Nhịp hội thoại (thử nghiệm)</label><select class="js-input" id="adaptiveMode"><option value="off" data-i18n="qs.adaptive_off">Chờ cố định</option><option value="observe" data-i18n="qs.adaptive_observe">Quan sát để kiểm tra</option><option value="natural" data-i18n="qs.adaptive_natural">Tự nhiên</option></select></div>
+                  <div class="qs-hint" data-i18n="qs.adaptive_hint">Tự nhiên chờ theo câu nói, không thêm API. Quan sát chỉ ghi chẩn đoán trong bộ nhớ. Áp dụng cho Chuẩn và Làn nhanh.</div>
+                  <div class="qs-field"><label for="adaptivePace" class="qs-lbl" data-i18n="qs.adaptive_pace">Nhịp phản hồi</label><select id="adaptivePace" class="js-input"><option value="fast" data-i18n="qs.adaptive_fast">Nhanh</option><option value="balanced" data-i18n="qs.adaptive_balanced">Cân bằng</option><option value="patient" data-i18n="qs.adaptive_patient">Kiên nhẫn</option></select></div>
+                  <div class="qs-field"><button type="button" class="js-btn" id="adaptiveReset" data-i18n="qs.adaptive_reset">Đặt lại nhịp đã học</button><button type="button" class="js-btn" id="adaptiveExport" data-i18n="qs.adaptive_export">Tải chẩn đoán</button></div>
                 <div class="qs-field">
                   <label class="qs-lbl" for="endpointSel" data-i18n="qs.endpoint">Im lặng rồi gửi</label>
                   <select class="js-input" id="endpointSel" name="endpoint">
@@ -428,6 +437,7 @@
                   <span class="toggle"><input type="checkbox" id="qsBarge" checked><span></span></span>
                 </label>
                 <div class="gcard-meta" data-i18n="qs.mic_local">Ba mục micro áp dụng ngay trên máy đang dùng, không cần bấm Lưu; nút Lưu chế độ chỉ lưu phần chế độ và bộ não giọng.</div>
+                </div>
               </div>
             </div>
 
@@ -451,7 +461,7 @@
               <div class="popover-label" data-i18n="qs.domain">TÊN MIỀN & SSL</div>
               <div class="opt-sub dom-intro" data-i18n="qs.domain_intro">Nhập tên miền để Thansa kiểm tra DNS và hướng dẫn bật HTTPS theo đúng môi trường đang chạy.</div>
               <div class="dom-field">
-                <input id="setDomain" placeholder="Ví dụ: thansa.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
+                <input id="setDomain" placeholder="Ví dụ: javis.tencuaban.com" data-i18n-ph="qs.domain_ph" autocomplete="off" spellcheck="false">
                 <button class="gcard-btn" id="saveDomain" data-i18n="qs.domain_save">Lưu &amp; kiểm tra</button>
               </div>
               <div class="dom-status" id="domStatusRow" style="display:none">
@@ -497,18 +507,13 @@
         <span class="mb-caret">▾</span>
       </button>
       <div class="mb-pop" id="mbPop" hidden></div>
-      <!-- 0.49.3: dải này BỎ hai đèn "HỆ THỐNG" (Claude Code CLI / Voice) - chúng gần như
-           luôn xanh nên không nói thêm được gì, mà trạng thái thật đã có chỗ tử tế hơn:
-           banner đỏ trên navbar khi mất model, trang Kết nối cho MCP. Chỗ trống dành cho
-           thứ THAY ĐỔI theo từng lượt: BA tool Thansa vừa gọi, mới nhất đứng đầu. -->
-      <div class="sysbar" id="sysBar">
-        <span class="sysbar-label" data-i18n="mb.recent">VỪA GỌI</span>
-        <div id="mcpList" class="mcp-list"><div class="mcp-item dim" data-i18n="mb.no_tools">Chưa gọi tool nào</div></div>
-      </div>
+      <!-- 0.64.15: dải ba tool gọi gần nhất (chữ xanh lá) đã bỏ. Từng bước tool giờ hiện ngay trong
+           khung chat (khối bước + chip đang chạy), nên dải này chỉ lặp lại thứ đã thấy. -->
     </div>
 
     <!-- ===== BOTTOM: voice bar ===== -->
     <div class="hud-voice" id="hudVoice">
+      <button id="voiceFocusResume" class="voice-focus-resume" hidden></button>
       <button class="mic-big" id="voiceBtn" title="Bấm để nói (hoặc giữ Space)" data-i18n-title="bar.mic">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -652,9 +657,7 @@
         .wz-card input{margin-top:3px;accent-color:#ff8a3c} .wz-card b{font-size:15px;color:#e7eefc}
         .wz-rec{font-size:12px;background:#ff8a3c;color:#1a1a1a;border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:700}
         .wz-pdesc{font-size:15px;color:#9fb0cf;margin-top:3px;line-height:1.45}
-        .wz-tokhelp{border:1px solid rgba(255,138,60,.3);background:rgba(255,138,60,.06);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px;color:#cdd8ee;line-height:1.55}
-        .wz-tokhelp ol{margin:6px 0 4px 18px;padding:0} .wz-tokhelp li{margin:3px 0}
-        .wz-tokhelp code,#wzProvHint code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px;font-size:13px}
+        #wzProvHint code{background:rgba(0,0,0,.35);padding:1px 5px;border-radius:4px;font-size:13px}
         #wzProvHint{margin-top:8px;font-size:15px;color:#8aa}
         </style>
         <div class="set-note"><span data-i18n="wz.intro">Vài bước nhanh để bắt đầu. Mọi thứ đổi lại được sau trong</span> <i data-ic="settings"></i> <span data-i18n="page.settings.label">Cài đặt</span>.</div>
@@ -667,21 +670,6 @@
           <div class="set-note" data-i18n="wz.pass_note">Đặt mật khẩu để chặn người lạ - quan trọng nếu đưa lên VPS. Bỏ trống nếu chỉ chạy máy cá nhân.</div>
           <label data-i18n="common.account">Tài khoản</label><input id="wzUser" placeholder="Ví dụ: admin" data-i18n-ph="wz.user_ph">
           <label data-i18n="common.password">Mật khẩu</label><input id="wzPass" type="password" placeholder="Để trống nếu không đặt mật khẩu" data-i18n-ph="wz.pass_ph">
-          <div id="wzTokenWrap" style="display:none">
-            <label><span data-i18n="wz.token">Mã thiết lập</span> <span class="dim" data-i18n="wz.token_sec">(bảo mật)</span></label>
-            <input id="wzToken" placeholder="Dán MÃ THIẾT LẬP từ log server" data-i18n-ph="wz.token_ph">
-            <div class="wz-tokhelp">
-              <b><i data-ic="circle-help"></i> <span data-i18n="wz.tok_q">Mã thiết lập là gì?</span></b> <span data-i18n="wz.tok_a">Thansa đang chạy trên server công khai. Để chắc chính bạn (không phải người lạ vô tình mở link) là người tạo tài khoản admin, bạn dán một mã chỉ in ra log server - nơi duy nhất chủ máy xem được.</span>
-              <br><b data-i18n="wz.tok_how">Cách lấy mã (Hostinger → App terminal):</b>
-              <ol>
-                <li data-i18n="wz.tok_s1">Mở app → bấm App terminal (bạn sẽ vào BÊN TRONG container javis).</li>
-                <li><span data-i18n="wz.tok_s2">Chạy:</span> <code>cat /data/state/.setup_token</code></li>
-                <li data-i18n="wz.tok_s3">Copy chuỗi hiện ra → dán vào ô trên.</li>
-              </ol>
-              <span class="dim"><span data-i18n="wz.tok_ssh">Nếu SSH vào HOST (không phải App terminal):</span> <code>docker compose logs javis | grep "SETUP TOKEN"</code></span><br>
-              <i data-ic="lightbulb"></i> <b data-i18n="wz.tok_skip">Khỏi cần mã:</b> <span data-i18n="wz.tok_skip2">nếu lúc deploy bạn đặt sẵn env</span> <code>JAVIS_ADMIN_PASSWORD</code> <span data-i18n="wz.tok_skip3">(+ JAVIS_ADMIN_USER), mở app ra là đăng nhập luôn, không hỏi mã.</span>
-            </div>
-          </div>
         </div>
         <div class="set-sec">
           <h4 data-i18n="wz.s3">3. Nhà cung cấp AI (bộ não)</h4>
@@ -838,7 +826,7 @@
   <script src="/static/i18n/index.js?v=2"></script>
   <!-- Thansa: lop phu dich EN cho cac chuoi con nam cung trong code (chi chay khi ui_lang=en) -->
   <script src="/static/i18n/dich-en.js?v=1"></script>
-  <script src="/static/vendor/lucide-icons.js?v=5"></script>
+  <script src="/static/vendor/lucide-icons.js?v=7"></script>
   <script src="/static/icons.js?v=2"></script>
 
   <!-- theme.js phải nạp TRƯỚC mọi file khác: graph.js / app.js đăng ký
@@ -846,11 +834,15 @@
        đăng ký hụt và các lớp canvas kẹt ở bảng màu tối. -->
   <script src="/static/theme.js?v=2"></script>
   <!-- Voice V1: đạo diễn hội thoại (thuần) phải nạp TRƯỚC voice.js và app.js. -->
-  <script src="/static/voice-turn.js?v=1"></script>
+  <script src="/static/voice-turn.js?v=2"></script>
+  <script src="/static/voice-turn-policy.js?v=1"></script>
+  <script src="/static/voice-adaptive.js?v=1"></script>
+  <script src="/static/voice-adaptive-ui.js?v=1"></script>
+  <script src="/static/voice-attention.js?v=1"></script>
   <script src="/static/voice-chunker.js?v=1"></script>
-  <script src="/static/voice.js?v=23"></script>
-  <script src="/static/graph.js?v=16"></script>
-  <script src="/static/chat-render.js?v=14"></script>
+  <script src="/static/voice.js?v=27"></script>
+  <script src="/static/graph.js?v=17"></script>
+  <script src="/static/chat-render.js?v=15"></script>
   <script src="/static/code-hl.js?v=1"></script>
   <script src="/static/dataview.js?v=1"></script>
   <!-- window.JavisCopy: chép một chuỗi vào bảng nhớ tạm, có đường lui cho http trần. Đứng
@@ -866,12 +858,16 @@
   <script src="/static/chat-slash.js?v=3"></script>
   <script src="/static/chat-acts.js?v=2"></script>
   <script src="/static/chat-marks.js?v=3"></script>
+  <!-- Khối tiến trình từng bước trong khung chat: phải đứng TRƯỚC app.js vì app.js gọi
+       window.JavisSteps ngay khi khung tool_call đầu tiên về. -->
+  <script src="/static/chat-steps.js?v=1"></script>
+  <script src="/static/chat-viec.js?v=1"></script>
   <!-- Voice V1: khối ngữ cảnh giao diện + bộ nhận lệnh ui_action, nạp TRƯỚC app.js. -->
   <script src="/static/ui-context.js?v=1"></script>
   <script src="/static/ui-actions.js?v=1"></script>
   <!-- Voice V2: nghe nói thẳng (Live), app.js gọi lười khi bấm mic ở chế độ Live. -->
-  <script src="/static/voice-live.js?v=2"></script>
-  <script src="/static/app.js?v=109"></script>
+  <script src="/static/voice-live.js?v=3"></script>
+  <script src="/static/app.js?v=115"></script>
   <!-- Sau app.js: dải việc nền đọc window.JavisSessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=2"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -882,13 +878,13 @@
   <script src="/static/quick-settings.js?v=10"></script>
   <script src="/static/chat-zoom.js?v=6"></script>
   <script src="/static/brains-ui.js?v=7"></script>
-  <script src="/static/sessions-ui.js?v=18"></script>
-  <script src="/static/studio.js?v=39"></script>
+  <script src="/static/sessions-ui.js?v=19"></script>
+  <script src="/static/studio.js?v=42"></script>
   <!-- Trang Cộng sự: nạp SAU studio.js (mượn trình sửa agent/workflow của Studio) và TRƯỚC
        console.js (renderWorkspace ủy quyền cho window.JavisWorkspace). -->
-  <script src="/static/workspace.js?v=10"></script>
+  <script src="/static/workspace.js?v=14"></script>
   <script src="/static/packs.js?v=1"></script>
-  <script src="/static/chatbots.js?v=16"></script>
+  <script src="/static/chatbots.js?v=17"></script>
   <!-- Trang Hội thoại (hộp thư khách): nạp TRƯỚC console.js để renderConversations uỷ quyền được. -->
   <script src="/static/conversations.js?v=6"></script>
   <!-- Dashboard Token (trang Mức dùng nâng cấp): nạp TRƯỚC console.js để renderUsage ủy quyền được. -->
@@ -896,12 +892,16 @@
   <!-- Trang Code (terminal): nạp TRƯỚC console.js để renderCode ủy quyền được. File này CHỈ có
        phần khung - xterm.js (285KB) nạp lười ở lần đầu mở tab, không nằm trong đường khởi động. -->
   <script src="/static/code-term.js?v=2"></script>
+  <!-- Hộp chọn thư mục dùng chung (JavisFolderPicker). Nạp TRƯỚC file nào gọi nó. -->
+  <script src="/static/folder-picker.js?v=2"></script>
   <!-- Trang Coding (nhóm Code): mượn khung chat của app, nên nạp TRƯỚC console.js y như
        workspace.js để renderCoding uỷ quyền được. -->
-  <script src="/static/coding.js?v=1"></script>
+  <script src="/static/coding.js?v=6"></script>
   <!-- Console layer: console.js đăng ký store TRƯỚC khi Alpine khởi động (defer) -->
-  <script src="/static/console.js?v=145"></script>
-  <script src="/static/mobile-chat.js?v=8"></script>
+  <!-- Phần đọc cấu hình của form "Tự thêm MCP" (thuần, có test node). Nạp TRƯỚC console.js. -->
+  <script src="/static/mcp-form-parse.js?v=1"></script>
+  <script src="/static/console.js?v=156"></script>
+  <script src="/static/mobile-chat.js?v=9"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=2"></script>
   <script src="/static/install-nudge.js?v=1"></script>

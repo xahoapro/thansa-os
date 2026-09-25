@@ -94,6 +94,15 @@ CREATE TABLE IF NOT EXISTS messages (
     tool_calls_json TEXT
 );
 
+CREATE TABLE IF NOT EXISTS voice_receipts (
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    utterance_id TEXT NOT NULL, message_id INTEGER NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+    response_policy TEXT NOT NULL, continuation_of TEXT NOT NULL DEFAULT '',
+    answer_requested INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT 'committed',
+    PRIMARY KEY(session_id, utterance_id)
+);
+CREATE INDEX IF NOT EXISTS voice_receipts_message ON voice_receipts(message_id);
+
 -- Project = nhóm hội thoại do người dùng tự gom (ý "gom hội thoại thành Project").
 -- KHÔNG khai REFERENCES ở cột sessions.project_id: cột đó thêm bằng ALTER TABLE cho DB cũ,
 -- mà SQLite không cho ALTER kèm khoá ngoại. Ràng buộc được giữ ở tầng code: xoá project là
@@ -403,6 +412,10 @@ class SessionStore:
                               # chung một cột là lượt sau đưa id của engine này cho engine kia
                               # resume, và nó nối vào một mạch không tồn tại rồi hỏng câm.
                               ("grok_session_id", "TEXT"),
+                              # Luồng của engine ChatGPT Web, đã gỡ ở 0.64.20. Cột VẪN khai
+                              # báo để DB cũ và DB mới cùng một hình dạng; không ai đọc ghi
+                              # nó nữa. Xoá cột SQLite là phải dựng lại cả bảng, không đáng.
+                              ("web_thread_id", "TEXT"),
                               # Model GHIM RIÊNG của phiên. Hai nguồn ghi: user đổi model ngay
                               # trong phiên, và từ 0.35.5 server tự ĐÓNG DẤU model đang chạy ở
                               # lượt dashboard đầu tiên - nên đổi mặc định chung không bao giờ
@@ -549,7 +562,8 @@ class SessionStore:
             return True
         return bool(self._write(_do))
 
-    def replace_last_message(self, session_id: str, role: str, content: str) -> bool:
+    def replace_last_message(self, session_id: str, role: str, content: str,
+                             expected_content: Optional[str] = None) -> bool:
         """Thay NỘI DUNG tin cuối của phiên nếu nó đúng vai. Trả True khi có thay.
 
         Dùng cho lượt nói: tin người dùng được lưu NGAY khi tới (chữ thô của máy nghe), rồi bộ
@@ -558,9 +572,11 @@ class SessionStore:
         đi vào vòng tự học. Trigger messages_fts_upd cập nhật chỉ mục tìm kiếm theo."""
         def _do(conn):
             row = conn.execute(
-                "SELECT id, role FROM messages WHERE session_id = ? "
+                "SELECT id, role, content FROM messages WHERE session_id = ? "
                 "ORDER BY ts DESC, id DESC LIMIT 1", (session_id,)).fetchone()
             if not row or row[1] != role:
+                return False
+            if expected_content is not None and row[2] != expected_content:
                 return False
             conn.execute("UPDATE messages SET content = ? WHERE id = ?", (content, row[0]))
             return True
@@ -576,11 +592,15 @@ class SessionStore:
             except Exception:
                 d["tool_calls"] = None
         d.pop("tool_calls_json", None)
+        metadata = d.pop("voice_metadata", None)
+        if metadata:
+            d["voice_metadata"] = json.loads(metadata)
         return d
 
     def get_messages(self, session_id: str) -> List[Dict[str, Any]]:
         rows = self._read(
-            "SELECT id, role, content, ts, tool_calls_json FROM messages "
+            "SELECT id, role, content, ts, tool_calls_json, "
+            "(SELECT json_object('utterance_id',utterance_id,'message_id',message_id,'response_policy',response_policy,'answer_requested',answer_requested,'state',state) FROM voice_receipts WHERE message_id=messages.id) AS voice_metadata FROM messages "
             "WHERE session_id = ? ORDER BY ts, id",
             (session_id,),
         )
@@ -604,7 +624,8 @@ class SessionStore:
         `has_more` cho biết phía trên còn tin nữa không.
         """
         limit = max(1, int(limit))
-        sql = ("SELECT id, role, content, ts, tool_calls_json FROM messages "
+        sql = ("SELECT id, role, content, ts, tool_calls_json, "
+            "(SELECT json_object('utterance_id',utterance_id,'message_id',message_id,'response_policy',response_policy,'answer_requested',answer_requested,'state',state) FROM voice_receipts WHERE message_id=messages.id) AS voice_metadata FROM messages "
                "WHERE session_id = ?")
         params: List[Any] = [session_id]
         if before is not None:

@@ -48,10 +48,10 @@ const iCard = cs.indexOf("async function renderVoiceV2Card()");
 const card = cs.slice(iCard, iCard + 9000);
 check("console.js: trả micro về nhà TRƯỚC khi host.innerHTML ghi đè",
   card.indexOf("traMicVeNha();") > 0 && card.indexOf("traMicVeNha();") < card.indexOf("host.innerHTML ="));
-check("console.js: ghép micro vào thẻ ngay TRÊN nút Lưu chế độ (.qs-foot)",
-  /gheMicVaoThe\(host\.querySelector\("\.qs-foot"\)\);/.test(card));
-check("console.js: ghép bằng insertBefore vào .qs-block của thẻ và ẩn nhà cũ",
-  /the\.insertBefore\(micFields, truoc\)/.test(card) && /micHome\.hidden = true/.test(card));
+check("console.js: ghép micro vào thẻ vào Nâng cao trước điểm neo",
+  /gheMicVaoThe\(host\.querySelector\("#v2AdvancedEnd"\)\);/.test(card));
+check("console.js: ghép bằng insertBefore vào cha của điểm neo và ẩn nhà cũ",
+  /truoc\.parentNode\.insertBefore\(micFields, truoc\)/.test(card) && /micHome\.hidden = true/.test(card));
 check("console.js: máy chủ cũ (không đọc được /voice/options) vẫn hiện ba mục micro",
   /settings\.v2_load_fail[\s\S]{0,200}gheMicVaoThe\(null\)/.test(card));
 check("console.js: chế độ mặc định trên màn hình là Làn nhanh",
@@ -71,11 +71,9 @@ check("CANARY: không còn sót mặc định 800 nào", !/\|\| "800"/.test(app)
 // ---- 4. voice.js + main.py: "auto" đi đúng hai đường nghe ----
 check("voice.js: setRecognitionLang('auto') bật langAuto và KHÔNG ghi đè this.lang (phần đọc còn giọng Việt)",
   /this\.langAuto = lang === "auto";\s*\n\s*if \(!this\.langAuto\) this\.lang = lang;/.test(voice));
-check("voice.js: máy nghe trình duyệt để trống lang khi auto",
-  /this\.recognition\.lang = this\.langAuto \? "" : this\.lang;/.test(voice)
-  && (voice.match(/this\.langAuto \? "" : this\.lang/g) || []).length >= 2);
-check("voice.js: gửi /stt chữ 'auto' thay vì mã tiếng",
-  /fd\.append\("lang", this\.langAuto \? "auto" : \(this\.lang \|\| ""\)\);/.test(voice));
+check("voice.js: máy nghe trình duyệt giữ tiếng Việt dự phòng khi Groq tự dò",
+  (voice.match(/this\.recognition\.lang = this\.lang;/g) || []).length >= 2);
+// Real FormData language snapshot is tested in test_voice_capture_lifecycle.js.
 check("main.py: /stt đổi 'auto' thành '' (Whisper tự dò), rỗng vẫn về None (mặc định vi)",
   /ngon_ngu = "" if lang\.lower\(\) == "auto" else \(lang\.split\("-"\)\[0\]\.strip\(\) or None\)/.test(main));
 

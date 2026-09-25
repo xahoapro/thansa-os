@@ -26,6 +26,7 @@
   "groups": {
     "nav": [
       "hexagon",
+      "code-xml",
       "message-circle",
       "bot",
       "puzzle",
@@ -53,6 +54,7 @@
     ],
     "hanh-dong": [
       "save",
+      "clipboard-paste",
       "x",
       "rotate-cw",
       "play",
@@ -111,6 +113,7 @@
       "folder",
       "folder-open",
       "folder-plus",
+      "folder-git",
       "image",
       "book-open",
       "scroll",

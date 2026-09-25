@@ -218,7 +218,11 @@
 
   async function taiDanhSach() {
     var b = encodeURIComponent(brain());
-    var r = await Promise.all([api("/agents?brain=" + b), api("/workflows?brain=" + b)]);
+    // `prompt=0` = danh sách NHẸ. Đo trên brain 14 trợ lý: kèm system prompt là 366 KB, bỏ ra
+    // còn 2.9 KB - 99% số byte là thứ cột trái không bao giờ hiện. Qua mạng nhà, 366 KB là cả
+    // giây cột trái trống trơn mỗi lần mở trang (chủ dự án 22/09: mở trang Cộng sự từ linh vật
+    // vẫn lag). Prompt của ĐÚNG trợ lý đang sửa do studio.js lấy riêng qua /agents/get.
+    var r = await Promise.all([api("/agents?brain=" + b + "&prompt=0"), api("/workflows?brain=" + b)]);
     S.agents = sapXep(r[0].agents || [], "last_chat_at");
     S.workflows = sapXep((r[1].workflows || []).filter(function (w) { return w.status === "active"; }), "last_run_at");
     daTai = true;
@@ -227,6 +231,18 @@
   // ---------- dựng khung ----------
   function render(el, opts) {
     S.el = el; active = true; ready = false;
+    // DỰNG LẠI TỪ ĐẦU, không nối tiếp lần trước. Trang này còn được dựng lại NGAY TẠI CHỖ khi
+    // người dùng đổi bộ não (console.js gọi thẳng renderPage, không đi qua navigateTo nên roi()
+    // KHÔNG chạy), và lúc đó mọi thứ còn sót lại đều là của brain cũ:
+    //   - một moPhien đang chờ mạng sẽ mở phiên của brain cũ vào khung chat vừa dựng
+    //     (chủ dự án 22/09: "khung chat hiển thị dữ liệu của hội thoại cũ") -> opening++ cắt nó;
+    //   - _phienTruoc trỏ vào cuộc chính của brain cũ, rời trang là mở nhầm nó ra;
+    //   - danh sách cũ mà `daTai` vẫn true thì brain mới chưa tải xong đã bày nhầm màn khởi đầu.
+    opening++;
+    dongMenu();            // menu nổi của lần dựng trước neo vào <body>, không chết theo DOM cũ
+    _phienTruoc = null;
+    S.sessionCuaPhien = {}; S.tienDo = {}; S.lanChay = {};
+    S.agents = []; S.workflows = []; daTai = false;
     el.innerHTML =
       '<div class="wspage" id="wsPage">' +
         '<aside class="ws-left" id="wsLeft">' +
@@ -274,7 +290,7 @@
           // Chỗ đứng cho TRÌNH SỬA khi mở một file .md từ chat hay từ cây thư mục, y như
           // #chatPageEdit của trang Trò chuyện. Thiếu nó thì _borrowNoteEditor() không tìm
           // được khung nào để mượn và cú bấm vào link file lặng lẽ không làm gì cả.
-          '<div class="ws-edit" id="wsEdit"></div>' +
+          '<div class="ws-edit" id="wsEdit" data-ne-host></div>' +
         '</div>' +
         '<aside class="ws-right" id="wsRight">' +
           '<button type="button" class="ws-ico ws-panel-close" aria-label="' + esc(t("common.close")) + '">' + ic("x") + '</button>' +
@@ -302,7 +318,14 @@
         await taiDanhSach(); veTrai(); chonMacDinh();
       });
     };
-    el.querySelector("#wsFiles").onclick = function () { if (ready && window.JavisChatSide) window.JavisChatSide.moKhungCuoc(); };
+    // Một ngăn kéo cho cả hai phạm vi (của trợ lý / chỉ cuộc này), công tắc nằm ở đầu ngăn.
+    // Quy trình không có tài liệu riêng, nên ở tab Quy trình nút này vẫn mở tài liệu của cuộc.
+    el.querySelector("#wsFiles").onclick = function () {
+      if (!ready || !window.JavisChatSide) return;
+      var x = dangChon();
+      if (S.loai === "agent" && x && window.JavisChatSide.moTaiLieu) window.JavisChatSide.moTaiLieu(x.slug, x.name);
+      else window.JavisChatSide.moKhungCuoc();
+    };
     el.querySelector("#wsStore").onclick = function () { if (window.JavisPacks && window.JavisPacks.moKho) window.JavisPacks.moKho(S.loai, "workspace", t("page.workspace.label")); };
     el.querySelector("#wsNewChat").onclick = function () { var x = dangChon(); if (x) moPhien(x, true); };
     var page = el.querySelector("#wsPage");

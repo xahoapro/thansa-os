@@ -223,7 +223,7 @@
     var clean = String(rawpath || "").replace(/^\.?\//, "");
     return 'href="' + esc(fileUrl(clean, brainOverride) + "&dl=1") + '" data-vault-path="' + esc(clean) +
       '" class="jv-fdownload' + (extraCls ? " " + extraCls : "") +
-      '" download title="' + esc(tw("crender.dl_file")) + '"';
+      '" download title="' + esc(tw("crender.dl_file") + "\n" + clean) + '"';
   }
   // Thuoc tinh <a> mo trang Tep tin dung vi tri file/thu muc. Giu href deep-link (#open=..) de
   // Ctrl/giua chuot mo tab trinh duyet moi cung nhay dung cho; bam thuong -> mo trong app.
@@ -237,7 +237,7 @@
     // .html roi thay trinh sua bung ra la mot bat ngo - dung huong nhung sai loi hua.
     var tit = EDIT_EXT_RE.test(clean.split(/[?#]/)[0]) ? tw("crender.open_edit") : tw("crender.open_loc");
     return 'href="#open=' + esc(encodeURIComponent(clean)) + '" data-vault-path="' + esc(clean) +
-      '" class="jv-floc' + (extraCls ? " " + extraCls : "") + '" title="' + tit + '"';
+      '" class="jv-floc' + (extraCls ? " " + extraCls : "") + '" title="' + esc(tit + "\n" + clean) + '"';
   }
   function vaultLink(rawpath, extraCls, brainOverride) {
     return isDownloadFile(rawpath)
@@ -264,7 +264,7 @@
     var label = (alias != null && alias.trim()) ? alias.trim() : target;
     return '<a href="#open=' + esc(encodeURIComponent(target)) + '" data-vault-path="' + esc(target) + '"' +
       (label !== target ? ' data-wiki-alias="' + esc(label) + '"' : "") +
-      ' class="jv-wikilink" title="' + esc(tw("crender.open_note", { ten: target })) + '">' + esc(label) + "</a>";
+      ' class="jv-wikilink" title="' + esc(tw("crender.open_note", { ten: label }) + "\n" + target) + '">' + esc(label) + "</a>";
   }
   // FNV-1a -> id ngan on dinh cho artifact (cung noi dung -> cung id qua cac lan re-render khi stream)
   function hashId(s) {
@@ -633,20 +633,21 @@
         // vi chuoi thay the nay dang chay giua .replace(). Giai ma duoc thi dung, khong thi
         // giu nguyen chuoi tho (slug va ma phien deu la ASCII nen van mo dung).
         try { spec = decodeURIComponent(spec); } catch (err) {}
-        return put('<a class="jv-cs" href="' + esc(href) + '" data-cs="' + esc(spec) + '">' + esc(t) + "</a>");
+        return put('<a class="jv-cs" href="' + esc(href) + '" title="' + esc(href) + '" data-cs="' + esc(spec) + '">' + esc(t) + "</a>");
       }
-      if (/^(https?:|mailto:)/i.test(href)) return put('<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(t) + "</a>");
+      if (/^(https?:|mailto:)/i.test(href)) return put('<a href="' + esc(href) + '" title="' + esc(href) + '" target="_blank" rel="noopener">' + esc(t) + "</a>");
       // URL that thi GIU nguyen ma hoa (do la duong dan mang); chi duong dan trong vault moi go
       // ra, vi no se di thang toi ten file tren dia. Xem decodeVaultPath.
       if (isVaultRel(href)) return put('<a ' + vaultLink(decodeVaultPath(href)) + ">" + esc(t) + "</a>");
-      return put('<a href="' + esc(resolveSrc(href)) + '" target="_blank" rel="noopener">' + esc(t) + "</a>");
+      var resolved = resolveSrc(href);
+      return put('<a href="' + esc(resolved) + '" title="' + esc(resolved) + '" target="_blank" rel="noopener">' + esc(t) + "</a>");
     });
     // 4b) URL tran (AI go thang, khong boc markdown) -> tu thanh link mo tab moi. Chay SAU khi link/anh/
     //     code da cat vao placeholder (sentinel) nen khong dung vao chung; loai dau cau/ngoac o duoi URL.
     raw = raw.replace(new RegExp("(^|[^\\]\"'=/])(\\bhttps?:\\/\\/[^\\s<>()\\[\\]" + OPEN + CLOSE + "]+)", "g"), function (_m, pre, url) {
       var trail = "", tm = /[.,;:!?)\]}'"]+$/.exec(url);
       if (tm) { trail = tm[0]; url = url.slice(0, url.length - trail.length); }
-      return pre + put('<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + "</a>") + trail;
+      return pre + put('<a href="' + esc(url) + '" title="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + "</a>") + trail;
     });
     // 5) bang markdown
     raw = raw.replace(/(^\|.+\|[ \t]*\n\|[ \t:|-]+\|[ \t]*\n(?:\|.*\|[ \t]*\n?)*)/gm, function (tbl) {
@@ -988,6 +989,43 @@
     if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(rel);
   }
 
+  // ---------------------------------------------------------------- tai file tren iPhone
+  // iPadOS 13+ khai minh la Mac, chi lo ra qua maxTouchPoints (cung luat voi install-nudge.js).
+  function laIOS() {
+    try {
+      var ua = navigator.userAgent || "";
+      return /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1);
+    } catch (e) { return false; }
+  }
+  var DUOI_ANH_RE = /\.(?:png|jpe?g|gif|webp|bmp|svg|heic)$/i;
+  var DUOI_XEM_RE = /\.(?:png|jpe?g|gif|webp|bmp|svg|heic|pdf|mp4|mov|m4v|webm|mp3|m4a|wav|aac|txt)$/i;
+  // Link nao la TAI FILE: co thuoc tinh download, hoac tro toi duong phuc vu file cua may chu
+  // (cung origin). Link #open= (mo trinh sua trong app) va link ngoai http khong dinh o day.
+  function laLinkTaiFile(a) {
+    if (a.hasAttribute("download")) return true;
+    var href = a.getAttribute("href") || "";
+    if (/^(blob|data):/i.test(href)) return false;       // khong co download thi khong phai tai
+    try {
+      var u = new URL(href, window.location.href);
+      if (u.origin !== window.location.origin) return false;
+      return /^\/(?:files\/(?:raw|zip|download)|upload\/raw)(?:\/|$)/i.test(u.pathname);
+    } catch (e) { return false; }
+  }
+  // blob:/data: (tai khoi code, file chan doan giong noi): cua so moi tren iOS khong doc duoc
+  // blob cua trang nay, nen dua qua bang chia se cua he dieu hanh ("Luu vao Tep").
+  function chiaSeBlob(href, ten) {
+    try {
+      fetch(href).then(function (r) { return r.blob(); }).then(function (b) {
+        var f = new File([b], ten || "file", { type: b.type || "application/octet-stream" });
+        if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f] });
+        throw new Error("no-share");
+      }).catch(function (err) {
+        if (err && err.name === "AbortError") return;   // nguoi dung tu dong bang chia se
+        try { alert(tw("crender.ios_dl_fail")); } catch (e2) {}
+      });
+    } catch (e) {}
+  }
+
   // ---------------------------------------------------------------- lightbox xem anh
   // Bam anh trong chat -> mo lop xem phong to (kieu ChatGPT): anh vua man, co nut Tai ve,
   // Mo tab moi, Dong; bam nen den hoac Esc de dong; bam vao anh de doi qua lai giua "vua man"
@@ -1105,6 +1143,39 @@
       if (!ten) ten = vp ? vp.split("/").pop() : (a.getAttribute("href") || "").split("/").pop().split("?")[0];
       moLightbox(a.getAttribute("href") || (img && img.src) || "", ten);
     }, true);
+    // TAI FILE TREN IPHONE (0.64.46). App cai ra man hinh chinh (standalone) KHONG co nut Back.
+    // Mot link tai file (<a download>, hay link toi /files/raw, /files/zip, /upload/raw) ma di
+    // trong CUNG cua so thi iOS khong tai gi ca: no THAY ca app bang trang xem file ("Open in
+    // Preview / More..."), va khong con duong nao quay lai Thansa ngoai tat app (chu repo gui anh
+    // 24/09). Moi cho tai file deu roi vao day: link trong chat, nut Tai ve cua lightbox, trang
+    // Tep tin (_dlGo, tai ca thu muc zip), trinh sua file, tai khoi code.
+    //   - anh trong chat  -> mo lightbox ngay trong app (co nut Dong, nut Back cung dong duoc)
+    //   - file con lai    -> mo o CUA SO MOI: tren iOS do la lop Safari noi len co nut "Xong",
+    //                        xem truoc/luu/chia se o day roi bam Xong la ve dung cho cu
+    //   - blob:/data:     -> bang chia se cua iOS (Luu vao Tep), vi cua so moi khong doc duoc blob
+    // May tinh va Android giu nguyen: o do <a download> tai file binh thuong, khong roi trang.
+    document.addEventListener("click", function (e) {
+      if (!laIOS()) return;
+      if (e.defaultPrevented) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a || !laLinkTaiFile(a)) return;
+      if (a.target === "_blank") return;                 // da mo cua so moi san, iOS co nut Xong
+      if (e.target.closest('[contenteditable="true"]')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var href = a.href || a.getAttribute("href") || "";
+      if (/^(blob|data):/i.test(href)) { chiaSeBlob(href, a.getAttribute("download") || "file"); return; }
+      var xem = href.replace(/([?&])dl=1(&|$)/, function (m, dau, sau) { return sau ? dau : ""; });
+      var ten = a.getAttribute("data-vault-path") || a.getAttribute("download") || "";
+      ten = (ten || decodeURIComponent((/[?&]path=([^&]*)/.exec(href) || [0, ""])[1] || "")).split("/").pop();
+      // Anh: xem ngay trong app. Dang o trong lightbox (nut Tai ve) thi KHONG mo lightbox chong
+      // len nua, ma mo cua so moi de nguoi dung bam giu anh -> "Luu vao Anh".
+      if (DUOI_ANH_RE.test(ten || xem.split("?")[0]) && !_lb) { moLightbox(xem, ten); return; }
+      // Anh, PDF, video, am thanh: Safari tu hien duoc -> mo ban XEM (bo dl=1) cho de luu/chia se.
+      // Con lai (docx, zip...) giu dl=1: Safari hien trang Quick Look co nut chia se, trong lop co nut Xong.
+      window.open(DUOI_XEM_RE.test(ten || xem.split("?")[0]) ? xem : href, "_blank");
+    }, true);
     // Checkbox task "- [ ]" (cam hung obsidian-tasks): trong editor (.ne-wys) tick duoc va tu luu
     // (editor nghe event jv-task-toggle); trong chat/khung chi-doc thi khoa lai (khong co file de ghi).
     // Task trong ket qua dataview co handler rieng (dataview.js) ghi thang vao file goc.
@@ -1217,6 +1288,7 @@
     module.exports = { mdToHtml: mdToHtml, highlight: highlight, wkResolve: wkResolve,
       appFilePath: appFilePath, appFileRef: appFileRef, fileUriPath: fileUriPath,
       isDownloadFile: isDownloadFile,
+      laLinkTaiFile: laLinkTaiFile, laIOS: laIOS,
       // Xuat them de test chay THAT chuoi du phong cua anh (xem ungVienAnh / imgGone).
       ungVienAnh: ungVienAnh, ghepDuong: ghepDuong, imgGone: imgGone };
   }

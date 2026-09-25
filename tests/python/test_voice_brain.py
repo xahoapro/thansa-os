@@ -172,10 +172,10 @@ async def main():
     # ---- 4. sổ phiên ----
     conf = vb.config_from_settings({"voice": {"mode": "fast", "brain_provider": "groq", "brain_model": "m1"},
                                     "model": {"groq_api_key": "gk"}})
-    # loc_tap_am: cửa tạp âm, mặc định BẬT khi settings chưa có khoá (xem test_voice_tap_am.py).
+    # Legacy text-only noise filtering is retired; accepted speech is preserved.
     check("config_from_settings: lấy đúng key theo provider",
           conf == {"mode": "fast", "provider": "groq", "model": "m1", "api_key": "gk",
-                   "loc_tap_am": True})
+                   "loc_tap_am": False})
     b1 = await vb.get_brain("s1", conf)
     b2 = await vb.get_brain("s1", conf)
     check("get_brain: cùng phiên dùng lại", b1 is b2 and vb.active_count() == 1)
@@ -439,9 +439,7 @@ check("replace_last_message: tin cuối sai vai thì không đụng",
 _src_main = (SERVER / "main.py").read_text(encoding="utf-8", errors="replace")
 check("main: làn nhanh bóc JAVIS_NGHE giữa lúc stream và ở lưới sau",
       "voice_brain.tach_nghe_dau(text)" in _src_main and "voice_brain.parse_nghe(text)" in _src_main)
-check("main: diễn giải thay tin trong kho phiên và bắn user_text cho khung chat",
-      'store.replace_last_message(conv_sid, "user", nghe)' in _src_main
-      and _src_main.count('"type": "user_text"') >= 2)
+# Storage/UI correction and destructive rewrites are executed by test_voice_turn_integrity.py.
 _src_app = (ROOT / "dashboard" / "app.js").read_text(encoding="utf-8", errors="replace")
 check("app.js: nhận user_text, thay bong bóng người dùng cuối và convo",
       'data.type === "user_text"' in _src_app and "function capNhatTinNguoiDung" in _src_app

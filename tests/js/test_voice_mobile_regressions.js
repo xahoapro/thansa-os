@@ -31,6 +31,15 @@ v._iosCache = false;
 v.recognition.start = () => {};
 v.recognition.onend();
 assert.equal(v._committed, 'Em kiểm tra lại bản tin giá vàng.');
+// Transcript selection uses capture coverage; exercised in test_voice_capture_lifecycle.js.
+v.setRecognitionLang('auto');
+assert.equal(v.recognition.lang, 'vi-VN');
+let delivered = '';
+v.onTranscript = t => { delivered = t; };
+v.recognition.onstart(); // Chrome mở lại phiên mới nhưng chưa giao kết quả nào
+v.userStopped = true;
+v.recognition.onend();
+assert.equal(delivered, 'Em kiểm tra lại bản tin giá vàng.');
 v._iosCache = true;
 v.isPlaying = true; v._countThis = true; v._wordsDone = 4;
 v.ttsChunks = ['một hai ba bốn']; v._chunkIndex = 0;

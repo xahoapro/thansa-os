@@ -340,7 +340,7 @@ Khối **NHÀ CUNG CẤP GIỌNG ĐỌC** có ba lựa chọn:
 | OpenAI - mượt, đa ngôn ngữ | OpenAI API key (dùng chung với chat) + chọn một trong 11 giọng: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse |
 | ElevenLabs - tự nhiên nhất | ElevenLabs API key + **Voice ID** (lấy ở ElevenLabs → Voices) |
 
-Chọn xong bấm **Lưu nhà cung cấp**. Dòng trạng thái bên dưới ghi đang dùng cái nào. Nếu nhà cung cấp trả phí gặp lỗi (hết hạn mức, sai key, mất mạng), Thansa **tự quay về Edge TTS** để giọng không bao giờ tắt hẳn.
+Chọn xong bấm **Lưu nhà cung cấp**. Dòng trạng thái bên dưới ghi đang dùng cái nào. Nếu giọng đã chọn gặp lỗi (hết hạn mức, sai key, mất mạng), Thansa báo lỗi để bạn thử lại hoặc chọn giọng khác; không tự chuyển giọng.
 
 Khi chọn OpenAI hoặc ElevenLabs, khối giọng Edge (Hoài My, Nam Minh và 5 giọng đa ngôn ngữ) tự ẩn đi vì lúc đó giọng chọn ngay trong khối của nhà cung cấp.
 
@@ -348,7 +348,7 @@ Khi chọn OpenAI hoặc ElevenLabs, khối giọng Edge (Hoài My, Nam Minh và
 
 | Tuỳ chọn | Giá trị | Ghi chú |
 |---|---|---|
-| Giọng đọc | **Hoài My** | Nữ, tự nhiên và ấm áp (mặc định; mã Edge: `vi-VN-HoaiMyNeural`) |
+| Giọng đọc | **Emma Multilingual** | Giọng nữ đa ngôn ngữ (mặc định; mã Edge: `en-US-EmmaMultilingualNeural`) |
 | Giọng đọc | **Nam Minh** | Nam, trầm (mã Edge: `vi-VN-NamMinhNeural`) |
 | Giọng đọc | **Ava, Emma** (nữ), **Andrew, Brian, William** (nam) | 5 giọng đa ngôn ngữ thế hệ mới của Edge: tự nhận tiếng Việt, ngữ điệu mượt hơn hai giọng trên nhưng có thể lơ lớ vài chữ. Nghe thử rồi chọn. |
 | Tốc độ | Thanh trượt 0.70× đến 1.80× | Mặc định 1.10× |
@@ -362,7 +362,9 @@ Các bước:
 3. Bấm **▶ Nghe thử** để nghe một câu chào mẫu bằng giọng vừa chọn.
 4. "Ngôn ngữ nghe" là ngôn ngữ Thansa dùng để nhận diện lời bạn nói, khác với giọng đọc trả lời. Để mặc định Tiếng Việt trừ khi bạn quen nói tiếng Anh.
 
-Mọi lựa chọn giọng, tốc độ, ngôn ngữ nghe đều được ghi nhớ cho lần sau.
+Mọi lựa chọn giọng, tốc độ, ngôn ngữ nghe đều được ghi nhớ trên trình duyệt hiện tại cho lần sau. Emma là mặc định khi chưa lưu lựa chọn; cập nhật không ghi đè giọng bạn đã chọn.
+
+Trong chế độ Chuẩn/Nhanh, chữ đã hiện lúc bạn kết thúc câu được giữ nguyên khi gửi và lưu lịch sử. Bộ nghe phụ Groq chỉ đối chiếu và báo khi khác; AI không sửa lại tin đã gửi. Chữ tạm vẫn có thể thay đổi trong lúc bạn đang nói.
 
 ## Phóng to khung chat
 
@@ -473,3 +475,20 @@ Phím tắt:
 - [Kênh Telegram](11-telegram.md) và [Kênh Zalo](12-zalo.md) - chat với Thansa ngoài dashboard.
 
 Vẫn kẹt? Xem [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md).
+
+Từ 0.64.34, cài đặt trò chuyện ưu tiên giọng, tốc độ, chế độ và tập trung. Mở **Nâng cao** để chỉnh bộ não/model, bộ nghe phụ, từ gợi ý và micro. Mở **Nhà cung cấp và kết nối** để cấu hình API và lưu nhà cung cấp. Các lựa chọn không tác động tới chế độ đang dùng được ẩn; ngôn ngữ nghe vẫn có trong Live vì dùng cho tiếng gọi Thansa.
+
+
+## Nhịp hội thoại thử nghiệm (0.64.35)
+
+Vào **Cài đặt → Trò chuyện → Nâng cao → Nhịp hội thoại (thử nghiệm)**:
+
+- **Chờ cố định**: mặc định, giữ cách nghe hiện tại.
+- **Quan sát để kiểm tra**: giữ cách nghe hiện tại, chỉ tính quyết định thử trong bộ nhớ.
+- **Tự nhiên**: chờ theo câu nói và nhịp ngắt nghỉ trong phiên; chọn Nhanh/Cân bằng/Kiên nhẫn. Chỉ dùng ở Chuẩn/Làn nhanh với máy chủ hỗ trợ, không thêm API.
+
+Câu dang dở không tự gửi. Sau 10 giây chưa nói tiếp, phần chữ ở lại dưới dạng bản nháp với **Gửi phần đã nói / Tiếp tục / Bỏ**. Nói “khoan để anh nghĩ” giữ lượt tối đa 90 giây. Có thể gọi Thansa hoặc bấm Tiếp tục để mở lại bản nháp. Tới 120 giây hoặc 4.000 ký tự, cần kiểm tra phần đã nghe trước khi tiếp tục; không cắt chữ âm thầm.
+
+Bản đầu chỉ tự im lặng với lời kết thúc rõ ràng và một số lời giải thích đã được server xác định chắc chắn là hoàn tất. Ngữ cảnh khác vẫn trả lời; không coi mọi câu “vâng” là lời kết thúc. Tin được ghi nhận có nút **Yêu cầu trả lời** và vẫn nằm trong lịch sử.
+
+**Tải chẩn đoán** xuất tối đa 200 sự kiện về trạng thái/thời điểm từ RAM, không chứa nội dung câu nói, âm thanh hay khóa API. Đặt lại nhịp đã học không xóa hội thoại. Chưa có kiểm chứng âm học trên mọi tablet: giữ Chờ cố định nếu Tự nhiên chưa phù hợp, và thử lại cùng một đoạn nói để so sánh.

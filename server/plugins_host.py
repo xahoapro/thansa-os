@@ -56,6 +56,11 @@ _ENTRY_FILES = ("plugin.py", "__init__.py")
 # slug + tool name: chống traversal / chèn tên tool lạ
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
 _TOOL_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+_HTTP_PATH_RE = re.compile(r"^[A-Za-z0-9._~-]+(/[A-Za-z0-9._~-]+)*$")
+_WELL_KNOWN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+_HTTP_METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE"})
+# Nguồn được mở đường HTTP. Thiếu 'vault' là CHỦ Ý: model ghi được vào brain.
+_HTTP_NGUON = frozenset({"bundled", "pack", "user"})
 
 # Tên tool builtin/lõi - plugin KHÔNG được trùng (mcp_hub cũng skip lúc merge, đây là lớp 2).
 _RESERVED_TOOLS = {"javis_connections", "javis_read_file", "javis_list_dir",
@@ -302,6 +307,11 @@ def describe(vault_root: Optional[str] = None) -> List[dict]:
             "tools": list(manifest.get("tools") or []),
             "hooks": list(manifest.get("hooks") or []),
             "valid_slug": valid_slug(slug), "removed": da_go(slug),
+            # Trang riêng của plugin: chỉ đưa ra khi plugin có quyền mở đường HTTP và đang nạp
+            # được, không thì nút "Mở trang" trỏ vào một đường 404.
+            "page": (f"/ext/{slug}/" + (_trang_cua(manifest) or "")
+                     if (_trang_cua(manifest) is not None and loaded
+                         and source in _HTTP_NGUON) else ""),
             "error": merr or errors.get(slug, ""),
             "dir": str(pdir),
         })
@@ -323,6 +333,8 @@ class PluginContext:
         self._tools: List[dict] = []
         self._hooks: Dict[str, List[Callable]] = {}
         self._on_unload: List[Callable] = []
+        self._http: List[dict] = []
+        self._well_known: Dict[str, Callable] = {}
 
     @property
     def data_dir(self) -> Path:
@@ -367,12 +379,69 @@ class PluginContext:
 
     def register_hook(self, event: str, callback: Callable) -> None:
         """Đăng ký callback lifecycle. v1 hỗ trợ: 'pre_tool_call', 'post_tool_call'
-        (bắn quanh MỌI tool call). callback(**kwargs) - nhận tool_name, args, result, mode, vault_root."""
+        (bắn quanh MỌI tool call). callback(**kwargs) - nhận tool_name, args, result, mode,
+        vault_root. Luôn khai `**kwargs` trong callback: các khoá mới được thêm theo thời gian
+        (vd `denied` ở post_tool_call), và một callback khai cứng tham số sẽ gãy khi đó.
+
+        **`pre_tool_call` CHẶN ĐƯỢC** (từ 0.63.1 - trước đó nó chỉ quan sát được dù docstring
+        này nói "bắn quanh mọi tool call" nên ai cũng tưởng là chốt chặn). Giá trị trả về:
+
+            return {"deny": "lý do"}    -> tool KHÔNG chạy, model nhận đúng câu lý do đó
+            return {"args": {...}}      -> thay tham số rồi mới chạy
+            return None                 -> không ảnh hưởng (mặc định, plugin cũ giữ nguyên)
+
+        Hook ném lỗi thì tool VẪN CHẠY (fail-open có chủ ý, xem `_fire_pre`). `post_tool_call`
+        không chặn được: lúc đó tool đã chạy rồi.
+        """
         self._hooks.setdefault(str(event), []).append(callback)
 
 
+    # ---- đường HTTP (0.64.26) ----
+    #
+    # Sinh ra để "Javis trong ChatGPT" rời lõi thành một gói trong kho: gói đó phải mở cửa OAuth
+    # và một địa chỉ MCP cho máy chủ OpenAI gọi vào, mà plugin trước đây chỉ đăng ký được tool
+    # và hook. Cố ý làm CHUNG chứ không may đo cho một gói: webhook của dịch vụ ngoài là cùng
+    # một nhu cầu.
+    #
+    # Ranh giới (lõi ép, plugin không nới được):
+    #   - Mọi đường nằm dưới `/ext/<slug>/`, không chiếm được đường nào của lõi.
+    #   - MẶC ĐỊNH đòi phiên đăng nhập dashboard thật (token API không qua).
+    #   - `public=True`: không đòi đăng nhập - plugin TỰ xác thực (token OAuth, chữ ký webhook).
+    #   - `no_cookie=True` (chỉ đi kèm public): miễn hàng rào CSRF, và lõi GỠ HẲN cookie khỏi
+    #     request trước khi giao cho plugin. Miễn CSRF mà vẫn mang cookie là mở đường cho trang
+    #     lạ mượn phiên của chủ; gỡ cookie thì đường đó không còn gì để mượn.
+    #   - Chỉ plugin đi kèm app, plugin của GÓI đã đồng ý cài, và plugin global (đã qua cổng
+    #     env) mới có đường. Plugin trong brain KHÔNG: model ghi được vào brain.
+
+    def register_http(self, path: str, handler: Callable, methods=("GET",),
+                      public: bool = False, no_cookie: bool = False) -> None:
+        """Mở `/ext/<slug>/<path>`. handler(request, ctx) (sync|async) trả về một Response của
+        Starlette, một dict/list (thành JSON) hoặc một chuỗi (thành HTML)."""
+        duong = str(path or "").strip("/")
+        if duong and (not _HTTP_PATH_RE.match(duong)
+                      or any(p in (".", "..") for p in duong.split("/"))):
+            raise ValueError(f"đường HTTP không hợp lệ: {path!r}")
+        if no_cookie and not public:
+            raise ValueError("no_cookie chỉ đi kèm public=True")
+        mt = tuple(sorted({str(m).upper() for m in (methods or ("GET",))}))
+        if not mt or any(m not in _HTTP_METHODS for m in mt):
+            raise ValueError(f"method không hợp lệ: {methods!r}")
+        self._http.append({"path": duong, "handler": handler, "methods": mt,
+                           "public": bool(public), "no_cookie": bool(no_cookie)})
+
+    def register_well_known(self, name: str, handler: Callable) -> None:
+        """Phục vụ `GET /.well-known/<name>` và `/.well-known/<name>/<phần sau>` (ví dụ metadata
+        OAuth, vốn BẮT BUỘC nằm ở gốc tên miền). Công khai và không cookie. Hai plugin cùng xin
+        một tên thì plugin nạp trước giữ tên đó."""
+        ten = str(name or "").strip("/")
+        if not _WELL_KNOWN_RE.match(ten):
+            raise ValueError(f"tên well-known không hợp lệ: {name!r}")
+        self._well_known[ten] = handler
+
+
 class LoadedPlugin:
-    __slots__ = ("slug", "source", "name", "description", "min_mode", "tools", "hooks", "ctx")
+    __slots__ = ("slug", "source", "name", "description", "min_mode", "tools", "hooks", "ctx",
+                 "http", "well_known", "page")
 
     def __init__(self, ctx: PluginContext, manifest: dict):
         self.slug = ctx.slug
@@ -384,6 +453,9 @@ class LoadedPlugin:
         self.tools = ctx._tools
         self.hooks = ctx._hooks
         self.ctx = ctx
+        self.http = ctx._http
+        self.well_known = ctx._well_known
+        self.page = _trang_cua(manifest)
 
 
 # ============================================================
@@ -566,6 +638,97 @@ def _load_all(vault_root: Optional[str], scope_vault: bool = True) -> dict:
         return ent
 
 
+# ============================================================
+# Đường HTTP của plugin (0.64.26) - lõi tra ở đây, main.py chỉ chuyển request
+# ============================================================
+def _trang_cua(manifest: dict) -> Optional[str]:
+    """Đường tương đối của trang riêng plugin khai trong `plugin.yaml` (`page: ""` là gốc), hoặc
+    None nếu không khai. Thẻ trên trang Plugin dùng nó để hiện nút "Mở trang"."""
+    if "page" not in (manifest or {}):
+        return None
+    v = str(manifest.get("page") or "").strip("/")
+    if v and (not _HTTP_PATH_RE.match(v) or any(p in (".", "..") for p in v.split("/"))):
+        return None
+    return v
+
+
+def _plugin_http() -> List["LoadedPlugin"]:
+    """Plugin đang nạp được mở đường HTTP. MỘT bản nạp cố định, không theo brain: cùng một
+    đường mà mỗi brain một bản plugin thì trạng thái trong RAM của plugin (yêu cầu đang chờ,
+    mã một lần) sẽ nằm ở bản này còn request tới bản kia."""
+    ent = _load_all(None, scope_vault=False)
+    return [lp for lp in ent["plugins"] if lp.source in _HTTP_NGUON]
+
+
+def tim_http(slug: str, duong: str, method: str = ""):
+    """(plugin, route) phục vụ `/ext/<slug>/<duong>`, hoặc None.
+    `method` rỗng = khớp theo đường thôi (hàng rào cần biết đường có tồn tại, chưa cần method)."""
+    duong = str(duong or "").strip("/")
+    for lp in _plugin_http():
+        if lp.slug != slug:
+            continue
+        for r in lp.http:
+            if r["path"] == duong and (not method or method.upper() in r["methods"]):
+                return lp, r
+    return None
+
+
+def tim_well_known(ten: str):
+    """(plugin, handler) phục vụ `/.well-known/<ten>`, hoặc None. Plugin nạp trước giữ tên."""
+    for lp in _plugin_http():
+        h = lp.well_known.get(ten)
+        if h:
+            return lp, h
+    return None
+
+
+def _tach_ext(path: str):
+    """'/ext/<slug>/<phần sau>' -> (slug, phần sau), hoặc None."""
+    if not path.startswith("/ext/"):
+        return None
+    con = path[len("/ext/"):]
+    slug, _, sau = con.partition("/")
+    return (slug, sau) if valid_slug(slug) else None
+
+
+def _ten_well_known(path: str) -> str:
+    if not path.startswith("/.well-known/"):
+        return ""
+    return path[len("/.well-known/"):].split("/", 1)[0]
+
+
+def http_cong_khai(path: str, method: str) -> bool:
+    """Hàng rào đăng nhập hỏi: đường này của plugin có được vào KHÔNG cần đăng nhập không.
+    Xét theo CẶP (đường, method): một plugin có thể để GET công khai mà POST cùng đường thì không."""
+    try:
+        ten = _ten_well_known(path)
+        if ten:
+            return method.upper() == "GET" and tim_well_known(ten) is not None
+        t = _tach_ext(path)
+        if not t:
+            return False
+        tr = tim_http(t[0], t[1], method or "?")
+        return bool(tr and tr[1]["public"])
+    except Exception:
+        return False
+
+
+def http_khong_cookie(path: str, method: str) -> bool:
+    """Hàng rào CSRF hỏi: đường này có được miễn không. Chỉ đường KHÔNG dùng cookie (lõi gỡ
+    cookie trước khi giao cho plugin), nên miễn CSRF không cho ai mượn được phiên của chủ."""
+    try:
+        ten = _ten_well_known(path)
+        if ten:
+            return method.upper() == "GET" and tim_well_known(ten) is not None
+        t = _tach_ext(path)
+        if not t:
+            return False
+        tr = tim_http(t[0], t[1], method or "?")
+        return bool(tr and tr[1]["no_cookie"])
+    except Exception:
+        return False
+
+
 def invalidate() -> None:
     """Xoá cache load - gọi sau khi bật/tắt/sửa plugin.
 
@@ -744,6 +907,10 @@ def has_tool_hooks(vault_root: Optional[str] = None) -> bool:
 
 
 async def _fire(event: str, vault_root: Optional[str], payload: dict) -> None:
+    """Bắn hook và BỎ QUA thứ nó trả về. Dùng cho hook chỉ để quan sát (post_tool_call).
+
+    Muốn hook CHẶN được thì dùng `_fire_pre` - xem chú thích dài ở đó.
+    """
     ent = _load_all(vault_root)
     for cb in ent["hooks"].get(event, []):
         try:
@@ -752,11 +919,75 @@ async def _fire(event: str, vault_root: Optional[str], payload: dict) -> None:
             print(f"[plugins] hook {event} lỗi: {type(e).__name__}: {e}", file=sys.stderr)
 
 
+async def _fire_pre(vault_root: Optional[str], payload: dict) -> dict:
+    """Bắn `pre_tool_call` và ĐỌC thứ hook trả về. Trả {"deny": str} hoặc {"args": dict} hoặc {}.
+
+    **Vì sao hàm này tồn tại.** Tới 0.63.0, `wrap_with_hooks` gọi `await _fire("pre_tool_call")`
+    rồi vứt giá trị trả về, và `_fire` còn nuốt cả exception. Nghĩa là hook CHỈ QUAN SÁT được:
+    nó không chặn nổi một lời gọi tool nào, dù docstring của `register_hook` hứa "bắn quanh
+    MỌI tool call" nên ai đọc cũng tưởng đó là chốt chặn. Một lớp bảo vệ mà không bảo vệ được
+    gì thì nguy hiểm hơn là không có, vì người ta tin vào nó.
+
+    **Hợp đồng với plugin** (giữ nguyên chữ ký cũ, plugin cũ không phải sửa gì):
+      - trả `{"deny": "lý do"}`  -> tool KHÔNG chạy, model nhận đúng câu lý do đó
+      - trả `{"args": {...}}`    -> thay tham số rồi mới chạy (vd nắn đường dẫn về đúng thư mục)
+      - trả None / bất cứ gì khác -> không ảnh hưởng, y như trước
+
+    **FAIL-OPEN là cố ý.** Hook ném lỗi thì tool VẪN CHẠY, chỉ ghi một dòng stderr. Hook là
+    thứ người dùng tự cài; để một plugin hỏng khoá được mọi tool của Javis là đổi một lỗi nhỏ
+    lấy một hệ thống chết. Ai cần fail-closed thì tự bắt lỗi trong hook rồi trả `deny`.
+
+    Nhiều hook cùng đăng ký thì hook ĐẦU TIÊN nói `deny` thắng và dừng luôn vòng lặp: đã có
+    một lý do từ chối rõ ràng thì chạy tiếp mấy hook sau chỉ tổ sinh tác dụng phụ.
+    """
+    ent = _load_all(vault_root)
+    ra: dict = {}
+    for cb in ent["hooks"].get("pre_tool_call", []):
+        try:
+            out = await _maybe_await(cb(**payload))
+        except Exception as e:
+            print(f"[plugins] hook pre_tool_call lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+            continue
+        if not isinstance(out, dict):
+            continue
+        ly_do = str(out.get("deny") or "").strip()
+        if ly_do:
+            return {"deny": ly_do[:2000]}
+        moi = out.get("args")
+        if isinstance(moi, dict):
+            payload = {**payload, "args": moi}
+            ra["args"] = moi
+    return ra
+
+
+# Câu báo khi hook chặn. Đi thẳng vào chỗ model đọc kết quả tool, nên phải nói ĐƯỢC GÌ TIẾP
+# THEO chứ không chỉ nói "bị chặn" - model nhận một câu cụt thì nó thử lại y hệt.
+def _cau_bi_chan(fn: str, ly_do: str) -> str:
+    return (f"ERROR: lời gọi `{fn}` bị chặn bởi một hook đang bật trên máy này.\n"
+            f"Lý do: {ly_do}\n"
+            f"Đọc kỹ lý do rồi làm lại theo đúng cách nó chỉ. Đừng gọi lại y nguyên.")
+
+
 def wrap_with_hooks(fn: str, base_call: Callable, mode: str, vault_root: Optional[str]) -> Callable:
-    """Bọc 1 route call để bắn pre/post_tool_call. base_call(args) -> result (async)."""
+    """Bọc 1 route call để bắn pre/post_tool_call. base_call(args) -> result (async).
+
+    `pre_tool_call` CHẶN được và SỬA được tham số (xem `_fire_pre`). `post_tool_call` thì
+    không: lúc đó tool đã chạy rồi, thứ nó trả về không còn đổi được gì.
+    """
     async def _wrapped(args):
-        await _fire("pre_tool_call", vault_root,
-                    {"tool_name": fn, "args": args, "mode": mode, "vault_root": vault_root})
+        quyet = await _fire_pre(vault_root,
+                                {"tool_name": fn, "args": args, "mode": mode,
+                                 "vault_root": vault_root})
+        if quyet.get("deny"):
+            ket = _cau_bi_chan(fn, quyet["deny"])
+            # Vẫn bắn post_tool_call: hook kiểm toán cần thấy CẢ lời gọi bị chặn, không thì
+            # nhật ký chỉ có phần trôi lọt và đó là loại nhật ký tệ nhất.
+            await _fire("post_tool_call", vault_root,
+                        {"tool_name": fn, "args": args, "result": ket, "mode": mode,
+                         "vault_root": vault_root, "denied": True})
+            return ket
+        if isinstance(quyet.get("args"), dict):
+            args = quyet["args"]
         result = await base_call(args)
         await _fire("post_tool_call", vault_root,
                     {"tool_name": fn, "args": args, "result": result, "mode": mode, "vault_root": vault_root})

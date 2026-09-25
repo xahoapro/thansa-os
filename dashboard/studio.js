@@ -20,6 +20,55 @@
   };
   const fd = (obj) => { const f = new FormData(); Object.entries(obj).forEach(([k, v]) => f.append(k, v)); return f; };
 
+  // ===== Hai lượt mạng NỀN của trình sửa trợ lý: danh sách skill + /settings (dựng ô chọn model) =====
+  // Ở trang Cộng sự, form này dựng lại MỖI LẦN bấm sang một trợ lý khác, nên cứ một cú bấm là
+  // thêm hai lượt mạng chen vào cùng lúc với /sessions và /agents của chính trang đó - trình
+  // duyệt chỉ mở 6 kết nối một lúc, và /settings thì còn đi dò từng binary CLI trên đĩa. Chủ
+  // dự án 22/09: "load phần trợ lý và phần cài đặt rất chậm".
+  // Trong vài giây giữa hai cú bấm, hai thứ này không đổi, nên giữ lại một lát. Khoá theo
+  // BRAIN để đổi bộ não là hết hiệu lực ngay; đổi skill/model rồi thì gọi quenForm().
+  const FORM_TTL = 20000;
+  let _formCache = null;
+  async function duLieuForm() {
+    const b = brain();
+    if (_formCache && _formCache.brain === b && Date.now() - _formCache.luc < FORM_TTL) return _formCache.ds;
+    const ds = await Promise.all([
+      api(`/skills?brain=${encodeURIComponent(b)}`),
+      api("/settings"),
+    ]);
+    // Lượt hỏng (api() nuốt lỗi và trả {}) thì ĐỪNG nhớ: nhớ một câu trả lời rỗng 20 giây là
+    // form mở lên không có skill nào, không có model nào, mà không gì nói vì sao.
+    if ((ds[0] && ds[0].skills) || (ds[1] && ds[1].model)) _formCache = { brain: b, luc: Date.now(), ds: ds };
+    return ds;
+  }
+  function quenForm() { _formCache = null; }
+
+  // ===== Trợ lý ĐẦY ĐỦ (kèm system prompt) cho trình sửa =====
+  // Các danh sách nay xin bản NHẸ (`/agents?prompt=0`): đo trên brain 14 trợ lý, kèm prompt
+  // là 366 KB còn bỏ ra là 2.9 KB, mà cột trái chưa bao giờ hiện prompt. Đổi lại, mục truyền
+  // vào trình sửa thiếu `prompt` nên phải đi lấy riêng đúng một trợ lý.
+  //
+  // Lấy HỎNG thì trả `false`, KHÔNG rơi về chuỗi rỗng: một ô sửa mở ra trống nhìn y hệt một
+  // trợ lý chưa có prompt, bấm Lưu một cái là prompt thật bị ghi đè mất, lặng lẽ.
+  async function layAgentDay(a) {
+    if (!a || !a.slug) return null;                  // tạo mới: chưa có gì để lấy
+    if (typeof a.prompt === "string") return a;      // người gọi đã cầm bản đầy đủ
+    const url = `/agents/get?slug=${encodeURIComponent(a.slug)}&brain=${encodeURIComponent(brain())}`;
+    let r = await api(url);
+    // `{}` trơn = api() nuốt một lần hết giờ / rớt mạng, KHÁC với `{error}` (server nói không
+    // có trợ lý này). Máy chủ bận một lượt chat là đủ để lần đầu trượt, nên thử lại đúng một
+    // lần trước khi báo lỗi. Trước đây trượt một lần là hiện ngay "Không tải được trợ lý này"
+    // dù trợ lý vẫn nằm nguyên đó (chủ repo gặp 23/09).
+    if (r && !r.error && typeof r.prompt !== "string") r = await api(url);
+    if (!r || typeof r.prompt !== "string") return false;
+    return Object.assign({}, a, r);
+  }
+  // Đổi bộ não / lưu skill / cắm key model ở trang khác đều làm bộ nhớ tạm này sai.
+  try {
+    const _gs = document.getElementById("graphSource");
+    if (_gs) _gs.addEventListener("change", quenForm);
+  } catch (e) { /* không có ô chọn brain thì thôi */ }
+
   // ===== Xuất / Nhập năng lực (chia sẻ agent/skill/workflow qua file .zip) =====
   // slug nhận 1 chuỗi hoặc mảng (chọn nhiều) - server gói tất cả vào MỘT file .zip.
   const exportUrl = (kind, slug) => `/export?kind=${kind}&slug=${encodeURIComponent(Array.isArray(slug) ? slug.join(",") : slug)}&brain=${encodeURIComponent(brain())}&deps=1`;
@@ -87,6 +136,8 @@
     workflows: loadWorkflows, agents: loadAgents, skills: loadSkills,
     // Trang Cộng sự mượn chính hai trình sửa này (xem editAgent/editWorkflow) + nút Xuất.
     editAgent: editAgent, editWorkflow: editWorkflow, exportItem: exportItem, importItems: importItems,
+    // Trang Models gọi sau khi cắm/ngắt key: ô chọn model trong form trợ lý dựng từ /settings.
+    quenForm: quenForm,
   };
   const _studioBtn = document.getElementById("studioOpenBtn");
   if (_studioBtn) _studioBtn.addEventListener("click", () => window.openStudio("workspace"));
@@ -113,7 +164,9 @@
   // `{}["__proto__"]` trả về Object.prototype chứ không phải undefined, nên một mã lạ đúng
   // tên đó sẽ lọt qua nhánh "|| ws.save_failed".
   const _MA_LOI_LUU = Object.assign(Object.create(null),
-    { avatar_shape: "ws.err_avatar_shape", avatar_palette: "ws.err_avatar_palette" });
+    { avatar_shape: "ws.err_avatar_shape", avatar_palette: "ws.err_avatar_palette",
+      avatar_color: "ws.err_avatar_palette", avatar_eye: "ws.err_avatar_eye",
+      avatar_eye_color: "ws.err_avatar_eye", avatar_eye_size: "ws.err_avatar_eye" });
   const loiLuu = (ma) => t(_MA_LOI_LUU[String(ma == null ? "" : ma)] || "ws.save_failed");
 
   // Bỏ dấu để gõ "viet email" vẫn ra "Viết email".
@@ -418,7 +471,8 @@
   // chọn agent.)
   async function editWorkflow(w, tuyChon) {
     tuyChon = tuyChon || {};
-    const ad = await api(`/agents?brain=${encodeURIComponent(brain())}`);
+    // Bản NHẸ: ô chọn agent của từng bước chỉ cần slug + tên (xem layAgentDay).
+    const ad = await api(`/agents?brain=${encodeURIComponent(brain())}&prompt=0`);
     agentsCache = ad.agents || [];
     if (!agentsCache.length) { alert(t("studio.no_agents")); return; }
     const box = document.getElementById("editorBox");
@@ -540,7 +594,8 @@
     const panel = document.getElementById("panel-agents");
     if (!panel) return;   // cùng lý do với loadWorkflows: trang Trợ lý riêng đã gộp vào Cộng sự
     panel.innerHTML = `<div class="empty">${esc(t("common.loading"))}</div>`;
-    const d = await api(`/agents?brain=${encodeURIComponent(brain())}`);
+    // Bản NHẸ: lưới thẻ chỉ hiện tên/vai/nhóm; bấm Sửa thì layAgentDay() lấy prompt.
+    const d = await api(`/agents?brain=${encodeURIComponent(brain())}&prompt=0`);
     _agState.agents = d.agents || [];
     _sel.agent.clear();   // nạp lại trang là làm mới lựa chọn
     refreshStats();
@@ -601,10 +656,25 @@
     opts = opts || {};
     // Có host thì KHÔNG đụng vào modal: mở/đóng nó sẽ che mất cả trang Cộng sự.
     const moDong = (mo) => { if (!opts.host) editor.classList.toggle("open", mo); };
-    const [sd, st] = await Promise.all([
-      api(`/skills?brain=${encodeURIComponent(brain())}`),
-      api("/settings"),
-    ]);
+    // Nói "đang tải" ngay: ở cột phải trang Cộng sự, khung này trống trơn suốt lúc chờ mạng
+    // trông y như app bị treo.
+    if (opts.host && opts.host.isConnected && !opts.host.childElementCount) {
+      opts.host.innerHTML = `<div class="empty">${esc(t("common.loading"))}</div>`;
+    }
+    // Song song, không nối đuôi: hai lượt của form và một lượt lấy prompt cùng đi một nhịp.
+    const [dsForm, day] = await Promise.all([duLieuForm(), layAgentDay(a)]);
+    const [sd, st] = dsForm;
+    if (day === false) {
+      const hong = opts.host || document.getElementById("editorBox");
+      if (hong && (!opts.host || hong.isConnected)) {
+        hong.innerHTML = `<div class="empty">${esc(t("studio.ag_load_err"))}</div>` +
+          `<div class="editor-actions"><button class="s-btn" id="agRetry">${esc(t("common.retry"))}</button></div>`;
+        hong.querySelector("#agRetry").onclick = () => editAgent(a, opts);
+        moDong(true);
+      }
+      return;
+    }
+    if (day) a = day;
     const skills = sd.skills || [];
     // CÙNG nguồn với trình chọn model chính (/settings → model.providers), nên thêm nhà mới
     // ở trang Models là ô này có ngay - và giờ là cùng cả THÂN BẢNG CHỌN (model-list.js).
@@ -670,7 +740,12 @@
     const nutTaiLieu = box.querySelector("#agAssets");
     if (nutTaiLieu) nutTaiLieu.onclick = () => {
       if (!(a && a.slug)) return;
-      if (window.JavisChatSide && window.JavisChatSide.moKhungAgent)
+      // Ở trang Cộng sự (opts.host) thì mở ngăn có công tắc phạm vi, đứng sẵn ở "của trợ lý":
+      // bấm từ Cài đặt trợ lý là ý muốn gắn cho trợ lý. Ở Studio thì cuộc đang mở không liên
+      // quan gì tới trợ lý này, nên vẫn mở ngăn riêng của trợ lý như cũ.
+      if (opts.host && window.JavisChatSide && window.JavisChatSide.moTaiLieu)
+        window.JavisChatSide.moTaiLieu(a.slug, a.name || a.slug, "agent");
+      else if (window.JavisChatSide && window.JavisChatSide.moKhungAgent)
         window.JavisChatSide.moKhungAgent(a.slug, a.name || a.slug);
     };
     box.querySelectorAll("label").forEach(label => { const input = label.nextElementSibling; if (input && /^(INPUT|SELECT|TEXTAREA)$/.test(input.tagName)) label.htmlFor = input.id; });
@@ -761,7 +836,7 @@
         // người dùng vừa đổi ở cột trái. Server thấy thiếu field là giữ nguyên nhóm đang có.
         const saved = await api("/agents", { method: "POST", body: fd({ name, role: box.querySelector("#agRole").value,
           prompt: box.querySelector("#agPrompt").value, skills: sk, model: mName, model_provider: mProv,
-          slug: a ? a.slug : "", brain: brain(), ...(avatar ? {avatar_shape: avatar.shape, avatar_palette: avatar.palette} : {}) }) });
+          slug: a ? a.slug : "", brain: brain(), ...(avatar ? window.JavisAvatar.formFields(avatar) : {}) }) });
         if (!saved.ok) { alert(loiLuu(saved.error)); return; }
         moDong(false);
         if (opts.onSaved) await opts.onSaved(saved); else loadAgents();
@@ -989,6 +1064,7 @@
 
   async function toggleSkill(s, enabled) {
     const r = await api("/skills/toggle", { method: "POST", body: fd({ slug: s.slug, enabled: enabled ? "1" : "0", brain: brain() }) });
+    quenForm();   // danh sách skill của form trợ lý vừa đổi
     if (r && r.error) { alert(t("studio.toggle_err") + " " + r.error); }
     s.enabled = enabled;
     renderSkillUI(); refreshStats();
@@ -1017,6 +1093,7 @@
         name, group: panel.querySelector("#skGroup").value.trim() || "Chung",
         description: panel.querySelector("#skDesc").value, body: panel.querySelector("#skBody").value,
         slug: sk.slug || "", brain: brain() }) });
+      quenForm();
       loadSkills();
     };
   }
@@ -1024,6 +1101,7 @@
   async function deleteSkill(slug, name) {
     if (!confirm(t("studio.del_sk", { ten: name, slug }))) return;
     await api("/skills/delete", { method: "POST", body: fd({ slug, brain: brain() }) });
+    quenForm();
     loadSkills();
   }
 })();

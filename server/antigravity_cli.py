@@ -1400,6 +1400,21 @@ class AntigravityCLI:
                     proc.stdin.close()
                 except Exception:
                     pass
+                # Đọc stderr SONG SONG ở luồng riêng. Bản cũ đọc hết stdout rồi mới đọc stderr:
+                # agy mà ghi quá ~64KB vào stderr (log MCP, cảnh báo) thì ống đầy, nó đứng chờ
+                # ghi, còn mình đứng chờ stdout đóng - lượt treo tới khi bị cắt.
+                phan_loi: list = []
+
+                def _doc_loi():
+                    try:
+                        for dl in iter(proc.stderr.readline, ""):
+                            phan_loi.append(dl)
+                    except Exception:
+                        pass
+
+                luong_loi = threading.Thread(target=_doc_loi, daemon=True,
+                                             name=f"javis-agy-err-{self.tag}")
+                luong_loi.start()
                 for line in iter(proc.stdout.readline, ""):
                     line = line.strip()
                     if not line:
@@ -1408,12 +1423,9 @@ class AntigravityCLI:
                         loop.call_soon_threadsafe(hang.put_nowait, json.loads(line))
                     except json.JSONDecodeError:
                         loop.call_soon_threadsafe(hang.put_nowait, {"_raw": line})
-                err = ""
-                try:
-                    err = (proc.stderr.read() or "").strip()
-                except Exception:
-                    pass
                 ma = proc.wait(timeout=self.timeout)
+                luong_loi.join(timeout=5)
+                err = "".join(phan_loi).strip()
                 if ma != 0 or err:
                     loop.call_soon_threadsafe(hang.put_nowait, {"_exit": ma, "_err": err})
             except subprocess.TimeoutExpired:
@@ -1551,6 +1563,30 @@ class AntigravityCLI:
             _gop = dict(_sub)
             _gop.update({k: v for k, v in ev.items() if k != t})
             ev = _gop
+
+        # LOẠI bước thật nằm ở `step_type`, không phải ở tầng ngoài. Đo trên agy 1.2.8: mọi
+        # bước đều đi chung một tên sự kiện `step_update`, và bước gọi công cụ là
+        #   {"step_type":"tool","tool_name":"run_command","state":"ACTIVE"|"DONE",
+        #    "step_index":2,"tool_info":{"name":...,"parameters":{...}}}
+        # Nhánh `tool_use/tool_call/tool` bên dưới chỉ khớp khi loại nằm ở tầng ngoài, hình
+        # dạng CLI thật không dùng - nên trước bản này mọi lần agy gọi công cụ đều rơi vào hư
+        # không: khung chat không vẽ được tiến trình nào, và `co_tool` không bật lên nên Javis
+        # tưởng lượt đó chưa đụng gì bên ngoài và cho phép chạy lại.
+        if str(ev.get("step_type") or "").lower() == "tool":
+            # `state` đi ACTIVE rồi DONE cho CÙNG một `step_index`, nên phải đếm theo index
+            # chứ không theo số dòng - không thì một lần gọi hiện thành hai bước.
+            kho = chan if isinstance(chan, dict) else {}
+            da_bao = kho.setdefault("_buoc_tool", set())
+            idx = str(ev.get("step_index") or ev.get("tool_id") or ev.get("id") or "")
+            ten = str(ev.get("tool_name") or (ev.get("tool_info") or {}).get("name") or "")
+            ra = []
+            if idx not in da_bao:
+                da_bao.add(idx)
+                ra.append({"type": "tool_call", "name": ten, "id": idx,
+                           "input": (ev.get("tool_info") or {}).get("parameters") or {}})
+            if str(ev.get("state") or "").upper() == "DONE":
+                ra.append({"type": "tool_result", "id": idx, "status": "", "content": ""})
+            return ra
 
         # Mở mạch: nhặt id hội thoại để lượt sau nối lại được.
         if t in ("init", "session", "conversation", "start", "system"):

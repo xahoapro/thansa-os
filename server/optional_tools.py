@@ -40,6 +40,11 @@ from config import STATE_DIR
 BROWSERS_DIR = STATE_DIR / "browsers"
 ENV_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
 
+# Thư mục thư viện Python mà mục "Thư viện lái trình duyệt (playwright)" từng cài vào, phục vụ
+# DUY NHẤT model ChatGPT Web. Model đó gỡ ở 0.64.20, nên thư mục này (chừng 140 MB) thành rác
+# trên ổ gắn ngoài. Giữ lại đường dẫn chỉ để `don_thu_vien_cu()` dọn nó.
+PYLIBS_DIR = STATE_DIR / "pylibs"
+
 # Trần thời gian tải. Mạng VPS chậm vẫn phải xong trong chừng này, còn treo lâu hơn là hỏng
 # thật chứ không phải chậm - và treo im vô hạn là kiểu lỗi tệ nhất (không kết quả, không lỗi).
 TAI_TIMEOUT = 900.0
@@ -97,15 +102,169 @@ def _chrome_he_thong() -> str:
     return ""
 
 
-def _da_tai() -> str:
-    """Thư mục bản Chromium Javis đã tải, rỗng nếu chưa có."""
+# Một lần `playwright install chromium` để lại HAI thư mục, không phải một, và hai file chạy
+# mang TÊN KHÁC NHAU:
+#
+#     browsers/chromium-1194/chrome-linux/chrome
+#     browsers/chromium_headless_shell-1194/chrome-linux/headless_shell
+#
+# Đây là gốc của lỗi chủ repo báo 22/09: `_da_tai()` cũ trả về thư mục ĐẦU TIÊN mà `iterdir()`
+# đưa ra (thứ tự trên đĩa, không đoán trước được), rồi chỗ dò file chạy chỉ tìm mỗi tên
+# `chrome`. Rơi vào thư mục headless_shell là không thấy gì, nên trang Công cụ báo "Sẵn sàng"
+# còn chỗ dùng thật báo "Chưa có trình duyệt nào Javis lái được" - cùng một máy, hai câu trả
+# lời ngược nhau.
+# Đường dẫn QUEN, thử trước vì nó nhanh (vài lần `is_file`). Bản đầy đủ trước, bản headless
+# rút gọn sau, ba hệ điều hành trong cùng một danh sách - một thư mục build chỉ chứa đúng một
+# trong số này nên không cần hỏi đang chạy hệ nào.
+_BINARY_TRONG_BUILD = (
+    "chrome-linux/chrome",
+    "chrome-win/chrome.exe",
+    "chrome-mac/Chromium.app/Contents/MacOS/Chromium",
+    "chrome-linux/headless_shell",
+    "chrome-win/headless_shell.exe",
+    "chrome-mac/headless_shell",
+)
+
+# TÊN file chạy. Đây mới là thứ bền: thư mục bọc ngoài đổi theo bản Playwright và theo kiến
+# trúc máy (`chrome-linux`, `chrome-linux64`, `chrome-linux-arm64`... - đọc thẳng trong
+# playwright-core mới thấy đủ), còn tên file thì không đổi.
+_TEN_FILE_CHAY = ("chrome", "chrome.exe", "headless_shell", "headless_shell.exe", "Chromium")
+
+# Trần độ sâu khi quét. Bố cục sâu nhất đang biết là bản macOS:
+# chrome-mac/Chromium.app/Contents/MacOS/Chromium = 5 cấp. Có trần để một thư mục rác khổng lồ
+# nằm nhầm chỗ không kéo cả trang Models đứng hình.
+_SAU_QUET = 6
+
+
+def _binary_trong(thu_muc: Path) -> str:
+    """File chạy được bên trong MỘT thư mục build của Playwright, rỗng nếu không có.
+
+    HAI vòng, và vòng thứ hai là lý do 0.64.10 tồn tại. 0.64.9 chỉ có vòng một - một danh sách
+    đường dẫn gõ cứng - nên chủ repo cập nhật xong vẫn thấy y nguyên câu "chưa có trình duyệt":
+    máy họ để file chạy ở một bố cục không nằm trong danh sách đó. Gõ cứng đường dẫn của một
+    thứ người khác sinh ra là cược rằng họ không bao giờ đổi, mà Playwright thì đã đổi vài lần
+    (thêm bản headless_shell, tách thư mục theo kiến trúc máy).
+
+    Nên khi vòng một không thấy gì, quét thật thư mục tìm ĐÚNG TÊN file chạy. Chậm hơn, nhưng
+    chỉ chạy đúng lúc cách nhanh đã thất bại, và nó không phụ thuộc vào việc đoán đúng tương lai.
+    """
+    for ten in _BINARY_TRONG_BUILD:
+        try:
+            p = thu_muc / ten
+            if p.is_file():
+                return str(p)
+        except OSError:
+            pass
+
+    goc = len(thu_muc.parts)
+    tim_thay = ""
     try:
-        for d in BROWSERS_DIR.iterdir():
-            if d.is_dir() and d.name.startswith(("chromium", "chromium_headless_shell")):
-                return str(d)
+        for p in thu_muc.rglob("*"):
+            if len(p.parts) - goc > _SAU_QUET:
+                continue
+            if p.name not in _TEN_FILE_CHAY:
+                continue
+            try:
+                if not p.is_file():
+                    continue
+            except OSError:
+                continue
+            # `chrome` được ưu tiên hơn `headless_shell`: bản đầy đủ chạy được cả có cửa sổ lẫn
+            # ẩn, bản rút gọn chỉ chạy ẩn. Thấy bản đầy đủ thì lấy luôn, còn bản rút gọn thì
+            # giữ lại rồi tìm tiếp.
+            if p.name in ("chrome", "chrome.exe", "Chromium"):
+                return str(p)
+            tim_thay = tim_thay or str(p)
     except OSError:
         pass
-    return ""
+    return tim_thay
+
+
+def chan_doan_trinh_duyet() -> str:
+    """Một câu nói Javis đã tìm Ở ĐÂU và thấy GÌ. Rỗng khi không có gì đáng nói.
+
+    Vì sao đáng có: "Chưa có trình duyệt nào Javis lái được" là câu cụt - người đọc đã bấm tải
+    và thấy báo xong rồi, nên câu đó chỉ nói họ sai mà không nói sai ở đâu. Chủ repo mắc kẹt ở
+    đúng câu này qua hai phiên bản (22/09), và mỗi vòng hỏi lại tốn một lần cập nhật. Câu chẩn
+    đoán biến một ảnh chụp màn hình thành đủ dữ kiện để sửa.
+    """
+    try:
+        if not BROWSERS_DIR.exists():
+            return f"Javis đã tìm trong {BROWSERS_DIR} nhưng thư mục đó chưa có."
+        ten = sorted(d.name for d in BROWSERS_DIR.iterdir() if d.is_dir())
+        if not ten:
+            return f"Javis đã tìm trong {BROWSERS_DIR} nhưng thư mục đó rỗng."
+        return (f"Javis đã tìm trong {BROWSERS_DIR}, thấy {', '.join(ten[:6])} "
+                f"nhưng không có file chạy nào bên trong.")
+    except OSError as e:
+        return f"Javis không đọc được {BROWSERS_DIR}: {e}"
+
+
+def _so_ban(ten: str) -> int:
+    """Số bản dựng ở đuôi tên thư mục (`chromium-1194` -> 1194). 0 khi không có."""
+    duoi = ten.rsplit("-", 1)[-1]
+    return int(duoi) if duoi.isdigit() else 0
+
+
+def _cac_ban_da_tai() -> list:
+    """Mọi thư mục build Chromium trong BROWSERS_DIR, theo thứ tự ƯU TIÊN.
+
+    Bản ĐẦY ĐỦ đứng trước bản headless rút gọn (xem `_binary_trong`), bản mới đứng trước bản
+    cũ. Thứ tự phải CỐ ĐỊNH chứ
+    không phải thứ tự `iterdir()` trả về: cùng một máy mà mỗi lần gọi ra một kết quả khác là
+    kiểu lỗi không ai dựng lại được.
+    """
+    try:
+        ds = [d for d in BROWSERS_DIR.iterdir()
+              if d.is_dir() and d.name.startswith("chromium")]
+    except OSError:
+        return []
+    return sorted(ds, key=lambda d: (d.name.startswith("chromium_headless_shell"),
+                                     -_so_ban(d.name), d.name))
+
+
+def duong_dan_chrome() -> str:
+    """Đường dẫn FILE CHẠY ĐƯỢC của trình duyệt trên máy này, rỗng nếu máy không có.
+
+    MỘT nguồn sự thật cho trang Công cụ và mọi chỗ dùng trình duyệt. Trước 0.64.9 mỗi bên tự
+    dò một kiểu, nên hai trang nói ngược nhau mà không bên nào sai theo logic của chính nó. Gộp
+    lại đây thì cảnh đó không dựng lại được nữa: thẻ báo "Sẵn sàng" đúng khi và chỉ khi có một
+    file chạy được thật.
+    """
+    for d in _cac_ban_da_tai():
+        if (duong := _binary_trong(d)):
+            return duong
+    return _chrome_he_thong()
+
+
+def _da_tai() -> str:
+    """Thư mục bản Chromium Javis đã tải, rỗng nếu chưa có.
+
+    CỐ Ý không đòi thư mục phải có file chạy: hàm này còn trả lời câu "có gì để gỡ không" và
+    "tính dung lượng ở đâu". Một lần tải hỏng dở dang vẫn phải gỡ được bằng nút, không thì
+    người dùng mắc kẹt với một thư mục rác mà giao diện coi như không tồn tại.
+    """
+    ds = _cac_ban_da_tai()
+    return str(ds[0]) if ds else ""
+
+
+def don_thu_vien_cu() -> bool:
+    """Xoá thư mục thư viện playwright do model ChatGPT Web (đã gỡ ở 0.64.20) để lại.
+
+    An toàn để xoá thẳng: CHỈ nút "Thư viện lái trình duyệt (playwright)" từng ghi vào đây
+    (`pip install --target`), và thứ duy nhất dùng thư viện đó là model đã gỡ. Không dọn thì
+    ai từng bấm cài mang theo chừng 140 MB rác trên ổ gắn ngoài mãi mãi, mà giao diện không
+    còn nút nào để gỡ. Trả True khi có dọn.
+    """
+    try:
+        if PYLIBS_DIR.is_dir():
+            shutil.rmtree(PYLIBS_DIR, ignore_errors=True)
+            print(f"[cong-cu] đã dọn {PYLIBS_DIR} (thư viện của model ChatGPT Web đã gỡ)",
+                  file=sys.stderr)
+            return True
+    except OSError:
+        pass
+    return False
 
 
 def _dung_luong(p: Path) -> int:
@@ -126,30 +285,43 @@ def doc_mb(so_byte: int) -> str:
     return f"{so_byte / 1024 / 1024:.0f} MB" if so_byte else ""
 
 
+def _trang_thai_browser(d: dict, viec: dict) -> dict:
+    dang_chay = bool(viec.get("dang_chay"))
+    tai_ve = _da_tai()
+    # "Sẵn sàng" phải nghĩa là CÓ FILE CHẠY ĐƯỢC, không phải "có thư mục". Thẻ này nói đúng
+    # một điều người dùng quan tâm: bấm tiếp được chưa. Đọc thư mục rồi báo xong là đúng chữ
+    # mà sai việc, và chỗ dùng thật ở trang Models sẽ cãi lại ngay.
+    chay_duoc = duong_dan_chrome()
+    tu_tai = bool(tai_ve and chay_duoc and chay_duoc.startswith(str(BROWSERS_DIR)))
+    if dang_chay:
+        tt, ly_do = "dang_cai", "Đang tải trình duyệt về, việc này mất vài phút."
+    elif tu_tai:
+        tt, ly_do = "san_sang", "Javis đã tải sẵn một bản Chromium riêng."
+    elif chay_duoc:
+        tt, ly_do = "san_sang", f"Dùng trình duyệt có sẵn trên máy: {chay_duoc}"
+    elif tai_ve:
+        tt, ly_do = "chua_cai", ("Có thư mục trình duyệt nhưng thiếu file chạy, bản tải về "
+                                 "hỏng dở. Bấm Gỡ rồi tải lại. " + chan_doan_trinh_duyet())
+    else:
+        tt, ly_do = "chua_cai", "Máy này chưa có trình duyệt nào Javis lái được."
+    d.update({
+        "trang_thai": tt, "ly_do": ly_do,
+        "go_duoc": bool(tai_ve),           # chỉ gỡ được thứ CHÍNH JAVIS tải về
+        "duong_dan": chay_duoc or tai_ve,
+        "dung_luong": doc_mb(_dung_luong(BROWSERS_DIR)) if tai_ve else "",
+    })
+    return d
+
+
 def trang_thai(cong_cu: str = "browser") -> dict:
     """Trạng thái một công cụ tuỳ chọn, đủ để vẽ thẻ trên màn hình."""
     if cong_cu not in CONG_CU:
         return {"ok": False, "error": f"không có công cụ tên {cong_cu!r}"}
     d = dict(CONG_CU[cong_cu]())
     viec = _viec.get(cong_cu) or {}
-    dang_chay = bool(viec.get("dang_chay"))
-    tai_ve = _da_tai()
-    he_thong = "" if tai_ve else _chrome_he_thong()
-    if dang_chay:
-        tt, ly_do = "dang_cai", "Đang tải trình duyệt về, việc này mất vài phút."
-    elif tai_ve:
-        tt, ly_do = "san_sang", "Javis đã tải sẵn một bản Chromium riêng."
-    elif he_thong:
-        tt, ly_do = "san_sang", f"Dùng trình duyệt có sẵn trên máy: {he_thong}"
-    else:
-        tt, ly_do = "chua_cai", "Máy này chưa có trình duyệt nào Javis lái được."
+    d["ok"] = True
+    d = _trang_thai_browser(d, viec)
     d.update({
-        "ok": True,
-        "trang_thai": tt,
-        "ly_do": ly_do,
-        "go_duoc": bool(tai_ve),           # chỉ gỡ được thứ CHÍNH JAVIS tải về
-        "duong_dan": tai_ve or he_thong,
-        "dung_luong": doc_mb(_dung_luong(Path(tai_ve))) if tai_ve else "",
         "tien_do": viec.get("tien_do", ""),
         "log": viec.get("log", ""),
         "loi": viec.get("loi", ""),
@@ -174,22 +346,37 @@ def _ghi_log(cong_cu: str, dong: str) -> None:
             break
 
 
-async def _chay_tai(cong_cu: str) -> None:
-    """Tải trình duyệt. Chạy nền, mọi đường ra đều ghi lại trạng thái."""
-    v = _viec.setdefault(cong_cu, {})
-    v.update({"dang_chay": True, "loi": "", "log": "", "tien_do": "Đang chuẩn bị...", "bat_dau": time.time()})
+def _lenh_cai(cong_cu: str) -> tuple:
+    """(lệnh, thư mục chạy, env, trần giờ, câu lỗi khi không tìm thấy chương trình).
+
+    Gom ở đây để `_chay_tai` chỉ còn phần CHẠY: đọc log, đếm giờ, ghi trạng thái. Thêm công cụ
+    thứ ba sau này chỉ phải viết thêm một nhánh ở đây.
+    """
     BROWSERS_DIR.mkdir(parents=True, exist_ok=True)
     moi_truong = dict(os.environ)
     moi_truong[ENV_BROWSERS_PATH] = str(BROWSERS_DIR)
-    # `--only-shell`: chỉ tải bản headless shell, nhỏ hơn hẳn bản đầy đủ. Javis chạy ẩn cửa sổ
-    # nên không cần phần giao diện của trình duyệt.
-    lenh = ["npx", "-y", "playwright@latest", "install", "--only-shell", "chromium"]
+    # `--only-shell`: chỉ tải bản headless shell, nhỏ hơn hẳn bản đầy đủ, và đủ cho Playwright
+    # MCP chạy ẩn trên máy chủ. 0.64.18 từng đổi sang bản đầy đủ để model ChatGPT Web có cửa
+    # qua Cloudflare; model đó gỡ ở 0.64.20 nên quay về bản nhẹ. Máy nào đã tải bản đầy đủ thì
+    # vẫn dùng được, `duong_dan_chrome()` còn ưu tiên nó.
+    return (
+        ["npx", "-y", "playwright@latest", "install", "--only-shell", "chromium"],
+        str(BROWSERS_DIR), moi_truong, TAI_TIMEOUT,
+        "Máy này không có Node (npx), không tải được trình duyệt.",
+    )
+
+
+async def _chay_tai(cong_cu: str) -> None:
+    """Cài một công cụ tuỳ chọn. Chạy nền, mọi đường ra đều ghi lại trạng thái."""
+    v = _viec.setdefault(cong_cu, {})
+    v.update({"dang_chay": True, "loi": "", "log": "", "tien_do": "Đang chuẩn bị...", "bat_dau": time.time()})
+    lenh, thu_muc, moi_truong, tran_gio, loi_thieu = _lenh_cai(cong_cu)
     try:
         tt = await asyncio.create_subprocess_exec(
             *lenh, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
-            env=moi_truong, cwd=str(BROWSERS_DIR), **winproc.kwargs_no_window())
+            env=moi_truong, cwd=thu_muc, **winproc.kwargs_no_window())
     except FileNotFoundError:
-        v.update({"dang_chay": False, "loi": "Máy này không có Node (npx), không tải được trình duyệt."})
+        v.update({"dang_chay": False, "loi": loi_thieu})
         return
     except Exception as e:
         v.update({"dang_chay": False, "loi": f"{type(e).__name__}: {e}"})
@@ -203,7 +390,7 @@ async def _chay_tai(cong_cu: str) -> None:
             _ghi_log(cong_cu, khuc.decode("utf-8", "replace"))
 
     try:
-        await asyncio.wait_for(asyncio.gather(_doc(), tt.wait()), timeout=TAI_TIMEOUT)
+        await asyncio.wait_for(asyncio.gather(_doc(), tt.wait()), timeout=tran_gio)
         ma = tt.returncode
     except asyncio.TimeoutError:
         try:
@@ -211,7 +398,7 @@ async def _chay_tai(cong_cu: str) -> None:
         except Exception:
             pass
         v.update({"dang_chay": False,
-                  "loi": f"Tải quá {int(TAI_TIMEOUT // 60)} phút chưa xong nên đã dừng. Thử lại khi mạng rảnh hơn."})
+                  "loi": f"Chạy quá {int(tran_gio // 60)} phút chưa xong nên đã dừng. Thử lại khi mạng rảnh hơn."})
         return
     except asyncio.CancelledError:
         try:
@@ -226,9 +413,9 @@ async def _chay_tai(cong_cu: str) -> None:
 
     v["dang_chay"] = False
     if ma != 0:
-        v["loi"] = f"Lệnh tải trả mã lỗi {ma}. Xem log bên dưới."
-    elif not _da_tai():
-        v["loi"] = "Lệnh chạy xong nhưng không thấy trình duyệt đâu."
+        v["loi"] = f"Lệnh cài trả mã lỗi {ma}. Xem log bên dưới."
+    elif not duong_dan_chrome():
+        v["loi"] = "Lệnh chạy xong nhưng không thấy thứ vừa cài đâu."
     else:
         v["tien_do"] = "Xong."
     print(f"[cong-cu] tải {cong_cu}: mã {ma}, lỗi={v.get('loi') or 'không'}", file=sys.stderr)
@@ -250,11 +437,11 @@ def go(cong_cu: str = "browser") -> dict:
     """Xoá bản Javis tự tải. KHÔNG bao giờ đụng tới trình duyệt có sẵn của máy."""
     if cong_cu not in CONG_CU:
         return {"ok": False, "error": f"không có công cụ tên {cong_cu!r}"}
-    d = _da_tai()
-    if not d:
-        return {"ok": False, "error": "Không có bản nào do Javis tải để gỡ."}
+    goc = BROWSERS_DIR
+    if not _da_tai():
+        return {"ok": False, "error": "Không có bản nào do Javis cài để gỡ."}
     try:
-        shutil.rmtree(BROWSERS_DIR, ignore_errors=True)
+        shutil.rmtree(goc, ignore_errors=True)
         _viec.pop(cong_cu, None)
         return {"ok": True}
     except Exception as e:

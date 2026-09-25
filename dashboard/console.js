@@ -35,7 +35,9 @@
     learn: "brain",
     kanban: "square-kanban",
     terminal: "terminal",
-    coding: "git-branch",
+    // </> chứ không phải "một file mã": trang này là chỗ SAI VIỆC cho engine trên một thư
+    // mục, không phải chỗ mở một file. Ký hiệu </> ai nhìn cũng hiểu ngay là lập trình.
+    coding: "code-xml",
     models: "cpu",
     channels: "send",
     mcp: "plug",
@@ -61,6 +63,9 @@
   // Icon cho TẦNG 1 (nhãn nhóm) - chỉ dùng ở header nhóm rail.
   const GICON = {
     "Bộ não": ic("brain"),
+    // Giữ "file-code" như trước khi có mục Coding. 0.63.1 từng đổi sang "wrench" để nhường
+    // icon cho mục con, nhưng 0.63.4 mục con đã sang "code-xml" nên không còn trùng nữa, mà
+    // cờ lê thì nói "sửa chữa, cài đặt" chứ không nói "mã nguồn". Chủ dự án đòi trả lại.
     "Code": ic("file-code"),
     "Năng lực": ic("lightbulb"),
     "Việc": ic("clipboard-check"),
@@ -265,10 +270,14 @@
 
   // ---- Điều khiển graph: chỉ chạy khi đang ở cockpit + không lite + không mở Studio ----
   function recomputeGraph() {
+    // Về tới màn chính = lúc trả nợ những việc app.js đã HOÃN khi đổi brain (đồ thị, số ký ức,
+    // số cộng sự, cờ vault). Gọi TRƯỚC khi hỏi `g` vì nợ vẫn phải trả kể cả khi không có đồ
+    // thị nào để đánh thức (máy yếu / chế độ lite), và nó tự kiểm "đang ở màn chính chưa".
+    const active = window.Alpine ? Alpine.store("nav").active : "home";
+    if (active === "home") { try { if (window.JavisCockpit) window.JavisCockpit.veManChinh(); } catch (e) {} }
     const g = window.__javisGraph;
     if (!g) return;
     const studioOpen = !!document.getElementById("studio")?.classList.contains("open");
-    const active = window.Alpine ? Alpine.store("nav").active : "home";
     const shouldRun = !liteMode() && active === "home" && !studioOpen;
     if (shouldRun) g.wake(); else g.pause();
   }
@@ -1809,7 +1818,7 @@
         </div>
         <div class="wf-desc">${esc(p.description || "")}</div>
         <div class="wf-steps">${meta}${chips ? `<div style="margin-top:8px">${chips}</div>` : ""}${p.error ? `<div style="margin-top:6px;color:var(--red)">${esc(p.error)}</div>` : ""}</div>
-        <div class="wf-actions">${p.source === "pack"
+        <div class="wf-actions">${p.page ? `<a class="s-btn-ghost" href="${esc(safeHref(p.page))}" target="_blank" rel="noopener">${esc(window.t("cs.pl_open_page"))} ↗</a>` : ""}${p.source === "pack"
             ? `<button class="s-btn-ghost" data-goto-packs="1">${esc(window.t("cs.pl_manage_store"))}</button>`
             : p.removed
               ? `<button class="s-btn-ghost undel">${esc(window.t("store.reinstall"))}</button>`
@@ -4507,17 +4516,6 @@
         : String(e) };
     } finally { if (timer) clearTimeout(timer); }
   }
-  function parseKV(text, sep) {
-    const o = {};
-    (text || "").split("\n").forEach(line => {
-      line = line.trim(); if (!line) return;
-      let i = line.indexOf(sep); if (i < 0 && sep === ":") i = line.indexOf("=");
-      if (i < 0) return;
-      const k = line.slice(0, i).trim(), v = line.slice(i + 1).trim();
-      if (k) o[k] = v;
-    });
-    return o;
-  }
   // ==== Trang Kết nối: kho connector + đa tài khoản (qua MCP hub) ====
   const PERM_META = {
     readonly: { key: "cs.cn_perm_readonly", color: "var(--link-ink)" },
@@ -4641,6 +4639,9 @@
 
   // Kết nối lại GIỮ NGUYÊN connection (id, label, quyền, deny) - không xoá tạo lại.
   function reconnectAccount(el, c, con) {
+    // Kết nối TỰ THÊM không có ô key khai trong catalog để "thay key", nên kết nối lại chính là
+    // mở lại form của nó ở chế độ Sửa (đổi URL, header, lệnh, env).
+    if ((c.connector_id || "custom") === "custom" && c.auth !== "oauth") { closeConnModal(); return openMcpForm(el, c); }
     if ((c.auth || "") === "oauth" || (con && con.auth_type === "oauth")) {
       postJson("/connect/oauth/start", { id: c.id }).then(r => {
         if (!r || r.ok === false) { alert(window.t("cs.cn_signin_fail") + " " + ((r && r.error) || window.t("cs.cn_error_low"))); return; }
@@ -5105,6 +5106,8 @@
   function openAccountMenu(el, c, con) {
     const m = connModal(mHead(esc(c.label || window.t("cs.cn_account_fallback")))
       + '<div class="conn-menu">'
+      + ((c.connector_id || "custom") === "custom" && c.auth !== "oauth"
+          ? '<button class="conn-menu-btn" data-m="edit">' + ic("settings") + ' ' + esc(window.t("cs.mf_menu_edit")) + '</button>' : "")
       + '<button class="conn-menu-btn" data-m="test">' + ic("rotate-cw") + ' ' + esc(window.t("cs.cn_menu_test")) + '</button>'
       + '<button class="conn-menu-btn" data-m="rekey">' + ic("repeat") + ' ' + esc(window.t("cs.cn_menu_rekey")) + '</button>'
       + '<button class="conn-menu-btn" data-m="default"' + (c.is_default ? " disabled" : "") + '>' + ic("star") + ' ' + esc(window.t("cs.cn_menu_default")) + '</button>'
@@ -5124,6 +5127,8 @@
         note.textContent = window.t("cs.cn_testing");
         const r = await postJson("/connect/test", { id: c.id });
         note.innerHTML = r.ok ? CHECK_ICON + " OK - " + esc(window.t("cs.cn_tools_n", { so: r.tools || 0 })) + (r.label ? " (" + esc(r.label) + ")" : "") : WARN_ICON + " " + esc(r.error || window.t("cs.cn_error_low"));
+      } else if (act === "edit") {
+        closeConnModal(); openMcpForm(el, c);
       } else if (act === "rekey") {
         closeConnModal(); reconnectAccount(el, c, con);
       } else if (act === "default") {
@@ -5535,57 +5540,229 @@
       });
     });
   }
+  // ---- Form "Tự thêm MCP" (thêm mới + SỬA) ----
+  // Làm lại 0.64.31 sau khi chủ repo báo: "thêm MCP hơi khó, ví dụ Composio thì thêm API key
+  // như nào, và thêm xong không có chỗ sửa lại". Ba lỗ của bản cũ:
+  //   1. Key phải gõ thành dòng "Tên-header: giá-trị" trong một ô văn bản thô, không ai nói cho
+  //      người dùng biết tên header là gì. Composio đưa `x-consumer-api-key`, người ta dán mỗi
+  //      cái key vào là hỏng mà không có lỗi gì.
+  //   2. Chế độ Sửa có sẵn trong hàm này nhưng KHÔNG nút nào gọi tới: menu "Kết nối lại" của
+  //      kết nối tự thêm rơi vào hộp "không có trường key để thay".
+  //   3. Lưu xong là đóng, không thử kết nối, nên sai URL/key chỉ lộ ra lúc đang chat.
+  // Giờ: dán nguyên cấu hình của nhà cung cấp (URL, JSON mcpServers, lệnh `claude mcp add`,
+  // `npx ...`) là tự điền; key nhập theo từng dòng tên + giá trị; lưu xong kiểm tra luôn.
+  // Phần đọc cấu hình nằm ở mcp-form-parse.js (thuần, có test node).
   function openMcpForm(el, server) {
-    const edit = !!server;
-    let modal = document.getElementById("mcpAddModal");
-    if (!modal) { modal = document.createElement("div"); modal.id = "mcpAddModal"; modal.className = "mp-overlay"; document.body.appendChild(modal); }
-    const keys = edit ? (server.header_keys || []).concat(server.env_keys || []) : [];
-    const credPh = edit && keys.length ? esc(window.t("cs.cn_cred_keep", { ds: keys.join(", ") })) : esc(window.t("cs.cn_cred_ph"));
-    modal.innerHTML = `
-      <style>#mcpAddModal .mcp-lb{display:flex;flex-direction:column;gap:4px;font-size:14px;opacity:.85}#mcpAddModal .mcp-lb input,#mcpAddModal .mcp-lb select,#mcpAddModal .mcp-lb textarea{width:100%}</style>
-      <div class="mp-box" style="max-width:560px">
-        <div class="mp-head"><div class="mp-title">${esc(window.t(edit ? "cs.cn_mcp_edit_head" : "cs.cn_mcp_add_head"))}</div><button class="mp-x" data-act="close">${X_ICON}</button></div>
-        <div style="padding:14px 18px;display:flex;flex-direction:column;gap:10px">
-          <label class="mcp-lb">${esc(window.t("cs.cn_mcp_name"))}<input class="js-input" id="mName" placeholder="${esc(window.t("cs.cn_mcp_name_ph"))}" value="${edit ? esc(server.name) : ""}"></label>
-          <label class="mcp-lb">Transport<select class="js-input" id="mTransport"><option value="http">HTTP</option><option value="sse">SSE</option><option value="stdio">stdio</option></select></label>
-          <label class="mcp-lb" id="mUrlWrap">URL<input class="js-input" id="mUrl" placeholder="${esc(window.t("cs.cn_mcp_url_ph"))}" value="${edit ? esc(server.url || "") : ""}"></label>
-          <label class="mcp-lb" id="mCmdWrap" style="display:none">${esc(window.t("cs.cn_mcp_cmd"))}<input class="js-input" id="mCmd" placeholder="${esc(window.t("cs.cn_mcp_cmd_ph"))}" value="${edit ? esc(((server.command || "") + " " + (server.args || []).join(" ")).trim()) : ""}"></label>
-          <label class="mcp-lb" id="mCredWrap">${esc(window.t("cs.cn_mcp_header"))}<textarea class="js-input" id="mCred" rows="3" placeholder="${credPh}"></textarea></label>
-        </div>
-        <div class="mp-foot"><span class="mp-note" id="mErr"></span><div><button class="mp-btn" data-act="close">${esc(window.t("common.cancel"))}</button><button class="mp-btn primary" id="mSave">${esc(window.t(edit ? "common.save" : "proj.add"))}</button></div></div>
-      </div>`;
-    const $ = (id) => modal.querySelector(id);
-    if (edit) $("#mTransport").value = server.transport || "http";
-    const sync = () => {
-      const t = $("#mTransport").value;
-      $("#mUrlWrap").style.display = (t === "stdio") ? "none" : "";
-      $("#mCmdWrap").style.display = (t === "stdio") ? "" : "none";
-      $("#mCredWrap").childNodes[0].nodeValue = window.t((t === "stdio") ? "cs.cn_mcp_env" : "cs.cn_mcp_header2");
+    const P = window.JavisMcpParse;
+    let editId = server ? server.id : "";
+    const eyeBtn = '<button type="button" class="mcpf-eye" data-eye title="' + esc(window.t("cs.mf_show")) + '">' + ic("eye") + '</button>';
+    const dongKey = (ten, daLuu) => {
+      const phV = daLuu ? window.t("cs.mf_saved_ph") : window.t("cs.mf_key_val_ph");
+      return '<div class="mcpf-dong">'
+      + '<input class="js-input mcpf-k" list="mcpfGoiY" autocomplete="off" spellcheck="false" value="' + esc(ten || "") + '" placeholder="' + esc(window.t("cs.mf_key_name_ph")) + '">'
+      + '<span class="mcpf-gt"><input class="js-input mcpf-v" type="password" autocomplete="new-password" spellcheck="false" data-daluu="' + (daLuu ? "1" : "") + '" placeholder="' + esc(phV) + '">' + eyeBtn + '</span>'
+      + '<button type="button" class="mcpf-xoa" data-xoa title="' + esc(window.t("cs.mf_remove_row")) + '">' + ic("x") + '</button>'
+      + '<div class="mcpf-nhac" hidden></div></div>';
     };
-    $("#mTransport").onchange = sync; sync();
-    modal.querySelectorAll('[data-act="close"]').forEach(b => b.onclick = () => modal.classList.remove("open"));
-    $("#mSave").onclick = async () => {
-      const t = $("#mTransport").value;
-      const body = { name: $("#mName").value.trim(), transport: t, url: $("#mUrl").value.trim() };
-      if (!body.name) { $("#mErr").textContent = window.t("cs.cn_mcp_need_name"); return; }
-      const cred = $("#mCred").value.trim();
-      if (t === "stdio") {
-        const parts = $("#mCmd").value.trim().split(/\s+/).filter(Boolean);
-        body.command = parts[0] || ""; body.args = parts.slice(1); body.auth = "env";
-        if (cred || !edit) body.env = parseKV(cred, "=");
-      } else {
-        body.auth = "header";
-        if (cred || !edit) body.headers = parseKV(cred, ":");   // edit + để trống = giữ key cũ
+    const m = connModal(pgDau(esc(window.t(server ? "cs.mf_edit_head" : "cs.mf_add_head")),
+        server ? pgPhu(server.label || server.name, "") : esc(window.t("cs.mf_sub")), { icon: "plug" })
+      + '<div class="pkm-than mcpf">'
+      + (server ? "" :
+        '<div class="mcpf-dan"><label class="mcpf-nhan" for="mfDan">' + ic("clipboard-paste") + esc(window.t("cs.mf_paste_lbl")) + '</label>'
+        + '<textarea class="js-input" id="mfDan" rows="3" spellcheck="false" placeholder="' + esc(window.t("cs.mf_paste_ph")) + '"></textarea>'
+        + '<div class="mcpf-dan-kq" id="mfDanKq">' + esc(window.t("cs.mf_paste_hint")) + '</div></div>')
+      + '<label class="mcpf-nhan" for="mfTen">' + esc(window.t("cs.mf_name")) + '</label>'
+      + '<input class="js-input" id="mfTen" placeholder="' + esc(window.t("cs.mf_name_ph")) + '">'
+      + '<div class="mcpf-nhan">' + esc(window.t("cs.mf_kind")) + '</div>'
+      + '<div class="mcpf-kieu" role="tablist">'
+      + '<button type="button" data-kieu="url">' + ic("link") + '<span><b>' + esc(window.t("cs.mf_kind_url")) + '</b><small>' + esc(window.t("cs.mf_kind_url_d")) + '</small></span></button>'
+      + '<button type="button" data-kieu="stdio">' + ic("terminal") + '<span><b>' + esc(window.t("cs.mf_kind_cmd")) + '</b><small>' + esc(window.t("cs.mf_kind_cmd_d")) + '</small></span></button></div>'
+      + '<div id="mfUrlKhoi"><label class="mcpf-nhan" for="mfUrl">' + esc(window.t("cs.mf_url")) + '</label>'
+      + '<input class="js-input" id="mfUrl" inputmode="url" spellcheck="false" placeholder="' + esc(window.t("cs.mf_url_ph")) + '">'
+      + '<details class="mcpf-nc"><summary>' + esc(window.t("cs.mf_adv")) + '</summary>'
+      + '<label class="mcpf-nhan" for="mfGiao">' + esc(window.t("cs.mf_proto")) + '</label>'
+      + '<select class="js-input" id="mfGiao"><option value="http">' + esc(window.t("cs.mf_proto_http")) + '</option><option value="sse">SSE</option></select></details></div>'
+      + '<div id="mfCmdKhoi" hidden><label class="mcpf-nhan" for="mfCmd">' + esc(window.t("cs.mf_cmd")) + '</label>'
+      + '<input class="js-input" id="mfCmd" spellcheck="false" placeholder="' + esc(window.t("cs.mf_cmd_ph")) + '"></div>'
+      + '<div class="mcpf-nhan" id="mfKeyNhan"></div>'
+      + '<div class="mcpf-goi-y" id="mfKeyGoiY"></div>'
+      + '<div id="mfDongUrl" class="mcpf-ds"></div><div id="mfDongCmd" class="mcpf-ds" hidden></div>'
+      + '<button type="button" class="mp-btn mcpf-them" id="mfThemDong">' + ic("plus") + esc(window.t("cs.mf_add_row")) + '</button>'
+      + '<datalist id="mcpfGoiY">' + (P ? P.HEADER_GOI_Y : []).map(h => '<option value="' + esc(h) + '">').join("") + '</datalist>'
+      + '<div id="mfKq"></div>'
+      + '</div>', 0, true);
+    m.onclick = null;   // form có ô đang gõ key: bấm trượt ra nền KHÔNG được đóng mất chữ
+    const hop = m.querySelector(".mp-box");
+    const $ = (s) => m.querySelector(s);
+    const chan = pgChan(hop, '<span class="mp-note" id="mfErr"></span>'
+      + '<button class="mp-btn" data-act="close">' + esc(window.t("common.cancel")) + '</button>'
+      + '<button class="mp-btn primary" id="mfLuu">' + esc(window.t("cs.mf_save_test")) + '</button>');
+    let kieu = "url";
+    // Mỗi kiểu một khung dòng riêng, chỉ ẩn/hiện: đổi qua lại giữa URL và Lệnh không mất chữ đã gõ.
+    const box = () => $(kieu === "url" ? "#mfDongUrl" : "#mfDongCmd");
+
+    function ganDong(box) {
+      box.querySelectorAll(".mcpf-dong").forEach(d => {
+        d.querySelector("[data-xoa]").onclick = () => { d.remove(); capNhatGoiY(); };
+        d.querySelector("[data-eye]").onclick = () => {
+          const v = d.querySelector(".mcpf-v"); v.type = v.type === "password" ? "text" : "password";
+        };
+        const k = d.querySelector(".mcpf-k"), v = d.querySelector(".mcpf-v"), n = d.querySelector(".mcpf-nhac");
+        const soat = () => {
+          const thieu = kieu === "url" && P && P.thieuBearer(k.value, v.value);
+          n.hidden = !thieu;
+          if (thieu) n.textContent = window.t("cs.mf_bearer_hint");
+        };
+        k.oninput = soat; v.oninput = soat;
+      });
+    }
+    function veDong(cap) {
+      box().innerHTML = cap.map(x => dongKey(x[0], x[1])).join("");
+      ganDong(box());
+    }
+    function docDong() {
+      return Array.from(box().querySelectorAll(".mcpf-dong")).map(d => ({
+        k: d.querySelector(".mcpf-k").value.trim(), v: d.querySelector(".mcpf-v").value.trim(),
+        daLuu: !!d.querySelector(".mcpf-v").dataset.daluu,
+      }));
+    }
+    function capNhatGoiY() {
+      const ncc = kieu === "url" && P ? P.nhaCungCap($("#mfUrl").value.trim()) : null;
+      // Khoá dịch viết tường minh cho từng nhà: ghép chuỗi động thì test i18n không soát được.
+      const HINT_NCC = { composio: "cs.mf_hint_composio" };
+      $("#mfKeyGoiY").textContent = ncc && HINT_NCC[ncc.ten] ? window.t(HINT_NCC[ncc.ten], { h: ncc.header })
+        : window.t(kieu === "url" ? "cs.mf_hint_header" : "cs.mf_hint_env");
+    }
+    function datKieu(k) {
+      kieu = k;
+      m.querySelectorAll("[data-kieu]").forEach(b => b.setAttribute("aria-pressed", b.dataset.kieu === k ? "true" : "false"));
+      $("#mfUrlKhoi").hidden = k !== "url";
+      $("#mfCmdKhoi").hidden = k !== "stdio";
+      $("#mfDongUrl").hidden = k !== "url";
+      $("#mfDongCmd").hidden = k !== "stdio";
+      if (!box().children.length) veDong([["", false]]);
+      $("#mfKeyNhan").textContent = window.t(k === "url" ? "cs.mf_keys_header" : "cs.mf_keys_env");
+      capNhatGoiY();
+    }
+    m.querySelectorAll("[data-kieu]").forEach(b => b.onclick = () => datKieu(b.dataset.kieu));
+    $("#mfThemDong").onclick = () => {
+      box().insertAdjacentHTML("beforeend", dongKey("", false));
+      ganDong(box());
+      const ds = box().querySelectorAll(".mcpf-k"); ds[ds.length - 1].focus();
+    };
+    $("#mfUrl").oninput = () => {
+      if (P) $("#mfGiao").value = P.doanTransport($("#mfUrl").value.trim());
+      capNhatGoiY();
+    };
+
+    // Nạp một bản nháp (từ ô Dán hoặc từ kết nối đang sửa) vào form.
+    function napNhap(d, daLuuKeys) {
+      if (d.name && !$("#mfTen").value.trim()) $("#mfTen").value = d.name;
+      const la = d.transport === "stdio" ? "stdio" : "url";
+      datKieu(la);
+      if (la === "url") { $("#mfUrl").value = d.url || ""; $("#mfGiao").value = d.transport === "sse" ? "sse" : "http"; }
+      else $("#mfCmd").value = P ? P.ghepLenh(d.command, d.args) : [d.command].concat(d.args || []).join(" ");
+      const bang = la === "url" ? (d.headers || {}) : (d.env || {});
+      const cap = Object.keys(bang).map(k => [k, !!(daLuuKeys && daLuuKeys.includes(k))]);
+      veDong(cap.length ? cap : [["", false]]);
+      // Giá trị có sẵn trong khối dán (vd key đã nằm trong JSON) thì điền luôn.
+      box().querySelectorAll(".mcpf-dong").forEach(r => {
+        const k = r.querySelector(".mcpf-k").value;
+        if (bang[k]) r.querySelector(".mcpf-v").value = bang[k];
+      });
+      capNhatGoiY();
+    }
+
+    if (server) {
+      const la = server.transport === "stdio" ? "stdio" : (server.transport || "http");
+      napNhap({ name: server.label || server.name, transport: la, url: server.url || "",
+        command: server.command || "", args: server.args || [],
+        headers: Object.fromEntries((server.header_keys || []).map(k => [k, ""])),
+        env: Object.fromEntries((server.env_keys || []).map(k => [k, ""])) },
+        (server.header_keys || []).concat(server.env_keys || []));
+    } else {
+      datKieu("url");
+      const dan = $("#mfDan"), kq = $("#mfDanKq");
+      const thuDoc = () => {
+        const txt = dan.value.trim();
+        if (!txt) { kq.className = "mcpf-dan-kq"; kq.textContent = window.t("cs.mf_paste_hint"); return; }
+        const d = P ? P.docCauHinh(txt) : null;
+        if (!d) { kq.className = "mcpf-dan-kq loi"; kq.textContent = window.t("cs.mf_paste_bad"); return; }
+        $("#mfTen").value = "";
+        napNhap(d);
+        const n = Object.keys(d.transport === "stdio" ? d.env : d.headers).length;
+        kq.className = "mcpf-dan-kq ok";
+        kq.textContent = window.t(d.transport === "stdio" ? "cs.mf_paste_ok_cmd" : "cs.mf_paste_ok_url", { so: n });
+        // Còn ô key trống thì đưa con trỏ tới đó: bước duy nhất người dùng còn phải làm.
+        const trong = Array.from(box().querySelectorAll(".mcpf-v")).find(i => !i.value);
+        if (trong) trong.focus();
+      };
+      dan.oninput = () => { clearTimeout(dan._t); dan._t = setTimeout(thuDoc, 250); };
+    }
+
+    function baoKq(mau, tieu, chu) {
+      $("#mfKq").innerHTML = '<div class="pkm-canh ' + mau + '"><div class="pkm-canh-tieu">'
+        + ic(mau === "tin" ? "circle-check" : "triangle-alert") + esc(tieu) + '</div>'
+        + (chu ? '<div>' + esc(chu) + '</div>' : "") + '</div>';
+      $("#mfKq").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    const luu = $("#mfLuu"), err = $("#mfErr");
+    luu.onclick = async () => {
+      err.textContent = ""; $("#mfKq").innerHTML = "";
+      const name = $("#mfTen").value.trim();
+      if (!name) { err.textContent = window.t("cs.cn_mcp_need_name"); $("#mfTen").focus(); return; }
+      const body = { name: name, transport: kieu === "url" ? $("#mfGiao").value : "stdio" };
+      const dong = docDong().filter(x => x.k);
+      const bang = {};
+      for (const x of dong) {
+        if (!x.v && !x.daLuu) { err.textContent = window.t("cs.mf_need_val", { k: x.k }); return; }
+        bang[x.k] = x.v;   // rỗng + đã lưu = giữ giá trị cũ (server bỏ qua giá trị rỗng)
       }
-      $("#mSave").disabled = true; $("#mSave").textContent = window.t("settings.saving");
+      if (kieu === "url") {
+        body.url = $("#mfUrl").value.trim();
+        if (!/^https?:\/\//i.test(body.url)) { err.textContent = window.t("cs.mf_need_url"); $("#mfUrl").focus(); return; }
+        body.auth = "header"; body.headers = bang;
+        if (editId) body.env = {};
+      } else {
+        const tok = P ? P.tachLenh($("#mfCmd").value) : $("#mfCmd").value.trim().split(/\s+/).filter(Boolean);
+        if (!tok.length) { err.textContent = window.t("cs.mf_need_cmd"); $("#mfCmd").focus(); return; }
+        body.command = tok[0]; body.args = tok.slice(1); body.auth = "env"; body.env = bang;
+        body.url = "";
+        if (editId) body.headers = {};
+      }
+      luu.disabled = true; luu.textContent = window.t("settings.saving");
       let r;
-      if (edit) { body.id = server.id; r = await postJson("/mcp/update", body); }
-      else r = await postJson("/mcp/add", body);
-      if (!r.ok) { $("#mErr").textContent = r.error || window.t("app.err_cap"); $("#mSave").disabled = false; $("#mSave").textContent = window.t(edit ? "common.save" : "proj.add"); return; }
-      modal.classList.remove("open");
-      renderConnect(el);
+      if (editId) { body.id = editId; body.prune = true; r = await postJson("/mcp/update", body); }
+      else {
+        r = await postJson("/mcp/add", body);
+        // Lưu được thì từ đây form là form SỬA của kết nối vừa tạo: bấm Lưu lần nữa sau khi
+        // chữa key không được đẻ ra một bản trùng.
+        if (r && r.ok && r.id) {
+          editId = r.id;
+          box().querySelectorAll(".mcpf-v").forEach(i => { if (i.value) { i.dataset.daluu = "1"; } });
+        }
+      }
+      if (!r || !r.ok) {
+        luu.disabled = false; luu.textContent = window.t("cs.mf_save_test");
+        err.textContent = (r && r.error) || window.t("app.err_cap"); return;
+      }
+      luu.textContent = window.t("cs.cn_testing");
+      let t;
+      try { t = await postJson("/connect/test", { id: editId }); } catch (e) { t = { ok: false, error: String(e) }; }
+      try { await postJson("/connect/health/check", { id: editId }); } catch (e) { /* chỉ để đèn đổi màu */ }
+      luu.disabled = false; luu.textContent = window.t("cs.mf_save_test");
+      if (t && t.ok) {
+        baoKq("tin", window.t("cs.mf_ok", { so: t.tools || 0 }), "");
+        chan.querySelector("#mfLuu").textContent = window.t("common.close");
+        chan.querySelector("#mfLuu").onclick = () => { closeConnModal(); renderConnect(el); };
+        return;
+      }
+      baoKq("do", window.t("cs.mf_fail_head"), ((t && t.error) || "") + " " + window.t("cs.mf_fail_tail"));
+      chan.querySelector('[data-act="close"]').textContent = window.t("common.close");
+      chan.querySelector('[data-act="close"]').onclick = () => { closeConnModal(); renderConnect(el); };
     };
-    modal.classList.add("open");
+    setTimeout(() => { const f = $("#mfDan") || $("#mfTen"); if (f) f.focus(); }, 50);
   }
 
   // ---- Trang Kênh (Telegram) - form đầy đủ ----
@@ -6052,6 +6229,9 @@
   // đầu hội thoại (badge trong trang chat soi gương từ badge HUD nên chỉ cần làm mới HUD).
   function refreshModelUi() {
     try { if (window.initModelBar) window.initModelBar(); } catch (e) {}
+    // Ô chọn model trong form sửa trợ lý dựng từ /settings, mà form đó giữ bản /settings gần
+    // nhất một lát cho đỡ nặng - vừa đổi model/cắm key xong thì bảo nó quên đi.
+    try { if (window.JavisStudio && window.JavisStudio.quenForm) window.JavisStudio.quenForm(); } catch (e) {}
   }
   if (typeof window !== "undefined") window.JavisRefreshModelUi = refreshModelUi;
 
@@ -6118,7 +6298,8 @@
     const gheMicVaoThe = (truoc) => {
       const the = host.querySelector(".qs-block");
       if (!micFields || !the) return;
-      if (truoc) the.insertBefore(micFields, truoc); else the.appendChild(micFields);
+      if (truoc) truoc.parentNode.insertBefore(micFields, truoc); else the.appendChild(micFields);
+      micFields.hidden = false;
       if (micHome) micHome.hidden = true;
     };
     traMicVeNha();
@@ -6156,6 +6337,23 @@
             ${optA("live", t("settings.v2_mode_live"), cheDo)}
           </select>
         </div>
+        <div class="qs-field">
+          <label class="qs-lbl" for="v2LocTapAm">${esc(t("settings.v2_loc_tap_am"))}</label>
+          <label class="toggle"><input type="checkbox" id="v2LocTapAm" ${v.focus_mode === false ? "" : "checked"}><span></span></label>
+        </div>
+        <div class="qs-hint">${esc(t("settings.voice_focus_short"))}</div>
+        <div id="v2LiveBox">
+          <label class="js-lbl">${esc(t("settings.v2_live"))}</label>
+          <select class="js-input" id="v2Live">${liveOpts}</select>
+          <label class="js-lbl">${esc(t("settings.v2_live_model"))}</label>
+          <input class="js-input" id="v2LiveModel" value="${esc(v.live_model || "")}" placeholder="">
+          <label class="js-lbl">${esc(t("settings.v2_live_voice"))}</label>
+          <select class="js-input" id="v2LiveVoice"></select>
+          <div class="gcard-meta" id="v2LiveHint">${esc(t("settings.v2_live_note"))}</div>
+        </div>
+        <details class="qs-advanced" id="v2Advanced">
+          <summary>${esc(t("settings.voice_advanced"))}</summary>
+          <div id="v2BrowserAdvanced">
         <div id="v2FastBox">
           <label class="js-lbl">${esc(t("settings.v2_brain"))}</label>
           <select class="js-input" id="v2Brain">${brainOpts}</select>
@@ -6167,31 +6365,22 @@
         <div class="qs-field">
           <label class="qs-lbl" for="v2Stt">${esc(t("settings.v2_stt"))}</label>
           <select class="js-input" id="v2Stt">${sttOpts}</select>
+          <div class="qs-hint">${esc(t("settings.v2_stt_note"))}</div>
         </div>
-        <div class="qs-field">
-          <label class="qs-lbl" for="v2LocTapAm">${esc(t("settings.v2_loc_tap_am"))}</label>
-          <label class="toggle"><input type="checkbox" id="v2LocTapAm" ${v.loc_tap_am === false ? "" : "checked"}><span></span></label>
-        </div>
-        <div class="qs-hint">${esc(t("settings.v2_loc_tap_am_note"))}</div>
+          </div>
         <div class="qs-field">
           <label class="qs-lbl" for="v2Hotwords">${esc(t("settings.v2_hotwords"))}</label>
           <input class="js-input" id="v2Hotwords" value="${esc(v.hotwords || "")}" placeholder="${esc(t("settings.v2_hotwords_ph"))}">
           <div class="gcard-meta">${esc(t("settings.v2_hotwords_note", { goc: (o.hotwords_goc || ["Thansa"]).join(", ") }))}</div>
         </div>
-        <div id="v2LiveBox">
-          <label class="js-lbl">${esc(t("settings.v2_live"))}</label>
-          <select class="js-input" id="v2Live">${liveOpts}</select>
-          <label class="js-lbl">${esc(t("settings.v2_live_model"))}</label>
-          <input class="js-input" id="v2LiveModel" value="${esc(v.live_model || "")}" placeholder="">
-          <label class="js-lbl">${esc(t("settings.v2_live_voice"))}</label>
-          <select class="js-input" id="v2LiveVoice"></select>
-          <div class="gcard-meta" id="v2LiveHint">${esc(t("settings.v2_live_note"))}</div>
-        </div>
+          <div class="qs-hint">${esc(t("settings.v2_loc_tap_am_note"))}</div>
+          <div id="v2AdvancedEnd"></div>
+        </details>
         <div class="js-actions qs-foot"><button class="gcard-btn" id="v2Save">${esc(t("settings.v2_save"))}</button></div>
-        <div class="gcard-meta" id="v2Status">${esc(t("settings.v2_note"))}</div>
+        <div class="gcard-meta" id="v2Status" role="status"></div>
         <div class="gcard-meta" id="v2LastErr" style="display:none"></div>
       </div>`;
-    gheMicVaoThe(host.querySelector(".qs-foot"));   // ba mục micro đứng ngay trên nút Lưu chế độ
+    gheMicVaoThe(host.querySelector("#v2AdvancedEnd"));   // giữ node và handler micro trong Nâng cao
     const $ = (id) => document.getElementById(id);
     const byId = (arr, id) => (arr || []).find(p => p.id === id) || null;
     const syncBrain = () => {
@@ -6217,6 +6406,10 @@
       const m = $("v2Mode").value;
       $("v2FastBox").style.display = m === "fast" ? "" : "none";
       $("v2LiveBox").style.display = m === "live" ? "" : "none";
+      $("v2BrowserAdvanced").hidden = m === "live";
+      const browserMic = $("qsBrowserMicFields");
+      if (browserMic) browserMic.hidden = m === "live";
+      if (m === "fast" && !v.brain_provider) $("v2Advanced").open = true;
     };
     $("v2Brain").onchange = syncBrain; $("v2Live").onchange = syncLive; $("v2Mode").onchange = syncMode;
     syncBrain(); syncLive(); syncMode();
@@ -6225,6 +6418,7 @@
     // là bộ não giọng đang hỏng hay cài đặt đã trôi về chế độ chuẩn.
     const le = o.last_error || {};
     if (le.error) {
+      $("v2Advanced").open = true;
       const phut = Math.max(0, Math.round((Date.now() / 1000 - Number(le.at || 0)) / 60));
       const elErr = $("v2LastErr");
       elErr.style.display = "";
@@ -6240,9 +6434,9 @@
         mode: $("v2Mode").value, brain_provider: $("v2Brain").value, brain_model: brainModel,
         stt_provider: $("v2Stt").value, live_provider: $("v2Live").value,
         live_model: $("v2LiveModel").value.trim(), live_voice: $("v2LiveVoice").value || "",
-        hotwords: $("v2Hotwords").value.trim(), loc_tap_am: $("v2LocTapAm").checked,
+        hotwords: $("v2Hotwords").value.trim(), focus_mode: $("v2LocTapAm").checked,
       };
-      if (data.mode === "fast" && !data.brain_provider) { st.textContent = t("settings.v2_need_brain"); return; }
+      if (data.mode === "fast" && !data.brain_provider) { $("v2Advanced").open = true; $("v2Brain").focus(); st.textContent = t("settings.v2_need_brain"); return; }
       const r = await saveSetting("voice", data);
       st.textContent = r && r.ok ? t("settings.v2_saved") : t("settings.save_failed");
       try { if (window.JavisVoiceMode) window.JavisVoiceMode.refresh(); } catch (e) {}
@@ -6424,48 +6618,18 @@
       return;
     }
     if (tuMayChu) P.hydrate(tuMayChu);
+    // Bộ chỉnh diện mạo (hình dáng, cỡ, màu thân, màu mắt, cỡ mắt) nằm ở pet.js, dùng CHUNG
+    // với cài đặt avatar trợ lý (0.64.39): hai chỗ là một bộ, không lệch nhau được. Ở đây chỉ
+    // còn khối nút Lưu / Tắt / Đặt lại.
+    //
+    // Kích cỡ và cỡ mắt là THANH TRƯỢT: lúc kéo (tam = true) con pet đổi ngay nhưng chưa ghi
+    // máy chủ, thả tay mới ghi. Màu thân và màu mắt có thêm ô TỰ CHỌN kèm ô gõ mã màu.
+    const OPTS_ED = { size: true, vanh: true };
     const ve = () => {
       const cur = P.get();
-      const shapes = P.shapes(), palettes = P.palettes(), sizes = P.sizes(), mats = P.eyeColors();
-      const coMat = P.eyeSizes();
-      // Nhãn màu mắt lấy từ chính khoá của màu đó, KHÔNG ghép chuỗi vào trong lời gọi dịch:
-      // bộ quét khoá i18n (tests/js/test_i18n.mjs) chỉ đọc chuỗi đứng ngay sau lời gọi, nên
-      // ghép kiểu đó là nó bắt được một tiền tố cụt rồi báo thiếu một khoá không hề tồn tại.
-      //
-      // PHẢI NẰM TRONG `ve`, dưới dòng khai `mats`. Bản 0.59.36 đặt nó ở scope ngoài mà vẫn
-      // đọc `mats`, biến chỉ tồn tại trong `ve`: mỗi lần vẽ là một ReferenceError, `innerHTML`
-      // không kịp được gán, và cả trang Cài đặt linh vật trắng trơn. Không lỗi nào lên màn
-      // hình, chỉ là trống. Phép thử hồi đó soi MÃ NGUỒN bằng regex nên vẫn xanh trong khi
-      // tính năng chết hẳn - nay test_pet_trang_cai_dat.js CHẠY THẬT hàm vẽ này.
-      const nhanMat = (k) => t((mats[k] || mats.den).key);
       // Thứ tự: HÌNH DÁNG trước (thứ người ta tới đây để đổi), rồi cỡ, màu, màu mắt, và CUỐI
       // CÙNG mới tới khối nút Lưu / Tắt / Đặt lại. Chủ dự án chốt 15/09.
-      host.innerHTML = `<div class="settings-card">
-        <div class="settings-card-head"><b>${esc(t("settings.pet_shape"))}</b></div>
-        <div class="pet-picker" role="group">${Object.entries(shapes).map(([k, sh]) =>
-          // `vanh: true` - ô chọn hình dáng vẽ CẢ vành quỹ đạo, để mấy hình này trông đúng con
-          // pet thật ở mép màn hình chứ không phải một cái mặt trần. Avatar trợ lý và dấu ấn
-          // trên thanh bên vẫn không có vành: ở cỡ 26-30px nó chỉ còn là một vệt bẩn.
-          // `mat` - vẽ đúng màu mắt đang chọn, để ô xem thử không nói khác con pet thật.
-          `<button type="button" class="pet-pick" data-pet-shape="${esc(k)}" aria-pressed="${k === cur.shape}">${P.previewSvg(k, cur.palette, { vanh: true, mat: cur.eye, coMat: cur.eyeSize })}<span>${esc(t(sh.key))}</span></button>`).join("")}</div>
-        <div class="settings-card-head" style="margin-top:14px"><b>${esc(t("settings.pet_size"))}</b><span class="gcard-tag">${esc(t(sizes[cur.size].key))}</span></div>
-        <div class="pet-picker" role="group">${Object.entries(sizes).map(([k, sz]) =>
-          `<button type="button" class="pet-pick pet-pick-size" data-pet-size="${esc(k)}" aria-pressed="${k === cur.size}"><i style="width:${Math.round(sz.px / 3)}px;height:${Math.round(sz.px / 3)}px"></i><span>${esc(t(sz.key))}</span></button>`).join("")}</div>
-        <div class="settings-card-head" style="margin-top:14px"><b>${esc(t("settings.pet_color"))}</b><span class="gcard-tag">${esc(t(palettes[cur.palette].key))}</span></div>
-        <div class="pet-picker" role="group">${Object.keys(palettes).map(k => {
-          const tone = P.toneOf(k) || ["#888"];
-          return `<button type="button" class="pet-swatch" data-pet-palette="${esc(k)}" aria-pressed="${k === cur.palette}" title="${esc(t(palettes[k].key))}" aria-label="${esc(t(palettes[k].key))}"><i style="background:${esc(tone[0])}"></i></button>`;
-        }).join("")}</div>
-        <div class="settings-card-head" style="margin-top:14px"><b>${esc(t("settings.pet_eye"))}</b><span class="gcard-tag">${esc(nhanMat(cur.eye))}</span></div>
-        <div class="pet-picker" role="group">${Object.entries(mats).map(([k, m]) =>
-          `<button type="button" class="pet-swatch" data-pet-eye="${esc(k)}" aria-pressed="${k === cur.eye}" title="${esc(nhanMat(k))}" aria-label="${esc(nhanMat(k))}"><i style="background:${esc(m.mau)}"></i></button>`).join("")}</div>
-        <div class="settings-card-head" style="margin-top:14px"><b>${esc(t("settings.pet_eye_size"))}</b><span class="gcard-tag">${esc(t(coMat[cur.eyeSize].key))}</span></div>
-        <div class="pet-picker" role="group">${Object.entries(coMat).map(([k, cm]) =>
-          // Ô chọn cỡ mắt vẽ CHÍNH hình dáng và bảng màu đang dùng, chỉ đổi mỗi cỡ mắt: cỡ mắt
-          // là thứ khó tả bằng chữ, thấy ba khuôn mặt cạnh nhau thì chọn xong trong một giây.
-          // Không vẽ vành ở đây - hàng này đã có ba khuôn mặt rồi, thêm vành là rối.
-          `<button type="button" class="pet-pick" data-pet-eye-size="${esc(k)}" aria-pressed="${k === cur.eyeSize}">${P.previewSvg(cur.shape, cur.palette, { mat: cur.eye, coMat: k })}<span>${esc(t(cm.key))}</span></button>`).join("")}</div>
-      </div>
+      host.innerHTML = `<div class="settings-card"><div class="pet-editor" data-pet-editor>${P.editorHtml(cur, OPTS_ED)}</div></div>
       <div class="settings-card">
         <div class="settings-card-head"><b>${esc(t("settings.pet"))}</b><span class="gcard-tag">${esc(cur.enabled ? t("settings.tag_on") : t("settings.tag_off"))}</span></div>
         <p>${esc(t("settings.pet_desc"))}</p>
@@ -6493,12 +6657,8 @@
         stt.innerHTML = Icons.warn(t("settings.pet_save_fail") + (r.lech.length ? " (" + r.lech.join(", ") + ")" : ""));
       };
       host.querySelector("#setPetToggle").onclick = () => { P.setEnabled(!cur.enabled); ve(); };
-      host.querySelector("#setPetReset").onclick = () => { P.setCfg({ shape: "circle", palette: "amber", size: "vua", side: "right", pos: 0.62, eye: "den", eyeSize: "thuong", enabled: true }); ve(); };
-      host.querySelectorAll("[data-pet-shape]").forEach(b => b.onclick = () => { P.setCfg({ shape: b.dataset.petShape }); ve(); });
-      host.querySelectorAll("[data-pet-size]").forEach(b => b.onclick = () => { P.setCfg({ size: b.dataset.petSize }); ve(); });
-      host.querySelectorAll("[data-pet-palette]").forEach(b => b.onclick = () => { P.setCfg({ palette: b.dataset.petPalette }); ve(); });
-      host.querySelectorAll("[data-pet-eye]").forEach(b => b.onclick = () => { P.setCfg({ eye: b.dataset.petEye }); ve(); });
-      host.querySelectorAll("[data-pet-eye-size]").forEach(b => b.onclick = () => { P.setCfg({ eyeSize: b.dataset.petEyeSize }); ve(); });
+      host.querySelector("#setPetReset").onclick = () => { P.setCfg({ shape: "star", palette: "cam", size: 72, side: "right", pos: 0.62, eye: "den", eyeSize: 1, enabled: true }); ve(); };
+      P.editorBind(host.querySelector("[data-pet-editor]"), cur, (patch, tam) => P.setCfg(patch, tam), OPTS_ED);
     };
     ve();
   }
@@ -6689,6 +6849,8 @@
     renderVoiceV2Card();
 
     const provSel = document.getElementById("vpProvider");
+    const ttsAdvanced = document.getElementById("ttsAdvanced");
+    if (ttsAdvanced) ttsAdvanced.open = prov !== "edge";
     if (provSel) {   // guard: thiếu điểm neo (vd cache index.html cũ) thì avatar/tên miền vẫn chạy, không sập trang
       const showFields = () => {
         const p = provSel.value;
@@ -6704,7 +6866,7 @@
 
       // Dòng trạng thái nằm sẵn trong index.html (rỗng) nên câu mở đầu phải đặt từ đây.
       const st = document.getElementById("vpStatus");
-      if (st) st.innerHTML = esc(t("settings.tts_using")) + " <b>" + esc(prov) + "</b>. " + esc(t("settings.tts_note"));
+      if (st) st.innerHTML = esc(t("settings.tts_using")) + " <b>" + esc({ edge: "Edge", openai: "OpenAI", elevenlabs: "ElevenLabs" }[prov] || prov) + "</b>";
       document.getElementById("vpSave").onclick = async () => {
         st.textContent = t("settings.saving");
         const data = {
@@ -7001,13 +7163,63 @@
   // Từ 0.33.4 trang Tệp tin cũng mượn chính node này (#fmEdit) thay vì bật popup riêng - một
   // trình sửa duy nhất cho cả app, không có bản nghèo hơn ở góc nào nữa.
   let _neSlot = null;
+  // ============================================================
+  // Cột trái của .chatpage: MỘT bản luật cho mọi trang dùng khung này
+  // ============================================================
+  //
+  // Trang Trò chuyện và trang Code dùng CHUNG bộ lớp `.chatpage*`, nhưng trước 0.64.13 mỗi
+  // trang tự viết phần bật/tắt cột trái, và trang Code viết sai: nó `toggle("side-thu")` -
+  // lớp THU GỌN của máy tính - trong khi màn hẹp chỉ hiểu lớp `side-open`. Kết quả trên điện
+  // thoại là bấm nút lịch sử mà không có gì xảy ra (chủ repo báo 23/09, dựng lại được ở 390px:
+  // sau cú bấm, cột trái vẫn nằm ở x = -315).
+  //
+  // Nên phần này thành MỘT hàm dùng chung. Trang nào cũng gọi nó thì không còn chỗ để hai bản
+  // trôi lệch nhau - đúng lý lẽ mà chính coding.js đã viết khi nó quyết định mượn bộ lớp
+  // `.chatpage*` thay vì chép ra bộ thứ hai.
+  //
+  //   page: node `.chatpage`    sideEl: node cột trái    slot: khung nội dung (có thể null)
+  //
+  // Trả về hàm `bat()` để nút bật/tắt của trang gọi: màn hẹp thì mở/đóng ngăn kéo, máy tính
+  // thì thu/mở cột và nhớ lựa chọn.
+  function _neoCotTrai(page, sideEl, slot) {
+    if (!page || page.dataset.cotTraiDaNeo === "1") return function () {};
+    page.dataset.cotTraiDaNeo = "1";
+    const hep = () => window.matchMedia("(max-width: 860px)").matches;
+    const dong = () => { if (hep()) page.classList.remove("side-open"); };
+    // BA đường đóng, và cả ba đều cần: chạm nội dung, chạm nền mờ, chạm một mục trong danh
+    // sách. Thiếu đường nền mờ thì lúc trình sửa chiếm chỗ khung chat, ngăn kéo dính cứng
+    // giữa màn hình không cách nào đóng (lỗi thật 01/09).
+    if (slot) slot.addEventListener("click", dong);
+    page.addEventListener("click", (e) => { if (e.target === page) dong(); });
+    if (sideEl) sideEl.addEventListener("click", (e) => { if (e.target.closest(".cside-item")) dong(); });
+    // Xoay ngang / đổi cỡ cửa sổ: ngăn kéo đang mở mà nhảy sang bố cục máy tính thì lớp
+    // `side-open` treo lại vô nghĩa. Dọn luôn cho sạch.
+    try {
+      window.matchMedia("(max-width: 860px)").addEventListener("change", (e) => {
+        if (!e.matches) page.classList.remove("side-open");
+      });
+    } catch (e) {}
+    return function bat() {
+      if (hep()) { page.classList.toggle("side-open"); return; }
+      const thu = !page.classList.contains("side-thu");
+      page.classList.toggle("side-thu", thu);
+      try { localStorage.setItem("javis_chatside_thu", thu ? "1" : "0"); } catch (e) {}
+    };
+  }
+  if (typeof window !== "undefined") window.JavisNeoCotTrai = _neoCotTrai;
+
   function _borrowNoteEditor(into) {
     const ed = document.getElementById("noteEditor");
     // Bỏ trống `into` = tự tìm khung của trang ĐANG mở. Có HAI trang mượn khung chat và cùng
     // mang lớp body.on-chat: Trò chuyện (#chatPageEdit) và Cộng sự (#wsEdit). Trước 0.59.2 chỗ
     // này tra cứng #chatPageEdit, nên ở trang Cộng sự `into` là null và cú bấm vào một file .md
     // trong chat LẶNG LẼ không làm gì - không lỗi, không toast, chỉ là không có gì mở ra.
-    into = into || document.getElementById("chatPageEdit") || document.getElementById("wsEdit");
+    // Khung nào nhận trình sửa thì TỰ KHAI bằng `data-ne-host`, thay cho danh sách id viết
+    // cứng ở đây. Danh sách cứng đã cắn hai lần đúng một kiểu: trang Cộng sự (0.59.2) rồi
+    // trang Coding (0.63.4) mở file ra LẶNG LẼ không có gì xảy ra, vì tên khung của trang mới
+    // không có trong danh sách. Không lỗi, không toast, nên rất khó đoán ra.
+    // Mỗi lúc chỉ một trang dựng trong cviewBody nên chỉ có tối đa một khung mang dấu này.
+    into = into || document.querySelector("[data-ne-host]");
     if (!ed || !into) return false;
     if (!_neSlot) _neSlot = { node: ed, parent: ed.parentNode, next: ed.nextSibling };
     into.appendChild(ed);
@@ -7082,8 +7294,19 @@
         return true;
       },
       groupIds() { return RAIL_GROUPS.map(g => g.id).filter(Boolean); },
+      // Trang đang mở. app.js hỏi để biết có nên nạp lại cockpit ngay hay hoãn tới lúc về
+      // màn chính (xem capNhatManChinh bên app.js).
+      active() { const s = _navStore(); return (s && s.active) || "home"; },
+      // Trang đang mở có đang GIỮ khung chat và tự mở phiên của nó không. Cộng sự mở phiên
+      // agent:<slug>/workflow:<slug>, Coding mở phiên của repo - cả hai đều KHÔNG phải cuộc
+      // chính của brain, nên lúc đổi brain app.js không được nhớ hay khôi phục phiên vào đây.
+      giuKhungChat() { return _chatSlots.length > 0 && TRANG_GIU_CHAT.includes(this.active()); },
     };
   }
+
+  // Trang MƯỢN khung chat và tự mở phiên riêng của nó (không phải cuộc chính của brain).
+  // Trang "chat" cố ý KHÔNG nằm đây: nó chính là cuộc chính.
+  const TRANG_GIU_CHAT = ["workspace", "coding"];
 
   function _returnChatNodes() {
     // Rời trang Trò chuyện thì trả cây Vault về cột trái màn chính, nếu không màn chính mất
@@ -7127,7 +7350,7 @@
           '</div>' +
           '<div class="chatpage-slot" id="chatPageSlot"></div>' +
           // Chỗ đứng cho TRÌNH SỬA khi mở file từ tab Thư mục. Rỗng và ẩn cho tới lúc đó.
-          '<div class="chatpage-edit" id="chatPageEdit"></div>' +
+          '<div class="chatpage-edit" id="chatPageEdit" data-ne-host></div>' +
         '</div>' +
       '</div>';
     const page = el.querySelector("#chatPage");
@@ -7164,6 +7387,7 @@
       if (isNar()) { page.classList.toggle("side-open"); return; }
       datSideThu(!page.classList.contains("side-thu"));
     };
+    _neoCotTrai(page, el.querySelector("#chatPageSide"), slot);
     // Khung chat PHẢI khi đang sửa file (.edit-on): nút thu co vào bên phải + nhớ trạng
     // thái. Nút gắn vào slot SAU khi mượn node chat nên không bị _borrowChatNodes chen chỗ.
     const mainEl = el.querySelector(".chatpage-main");
@@ -7186,16 +7410,6 @@
     // Đường VỀ. Nút phóng to ở màn Thansa nay dẫn thẳng sang trang này (lớp nổi .chat-stage đã
     // bỏ), nên trang này phải có nút thu nhỏ, nếu không người dùng chỉ còn cách bấm rail.
     el.querySelector("#cpMinBtn").onclick = () => navigateTo("home");
-    slot.addEventListener("click", () => { if (isNar() && page.classList.contains("side-open")) page.classList.remove("side-open"); });
-    // Chạm NỀN MỜ (pseudo-element của chính .chatpage nên cú chạm rơi vào page) = đóng ngăn kéo.
-    // Đây là đường đóng DUY NHẤT còn sống khi trình sửa đang chiếm chỗ khung chat.
-    page.addEventListener("click", (e) => {
-      if (isNar() && e.target === page && page.classList.contains("side-open")) page.classList.remove("side-open");
-    });
-    el.querySelector("#chatPageSide").addEventListener("click", (e) => {
-      if (isNar() && e.target.closest(".cside-item")) page.classList.remove("side-open");
-    });
-
     // Cuộn xuống đáy + focus ô nhập cho tiện gõ ngay
     const ca = document.getElementById("chatArea"); if (ca) ca.scrollTop = ca.scrollHeight;
     const ci = document.getElementById("chatInput"); if (ci) { try { ci.focus(); } catch (e) {} }

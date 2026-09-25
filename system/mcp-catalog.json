@@ -21,16 +21,27 @@
             "header": "x-consumer-api-key: {api_key}"
           }
         ],
-        "guide": "Làm 1 lần:\n1. Vào platform.composio.dev, đăng ký hoặc đăng nhập (có gói miễn phí).\n2. Tạo một MCP server (mục MCP) rồi copy API key dạng ck_... ở bước cấu hình client.\n3. Dán key vào đây, bấm Kết nối.\n\nSau khi đấu, muốn dùng app nào (Gmail, Notion, Sheets...) thì bảo Thansa ngay trong chat, vd 'nối Notion qua Composio'. Composio đưa link đăng nhập app đó, bạn tự đăng nhập xong là dùng được.\n\nLƯU Ý: mọi hành động của app (kể cả đọc dữ liệu) đều chạy qua một tool chung của Composio, nên muốn Thansa thật sự thao tác thì kết nối này cần mức Toàn quyền. Mức Chỉ đọc chỉ tìm và xem mô tả tool.",
-        "guide_url": "https://docs.composio.dev/"
+        "guide": "Làm 1 lần:\n1. Vào Composio For You → Connect my agent và chọn ứng dụng MCP client.\n2. Sao chép consumer key dạng ck_* trong hướng dẫn kết nối. Thansa gửi key qua header x-consumer-api-key tới https://connect.composio.dev/mcp.\nKhông dùng Project API key ak_* hoặc MCP server tạo trong Platform.\n3. Dán key vào đây, bấm Kết nối. Nếu đã có kết nối Thansa, chọn Kết nối lại trên thẻ Composio để thay key rồi bấm Kiểm tra.\n\nKết nối Calendar hoặc app khác ở Composio For You → Connect Apps.\nKết nối app không tự cập nhật consumer key đã lưu trong Thansa. Sau khi đấu, Thansa có thể tìm tool, mở link đăng nhập app và chạy hành động qua Composio.\n\nLƯU Ý: ở mức Chỉ đọc, Thansa đọc được dữ liệu các app đã nối (xem lịch, đọc mail, liệt kê file...) và xem danh sách tài khoản đã nối. Muốn Thansa sửa, gửi hoặc xoá thì nâng lên Toàn quyền.",
+        "guide_url": "https://docs.composio.dev/docs/composio-connect"
       },
       "tool_meta": {
         "read": ["COMPOSIO_SEARCH_TOOLS", "COMPOSIO_GET_TOOL_SCHEMAS", "COMPOSIO_WAIT_FOR_CONNECTIONS"],
         "write": ["COMPOSIO_MANAGE_CONNECTIONS"],
         "danger": ["COMPOSIO_MULTI_EXECUTE_TOOL", "COMPOSIO_REMOTE_BASH_TOOL", "COMPOSIO_REMOTE_WORKBENCH"]
       },
+      "call_rules": {
+        "COMPOSIO_MULTI_EXECUTE_TOOL": {
+          "items": "tools", "key": "tool_slug", "else": "danger",
+          "read_tokens": ["LIST", "LISTS", "GET", "FETCH", "SEARCH", "FIND", "READ", "QUERY", "RETRIEVE", "DESCRIBE", "VIEW", "COUNT", "LOOKUP", "DOWNLOAD", "EXPORT"],
+          "write_tokens": ["CREATE", "UPDATE", "PATCH", "DELETE", "REMOVE", "SEND", "POST", "ADD", "INSERT", "UPLOAD", "MOVE", "TRASH", "UNTRASH", "REPLY", "FORWARD", "SET", "SHARE", "ARCHIVE", "PUBLISH", "EXECUTE", "CANCEL", "APPROVE", "MODIFY", "EDIT", "WRITE", "PUT", "MARK", "SUBSCRIBE", "UNSUBSCRIBE", "INVITE", "ACCEPT", "DECLINE", "IMPORT", "DUPLICATE", "COPY", "RENAME", "CLEAR", "EMPTY", "STAR", "UNSTAR", "WATCH", "RESTORE", "PIN", "UNPIN", "LIKE", "UNLIKE", "FOLLOW", "UNFOLLOW", "BLOCK", "UNBLOCK", "CLOSE", "REOPEN", "ASSIGN", "TRANSFER", "PAY", "CHARGE", "REFUND", "GENERATE", "TOGGLE", "ENABLE", "DISABLE", "RESET", "REVOKE", "GRANT", "SAVE", "SUBMIT", "REACT", "HIDE", "UNHIDE", "INVOKE", "DEPLOY", "PUSH", "COMMIT", "APPLY", "REPLACE", "UPSERT", "CLAIM", "RESPOND", "JOIN", "LEAVE", "KICK", "BAN", "MUTE", "UNMUTE", "RSVP", "TERMINATE", "KILL", "DESTROY", "PURGE", "WIPE", "REBOOT", "RESTART", "SUSPEND", "RESUME", "ACTIVATE", "DEACTIVATE", "LOCK", "UNLOCK", "VOTE", "DISMISS", "RESOLVE", "COMPLETE", "CHECKOUT", "PURCHASE", "BUY", "SELL", "WITHDRAW", "DEPOSIT", "NOTIFY", "BROADCAST", "ANNOUNCE", "RELEASE", "PROMOTE", "DEMOTE", "CONFIRM", "ATTACH", "DETACH", "LINK", "UNLINK", "CONNECT", "DISCONNECT", "REGISTER", "UNREGISTER", "SIGN", "UNDO", "REVERT", "ROLLBACK", "EXTEND", "RENEW", "ENROLL", "UNENROLL", "PREPEND", "APPEND"]
+        },
+        "COMPOSIO_MANAGE_CONNECTIONS": {
+          "items": "toolkits", "key": "action", "default": "add", "else": "write",
+          "read_values": ["list"]
+        }
+      },
       "default_perm": "readonly",
-      "risk": "Composio là cổng đa ứng dụng: mọi hành động lên app thật (đọc mail, gửi mail, sửa sheet, tạo issue...) đều chạy qua MỘT tool chung nên Thansa KHÔNG tách được lệnh đọc với lệnh ghi bên trong.\n\nMức Chỉ đọc: chỉ tìm và xem mô tả tool, chưa chạy được hành động nào.\n\nMức Ghi nháp: thêm quyền nối app mới (Composio đưa link đăng nhập, bạn tự đăng nhập, Thansa không thấy mật khẩu).\n\nMức Toàn quyền: Thansa chạy được MỌI hành động của các app bạn đã nối qua Composio, kể cả gửi tin, sửa và xoá dữ liệu thật.\nChỉ nâng khi thật sự cần; phạm vi đúng bằng quyền bạn đã cấp cho từng app bên Composio."
+      "risk": "Composio là cổng đa ứng dụng: mọi hành động lên app thật (đọc mail, gửi mail, sửa sheet, tạo issue...) đều chạy qua MỘT tool chung.\nJavis soi TỪNG lệnh bên trong theo tên lệnh: có động từ đọc (LIST, GET, FETCH, SEARCH...) là đọc, còn lại coi là ghi.\n\nMức Chỉ đọc: đọc dữ liệu các app đã nối (xem lịch, đọc mail, liệt kê file) và xem tài khoản đã nối. Lệnh nào không chắc là đọc thì bị chặn.\n\nMức Ghi nháp: thêm quyền nối app mới (Composio đưa link đăng nhập, bạn tự đăng nhập, Thansa không thấy mật khẩu).\n\nMức Toàn quyền: Thansa chạy được MỌI hành động của các app bạn đã nối qua Composio, kể cả gửi tin, sửa và xoá dữ liệu thật.\nChỉ nâng khi thật sự cần; phạm vi đúng bằng quyền bạn đã cấp cho từng app bên Composio."
     },
             {
       "id": "zalo",
@@ -151,7 +162,7 @@
           "*share*"
         ]
       },
-      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA bảng tính thật trong Drive, kể cả ghi đè dữ liệu đang có.\n\nMức Toàn quyền thêm quyền CHIA SẺ bảng tính cho người khác. Chia sẻ là đẩy số liệu kinh doanh ra ngoài nên xếp mức nguy hiểm, giống việc chia sẻ ghi chú ở Google Keep.\n\nThansa chỉ đụng được thư mục Drive mà bạn đã share cho service account.",
+      "risk": "Mức Ghi nháp (mặc định) cho phép Thansa TẠO và SỬA bảng tính thật trong Drive, kể cả ghi đè dữ liệu đang có.\n\nMức Toàn quyền thêm quyền CHIA SẺ bảng tính cho người khác. Chia sẻ là đẩy số liệu kinh doanh ra ngoài nên xếp mức nguy hiểm, giống việc chia sẻ ghi chú ở Google Keep.\n\nJavis chỉ đụng được thư mục Drive mà bạn đã share cho service account.",
       "default_perm": "safe"
     },
     {
@@ -371,7 +382,7 @@
             "optional": true
           }
         ],
-        "guide": "Cần trước: Git trên máy chạy Thansa (uvx tải server từ GitHub).\n\nLàm 1 lần, khoảng 10 phút:\n1. Google Ads > tài khoản quản lý MCC > Công cụ > API Center: lấy developer token, mức Explorer đủ để đọc.\n2. Vào console.cloud.google.com, tạo project rồi bật Google Ads API. Nhớ Project ID để điền bên dưới.\n3. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n4. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n5. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n6. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Thansa đọc Google Ads.\n\nThansa tự dựng file đăng nhập, KHÔNG cần cài Google Cloud CLI và không phải chạy lệnh nào.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Thansa sẽ dùng luôn.",
+        "guide": "Cần trước: Git trên máy chạy Thansa (uvx tải server từ GitHub).\n\nLàm 1 lần, khoảng 10 phút:\n1. Google Ads > tài khoản quản lý MCC > Công cụ > API Center: lấy developer token, mức Explorer đủ để đọc.\n2. Vào console.cloud.google.com, tạo project rồi bật Google Ads API. Nhớ Project ID để điền bên dưới.\n3. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n4. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n5. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n6. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Thansa đọc Google Ads.\n\nJavis tự dựng file đăng nhập, KHÔNG cần cài Google Cloud CLI và không phải chạy lệnh nào.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Thansa sẽ dùng luôn.",
         "guide_url": "https://console.cloud.google.com/apis/credentials"
       },
       "validate": {
@@ -603,7 +614,7 @@
             "env": "UNSAFE_MODE"
           }
         ],
-        "guide": "Google Keep không có API chính chủ cho gmail thường, nên Thansa phải đăng nhập bằng App Password rồi tự đổi thành token.\n\nCẢNH BÁO: token đổi ra có TOÀN QUYỀN tài khoản Google của bạn (Gmail, Drive, Photos...), tương đương mật khẩu.\n\nLàm 1 lần:\n1. Bật xác minh 2 bước cho tài khoản Google.\n2. Bấm nút bên dưới, tạo App Password rồi copy chuỗi 16 ký tự.\n3. Dán email + chuỗi đó vào ô dưới, bấm Kết nối.\n\nThansa đổi lấy token, lưu token, và KHÔNG lưu lại App Password. Copy cả dấu cách cũng được.\n\nNếu Google từ chối (hay gặp khi Thansa chạy trên VPS), hãy tự lấy master token ở máy cá nhân rồi dán vào ô Master token.\n\nÔ unsafe_mode để trống thì Thansa chỉ sửa được note do chính nó tạo. Gõ true thì Thansa sửa được mọi note, kể cả note bạn viết tay.\n\nNếu báo 'Google từ chối đăng nhập' dù chuỗi đúng: Google đang siết dần đường App Password. Đường lui oauth_token:\n1. Bấm nút 'Mở trang lấy oauth_token' bên dưới trong TAB ẨN DANH, đăng nhập đúng tài khoản, bấm Tôi đồng ý.\n2. Ngay tab đó bấm F12 > Application > Cookies > accounts.google.com, tìm cookie tên oauth_token (giá trị bắt đầu oauth2_4/).\n3. Copy giá trị đó dán vào ô oauth_token rồi bấm Kết nối NGAY (cookie dùng một lần, hết hạn nhanh). Thansa đổi lấy master token và không lưu cookie.",
+        "guide": "Google Keep không có API chính chủ cho gmail thường, nên Thansa phải đăng nhập bằng App Password rồi tự đổi thành token.\n\nCẢNH BÁO: token đổi ra có TOÀN QUYỀN tài khoản Google của bạn (Gmail, Drive, Photos...), tương đương mật khẩu.\n\nLàm 1 lần:\n1. Bật xác minh 2 bước cho tài khoản Google.\n2. Bấm nút bên dưới, tạo App Password rồi copy chuỗi 16 ký tự.\n3. Dán email + chuỗi đó vào ô dưới, bấm Kết nối.\n\nJavis đổi lấy token, lưu token, và KHÔNG lưu lại App Password. Copy cả dấu cách cũng được.\n\nNếu Google từ chối (hay gặp khi Thansa chạy trên VPS), hãy tự lấy master token ở máy cá nhân rồi dán vào ô Master token.\n\nÔ unsafe_mode để trống thì Thansa chỉ sửa được note do chính nó tạo. Gõ true thì Thansa sửa được mọi note, kể cả note bạn viết tay.\n\nNếu báo 'Google từ chối đăng nhập' dù chuỗi đúng: Google đang siết dần đường App Password. Đường lui oauth_token:\n1. Bấm nút 'Mở trang lấy oauth_token' bên dưới trong TAB ẨN DANH, đăng nhập đúng tài khoản, bấm Tôi đồng ý.\n2. Ngay tab đó bấm F12 > Application > Cookies > accounts.google.com, tìm cookie tên oauth_token (giá trị bắt đầu oauth2_4/).\n3. Copy giá trị đó dán vào ô oauth_token rồi bấm Kết nối NGAY (cookie dùng một lần, hết hạn nhanh). Thansa đổi lấy master token và không lưu cookie.",
         "exchange": { "handler": "google_master_token", "inputs": ["google_email", "app_password", "oauth_token"], "output": "master_token", "drop": ["app_password", "oauth_token"] },
         "setup": { "links": [{ "label": "Tạo App Password", "url": "https://myaccount.google.com/apppasswords" }, { "label": "Mở trang lấy oauth_token", "url": "https://accounts.google.com/EmbeddedSetup" }] },
         "guide_url": "https://github.com/feuerdev/keep-mcp",

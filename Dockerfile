@@ -50,8 +50,8 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # phần duy nhất bắt buộc phải có sẵn.
 #
 # Còn BẢN THÂN trình duyệt thì KHÔNG nằm trong ảnh: nó nặng và phần lớn người dùng không cần.
-# Ai cần thì bấm nút trong trang Công cụ, Javis tải bản headless về `<state>/browsers` - thư
-# mục nằm trên ổ gắn ngoài nên sống qua mỗi lần cập nhật, không phải tải lại.
+# Ai cần thì bấm nút trong trang Công cụ, Javis tải về `<state>/browsers` - thư mục nằm trên
+# ổ gắn ngoài nên sống qua mỗi lần cập nhật, không phải tải lại.
 #
 # Để riêng MỘT lớp để đo được nó tốn bao nhiêu (`docker history`), và để tắt được bằng
 # `--build-arg WITH_BROWSER_DEPS=0` khi ai đó muốn ảnh gọn nhất có thể.
