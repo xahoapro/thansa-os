@@ -11282,11 +11282,11 @@ async def autostart_post(enabled: str = Form(...)):
 
 
 # ---- Nhật ký cập nhật (changelog) -------------------------------------------
-# Bản Thansa: CHANGELOG/ANNOUNCEMENTS lấy từ upstream (file lẫn GitHub) nhắc "Javis" —
+# Bản Thansa: CHANGELOG/ANNOUNCEMENTS lấy từ upstream (file lẫn GitHub) nhắc "Javis" -
 # lọc thành "Thansa" LÚC HIỂN THỊ thay vì sửa file (CHANGELOG là file churn cao nhất
 # repo, sửa thẳng là mỗi vòng trộn xung đột). Trang Nhật ký là trang ĐỌC TIN nên chủ
 # chốt (18/08) quét SẠCH mọi dạng javis, kể cả token kỹ thuật trong lời kể
-# (javis_* → thansa_*, JAVIS_* → THANSA_*...) — tên THẬT trong code không đổi.
+# (javis_* → thansa_*, JAVIS_* → THANSA_*...) - tên THẬT trong code không đổi.
 # Đổi luôn thương hiệu/tác giả/link của Javis sang Thansa (P026): domain javisos.com →
 # thansa.org, minhquy.vn → tradingauto.org, tên tác giả Minh Quý → Duy Quang, repo →
 # xahoapro/thansa-os. Các phép đổi CỤ THỂ phải chạy TRƯỚC phép đổi chung "javis"→"thansa"
