@@ -1146,7 +1146,7 @@
     // TAI FILE TREN IPHONE (0.64.46). App cai ra man hinh chinh (standalone) KHONG co nut Back.
     // Mot link tai file (<a download>, hay link toi /files/raw, /files/zip, /upload/raw) ma di
     // trong CUNG cua so thi iOS khong tai gi ca: no THAY ca app bang trang xem file ("Open in
-    // Preview / More..."), va khong con duong nao quay lai Javis ngoai tat app (chu repo gui anh
+    // Preview / More..."), va khong con duong nao quay lai Thansa ngoai tat app (chu repo gui anh
     // 24/09). Moi cho tai file deu roi vao day: link trong chat, nut Tai ve cua lightbox, trang
     // Tep tin (_dlGo, tai ca thu muc zip), trinh sua file, tai khoi code.
     //   - anh trong chat  -> mo lightbox ngay trong app (co nut Dong, nut Back cung dong duoc)
