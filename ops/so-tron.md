@@ -569,3 +569,11 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   thuế prompt→"THUE CAU TRUC FORK"; P013 vi.json tradingauto.org→image_gen.py BRAND_SOURCE value.
 - VERSION `1.11.0-javis-0.64.50`. moc-goc fa235a8/0.64.50/so_patch 41. tu-kiem-chung 5/5 XANH. backup
   me-backup-0.63.0. **CHƯA đẩy remote** — chờ chủ bấm.
+
+## Vòng 2026-09-26 (goc fa235a8 → e4ad5ec, upstream +3 commit, VERSION nền 0.64.50 → 0.64.52, thansa 1.11→1.12)
+- Vòng CỰC NHỎ (vá lỗi): tải ảnh/tài liệu lên chat không còn báo "lỗi mạng" (0.64.51); mở lại app
+  khôi phục đúng trang + cuộc chat đang làm (0.64.52).
+- Rebase 133 commit (41 patch). 2 xung đột: P025 (VERSION → 1.12.0-javis-0.64.52), P035 (console.js:
+  upstream bỏ comment "mở app là vào màn Javis" vì đổi hành vi khôi phục trang → lấy HEAD).
+- Rebrand 1 comment mới console.js (fix commit, không thêm patch). so_patch giữ 41.
+- VERSION `1.12.0-javis-0.64.52`. backup me-backup-0.64.50 (@ c42b2d4). CHƯA đẩy remote — chờ chủ bấm.
