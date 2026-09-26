@@ -8712,7 +8712,7 @@
     renderVaultTree();
     initRailTooltip();   // tooltip nhanh cho rail thu gọn
     // Trang đầu của thiết bị là Trò chuyện; các lần sau quay lại đúng khung đang dùng.
-    // Khôi phục ngay, trước các lời gọi mạng ở freshSettings, để tránh nháy màn Javis.
+    // Khôi phục ngay, trước các lời gọi mạng ở freshSettings, để tránh nháy màn Thansa.
     khoiPhucTrang();
 
     freshSettings().then(async s => {
