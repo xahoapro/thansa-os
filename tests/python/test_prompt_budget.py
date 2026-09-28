@@ -79,7 +79,8 @@ def _tok(chars):
 #     python -c "import tiktoken; print(len(tiktoken.get_encoding('cl100k_base').encode(open('CLAUDE.md', encoding='utf-8').read())))"
 # THUE CAU TRUC FORK (0.64.50): CLAUDE.md rebrand + P038/P040 -> 33.630, vuot tran goc
 # 33.600 dung 30 ky tu. Nang 33_600->33_800 (khop main.PROMPT_KERNEL_MAX_CHARS), co y thuc.
-KERNEL_MAX_CHARS = 33_800
+# Vong 0.64.74: QUY TAC tran fork = tran upstream (33_600) + 300 thue fork. Chi doi khi upstream doi tran.
+KERNEL_MAX_CHARS = 33_900
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(
