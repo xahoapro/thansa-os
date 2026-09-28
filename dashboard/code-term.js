@@ -145,7 +145,7 @@
       .then(function (r) {
         // Lỗi HTTP vẫn kèm JSON hợp lệ ({"detail":"Not Found"}) nên r.json() không ném gì;
         // st.bat khi đó là undefined và màn hình báo nhầm rằng admin đã đặt JAVIS_TERMINAL=0.
-        // Hay gặp nhất khi server còn chạy code cũ chưa có route này -> phải restart Javis.
+        // Hay gặp nhất khi server còn chạy code cũ chưa có route này -> phải restart Thansa.
         if (!r.ok) throw new Error(window.t("term.http_err", { status: r.status }));
         return r.json();
       })
