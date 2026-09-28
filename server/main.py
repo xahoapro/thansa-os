@@ -463,7 +463,10 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 # 33.600 của upstream đúng 30 ký tự. Không phải phình do thêm nội dung (upstream đã đẩy mục Dev
 # conventions ra docs/ ở 0.64.7); là thuế tên thương hiệu + hai luật fork không cắt được. Nâng
 # 33_600->33_800 (headroom ~170) CÓ Ý THỨC, khớp KERNEL_MAX_CHARS trong test.
-PROMPT_KERNEL_MAX_CHARS = 33_800
+# Vòng 0.64.74: upstream tự phình CLAUDE.md lên 33.574 (sát trần 33.600 của họ), cộng thuế fork ~240
+# -> 33.813. Chốt QUY TẮC để khỏi nâng lắt nhắt: trần fork = trần upstream (33.600) + 300 = 33.900.
+# Chỉ đổi số này khi upstream tự đổi trần của họ.
+PROMPT_KERNEL_MAX_CHARS = 33_900
 
 # Bộ nhớ dài hạn - lưu TRONG vault đang chọn để đi theo vault
 MEMORY_SEED = (
