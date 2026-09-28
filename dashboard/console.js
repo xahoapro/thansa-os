@@ -3968,7 +3968,7 @@
       if (p.id === "openai-compat") {
         // Endpoint tự khai: thứ quyết định "đã kết nối" là Base URL, key có thể bỏ trống.
         return `<div class="prov-card ${p.is_main ? "main" : ""}">
-          ${provHead(p, on, "MCP Javis", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
+          ${provHead(p, on, "MCP Thansa", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
           <div class="prov-note">${esc(t("models.oc_note"))}</div>
           <div class="prov-action" style="flex-wrap:wrap">
             <input class="js-input" id="ocBase" inputmode="url" spellcheck="false" style="flex:1 1 100%" value="${esc(m.openai_compat_base || "")}" placeholder="${esc(t("models.oc_base_ph"))}">
