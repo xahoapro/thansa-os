@@ -577,3 +577,19 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   upstream bỏ comment "mở app là vào màn Javis" vì đổi hành vi khôi phục trang → lấy HEAD).
 - Rebrand 1 comment mới console.js (fix commit, không thêm patch). so_patch giữ 41.
 - VERSION `1.12.0-javis-0.64.52`. backup me-backup-0.64.50 (@ c42b2d4). CHƯA đẩy remote — chờ chủ bấm.
+
+## Vòng 2026-09-28 (goc e4ad5ec → d0087c8, upstream +32 commit, VERSION nền 0.64.52 → 0.64.74, thansa 1.12→1.13)
+- 1.12.0/0.64.52 chưa phát hành → cuộn vào đây, phát hành một lần 1.13.0.
+- 32 commit: việc chạy nền có giám sát (plugin javis-job + server/tien_trinh_nen.py, 0.64.66), Cài đặt
+  5 tab, updater + nút cập nhật hiện ngay, nghe/đọc câu Việt xen Anh (lexicon, phiên âm), bảng chọn model,
+  vá mobile.
+- Rebase 135 commit (41 patch). Xung đột: P003 (index.html giữ viewport interactive-widget mới + title Thansa),
+  P025 (VERSION 1.13.0-javis-0.64.74), P027 (6 docs --ours + regex 236; đã soát link fork không mất), P035
+  (console.js giữ data-i18n mới + rebrand comment), P039 (vi/en/workspace --ours + regex 373; cs.si_* còn),
+  P045 (index.html --ours + regex). P038 áp SẠCH.
+- **Soát an toàn javis-job:** tool chỉ lưu lời dặn "xong thì làm tiếp" (min_mode safe, không chạy lệnh);
+  lượt nối tiếp chạy qua runner của CHÍNH khung chat web (_NOI_TIEP_WEB), không tạo loop/việc nền mới -
+  không lách chốt P038.
+- **Trần prompt:** upstream tự phình CLAUDE.md 33.012→33.574. Chốt QUY TẮC trần fork = trần upstream + 300
+  = 33_900 (server + test), chỉ đổi khi upstream đổi trần của họ.
+- VERSION 1.13.0-javis-0.64.74. backup me-backup-0.64.52. CHƯA đẩy remote.
