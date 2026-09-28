@@ -1996,8 +1996,8 @@ function runMsgAct(btn) {
   const act = btn.dataset.act;
   if (act === "copy") {
     const b = msgEl.querySelector(".bubble");
-    // Tin Javis giữ markdown gốc trong dataset.md: copy bản đó để bài viết dán sang
-    // CMS/website còn nguyên heading, đậm, link, bảng. Metadata ẩn chỉ có ở tin Javis;
+    // Tin Thansa giữ markdown gốc trong dataset.md: copy bản đó để bài viết dán sang
+    // CMS/website còn nguyên heading, đậm, link, bảng. Metadata ẩn chỉ có ở tin Thansa;
     // chữ người dùng phải giữ nguyên, kể cả khi họ thật sự gõ cú pháp HTML comment.
     if (b) {
       const value = msgEl.classList.contains("msg-javis")
