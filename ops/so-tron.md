@@ -593,3 +593,13 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - **Trần prompt:** upstream tự phình CLAUDE.md 33.012→33.574. Chốt QUY TẮC trần fork = trần upstream + 300
   = 33_900 (server + test), chỉ đổi khi upstream đổi trần của họ.
 - VERSION 1.13.0-javis-0.64.74. backup me-backup-0.64.52. CHƯA đẩy remote.
+
+## Vòng 2026-09-29 (goc d0087c8 → 7f0ece6, upstream +3 commit, VERSION nền 0.64.74 → 0.64.77, thansa 1.13→1.14)
+- Vòng CỰC NHỎ: ảnh Codex tự tạo về thẳng khung chat (0.64.75), Codex tự nối lại không thành bong bóng
+  lỗi + WebSocket hỏng thì đi HTTPS (0.64.76), Telegram không lộ nguyên câu lệnh trong dòng trạng thái
+  (0.64.77). Cuộn luôn 1.13.0/0.64.74 (chưa phát hành) → phát hành một lần 1.14.0.
+- Rebase 138 commit (41 patch), chỉ 1 xung đột P025 (VERSION → 1.14.0-javis-0.64.77). Không bề mặt
+  hiển thị mới có "Javis" (các chữ Javis mới đều là docstring server, giữ theo chiến lược).
+- CLAUDE.md 33.813 < trần fork 33.900 (server+test khớp). backup me-backup-0.64.74 (@ 5556ae54).
+- LƯU Ý: phiên này mở từ terminal trong app (JAVIS_STATE_DIR = state thật) → chạy suite bằng
+  `env -u JAVIS_STATE_DIR -u JAVIS_BRAIN -u JAVIS_IN_TERMINAL`. CHƯA đẩy remote — chờ chủ bấm.
