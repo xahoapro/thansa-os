@@ -603,3 +603,5 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - CLAUDE.md 33.813 < trần fork 33.900 (server+test khớp). backup me-backup-0.64.74 (@ 5556ae54).
 - LƯU Ý: phiên này mở từ terminal trong app (JAVIS_STATE_DIR = state thật) → chạy suite bằng
   `env -u JAVIS_STATE_DIR -u JAVIS_BRAIN -u JAVIS_IN_TERMINAL`. CHƯA đẩy remote — chờ chủ bấm.
+- NGHIỆM THU: suite 497/503 → sửa 1 test coupled (test_anh_codex_ve_brain kiểm nhãn javisos → tradingauto.org)
+  → còn 5 đỏ sandbox/môi trường y như các vòng trước (form/route/terminal*/run_command_quyen), 0 hồi quy.
