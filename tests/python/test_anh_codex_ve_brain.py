@@ -97,8 +97,9 @@ check("file ngoài generated_images giữ nguyên, không chép",
       f"[file lạ]({bi_mat.as_posix()})" in moi and not any("bi-mat" in n for n in ten))
 check("trả đúng danh sách đường tuyệt đối trong brain",
       len(ds) == 4 and all(Path(x).is_file() and Path(x).parent == attach for x in ds), ds)
-check("PNG được gắn nhãn Javis như ảnh tự tạo",
-      b"javisos" in (attach / "codex-01a0e847-exec-aaa.png").read_bytes().lower())
+# Thansa: nhãn ảnh là BRAND_SOURCE fork (tradingauto.org, P013), không phải javisos của upstream.
+check("PNG được gắn nhãn Thansa như ảnh tự tạo",
+      b"tradingauto" in (attach / "codex-01a0e847-exec-aaa.png").read_bytes().lower())
 
 # Chạy lại (resume, gọi hai lần) → không đẻ bản sao.
 moi2, _ = anh_codex.dua_anh_ve_brain(cau, THREAD, t0, str(vault))
