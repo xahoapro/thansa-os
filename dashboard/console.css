@@ -437,6 +437,36 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 
 /* Cài đặt: một cột đọc tập trung, nhóm ít dùng có thể gập lại thay vì trải kín màn hình. */
 .settings-page { width: min(100%, 960px); margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.cview-body:has(> .settings-tabs-page) { padding-top: 0; }
+.settings-tabs-page { width: 100%; margin: 0; min-width: 0; }
+.vt-create-menu { position: fixed; margin: 0; padding: 5px; width: 204px; max-width: calc(100vw - 16px); border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); box-shadow: var(--shadow-1); }
+.vt-create-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.vt-create-menu button:hover, .vt-create-menu button:focus-visible { background: var(--surface-2); }
+.ne-location-side { display: flex; flex-direction: column; flex: 0 0 280px; min-height: 0; max-width: 75vw; border-right: 1px solid var(--border); padding-right: 10px; }
+.ne-location-side > button { align-self: flex-end; }
+@media (max-width: 700px) { .fm-edit > .ne-location-side { position: absolute; inset: 0 auto 0 0; z-index: 5; width: 280px; background: var(--bg); } }
+.settings-tab-content > .settings-page,
+.settings-tab-content > .cl-wrap { margin-left: 0; margin-right: 0; }
+.settings-tabs {
+  display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin;
+  position: sticky; top: 0; z-index: 3; padding: 6px 0;
+  margin-bottom: 14px; background: var(--bg); border-bottom: 1px solid var(--glass-brd);
+}
+.settings-tabs [role="tab"] {
+  flex: 0 0 auto; border: 1px solid transparent; border-radius: 9px;
+  padding: 10px 16px; background: transparent; color: var(--text2);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.settings-tabs [role="tab"]:hover { background: var(--glass); color: var(--text); }
+.settings-tabs [aria-selected="true"] { color: var(--accent-ink); background: var(--accent-wash-2); border-color: var(--accent-line); }
+.settings-tabs [role="tab"]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.settings-tab-content { min-width: 0; }
+.settings-tab-content[data-settings-tab="general"] [data-settings-section="voice"],
+.settings-tab-content[data-settings-tab="voice"] [data-settings-section="general"] { display: none !important; }
+@media (max-width: 700px) {
+  .settings-tabs { margin-bottom: 12px; }
+  .settings-tabs [role="tab"] { padding: 10px 12px; font-size: 13px; }
+}
 .settings-group {
   border: 1px solid var(--glass-brd); border-radius: 16px; overflow: hidden;
   background: var(--glass); box-shadow: var(--shadow-1);
@@ -843,6 +873,33 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
     margin: 5px 8px max(7px, env(safe-area-inset-bottom, 0px));
   }
   .hud-voice .voice-input { min-width: 0; }
+  /* Trang quản lý (Trò chuyện, Coding, Cộng sự) mượn ô nhập vào một cột đã có lề đáy riêng.
+     Trước đây lề an toàn cộng CHỒNG lên lề cột (34 + 12px), ô nhập đứng lửng cách đáy màn
+     hình gần 50px. Nay lề an toàn chuyển xuống cột, ô nhập không tự chừa thêm. */
+  .cview .hud-voice { margin-bottom: 0; }
+  .cview .chatpage-main, .cview .ws-main { padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); }
+
+  /* BÀN PHÍM ĐANG MỞ (lớp do mobile-chat.js gắn theo visualViewport). Vạch Home nằm dưới bàn
+     phím nên bỏ hẳn lề an toàn; cả khung chat đặt đúng vào phần màn hình còn nhìn thấy để ô
+     nhập nằm sát bàn phím như app Claude hay Telegram, không có dải trống ở giữa. */
+  /* RELATIVE chứ không phải fixed. 0.64.63 dùng fixed, mà position:fixed luôn dựng một ngữ
+     cảnh xếp chồng mới: cả .hud (kể cả header và bảng chọn model mở từ header) bị ép xuống
+     DƯỚI trang quản lý (.cview, z-index 40, là anh em chứ không phải con của .hud). Bảng chọn
+     model rơi ra sau khung chat, chỉ lộ một mẩu sau bàn phím và bấm lại không lên được (chủ
+     repo báo 27/09). Relative không dựng ngữ cảnh mới; --vv-ptop là vị trí vùng nhìn thấy
+     tính từ đầu tài liệu (visualViewport.pageTop), đúng mốc của một khối trong luồng thường. */
+  body.kb-open .hud {
+    position: relative; top: var(--vv-ptop, 0px);
+    height: var(--vv-h, 100dvh);
+  }
+  body.kb-open .hud-top { top: var(--vv-top, 0px); }
+  body.kb-open .cview {
+    top: calc(var(--vv-top, 0px) + var(--topbar-h)); bottom: auto;
+    height: calc(var(--vv-h, 100dvh) - var(--topbar-h));
+  }
+  body.kb-open .hud-voice { margin-bottom: 6px; }
+  body.kb-open .cview .hud-voice { margin-bottom: 0; }
+  body.kb-open .cview .chatpage-main, body.kb-open .cview .ws-main { padding-bottom: 6px; }
   .cview-head { padding: 14px 16px; }
   .cview-title { font-size: 16px; }
 }
@@ -1536,6 +1593,8 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
    gõ dở trong ô nhập và phiên đang mở đều không mất. Không còn @media nào ở đây - mọi khổ
    màn cùng một luật, đúng luật mà màn hẹp vẫn chạy từ trước. */
 .ws-main.edit-on > .ws-slot { display: none; }
+.ws-main.edit-on > .ws-onboard { display: none; }
+.ws-main.edit-on > .ws-bar, .ws-main.edit-on > .ws-id { display: none; }
 .ws-right { width: 320px; flex: none; overflow: hidden; padding: 14px 12px;
   display: flex; flex-direction: column; gap: 8px;
   border-left: 1px solid var(--glass-brd); background: var(--surface-1); }
@@ -1612,7 +1671,9 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 /* Tên + vai trò của cộng sự CẮT BỚT bằng ba chấm, tuyệt đối không xuống dòng. Vai trò trong
    file agent là cả một câu, nên để nó tự ngắt dòng là thanh tiêu đề cao mấy trăm pixel và
    ĐẨY Ô NHẬP RỚT KHỎI MÀN HÌNH (đo thật ở màn 1024px: ô nhập nằm ở y=850/768). */
-.ws-id { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.ws-id { flex: none; min-width: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; margin: 0 2px 8px; }
+.ws-id:has(.ws-err) { flex-wrap: wrap; }
+#wsRightBtn { margin-left: auto; }
 .ws-id > svg, .ws-id > .ic { flex: none; }
 .ws-id > div { min-width: 0; }
 .ws-id strong, .ws-id small, .ws-id .ws-err { display: block; overflow: hidden;
@@ -1897,15 +1958,10 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 
 .ws-id .agent-avatar { flex:none; }
 @media (max-width:1200px) { .ws-right { width:310px; } }
-/* MÀN ĐIỆN THOẠI: thanh đầu trang xếp HAI DÒNG. Dòng trên là nguyên khuôn mặt cộng sự cùng
-   tên và vai trò, dòng dưới là các nút chức năng. Xếp cả năm thứ trên MỘT dòng thì bốn cái nút
-   ép ô tên còn đúng một chữ cái (đo thật trên iPhone: tiêu đề hiện ra là "C" và "C."), tức chỗ
-   duy nhất nói cho biết mình đang nói với ai lại là chỗ bị cắt mất trước tiên. */
+/* Hàng nút đứng trước tiêu đề trong DOM; icon nhỏ và tên luôn cùng một dòng. */
 @media (max-width:600px) {
   .ws-right { width:min(350px,90vw); }
   .ws-bar { flex-wrap:wrap; gap:8px 6px; }
-  /* order -1: trong DOM ô tên đứng SAU nút mở danh sách, mà dòng trên phải là khuôn mặt. */
-  .ws-id { order:-1; flex:1 0 100%; flex-wrap:wrap; }
   /* Lúc hỏng, câu báo lỗi và nút Thử lại được nhồi vào chính ô tên (xem veLoi trong
      workspace.js). Chen cạnh cái tên trên màn hẹp thì câu lỗi bị cắt giữa chữ và chữ trên nút
      bẻ làm hai dòng, nên cho cả hai xuống một dòng riêng. */
@@ -2156,7 +2212,10 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
    khỏi màn hình và đè lên thanh điều hướng (chủ dự án báo 22/09). Chiều cao thật do JS đặt
    theo chỗ trống quanh chip; luật này chỉ là trần dự phòng. */
 .cd-menu { position: fixed; z-index: 60; min-width: 220px; max-width: 340px; padding: 5px;
-  border-radius: 11px; border: 1px solid var(--glass-brd); background: var(--surface-1);
+  /* Nền ĐẶC. --surface-1 chỉ là lớp phủ alpha 2,5% dành cho thẻ nằm trên nền trang, dùng cho
+     một menu nổi thì chữ của header phía sau xuyên qua, đọc lẫn vào nhau (chủ repo báo 27/09,
+     kèm ảnh menu thư mục đè lên chip model). */
+  border-radius: 11px; border: 1px solid var(--border); background: var(--bg2);
   box-shadow: 0 12px 34px var(--shadow-veil); display: flex; flex-direction: column; gap: 2px;
   max-height: min(60vh, 420px); overflow-y: auto; }
 /* Tên thư mục và đường dẫn ở đây là chữ PHỤ, đọc lướt để chọn, nên để nhỏ gọn cho menu đỡ
@@ -2181,6 +2240,8 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 /* Đang gắn nhiều thư mục: chip mang tên thư mục chính kèm "+N". */
 .cd-chip-them { font-weight: 600; color: var(--info-ink); }
 .cd-menu button.moi { border-top: 1px solid var(--glass-brd); border-radius: 0 0 8px 8px; }
+/* Chưa gắn thư mục nào thì "Thêm thư mục" là mục DUY NHẤT: vạch ngăn phía trên chẳng ngăn gì cả. */
+.cd-menu button.moi:first-child { border-top: 0; border-radius: 8px; }
 .cd-menu button.nguy { color: var(--red); }   /* --danger không có trong bảng màu */
 .cd-menu button small { display: block; font-size: 12px; color: var(--text3); margin-top: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

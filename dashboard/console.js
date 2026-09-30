@@ -118,7 +118,7 @@
     { id: "nang_luc", get label() { return t("nav.group.nang_luc"); },    icon: GICON["Năng lực"], ids: ["workspace", "conversations", "skills", "plugins"] },
     { id: "viec", get label() { return t("nav.group.viec"); },        icon: GICON["Việc"],     ids: ["kanban", "selfimprove"] },
     { id: "ket_noi", get label() { return t("nav.group.ket_noi"); },     icon: GICON["Kết nối"],  ids: ["mcp", "packs", "channels", "models"] },
-    { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON["Hệ thống"], ids: ["usage", "settings", "pet", "share", "logs", "account"], foot: true },
+    { id: "he_thong", get label() { return t("nav.group.he_thong"); },    icon: GICON["Hệ thống"], ids: ["settings", "share", "account"], foot: true },
   ];
   const RAIL_BY_ID = Object.fromEntries(RAIL_ITEMS.map(i => [i.id, i]));
 
@@ -134,7 +134,8 @@
   //
   // "chatbots" (0.61.0): trang Chatbot gộp vào trang Hội thoại làm tab thứ ba. Id còn đó để
   // lệnh nói / bookmark cũ đi tới đúng tab, nhưng không còn là một mục trên thanh bên.
-  const RAIL_AN = new Set(["chatbots"]);
+  // Các id cũ vẫn dùng được qua lệnh UI và lối tắt, nhưng mở tab trong Cài đặt.
+  const RAIL_AN = new Set(["chatbots", "usage", "pet", "logs"]);
   // Trả về [{label, foot, items:[...]}], bỏ id không tồn tại. Mục nào chưa xếp nhóm → dồn vào "Khác".
   function railGroups() {
     const seen = new Set();
@@ -158,6 +159,7 @@
   }
   // Nhãn nhóm chứa một mục id (cho accordion: mở đúng nhóm của trang đang xem).
   function groupLabelOf(id) {
+    if (["pet", "usage", "logs", "runtime"].includes(id)) id = "settings";
     const g = RAIL_GROUPS.find(gr => (gr.ids || []).includes(id));
     return g ? g.label : (RAIL_GROUPS[0] && RAIL_GROUPS[0].label) || "";
   }
@@ -292,6 +294,18 @@
   // Trang Trợ lý và Quy trình gộp thành Cộng sự ở 0.59.0; ai bấm nút cũ trong chat hay
   // bookmark vẫn tới nơi.
   const TRANG_GOP = { runtime: "usage", agents: "workspace", workflows: "workspace" };
+  const TRANG_CUOI_KEY = "javis_last_page";
+  function khoiPhucTrang() {
+    let id = "home";
+    try {
+      const saved = localStorage.getItem(TRANG_CUOI_KEY);
+      const resolved = TRANG_GOP[saved] || saved;
+      if (resolved === "chat" || resolved === "workspace") id = resolved;
+    } catch (e) {}
+    const store = Alpine.store("nav");
+    store.openGroup = groupLabelOf(id);
+    navigateTo(id, true);
+  }
   function navigateTo(id) {
     // Trang Chatbot là TAB của trang Hội thoại từ 0.61.0: nhớ tab rồi đi tới trang đó.
     if (id === "chatbots") {
@@ -300,26 +314,36 @@
     }
     id = TRANG_GOP[id] || id;
     const store = Alpine.store("nav");
-    if (store.active === id) return;   // đang ở trang này → khỏi đổi (tránh nháy + mượn/trả node thừa)
+    const oldTab = { pet: "pet", usage: "usage", logs: "updates" }[id];
+    let tab = oldTab || (id === "settings" ? arguments[2] || "general" : null);
+    if (tab && !["general", "voice", "pet", "usage", "updates"].includes(tab)) tab = "general";
+    if (oldTab) id = "settings";
+    if (store.active === id && (!tab || store.settingsTab === tab)) return;
     const swap = () => {
       const leave = _pageLeave; _pageLeave = null;
       if (leave) { try { leave(); } catch (e) {} }   // dọn trang cũ trước khi thay nội dung
       // (Trước 0.12.4 ở đây còn một nhát thu lớp chat phóng to. Lớp nổi đó đã bỏ - phóng to
       // giờ là chuyển hẳn sang trang Trò chuyện, và _pageLeave ở trên đã trả node về HUD.)
       store.active = id;
+      if (tab) store.settingsTab = tab;
+      // Chỉ nhớ hai khung hội thoại. Ghé Cài đặt, Cập nhật hay Đồ thị không làm mất
+      // nơi đang nói chuyện; chưa từng mở hội thoại thì lần đầu vẫn vào Đồ thị.
+      if (id === "chat" || id === "workspace") {
+        try { localStorage.setItem(TRANG_CUOI_KEY, id); } catch (e) {}
+      }
       // Về nơi có hiển thị model thì làm mới, phòng khi model bị đổi bằng đường khác
       // (trang Models, Cài đặt nhanh, hoặc chỉnh tay settings).
       if (id === "home" || id === "chat") refreshModelUi();
       // Nút điều khiển cockpit (cài đặt, giọng nói, làm mới) chỉ hiện ở trang Thansa, không hiện navbar trang quản lý
       document.body.classList.toggle("in-console", id !== "home");
       // Rời trang Cài đặt → cất #quickSet về holder TRƯỚC khi cviewBody bị ghi đè (giữ node + handler).
-      if (id !== "settings") parkQuickSet();
+      if (id !== "settings") parkQuickSet(true);
       if (id !== "home") renderPage(id);
       recomputeGraph();
     };
     // Dính tab Trò chuyện thì bỏ View Transition: nó chụp snapshot đồ thị của home rồi
     // cross-fade → loé orb ~1s (bitmap chụp trước cả khi ẩn graph). Swap thẳng cho sạch, tức thì.
-    const skipVT = (id === "chat" || store.active === "chat");
+    const skipVT = arguments[1] === true || id === "chat" || store.active === "chat";
     if (document.startViewTransition && !skipVT) document.startViewTransition(swap);
     else swap();
   }
@@ -461,6 +485,8 @@
   async function renderPage(id) {
     let el = body();
     if (!el) return;
+    // Cả đổi TAB trong Cài đặt cũng thay cviewBody. Trả node tĩnh về trước khi tháo nó.
+    parkQuickSet();
     // Thay #cviewBody bằng node MỚI mỗi lần đổi trang: renderer async của trang CŨ (đang await
     // fetch) nếu ghi trễ (el.innerHTML=...) sẽ ghi vào node cũ ĐÃ THÁO RỜI → vô hại, không phá
     // nội dung/nút của trang mới. Đặc biệt bảo vệ các node chat mà tab Trò chuyện mượn vào
@@ -470,7 +496,7 @@
     if (id === "chat")     return renderChat(el);
     if (id === "workspace") return renderWorkspace(el);
     if (STUDIO_PAGES.includes(id)) return renderStudioPage(el, id);
-    if (id === "settings") return renderSettings(el);
+    if (id === "settings") return renderSettingsPage(el);
     if (id === "pet") return renderPetPage(el);
     if (id === "share") return renderSharePage(el);
     if (id === "models")   return renderModels(el);
@@ -1285,6 +1311,7 @@
   // Rời trang Tệp tin: TRẢ trình sửa về khoang não trước khi #cviewBody bị ghi đè, y như trang
   // Trò chuyện vẫn làm. Không trả là mất luôn node #noteEditor, và lần sau mở file ra trắng trơn.
   function _fmRoiTrang() {
+    _neHideLocationSide();
     document.body.classList.remove("on-files");
     _fmSauKhiDong = null;
     _returnNoteEditor();
@@ -3809,7 +3836,7 @@
       `<button class="seg-btn ${reasoning === v ? "sel" : ""}" data-reason="${v}" title="${esc(d)}">` +
       `<span class="seg-lb">${esc(l)}</span><span class="seg-d">${esc(d)}</span></button>`).join("");
 
-    const KEYFIELD = { "openrouter": "openrouter_key", "anthropic-api": "anthropic_api_key", "openai": "openai_api_key", "gemini": "gemini_api_key", "groq": "groq_api_key", "ollama": "ollama_key" };
+    const KEYFIELD = { "openrouter": "openrouter_key", "anthropic-api": "anthropic_api_key", "openai": "openai_api_key", "gemini": "gemini_api_key", "groq": "groq_api_key", "ollama": "ollama_key", "openai-compat": "openai_compat_key" };
     const provHead = (p, on, kindLabel, statusText) => `
         <div class="prov-head">
           <span class="prov-shield ${on ? "on" : ""}">${_shield(on)}</span>
@@ -3932,6 +3959,20 @@
         </div>`;
       }
       const masked = (m[KEYFIELD[p.id]] || "").slice(-4);
+      if (p.id === "openai-compat") {
+        // Endpoint tự khai: thứ quyết định "đã kết nối" là Base URL, key có thể bỏ trống.
+        return `<div class="prov-card ${p.is_main ? "main" : ""}">
+          ${provHead(p, on, "MCP Thansa", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
+          <div class="prov-note">${esc(t("models.oc_note"))}</div>
+          <div class="prov-action" style="flex-wrap:wrap">
+            <input class="js-input" id="ocBase" inputmode="url" spellcheck="false" style="flex:1 1 100%" value="${esc(m.openai_compat_base || "")}" placeholder="${esc(t("models.oc_base_ph"))}">
+            <input class="js-input" id="ocKey" type="password" style="flex:1" placeholder="${on && masked ? esc(t("models.key_change_ph", { duoi: masked })) : esc(t("models.oc_key_ph"))}">
+            <button class="gcard-btn" id="ocSave">${on ? esc(t("common.save")) : esc(t("models.connect"))}</button>
+            ${on ? `<button class="gcard-btn ghost" data-disc="${p.id}">${esc(t("models.disconnect"))}</button>` : ""}
+            <span id="ocMsg" class="gcard-meta" style="flex:1 1 100%"></span>
+          </div>
+        </div>`;
+      }
       return `<div class="prov-card ${p.is_main ? "main" : ""}">
         ${provHead(p, on, p.kind === "cli" ? "MCP/skill" : "MCP Thansa", (on ? t("models.st_connected") : t("models.st_not_connected")) + " · " + p.models.length + " model")}
         ${p.needs_key
@@ -4050,6 +4091,24 @@
         renderModelsCloudTab(el);
       };
     });
+    const ocSave = document.getElementById("ocSave");
+    if (ocSave) ocSave.onclick = async () => {
+      const base = (document.getElementById("ocBase").value || "").trim();
+      const key = (document.getElementById("ocKey").value || "").trim();
+      const msg = document.getElementById("ocMsg");
+      if (!/^https?:\/\//i.test(base)) { msg.textContent = t("models.oc_need_base"); document.getElementById("ocBase").focus(); return; }
+      ocSave.disabled = true; ocSave.textContent = t("settings.checking");
+      // Server gọi thử {base}/models bằng key này, chỉ lưu khi thành công.
+      let r;
+      try { r = await postJson("/provider/openai-compat/connect", { base: base, key: key }, 30000); } catch (e) { r = { ok: false, error: String(e) }; }
+      if (!r || !r.ok) {
+        ocSave.disabled = false; ocSave.textContent = t("models.connect");
+        msg.innerHTML = WARN_ICON + " " + esc((r && r.error) || t("app.err_cap"));
+        return;
+      }
+      await freshSettings();
+      renderModelsCloudTab(el);
+    };
     el.querySelectorAll(".gcard-btn[data-disc]").forEach(b => {
       b.onclick = async () => {
         b.disabled = true; b.textContent = t("models.disconnecting");
@@ -4646,6 +4705,8 @@
       postJson("/connect/oauth/start", { id: c.id }).then(r => {
         if (!r || r.ok === false) { alert(window.t("cs.cn_signin_fail") + " " + ((r && r.error) || window.t("cs.cn_error_low"))); return; }
         window.open(r.url, "_blank");
+        // Đăng nhập xong quay lại tab này: vẽ lại để đèn và nút "Kết nối lại" cập nhật ngay.
+        window.addEventListener("focus", () => renderConnect(el), { once: true });
       });
       return;
     }
@@ -5346,7 +5407,7 @@
     // native, bốn provider API đi qua vòng gọi tool + hub trong _api_stream_mcp. Gemini từng
     // thiếu trong danh sách này nên khách chạy Gemini bị banner vàng "chưa hỗ trợ gọi công cụ"
     // dù bên dưới đã chạy MCP ngon - nhánh vàng giờ chỉ còn để chặn provider lạ.
-    const MCP_PROVIDERS = ["anthropic-cli", "openrouter", "openai", "anthropic-api", "gemini", "groq", "ollama"];
+    const MCP_PROVIDERS = ["anthropic-cli", "openrouter", "openai", "anthropic-api", "gemini", "groq", "ollama", "openai-compat"];
     const mainLabel = (provs.find(p => p.id === main.provider) || {}).label || main.provider || "-";
     let warn = "";
     if (main.provider === "openai-oauth") {
@@ -5555,6 +5616,9 @@
   function openMcpForm(el, server) {
     const P = window.JavisMcpParse;
     let editId = server ? server.id : "";
+    // Kết nối đã chuyển sang OAuth thì Lưu phải GIỮ chế độ đó: gửi auth=header là token thôi
+    // được gắn, máy chủ trả 401 và người dùng bị đẩy đi đăng nhập lại vô cớ.
+    let dangOauth = !!(server && server.auth === "oauth");
     const eyeBtn = '<button type="button" class="mcpf-eye" data-eye title="' + esc(window.t("cs.mf_show")) + '">' + ic("eye") + '</button>';
     const dongKey = (ten, daLuu) => {
       const phV = daLuu ? window.t("cs.mf_saved_ph") : window.t("cs.mf_key_val_ph");
@@ -5722,7 +5786,7 @@
       if (kieu === "url") {
         body.url = $("#mfUrl").value.trim();
         if (!/^https?:\/\//i.test(body.url)) { err.textContent = window.t("cs.mf_need_url"); $("#mfUrl").focus(); return; }
-        body.auth = "header"; body.headers = bang;
+        body.auth = dangOauth ? "oauth" : "header"; body.headers = bang;
         if (editId) body.env = {};
       } else {
         const tok = P ? P.tachLenh($("#mfCmd").value) : $("#mfCmd").value.trim().split(/\s+/).filter(Boolean);
@@ -5758,7 +5822,64 @@
         chan.querySelector("#mfLuu").onclick = () => { closeConnModal(); renderConnect(el); };
         return;
       }
-      baoKq("do", window.t("cs.mf_fail_head"), ((t && t.error) || "") + " " + window.t("cs.mf_fail_tail"));
+      // Server trả 401 = đòi đăng nhập OAuth (chuẩn MCP Authorization, như Claude/ChatGPT tự làm).
+      // Form này mặc định auth=header nên trước đây không có đường nào mở trang đăng nhập.
+      const canOauth = kieu === "url" && /\b401\b|unauthori[sz]ed/i.test((t && t.error) || "");
+      baoKq("do", window.t("cs.mf_fail_head"), ((t && t.error) || "") + " "
+        + window.t(canOauth ? "cs.mf_oauth_hint" : "cs.mf_fail_tail"));
+      if (canOauth) {
+        const ob = document.createElement("button");
+        ob.type = "button"; ob.className = "mp-btn primary"; ob.style.marginTop = "8px";
+        ob.innerHTML = ic("external-link") + esc(window.t("cs.mf_oauth_btn"));
+        ob.onclick = async () => {
+          // Mở tab NGAY trong cú bấm: mở sau await là trình duyệt chặn popup.
+          const w = window.open("", "_blank");
+          ob.disabled = true;
+          const syncAuth = async () => {
+            try {
+              const data = await (await fetch("/mcp/list")).json();
+              const current = (data.servers || []).find(c => c.id === editId);
+              if (current) dangOauth = current.auth === "oauth";
+            } catch (e) { /* keep the last known state until the connection can be read */ }
+          };
+          try {
+            const updated = await postJson("/mcp/update", { id: editId, auth: "oauth" });
+            if (!updated || updated.ok === false) {
+              throw new Error((updated && updated.error) || window.t("cs.cn_error_low"));
+            }
+            dangOauth = true;
+            const r = await postJson("/connect/oauth/start", { id: editId });
+            if (!r || r.ok === false) {
+              // A failed start may restore header auth, or retain OAuth when a token already
+              // exists. Follow the server's resulting state before the user saves again.
+              if (r && r.auth) dangOauth = r.auth === "oauth";
+              else await syncAuth();
+              if (w) w.close();
+              baoKq("do", window.t("cs.cn_signin_fail"), (r && r.error) || window.t("cs.cn_error_low"));
+              return;
+            }
+            if (w) w.location = r.url; else window.open(r.url, "_blank");
+            baoKq("tin", window.t("cs.cn_oauth_after"), "");
+            // Quay lại tab này sau khi đăng nhập xong thì tự kiểm tra lại, khỏi bắt bấm Lưu lần nữa.
+            window.addEventListener("focus", async () => {
+              let t2;
+              try { t2 = await postJson("/connect/test", { id: editId }); } catch (e) { t2 = null; }
+              if (t2 && t2.ok) {
+                baoKq("tin", window.t("cs.mf_ok", { so: t2.tools || 0 }), "");
+                chan.querySelector("#mfLuu").textContent = window.t("common.close");
+                chan.querySelector("#mfLuu").onclick = () => { closeConnModal(); renderConnect(el); };
+              }
+            }, { once: true });
+          } catch (e) {
+            await syncAuth();
+            if (w) w.close();
+            baoKq("do", window.t("cs.cn_signin_fail"), String(e));
+          } finally {
+            ob.disabled = false;
+          }
+        };
+        $("#mfKq .pkm-canh").appendChild(ob);
+      }
       chan.querySelector('[data-act="close"]').textContent = window.t("common.close");
       chan.querySelector('[data-act="close"]').onclick = () => { closeConnModal(); renderConnect(el); };
     };
@@ -6237,9 +6358,13 @@
 
   // ---- Cất #quickSet (avatar/tên miền/giọng nói) về holder ẩn khi rời trang Cài đặt ----
   // Node giữ nguyên → mọi handler đã gắn ở app.js/branding.js/quick-settings.js vẫn sống.
-  function parkQuickSet() {
+  function parkQuickSet(resetDrafts = false) {
     const qs = document.getElementById("quickSet");
     const holder = document.getElementById("quickSetHolder");
+    if (qs && resetDrafts) {
+      delete qs.dataset.generalReady;
+      qs.querySelectorAll("[data-settings-ready]").forEach(node => delete node.dataset.settingsReady);
+    }
     if (qs && holder && qs.parentNode !== holder) holder.appendChild(qs);
   }
 
@@ -6286,6 +6411,7 @@
   // Đọc /voice/options để biết cái gì đang sẵn (agy đã cài chưa, key nào đã dán), rồi vẽ ba
   // khối: chế độ, bộ não giọng cho làn nhanh, nghe bằng gì, và nhà cung cấp cho bậc Live.
   async function renderVoiceV2Card() {
+    const gen = _renderGen;
     const host = document.getElementById("vpV2Host");
     if (!host) return;
     // Ba mục micro (ngôn ngữ nghe, im lặng rồi gửi, ngắt lời) là node TĨNH của index.html:
@@ -6305,6 +6431,7 @@
     traMicVeNha();
     let o = null;
     try { o = await (await fetch("/voice/options", { cache: "no-store" })).json(); } catch (e) { o = null; }
+    if (gen !== _renderGen) return;
     if (!o || !o.ok) {
       // Máy chủ cũ: vẫn phải cho chỉnh micro, ba mục đó không cần máy chủ.
       host.innerHTML = `<div class="qs-block"><div class="popover-label">${esc(t("settings.v2_title"))}</div><div class="gcard-meta">${esc(t("settings.v2_load_fail"))}</div></div>`;
@@ -6441,6 +6568,7 @@
       st.textContent = r && r.ok ? t("settings.v2_saved") : t("settings.save_failed");
       try { if (window.JavisVoiceMode) window.JavisVoiceMode.refresh(); } catch (e) {}
     };
+    host.dataset.settingsReady = "true";
   }
 
   // ---- Thẻ LINH VẬT trên trang Cài đặt ----
@@ -6663,7 +6791,45 @@
     ve();
   }
 
-  async function renderSettings(el) {
+  async function renderSettingsPage(el) {
+    const tabs = ["general", "voice", "pet", "usage", "updates"];
+    const tab = Alpine.store("nav").settingsTab || "general";
+    el.innerHTML = `<div class="settings-tabs-page">
+      <div class="settings-tabs" role="tablist" aria-label="${esc(t("page.settings.label"))}">
+        ${tabs.map(id => `<button type="button" role="tab" id="settings-tab-${id}"
+          data-settings-tab="${id}" aria-controls="settings-panel" aria-selected="${id === tab}"
+          tabindex="${id === tab ? 0 : -1}">${esc(t(`settings.tab.${id}`))}</button>`).join("")}
+      </div>
+      <section id="settings-panel" class="settings-tab-content" role="tabpanel"
+        aria-labelledby="settings-tab-${tab}" tabindex="0" data-settings-tab="${tab}"></section>
+    </div>`;
+    const select = (id) => {
+      navigateTo("settings", true, id);
+      const btn = document.getElementById("settings-tab-" + id);
+      if (btn) { btn.focus({ preventScroll: true }); btn.scrollIntoView({ block: "nearest", inline: "nearest" }); }
+    };
+    el.querySelectorAll("[role=tab]").forEach(btn => {
+      btn.onclick = () => select(btn.dataset.settingsTab);
+      btn.onkeydown = e => {
+        const i = tabs.indexOf(btn.dataset.settingsTab);
+        const next = e.key === "ArrowRight" ? (i + 1) % tabs.length
+          : e.key === "ArrowLeft" ? (i + tabs.length - 1) % tabs.length
+          : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1;
+        if (next >= 0) { e.preventDefault(); select(tabs[next]); }
+      };
+    });
+    const panel = el.querySelector("#settings-panel");
+    try {
+      if (tab === "pet") await renderPetPage(panel);
+      else if (tab === "usage") await renderUsage(panel);
+      else if (tab === "updates") await renderLogs(panel);
+      else await renderSettings(panel, tab);
+    } catch (e) {
+      if (panel.isConnected) panel.innerHTML = `<div class="cview-placeholder">${esc(t("app.err_net"))}</div>`;
+    }
+  }
+
+  async function renderSettings(el, tab = "general") {
     const gen = _renderGen;               // chốt token: nếu user đổi trang trong lúc await → bỏ render này
     parkQuickSet();                       // giữ #quickSet an toàn TRƯỚC khi ghi đè cviewBody
     el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
@@ -6742,7 +6908,7 @@
         <input class="js-input" id="vpElVoice" value="${esc(v.elevenlabs_voice || "")}" placeholder="${esc(t("settings.eleven_voice_ph"))}">
       </div>`;
     el.innerHTML = `<div class="settings-page">
-      <details class="settings-group" open>
+      <details class="settings-group" data-settings-section="general" open>
         <summary><span><b>${esc(t("settings.grp_system"))}</b><small>${esc(t("settings.grp_system_sub"))}</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
         <div class="settings-group-body">
           <div class="settings-status-grid">
@@ -6754,13 +6920,11 @@
           <div class="settings-links">
             <button data-settings-go="models"><span>◈</span><b>${esc(t("page.models.label"))}</b><small>${esc(t("settings.link_models_sub"))}</small></button>
             <button data-settings-go="channels"><span>${ic("send")}</span><b>${esc(t("page.channels.label"))}</b><small>${esc(t("settings.link_channels_sub"))}</small></button>
-            <button data-settings-go="account"><span>${ic("circle-user")}</span><b>${esc(t("page.account.label"))}</b><small>${esc(t("settings.link_account_sub"))}</small></button>
-            <button data-settings-go="logs"><span>${ic("scroll-text")}</span><b>${esc(t("page.logs.label"))}</b><small>${esc(t("settings.link_logs_sub"))}</small></button>
           </div>
         </div>
       </details>
 
-      <details class="settings-group" open>
+      <details class="settings-group" data-settings-section="general" open>
         <summary><span><b>${esc(t("settings.grp_ui"))}</b><small>${esc(t("settings.grp_ui_sub"))}</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
         <div class="settings-group-body settings-two-col">
           <div class="settings-card">
@@ -6790,12 +6954,9 @@
         </div>
       </details>
 
-      <details class="settings-group" open>
-        <summary><span><b>${esc(t("settings.grp_voice"))}</b><small>${esc(t("settings.grp_voice_sub"))}</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
-        <div class="settings-group-body cs-host"></div>
-      </details>
+      <div class="cs-host"></div>
 
-      <details class="settings-group" id="setAutostartSec" style="display:none">
+      <details class="settings-group" data-settings-section="general" id="setAutostartSec" style="display:none">
         <summary><span><b>${esc(t("settings.grp_autostart"))}</b><small>${esc(t("settings.grp_autostart_sub"))}</small></span><span class="settings-caret">${ic("chevron-down")}</span></summary>
         <div class="settings-group-body">
           <div class="settings-card compact">
@@ -6813,11 +6974,15 @@
     // Phải chạy TRƯỚC vòng nối [data-settings-go] bên dưới: nút "Bật ngay" nằm trong khối vừa
     // nhúng, và nó dựa vào chính vòng đó để nối hành động chuyển trang.
     await renderTfaRow();
+    if (gen !== _renderGen) return;
     // Khối tài khoản vừa nhúng do app.js nuôi, và đường vào trang này KHÔNG đi qua
     // openSettings() - không gọi cái này thì ô "Tài khoản" trống trơn, ô mật khẩu hiện tại
     // không hiện ra, và nút Lưu tưởng là chưa có tài khoản nên bấm không ăn.
     if (window.__javisRefreshAuthRow) { try { await window.__javisRefreshAuthRow(); } catch (e) {} }
-    if (window.__javisRefreshExtras) { try { window.__javisRefreshExtras(); } catch (e) {} }  // nạp lại avatar/tên miền
+    if (gen !== _renderGen) return;
+    if (tab === "general" && qs && !qs.dataset.generalReady && window.__javisRefreshExtras) {
+      try { window.__javisRefreshExtras(); qs.dataset.generalReady = "true"; } catch (e) {}
+    }
     const langHost = document.getElementById("replyLangHost");
     if (langHost) {
       langHost.innerHTML = langHtml;
@@ -6845,12 +7010,15 @@
     // còn #vpV2Host là thẻ "Chế độ nói chuyện" của riêng nó (trước đây V2 bị nhét vào trong
     // khối nhà cung cấp, nên một thẻ có hai nút Lưu chồng nhau).
     const provHost = document.getElementById("ttsProviderHost");
-    if (provHost) provHost.innerHTML = provHtml;
-    renderVoiceV2Card();
+    // Giữ nguyên các ô chưa Lưu khi chuyển TAB. Chỉ nạp lại khi mở một lượt Cài đặt mới.
+    const keepVoiceDraft = provHost && provHost.dataset.settingsReady === "true";
+    if (provHost && !keepVoiceDraft) { provHost.innerHTML = provHtml; provHost.dataset.settingsReady = "true"; }
+    const voiceHost = document.getElementById("vpV2Host");
+    if (tab === "voice" && voiceHost && voiceHost.dataset.settingsReady !== "true") renderVoiceV2Card();
 
     const provSel = document.getElementById("vpProvider");
     const ttsAdvanced = document.getElementById("ttsAdvanced");
-    if (ttsAdvanced) ttsAdvanced.open = prov !== "edge";
+    if (ttsAdvanced && !keepVoiceDraft) ttsAdvanced.open = prov !== "edge";
     if (provSel) {   // guard: thiếu điểm neo (vd cache index.html cũ) thì avatar/tên miền vẫn chạy, không sập trang
       const showFields = () => {
         const p = provSel.value;
@@ -6866,7 +7034,7 @@
 
       // Dòng trạng thái nằm sẵn trong index.html (rỗng) nên câu mở đầu phải đặt từ đây.
       const st = document.getElementById("vpStatus");
-      if (st) st.innerHTML = esc(t("settings.tts_using")) + " <b>" + esc({ edge: "Edge", openai: "OpenAI", elevenlabs: "ElevenLabs" }[prov] || prov) + "</b>";
+      if (st && !keepVoiceDraft) st.innerHTML = esc(t("settings.tts_using")) + " <b>" + esc({ edge: "Edge", openai: "OpenAI", elevenlabs: "ElevenLabs" }[prov] || prov) + "</b>";
       document.getElementById("vpSave").onclick = async () => {
         st.textContent = t("settings.saving");
         const data = {
@@ -6876,12 +7044,15 @@
         };
         const elKey = document.getElementById("vpElKey").value.trim();
         if (elKey) data.elevenlabs_key = elKey;
-        const r = await saveSetting("voice", data);
         const oaKey = document.getElementById("vpOaKey").value.trim();
-        if (oaKey) await saveSetting("model", { openai_api_key: oaKey });   // key OpenAI dùng chung với chat
+        let r = await saveSetting("voice", data);
+        if (oaKey) {
+          const keyResult = await saveSetting("model", { openai_api_key: oaKey });
+          if (!keyResult.ok) r = keyResult;
+        }
         _settings = null;
         st.innerHTML = r.ok
-          ? OK_ICON + " " + esc(window.t("cs.vo_saved_a")) + " <b>" + esc(provSel.value) + "</b>. " + esc(window.t("cs.vo_saved_b"))
+          ? OK_ICON + " " + esc(window.t("cs.vo_saved_a")) + " <b>" + esc(data.tts_provider) + "</b>. " + esc(window.t("cs.vo_saved_b"))
           : WARN_ICON + " " + esc(window.t("cs.ch_save_err"));
       };
     }
@@ -6889,7 +7060,7 @@
     el.querySelectorAll("[data-settings-go]").forEach(btn => {
       btn.onclick = () => navigateTo(btn.dataset.settingsGo);
     });
-    const refreshSettings = () => { _settings = null; renderSettings(el); };
+    const refreshSettings = () => { if (gen !== _renderGen) return; _settings = null; renderPage("settings"); };
     const graphToggle = document.getElementById("setGraphToggle");
     if (graphToggle) graphToggle.onclick = async () => {
       graphToggle.disabled = true;
@@ -6926,7 +7097,7 @@
     const loadAutostart = async () => {
       const section = document.getElementById("setAutostartSec"); if (!section) return;
       let j = {}; try { j = await (await fetch("/autostart", { cache: "no-store" })).json(); } catch (e) { return; }
-      if (!j.supported) return;
+      if (gen !== _renderGen || !j.supported) return;
       section.style.display = ""; section.open = true;
       const on = !!j.enabled;
       document.getElementById("setAutoTag").textContent =
@@ -6947,11 +7118,12 @@
         button.disabled = true; document.getElementById("setAutoStatus").textContent = window.t("settings.saving");
         const fd = new FormData(); fd.append("enabled", (on && !hong) ? "0" : "1");
         let r = {}; try { r = await (await fetch("/autostart", { method: "POST", body: fd })).json(); } catch (e) { r = { ok: false, error: e.message }; }
+        if (gen !== _renderGen) return;
         if (r.ok) { document.getElementById("setAutoStatus").textContent = ""; loadAutostart(); }
         else { document.getElementById("setAutoStatus").innerHTML = WARN_ICON + " " + esc(r.error || window.t("app.err_cap")); button.disabled = false; }
       };
     };
-    loadAutostart();
+    if (tab === "general") loadAutostart();
   }
 
   // ============================================
@@ -7337,12 +7509,12 @@
         '<aside class="chatpage-side" id="chatPageSide"></aside>' +
         '<div class="chatpage-main">' +
           '<div class="chatpage-bar">' +
-            '<button class="cp-ico-btn cp-side-toggle" type="button" title="' + esc(window.t("cs.cp_toggle_hist")) + '">' + ic("history") + '</button>' +
+            '<button class="cp-ico-btn cp-side-toggle" type="button" data-i18n-title="cs.cp_toggle_hist" title="' + esc(window.t("cs.cp_toggle_hist")) + '">' + ic("history") + '</button>' +
             // Chữ nằm trong <span> để màn hẹp ẩn được, giữ lại icon. Để chữ trần thì không
             // có cách nào ẩn mà không mất luôn cả nút.
-            '<button class="cp-ico-btn cp-min" type="button" id="cpMinBtn" ' +
+            '<button class="cp-ico-btn cp-min" type="button" id="cpMinBtn" data-i18n-title="cs.cp_min_title" data-i18n-aria="cs.cp_min_title" ' +
               'title="' + esc(window.t("cs.cp_min_title")) + '" aria-label="' + esc(window.t("cs.cp_min_title")) + '">' +
-              ic("chevron-left") + '<span>' + esc(window.t("cs.cp_min")) + '</span></button>' +
+              ic("chevron-left") + '<span data-i18n="cs.cp_min">' + esc(window.t("cs.cp_min")) + '</span></button>' +
             // Tiêu đề tĩnh "Trò chuyện với Thansa" ĐÃ BỎ (chủ repo yêu cầu 01/09). Nó nói
             // đúng một điều mà rail đang tô sáng và khung trống đã ghi bằng chữ in nghiêng
             // ngay bên dưới, nên nó chỉ ăn chỗ. Chip project lùi về mép phải, chiếm chỗ đó.
@@ -7375,11 +7547,11 @@
     if (sideEl) {
       const thuBtn = document.createElement("button");
       thuBtn.className = "cside-thu-btn"; thuBtn.type = "button";
-      thuBtn.title = window.t("cs.cp_side_collapse"); thuBtn.innerHTML = ic("panel-left");
+      thuBtn.title = window.t("cs.cp_side_collapse"); thuBtn.dataset.i18nTitle = "cs.cp_side_collapse"; thuBtn.innerHTML = ic("panel-left");
       thuBtn.onclick = () => datSideThu(true);
       const moBtn = document.createElement("button");
       moBtn.className = "cside-expand"; moBtn.type = "button";
-      moBtn.title = window.t("cs.cp_side_expand"); moBtn.innerHTML = ic("panel-left");
+      moBtn.title = window.t("cs.cp_side_expand"); moBtn.dataset.i18nTitle = "cs.cp_side_expand"; moBtn.innerHTML = ic("panel-left");
       moBtn.onclick = () => datSideThu(false);
       sideEl.appendChild(thuBtn); sideEl.appendChild(moBtn);
     }
@@ -7399,11 +7571,11 @@
       try { if (localStorage.getItem("javis_editchat_thu") === "1") mainEl.classList.add("echat-thu"); } catch (e) {}
       const et = document.createElement("button");
       et.className = "cedit-thu-btn"; et.type = "button";
-      et.title = window.t("cs.cp_chat_collapse"); et.innerHTML = ic("panel-left");
+      et.title = window.t("cs.cp_chat_collapse"); et.dataset.i18nTitle = "cs.cp_chat_collapse"; et.innerHTML = ic("panel-left");
       et.onclick = () => datEditThu(true);
       const em = document.createElement("button");
       em.className = "cedit-expand"; em.type = "button";
-      em.title = window.t("cs.cp_chat_expand"); em.innerHTML = ic("panel-left");
+      em.title = window.t("cs.cp_chat_expand"); em.dataset.i18nTitle = "cs.cp_chat_expand"; em.innerHTML = ic("panel-left");
       em.onclick = () => datEditThu(false);
       slot.appendChild(et); slot.appendChild(em);
     }
@@ -7525,6 +7697,38 @@
     }
   }
 
+  function _vtCreateMenu(button, rel, isDir) {
+    document.getElementById("vtCreateMenu")?.remove();
+    const menu = document.createElement("div");
+    menu.id = "vtCreateMenu"; menu.className = "vt-create-menu";
+    menu.setAttribute("popover", "auto");
+    menu.innerHTML = `<button type="button">${ic("file-text")} ${esc(window.t("cs.vt_create_file"))}</button>`
+      + `<button type="button">${ic("folder")} ${esc(window.t("cs.vt_create_dir"))}</button>`;
+    menu.querySelectorAll("button").forEach((item, index) => {
+      item.onclick = () => { menu.remove(); if (index) _vtAddFolder(rel, isDir); else _vtAddFile(rel, isDir); };
+    });
+    document.body.appendChild(menu);
+    const rect = button.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 220)) + "px";
+    menu.style.top = Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 110)) + "px";
+    menu.showPopover();
+    menu.querySelector("button").focus();
+    menu.addEventListener("toggle", () => { if (!menu.matches(":popover-open")) menu.remove(); });
+  }
+
+  async function _vtAddFolder(rel, isDir) {
+    const dir = isDir ? rel : (rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "");
+    const name = (prompt(window.t("cs.vt_new_dir")) || "").trim();
+    if (!name) return;
+    const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", dir); fd.append("name", name);
+    try {
+      const response = await fetch("/files/mkdir", { method: "POST", body: fd });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.error) throw new Error(result.error || window.t("app.err_net"));
+      await _vtRevealInTree(dir ? dir + "/" + name : name, true);
+    } catch (error) { alert(error.message || window.t("app.err_net")); }
+  }
+
   async function _vtAddFile(rel, isDir) {
     // Bấm ở thư mục → tạo file BÊN TRONG; bấm ở file → tạo CÙNG thư mục (thư mục cha của file).
     const dir = isDir ? rel : (rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "");
@@ -7571,7 +7775,7 @@
     node.querySelectorAll(".vt-act button").forEach(b => b.onclick = (e) => {
       e.stopPropagation();
       const a = b.dataset.a;
-      if (a === "add") _vtAddFile(rel, isDir);
+      if (a === "add") _vtCreateMenu(b, rel, isDir);
       else if (a === "dl") { if (isDir) _dlFolder(rel, it.name); else _dlFile(rel); }
       else if (a === "ren") _vtRename(rel, it.name);
       else _vtDelete(rel, it.name, isDir);
@@ -7612,7 +7816,12 @@
       const items = await _vtList(dir);
       for (const it of items) {
         const rel = dir ? dir + "/" + it.name : it.name;
-        if (it.type === "dir") { if (!it.name.startsWith(".") && !SKIP.has(it.name)) queue.push(rel); }
+        if (it.type === "dir") {
+          if (!it.name.startsWith(".") && !SKIP.has(it.name)) {
+            out.push({ name: it.name, type: "dir", ext: "", path: rel, dir: dir });
+            queue.push(rel);
+          }
+        }
         else out.push({ name: it.name, ext: it.ext, path: rel, dir: dir });
       }
     }
@@ -7634,9 +7843,9 @@
    * Dùng lại `_vtRebuildReExpand` (vốn viết cho việc tạo file mới) nên không đẻ thêm cơ chế
    * xổ cây thứ hai.
    */
-  async function _vtRevealInTree(path) {
+  async function _vtRevealInTree(path, isDir = false) {
     const p = String(path || "");
-    const dir = p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : (_vtHome || "");
+    const dir = isDir ? p : (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : (_vtHome || ""));
     const input = document.getElementById("vaultSearch");
     if (input) input.value = "";
     const results = document.getElementById("vaultResults"); if (results) results.hidden = true;
@@ -7653,12 +7862,13 @@
     box.innerHTML = "";
     list.forEach(it => {
       const el = document.createElement("div"); el.className = "vr-item";
+      const isDir = it.type === "dir";
       const sub = withSnippet ? (it.snippet || "") : _vtRelHome(it.dir);
-      el.innerHTML = `<div class="vr-name"><span class="vt-ico">${_fileIcon(it.ext)}</span>${esc(it.name)}`
+      el.innerHTML = `<div class="vr-name"><span class="vt-ico">${isDir ? ic("folder") : _fileIcon(it.ext)}</span><span class="vr-label" title="${esc(it.name)}">${esc(it.name)}</span>`
         + `<button class="vr-loc" type="button" title="${esc(window.t("cs.vt_loc_title"))}">${esc(window.t("cs.fm_loc"))}</button></div>`
         + (sub ? `<div class="vr-snip">${esc(sub)}</div>` : "");
-      el.onclick = () => openNote(it.path, { name: it.name, ext: it.ext, type: "file" });
-      el.querySelector(".vr-loc").onclick = (e) => { e.stopPropagation(); _vtRevealInTree(it.path); };
+      el.onclick = () => isDir ? _vtRevealInTree(it.path, true) : openNote(it.path, { name: it.name, ext: it.ext, type: "file" });
+      el.querySelector(".vr-loc").onclick = (e) => { e.stopPropagation(); _vtRevealInTree(it.path, isDir); };
       box.appendChild(el);
     });
   }
@@ -7679,13 +7889,13 @@
     let hits = null;
     try {
       const r = await fetch(`/files/search?brain=${encodeURIComponent(fbrain())}`
-        + `&q=${encodeURIComponent(q)}&mode=name&limit=120`);
+        + `&q=${encodeURIComponent(q)}&mode=name&include_dirs=true&limit=120`);
       if (r.ok) {
         const d = await r.json().catch(() => ({}));
         // `path` của /files/search tính theo TRẦN DUYỆT - đúng quy ước openNote/_vtRevealInTree
         // đang dùng, nên không phải đổi gì ở hai chỗ đó.
         if (d && !d.error) hits = (d.items || []).map(it => ({
-          name: it.name, ext: it.ext, path: it.path,
+          name: it.name, ext: it.ext, path: it.path, type: it.type || "file",
           dir: String(it.path || "").includes("/")
             ? it.path.slice(0, it.path.lastIndexOf("/")) : "",
         }));
@@ -7745,16 +7955,7 @@
     chipContent.onclick = () => setMode("content");
     const nf = document.getElementById("vtNewFile"), nd = document.getElementById("vtNewDir"), rf = document.getElementById("vtRefresh");
     if (rf) rf.onclick = () => { _vtCache.clear(); _vtIndex = null; renderVaultTree(); };
-    if (nf) nf.onclick = async () => {
-      let n = prompt(window.t("cs.vt_new_file")); if (!n) return;
-      if (!/\.[a-z0-9]+$/i.test(n)) n += ".md";   // mặc định file markdown
-      const rel = _vtHome ? _vtHome + "/" + n : n;
-      const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", rel); fd.append("content", "");
-      await fetch("/files/write", { method: "POST", body: fd });
-      await _vtRebuildReExpand(_vtHome || "");   // giữ thư mục đang mở
-      const ext = "." + n.split(".").pop().toLowerCase();
-      openNote(rel, { name: n, ext: ext, type: "file" });
-    };
+    if (nf) nf.onclick = () => _vtCreateMenu(nf, _vtHome || "", true);
     if (nd) nd.onclick = async () => {
       const n = prompt(window.t("cs.vt_new_dir")); if (!n) return;
       const fd = new FormData(); fd.append("brain", fbrain()); fd.append("path", _vtHome || ""); fd.append("name", n);
@@ -7847,6 +8048,7 @@
   }
 
   function closeNote() {
+    _neHideLocationSide();
     const ed = document.getElementById("noteEditor"); if (!ed) return;
     ed.hidden = true; ed.classList.remove("ne-full"); _neSyncFull();
     // Đóng trình sửa ở trang Trò chuyện = trả chỗ lại cho khung chat. Không trả thì khung chat
@@ -7902,6 +8104,42 @@
     closeNote();
     await _vtRebuildReExpand(null);
   }
+  function _neHideLocationSide() {
+    const side = document.getElementById("neLocationSide");
+    if (side) { _returnVaultPanel(); side.remove(); }
+  }
+
+  async function _neShowLocation(rel) {
+    const editor = document.getElementById("noteEditor");
+    if (editor) { editor.classList.remove("ne-full"); _neSyncFull(); }
+    const workspace = document.getElementById("wsPage");
+    const chat = document.getElementById("chatPage");
+    const files = document.getElementById("fmEdit");
+    if (workspace) {
+      workspace.querySelector('[data-rtab="files"]')?.click();
+      workspace.classList.toggle("right-open", window.matchMedia("(max-width: 1060px)").matches);
+    } else if (chat) {
+      window.JavisChatSide?.tab("files");
+      chat.classList.remove("side-thu");
+      chat.classList.add("side-open");
+    } else if (files) {
+      let side = document.getElementById("neLocationSide");
+      if (!side) {
+        side = document.createElement("aside"); side.id = "neLocationSide";
+        side.className = "ne-location-side cside-pane";
+        const close = document.createElement("button"); close.type = "button";
+        close.className = "ws-ico"; close.innerHTML = X_ICON;
+        close.setAttribute("aria-label", window.t("common.close"));
+        close.onclick = _neHideLocationSide;
+        side.appendChild(close); files.prepend(side);
+        _borrowVaultPanel(side);
+      }
+    } else {
+      document.body.classList.remove("vault-thu");
+    }
+    await _vtRevealInTree(rel);
+  }
+
   function _neCommonBtns(actions, rel, it) {
     // label là HTML (icon SVG), không phải chữ trơ - dùng innerHTML kẻo in ra mã.
     const mk = (label, title, fn) => { const b = document.createElement("button"); b.innerHTML = label; if (title) b.title = title; b.onclick = fn; return b; };
@@ -7913,6 +8151,9 @@
     const bSao = mk(ic("copy"), window.t("common.copy_path") + ": " + rel,
                     () => { if (window.JavisCopy) window.JavisCopy(rel, bSao); });
     actions.appendChild(bSao);
+    const locationButton = mk(ic("folder") + " " + esc(window.t("cs.ne_file_location")), window.t("cs.ne_file_location"), () => _neShowLocation(rel));
+    locationButton.type = "button";
+    actions.appendChild(locationButton);
     actions.appendChild(mk(ic("pencil"), window.t("cs.ne_rename_file"), () => _neRenameCur(rel, it)));
     actions.appendChild(mk(ic("trash-2"), window.t("cs.ne_del_file"), () => _neDeleteCur(rel, it)));
     // CHIA SE: cung cai nut cua trinh sua modal (window.JavisShareBtn), chi khac cho ve thanh
@@ -8174,7 +8415,7 @@
     _neDangDiLichSu = false;
     if (!laLichSu) _neDayLichSu(rel, it);
     _neVeNutLui();
-    ed.hidden = false; ed.classList.remove("ne-full"); _neSyncFull();
+    ed.hidden = false; ed.classList.add("ne-full"); _neSyncFull();
     _neOpenRel = rel || "";     // để chip "file đang mở" biết có cần nạp lại hay chỉ cần đưa mắt về
     _neLayNoiDung = null; _neGocText = null;   // file mới: mốc so sánh dựng lại ở dưới
     // Đang ở trang Trò chuyện thì trình sửa chiếm chỗ khung chat thay vì đè lên visual não
@@ -8412,6 +8653,9 @@
     // Cột trái = Vault explorer (luôn có trong DOM ở màn home) → nạp cây ngay khi khởi động
     renderVaultTree();
     initRailTooltip();   // tooltip nhanh cho rail thu gọn
+    // Trang đầu của thiết bị là Trò chuyện; các lần sau quay lại đúng khung đang dùng.
+    // Khôi phục ngay, trước các lời gọi mạng ở freshSettings, để tránh nháy màn Thansa.
+    khoiPhucTrang();
 
     freshSettings().then(s => {
       // Ô đổi ngôn ngữ giao diện dưới đáy rail. Danh sách từ sổ đăng ký phía server
@@ -8435,9 +8679,6 @@
         }
       } catch (e) { /* thiếu ô thì rail vẫn sống */ }
       graphEnabled = !(s.dashboard && s.dashboard.graph_enabled === false);
-      // MỞ APP LÀ VÀO MÀN JAVIS, kể cả lite-mode (cờ graph tắt hoặc màn hẹp): màn Thansa đã có
-      // sẵn ô chat, chỉ khác là không vẽ khoang não. Bản trước tự đẩy sang trang Trò chuyện,
-      // hoá ra rối hơn - mỗi lần tải lại là mỗi lần rơi vào một trang khác.
       recomputeGraph();
       // Deep-link mở tab mới từ link file trong chat: #open=<đường-dẫn-vault>.
       // Đi qua openVaultPath chứ KHÔNG phải openFilesAt: file sửa được thì mở thẳng trình sửa,

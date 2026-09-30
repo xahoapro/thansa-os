@@ -72,7 +72,9 @@
   }
 
   // Loop va nhac hen song o trang Viec dinh ky, khong phai bang Kanban (0.64.49).
+  // Việc chạy nền (0.64.66) không có trang nào liệt kê: thẻ không có nút mở trang.
   function trangCua(kind) {
+    if (kind === "job") return "";
     return (kind === "loop" || kind === "reminder") ? "selfimprove" : "kanban";
   }
 
@@ -100,8 +102,8 @@
       '<span class="viec-ico">' + icon(iconCua(viec)) + "</span>" +
       '<span class="viec-nhan">' + esc(nhanCua(viec)) + "</span>" +
       (viec.title ? '<span class="viec-ten" title="' + esc(viec.title) + '">' + esc(viec.title) + "</span>" : "") +
-      '<button type="button" class="viec-mo" data-trang="' + trang + '">' + icon("square-kanban") +
-      "<span>" + esc(tw(trang === "kanban" ? "viec.mo_trang" : "viec.mo_dinh_ky")) + "</span></button>" +
+      (trang ? '<button type="button" class="viec-mo" data-trang="' + trang + '">' + icon("square-kanban") +
+      "<span>" + esc(tw(trang === "kanban" ? "viec.mo_trang" : "viec.mo_dinh_ky")) + "</span></button>" : "") +
       "</div>";
   }
 

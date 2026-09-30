@@ -130,8 +130,11 @@ function setOrbState(state, label, petState) {
 const attention = new window.JavisVoiceAttention.Attention();
 const voice = new JavisVoice({
   lang: "vi-VN",
-  preserveTranscript: true,
-  onTranscriptSuggestion: () => ghiChuThoang(window.t("app.voice_alt_transcript")),
+  // KHÔNG bật preserveTranscript (0.64.73). 0.64.32 bật nó: chữ Groq Whisper chỉ còn là "gợi
+  // ý", tin gửi đi luôn là chữ Chrome, nên người đã CHỌN Groq cũng chỉ nhận được bản Chrome
+  // tiếng Việt chép tiếng Anh thành "clash", "cloud Play". Chủ dự án 27/09: "lần trước có bản
+  // nhận đúng Việt Anh, tuyệt vời lắm, giờ không tái hiện được" - chính là bản trước 0.64.32.
+  // Chữ Chrome vẫn hiện TẠM lúc đang nói; câu chốt gửi đi là chữ Groq (Groq lỗi thì chữ Chrome).
   onPlaybackError: () => ghiChuThoang(window.t("app.voice_playback_failed")),
   acceptTranscript: (text) => !handsFree || attention.accept(text),
   onStart: () => {
@@ -568,6 +571,7 @@ async function batLive(wakeText = "") {
       }
       _liveJavisText += text;
       if (!_liveJavisBubble) _liveJavisBubble = createStreamingBubble();
+      _liveJavisBubble.dataset.md = _liveJavisText;   // copy ra markdown gốc, kể cả hội thoại bằng giọng
       if (dangTheoLoi()) batTheoLoi(_liveJavisBubble, _liveJavisText, null, true);   // V3: chữ theo tiếng
       else { _liveJavisBubble.querySelector(".bubble").innerHTML = markdownToHtml(_liveJavisText); scrollBottom(); }
     },
@@ -661,6 +665,7 @@ function connect() {
 // KHÔNG có nút reload nào cả - nên phải tự hồi sức: nối lại socket ngay (không đợi chuỗi
 // retry 3s bắt kịp) và kéo lại hội thoại đang xem từ server để bù tin đã lỡ.
 let _hiddenAt = 0;
+let _daChao = false;   // đã nhận "hello" lần nào chưa: lần sau là socket nối lại
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { _hiddenAt = Date.now(); adaptive.save("hidden"); return; }
   _resumeSauNgu(false);
@@ -672,16 +677,50 @@ function _resumeSauNgu(force) {
   // thoại một cách ồn ào - trừ khi bfcache (force) vì khi đó không biết đã ngủ bao lâu.
   if (!force && (!_hiddenAt || Date.now() - _hiddenAt < 20000)) return;
   _hiddenAt = 0;
+  const socketConSong = !!(ws && ws.readyState === WebSocket.OPEN);
   try { connect(); } catch (e) {}   // đã có chốt chống trùng, gọi thừa vô hại
-  // Phiên đang xem có lưu DB thì dựng lại từ server - openStoredSession tự gắn lại bong
-  // bóng sống nếu phiên đang generate nền, nên gọi giữa chừng không mất gì.
-  if (savedSessionId) { try { openStoredSession(savedSessionId); } catch (e) {} }
+  // Socket còn sống thì tin đã đến khung hiện tại: giữ nguyên DOM, vị trí đọc và ô đang gõ.
+  // Chỉ đồng bộ từ server khi socket đứt hoặc trang trở về từ bfcache.
+  if (savedSessionId && (force || !socketConSong)) {
+    try { openStoredSession(savedSessionId); } catch (e) {}
+  } else if (savedSessionId) {
+    // Socket "còn sống" trên giấy: iOS hay trả về một socket readyState OPEN mà thực ra đã
+    // chết trong lúc app ngủ, tin tới lúc đó rơi mất. Chủ repo báo 27/09: hỏi lúc 14:53 mà
+    // khung chat không có câu trả lời nào, phải hỏi lại. Hỏi server tin CUỐI một cái (rẻ),
+    // lệch với khung đang hiện thì mới tải lại, không thì để yên.
+    _dongBoNeuLech();
+  }
+}
+
+// So tin cuối trên server với tin cuối đang hiện; lệch thì tải lại hội thoại từ server.
+// Bỏ khối ẩn <!-- ... --> và khoảng trắng trước khi so, vì bản live và bản lưu có thể khác ở
+// đúng mấy chỗ đó.
+function _chuanTinSo(s) {
+  return String(s || "").replace(/<!--[\s\S]*?-->/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+async function _dongBoNeuLech() {
+  const sid = savedSessionId;
+  if (!sid || (turns[sid] && turns[sid].running)) return;
+  try {
+    const s = await (await fetch(`/sessions/${encodeURIComponent(sid)}?limit=1`)).json();
+    if (sid !== savedSessionId || !s || s.error || (turns[sid] && turns[sid].running)) return;
+    const m = (s.messages || []).slice(-1)[0];
+    if (!m) return;
+    const c = convo.length ? convo[convo.length - 1] : null;
+    const cungVai = !!c && ((m.role === "assistant") === (c.role === "javis"));
+    const chuSv = m.role === "user" ? chuNguoiGo(m.content || "") : (m.content || "");
+    if (!cungVai || _chuanTinSo(chuSv) !== _chuanTinSo(c.text)) openStoredSession(sid);
+  } catch (e) {}
 }
 
 function handleMessage(data) {
   // Server chào khi kết nối: đồng bộ các job vẫn đang chạy. Job thuộc server,
   // không thuộc WebSocket nên đóng/F5 tab rồi mở lại vẫn xem và Stop được.
   if (data.type === "hello") {
+    // Socket NỐI LẠI (không phải lần chào đầu): tin tới trong lúc đứt có thể đã rơi mất, ví dụ
+    // câu trả lời của một lượt chạy xong khi điện thoại đang tắt màn hình. Đồng bộ nhẹ.
+    if (_daChao) setTimeout(_dongBoNeuLech, 300);
+    _daChao = true;
     adaptiveCapable = (data.capabilities || []).includes("adaptive_voice_v1");
     stopTag = data.stop_tag || null;
     if (window.JavisRunning) window.JavisRunning.clear();
@@ -819,9 +858,11 @@ function handleMessage(data) {
     if (isActive) {
       petReact("viet");   // chữ trả lời đang chảy về: linh vật chuyển từ nghĩ sang cắm cúi viết
       if (!t.bubble) { t.bubble = createStreamingBubble(); showActivity(Icons.msg("pen-line", window.t("app.act_writing"))); }
+      t.bubble.dataset.md = t.text;   // copy giữa chừng vẫn ra markdown gốc, kể cả khi đang đọc theo giọng
       // V3: đang nói chuyện bằng giọng thì chữ hiện THEO LỜI ĐỌC, không hiện trước loa.
       if (dangTheoLoi() && data.tts !== false) batTheoLoi(t.bubble, t.text, null, false);
       else { t.bubble.querySelector(".bubble").innerHTML = markdownToHtml(t.text); scrollBottom(); }
+      // Đọc NGAY đoạn trung gian (chỉ đọc phiên đang xem). OpenRouter gửi tts:false → đọc 1 lần ở cuối.
       // Voice V3: gom chữ stream thành CỤM đọc được (voice-chunker.js) thay vì đọc từng mẩu.
       // Trước đây mỗi khung stream của bộ não chính (vài từ) là một yêu cầu TTS riêng nên nghe
       // cà nhắc; làn nhanh gửi nguyên câu thì qua đây vẫn phát ngay. OpenRouter gửi tts:false
@@ -850,6 +891,7 @@ function handleMessage(data) {
       veKhoiBuoc(t, false);   // het luot: khoi tien trinh gap thanh mot dong "Da chay N buoc"
       let msgEl = t && t.bubble;
       if (!msgEl) msgEl = appendJavisMessage(shownText);
+      if (t && t.bubble) msgEl.dataset.md = shownText;   // copy ra markdown gốc dù đọc theo giọng hay không
       if (dangTheoLoi() && t && finalText) {
         batTheoLoi(msgEl, shownText, ask, false);        // V3: chữ theo lời tới khi đọc xong, rồi vẽ đủ + chip
       } else {
@@ -1283,7 +1325,9 @@ function persistSession() {
   } catch (e) {}
 }
 // Thay chữ của tin NGƯỜI DÙNG cuối cùng bằng câu đã diễn giải (sự kiện user_text), cả trên
-// bong bóng lẫn trong convo để F5 còn đúng. `raw` là chữ thô của máy nghe, hiện nhỏ bên dưới.
+// bong bóng lẫn trong convo để F5 còn đúng. `raw` là chữ thô của máy nghe: CHỈ dùng để nhận
+// đúng bong bóng, KHÔNG hiện ra. Chủ dự án 27/09: dòng "Máy nghe: ..." nhỏ bên dưới không
+// cần, bong bóng chỉ hiện câu đã nhận diện (bản 0.59.25 tới 0.64.67 có hiện).
 function capNhatTinNguoiDung(text, raw) {
   if (!text || !text.trim()) return;
   const lastUser = [...convo].reverse().find(m => m.role === "user");
@@ -1294,12 +1338,6 @@ function capNhatTinNguoiDung(text, raw) {
     div.dataset.text = text;
     const u = div.querySelector(".utext");
     if (u) u.textContent = text;
-    const bubble = div.querySelector(".bubble");
-    if (bubble && raw && raw.trim() !== text.trim()) {
-      let tho = bubble.querySelector(".nghe-tho");
-      if (!tho) { tho = document.createElement("div"); tho.className = "nghe-tho"; bubble.appendChild(tho); }
-      tho.textContent = window.t("app.nghe_tho", { raw });
-    }
   }
   for (let i = convo.length - 1; i >= 0; i--) {
     if (convo[i].role === "user") { convo[i].text = text; break; }
@@ -1349,6 +1387,11 @@ function restoreSession() {
   if (!s) return;
   convo = Array.isArray(s.convo) ? s.convo : [];
   savedSessionId = s.sessionId || null;
+  // brains-ui nạp các brain từ server SAU bước khôi phục này. Nếu option brain của cuộc
+  // đang xem chưa có trong dropdown, graphSource tạm là "brain"; sự kiện change khi option
+  // về là hoàn tất khởi động, không phải người dùng đổi brain. Nhớ brain thật của cuộc đã
+  // khôi phục để handler không xoá trắng khung chat và ghi đè localStorage bằng phiên rỗng.
+  if (savedSessionId && s.brain) _lastBrain = s.brain;
   // Dựng lại bong bóng hội thoại
   convo.forEach((t, i) => {
     // t.ts vắng mặt ở tin lưu từ trước bản này -> truyền 0 để ẩn giờ thay vì hiện giờ F5.
@@ -1733,6 +1776,7 @@ function appendJavisMessage(text, ts, brain) {
   div.innerHTML = `<div class="bubble">${markdownToHtml(tv.clean, brain)}</div>` +
     actsHtml("javis", ts === undefined ? Date.now() : ts, !!lastUserText().trim());
   if (tv.viec) window.JavisViec.ve(div, tv.viec);
+  div.dataset.md = tv.clean || "";   // copy nội dung markdown, không chép marker việc nền
   chatAppend(div); scrollBottom();
   return div;
 }
@@ -1952,7 +1996,15 @@ function runMsgAct(btn) {
   const act = btn.dataset.act;
   if (act === "copy") {
     const b = msgEl.querySelector(".bubble");
-    if (b) copyText(b.innerText).then(() => flashCopied(btn, "⧉"));
+    // Tin Thansa giữ markdown gốc trong dataset.md: copy bản đó để bài viết dán sang
+    // CMS/website còn nguyên heading, đậm, link, bảng. Metadata ẩn chỉ có ở tin Thansa;
+    // chữ người dùng phải giữ nguyên, kể cả khi họ thật sự gõ cú pháp HTML comment.
+    if (b) {
+      const value = msgEl.classList.contains("msg-javis")
+        ? window.JavisVisibleMarkdown(msgEl.dataset.md || b.innerText)
+        : (msgEl.dataset.text || b.innerText);
+      copyText(value).then(() => flashCopied(btn, "⧉"));
+    }
     return;
   }
   // Chi tin NGUOI DUNG mang nut gui lai / sua lai, nen chu goc luon nam ngay tren chinh no.
@@ -2918,10 +2970,20 @@ const TAI_THU_LAI = 2;           // số lần tự thử lại khi mạng đứ
 function guiUpload(fd, onTien, opt) {
   opt = opt || {};
   const XHR = opt.XHR || XMLHttpRequest;
-  const dongHo = opt.dongHo || { now: () => Date.now(), setInterval, clearInterval };
+  // PHẢI bọc bằng hàm mũi tên (0.64.51). Bản 0.64.43 viết `{ setInterval, clearInterval }` rồi
+  // gọi `dongHo.setInterval(...)`: trình duyệt thấy `this` là object này chứ không phải window
+  // và ném "TypeError: Illegal invocation" ngay trước khi gửi. Mọi file đính kèm đều hỏng, chip
+  // báo "lỗi mạng" (chủ repo báo 25/09). Node không kiểm `this` nên test cũ không bắt được.
+  const dongHo = opt.dongHo || {
+    now: () => Date.now(),
+    setInterval: (fn, ms) => setInterval(fn, ms),
+    clearInterval: (id) => clearInterval(id),
+  };
   const ketMs = opt.ketMs || TAI_KET_MS, choMs = opt.choMs || TAI_CHO_MAY_CHU_MS;
   return new Promise((resolve, reject) => {
     const xhr = new XHR();
+    // Lỗi ném ngay trong lúc DỰNG yêu cầu (không phải lỗi mạng) phải nói đúng tên, không được
+    // rơi thành "lỗi mạng" rồi tự thử lại vô ích như vụ 25/09.
     let moc = dongHo.now(), guiXong = false, xong = false, ly = null;
     const ket = (loai) => { if (xong) return; ly = loai; try { xhr.abort(); } catch (e) {} };
     const canh = dongHo.setInterval(() => {
@@ -2939,8 +3001,12 @@ function guiUpload(fd, onTien, opt) {
     xhr.onload = () => het(resolve, { status: xhr.status, text: xhr.responseText });
     xhr.onerror = () => het(reject, loi("net"));
     xhr.onabort = () => het(reject, loi(ly || "net"));
-    xhr.open("POST", "/upload");
-    xhr.send(fd);
+    try {
+      xhr.open("POST", "/upload");
+      xhr.send(fd);
+    } catch (e) {
+      het(reject, Object.assign(loi("client"), { chiTiet: (e && e.message) || String(e) }));
+    }
   });
 }
 
@@ -2996,7 +3062,13 @@ async function _taiLen(file, att) {
     try {
       resp = await guiUpload(fd, onTien);
     } catch (e) {
-      const kind = (e && e.kind) || "net";
+      const kind = (e && e.kind) || (e && e.name === "TypeError" ? "client" : "net");
+      if (kind === "client") {
+        try { console.error("[upload] lỗi phía trình duyệt:", e); } catch (_e) {}
+        att.loi = true;
+        att.statusText = window.t("app.att_client_err", { msg: String((e && (e.chiTiet || e.message)) || e).slice(0, 80) });
+        return;
+      }
       // Mạng đứng/đứt thì tự thử lại (máy chủ có lưu dở cũng vô hại: mỗi lần là một tên
       // file tạm riêng). Máy chủ im sau khi đã nhận đủ thì KHÔNG thử lại vòng vòng.
       if (kind !== "server" && lan < TAI_THU_LAI) {

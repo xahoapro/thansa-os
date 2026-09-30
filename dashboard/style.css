@@ -793,6 +793,46 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
 .md-table { border-collapse: collapse; margin: 6px 0; font-size: 14px; width: 100%; }
 .md-table th, .md-table td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; }
 .md-table th { background: var(--bg3); color: var(--text); }
+
+/* ===== Bảng VUỐT NGANG được, thay vì bị bóp cho vừa khung =====
+   Chủ repo gửi ảnh 21/09: trên điện thoại một bảng 3 cột bị ép vào bề ngang màn hình thì mỗi
+   ô còn vài ký tự, chữ vỡ dọc thành từng chữ cái, đọc không nổi. App Claude không bóp: nó giữ
+   bề rộng tự nhiên của cột rồi cho vuốt sang phải để đọc tiếp. Đây là bản đó.
+
+   Ba mảnh, thiếu mảnh nào cũng hỏng:
+     1. khung bọc `overflow-x: auto` - chỗ cuộn thật sự;
+     2. `width: max-content` cho bảng - bỏ luật "co cho vừa"; `min-width: 100%` để một bảng
+        NGẮN vẫn trải hết bề ngang chứ không co rúm vào một góc;
+     3. trần `max-width` cho từng ô - không có nó thì một ô văn xuôi dài kéo bảng rộng ra hàng
+        nghìn pixel và phải vuốt cả chục lần. Có nó thì ô ngắn nằm một dòng, ô dài tự xuống
+        dòng ở một bề ngang còn đọc được. */
+.md-tablewrap, .jv-dataview .dv-tablewrap {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;   /* vuốt hết bảng thì DỪNG, không kéo cả trang trôi theo */
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  margin: 6px 0;
+}
+.md-tablewrap > .md-table, .jv-dataview .dv-tablewrap > .md-table {
+  margin: 0; width: max-content; min-width: 100%;
+}
+.md-tablewrap > .md-table :is(th, td), .jv-dataview .dv-tablewrap > .md-table :is(th, td) {
+  max-width: 34ch;
+}
+/* Thanh cuộn mảnh, theo tông của app. Ở đâu trình duyệt vẽ thanh cuộn CHIẾM CHỖ (Chrome/
+   Firefox trên Windows, Linux) thì nó là dấu hiệu thường trực "vuốt được"; ở đâu thanh cuộn
+   là lớp phủ tự ẩn (macOS, iOS, Android) thì nó chỉ hiện lúc vuốt - chỗ đó dựa vào việc bảng
+   bị cắt ngang giữa một cột. */
+.md-tablewrap, .jv-dataview .dv-tablewrap { scrollbar-width: thin; }
+.md-tablewrap::-webkit-scrollbar, .jv-dataview .dv-tablewrap::-webkit-scrollbar { height: 7px; }
+.md-tablewrap::-webkit-scrollbar-thumb, .jv-dataview .dv-tablewrap::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 99px;
+}
+/* ĐÃ THỬ và BỎ: vệt mờ ở mép bằng background-gradient (kiểu "scroll shadow" hay gặp). Nền của
+   khung cuộn nằm DƯỚI nội dung, mà ô bảng có nền và viền riêng nên chúng che kín vệt đó - đo
+   trên Chromium thật thì gradient có được áp nhưng không nhìn thấy gì. Muốn vẽ đè lên nội dung
+   thì phải có JS đo tràn rồi gắn lớp phủ; chưa đáng cho phần này. Bảng bị cắt giữa một cột,
+   cộng thanh cuộn, đã đủ nói là còn nữa bên phải. */
 .code-block {
   background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
   padding: 10px 12px; font-size: 14px; overflow-x: auto; white-space: pre; margin: 6px 0;
@@ -2110,9 +2150,11 @@ body.jv-lb-open { overflow: hidden; }        /* khoá cuộn nền để lăn ch
 .jv-lb-nut button:hover { background: rgba(255, 255, 255, 0.2); }
 /* Khung ảnh chiếm hết phần còn lại; ảnh canh giữa và luôn vừa màn ở trạng thái mặc định. */
 .jv-lb-khung { flex: 1 1 auto; min-height: 0; display: flex; align-items: center;
-  justify-content: center; padding: 0 14px 14px; overflow: auto; }
+  justify-content: center; padding: 0 14px 14px; overflow: auto; touch-action: none; }
 .jv-lb-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;
-  cursor: zoom-in; }
+  cursor: zoom-in; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.jv-lb.pinch .jv-lb-khung { overflow: hidden; }
+.jv-lb.pinch .jv-lb-img { cursor: grab; }
 /* Bấm vào ảnh -> xem cỡ thật để soi chi tiết, kéo trong khung để xem phần khuất. */
 .jv-lb.that .jv-lb-khung { align-items: flex-start; justify-content: flex-start; }
 .jv-lb.that .jv-lb-img { max-width: none; max-height: none; cursor: zoom-out; }
@@ -2315,10 +2357,12 @@ body.jv-artpanel-open { overflow: hidden; }
 .vt-act button { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 12px; padding: 0 3px; line-height: 1; }
 .vt-act button:hover { color: var(--accent); }
 .vt-hidden { display: none !important; }
-.vr-item { padding: 7px 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.vr-item { padding: 7px 8px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; align-items: stretch; min-width: 0; gap: 2px; }
 .vr-item:hover { background: var(--info-wash); }
 .vr-main { min-width: 0; flex: 1; }
-.vr-name { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-name { font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; min-width: 0; }
+.vr-label { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-name > .vt-ico, .vr-loc { flex-shrink: 0; }
 .vr-snip { font-size: 12px; color: var(--text3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vr-dl { flex: none; border: 1px solid var(--border); background: var(--surface-1); color: var(--text2); border-radius: 6px; padding: 3px 7px; cursor: pointer; }
 .vr-dl:hover { color: var(--accent); border-color: var(--accent-line); }
@@ -2359,7 +2403,7 @@ body.ne-full-on .cview { z-index: 250; }
   display: flex; align-items: center; justify-content: center; }
 .ne-nav button:hover:not(:disabled) { color: var(--accent); border-color: var(--accent-line); }
 .ne-nav button:disabled { opacity: 0.35; cursor: default; }
-.ne-actions { display: flex; gap: 5px; flex: none; align-items: center; }
+.ne-actions { display: flex; gap: 5px; flex: 0 1 auto; min-width: 0; max-width: 100%; flex-wrap: wrap; align-items: center; }
 /* Màn hẹp: tên file xuống hẳn một dòng riêng. Thanh nút có tới 8 nút, để chung một dòng thì tên
    file bị bóp còn 0px - mở file ra mà không biết đang mở file nào. */
 @media (max-width: 700px) {
@@ -2446,9 +2490,13 @@ body.ne-full-on .cview { z-index: 250; }
 .jv-ask-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .jv-ask-chip {
   background: var(--bg3); border: 1px solid var(--border); color: var(--text);
-  border-radius: 999px; padding: 5px 12px; font-family: var(--font); font-size: 13px;
+  border-radius: 14px; padding: 5px 12px; font-family: var(--font); font-size: 13px;
   cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  text-align: left; max-width: 100%;
 }
+.jv-ask-chip-label { font-weight: 600; }
+.jv-ask-chip-desc { font-size: 12px; color: var(--text3); font-weight: 400; }
 .jv-ask-chip:hover { border-color: var(--accent); color: var(--accent); }
 .jv-ask-other { color: var(--text3); border-style: dashed; }
 
@@ -3078,8 +3126,6 @@ body.ne-full-on .cview { z-index: 250; }
 }
 .msg-javis .viec-giao svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--accent); }
 .msg-javis .viec-giao .viec-ten { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text); }
-/* Chữ THÔ của máy nghe, dưới câu đã diễn giải trong bong bóng người dùng (sự kiện user_text). */
-.msg-user .nghe-tho { font-size: 12.5px; color: var(--text3); margin-top: 4px; font-style: italic; }
 
 /* ============================================================
    LINH VẬT (pet.js) - khuôn mặt nhỏ nép ở mép màn hình

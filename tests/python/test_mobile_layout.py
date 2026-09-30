@@ -54,6 +54,30 @@ check("có nút mắt điều khiển overlay brain", 'id="brainOverlayToggle"' 
 check("nút mắt ẩn đúng nhãn và thanh năng lực", ".hud-center.brain-overlays-hidden .concept-labels" in STYLE and ".hud-center.brain-overlays-hidden .brain-stats" in STYLE)
 check("trạng thái nút mắt được nhớ", "localStorage.setItem(STORAGE_KEY" in BRAIN_VIEW)
 
+# Bàn phím ảo (chủ repo báo 27/09): ô nhập phải nằm sát bàn phím, không chừa lề vạch Home
+# khi vạch đó đã nằm dưới bàn phím. mobile-chat.js gắn lớp theo visualViewport, CSS dùng nó.
+MOBILE_CHAT = (ROOT / "dashboard" / "mobile-chat.js").read_text(encoding="utf-8")
+check("mobile-chat đo visualViewport và gắn lớp kb-open",
+      "visualViewport" in MOBILE_CHAT and '"kb-open"' in MOBILE_CHAT and "--vv-h" in MOBILE_CHAT)
+check("khung chat đặt theo vùng nhìn thấy khi bàn phím mở",
+      "body.kb-open .hud {" in CSS and "var(--vv-h" in CSS and "body.kb-open .cview {" in CSS)
+check("bàn phím mở thì ô nhập bỏ lề an toàn", "body.kb-open .hud-voice { margin-bottom: 6px; }" in CSS)
+check("trang quản lý không cộng chồng hai lề đáy dưới ô nhập", ".cview .hud-voice { margin-bottom: 0; }" in CSS)
+check("Android co trang theo bàn phím", "interactive-widget=resizes-content" in INDEX)
+_cd = re.search(r"\.cd-menu \{[^}]*\}", CSS)
+check("menu chip Coding có nền đặc, không dùng lớp phủ trong suốt",
+      _cd is not None and "var(--surface-1)" not in _cd.group(0) and "var(--bg2)" in _cd.group(0))
+
+# 0.64.64: .hud KHÔNG được fixed khi bàn phím mở - fixed dựng ngữ cảnh xếp chồng mới và ép
+# bảng chọn model (con của header) xuống dưới .cview, kẹt sau khung chat.
+_kb = re.search(r"body\.kb-open \.hud \{[^}]*\}", CSS)
+check("khung chính khi bàn phím mở không dựng ngữ cảnh xếp chồng (không fixed)",
+      _kb is not None and "position: fixed" not in _kb.group(0) and "position: relative" in _kb.group(0))
+PICKER = (ROOT / "dashboard" / "model-picker.js").read_text(encoding="utf-8")
+check("bảng chọn model không tự bật bàn phím trên màn cảm ứng", "pointer: coarse" in PICKER and "camUng()" in PICKER)
+check("bảng chọn model mở ngay, không chờ mạng", "noWait: true" in PICKER and "o.cho" in PICKER)
+check("bấm lại tên nhà đang mở là thu danh sách", 'expanded === prov.dataset.prov ? ""' in PICKER)
+
 if fails:
     raise SystemExit(f"\nFAIL - test_mobile_layout: {len(fails)} lỗi")
 print("\nOK - test_mobile_layout: tất cả pass")

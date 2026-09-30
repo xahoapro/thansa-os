@@ -207,6 +207,21 @@
   function danhSach() { return S.loai === "agent" ? S.agents : S.workflows; }
   function kenh(item) { return (S.loai === "agent" ? "agent:" : "workflow:") + item.slug; }
   function dangChon() { var slug = S.chon[S.loai]; return danhSach().find(function (x) { return x.slug === slug; }) || null; }
+  var VI_TRI_KEY = "javis_workspace_view";
+  function docViTri() {
+    try {
+      var v = JSON.parse(localStorage.getItem(VI_TRI_KEY) || "null");
+      return v && v.brain === brain() && v.sessionId ? v : null;
+    } catch (e) { return null; }
+  }
+  function luuViTri(id) {
+    var item = dangChon();
+    if (!id || !item) return;
+    try { localStorage.setItem(VI_TRI_KEY, JSON.stringify({
+      brain: brain(), kind: S.loai, slug: item.slug, sessionId: id,
+      mainSessionId: _phienTruoc,
+    })); } catch (e) {}
+  }
   function cacBuoc(item) { return (item && item.steps) || []; }
   // Khổ màn hình mà cột trái là NGĂN KÉO (xem khối .wspage trong console.css) - phải khớp số
   // 900px bên đó, lệch nhau là nút đóng/mở nói một đằng màn hình làm một nẻo.
@@ -269,19 +284,19 @@
           '</div>' +
           '<div class="ws-list" id="wsList"></div>' +
           '<div class="ws-left-foot"><button type="button" class="ws-btn" id="wsNew">' + ic("plus") + ' ' + esc(t("ws.new_item")) + '</button>' +
-          '<button type="button" class="ws-btn" id="wsImport">' + esc(t("ws.upload_agent")) + '</button>' +
+          '<button type="button" class="ws-btn" id="wsImport">' + ic("upload-cloud") + ' ' + esc(t("ws.upload_agent")) + '</button>' +
           '<button type="button" class="ws-btn" id="wsStore">' + ic("package") + ' Thansa Store</button></div>' +
         '</aside>' +
         '<div class="ws-main">' +
           '<div class="ws-bar">' +
             '<button type="button" class="ws-ico" id="wsLeftBtn" title="' + esc(t("ws.toggle_list")) + '">' + ic("panel-left") + '</button>' +
-            '<div class="ws-id" id="wsIdentity"></div>' +
             '<button type="button" class="ws-btn" id="wsFiles">' + ic("paperclip") + ' ' + esc(t("ws.files_links")) + '</button>' +
             '<button type="button" class="ws-btn" id="wsNewChat">' + esc(t("sess.new_chat")) + '</button>' +
             // Bộ icon chưa đóng gói "panel-right" (xem icons.manifest.json) và thêm icon mới
             // phải chạy gen_icons tải mạng - lật gương panel-left bằng CSS rẻ hơn mà cùng nghĩa.
             '<button type="button" class="ws-ico lat" id="wsRightBtn" title="' + esc(t("ws.toggle_panel")) + '">' + ic("panel-left") + '</button>' +
           '</div>' +
+          '<div class="ws-id" id="wsIdentity"></div>' +
           // Màn khởi đầu: danh sách rỗng thì không có phiên nào để mở, ô nhập bị khoá, nên
           // chỗ khung chat là hai nút tạo. Nằm TRƯỚC #wsSlot trong DOM cho thuận mắt, còn
           // khung chat thì ẩn đi bằng lớp .onboard-on (xem console.css).
@@ -539,7 +554,7 @@
     if (S.nhom && !nhoms[S.nhom] && conTrong.indexOf(S.nhom) < 0) S.nhom = "";
     veThanhNhom(el);
     el.querySelector("#wsNew").innerHTML = ic("plus") + " " + esc(S.loai === "agent" ? t("ws.new_agent") : t("ws.new_workflow"));
-    el.querySelector("#wsImport").textContent = t(S.loai === "agent" ? "ws.upload_agent" : "ws.upload_workflow");
+    el.querySelector("#wsImport").innerHTML = ic("upload-cloud") + ' ' + esc(t(S.loai === "agent" ? "ws.upload_agent" : "ws.upload_workflow"));
     veDanhSach();
   }
   // Quy trình này có lần chạy nào ĐANG chạy không? Đọc thẳng từ S.tienDo (máy trạng thái ăn
@@ -859,7 +874,9 @@
     // trả false, app.js lặng lẽ quay ra, màn hình không nói một lời nào.
     if (!ds.length) { chatReady(false); veGiua(null, t("ws.none_yet")); vePhai(null); return; }
     if (!ds.some(function (x) { return x.slug === S.chon[S.loai]; })) S.chon[S.loai] = ds[0].slug;
-    veDanhSach(); return moPhien(dangChon(), false);
+    var v = docViTri();
+    var id = v && v.kind === S.loai && v.slug === S.chon[S.loai] ? v.sessionId : null;
+    veDanhSach(); return moPhien(dangChon(), false, id);
   }
 
   // ---------- trả khung chat về bộ não chính khi rời trang ----------
@@ -891,6 +908,8 @@
   function nhoPhienTruoc() {
     try {
       var cur = window.JavisSessions && window.JavisSessions.current();
+      var v = docViTri();
+      if (v && cur === v.sessionId) { _phienTruoc = v.mainSessionId || null; return; }
       if (cur && !laPhienCongSu(cur)) _phienTruoc = cur;
     } catch (e) {}
   }
@@ -929,6 +948,7 @@
       if (!still()) return false;
       if (!window.JavisSessions || window.JavisSessions.current() !== id) throw new Error(t("ws.err_session"));
       chatReady(true);
+      luuViTri(id);
       if (S.loai === "workflow") veBuoc(item, tienDoHienTai(item));
       return true;
     } catch (e) {
@@ -969,8 +989,7 @@
       if (nhac) { var o = document.getElementById("chatInput"); if (o) o.placeholder = nhac; }
       return;
     }
-    var phu = S.loai === "agent" ? (item.group || "Chung") + " · " + (item.role || "") : t("ws.wf_sub", { n: cacBuoc(item).length });
-    el.innerHTML = (S.loai === "agent" ? avatar(item, 42) : ic("workflow")) + '<div><strong>' + esc(item.name) + '</strong><small>' + esc(phu) + '</small></div>';
+    el.innerHTML = (S.loai === "agent" ? avatar(item, 24) : ic("workflow")) + '<div><strong>' + esc(item.name) + '</strong></div>';
     var inp = document.getElementById("chatInput");
     if (inp) inp.placeholder = S.loai === "agent" ? t("ws.ph_agent", { ten: item.name }) : t("ws.ph_workflow");
   }
@@ -1259,4 +1278,9 @@
 
   window.JavisWorkspace = { render: render, roi: roi, openCommand: openCommand, openTab: openTab, onTurnDone: onTurnDone, canSend: function () { return !active || ready; }, onChatState: onChatState, chayQuyTrinh: chayQuyTrinh, onWfEvent: onWfEvent, sapXep: sapXep, loc: loc, tienDoMoi: tienDoMoi, apDung: apDung, phanTram: phanTram,
     dangChay: dangChay, tabPhai: chonTabPhai, gomNhom: gomNhom, nhomHtml: nhomHtml, chonNhom: chonNhom, state: function () { return S; } };
+  // Sidebar lịch sử mở phiên trực tiếp qua JavisSessions.open, ngoài đường moPhien ở trên.
+  // Ghi lại sau khi nó mở xong để lần dựng trang sau vẫn ở đúng cuộc đã chọn.
+  window.addEventListener("javis:sessions-changed", function () {
+    if (active && ready && window.JavisSessions) luuViTri(window.JavisSessions.current());
+  });
 })();

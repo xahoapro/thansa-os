@@ -45,10 +45,31 @@ antigravity_cli.list_models = lambda: [{"id": "gemini-3.8-flash-low", "label": "
 
 r = client.post("/stt", files={"file": ("voice.webm", b"OggS-fake", "audio/webm")}, data={"lang": "vi-VN"})
 check("/stt: 200 ok=true kèm text đã sửa David -> Javis", r.status_code == 200 and r.json()["ok"] is True and r.json()["text"] == "xin chào Javis")
-check("/stt: mồi hotwords cho Whisper (Javis + từ người dùng khai)", calls[-1]["hotwords"] == "Javis, Pancake, OpenRouter.")
+check("/stt: mồi hotwords cho Whisper (Javis + từ người dùng khai, đứng cuối sát audio)", calls[-1]["hotwords"].endswith("Javis, Pancake, OpenRouter."))
+check("/stt: mồi kèm từ tiếng Anh hay nói xen (GitHub Actions)", "GitHub Actions" in calls[-1]["hotwords"])
 check("/stt: byte file tới nguyên vẹn, tên file giữ", calls[-1]["data"] == b"OggS-fake" and calls[-1]["ten"] == "voice.webm")
 check("/stt: vi-VN rút thành vi", calls[-1]["lang"] == "vi")
 check("/stt: key lấy từ model.groq_api_key", calls[-1]["key"] == "gk")
+
+# ---- 0.64.74: đối chiếu với bản nháp Web Speech ----
+# Bản nháp gần đúng về âm ("xin chào Gia vít") -> dùng chữ Groq.
+r = client.post("/stt", files={"file": ("voice.webm", b"OggS-fake", "audio/webm")},
+                data={"lang": "vi-VN", "draft": "xin chào Gia vít"})
+check("/stt: bản nháp gần âm -> dùng chữ Groq", r.json()["ok"] is True and r.json()["text"] == "xin chào Javis")
+
+
+async def fake_bia(data, ten, key, model="", ngon_ngu=None, hotwords=""):
+    return {"ok": True, "text": "Các bạn có thể nhận thêm thông tin về các bài hát trong phần mô tả", "model": "m"}
+
+
+stt.groq_nghe = fake_bia
+r = client.post("/stt", files={"file": ("voice.webm", b"OggS-fake", "audio/webm")},
+                data={"lang": "vi-VN", "draft": "today How are you I'm fine thank you chào em nhé"})
+check("/stt: Groq bịa câu lệch hẳn bản nháp -> ok=false, ly_do lech_ban_nhap (giữ bản nháp)",
+      r.json()["ok"] is False and r.json()["ly_do"] == "lech_ban_nhap" and r.json()["text"] == "")
+r = client.post("/stt", files={"file": ("voice.webm", b"OggS-fake", "audio/webm")}, data={"lang": "vi-VN"})
+check("/stt: không gửi bản nháp -> không đối chiếu, dùng Groq như cũ", r.json()["ok"] is True)
+stt.groq_nghe = fake_nghe
 
 main.cfgmod.read_settings = lambda: {"model": {}, "voice": {}}
 r = client.post("/stt", files={"file": ("v.webm", b"x", "audio/webm")})

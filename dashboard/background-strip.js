@@ -53,7 +53,8 @@
     ready: "bgs.status.ready", todo: "bgs.status.todo", triage: "bgs.status.triage",
     enabled: "bgs.status.enabled", pending: "bgs.status.pending"
   };
-  var LOAI = { task: "bgs.kind.task", loop: "bgs.kind.loop", reminder: "bgs.kind.reminder" };
+  var LOAI = { task: "bgs.kind.task", loop: "bgs.kind.loop", reminder: "bgs.kind.reminder",
+               job: "bgs.kind.job" };
   function nhan(x) { return NHAN[x] ? tw(NHAN[x]) : x; }
   function loai(x) { return LOAI[x] ? tw(LOAI[x]) : x; }
 

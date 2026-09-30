@@ -177,6 +177,19 @@ PROMISE = (
         r"[^.!?]{0,80}?\b(roi|xong|sau do)\b[^.!?]{0,30}?"
         r"\b(bao|gui|cap nhat|thong bao|noi lai|tra loi)\b"
     )),
+    # 0.64.66, chủ repo báo 2026-09-27: "Đang render nền, xong mình ghép tiếng và gửi video"
+    # lọt qua `xong_em_bao` vì có việc chen giữa "xong mình" và "gửi". Cho phép chen tới 60 ký
+    # tự, nhưng KHÔNG nhận "xong rồi em gửi..." (đó thường là đang giao hàng ngay, không phải
+    # hứa về sau) - `xong_em_bao` ở trên vẫn giữ trường hợp liền mạch "xong rồi em báo".
+    ("xong_em_lam_roi_gui", re.compile(
+        r"\bxong\s+(thi\s+)?(em|minh|toi)\s+(se\s+)?[^.!?]{0,60}?"
+        r"\b(bao|gui|cap nhat|nop|dua len|chuyen)\b"
+    )),
+    # Việc chạy nền kèm hẹn giờ: "khoảng 5 phút nữa xong", "tầm vài phút nữa là có".
+    ("vai_phut_nua", re.compile(
+        r"\b(khoang|tam|chung|mat|con)\s+(\d+|vai|mot|hai|ba|nam|muoi|nua)\s*"
+        r"(-\s*\d+\s*)?(phut|tieng|gio|giay)\s+nua\s+(la\s+)?(xong|co ket qua|co)\b"
+    )),
     ("english", re.compile(
         r"\b(i(?:'| wi)?ll|i will|we(?:'| wi)?ll|we will)\s+"
         r"(get back to you|report back|update you|let you know|keep you posted)\b"

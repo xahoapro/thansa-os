@@ -43,6 +43,10 @@ AO = [
     "Các bạn nhớ subscribe kênh nhé",
     "Subscribe to my channel for more videos",
     "Thanks for watching!",
+    # 0.64.74, gặp thật 28/09 (Groq thay bản nháp đúng của trình duyệt bằng câu này):
+    "Cảm ơn các bạn đã theo dõi và",
+    "Cảm ơn các bạn đã xem video",
+    "Các bạn có thể nhận thêm thông tin về các bài hát của mình trong phần bình luận.",
     "[Music]",
     "♪♪♪",
 ]
@@ -74,7 +78,24 @@ THAT = [
     "Kênh của mình tháng này ra bao nhiêu đơn?",
     "Các bạn bên kho báo hết hàng rồi",
     "Soạn giúp mình tin nhắn cảm ơn khách đã ủng hộ shop nhé",
+    # Đối ứng với hai mẫu 0.64.74: lời thật có "cảm ơn các bạn", "thông tin", "bình luận".
+    "Cảm ơn các bạn đã giúp mình xử lý đơn hôm qua",
+    "Gửi thêm thông tin sản phẩm cho khách giúp mình",
+    "Xem phần bình luận trên bài đăng mới nhất có gì",
+    "Nhận thêm thông tin đơn hàng qua Zalo nhé",
 ]
+# Hàm đối chiếu với bản nháp Web Speech (stt.khop_ban_nhap, 0.64.74), đo trên cặp thật.
+for nhap, nghe in [("clash là dịch vụ như chưa đám mây", "Cloudflare là dịch vụ lưu trữ đám mây"),
+                   ("Quốc cơ ford plat form", "Workers for Platforms"),
+                   ("cave là gì", "KV là gì"),
+                   ("today How are you I'm fine thank you", "Today, how are you? I'm fine, thank you.")]:
+    check(f"khớp bản nháp (Groq sửa đúng): {nhap!r}", stt.khop_ban_nhap(nhap, nghe)[0])
+for nhap, nghe in [("today How are you I'm fine thank you chào em nhé", "Cảm ơn các bạn đã theo dõi và"),
+                   ("mở trang cài đặt giúp anh", "Cảm ơn các bạn đã xem video"),
+                   ("anh đang tìm hiểu gói 5 đô của Cloudflare", "Hẹn gặp lại các bạn trong những video tiếp theo"),
+                   ("cho anh hỏi về GitHub Actions", "Các bạn có thể nhận thêm thông tin về các bài hát")]:
+    check(f"lệch bản nháp (Groq bịa): {nghe!r}", not stt.khop_ban_nhap(nhap, nghe)[0])
+check("không có bản nháp thì không chặn", stt.khop_ban_nhap("", "bất kỳ")[0])
 for s in THAT:
     check(f"giữ nguyên lời thật: {s[:40]!r}", L(s) == s)
 
@@ -115,12 +136,23 @@ check("chuỗi rỗng vẫn rỗng", L("") == "" and L(None) == "")
 check("chỉ còn dấu câu thì coi như rỗng", L("Ghiền Mì Gõ . !") == "")
 check("không làm hỏng khoảng trắng thừa", L("  Chào Javis  ") == "Chào Javis")
 
+# ---- 4b. Whisper chép lại chính lời mồi (danh sách từ, 0.64.67) ----
+MOI = "GitHub, GitHub Actions, commit, push, pull request, merge, deploy, Javis, Pancake."
+check("chép lại một đoạn lời mồi: bỏ", stt.la_lap_loi_moi("commit, push, pull request, merge.", MOI))
+check("chép lại cả lời mồi: bỏ", stt.la_lap_loi_moi(MOI, MOI))
+check("câu thật ngắn trùng từ mồi: giữ", not stt.la_lap_loi_moi("GitHub Actions", MOI))
+check("câu thật có từ mồi xen tiếng Việt: giữ",
+      not stt.la_lap_loi_moi("cho anh hỏi về GitHub Actions deploy thế nào", MOI))
+check("không có lời mồi: không bỏ gì", not stt.la_lap_loi_moi("commit push pull request", ""))
+
 # ---- 5. Nối vào đường nghe: groq_nghe lọc trước khi trả ----
 src = (SERVER / "stt.py").read_text(encoding="utf-8", errors="replace")
 than = src[src.index("async def groq_nghe"):]
 check("groq_nghe gọi loc_ao_giac trước khi trả text", "loc_ao_giac(" in than)
 check("lọc xong rỗng thì báo khong_nghe_ro (chỗ gọi giữ chữ Web Speech)",
       than.index("loc_ao_giac(") < than.index('"khong_nghe_ro"'))
+check("groq_nghe bỏ bản chép lại lời mồi trước khi trả",
+      than.index("la_lap_loi_moi(") < than.index('"khong_nghe_ro"', than.index("loc_ao_giac(")))
 
 if _fails:
     print("\nFAIL:", len(_fails), _fails)

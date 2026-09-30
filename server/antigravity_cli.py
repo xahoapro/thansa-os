@@ -1394,6 +1394,11 @@ class AntigravityCLI:
                     cwd=self.cwd, text=True, encoding="utf-8", errors="replace", bufsize=1,
                     creationflags=_no_window(), start_new_session=(os.name != "nt"),
                 )
+                try:   # lệnh chạy ngầm agy bỏ lại sẽ được theo dõi sau lượt (tien_trinh_nen)
+                    import tien_trinh_nen
+                    tien_trinh_nen.ghi_nhom(self.tag, proc.pid)
+                except Exception:
+                    pass
                 try:
                     if qua_stdin:
                         _ghi_stdin(proc, full)

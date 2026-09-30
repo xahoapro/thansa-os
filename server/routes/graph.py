@@ -202,7 +202,7 @@ def _make_router() -> APIRouter:
                 if recv in done:
                     try:
                         recv.result()   # tiêu thụ exception (nếu có) cho gọn warning
-                    except Exception:
+                    except (Exception, asyncio.CancelledError):
                         pass
                     break   # disconnect / socket lỗi → dọn
                 batch = item.result()
@@ -239,12 +239,47 @@ def _make_router() -> APIRouter:
                     }, ensure_ascii=False))
         except WebSocketDisconnect:
             pass
+        except asyncio.CancelledError:
+            # TestClient (và một số proxy) hủy task ngay sau khi gửi disconnect.
+            # CancelledError không thuộc Exception; để lọt ra sẽ làm lần đóng socket
+            # ném lỗi dù mọi graph_add trước đó đã gửi thành công.
+            pass
         except Exception as e:
             print(f"[ws_graph] {type(e).__name__}: {e}", file=__import__('sys').stderr)
         finally:
-            stop.set()   # tắt awatch (stop_event) rồi huỷ nốt các task nền của socket này
-            for t in (watcher, sparse, recv, item):
-                t.cancel()
+            # Tắt watcher và CHỜ mọi task thoát hẳn. Chỉ gọi ``cancel()`` rồi rời handler sẽ
+            # để luồng FSEvents/watchfiles còn giữ Unix socket trên macOS; mỗi lần F5 tạo thêm
+            # một socket mồ côi, tới giới hạn ``maxfiles=256`` thì toàn bộ API bắt đầu nổ
+            # ``OSError: [Errno 24] Too many open files`` và giao diện tưởng brain biến mất.
+            stop.set()
+            # awatch cần nhìn thấy stop_event để tự đóng backend FSEvents. Hủy watcher ngay
+            # có thể ngắt coroutine trước khi backend kịp thu socket; ngược lại chờ vô hạn sẽ
+            # treo disconnect trên một số bản watchfiles. Vì vậy dọn ba task thuần asyncio
+            # trước, cho watcher tối đa 2 giây thoát êm rồi mới cưỡng chế hủy.
+            auxiliaries = (sparse, recv, item)
+            for t in auxiliaries:
+                if not t.done():
+                    t.cancel()
+            try:
+                await asyncio.gather(*auxiliaries, return_exceptions=True)
+                done, pending = await asyncio.wait({watcher}, timeout=2.0)
+                if pending:
+                    watcher.cancel()
+                    # wait_for() chờ coroutine thực sự hủy xong, có thể treo vô hạn
+                    # khi backend watchfiles đang chặn trong luồng native. Giới hạn
+                    # cả thời gian dọn sau cancel để WebSocket đóng được.
+                    done, pending = await asyncio.wait({watcher}, timeout=2.0)
+                if pending:
+                    print("[ws_graph watcher] không dừng sau khi hủy; đóng WebSocket",
+                          file=__import__('sys').stderr)
+                for task in done:
+                    if not task.cancelled():
+                        task.exception()  # tiêu thụ exception để tránh warning
+            except asyncio.CancelledError:
+                # Proxy/TestClient có thể hủy task ngay sau khi gửi disconnect, đúng lúc
+                # ta đang chờ watcher. stop_event và cancel ở trên đã phát tín hiệu dọn;
+                # không để CancelledError biến một lần đóng socket bình thường thành lỗi.
+                watcher.cancel()
 
     return router
 

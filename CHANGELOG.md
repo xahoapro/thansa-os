@@ -1,8 +1,139 @@
 # Nhật ký cập nhật
 
-Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay trong app tại mục **Cập nhật** trên thanh bên trái.
+Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay trong app tại **Cài đặt → Cập nhật**.
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
+
+## [0.64.77] - 2026-09-28
+### Sửa lỗi
+- **Telegram và Zalo không còn in nguyên câu lệnh máy** kiểu `/bin/sh -lc "sed -n ..."` vào dòng trạng thái khi dùng ChatGPT. Dòng đó nay chỉ ghi gọn việc đã làm, ví dụ "⚙ Chạy lệnh · pos_statistics · 2m39s".
+- Trên trang Chat, bước chạy lệnh của ChatGPT hiện đúng nhãn "Chạy lệnh: ..." như các bộ não khác.
+
+## [0.64.76] - 2026-09-28
+### Sửa lỗi
+- **Chat bằng ChatGPT không còn hiện liền mấy bong bóng "Codex: Reconnecting... 2/5".** Đó là Codex tự kết nối lại chứ chưa phải lỗi, nay chỉ hiện thành một dòng trạng thái mờ trong lúc chờ.
+- **Máy mà kết nối WebSocket tới ChatGPT hay bị ngắt (thường gặp trên VPS) giờ tự chuyển sang đường HTTPS** từ lượt sau, khỏi mất năm lần thử lại mỗi lượt. Sau 3 ngày Javis tự thử lại đường cũ.
+
+## [0.64.75] - 2026-09-28
+### Sửa lỗi
+- **Nhờ Javis vẽ ảnh khi đang dùng ChatGPT (Codex), ảnh hiện ngay trong khung chat.** Trước đây Codex vẽ bằng công cụ riêng rồi cất ảnh ngoài brain, nên link bấm vào không mở được, kèm dòng "không tìm thấy trong brain", và phải tự đi lưu ảnh về.
+- Ảnh nay tự vào thư mục `attachments` của brain, Telegram cũng nhận được ảnh đính kèm. Ảnh vẽ xong mà câu trả lời quên nhắc cũng được hiện ở cuối.
+
+## [0.64.74] - 2026-09-28
+### Sửa lỗi
+- **Groq Whisper bịa câu thì giữ câu trình duyệt đã nghe:** khi audio thiếu tiếng, Groq hay tự đẻ ra lời kết video ("Cảm ơn các bạn đã theo dõi", "nhận thêm thông tin trong phần bình luận") và đè lên câu đúng. Nay câu Groq lệch hẳn với câu trình duyệt thì bị bỏ.
+- Muốn câu trong bong bóng nháp vào thẳng khung chat (nhanh hơn, không chờ Groq): chọn **Nghe bằng: Trình duyệt** trong Cài đặt, mục Giọng nói.
+
+## [0.64.73] - 2026-09-27
+### Sửa lỗi
+- **Chọn Groq Whisper thì câu gửi đi là chữ Groq nghe được**, như trước bản 0.64.32. Từ 0.64.32, chữ Groq chỉ được dùng để đối chiếu, câu gửi đi vẫn là chữ của trình duyệt, nên tiếng Anh xen tiếng Việt bị chép thành "clash", "cloud Play" dù đã chọn Groq. Chữ của trình duyệt vẫn hiện tạm trong lúc đang nói.
+
+## [0.64.72] - 2026-09-27
+### Sửa lỗi
+- **Nói trên điện thoại, máy tính bảng Android không còn bị lặp câu:** trình duyệt Android hay gửi đi gửi lại một câu mà sửa dần chữ cuối, trước đây mỗi bản bị nối thêm vào tin. Nay chỉ giữ bản cuối cùng.
+- **Bong bóng hiện đúng thuật ngữ nhiều hơn:** "cave" thành "KV", "Quốc cơ ford plat form của clap Play" thành "Workers for Platforms của Cloudflare".
+- Câu nào máy chưa chắc để tự sửa thì Javis trả lời thẳng vào việc, không mở đầu bằng "em hiểu X là Y" nữa.
+
+## [0.64.71] - 2026-09-27
+### Sửa lỗi
+- **Chat bằng ChatGPT (Codex) nay gọi công cụ đúng brain đang mở.** Trước đây Javis có gửi brain cho Codex nhưng ghi sai cách, nên Codex bỏ qua, và Javis phải đoán brain theo cuộc trò chuyện vừa hoạt động gần nhất trên cả máy. Hậu quả: đang ở brain này mà một lệnh (ví dụ tạo đơn TTS Dropship) lại chạy ở brain khác, chỉ vì một kênh khác (Telegram, Zalo, việc chạy nền) vừa có tin nhắn. Nay brain đi kèm đúng từng lệnh, kể cả brain tên tiếng Việt có dấu.
+- Kênh Telegram dùng ChatGPT: đổi brain qua lại không còn làm lượt sau chạy nhầm brain cũ.
+
+## [0.64.70] - 2026-09-27
+### Cải thiện
+- **Cài hoặc cập nhật gói có mã không còn bắt gõ lại mã gói.** Khối cảnh báo đỏ "Gói này chạy Python thật trong máy chủ Javis" vẫn hiện đầy đủ kèm tên từng tệp mã, nút Huỷ vẫn được chọn sẵn, và gói có mã vẫn cài xong ở trạng thái tắt. Chỉ bỏ bước gõ tay.
+
+## [0.64.69] - 2026-09-27
+### Sửa lỗi
+- **Nút cập nhật hiện ngay khi có bản mới:** trước đây, trong vài phút sau mỗi lần phát hành, khung trên có thể báo "đang dùng bản mới nhất" dù danh sách bên dưới đã có bản mới, và không có nút. Nay hai chỗ luôn khớp nhau.
+
+## [0.64.68] - 2026-09-27
+### Cải thiện
+- **Đọc từ tiếng Anh theo kiểu người Việt nói**, cả câu một giọng anh đã chọn: "GitHub Actions" đọc là "ghít hắp ác sừn", "Micro" là "mi cờ rô", "Emma" là "em ma". Bỏ cách ghép hai giọng của bản trước, nên chọn giọng nào thì nghe đúng giọng đó.
+- **Bong bóng chat hiện đúng câu anh định nói:** "huyết áp Action", "khít half action" nay được sửa thành "GitHub Actions". Những chỗ sửa làm đổi nghĩa (số tiền, "không" thành "có"...) vẫn bị chặn như cũ.
+- Bỏ dòng chữ nhỏ "Máy nghe: ..." dưới bong bóng, chỉ còn câu đã nhận diện.
+
+## [0.64.67] - 2026-09-27
+### Cải thiện
+- **Đọc từ tiếng Anh cho ra tiếng Anh:** trong câu Việt xen Anh, những từ như GitHub Actions, deploy, dashboard nay được đọc bằng giọng tiếng Anh, phần tiếng Việt vẫn giọng Việt. Áp dụng cho giọng Edge Hoài My, Nam Minh và các giọng đa ngôn ngữ.
+- Chọn **Hoài My** là nghe tự nhiên nhất: tiếng Việt chuẩn, từ tiếng Anh do Emma đọc. Chọn Emma hay giọng đa ngôn ngữ khác thì phần tiếng Việt trong câu trộn vẫn giao cho giọng Việt, vì chúng đọc mẩu tiếng Việt ngắn bị sai.
+- **Nghe câu Việt xen Anh đúng hơn:** Groq Whisper chuyển sang bản đầy đủ và được mồi sẵn các từ tiếng Anh hay nói, nên "GitHub Actions" không còn thành "huyết áp Action". Độ trễ gần như không đổi.
+
+## [0.64.66] - 2026-09-27
+### Sửa lỗi
+- Việc chạy nền tự báo về khung chat (đang soạn).
+
+## [0.64.65] - 2026-09-27
+### Cải thiện
+- **Nhà cung cấp đã kết nối nằm trên cùng** trong bảng chọn model, nhà chưa kết nối xuống dưới.
+- Bấm lại tên nhà đang mở là thu danh sách lại, không phải cuộn qua hơn 300 model OpenRouter mới sang được nhà khác.
+- Ô tìm model tìm trên mọi nhà đã kết nối, gõ tên nhà cung cấp cũng ra cả danh sách của nhà đó. Danh sách quá dài thì báo còn bao nhiêu model để gõ tìm tiếp.
+
+## [0.64.64] - 2026-09-27
+### Sửa lỗi
+- **Chọn model trên điện thoại không còn bị kẹt:** bảng chọn không tự bật bàn phím nữa, và không bị trang chat che mất khi bàn phím đang mở. Bấm chip model lúc đang gõ thì bàn phím tự hạ xuống.
+- Bảng chọn model mở ra ngay, hiện dòng đang tải thay vì trống trơn. Danh sách được tải sẵn và làm mới ngầm nên các lần sau không phải chờ.
+
+## [0.64.63] - 2026-09-27
+### Sửa lỗi
+- **Ô nhập nằm sát bàn phím** trên điện thoại như app Claude hay Telegram, hết dải trống giữa ô nhập và bàn phím. Khi không gõ, ô nhập ở trang Trò chuyện và Coding cũng bớt khoảng hở dưới đáy.
+- Menu chọn thư mục ở trang Coding có nền đặc, mở xuống dưới chip, không còn đè chữ lên thanh trên cùng.
+
+## [0.64.62] - 2026-09-27
+### Sửa lỗi
+- Thông báo tải lại sau cập nhật vừa màn hình điện thoại, không ép chữ thành cột hẹp. Editor mở toàn màn hình; thanh nút không tràn ra ngoài trên điện thoại.
+### Cải thiện
+- Khung Trợ lý và Quy trình gọn hơn: nút thao tác ở trên, icon nhỏ cạnh tên, bỏ mô tả dưới tiêu đề.
+- Thêm icon cho nút Tải lên trợ lý và Tải lên quy trình. Nút tạo trong cây thư mục có thêm lựa chọn tạo thư mục con.
+- Tìm theo tên trong cây thư mục trả về cả thư mục, kể cả thư mục rỗng. Bấm kết quả để mở đúng vị trí trong cây; nút Vị trí luôn hiện dù tên dài. Trình sửa cũng có nút Vị trí file để mở cây tại file đang xem.
+
+## [0.64.61] - 2026-09-27
+### Cải thiện
+- Cài đặt gọn hơn, các tab và nội dung căn sát lề trái, giảm khoảng trống dưới tiêu đề.
+- Ô nhập ở Chat và Trợ lý cùng hiển thị: Bạn muốn tôi làm điều gì?
+
+## [0.64.60] - 2026-09-27
+### Cải thiện
+- **Cài đặt có năm tab:** Chung, Giọng nói, Linh vật, Mức dùng và Cập nhật. Menu Hệ thống gọn lại còn Cài đặt, Link chia sẻ và Tài khoản.
+- Giữ các thay đổi giọng nói chưa lưu khi chuyển tab. Những lối mở Mức dùng, Linh vật và Cập nhật trước đây đưa bạn tới đúng tab mới.
+
+## [0.64.59] - 2026-09-27
+### Sửa lỗi
+- Đóng kết nối theo dõi Đồ thị sạch hơn khi rời trang hoặc tải lại, tránh một lần ngắt kết nối làm kiểm thử và quá trình dọn tài nguyên lỗi ngẫu nhiên.
+
+## [0.64.57] - 2026-09-27
+### Sửa lỗi
+- Tải lại Javis vẫn mở đúng cuộc hội thoại vừa xem, kể cả khi bộ não được nạp sau từ máy chủ.
+- Nhãn trong màn Trò chuyện hiển thị thành chữ thay vì mã dịch khi từ điển ngôn ngữ tải chậm.
+
+## [0.64.56] - 2026-09-27
+### Cải thiện
+- **Chụm hai ngón để phóng to ảnh trên điện thoại.** Kéo ảnh bằng một ngón để xem phần khuất, chụm lại để thu nhỏ; ảnh giữ trong khung xem thay vì phóng to cả trang.
+
+## [0.64.55] - 2026-09-27
+### Sửa lỗi
+- **Cập nhật được cả máy dùng nhánh code tùy chỉnh.** Javis lấy bản phát hành mới rồi hợp nhất vào nhánh đang chạy, giữ các commit riêng. Nếu hai phần sửa đụng nhau, Javis hủy lượt hợp nhất, nêu tên file xung đột và giữ bản sao sửa đổi cục bộ để khôi phục.
+- **Token Apify sai được báo ngay lúc kết nối.** Javis kiểm token với Apify trước khi lưu; nếu dịch vụ không phản hồi, form báo rõ để thử lại thay vì hiện kết nối xanh rồi hỏng ở lần quét đầu.
+- **Đóng Đồ thị không còn có thể treo khi bộ theo dõi file dừng chậm.** Luồng WebSocket chờ dọn tài nguyên trong thời gian có giới hạn; test CI cũng báo lỗi khi không nhận được sự kiện thay vì chờ vô hạn.
+
+## [0.64.54] - 2026-09-26
+### Sửa lỗi
+- Tạo ảnh qua ChatGPT trả kết quả ngay khi nhận tín hiệu hoàn tất, không chờ thừa kết nối đóng. Lượt tạo ảnh bị lỗi cũng báo ngay để tránh khung chat chờ mãi.
+
+## [0.64.53] - 2026-09-26
+### Sửa lỗi
+- Lần đầu mở Javis vào Đồ thị. Lần sau quay về khung Trò chuyện hoặc Trợ lý dùng gần nhất, đúng cuộc hội thoại đang xem; các trang khác không thay đổi nơi quay lại.
+- Khắc phục trường hợp Claude đã báo trả lời xong nhưng khung chat vẫn chờ bản tổng kết mãi. Javis giữ lại câu trả lời và kết thúc lượt khi xác nhận không còn công cụ hay tác vụ phụ đang chạy.
+
+## [0.64.52] - 2026-09-26
+### Sửa lỗi
+- Mở Javis lần đầu sẽ vào khung Trò chuyện. Những lần sau, Javis giữ đúng trang đang làm việc và cuộc hội thoại đang xem ở khung Trợ lý hoặc Trò chuyện trên cả điện thoại và máy tính.
+- Khi chuyển sang ứng dụng khác rồi quay lại, khung chat không tải lại nội dung nếu kết nối vẫn hoạt động.
+
+## [0.64.51] - 2026-09-25
+### Sửa lỗi
+- **Tải ảnh và tài liệu lên khung chat chạy lại bình thường.** Từ bản 0.64.43, mọi file đính kèm đều báo "lỗi mạng" dù mạng vẫn ổn. Lỗi nằm ở chính Javis (bộ canh mạng đứng gọi sai cách nên trình duyệt từ chối), không phải do mạng nhà anh. Nay đã sửa và thử trên trình duyệt thật.
+- Nếu sau này trình duyệt gặp lỗi lạ khi gửi file, chip sẽ ghi đúng lỗi đó thay vì đổ cho mạng.
 
 ## [0.64.50] - 2026-09-24
 ### Cải thiện

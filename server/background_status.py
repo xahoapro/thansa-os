@@ -168,9 +168,22 @@ def _reminder_item(rem: dict, chat_id: str) -> dict:
     }
 
 
+def _job_item(job: dict, chat_id: str) -> dict:
+    """Tiến trình chạy nền mà Javis đang theo dõi (tien_trinh_nen). Luôn là "running": chỉ việc
+    còn sống mới được đưa vào đây, và nó chắc chắn sẽ tự báo về khung chat khi xong."""
+    return {
+        "kind": "job",
+        "id": str(job.get("id") or ""),
+        "title": str(job.get("mo_ta") or "tiến trình nền")[:160],
+        "status": "running",
+        "mine": bool(chat_id) and str(job.get("chat_id") or "") == chat_id,
+        "at": float(job.get("bat_dau") or 0),
+    }
+
+
 def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",
                 orchestration: str = "off", running_loop: str = "",
-                now: float = 0.0, voice_tasks: list = None) -> dict:
+                now: float = 0.0, voice_tasks: list = None, jobs: list = None) -> dict:
     """Gom việc nền còn sống thành một khung nhìn cho dải trạng thái của khung chat.
 
     Nhận dữ liệu THÔ đã đọc sẵn (không tự đi đọc kho) để test được mà không cần dựng cả server.
@@ -201,6 +214,8 @@ def active_view(tasks: list, loops: list, reminders: list, chat_id: str = "",
             items.append(_loop_item(lp, cid, str(running_loop or "")))
     for r in reminders or []:
         items.append(_reminder_item(r, cid))
+    for j in jobs or []:
+        items.append(_job_item(j, cid))
     # `voice_tasks` (voice_brain._PENDING) KHÔNG thành mục riêng: từ 0.57.20 mỗi việc nền của
     # giọng đã là một THẺ THẬT trên trang Việc, nên thêm mục nữa là đếm đôi cùng một việc.
     # Danh sách này chỉ dùng để đếm: nó là sự thật về việc CÒN SỐNG trong tiến trình (task

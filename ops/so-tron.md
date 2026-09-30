@@ -569,3 +569,39 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   thuế prompt→"THUE CAU TRUC FORK"; P013 vi.json tradingauto.org→image_gen.py BRAND_SOURCE value.
 - VERSION `1.11.0-javis-0.64.50`. moc-goc fa235a8/0.64.50/so_patch 41. tu-kiem-chung 5/5 XANH. backup
   me-backup-0.63.0. **CHƯA đẩy remote** — chờ chủ bấm.
+
+## Vòng 2026-09-26 (goc fa235a8 → e4ad5ec, upstream +3 commit, VERSION nền 0.64.50 → 0.64.52, thansa 1.11→1.12)
+- Vòng CỰC NHỎ (vá lỗi): tải ảnh/tài liệu lên chat không còn báo "lỗi mạng" (0.64.51); mở lại app
+  khôi phục đúng trang + cuộc chat đang làm (0.64.52).
+- Rebase 133 commit (41 patch). 2 xung đột: P025 (VERSION → 1.12.0-javis-0.64.52), P035 (console.js:
+  upstream bỏ comment "mở app là vào màn Javis" vì đổi hành vi khôi phục trang → lấy HEAD).
+- Rebrand 1 comment mới console.js (fix commit, không thêm patch). so_patch giữ 41.
+- VERSION `1.12.0-javis-0.64.52`. backup me-backup-0.64.50 (@ c42b2d4). CHƯA đẩy remote — chờ chủ bấm.
+
+## Vòng 2026-09-28 (goc e4ad5ec → d0087c8, upstream +32 commit, VERSION nền 0.64.52 → 0.64.74, thansa 1.12→1.13)
+- 1.12.0/0.64.52 chưa phát hành → cuộn vào đây, phát hành một lần 1.13.0.
+- 32 commit: việc chạy nền có giám sát (plugin javis-job + server/tien_trinh_nen.py, 0.64.66), Cài đặt
+  5 tab, updater + nút cập nhật hiện ngay, nghe/đọc câu Việt xen Anh (lexicon, phiên âm), bảng chọn model,
+  vá mobile.
+- Rebase 135 commit (41 patch). Xung đột: P003 (index.html giữ viewport interactive-widget mới + title Thansa),
+  P025 (VERSION 1.13.0-javis-0.64.74), P027 (6 docs --ours + regex 236; đã soát link fork không mất), P035
+  (console.js giữ data-i18n mới + rebrand comment), P039 (vi/en/workspace --ours + regex 373; cs.si_* còn),
+  P045 (index.html --ours + regex). P038 áp SẠCH.
+- **Soát an toàn javis-job:** tool chỉ lưu lời dặn "xong thì làm tiếp" (min_mode safe, không chạy lệnh);
+  lượt nối tiếp chạy qua runner của CHÍNH khung chat web (_NOI_TIEP_WEB), không tạo loop/việc nền mới -
+  không lách chốt P038.
+- **Trần prompt:** upstream tự phình CLAUDE.md 33.012→33.574. Chốt QUY TẮC trần fork = trần upstream + 300
+  = 33_900 (server + test), chỉ đổi khi upstream đổi trần của họ.
+- VERSION 1.13.0-javis-0.64.74. backup me-backup-0.64.52. CHƯA đẩy remote.
+
+## Vòng 2026-09-29 (goc d0087c8 → 7f0ece6, upstream +3 commit, VERSION nền 0.64.74 → 0.64.77, thansa 1.13→1.14)
+- Vòng CỰC NHỎ: ảnh Codex tự tạo về thẳng khung chat (0.64.75), Codex tự nối lại không thành bong bóng
+  lỗi + WebSocket hỏng thì đi HTTPS (0.64.76), Telegram không lộ nguyên câu lệnh trong dòng trạng thái
+  (0.64.77). Cuộn luôn 1.13.0/0.64.74 (chưa phát hành) → phát hành một lần 1.14.0.
+- Rebase 138 commit (41 patch), chỉ 1 xung đột P025 (VERSION → 1.14.0-javis-0.64.77). Không bề mặt
+  hiển thị mới có "Javis" (các chữ Javis mới đều là docstring server, giữ theo chiến lược).
+- CLAUDE.md 33.813 < trần fork 33.900 (server+test khớp). backup me-backup-0.64.74 (@ 5556ae54).
+- LƯU Ý: phiên này mở từ terminal trong app (JAVIS_STATE_DIR = state thật) → chạy suite bằng
+  `env -u JAVIS_STATE_DIR -u JAVIS_BRAIN -u JAVIS_IN_TERMINAL`. CHƯA đẩy remote — chờ chủ bấm.
+- NGHIỆM THU: suite 497/503 → sửa 1 test coupled (test_anh_codex_ve_brain kiểm nhãn javisos → tradingauto.org)
+  → còn 5 đỏ sandbox/môi trường y như các vòng trước (form/route/terminal*/run_command_quyen), 0 hồi quy.

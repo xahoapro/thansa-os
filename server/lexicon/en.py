@@ -192,6 +192,12 @@ PROMISE = (
         r"(finish|finished|done|complete|completed|get|got)\b"
         r"[^.!?]{0,50}?\b(i(?:'| wi)?ll|i will|we(?:'| wi)?ll|we will)\b"
     )),
+    # 0.64.66: "rendering in the background, once it's done I'll add the audio and send it".
+    ("once_it_is_done", re.compile(
+        r"\b(once|when|after)\s+(it|that|this|the \w+)\s*(?:'s|is|has)?\s*"
+        r"(done|finished|ready|rendered|complete|completed)\b"
+        r"[^.!?]{0,60}?\b(i(?:'| wi)?ll|i will|we(?:'| wi)?ll|we will)\b"
+    )),
     ("will_wait_then", re.compile(
         r"\b(i(?:'| wi)?ll|i will)\s+(wait|monitor|watch|keep an eye)\b"
         r"[^.!?]{0,60}?\b(then|and)\b[^.!?]{0,30}?"

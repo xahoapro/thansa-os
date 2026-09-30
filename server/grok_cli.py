@@ -1173,6 +1173,11 @@ class GrokCLI:
                     errors="replace", bufsize=1, creationflags=_no_window(),
                     env=_moi_truong(), start_new_session=(os.name != "nt"),
                 )
+                try:   # lệnh chạy ngầm Grok bỏ lại sẽ được theo dõi sau lượt (tien_trinh_nen)
+                    import tien_trinh_nen
+                    tien_trinh_nen.ghi_nhom(self.tag, proc.pid)
+                except Exception:
+                    pass
 
                 def cat():
                     """Giết tiến trình khi quá giờ, để vòng readline dưới kia thoát ra được.

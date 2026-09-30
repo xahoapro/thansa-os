@@ -5,7 +5,7 @@ Kiểm tra: node mọc NGAY khi file .md được ghi (không đợi nhịp qué
 note đổi, file trong thư mục ẩn không lọt ra, và disconnect dọn task nền sạch sẽ.
 """
 from _paths import ROOT, SERVER  # noqa: E402,F401  - nạp server/ vào sys.path (xem tests/python/_paths.py)
-import os, sys, tempfile, json, time, concurrent.futures
+import os, sys, tempfile, json, time, queue, threading
 os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-graphwatch-test-")
 
 _fails = []
@@ -40,9 +40,24 @@ def _write(relpath, content):
 
 def _recv_json(ws, timeout=10):
     """receive_text có canh giờ - treo quá timeout coi như không có sự kiện."""
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-        fut = ex.submit(ws.receive_text)
-        return json.loads(fut.result(timeout=timeout))
+    result = queue.Queue(maxsize=1)
+
+    def _receive():
+        try:
+            result.put((True, ws.receive_text()))
+        except BaseException as exc:
+            result.put((False, exc))
+
+    # ThreadPoolExecutor.__exit__ chờ luồng đọc WebSocket kết thúc ngay cả khi
+    # Future.result() đã timeout, khiến CI treo vô hạn lúc watcher không gửi gì.
+    threading.Thread(target=_receive, daemon=True).start()
+    try:
+        ok, value = result.get(timeout=timeout)
+    except queue.Empty as exc:
+        raise TimeoutError("Không nhận được sự kiện graph WebSocket") from exc
+    if not ok:
+        raise value
+    return json.loads(value)
 
 # File có TRƯỚC khi kết nối → nằm trong baseline, sửa nó phải ra isNew=False
 _write("cu.md", "note cũ, chưa có link")
@@ -81,15 +96,9 @@ if _fails:
     print(f"FAIL {len(_fails)} test: " + ", ".join(_fails))
 
 # os._exit thay vì sys.exit: awatch của watchfiles chạy trên một luồng Rust (notify).
-# Khi socket đóng, `finally` trong /ws/graph chỉ .cancel() các task chứ không await,
-# nên luồng đó có thể còn sống lúc interpreter bắt đầu finalize - và trên Linux nó chạm
-# vào object đã giải phóng, cho Segmentation fault (core dumped) NGAY SAU khi test đã in
-# "TẤT CẢ PASS". Đúng lỗi này làm CI đỏ liên tục từ 0.9.231, che mất mọi lỗi thật khác.
-# os._exit bỏ qua hẳn bước finalize nên không còn cuộc đua đó.
-#
-# Cái này KHÔNG chứng minh gì về production: server chạy liên tục, không thoát, và
-# stop_event vẫn tắt watcher đúng cách khi client ngắt. Chỉ là chuyện lúc tiến trình chết.
-# Việc đáng làm riêng: cho /ws/graph await các task đã cancel thay vì bỏ mặc.
+# Handler đã chờ watcher thoát có giới hạn, nhưng trong môi trường kiểm thử vẫn có thể còn
+# luồng native sống đúng lúc interpreter finalize. os._exit tránh cuộc đua này sau khi đã
+# flush kết quả; lỗi dọn WebSocket trong khối with ở trên vẫn bị test bắt bình thường.
 sys.stdout.flush()
 sys.stderr.flush()
 os._exit(1 if _fails else 0)

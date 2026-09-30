@@ -95,7 +95,12 @@ check("push_to_chat ghi vai assistant, không bao giờ là user",
 // Con số này nhích lên là có đường mới đẻ ra tin của người dùng - phải đọc lại xem nó đến từ
 // đâu trước khi sửa test.
 const ghiUser = (server.match(/append_message\([^)]*"user"/g) || []).length;
-check("chỉ 5 chỗ ghi vai user (web + bot + 2 Live + duyệt quy trình)", ghiUser === 5, ghiUser);
+// 0.64.66 thêm chỗ thứ sáu: lượt nối tiếp sau khi việc chạy nền xong (_start_followup_turn)
+// ghi tin mở lượt, có đánh dấu "[Việc chạy nền đã xong]", để mở lại hội thoại vẫn hiểu vì sao
+// Javis tự nói tiếp. Không phải chữ của mic nên không đụng luật "mic không tự gửi".
+check("chỉ 6 chỗ ghi vai user (web + bot + 2 Live + duyệt quy trình + nối tiếp việc nền)", ghiUser === 6, ghiUser);
+check("chỗ thứ sáu nằm TRONG _start_followup_turn",
+  /async def _start_followup_turn[\s\S]{0,1600}store\.append_message\(conv_sid, "user", text\)/.test(server));
 const approvalBody = server.slice(server.indexOf('if action == "wf_resume":'), server.indexOf('if action == "resume_now":'));
 check("đường ghi thứ năm chỉ thuộc thao tác duyệt quy trình",
   (approvalBody.match(/append_message\([^)]*"user"/g) || []).length === 1

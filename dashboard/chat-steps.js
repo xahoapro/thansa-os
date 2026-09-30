@@ -155,6 +155,8 @@
      chay, bao nhieu buoc, buoc moi nhat la gi. Chi bung khi nguoi dung bam (`_moTay`). */
   function ve(el, st, dangChay) {
     if (!el) el = taoKhoi();
+    // Nhớ mạch để vẽ lại khi từ điển về (xem bộ nghe "javis:i18n" cuối file).
+    el._st = st; el._dangChay = !!dangChay;
     var cu = chuanHoa(st);
     var txt = el.querySelector(".steps-sum-text");
     if (txt) txt.textContent = dangChay ? tw("app.steps_running_n", { n: cu.so }) : tomTat(cu).nhan;
@@ -177,5 +179,16 @@
 
   var API = { nhan: nhan, tomTat: tomTat, taoKhoi: taoKhoi, ve: ve, nhanDong: nhanBuoc, TRAN: TRAN };
   if (typeof window !== "undefined") window.JavisSteps = API;
+  // Mở lại hội thoại (restoreSession) vẽ khối bước TRƯỚC khi từ điển tải xong, lúc đó t() trả
+  // về chính cái khoá, nên người dùng thấy chữ thô "app.steps_done" (chủ repo báo 27/09). Từ
+  // điển về thì vẽ lại mọi khối đang có.
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("javis:i18n", function () {
+      var ds = document.querySelectorAll(".msg-steps");
+      for (var i = 0; i < ds.length; i++) {
+        if (ds[i]._st) { try { ve(ds[i], ds[i]._st, ds[i]._dangChay); } catch (e) {} }
+      }
+    });
+  }
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

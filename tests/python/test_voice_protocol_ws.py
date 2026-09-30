@@ -44,7 +44,8 @@ class VoiceProtocolWS(unittest.IsolatedAsyncioTestCase):
                 _CONTEXT_RUNTIME=types.SimpleNamespace(start_turn=lambda *a:None),
                 workflow_chat=types.SimpleNamespace(persona_cua_phien=lambda r:None),
                 voice_brain=types.SimpleNamespace(config_from_settings=lambda s:None),
-                _bao_lan_nhanh_bo_qua=lambda *a:None,asyncio=asyncio,run_turn=run_turn)
+                _bao_lan_nhanh_bo_qua=lambda *a:None,asyncio=asyncio,run_turn=run_turn,
+                _NOI_TIEP_WEB={})
             tree=ast.parse((SERVER/'main.py').read_text(encoding='utf-8'))
             loop=next(n for n in ast.walk(tree) if isinstance(n,ast.While) and any(isinstance(c,ast.Attribute) and c.attr=='receive_text' for c in ast.walk(n)) and any(isinstance(c,ast.Constant) and c.value=='voice_answer' for c in ast.walk(n)))
             fn=ast.AsyncFunctionDef(name='receive',args=ast.arguments(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[]),body=[loop],decorator_list=[])
