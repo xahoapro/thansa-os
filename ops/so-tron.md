@@ -605,3 +605,26 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   `env -u JAVIS_STATE_DIR -u JAVIS_BRAIN -u JAVIS_IN_TERMINAL`. CHƯA đẩy remote — chờ chủ bấm.
 - NGHIỆM THU: suite 497/503 → sửa 1 test coupled (test_anh_codex_ve_brain kiểm nhãn javisos → tradingauto.org)
   → còn 5 đỏ sandbox/môi trường y như các vòng trước (form/route/terminal*/run_command_quyen), 0 hồi quy.
+
+## Vòng 2026-10-01 (goc 7f0ece6 → d27172b, upstream +22 commit, VERSION nền 0.64.77 → 0.65.12, thansa 1.14→1.15)
+- 22 commit: **lệnh "/" hệ thống trên khung chat web** (12 lệnh, Telegram thêm 4), **bot tự trả lời Zalo
+  cá nhân + trong nhóm Zalo** (tag đúng người, ghi chú/nhắc hẹn/poll qua plugin zalo-group, Zalo CLI cài sẵn),
+  **bộ phán xử hội thoại nhóm** (bot tự học khi nào nên nói, tự vận hành), **Hòm thư** đại tu (bố cục gọn,
+  tải dần, công tắc Tự động/Tôi trả lời, Gợi ý câu trả lời, lọc theo bot), trang Chatbot còn 2 tab,
+  **Claude Code tự cập nhật** (model mới tự hiện), khung xem mã sửa được.
+- Rebase 142 commit (41 patch). Xung đột: P007 (chatbot_runtime: lấy HEAD `_nhom_duoc_phep` + rebrand),
+  P008 (test_trang_chatbot: khoá mới cb2.nguon_agent_h + "Thansa"), chore gitignore (union: giữ khối
+  reply_policy/channel_accounts mới + ops/.telegram), P025 (VERSION 1.15.0-javis-0.65.12), P027 (5 docs
+  --ours + regex), P036 (app.js `_KHOI_NGU_CANH` lấy HEAD thêm [CHẾ ĐỘ KẾ HOẠCH/[MỤC TIÊU + "trình sửa của
+  Thansa" khớp nơi phát; server sessions.py khớp tiền tố chung nên an toàn; chatbots.js --ours + regex),
+  P039 (vi/en.json --ours + regex 209/205; cs.si_* 124 khoá còn đủ). P038 áp SẠCH.
+- **P046 mới:** rebrand bề mặt hiển thị 0.65.x (đầu ra lệnh / /usage /jobs /memory, xuất chat markdown,
+  lỗi Node.js/Docker, cảnh báo chatbot, plugin zalo-group mô tả+author, help Telegram, docs 11/12/28 vi+en).
+  so_patch 41→42.
+- **Soát hành vi:** bot tự trả lời Zalo bật theo TỪNG bot, nhóm phải được cho phép (AUDIENCE mặc định
+  "nhom", lỗi thì rơi về "chon" hẹp nhất) → không đụng chốt P038 (loop/việc mặc định suggest).
+- VERSION 1.15.0-javis-0.65.12. moc-goc d27172b/0.65.12/so_patch 42. tu-kiem-chung 5/5 XANH. backup
+  me-backup-0.64.77-pre (= me trước rebase, dc0282fa). Secret-scan cây = sạch.
+- NGHIỆM THU (env -u JAVIS_*): fork 528/533, upstream sạch 529/533. Đỏ chung = {form_chuoi_rong, route_table,
+  run_command_quyen, terminal_cmd_goc} (sandbox). test_grok_cli đỏ khi chạy song song 2 suite, chạy riêng
+  XANH (flaky tải máy) → **0 hồi quy fork**. CHƯA đẩy remote — chờ chủ bấm.
