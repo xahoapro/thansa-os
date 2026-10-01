@@ -178,17 +178,17 @@ Node.js 20+ is required on the machine running Thansa, same as for the Zalo conn
 | `zalo_create_reminder` | A reminder shown inside Zalo, with a time and repeat (daily, weekly, monthly) | Dangerous (Full power level) |
 | `zalo_create_poll` | A poll for the group: multiple answers, anonymous, closing time | Dangerous (Full power level) |
 
-Just say it in chat, for example "message the Sales group and tag @minhquy: meeting at 9am" or "create a poll in the Javis class group: what for lunch".
+Just say it in chat, for example "message the Sales group and tag @minhquy: meeting at 9am" or "create a poll in the Thansa class group: what for lunch".
 
 Four things worth knowing:
 
-- **You only need to say a name to tag.** "@minhquy" or "Minh Quý" both work, ignoring case and accents. Javis looks up the real Zalo
-  id among the people who already spoke in that group first, then in Zalo's member list. **If a name is ambiguous or not found, Javis
+- **You only need to say a name to tag.** "@minhquy" or "Minh Quý" both work, ignoring case and accents. Thansa looks up the real Zalo
+  id among the people who already spoke in that group first, then in Zalo's member list. **If a name is ambiguous or not found, Thansa
   asks back with the candidates** instead of guessing, because a wrong tag cannot be undone. `@All` only when you ask for it explicitly.
-- **This reminder is not Javis's own reminder** (`javis_schedule`): it shows up inside Zalo, so the whole group sees it. Times use Javis's timezone.
-- **If the group locks note or poll creation for members**, Zalo refuses and Javis reports that reason as is. If a command times out,
-  Javis says it is **not sure whether it was created** and asks you to check the group before trying again, so you do not get two polls.
-- **With several Zalo accounts attached, Javis asks** which one to use, same as for sending images.
+- **This reminder is not Thansa's own reminder** (`javis_schedule`): it shows up inside Zalo, so the whole group sees it. Times use Thansa's timezone.
+- **If the group locks note or poll creation for members**, Zalo refuses and Thansa reports that reason as is. If a command times out,
+  Thansa says it is **not sure whether it was created** and asks you to check the group before trying again, so you do not get two polls.
+- **With several Zalo accounts attached, Thansa asks** which one to use, same as for sending images.
 
 ## Using it in chat
 
