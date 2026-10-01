@@ -190,7 +190,7 @@ Gõ dấu `/` trong chat (hoặc bấm nút Menu của bot) sẽ hiện danh sá
 | `/model` | Xem hoặc đổi model. Gõ `/model` không kèm gì để mở bảng nút bấm chọn; hoặc gõ thẳng tên (vd `/model sonnet`) |
 | `/brain` | Xem hoặc đổi brain (vault) cho RIÊNG phiên của bạn. Gõ `/brain` để mở bảng nút chọn; hoặc gõ thẳng tên (vd `/brain Kim Khí`). Đổi xong hội thoại reset để nạp đúng bộ nhớ brain mới; người khác và dashboard không bị ảnh hưởng. File bạn gửi lên cũng rơi vào inbox của brain đã chọn |
 | `/retry` | Gửi lại câu hỏi gần nhất |
-| `/usage` | Token và chi phí Javis đã đo hôm nay và từ trước tới nay, kèm số dư OpenRouter nếu có key |
+| `/usage` | Token và chi phí Thansa đã đo hôm nay và từ trước tới nay, kèm số dư OpenRouter nếu có key |
 | `/tasks` | Việc nền đang chạy, chờ duyệt, bị kẹt hoặc xếp hàng của brain đang chọn cho phiên này. Có cảnh báo nếu "Tự vận hành" đang tắt |
 | `/memory` | Mục lục bộ nhớ dài hạn của brain đang chọn cho phiên này |
 | `/plan <việc>` | Một lượt chỉ đọc và đề xuất kế hoạch, chưa làm gì ra ngoài. Trên Telegram đây là lời dặn cho model, chưa có cổng chặn ở hub như trên web |

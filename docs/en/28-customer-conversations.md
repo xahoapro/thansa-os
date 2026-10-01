@@ -2,7 +2,7 @@
 
 *[Tiếng Việt](../28-hoi-thoai-khach.md) · **English***
 
-Every message a customer sends to a **dedicated bot** (Telegram or Zalo Bot) and to a connected **personal Zalo account** is gathered into one inbox inside Javis. You read the exchange between the customer and the bot, see which chats the bot is stuck on, and **take over** a chat when a human is needed.
+Every message a customer sends to a **dedicated bot** (Telegram or Zalo Bot) and to a connected **personal Zalo account** is gathered into one inbox inside Thansa. You read the exchange between the customer and the bot, see which chats the bot is stuck on, and **take over** a chat when a human is needed.
 
 Since 0.61.0 this page also holds the Chatbots: **one item on the rail, three tabs** (Inbox, Channels, Chatbots), and you **reply to customers right inside the Inbox**.
 
@@ -110,7 +110,7 @@ Since 0.377.0 every nick and Page lives on the **Channels** tab. On the left: **
 
 Pick a nick or Page and the right side shows:
 
-- **AI on duty for this Page**: one bot dropdown. **Cancel** and **Save** appear only after a change; nothing changes before Save. **No AI needed** means the place is only logged and no longer counts as a job on the tab. Changing the bot moves the place's existing chats to the new bot. A bot left with nothing to serve is switched off, and Javis says so.
+- **AI on duty for this Page**: one bot dropdown. **Cancel** and **Save** appear only after a change; nothing changes before Save. **No AI needed** means the place is only logged and no longer counts as a job on the tab. Changing the bot moves the place's existing chats to the new bot. A bot left with nothing to serve is switched off, and Thansa says so.
 - **Info**: a button next to the bot dropdown. It opens the account card in a popup: state, record switch, import history, edit, delete (described below), and **Bot settings** when a bot is on duty. The button shows a red dot when the account has an error. Since 0.404.0 the card no longer sits above the chat list.
 - **Groups and people**: one **AI here** switch per chat, a sentence on who is handling it, **Allow** when someone called the AI in a group not allowed yet, and **Open chat**. Every change can be undone. With no AI on duty yet the switch is dimmed and, when pressed, says to pick one in the box above.
 
@@ -118,31 +118,31 @@ The number on the Channels tab counts the places that need you: an account in er
 
 ## The Stats tab
 
-Press the period button to open the date picker: a quick range (today, yesterday, last 7, 30 or 90 days, last month, week or month to date) or a start and end day on the calendar, then **Apply**. Javis remembers the period you looked at last. Since 0.399.0 the page opens with a **benefit band**: how many messages the AI answered for you (against the period before), its share of all answers, **the time it freed for you** (estimated at 1 minute per AI answer) and **how many answers it sent while you rest** (9 pm to 7 am in the brain's time zone). Four tiles: Customers served (with the new ones, private chats whose first message is in the period), First answer after (the AI against hand replies, the typical value), Hand replies, Waiting for you (opens the Needs you list). A **When customers write** chart has 24 columns, your rest hours in a stronger colour and the busiest hour named. Last, **AI and hand replies per account** (one two-colour bar per account with that account's own AI share) and AI answers by bot. Since 0.401.0 an **account picker** sits next to the period button: pick one account and the whole page counts only that account, so an account where a person types does not lower the share of one only the AI answers. "Hand replies" are messages a person typed, in Javis or on that account's own phone. Numbers come from the Javis inbox.
+Press the period button to open the date picker: a quick range (today, yesterday, last 7, 30 or 90 days, last month, week or month to date) or a start and end day on the calendar, then **Apply**. Thansa remembers the period you looked at last. Since 0.399.0 the page opens with a **benefit band**: how many messages the AI answered for you (against the period before), its share of all answers, **the time it freed for you** (estimated at 1 minute per AI answer) and **how many answers it sent while you rest** (9 pm to 7 am in the brain's time zone). Four tiles: Customers served (with the new ones, private chats whose first message is in the period), First answer after (the AI against hand replies, the typical value), Hand replies, Waiting for you (opens the Needs you list). A **When customers write** chart has 24 columns, your rest hours in a stronger colour and the busiest hour named. Last, **AI and hand replies per account** (one two-colour bar per account with that account's own AI share) and AI answers by bot. Since 0.401.0 an **account picker** sits next to the period button: pick one account and the whole page counts only that account, so an account where a person types does not lower the share of one only the AI answers. "Hand replies" are messages a person typed, in Thansa or on that account's own phone. Numbers come from the Thansa inbox.
 
 ## The account card
 
-Every account customers write to appears as **the same kind of card**, whatever the channel: channel logo and name, account name, state (running, off, error with the reason), the bot on duty, conversation and unread counts, and the channel's capabilities (groups, files, reply from Javis). No channel gets its own section, Zalo included. A channel added later simply shows up as one more card.
+Every account customers write to appears as **the same kind of card**, whatever the channel: channel logo and name, account name, state (running, off, error with the reason), the bot on duty, conversation and unread counts, and the channel's capabilities (groups, files, reply from Thansa). No channel gets its own section, Zalo included. A channel added later simply shows up as one more card.
 
 Two kinds of account, differing in how you get them, not in how they look:
 
-**Bot accounts** (Telegram, Zalo Bot) are a token. Press **Add account**, pick the channel type, paste the token, press **Check** so Javis asks the right platform which bot it is, give it a display name and Save. A bot account records into the inbox while the bot serving it is enabled; with no bot on duty the card says so and offers **Create a bot**, which opens the form on the Bot tab with that account ticked. It can be deleted once no bot serves it; recorded conversations stay.
+**Bot accounts** (Telegram, Zalo Bot) are a token. Press **Add account**, pick the channel type, paste the token, press **Check** so Thansa asks the right platform which bot it is, give it a display name and Save. A bot account records into the inbox while the bot serving it is enabled; with no bot on duty the card says so and offers **Create a bot**, which opens the form on the Bot tab with that account ticked. It can be deleted once no bot serves it; recorded conversations stay.
 
-**Your own accounts** (personal Zalo) come from the **Connections** page (QR scan in Zalo Agent MCP) and appear here with a **Record conversations** switch. Turn it on and Javis reads new messages every 20 seconds through the MCP and writes them into the inbox. Three plain facts about this channel:
+**Your own accounts** (personal Zalo) come from the **Connections** page (QR scan in Zalo Agent MCP) and appear here with a **Record conversations** switch. Turn it on and Thansa reads new messages every 20 seconds through the MCP and writes them into the inbox. Three plain facts about this channel:
 
-- **Off by default.** Turning it on keeps your Zalo session alive continuously through an unofficial API, meaning the account is signed in 24/7 on the machine running Javis. That is your choice, not Javis's. Use a secondary account.
+- **Off by default.** Turning it on keeps your Zalo session alive continuously through an unofficial API, meaning the account is signed in 24/7 on the machine running Thansa. That is your choice, not Thansa's. Use a secondary account.
 - **Stored from the moment you turn it on.** No old history is pulled. Messages you send from your phone show as "You".
 - **No bot on duty.** Replying from the Inbox sends under your own name; a bot answering over this channel deserves its own decision.
 
 ## Where data lives and what is kept
 
-The store sits in the Javis state folder (`customer_conversations.sqlite3`), separate from the chat session store. **Text** is kept long term; images, files and voice keep only the message type and a description, the original files follow Javis's normal cleanup. A message read twice (after a restart, say) never creates a second row.
+The store sits in the Thansa state folder (`customer_conversations.sqlite3`), separate from the chat session store. **Text** is kept long term; images, files and voice keep only the message type and a description, the original files follow Thansa's normal cleanup. A message read twice (after a restart, say) never creates a second row.
 
 Deleting a bot does **not** delete its conversations, nor the channel accounts it served: customer history is your asset, a token is reusable. Bots created before 0.61.0 (token stored inside the bot) move to the account model automatically on update; token, conversations and allowed groups are all kept.
 
 ## For anyone adding a channel
 
-Since 0.61.0 everything the core knows about a channel lives in the **channel registry** (`server/channels/`, one file per channel). A channel file declares: id, name, logo key, kind (`bot` uses a token, `account` uses an existing signed-in session, `webhook` for platforms that call back), capabilities (groups, text, files), how to get a token; and a set of functions: token check and the long-poll transport (bot kind), listing accounts and toggling recording (account kind), `gui` to reply from Javis. Incoming messages are normalized into the common event (`channel`, `account_id`, `external_chat_id`, `sender_type`, `text`, `external_message_id`, `created_at`) and written to the store.
+Since 0.61.0 everything the core knows about a channel lives in the **channel registry** (`server/channels/`, one file per channel). A channel file declares: id, name, logo key, kind (`bot` uses a token, `account` uses an existing signed-in session, `webhook` for platforms that call back), capabilities (groups, text, files), how to get a token; and a set of functions: token check and the long-poll transport (bot kind), listing accounts and toggling recording (account kind), `gui` to reply from Thansa. Incoming messages are normalized into the common event (`channel`, `account_id`, `external_chat_id`, `sender_type`, `text`, `external_message_id`, `created_at`) and written to the store.
 
 Adding a channel = one file in the registry, one registration line, one logo in `icons.js`. The bot store, the supervisor, the API and all three tabs pick it up; nothing else changes. Details in `docs/dev/2026-09-kenh-hoi-thoai-spec.md`. API:
 
@@ -163,7 +163,7 @@ Adding a channel = one file in the registry, one registration line, one logo in 
 
 ## Want more: the Customer management (CRM) pack
 
-The Store has a **Customer management (CRM)** pack (`javis.khach-hang-crm`, needs 0.60.1 or newer) that sits on this very inbox. Once installed, just ask Javis: "who has waited over 2 hours without a reply", "what did Lan ask", "tag Lan as VIP", "how many new customers this week", "export customers who asked for a price to Excel". It ships a customer-care agent and a daily review workflow. The pack only reads the inbox and writes tags and notes on customers; it never messages anyone.
+The Store has a **Customer management (CRM)** pack (`javis.khach-hang-crm`, needs 0.60.1 or newer) that sits on this very inbox. Once installed, just ask Thansa: "who has waited over 2 hours without a reply", "what did Lan ask", "tag Lan as VIP", "how many new customers this week", "export customers who asked for a price to Excel". It ships a customer-care agent and a daily review workflow. The pack only reads the inbox and writes tags and notes on customers; it never messages anyone.
 
 ## See also
 
