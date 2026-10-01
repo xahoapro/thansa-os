@@ -627,4 +627,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   me-backup-0.64.77-pre (= me trước rebase, dc0282fa). Secret-scan cây = sạch.
 - NGHIỆM THU (env -u JAVIS_*): fork 528/533, upstream sạch 529/533. Đỏ chung = {form_chuoi_rong, route_table,
   run_command_quyen, terminal_cmd_goc} (sandbox). test_grok_cli đỏ khi chạy song song 2 suite, chạy riêng
-  XANH (flaky tải máy) → **0 hồi quy fork**. CHƯA đẩy remote — chờ chủ bấm.
+  XANH (flaky tải máy) → **0 hồi quy fork**. **ĐÃ PHÁT HÀNH 2026-10-01** (origin/main 592ac6c, snapshot ff từ e995f51; backup me-backup-0.65.12).
