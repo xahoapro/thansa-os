@@ -208,7 +208,7 @@ def dinh_dang_muc_dung(summary: dict, openrouter=None) -> str:
     summary = summary or {}
     hom_nay = summary.get("today") or {}
     tat_ca = summary.get("all_time") or {}
-    dong = ["📈 Mức dùng Javis (số Javis tự đo)",
+    dong = ["📈 Mức dùng Thansa (số Thansa tự đo)",
             _dong_muc_dung("Hôm nay", hom_nay.get("total") or {})]
     for it in (hom_nay.get("items") or [])[:5]:
         dong.append(f"  - {it.get('provider', '?')} {it.get('model', '')}: "
@@ -230,7 +230,7 @@ def dinh_dang_viec(view: dict, moi_cot: int = 5) -> str:
     cot = view.get("columns") or {}
     dem = view.get("counts") or {}
     che_do = str(view.get("orchestration") or "")
-    dong = ["📋 Việc nền của Javis"]
+    dong = ["📋 Việc nền của Thansa"]
     if che_do.lower() == "off":
         dong.append("⚠ Tự vận hành đang TẮT: việc chỉ nằm trong hàng đợi, chưa chạy. "
                     "Bật ở trang Việc trên dashboard.")
@@ -260,7 +260,7 @@ def dinh_dang_bo_nho(noi_dung: str, toi_da: int = 3000) -> str:
     s = str(noi_dung or "").strip()
     if not s:
         return ("Brain này chưa có bộ nhớ dài hạn nào (memory/MEMORY.md trống). "
-                "Nói \"nhớ giúp ... \" là Javis tự ghi.")
+                "Nói \"nhớ giúp ... \" là Thansa tự ghi.")
     if len(s) > toi_da:
         s = s[:toi_da].rstrip() + "\n... (còn nữa, mở memory/MEMORY.md để xem đủ)"
     return "🧠 Bộ nhớ dài hạn của brain này\n\n" + s
