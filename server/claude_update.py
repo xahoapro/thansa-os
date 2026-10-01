@@ -93,9 +93,9 @@ def cap_nhat(ly_do: str = "tay") -> dict:
     now = time.time()
     if deploy_info.deploy_mode() == "docker":
         return {"ok": False, "docker": True,
-                "error": localefmt.chu("Bản Docker nhận Claude Code mới theo mỗi bản cập nhật Javis, "
+                "error": localefmt.chu("Bản Docker nhận Claude Code mới theo mỗi bản cập nhật Thansa, "
                                        "không cập nhật riêng được.",
-                                       "The Docker build gets a new Claude Code with each Javis update; "
+                                       "The Docker build gets a new Claude Code with each Thansa update; "
                                        "it cannot be updated on its own.")}
     cli = claude_cli.find_claude_cli()
     if not cli:
