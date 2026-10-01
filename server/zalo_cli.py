@@ -86,7 +86,7 @@ def pick_connection(conns: List[dict], connection_id: str = "") -> Tuple[Optiona
 def check() -> Optional[str]:
     """Lý do CHƯA dùng được (người đọc hiểu và làm theo), hoặc None nếu ổn."""
     if not shutil.which("npx"):
-        return ("Máy chạy Javis chưa có Node.js 20+ (lệnh npx) nên chưa dùng được tính năng này. "
+        return ("Máy chạy Thansa chưa có Node.js 20+ (lệnh npx) nên chưa dùng được tính năng này. "
                 "Cài tại nodejs.org rồi thử lại.")
     if not connections():
         return ("Chưa đấu tài khoản Zalo nào. Vào trang Kết nối, chọn 'Zalo Agent MCP', "

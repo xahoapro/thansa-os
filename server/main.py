@@ -18963,7 +18963,7 @@ async def _tg_help_text(brain):
         "/cli - engine Claude (có MCP/skill)\n"
         "/or - engine OpenRouter (chat + MCP đa-model)\n"
         "/retry - gửi lại câu gần nhất\n"
-        "/usage - token và chi phí Javis đã dùng\n"
+        "/usage - token và chi phí Thansa đã dùng\n"
         "/tasks - việc nền đang chạy, xếp hàng, bị kẹt\n"
         "/memory - mục lục bộ nhớ dài hạn của brain\n"
         "/plan <việc> - chỉ lập kế hoạch, chưa làm gì ra ngoài\n"
@@ -19369,7 +19369,7 @@ async def _tg_command(cmd, arg, chat=None, meta=None):
         # có cổng chặn ở hub: lượt Telegram chưa mang mức quyền riêng từng lượt.
         if not arg.strip():
             return {"reply": "Gõ /plan kèm việc cần lên kế hoạch, ví dụ: /plan dọn lại kho hàng "
-                             "cuối tháng. Javis chỉ đọc và đề xuất, chưa làm gì ra ngoài."}
+                             "cuối tháng. Thansa chỉ đọc và đề xuất, chưa làm gì ra ngoài."}
         return {"ask": lenh_he_thong.khoi_ke_hoach() + arg.strip()}
     if cmd == "agents":
         ags = agents_index(brain, kem_prompt=False)   # lệnh này chỉ in tên + vai trò

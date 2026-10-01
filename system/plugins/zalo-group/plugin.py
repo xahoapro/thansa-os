@@ -524,7 +524,7 @@ def register(ctx):
         name="zalo_group_members",
         description=(
             "Liệt kê thành viên một NHÓM Zalo (uid kèm tên) để biết tag ai, hoặc tra một người theo tên (query). Gộp hai nguồn: "
-            "người đã nhắn trong nhóm (Hộp thư của Javis) và danh sách thành viên của Zalo. Chỉ đọc. Tham số: thread_id (id nhóm, "
+            "người đã nhắn trong nhóm (Hộp thư của Thansa) và danh sách thành viên của Zalo. Chỉ đọc. Tham số: thread_id (id nhóm, "
             "từ zalo_search_threads), query (tuỳ chọn, tên cần tìm; không phân biệt hoa thường hay dấu)."
         ),
         handler=_members, min_mode="readonly", check_fn=zalo_cli.check,
@@ -568,7 +568,7 @@ def register(ctx):
         name="zalo_create_reminder",
         description=(
             "Tạo NHẮC HẸN ngay TRONG Zalo, hiện cho cả nhóm (hoặc người kia trong chat riêng) và họ bấm nhận/từ chối được. KHÁC nhắc "
-            "hẹn riêng của Javis (javis_schedule chỉ nhắc chủ qua Telegram). Tham số: thread_id, title, time (\"YYYY-MM-DD HH:mm\" theo "
+            "hẹn riêng của Thansa (javis_schedule chỉ nhắc chủ qua Telegram). Tham số: thread_id, title, time (\"YYYY-MM-DD HH:mm\" theo "
             "giờ của người dùng, phải ở tương lai), repeat (none, daily, weekly, monthly), emoji, thread_type (1=nhóm mặc định, "
             "0=chat riêng)."
         ),
