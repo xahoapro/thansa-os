@@ -1337,3 +1337,30 @@
     (trần 33_800 khớp server+test).
   dieu_kien_bo: >
     Nếu upstream đưa hết chuỗi UI vào i18n gốc thì thu hẹp P045 về đúng phần overlay/dict còn lại.
+
+- id: P046
+  ten: "Rebrand nền 0.65.12 - lệnh / chat web, Zalo nhóm, Hòm thư, docs mới"
+  y_dinh: >
+    Nền 0.64.77→0.65.12 (22 commit) thêm lệnh "/" hệ thống (lenh_he_thong.py, chat-lenh.js),
+    bot trả lời nhóm Zalo (plugin zalo-group, zalo_cli), bộ phán xử hội thoại, tự cập nhật Claude
+    Code. Rebrand chuỗi HIỂN THỊ Javis->Thansa: đầu ra /usage /jobs /memory, xuất chat markdown,
+    lỗi Node.js/Docker, cảnh báo chatbot, mô tả+author plugin zalo-group, help /usage Telegram,
+    docs 11/12/28 (vi+en). Regex an toàn giữ path Javis/ + định danh; docstring server giữ Javis.
+  commit: "[me] P046: rebrand nen 0.65.12 - lenh / chat web, Zalo nhom, Hom thu, docs moi"
+  diem_neo:
+    - file: server/lenh_he_thong.py
+      ky_hieu: "📋 Việc nền của Thansa"
+    - file: system/plugins/zalo-group/plugin.yaml
+      ky_hieu: "author: Thansa (bundled)"
+  vung_theo_doi:
+    - "server/lenh_he_thong.py + dashboard/chat-lenh.js: chuỗi đầu ra lệnh /"
+    - "system/plugins/zalo-*: mô tả tool + author"
+    - "docs/11,12,28 (+en): prose"
+  anh_goc:
+    - file: server/lenh_he_thong.py
+      doan: "📋 Việc nền của Javis"
+  kiem_chung: >
+    grep chuỗi hiển thị "Javis" trên các file trên = 0 (regex an toàn); tu-kiem-chung 5/5; suite xanh
+    trừ đỏ sandbox nền.
+  dieu_kien_bo: >
+    Nếu upstream đưa chuỗi đầu ra lệnh / vào i18n gốc thì thu hẹp P046 về phần server/docs còn lại.
