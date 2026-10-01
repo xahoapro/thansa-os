@@ -186,13 +186,13 @@
   function dinhDangXuat(sess, gio, lamSachTinNguoi) {
     sess = sess || {};
     var sachNguoi = lamSachTinNguoi || function (x) { return x; };
-    var dong = ["# " + (sess.title || "Javis"), "", "_" + tw("lenh.ex_head", { gio: gio || "" }) + "_"];
+    var dong = ["# " + (sess.title || "Thansa"), "", "_" + tw("lenh.ex_head", { gio: gio || "" }) + "_"];
     (sess.messages || []).forEach(function (m) {
       var nguoi = m.role === "user";
       if (!nguoi && m.role !== "assistant") return;
       var noi = nguoi ? sachNguoi(m.content || "") : boKhoiDieuKhien(m.content || "");
       if (!String(noi).trim()) return;
-      dong.push("", "## " + (nguoi ? tw("lenh.ex_you") : "Javis"), "", String(noi).trim());
+      dong.push("", "## " + (nguoi ? tw("lenh.ex_you") : "Thansa"), "", String(noi).trim());
     });
     return dong.join("\n") + "\n";
   }

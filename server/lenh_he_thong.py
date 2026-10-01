@@ -211,7 +211,7 @@ def dinh_dang_muc_dung(summary: dict, openrouter=None) -> str:
     summary = summary or {}
     hom_nay = summary.get("today") or {}
     tat_ca = summary.get("all_time") or {}
-    dong = [localefmt.chu("📈 Mức dùng Javis (số Javis tự đo)", "📈 Javis usage (as measured by Javis)"),
+    dong = [localefmt.chu("📈 Mức dùng Thansa (số Thansa tự đo)", "📈 Thansa usage (as measured by Thansa)"),
             _dong_muc_dung(localefmt.chu("Hôm nay", "Today"), hom_nay.get("total") or {})]
     for it in (hom_nay.get("items") or [])[:5]:
         dong.append(f"  - {it.get('provider', '?')} {it.get('model', '')}: "
@@ -237,7 +237,7 @@ def dinh_dang_viec(view: dict, moi_cot: int = 5) -> str:
     cot = view.get("columns") or {}
     dem = view.get("counts") or {}
     che_do = str(view.get("orchestration") or "")
-    dong = [localefmt.chu("📋 Việc nền của Javis", "📋 Javis background work")]
+    dong = [localefmt.chu("📋 Việc nền của Thansa", "📋 Thansa background work")]
     if che_do.lower() == "off":
         dong.append(localefmt.chu("⚠ Tự vận hành đang TẮT: việc chỉ nằm trong hàng đợi, chưa chạy. "
                                   "Bật ở trang Việc trên dashboard.",
@@ -271,9 +271,9 @@ def dinh_dang_bo_nho(noi_dung: str, toi_da: int = 3000) -> str:
     s = str(noi_dung or "").strip()
     if not s:
         return localefmt.chu("Brain này chưa có bộ nhớ dài hạn nào (memory/MEMORY.md trống). "
-                             "Nói \"nhớ giúp ... \" là Javis tự ghi.",
+                             "Nói \"nhớ giúp ... \" là Thansa tự ghi.",
                              "This brain has no long-term memory yet (memory/MEMORY.md is empty). "
-                             "Say \"remember ...\" and Javis writes it down.")
+                             "Say \"remember ...\" and Thansa writes it down.")
     if len(s) > toi_da:
         s = s[:toi_da].rstrip() + localefmt.chu("\n... (còn nữa, mở memory/MEMORY.md để xem đủ)",
                                                 "\n... (more, open memory/MEMORY.md for the rest)")
