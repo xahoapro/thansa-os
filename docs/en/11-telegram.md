@@ -191,6 +191,10 @@ Typing `/` in the chat (or pressing the bot's Menu button) shows the command lis
 | `/model` | View or change the model. Type `/model` with nothing to open a button picker; or type a name directly (for example `/model sonnet`) |
 | `/brain` | View or change the brain (vault) for YOUR session only. Type `/brain` for a button picker; or type a name directly (for example `/brain Kim Khi`). After switching, the conversation resets to load the new brain's memory; other people and the dashboard are unaffected. Files you upload land in the selected brain's inbox |
 | `/retry` | Resend the most recent question |
+| `/usage` | Tokens and cost Thansa has measured today and all time, plus the OpenRouter balance when a key is set |
+| `/tasks` | Background tasks that are running, waiting for review, blocked or queued in the brain selected for this session. Warns you when "Auto-run" is off |
+| `/memory` | Index of the long-term memory of the brain selected for this session |
+| `/plan <task>` | One read-only turn that proposes a plan and does nothing outside. On Telegram this is an instruction to the model, without the hub-level gate the web has |
 | `/stop` | Stop the running answer immediately |
 | `/reset` | Start a new conversation (forgetting the old context) |
 | `/cli` | Switch to the Claude engine (Claude Code) |

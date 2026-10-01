@@ -309,7 +309,7 @@
   function navigateTo(id) {
     // Trang Chatbot là TAB của trang Hội thoại từ 0.61.0: nhớ tab rồi đi tới trang đó.
     if (id === "chatbots") {
-      if (window.JavisConversations && window.JavisConversations.chonTab) window.JavisConversations.chonTab("chatbot", true);
+      if (window.JavisConversations && window.JavisConversations.chonTab) window.JavisConversations.chonTab("bot", true);
       id = "conversations";
     }
     id = TRANG_GOP[id] || id;
@@ -492,6 +492,10 @@
     // nội dung/nút của trang mới. Đặc biệt bảo vệ các node chat mà tab Trò chuyện mượn vào
     // cviewBody (trước đây bị 1 render async trễ xoá mất → chat vỡ). Cũng hết nháy nội dung cũ.
     const fresh = el.cloneNode(false); el.parentNode.replaceChild(fresh, el); el = fresh;
+    // Trang Chatbot (0.65.10) tự vẽ tiêu đề cùng hàng với tab và chiếm trọn khung, nên đầu trang chung phải ẩn. Lớp nằm trên
+    // #cview (KHÔNG bị clone như cviewBody) nên phải bật/tắt ở MỌI lần đổi trang, không thì trang sau mất đầu trang.
+    const cv = document.getElementById("cview");
+    if (cv) cv.classList.toggle("cview-hoi-thoai", id === "conversations" || id === "chatbots");
     _renderGen++;   // đổi trang → vô hiệu mọi render async đang dở (guard bổ sung cho renderer đã có)
     if (id === "chat")     return renderChat(el);
     if (id === "workspace") return renderWorkspace(el);
@@ -3946,6 +3950,7 @@
           </div>
           ${cliWarn("claude")}
           <div class="prov-action" id="cliAction"></div>
+          <div class="prov-note" id="cliUpd" style="margin-top:8px;line-height:1.6"></div>
           <div class="prov-auth">
             <div class="prov-auth-title">${esc(t("models.auth_title"))}</div>
             <div class="prov-auth-note">${esc(t("models.auth_note"))}</div>
@@ -4305,6 +4310,7 @@
     let d;
     try { d = await (await fetch("/claude/status" + (ep ? "?refresh=1" : ""))).json(); }
     catch (e) { st.textContent = t("models.cant_check"); return; }
+    veCapNhatClaude(el, d);
     // KHÔNG hỏi được KHÁC hẳn "chưa đăng nhập", và trước bản này hai thứ đó vẽ y như nhau: một
     // lần hết giờ (hay gặp lúc đổi Main Model, khi trang cùng lúc gọi mấy tiến trình con) là
     // thẻ bày ra nút Đăng nhập, người dùng tưởng mất tài khoản rồi đi nối lại - trong khi
@@ -4347,6 +4353,39 @@
       el.querySelector("#cliLogin").onclick = () => startClaudeLogin(el);
       el.querySelector("#cliRecheck").onclick = () => refreshClaudeCard(el, true);
     }
+  }
+
+  // Dòng "Claude Code bản nào + nút Cập nhật". Danh sách model của gói Claude đọc từ chính
+  // binary `claude`, nên CLI cũ là model mới (Sonnet 5.5) không hiện - Claude Code không tự
+  // cập nhật khi chỉ được Javis gọi chạy ngầm. Server tự chạy `claude update` mỗi ngày; nút
+  // này là để khỏi phải chờ.
+  function veCapNhatClaude(el, d) {
+    const box = el.querySelector("#cliUpd");
+    if (!box) return;
+    if (d.cap_nhat_docker) { box.textContent = t("models.cc_upd_docker"); return; }
+    const cn = d.cap_nhat || {};
+    let dong = cn.sau ? t("models.cc_upd_ver", { v: cn.sau }) + " · " : "";
+    dong += t("models.cc_upd_auto");
+    if (cn.ts) dong += " · " + t("models.cc_upd_last", { luc: new Date(cn.ts * 1000).toLocaleString(LOC()) });
+    box.innerHTML = `<span>${esc(dong)}</span>
+      <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="gcard-btn ghost" id="cliUpdBtn">${esc(t("models.cc_upd_btn"))}</button>
+        <span id="cliUpdMsg" class="gcard-meta"></span>
+      </div>`;
+    const btn = box.querySelector("#cliUpdBtn"), msg = box.querySelector("#cliUpdMsg");
+    btn.onclick = async () => {
+      btn.disabled = true;
+      msg.textContent = t("models.cc_upd_running");
+      let r;
+      try { r = await (await fetch("/claude/update", { method: "POST" })).json(); }
+      catch (e) { btn.disabled = false; msg.textContent = t("common.net_err"); return; }
+      btn.disabled = false;
+      if (!r.ok) { msg.innerHTML = Icons.warn(t("models.cc_upd_fail") + " " + (r.error || "")); return; }
+      if (!r.doi) { msg.textContent = t("models.cc_upd_same", { v: r.sau || "" }); return; }
+      const moi = (r.model_moi || []).join(", ");
+      msg.innerHTML = CHECK_ICON + " " + esc(t("models.cc_upd_done", { truoc: r.truoc || "?", sau: r.sau })
+        + (moi ? " " + t("models.cc_upd_new", { ds: moi }) : ""));
+    };
   }
 
   async function startClaudeLogin(el) {
@@ -8539,6 +8578,17 @@
       const st = window.Alpine && Alpine.store("nav");
       if (st) st.i18nTick++;
     } catch (e) { /* Alpine chưa dựng xong - lát nữa nó đọc từ điển đã đầy rồi */ }
+    // Trang Cộng sự dựng khung bằng t() và không tự nghe sự kiện này. Trang cuối được khôi phục
+    // NGAY lúc khởi động, nên từ điển về chậm một nhịp là khung kẹt ở mã khoá (`ws.tab_agent`,
+    // `sess.new_chat`...) tới khi người dùng đổi trang. Dựng lại tại chỗ một lần: đường này đã có
+    // sẵn (đổi brain cũng gọi thẳng renderPage). Cờ tự hạ sau lần dựng, nên không lặp.
+    try {
+      const st = window.Alpine && Alpine.store("nav");
+      if (st && st.active === "workspace" && window.JavisWorkspace
+          && window.JavisWorkspace.dungKhiChuaCoTuDien && window.JavisWorkspace.dungKhiChuaCoTuDien()) {
+        renderPage("workspace");
+      }
+    } catch (e) { /* dựng lại hỏng thì giữ khung cũ, phần quét nhãn tĩnh bên dưới vẫn phải chạy */ }
     try { window.JavisI18n && JavisI18n.applyDom(); } catch (e) { /* noop */ }
     // Hai ô chọn ngôn ngữ (đáy rail + trang Cài đặt) phải chỉ cùng một giá trị: đổi ở đâu
     // thì ô kia tự nhảy theo, không cần F5.

@@ -132,13 +132,13 @@ Ba lệnh phiên đứng đầu danh sách:
 
 Trên bản web, `/new` và `/reset` cùng mở một hội thoại mới.
 
-Bên dưới ba lệnh đó là **toàn bộ skill của brain đang chọn**, mỗi dòng gồm `/slug`, tên skill và một dòng mô tả.
+Ngay bên dưới là **mười hai lệnh hệ thống** (xem mục tiếp theo), rồi tới **toàn bộ skill của brain đang chọn**, mỗi dòng gồm `/slug`, tên skill và một dòng mô tả.
 
 Cách điều khiển menu:
 
 - Gõ tiếp vài chữ để lọc dần. Ưu tiên khớp theo slug trước, rồi mới tới tên skill.
 - **Mũi tên lên / xuống** để chọn dòng, **Enter** hoặc **Tab** để chốt, **Esc** để đóng menu. Bấm chuột vào một dòng cũng được.
-- Chọn một **lệnh phiên** thì nó chạy ngay, không cần Enter.
+- Chọn một **lệnh phiên** hay một **lệnh hệ thống không cần nội dung kèm** thì nó chạy ngay, không cần Enter. Riêng `/plan` và `/goal` cần bạn gõ thêm nội dung, nên chọn chúng chỉ điền `/plan ` hay `/goal ` vào ô.
 - Chọn một **skill** thì `/slug ` được chèn **đúng chỗ con trỏ**, chữ đã gõ hai bên giữ nguyên; bạn gõ tiếp rồi Enter để gửi.
 
 Khi gửi một lệnh skill, Thansa dịch câu đó thành lời nhắc: "Hãy dùng skill `<slug>` với yêu cầu: ... Nếu không có skill tên này thì cứ xử lý yêu cầu của tôi bình thường."
@@ -152,9 +152,62 @@ Vài luật cho khỏi bắt nhầm:
 - Dấu `/` phải đứng **đầu câu hoặc ngay sau khoảng trắng**. Nhờ vậy `https://vd.com/notes` và `3/4 cái bánh` không bị hiểu thành lệnh.
 - Ở giữa câu, tên lệnh phải là **skill có thật** trong brain đang chọn. `/home/user/notes` hay `/khong-co-that` cứ đi thẳng vào chat như chữ thường.
 - Có nhiều lệnh trong một câu thì lấy cái **cuối cùng** (ý định mới nhất). Riêng lệnh đứng ngay đầu ô nhập luôn được ưu tiên tuyệt đối.
-- **Ba lệnh phiên (`/new`, `/reset`, `/stop`) chỉ chạy khi đứng ở đầu ô nhập**, và menu cũng không gợi ý chúng ở giữa câu - viết nửa câu rồi lỡ bấm `/reset` mà mất sạch ngữ cảnh thì hại hơn tiện.
+- **Ba lệnh phiên (`/new`, `/reset`, `/stop`) và mười hai lệnh hệ thống chỉ chạy khi đứng ở đầu ô nhập**, và menu cũng không gợi ý chúng ở giữa câu - viết nửa câu rồi lỡ bấm `/reset` mà mất sạch ngữ cảnh thì hại hơn tiện. Skill nào tình cờ trùng tên với một lệnh hệ thống thì ở đầu ô nhập lệnh thắng, còn giữa câu skill vẫn gọi được như cũ.
 
 Chi tiết về skill xem [Skills](06-skills.md).
+
+### Lệnh hệ thống
+
+Đây là các lệnh do **chính Thansa xử lý**, không mượn lệnh có sẵn của Claude Code, nên chạy giống hệt nhau dù bạn đang dùng bộ não nào (Claude Code, ChatGPT, Grok, Antigravity hay một engine API). Kết quả hiện thành một bong bóng có viền màu ngay trong khung chat; bong bóng này chỉ ở trên màn hình của bạn, không gửi cho model và không lưu vào hội thoại.
+
+| Lệnh | Làm gì |
+|---|---|
+| `/help` | Liệt kê các lệnh phiên và lệnh hệ thống |
+| `/status` | Bộ não và model đang chạy cho hội thoại này (đã ghim riêng hay theo model chính), brain, số tin, mức ngữ cảnh gần nhất, có đang trả lời không, phiên bản |
+| `/model` | Mở bảng chọn model. Gõ `/model tên-model` để đổi thẳng: tên khớp đúng thì đổi ngay, khớp nhiều model thì Thansa liệt kê cho bạn chọn chứ không đoán |
+| `/brain` | Liệt kê các brain. Gõ `/brain tên` để chuyển (tên khớp nhiều brain thì Thansa hỏi lại) |
+| `/retry` | Gửi lại câu bạn hỏi gần nhất |
+| `/usage` | Token và chi phí Thansa đã đo hôm nay và từ trước tới nay, kèm số dư OpenRouter nếu có key |
+| `/tasks` | Việc nền đang chạy, chờ bạn duyệt, bị kẹt, đang xếp hàng. Có cảnh báo nếu "Tự vận hành" đang tắt (khi đó việc chỉ nằm chờ) |
+| `/compact` | Nén hội thoại dài ngay, xem bên dưới |
+| `/plan việc-cần-làm` | Một lượt chỉ đọc và đề xuất, chưa làm gì ra ngoài |
+| `/memory` | Mục lục bộ nhớ dài hạn của brain đang chọn, bấm được vào từng ghi nhớ |
+| `/export` | Tải hội thoại này về thành file markdown |
+| `/goal mục-tiêu` | Thansa tự làm tiếp cho tới khi đạt mục tiêu, xem bên dưới |
+
+#### `/compact` - nén hội thoại
+
+Hội thoại càng dài thì mỗi lượt càng tốn token và càng dễ loãng. Thansa vẫn tự nén khi vượt ngưỡng lớn; `/compact` cho bạn nén **ngay** mà không đợi. Cách nén tuỳ bộ não của hội thoại, và Thansa luôn nói đúng nó đã làm gì:
+
+- **Engine API** (OpenRouter, OpenAI, Claude API, Gemini, Groq): các tin cũ được gấp vào một bản tóm tắt, chỉ giữ nguyên hai lượt hỏi đáp gần nhất. Từ lượt sau Thansa gửi bản tóm tắt thay cho cả lịch sử.
+- **Engine chạy bằng gói thuê bao** (Claude Code, ChatGPT/Codex, Grok): phần phình to nằm trong mạch mà engine tự giữ (kết quả công cụ, vòng lặp bên trong), không nằm trong lịch sử Thansa lưu. `/compact` bỏ mạch đó đi; lượt sau Thansa mở mạch mới và nạp lại lịch sử đã lưu. Không có bước tóm tắt vì gói thuê bao không có API key để gọi riêng một request tóm tắt.
+- Hội thoại dưới 4 tin, hoặc bộ não không giữ mạch riêng (Antigravity dựng lại từ lịch sử ở mỗi lượt), thì Thansa nói thẳng là chưa có gì để nén.
+- Hội thoại đang trả lời thì bị từ chối: nén giữa chừng là đổi lịch sử ngay dưới chân một lượt đang đọc nó.
+
+#### `/plan` - chỉ lập kế hoạch
+
+Gõ `/plan dọn lại kho hàng cuối tháng`: Thansa đọc dữ liệu cần thiết rồi đưa ra một kế hoạch ngắn (mục tiêu, các bước, việc nào cần bạn duyệt, rủi ro) và hỏi bạn có muốn làm theo không. Lượt đó **chưa được** ghi file, gửi tin, đăng bài, tạo đơn, sửa quảng cáo, xếp việc nền hay đặt nhắc hẹn. Bạn đồng ý ở tin sau thì Thansa mới làm thật.
+
+Mức chặn khác nhau theo bộ não, nên nói cho rõ: với **Claude Code, Grok và Antigravity**, lượt `/plan` chạy ở mức quyền `suggest` nên cổng công cụ chặn thật mọi hành động ra ngoài. Với **ChatGPT (Codex) và các engine API**, hiện chỉ có lời dặn trong tin gửi đi chứ chưa có cổng chặn riêng cho từng lượt.
+
+#### `/goal` - làm tới khi đạt
+
+Gõ `/goal mọi đơn hôm nay đã được đối soát xong`. Thansa làm một vòng, tự kiểm tra bằng dữ liệu thật xem mục tiêu đã đúng chưa, và nếu chưa thì **tự gửi vòng kế tiếp** mà bạn không phải nhắc. Mỗi vòng có một dòng ghi chú ngắn nói còn thiếu gì.
+
+Thansa đề xuất "xong hay chưa", còn **việc có chạy tiếp hay không do mã quyết định**, để một mục tiêu không bao giờ đạt được không thành vòng lặp đốt token vô hạn. Vòng tự động dừng khi:
+
+- mục tiêu đã đạt;
+- đã chạy **8 vòng** mà chưa đạt;
+- hai vòng liền báo còn thiếu y hệt nhau (không có tiến triển);
+- Thansa hỏi ngược bạn một câu cần bạn quyết;
+- một vòng bị lỗi, hoặc Thansa không báo được mục tiêu đã đạt hay chưa;
+- **bạn gõ một tin mới, bấm Dừng, mở hội thoại khác hoặc gõ `/goal clear`** - lời của bạn luôn lên trước.
+
+Chế độ này chạy trong **tab chat đang mở**: đóng tab hay tải lại trang thì dừng. Khác với `/plan`, `/goal` làm việc thật (đúng quyền hạn bạn đã cấp cho Thansa), nên hãy viết mục tiêu cụ thể, kiểm chứng được.
+
+#### Trên Telegram
+
+Telegram có sẵn `/status`, `/model`, `/brain`, `/retry`, `/skills`, `/agents`, `/workflows`, `/reset`, `/stop` từ trước. Nay có thêm `/usage`, `/tasks`, `/memory` và `/plan việc-cần-làm`, cùng cách hoạt động, trả lời bằng chữ thường. Trên Telegram `/plan` chỉ có lời dặn (chưa có cổng chặn ở hub); `/compact`, `/goal`, `/export` chỉ có trên web.
 
 ## Khi Thansa hỏi lại bằng nút bấm
 

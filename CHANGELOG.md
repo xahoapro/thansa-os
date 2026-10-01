@@ -4,6 +4,139 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.65.12] - 2026-09-30
+### Cải thiện
+- **Nhóm chat chỉ giữ 100 tin gần nhất trong Hòm thư**, nên kho không phình mãi và Javis không giữ lời của người lạ lâu hơn cần thiết. Chat riêng với khách vẫn lưu hết.
+- Lần đầu sau khi cập nhật, các nhóm cũ được cắt xuống 100 tin. Javis sao lưu file kho một lần trước khi cắt và tự xoá bản sao lưu sau 14 ngày.
+- **Bot trong nhóm xem 30 tin gần nhất để trả lời đúng ngữ cảnh**, không chỉ thấy mỗi câu đang hỏi.
+
+## [0.65.11] - 2026-09-30
+### Cải thiện
+- **Hòm thư tải dần, đỡ nặng máy.** Danh sách hội thoại tải 40 dòng đầu, cuộn xuống thì tự tải thêm. Khung tin chỉ tải 40 tin mới nhất, kéo lên thì tải tin cũ hơn mà không nhảy chỗ đang đọc.
+- Cứ 5 giây Javis chỉ hỏi tin MỚI hơn tin cuối rồi chèn vào cuối khung, thay vì tải lại và vẽ lại cả 200 tin. Đang đọc tin cũ mà có tin mới về thì không còn bị kéo về đầu.
+
+## [0.65.10] - 2026-09-30
+### Cải thiện
+- **Hòm thư bot gọn hơn, khung tin lớn hơn.** Bỏ bốn thẻ số liệu và dòng phụ đề ở đầu trang. Tiêu đề, hai tab, ô tìm và ô lọc nằm gọn trên cùng, còn danh sách và khung tin chiếm hết phần màn hình còn lại, mỗi bên cuộn riêng.
+- Số chưa đọc vẫn hiện trên tab, và "người thật đang xử lý" xem bằng ô lọc Tình trạng.
+
+## [0.65.9] - 2026-09-30
+### Cải thiện
+- **Trang Chatbot còn hai tab: Hòm thư và Bot.** Thêm kênh ngay trong tab Bot hoặc trong form Bot mới, không phải nhảy qua lại giữa "Kênh của bot" và "Tạo chatbot" nữa.
+- Kênh chưa có bot nằm ngay dưới danh sách bot. Kênh đã có bot hiện thành chip trên thẻ bot, bấm để sửa hoặc xoá.
+- Form Bot mới hiện cả kênh đang do bot khác giữ (mờ, kèm tên bot). Icon robot thay bằng icon quen hơn.
+
+## [0.65.8] - 2026-09-30
+### Cải thiện
+- **Bot tag người trong nhóm Zalo nhanh hơn.** Javis tự cài sẵn một bản công cụ Zalo vào thư mục của mình rồi chạy thẳng, không qua `npx` mỗi lần. Trên máy thử, phần khởi động giảm từ khoảng 3,1 giây xuống 0,7 giây.
+- Câu tag đầu tiên sau khi cập nhật vẫn đi bằng cách cũ (chậm hơn) trong lúc Javis cài ngầm, từ câu sau là nhanh. Cài hỏng thì vẫn chạy được như trước.
+
+## [0.65.7] - 2026-09-30
+### Thêm mới
+- **Bot trong nhóm Zalo tự tag người nó đang trả lời.** Khách hỏi thì bot mở đầu bằng "@Tên ...", nút "Trả lời giúp tin này" cũng vậy. Không có ô cài đặt nào.
+- Mỗi câu trả lời trong nhóm chậm thêm khoảng 2 đến 4 giây. Tag hỏng thì tin vẫn đi như cũ, chỉ mất cái tag.
+
+## [0.65.6] - 2026-09-30
+### Thêm mới
+- **Javis tag đúng người trong nhóm Zalo.** Chỉ cần nói tên (kiểu "@minhquy"), Javis tự tìm ID Zalo thật. Trùng tên hoặc không thấy thì hỏi lại chứ không đoán, vì tag nhầm không rút lại được.
+- **Tạo ghi chú nhóm, nhắc hẹn và poll trên Zalo** ngay từ chat, cho mọi bộ não. Nhắc hẹn hiện trong Zalo nên cả nhóm cùng thấy.
+### Sửa lỗi
+- Gửi ảnh Zalo không còn báo "đã gửi" khi Zalo từ chối.
+
+## [0.65.5] - 2026-09-30
+### Thêm mới
+- **Hòm thư: nút "Trả lời giúp tin này".** Bot trả lời ngay tin khách cuối bằng đúng Agent của nó, dù lúc nãy bộ phán xử đã chọn im. Cuộc chat vẫn ở Tự động, và bot học thêm một ca để lần sau tự nói.
+- **Nút "Gợi ý câu trả lời":** bot soạn nháp vào ô nhập cho bạn sửa rồi gửi, không để lại dấu vết nếu bạn bỏ đi. Nút chưa dùng được vẫn hiện và chạm vào thì nói lý do. Dòng trạng thái nói thật khi bot đang tắt.
+
+## [0.65.4] - 2026-09-30
+### Cải thiện
+- **Hòm thư: công tắc Tự động / Tôi trả lời** ở đầu mỗi cuộc chat của bot, thay nút Tiếp quản nhỏ. Ngay trên ô nhập có một dòng nói ai đang trực. Trên điện thoại công tắc xuống hàng riêng, dễ chạm.
+- **Dòng "Bot im: lý do" dưới tin khách cuối**, kèm nút Vì sao mở thẳng bảng Bộ phán xử. Khỏi phải mở menu mới biết vì sao bot không trả lời.
+
+## [0.65.3] - 2026-09-30
+### Cải thiện
+- **Hòm thư bot có bộ lọc dạng dropdown gọn một hàng:** theo bot, tình trạng (chưa đọc, cần trả lời, tôi tiếp quản) và loại (nhóm hay chat riêng). Số hội thoại nằm ngay trong từng lựa chọn, bộ lọc được nhớ lại lần sau.
+- **Mỗi dòng có thẻ tên bot** (mỗi bot một màu) khi bạn chạy từ 2 bot. Thẻ "Cần trả lời" chỉ gắn vào chat riêng chưa ai đáp, và nhóm mà bot vừa cân nhắc nói rồi im, không gắn cho mọi nhóm có người nhắn.
+
+## [0.65.2] - 2026-09-30
+### Thêm mới
+- **Thẻ "Tự động hóa tất cả" ở phần Bot trả lời ai.** Một cú chọn để bot trả lời mọi cuộc chat trên kênh và tự quyết nói hay im trong nhóm, thay cho hai cài đặt. Bot đã cài như vậy tự hiện đúng thẻ này.
+### Cải thiện
+- **Chữ mô tả chế độ Tự đánh giá đã nói đúng** (bot cân nhắc theo ngữ cảnh, không còn nói về cửa từ khoá cũ), và thẻ "Mọi cuộc chat" gọn hơn.
+
+## [0.65.1] - 2026-09-30
+### Cải thiện
+- **Bộ phán xử tự vận hành, bỏ hết ô cài đặt.** Chọn Tự đánh giá là xong. Máy tự chọn mức hăng hái cho từng nhóm, tự học từ phản ứng của nhóm, tự soạn vai từ Agent của bot. Bạn chỉ chỉnh bằng nút Đúng/Sai ở menu Bộ phán xử.
+- **Luật lên tiếng viết tay ở bản trước** được gộp vào Bài học của bot. Muốn bot nhận thêm một tên thì gọi bot rồi dạy trong nhóm.
+- **Hội thoại trong nhóm mang tên nhóm** ở lịch sử của Agent, không còn là tin đầu của người nhắn đầu tiên. Phiên cũ đổi tên khi nhóm nhắn lại.
+- **Lưu ý:** bot đang ở Tự đánh giá dùng bộ phán xử ngay khi cập nhật, và ghi lại chữ chat của nhóm (tối đa 400 ký tự mỗi tin, giữ 14 ngày) để học. Nút Quên hết xoá sạch.
+
+## [0.65.0] - 2026-09-30
+### Thêm mới
+- **Bộ phán xử cho bot trong nhóm.** Bot tự quyết nói hay im theo ngữ cảnh: đọc vài tin gần nhất, hiểu tin nối tiếp, và mỗi bot theo vai Agent của riêng nó. Mọi quyết định đều được ghi lại, kể cả lúc bot im (menu "…" của thẻ bot, mục Bộ phán xử). Bật trong form bot khi chọn Tự đánh giá; có chế độ Chạy thử để so sánh với luật cũ trước.
+- **Bot tự học từ phản ứng trong nhóm** (tắt sẵn, bật riêng từng bot): bị hỏi lại thì lần sau bot nói, bị nhắc "đừng chen vào" thì bớt nói. Chỉ đổi việc nói hay im, chỉ lời của chủ mới thành luật, và có nút Quên hết.
+### Sửa lỗi
+- **Gọi tên trơn cũng là gọi bot**, không cần @ ("nhi mai ơi"). Trước đây bot im mà không để lại dấu vết nào.
+### Cải thiện
+- **Hội thoại của bot với khách chuyển sang lịch sử của Agent** (trang Cộng sự, có nhãn Bot), không còn nằm ở lịch sử Trò chuyện.
+
+## [0.64.86] - 2026-09-30
+### Sửa lỗi
+- **Trang Cộng sự không còn hiện mã kiểu `ws.tab_agent`, `sess.new_chat` thay cho tên nút** khi mở lại Javis sau khi cập nhật. Nhãn giờ tự chuyển thành chữ ngay khi bộ chữ tải xong.
+- **Thanh trên cũng vậy:** số note và liên kết không còn kẹt ở `app.graph_stats`.
+
+## [0.64.85] - 2026-09-30
+### Thêm mới
+- **Chọn bot trả lời ai.** Ba lựa chọn: mọi cuộc chat trên kênh, ai nhắn riêng cũng được còn nhóm thì chọn (như cũ), hoặc chỉ những người và nhóm bạn chọn từ danh sách lấy ở Hộp thư.
+### Cải thiện
+- **Form bot gọn và đẹp hơn:** một cuộn với bốn phần rõ ràng, ô chọn dạng nút bấm, cảnh báo quyền gọn hơn.
+- **Thẻ bot gọn hơn**, các nút phụ vào menu "…", bỏ nhãn "chưa đặt người nhận" còn sót.
+
+## [0.64.84] - 2026-09-30
+### Sửa lỗi
+- **Bot Zalo giờ trả lời được trong nhóm.** Trước đây câu trả lời hiện trong Hộp thư nhưng không tới nhóm, vì Javis gửi sai tên tham số cho Zalo nên tin nào cũng đi như chat riêng. Chat riêng vẫn như cũ.
+- **Nhóm Zalo mới hiện đúng tên nhóm** trong Hộp thư, không còn hiện tên người nhắn đầu tiên.
+- **Đọc tin Zalo không còn bị đói khi bộ đệm đầy.** Trước đây mỗi lần đọc lại từ đầu, nick ở nhiều nhóm sôi nổi thì tin mới có thể không bao giờ tới được bot.
+- **Gửi Zalo lỗi giờ hiện ở nhật ký bot** (tab Hội thoại), trước đây chỉ lướt qua vài giây rồi mất.
+
+## [0.64.83] - 2026-09-29
+### Cải thiện
+- **Form bot gọn hơn: bỏ ô "Chat ID người trực nhận chuyển tiếp"** (đó là số Telegram, không dùng được cho bot Zalo). Bot đã đặt người trực từ trước vẫn chạy như cũ.
+- **Mục "Cài đặt thêm" ghi rõ bên trong có gì (ngôn ngữ, nhóm) và tự mở ra khi bot có kênh vào được nhóm**, để thấy ngay chế độ Tự đánh giá.
+### Sửa lỗi
+- **Cảnh báo mức Toàn quyền của bot nói đúng hơn.** Trước đây ghi "rào duy nhất còn lại là file Agent", nhưng mức quyền của từng kết nối ở trang Kết nối vẫn chặn bot ở mọi mức.
+
+## [0.64.82] - 2026-09-29
+### Thêm mới
+- **Bot trả lời được trong nhóm Zalo.** Nhóm đã cho phép: tag tên bot hoặc trả lời vào tin của bot là bot trả lời. Trước đây mọi tin nhóm đều bị bỏ qua nên tag cũng im.
+- **Chế độ "Tự đánh giá" trong cài đặt bot.** Không cần tag, bot tự xem tin có phải câu hỏi mà tài liệu của nó trả lời được không rồi mới lên tiếng. Các thành viên trò chuyện với nhau thì bot im.
+- Bot chờ một chút để nhường bạn khi bạn đang tự nhắn, có giới hạn số lần tự trả lời mỗi giờ, và câu hỏi nào bot bỏ qua đều có lý do trong nhật ký để bạn bổ sung tài liệu.
+
+## [0.64.81] - 2026-09-29
+### Thêm mới
+- **Gõ `/` trong khung chat giờ có 12 lệnh hệ thống**, chạy giống nhau ở mọi bộ não. `/status` cho biết đang dùng model nào, `/model` đổi model, `/usage` xem token đã dùng, `/tasks` xem việc nền, `/memory` xem bộ nhớ, `/export` tải hội thoại về, cùng `/help`, `/brain`, `/retry`.
+- **`/compact` nén hội thoại dài ngay**, không đợi ngưỡng tự động. **`/plan việc-cần-làm`** cho Javis chỉ lập kế hoạch, chưa làm gì ra ngoài.
+- **`/goal mục-tiêu`: Javis tự làm tiếp từng vòng cho tới khi đạt** (tối đa 8 vòng). Bạn gõ tin mới hoặc bấm Dừng là dừng.
+- **Telegram có thêm `/usage`, `/tasks`, `/memory` và `/plan`.**
+
+## [0.64.80] - 2026-09-29
+### Thêm mới
+- **Bot tự trả lời trên Zalo cá nhân.** Nối Zalo ở trang Kết nối, rồi bấm Tạo bot trực (hoặc Bot mới và chọn kênh Zalo cá nhân). Bot tự quyết có nên trả lời hay không, chuyện riêng tư hay tin không cần hồi đáp thì nó im. Không cần bật công tắc từng người.
+- Để khỏi nhắn nhầm dưới tên bạn: bot chỉ trả lời chat riêng dạng chữ, bỏ qua nhóm, ảnh và tin cũ, và tự nhường khi bạn đang tự tay nhắn cuộc chat đó.
+### Cải thiện
+- **Đổi "Tài khoản bot" thành "Kênh của bot"** ở tab, form Bot mới và các dòng hướng dẫn cho dễ hiểu. Form Bot mới giờ hiện cả Zalo cá nhân để chọn, trước đây không thấy kênh nào.
+
+## [0.64.79] - 2026-09-29
+### Cải thiện
+- **Khung xem mã dài trong chat giờ sửa được ngay tại chỗ.** Bấm vào mã rồi gõ, sửa xong bấm Copy hoặc Tải xuống là lấy đúng bản đã sửa. Chỗ sửa không đổi tin nhắn gốc, đóng khung là về nguyên bản, có dòng nhắc ngay bên dưới.
+- **Bỏ nút "Xuống dòng".** Mã luôn tự xuống dòng cho vừa khung nên nút đó không còn tác dụng gì.
+
+## [0.64.78] - 2026-09-29
+### Sửa lỗi
+- **Model Claude mới (như Sonnet 5.5, Opus 5.5) giờ tự hiện trong Javis.** Trước đây Claude Code trên máy không tự lên bản mới khi chỉ được Javis gọi chạy ngầm, nên danh sách model đứng yên hàng tháng trời.
+- Javis nay tự cập nhật Claude Code mỗi ngày một lần. Thẻ Claude Code trên trang **Models** ghi đang ở bản nào, lần cuối xét khi nào, kèm nút **Cập nhật Claude Code** để chạy ngay và báo model nào vừa có thêm.
+- **Bản Docker/VPS** nhận Claude Code mới nhất theo mỗi bản cập nhật Javis. Trước đây ảnh Docker vô tình giữ mãi một bản Claude Code cũ.
+
 ## [0.64.77] - 2026-09-28
 ### Sửa lỗi
 - **Telegram và Zalo không còn in nguyên câu lệnh máy** kiểu `/bin/sh -lc "sed -n ..."` vào dòng trạng thái khi dùng ChatGPT. Dòng đó nay chỉ ghi gọn việc đã làm, ví dụ "⚙ Chạy lệnh · pos_statistics · 2m39s".

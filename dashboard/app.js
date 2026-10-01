@@ -42,6 +42,7 @@ function stopCurrent() {
   try { ketThucTheoLoi(false); } catch (e) {}
   voice.stopSpeaking();
   const sid = savedSessionId;
+  try { if (window.JavisLenh) window.JavisLenh.dungMucTieu(); } catch (e) {}   // Dừng cũng dừng /goal
   if (sid && adaptiveCurrent.has(sid)) adaptiveCancelled.add(adaptiveCurrent.get(sid));
   // Dừng ĐÚNG phiên đang xem (phiên nền khác vẫn chạy). Server huỷ lượt + gửi turn_done về.
   if (sid && ws && ws.readyState === WebSocket.OPEN) {
@@ -882,7 +883,16 @@ function handleMessage(data) {
       refreshUsage();
       return;
     }
-    const { clean: askClean, ask } = window.JavisAsk.extract(data.content || "");
+    // /goal: dòng ẩn JAVIS_GOAL bóc ra TRƯỚC khối hỏi ngược, và đọc cả trong chữ đã stream khi khung
+    // response không mang lại nội dung. Chỉ ghi nhận ở đây; việc QUYẾT ĐỊNH chạy tiếp để turn_done làm.
+    const _gl = window.JavisLenh ? window.JavisLenh.tachMucTieu(data.content || "") : { clean: data.content || "", goal: null };
+    const { clean: askClean, ask } = window.JavisAsk.extract(_gl.clean);
+    try {
+      if (window.JavisLenh) {
+        const _mk = _gl.goal || window.JavisLenh.tachMucTieu((t && t.text) || "").goal;
+        window.JavisLenh.ghiNhan(sid, _mk, !!ask);
+      }
+    } catch (e) {}
     const finalText = askClean || (t && t.text) || "";
     const shownText = finalText || window.t("app.no_content");
     if (t) t.text = shownText;
@@ -928,6 +938,7 @@ function handleMessage(data) {
   } else if (data.type === "error") {
     if (t && data.limit) t.limit = data.limit;
     if (t) t.errored = true;   // khung response rỗng theo sau không vẽ thêm "(không có nội dung)"
+    try { if (window.JavisLenh) window.JavisLenh.baoLoi(sid); } catch (e) {}   // /goal không chạy tiếp qua một vòng lỗi
     if (isActive) {
       hideActivity();
       veKhoiBuoc(t, false);
@@ -989,6 +1000,8 @@ function handleMessage(data) {
     // Lượt vừa xong có thể đã giao việc nền. Đây là ĐÚNG khoảnh khắc người dùng đọc câu trả
     // lời "em đã giao 3 việc" và tự hỏi nó có chạy thật không - dải phải trả lời được ngay.
     try { if (window.JavisBackground) window.JavisBackground.refresh(); } catch (e) {}
+    // /goal: lượt vừa đóng, đây là lúc duy nhất quyết định có tự gửi vòng tiếp không.
+    try { if (isActive && window.JavisLenh) window.JavisLenh.hetLuot(sid); } catch (e) {}
   }
 }
 
@@ -1116,7 +1129,18 @@ function sendMessage(text, opts) {
   if (window.JavisWorkspace && !window.JavisWorkspace.canSend()) return;
   const msg = (text || chatInput.value).trim();
   // Lệnh / : session-command chạy tại chỗ; skill-command bung thành lời gọi skill.
-  const _slash = (window.JavisSlash && msg) ? window.JavisSlash.route(msg) : { type: "passthrough" };
+  // `opts.prefix` = tin do lệnh /plan, /goal (hoặc vòng tự động của /goal) gửi: khối chỉ dẫn đã
+  // dựng sẵn, và nội dung `msg` là câu người dùng nên KHÔNG được route lại (câu có thể tình cờ
+  // bắt đầu bằng "/").
+  const _slash = (opts && opts.prefix) ? { type: "prefix", prefix: opts.prefix, message: msg }
+    : (window.JavisSlash && msg) ? window.JavisSlash.route(msg) : { type: "passthrough" };
+  if (_slash.type === "system") {
+    // Lệnh hệ thống (chat-lenh.js): tự xử lý tại chỗ, không gửi gì cho model. /plan và /goal thì
+    // tự gọi lại sendMessage với `opts.prefix` sau khi xin khối chỉ dẫn từ máy chủ.
+    chatInput.value = ""; chatInput.style.height = "auto";
+    if (window.JavisLenh) window.JavisLenh.chay(_slash.cmd, _slash.arg);
+    return;
+  }
   if (_slash.type === "agent" || _slash.type === "workflow") {
     if (!window.JavisWorkspace) return;
     // Khung chat NGƯỜI DÙNG đang đứng lúc gõ lệnh. Gõ "/quy-trinh" là trang nhảy hẳn sang
@@ -1184,6 +1208,15 @@ function sendMessage(text, opts) {
   // endpoint() TRƯỚC khi gọi vào đây, mà lượt bị nuốt thì không bao giờ có turn_done để hạ nó,
   // nên orb đứng mãi ở "đang suy nghĩ" và người dùng không thấy tin mình vừa nói ở đâu cả.
   if ((turns[sid] && turns[sid].running) || (opts && opts.adaptive && _luotDaDung[sid]!=null)) {
+    // Ngoại lệ: đang chạy /goal thì người dùng gõ chữ CŨNG là chen ngang. Vòng tự động không phải lượt
+    // họ tự bấm gửi, nên "đợi nó xong rồi mới gõ được" là kẹt họ trong một vòng lặp họ không điều khiển.
+    // Dừng vòng hiện tại (stopCurrent cũng dừng /goal), tin của họ đi ngay sau khi lượt cũ dừng hẳn.
+    if (window.JavisLenh && window.JavisLenh.dangCoMucTieu() && !(_tuGiong || handsFree)) {
+      chatInput.value = ""; chatInput.style.height = "auto";
+      stopCurrent();
+      datTinCho(msg, opts);
+      return;
+    }
     if (!(_tuGiong || handsFree)) return;   // gõ chữ lúc không rảnh tay: giữ chốt cũ
     stopCurrent();
     datTinCho(msg, opts);   // gửi khi lượt cũ dừng HẲN, không gửi ngay (xem chú thích ở datTinCho)
@@ -1211,13 +1244,26 @@ function sendMessage(text, opts) {
   }
   window.JavisAsk.freezeAll();   // trả lời rồi thì chip của lượt trước hết bấm được
   const userElement = appendUserMessage(msg, atts);
+  // /goal đang chạy: tin do vòng tự động gửi thì gắn nó vào phiên này; tin người dùng tự gõ thì
+  // dừng mục tiêu (lời của họ lên trước, không chạy tiếp vòng tự động dưới một câu họ vừa nói).
+  try {
+    if (window.JavisLenh) {
+      if (_slash.type === "prefix") window.JavisLenh.daGui(sid, opts);
+      else window.JavisLenh.chenNgang(sid);
+    }
+  } catch (e) {}
   // Lưu cả `url` (đường /upload/raw của file stage): thiếu nó thì F5 xong ảnh trong tin cũ
   // không còn gì để trỏ tới, và bong bóng chỉ còn trơ cái tên file.
   recordTurn("user", msg, atts.map(a => ({ name: a.name, kind: a.kind, url: a.url || "" })));
 
   // Soạn message gửi Thansa (kèm đường dẫn file trong Sources)
   const _isSkill = _slash.type === "skill";
-  let outMsg = _isSkill ? _slash.message : msg;
+  // Tin của /plan, /goal: khối chỉ dẫn đứng ngay TRƯỚC câu người dùng, và ở SAU mọi khối ngữ cảnh
+  // khác (file đính kèm, file ghim, ngữ cảnh giao diện). chuNguoiGo gỡ được từng khối theo thứ
+  // tự nên bong bóng vẫn chỉ hiện đúng câu họ gõ.
+  const _isPrefix = _slash.type === "prefix";
+  const _than = _isPrefix ? _slash.prefix + _slash.message : msg;
+  let outMsg = _isSkill ? _slash.message : _than;
   if (atts.length) {
     const lines = atts.map(a => `- ${a.path}`).join("\n");
     const src = atts[0].sources || "", attDir = atts[0].attachments || "";
@@ -1230,8 +1276,8 @@ function sendMessage(text, opts) {
         `Mặc định: chỉ đọc file rồi trả lời, KHÔNG tự lưu đi đâu.\n` +
         `CHỈ khi user yêu cầu rõ (vd "lưu vào source", "ingest", "ghi vào second brain") thì mới: ` +
         `chuyển thành .md (ảnh thì đọc hiểu + mô tả) lưu vào Sources="${src}" (ảnh gốc chuyển vào Attachments="${attDir}"), kèm frontmatter source.]`;
-      outMsg = msg
-        ? `${ctx}\n\n${msg}`
+      outMsg = _than
+        ? `${ctx}\n\n${_than}`
         : `${ctx}\n\nHãy đọc (các) file trên và phản hồi / tóm tắt nội dung chính.`;
     }
   }
@@ -1299,6 +1345,18 @@ function nguCanhChon() {
 }
 // Chip lựa chọn (chat-ask.js) gửi đáp án qua đây: bấm chip = y như người dùng gõ tay nhãn đó.
 window.JavisSend = sendMessage;
+// Cầu nối cho chat-lenh.js (lệnh "/" hệ thống). Chỉ lộ đúng những gì lệnh cần, không lộ trạng
+// thái nội bộ: ghi chú lên khung chat, đọc phiên/brain đang mở, gửi một tin, đọc câu người dùng
+// gõ gần nhất, và làm sạch khối ngữ cảnh khỏi tin người dùng khi xuất hội thoại.
+window.JavisChatApi = {
+  note: appendLenhReply,
+  sid: () => savedSessionId,
+  brain: () => currentBrainPath(),
+  send: sendMessage,
+  lastUserText: lastUserText,
+  dangChay: (sid) => !!(sid && turns[sid] && turns[sid].running),
+  sach: chuNguoiGo,
+};
 // Module ngoài (limit-resume.js) gửi một khung điều khiển thô lên server. true = đã gửi.
 window.JavisWsSend = function (obj) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return false;
@@ -1635,7 +1693,7 @@ function lastUserText() {
 // "[SKILL: " là khối do chat-slash.js dựng khi người dùng gõ lệnh "/". Gỡ nó ra thì bong bóng
 // hiện ĐÚNG câu họ đã gõ, thay vì câu máy dựng quanh câu đó - khách báo đúng chuyện này 16/09.
 // Giữ MỘT DÒNG: test_dinh_kem_khong_roi.js bóc đúng dòng này ra để chạy docDinhKem bằng node.
-const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:", "[SKILL: "];
+const _KHOI_NGU_CANH = ["[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:", "[SKILL: ", "[CHẾ ĐỘ KẾ HOẠCH:", "[MỤC TIÊU:"];
 
 // Gỡ mấy khối đó ra để lấy lại ĐÚNG câu người dùng đã gõ.
 //
@@ -1789,6 +1847,17 @@ function appendJavisError(text) {
   const div = appendJavisMessage(text);
   const bubble = div.querySelector(".bubble");
   if (bubble) bubble.insertAdjacentHTML("afterbegin", ic("triangle-alert", { cls: "ic-warn" }) + " ");
+  return div;
+}
+// Bong bóng trả lời của lệnh "/" hệ thống (chat-lenh.js). CỤC BỘ: không gửi cho model, không lưu
+// vào hội thoại - đóng tab là hết, như dòng kết quả của một lệnh trong terminal. Không có hàng
+// nút dưới bong bóng (gửi lại / sửa / copy) vì đó không phải một lượt trò chuyện.
+function appendLenhReply(md) {
+  const div = document.createElement("div");
+  div.className = "msg msg-javis msg-lenh";
+  div.innerHTML = `<div class="bubble">${markdownToHtml(String(md || ""))}</div>`;
+  div.dataset.md = String(md || "");
+  chatAppend(div); scrollBottom(true);
   return div;
 }
 function createStreamingBubble() {
@@ -2073,6 +2142,17 @@ function compactToolLabel(toolName) {
 // Knowledge graph (2D canvas)
 // ============================================
 const graphStats = document.getElementById("graphStats");
+// Số note/liên kết hiện ở thanh trên. Nhớ số cuối cùng để vẽ lại khi từ điển i18n về sau: số liệu
+// đồ thị thường về TRƯỚC từ điển trên máy vừa cập nhật, và t() khi đó trả về chính cái khoá
+// (`app.graph_stats`) rồi kẹt mãi ở đó. Lỗi (models.err) là chuỗi đã ghép nên không nhớ.
+let _graphStatsCuoi = null;
+function veGraphStats(n, l) {
+  _graphStatsCuoi = { n: n, l: l };
+  graphStats.textContent = window.t("app.graph_stats", { n: n, l: l });
+}
+window.addEventListener("javis:i18n", () => {
+  if (_graphStatsCuoi) graphStats.textContent = window.t("app.graph_stats", _graphStatsCuoi);
+});
 const graphSource = document.getElementById("graphSource");
 let javisGraph = null;
 
@@ -2195,9 +2275,9 @@ async function reloadGraph() {
   try {
     const data = await javisGraph.load(query);
     const stats = data.stats || {};
-    graphStats.textContent = window.t("app.graph_stats", { n: stats.total_notes, l: stats.total_links });
+    veGraphStats(stats.total_notes, stats.total_links);
     renderConceptLabels(data.categories || [], stats.total_notes || 0);
-  } catch (e) { graphStats.textContent = window.t("models.err") + " " + e.message; }
+  } catch (e) { _graphStatsCuoi = null; graphStats.textContent = window.t("models.err") + " " + e.message; }
 }
 // ---- Việc CHỈ THẤY ĐƯỢC ở màn chính: hoãn khi đang đứng ở trang quản lý ----
 // Đổi brain là đổi cả cockpit: đồ thị, số ký ức, số cộng sự, cờ cấu trúc vault. Nhưng bốn thứ
@@ -2283,7 +2363,7 @@ function connectGraphWatch() {
     const r = javisGraph.addOrUpdate(m.node, m.linkTargets, m.isNew);
     if (r && r.created) {
       const s = javisGraph.nodeStats();
-      graphStats.textContent = window.t("app.graph_stats", { n: s.nodes, l: s.links });
+      veGraphStats(s.nodes, s.links);
       // Nháy nhẹ nhãn để báo có note mới sinh ra
       graphStats.classList.add("pulse");
       setTimeout(() => graphStats.classList.remove("pulse"), 700);

@@ -52,7 +52,7 @@ Nút **Hướng dẫn trên GitHub** trong thẻ Zalo luôn mở trang tài li�
 
 | Tool | Công dụng | Mức thao tác |
 |---|---|---|
-| `zalo_get_messages` | Đọc tin mới trong bộ đệm, hỗ trợ cursor | Đọc |
+| `zalo_get_messages` | Đọc tin mới trong bộ đệm, đọc tiếp bằng `since` (số thứ tự) | Đọc |
 | `zalo_get_history` | Lấy lịch sử một cuộc chat, có phân trang | Đọc |
 | `zalo_list_threads` | Liệt kê các cuộc chat đang có trong bộ đệm | Đọc |
 | `zalo_search_threads` | Tìm nhóm hoặc người theo tên | Đọc |
@@ -60,7 +60,9 @@ Nút **Hướng dẫn trên GitHub** trong thẻ Zalo luôn mở trang tài li�
 | `zalo_mark_read` | Đánh dấu đã xử lý đến một cursor | Ghi |
 | `zalo_send_message` | Gửi tin cho cá nhân hoặc nhóm | Nguy hiểm |
 
-Danh sách trên theo mã nguồn `zalo-agent-cli` 1.6.2. Tài liệu MCP của dự án gốc:
+Danh sách trên theo mã nguồn `zalo-agent-cli` 1.6.2. Tên tham số lấy từ mã nguồn chứ không từ
+tài liệu MCP, vì hai bên từng lệch nhau: kiểu cuộc chat của `zalo_send_message` là `threadType`
+(0 = chat riêng, 1 = nhóm), và `zalo_get_messages` đọc bằng `since` chứ không có `cursor`. Tài liệu MCP của dự án gốc:
 
 <https://github.com/PhucMPham/zalo-agent-cli/blob/main/skill/references/mcp-guide.md>
 
@@ -89,6 +91,33 @@ Ba điều nên biết:
 
 Cần Node.js 20+ trên máy chạy Thansa, giống như phần kết nối Zalo.
 
+## Tag người, ghi chú, nhắc hẹn và poll
+
+`zalo_send_message` chỉ gửi chữ nên không tag được ai, và MCP của Zalo cũng không có ghi chú, nhắc hẹn hay poll. Plugin bundled
+`zalo-group` (bật sẵn, làm giống `zalo-image`) bù đúng các chỗ đó bằng năm tool, mọi bộ não đều gọi được:
+
+| Tool | Công dụng | Mức thao tác |
+|---|---|---|
+| `zalo_group_members` | Liệt kê thành viên một nhóm (id kèm tên), hoặc tra một người theo tên | Đọc |
+| `zalo_send_mention` | Gửi tin vào nhóm và tag đúng người | Nguy hiểm (mức Toàn quyền) |
+| `zalo_create_note` | Tạo ghi chú nhóm, ghim được | Nguy hiểm (mức Toàn quyền) |
+| `zalo_create_reminder` | Nhắc hẹn hiện trong Zalo, chọn giờ và lặp (hằng ngày, tuần, tháng) | Nguy hiểm (mức Toàn quyền) |
+| `zalo_create_poll` | Poll cho nhóm: chọn nhiều đáp án, ẩn danh, hạn đóng | Nguy hiểm (mức Toàn quyền) |
+
+Nói trong chat như bình thường, ví dụ “nhắn nhóm Kinh doanh tag @minhquy họp lúc 9h nhé” hoặc “tạo poll trưa nay ăn gì trong nhóm Lớp Thansa”.
+
+Bốn điều nên biết:
+
+- **Tag chỉ cần nói tên.** “@minhquy” hay “Minh Quý” đều được, không phân biệt hoa thường hay dấu. Thansa tìm ID Zalo thật trong
+  những người đã nhắn ở nhóm đó trước, rồi tới danh sách thành viên của Zalo. **Trùng tên hoặc không thấy thì Thansa hỏi lại kèm
+  danh sách ứng viên**, không đoán, vì tag nhầm người thì không rút lại được. Tag cả nhóm (`@All`) chỉ khi bạn yêu cầu rõ.
+- **Nhắc hẹn này khác nhắc hẹn riêng của Thansa** (`javis_schedule`): nó hiện trong Zalo nên cả nhóm cùng thấy. Giờ tính theo múi giờ của Thansa.
+- **Nhóm khoá quyền tạo ghi chú hoặc poll của thành viên** thì Zalo từ chối và Thansa báo thẳng lý do đó. Nếu lệnh quá giờ, Thansa nói
+  **không rõ đã tạo chưa** và dặn xem lại nhóm trước khi thử tiếp, để khỏi ra hai poll.
+- **Đấu nhiều tài khoản Zalo thì Thansa hỏi lại** nên dùng tài khoản nào, giống phần gửi ảnh.
+
+Bot chuyên trách đứng trong nhóm Zalo thì **tự tag người nó đang trả lời**, không cần công cụ nào ở trên, xem [Chatbot](25-chatbot.md).
+
 ## Cách dùng trong chat
 
 Có thể nói tự nhiên:
@@ -109,7 +138,7 @@ Kết nối mới mặc định ở mức **Toàn quyền** để có thể dùn
 
 - **Chỉ đọc**: chỉ dùng năm tool đọc.
 - **Ghi nháp**: thêm `zalo_mark_read`, vẫn chặn gửi tin.
-- **Toàn quyền**: cho phép gửi tin (cả `zalo_send_message` lẫn `zalo_send_image`).
+- **Toàn quyền**: cho phép gửi tin (`zalo_send_message`, `zalo_send_image`) và các tool tag người, ghi chú, nhắc hẹn, poll.
 
 Bạn đổi quyền trong menu của chip tài khoản ở trang **Kết nối**. Việc nền chạy ở chế độ
 giới hạn vẫn bị MCP Hub chặn gửi tin, dù tài khoản đang đặt Toàn quyền.

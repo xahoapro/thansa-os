@@ -145,6 +145,51 @@
   function close() { const pop = $("mbPop"); if (pop) pop.hidden = true; }
   function isOpen() { const pop = $("mbPop"); return pop && !pop.hidden; }
 
+  // Chọn một model: ghi mặc định chung (chat mới sau này theo cái vừa chọn) + GHIM cho phiên
+  // đang mở (phiên này giữ đúng model kể cả khi mặc định chung bị đổi ở chỗ khác). Dùng chung
+  // cho cú bấm trong bảng chọn và lệnh `/model <tên>` của khung chat.
+  async function chonModel(prov, model) {
+    await saveModel({ main: { provider: prov, model: model } });
+    const sid = curSid();
+    if (sid) {
+      sessionPin = { provider: prov, model: model };
+      pinBroken = false;   // ghim mới đè ghim hỏng cũ
+      pinSid = sid;
+      await pinToSession(sid, prov, model);
+    } else {
+      // Chat trống chưa mint id: nhớ lựa chọn, app.js gọi claimPending(sid) lúc gửi
+      // tin đầu để phiên mới sinh ra đã mang đúng ghim.
+      pendingPin = { provider: prov, model: model };
+      sessionPin = null;
+    }
+    await loadState(); renderBar();
+  }
+
+  // `/model <tên>`: tìm trong model của các nhà ĐÃ KẾT NỐI. Khớp NGUYÊN id thì thắng ngay; nếu
+  // không thì khớp một phần, và chỉ đổi khi ra ĐÚNG MỘT model - đoán bừa giữa hai nhà là đổi
+  // nhầm bộ não. Trả {kind: "one"|"many"|"none", prov, model, ds}.
+  async function timModel(query) {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return { kind: "none" };
+    const nhaOk = state.providers.filter((p) => p.configured);
+    const dem = await Promise.all(nhaOk.map(async (p) => {
+      let ids = [];
+      try { ids = (window.JavisModelList ? await window.JavisModelList.models(p.id) : p.models) || []; }
+      catch (e) { ids = p.models || []; }
+      return { p, ids: ids.map((m) => (typeof m === "string" ? m : (m && (m.id || m.name)) || "")).filter(Boolean) };
+    }));
+    const dung = [], gan = [];
+    dem.forEach(({ p, ids }) => ids.forEach((id) => {
+      const k = id.toLowerCase();
+      if (k === q) dung.push({ prov: p.id, model: id, label: p.label });
+      else if (k.includes(q)) gan.push({ prov: p.id, model: id, label: p.label });
+    }));
+    const kq = dung.length ? dung : gan;
+    if (kq.length === 1) return { kind: "one", prov: kq[0].prov, model: kq[0].model, label: kq[0].label };
+    if (kq.length > 1) return { kind: "many", ds: kq.slice(0, 6).map((x) => (provShort(x.label) + " " + x.model)) };
+    return { kind: "none" };
+  }
+
   document.addEventListener("click", async (e) => {
     if (e.target.closest("#mbOpen")) { isOpen() ? close() : open(); return; }
     if (!e.target.closest("#modelBar") && !e.target.closest("#mbPop") && !e.target.closest("#mbOpen")) { if (isOpen()) close(); return; }
@@ -157,22 +202,8 @@
     }
     const item = e.target.closest(".mb-item");
     if (item) {
-      // Ghi mặc định chung (chat mới sau này theo cái vừa chọn) + GHIM cho phiên đang
-      // mở (phiên này giữ đúng model kể cả khi mặc định chung bị đổi ở chỗ khác).
-      await saveModel({ main: { provider: item.dataset.prov, model: item.dataset.model } });
-      const sid = curSid();
-      if (sid) {
-        sessionPin = { provider: item.dataset.prov, model: item.dataset.model };
-        pinBroken = false;   // ghim mới đè ghim hỏng cũ
-        pinSid = sid;
-        await pinToSession(sid, item.dataset.prov, item.dataset.model);
-      } else {
-        // Chat trống chưa mint id: nhớ lựa chọn, app.js gọi claimPending(sid) lúc gửi
-        // tin đầu để phiên mới sinh ra đã mang đúng ghim.
-        pendingPin = { provider: item.dataset.prov, model: item.dataset.model };
-        sessionPin = null;
-      }
-      await loadState(); renderBar(); close();
+      await chonModel(item.dataset.prov, item.dataset.model);
+      close();
       return;
     }
     const eff = e.target.closest(".mb-eff-btn");
@@ -208,6 +239,19 @@
       pinToSession(sid, pendingPin.provider, pendingPin.model);
       pendingPin = null;
       renderBar();
+    },
+    // Lệnh `/model` của khung chat (chat-lenh.js): mở bảng chọn, đổi theo tên, hoặc cho biết model hiện tại.
+    // Trả true nếu bảng chọn có mặt để mở (thanh model ẩn thì false, chỗ gọi tự nói model hiện tại).
+    open: function () { if (!$("mbPop")) return false; open(); return true; },
+    chon: async function (query) {
+      const r = await timModel(query);
+      if (r.kind === "one") { await chonModel(r.prov, r.model); return { kind: "one", label: provShort(r.label), model: r.model }; }
+      return r;
+    },
+    hienTai: function () {
+      const eff = effective();
+      const p = state.providers.find((x) => x.id === eff.provider);
+      return { label: p ? provShort(p.label) : eff.provider, model: eff.model || "" };
     },
     // app.js gọi mỗi lần GỬI TIN: server đóng dấu model đang chạy cho phiên ngay lượt
     // đầu, nên bar phải chuyển sang "ghim" tại chỗ - không chờ tới lần đổi phiên mới

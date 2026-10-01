@@ -19,13 +19,13 @@ Bot chuyên trách **làm việc thật được** nếu bạn nâng mức quy�
 - **Bot làm theo đúng file Agent của bạn.** Thansa không chèn thêm luật nào của mình vào.
 - **Ba mức quyền**, chọn khi tạo và đổi được sau: Chỉ đọc (mặc định), Được ghi, Toàn quyền. Nâng mức phải tick vào ô đồng ý sau khi đọc phần rủi ro.
 - Hai rào **không đổi theo mức**, và khoá bằng mã nguồn chứ không bằng câu dặn: **bot chỉ thấy brain của chính nó**, và **không chạy được lệnh máy**.
-- Câu ngoài tầm hiểu biết thì bot chuyển cho người trực bạn chỉ định.
+- Câu bot không trả lời nổi được ghi vào tab **Bot bí** để bạn bổ sung tài liệu, và bạn bấm **Tiếp quản** ở trang Hội thoại khi cần người thật vào cuộc.
 - Trang Chatbot dựng theo hướng **nhiều bot** ngay từ đầu: lưới thẻ, ô tìm, thêm/sửa/xoá, bật/tắt tại chỗ. Chạy một con hay mười con đều cùng một giao diện.
 - Mọi cuộc chat khách nhắn cho bot được lưu vào **hộp thư hội thoại** (trang **Hội thoại**): đọc lại, thấy cuộc nào bot bí, bấm Tiếp quản để tự trả lời khi cần. Xem [Hội thoại khách](28-hoi-thoai-khach.md).
 
 ## Mở ở đâu trong Thansa
 
-Thanh điều hướng bên trái, nhóm **Năng lực**, mục **Chatbot**, tab **Tạo chatbot** (từ 0.61.0 cả ba việc ở chung một trang: Hòm thư bot, Tài khoản bot, Tạo chatbot). Nói "mở chatbot" là tới thẳng tab này.
+Thanh điều hướng bên trái, nhóm **Năng lực**, mục **Chatbot**, tab **Bot**. Trang chỉ có hai tab: **Hòm thư bot** và **Bot** (từ 0.65.9; trước đó là ba tab Hòm thư bot, Kênh của bot, Tạo chatbot, và người dùng phải nhảy qua lại giữa "thêm kênh" và "tạo bot"). Nói "mở chatbot" là tới thẳng tab Bot.
 
 ## Chuẩn bị trước khi tạo bot
 
@@ -51,7 +51,7 @@ Bot **đọc Agent lúc chạy**, không chép lại. Sau này sửa Agent ở t
 
 ### 3. Một tài khoản kênh: token riêng, lấy đúng chỗ theo kênh
 
-Từ 0.61.0 token là một **tài khoản bot** ở tab **Tài khoản bot**, bot chỉ **trỏ tới** nó. Bạn thêm tài khoản ở tab Tài khoản bot trước rồi tích chọn khi tạo bot, hoặc dán token ngay trong form tạo bot; hai đường cho cùng một kết quả. Một bot trực được **nhiều** tài khoản (một vai trả lời ở cả Telegram lẫn Zalo Bot), còn mỗi tài khoản chỉ **một** bot trực.
+Từ 0.61.0 token là một **kênh** (tài khoản bot), bot chỉ **trỏ tới** nó. Bạn thêm kênh bằng nút **Thêm kênh** ở mục **Kênh chưa có bot** ngay dưới danh sách bot rồi tích chọn khi tạo bot, hoặc bấm **Kết nối kênh mới** ngay trong form Bot mới (kênh vừa nối được tick sẵn); hai đường cho cùng một kết quả. Một bot trực được **nhiều** tài khoản (một vai trả lời ở cả Telegram lẫn Zalo Bot), còn mỗi tài khoản chỉ **một** bot trực.
 
 Nếu bot chạy trên **Telegram**: vào **@BotFather** gõ `/newbot`, đặt tên và username, lấy chuỗi token dạng `123456789:ABCdef...`.
 
@@ -95,20 +95,32 @@ Cái đầu để **người khác nói chuyện với Thansa**. Cái sau để 
 
 ### Bước 1: Tạo bot
 
-Bấm **Bot mới**, điền:
+Bấm **Bot mới**. Từ 0.64.85 form có **bốn phần**, mỗi phần một quyết định, và những ô ít khi đụng tới nằm trong mục **Nâng cao** đã gập sẵn:
 
-| Ô | Điền gì |
+| Phần | Điền gì |
 |---|---|
-| Bot trực tài khoản kênh nào | Tích một hay nhiều tài khoản ở tab Tài khoản bot (chỉ hiện tài khoản của brain này mà chưa bot nào trực). Chưa có thì mở **Thêm tài khoản mới bằng token**: chọn loại kênh, dán token, Kiểm tra. Xem [Chọn Telegram hay Zalo](#chọn-telegram-hay-zalo) |
-| Tên bot | Tên bạn nhìn để phân biệt các bot với nhau |
-| Agent làm bộ não | Chọn Agent trong brain đang mở, hoặc bấm **Tạo Agent** |
-| Bot trả lời dựa trên gì | Xem mục hai chế độ ở dưới |
-| Bot được làm gì | Mức quyền. Cứ để **Chỉ đọc** cho lần đầu; xem mục [Ba mức quyền](#ba-mức-quyền---bot-được-làm-gì) trước khi nâng |
-| Chat ID người trực | Số Telegram của người nhận chuyển tiếp (xem bên dưới) |
-| Nhóm được phép | Chỉ hiện khi có tài khoản ở kênh vào được nhóm (Telegram). Để trống cũng được - thả bot vào nhóm rồi cho phép bằng một cú bấm sau (xem Bước 4) |
-| Khi nào bot lên tiếng trong nhóm | Cùng điều kiện. Mặc định chỉ khi được gọi tên hoặc reply vào nó |
+| **Bot là ai** | Tích một hay nhiều tài khoản kênh (chỉ hiện tài khoản của brain này mà chưa bot nào trực), đặt tên bot, chọn Agent làm bộ não hoặc bấm **Tạo Agent**. Kênh đang do bot khác trực hiện **mờ kèm ổ khoá**, ghi rõ bot nào (và brain nào nếu khác brain đang mở) đang giữ. Chưa có kênh thì bấm **Kết nối kênh mới**: chọn loại kênh, dán token, Kiểm tra. Xem [Chọn Telegram hay Zalo](#chọn-telegram-hay-zalo) |
+| **Bot trả lời ai** | Bốn thẻ chọn một, xem mục [Bot trả lời ai](#bot-trả-lời-ai) ngay dưới. Chọn nhóm hay người thì tick trong danh sách, không phải gõ id. Kèm nút chọn **khi nào bot lên tiếng trong nhóm**: Được gọi tên (mặc định), Tự đánh giá, hoặc Mọi tin (thẻ Tự động hóa tất cả đã quyết sẵn nên ẩn nút này) |
+| **Bot dựa vào đâu để trả lời** | Agent và tài liệu, hoặc Chỉ tài liệu. Xem mục hai chế độ ở dưới |
+| **Bot được làm gì** | Mức quyền. Cứ để **Chỉ đọc** cho lần đầu; xem mục [Ba mức quyền](#ba-mức-quyền---bot-được-làm-gì) trước khi nâng |
+| Nâng cao | Ngôn ngữ trả lời |
 
-Chỉ có tài khoản Zalo Bot thì hai ô cuối **biến mất** thay vì hiện ra rồi vô tác dụng: gói bot cơ bản của Zalo không cho bot vào nhóm, nên khai id nhóm ở đó chỉ là một lời hứa suông nằm lại trong dữ liệu.
+Chỉ có tài khoản Zalo Bot thì phần chọn nhóm **biến mất** thay vì hiện ra rồi vô tác dụng: gói bot cơ bản của Zalo không cho bot vào nhóm, nên chọn nhóm ở đó chỉ là một lời hứa suông nằm lại trong dữ liệu.
+
+#### Bot trả lời ai
+
+Đây là quyết định quan trọng nhất của form, nên nó là bốn thẻ nằm cạnh nhau để so sánh:
+
+| Thẻ | Bot làm gì |
+|---|---|
+| **Tự động hóa tất cả** (từ 0.65.2) | Như thẻ ngay dưới, nhưng trong nhóm bot **tự quyết nói hay im** (chế độ Tự đánh giá của [Bộ phán xử](#bộ-phán-xử-bot-tự-quyết-nói-hay-im-và-học-từ-nhóm)) và tự học dần. Một cú chọn thay cho hai cài đặt. Lưu xuống vẫn là "mọi cuộc chat" cộng "Tự đánh giá", nên bot cài như vậy từ trước tự hiện đúng thẻ này. Cùng ô xác nhận với thẻ dưới, kèm câu nói bot ghi lại chữ chat của nhóm để học |
+| **Mọi cuộc chat trên kênh** | Trả lời nhắn riêng và mọi nhóm bot có mặt; trong nhóm chọn được Được gọi tên hoặc Mọi tin. Phải tick ô xác nhận, vì nếu đây là tài khoản Zalo cá nhân thì bạn bè và người nhà cũng được trả lời |
+| **Ai nhắn riêng cũng được, nhóm thì tôi chọn** | **Mặc định.** Nhắn riêng thì ai cũng được, nhóm nào chưa tick thì bot im |
+| **Chỉ người và nhóm tôi chọn** | Bot im với mọi cuộc chat khác. Người và nhóm chưa tick nằm ở hàng chờ trên thẻ bot, bấm **Cho phép** là xong |
+
+Chỉ có kênh nhắn riêng (Zalo Bot) thì hai thẻ đầu ẩn đi (không có nhóm nào để bot tự quyết), và hai thẻ còn lại đổi nhãn thành "Ai nhắn cũng được" và "Chỉ người tôi chọn". Bấm thẻ cuối là hiện **ô chọn người và nhóm**: hai tab Nhóm / Người có số đếm, ô tìm theo tên, danh sách các cuộc chat đã nhắn tới tài khoản, và ô **Thêm bằng id** cho cuộc chat chưa từng nhắn. Cuộc chat đang chờ bạn cho phép được xếp lên đầu và có nhãn.
+
+Các thẻ không thay đổi việc bot phải được gọi tên trong nhóm: nhóm đã chọn vẫn theo nút "khi nào bot lên tiếng". Thẻ chỉ quyết định **bot có được phép đứng ở cuộc chat đó hay không**.
 
 **Không có ô chọn brain**, và đó là cố ý: bot thuộc về brain bạn đang mở. Muốn bot ở brain khác thì đổi brain ở đầu trang rồi tạo lại - một chỗ để nhìn, không có hai lớp phải khớp nhau.
 
@@ -122,17 +134,13 @@ Bật bot bằng nút **Bật** trên thẻ, rồi mở Telegram nhắn riêng c
 
 Thấy chưa ổn thì tắt đi, sửa Agent hoặc bổ sung tài liệu vào brain, rồi thử lại. Tắt có tác dụng ngay, không phải khởi động lại Thansa.
 
-### Bước 3: Chuyển cho người thật
+### Bước 3: Khi bot bí, người thật vào cuộc
 
-Điền **Chat ID người trực** để bot có chỗ chuyển khi bí. Lấy số đó bằng cách nhờ người đó mở **@userinfobot** trên Telegram, nó trả về dòng `Id: 123456789`.
+Từ 0.64.83 form **không còn ô Chat ID người trực** (đó là số Telegram, không dùng được cho bot Zalo). Bot mới không tự nhắn cho ai khi bí.
 
-Người trực phải bấm **Start** trong chat với con bot này một lần, nếu không Telegram chặn không cho bot nhắn tới.
+Bot bí thì vẫn trả lời theo Agent, hoặc nói chưa có thông tin nếu bạn chọn chế độ **Chỉ tài liệu**. Câu nó không trả lời nổi ghi vào tab **Bot bí** để bạn bổ sung tài liệu. Muốn tự trả lời một cuộc chat thì bấm **Tiếp quản** ở trang **Hội thoại**, bot sẽ im ở cuộc đó. Ai gõ `/nhanvien` được nói thật là chưa nối máy sang người trực được, và mời hỏi tiếp.
 
-Khi đó bot có hai đường chuyển: tự gọi người khi **bí hai câu liên tiếp** với cùng một người, và người đang hỏi chủ động gõ `/nhanvien` thì báo ngay. Cả hai đều gửi cho người trực một tin có tên bot, id cuộc trò chuyện và lý do. Lượt bot bị **lỗi kỹ thuật** cũng báo ngay từ lần đầu, nhưng chỉ một lần cho tới khi bot chạy lại được.
-
-Bỏ trống ô này thì **bot vẫn trả lời bình thường** theo Agent, chỉ là không có ai để chuyển tiếp. Ai gõ `/nhanvien` sẽ được nói thật là chưa nối máy sang người trực được, và mời hỏi tiếp.
-
-Muốn bot im khi không tìm thấy tài liệu thì đó là việc của chế độ **Chỉ tài liệu** ở mục trên, không phải của ô này.
+Bot đã đặt người trực từ trước 0.64.83 thì **giữ nguyên** (thẻ bot ghi "có chuyển người trực") và chạy như mô tả ở mục [Khi nào người trực bị gọi](#khi-nào-người-trực-bị-gọi).
 
 ### Bước 4: Thả bot vào một nhóm
 
@@ -142,15 +150,76 @@ Muốn bot im khi không tìm thấy tài liệu thì đó là việc của ch�
 
 Dùng `/id` chứ không phải gọi tên bot, và đó là chủ ý: **lệnh `/...` luôn tới được bot** dù Telegram đang bật chế độ riêng tư, còn tin nhắc tên thì chưa chắc (xem mục dưới). Nếu bước 2 mà bot **không trả lời gì cả** thì vấn đề không nằm ở nhóm - hoặc bot đang tắt, hoặc token hỏng; xem chấm trạng thái trên thẻ.
 
-Khai tay cũng được: lấy id ở bước 2 (một số **âm**, dạng `-1001234567890`) rồi dán vào ô **Nhóm được phép** trong form tạo hoặc sửa bot, mỗi id một dòng.
+Khai tay cũng được: lấy id ở bước 2 (một số **âm**, dạng `-1001234567890`) rồi dán vào ô **Thêm bằng id** trong phần **Bot trả lời ai** của form tạo hoặc sửa bot.
 
-**Chưa cho phép nhóm thì bot không trả lời trong nhóm đó.** Đây là mặc định cố ý: bot bị thả vào một nhóm lạ mà tự nhận việc là nó chen vào giữa cuộc nói chuyện của người khác. Nhưng từ chối không có nghĩa là biến mất - bot nói một câu cho người đang gọi biết phải làm gì, và nhóm đó nằm chờ ngay trên thẻ để bạn quyết.
+**Chưa cho phép nhóm thì bot không trả lời trong nhóm đó** (trừ khi bạn chọn thẻ "Mọi cuộc chat trên kênh" ở phần Bot trả lời ai). Đây là mặc định cố ý: bot bị thả vào một nhóm lạ mà tự nhận việc là nó chen vào giữa cuộc nói chuyện của người khác. Nhưng từ chối không có nghĩa là biến mất - bot nói một câu cho người đang gọi biết phải làm gì, và nhóm đó nằm chờ ngay trên thẻ để bạn quyết.
 
 Nhóm nào bạn không muốn thì bấm **Bỏ qua**, nó rời khỏi danh sách chờ. Có người gọi bot ở đó lần nữa thì nó quay lại - trang này không giấu đi một chỗ có người đang cố dùng bot.
 
 Trong nhóm đã cho phép, mặc định bot chỉ trả lời khi có người **nhắc tên nó** (gõ `@ten_bot`, hoặc bấm chọn tên nó từ danh sách thành viên) hoặc **reply vào tin của nó**. Nhóm có nhiều bot thì nó phân biệt được: nhắc tên bot khác hay reply vào bot khác thì nó không nhận vơ.
 
-Muốn nó trả lời **mọi câu trong nhóm** thì đổi ô "Trong nhóm thì khi nào bot lên tiếng". Cân nhắc kỹ: nhóm đông người thì rất ồn và đốt quota model nhanh. Và nó chỉ có tác dụng khi đã tắt chế độ riêng tư - đọc mục ngay dưới.
+Muốn nó trả lời **mọi câu trong nhóm** thì đổi nút "Trong nhóm, bot lên tiếng khi" sang **Mọi tin**. Cân nhắc kỹ: nhóm đông người thì rất ồn và đốt quota model nhanh. Và nó chỉ có tác dụng khi đã tắt chế độ riêng tư - đọc mục ngay dưới.
+
+### Bot trên Zalo cá nhân: nhóm và chế độ Tự đánh giá
+
+Từ 0.64.82 bot gắn vào **tài khoản Zalo cá nhân** (nối ở trang Kết nối, xem [Zalo Agent MCP](12-zalo.md)) đứng được trong nhóm Zalo, không chỉ chat riêng. Nick đó là người thật nên mọi thứ dưới đây nghiêng về phía im lặng.
+
+**Nhóm phải được bạn cho phép.** Có tin từ một nhóm lạ thì nhóm hiện lên hàng chờ ngay trên thẻ bot, kèm tên nhóm và nút **Cho phép nhóm này**. Khác Telegram, ở Zalo bot **không nói một câu nào** vào nhóm chưa cho phép: một câu như "em chưa được bật" trước cả nhóm là tự khai mình là máy.
+
+**Được tag, reply hoặc gọi tên thì trả lời luôn.** Từ 0.65.0 gọi tên trơn ("nhi mai ơi") cũng được coi là gọi, xem [Bộ phán xử](#bộ-phán-xử-bot-tự-quyết-nói-hay-im-và-học-từ-nhóm). Bot nhận ra tag bằng "@tên" trong chữ (tên là nhãn kết nối hoặc tên hiển thị của nick), bằng `mentions` nếu Zalo trả về, và nhận ra reply vào tin của nó. Tag người khác thì bot không nhận vơ. Nếu tag mà bot im, xem mục sự cố bên dưới.
+
+**Tự đánh giá.** Ở nút "Trong nhóm, bot lên tiếng khi", chọn **Tự đánh giá**. Bot vẫn trả lời khi được tag, và thêm một việc: tin không ai gọi tên thì bot tự xem có nên lên tiếng không. Đi từ rẻ tới đắt, tầng nào loại là dừng và không tốn lượt model:
+
+1. Tin có giống một **câu hỏi hoặc lời nhờ giúp** không (có dấu hỏi, hay các chữ như "làm sao", "lỗi", "cách", "hướng dẫn"). Tin trò chuyện, cảm ơn, một cái link, hay tin nhắc người khác thì bỏ.
+2. **Tài liệu trong brain của bot** có phần nào khớp câu hỏi không. Đây là cách bot hiểu "chủ đề mình trả lời được": có căn cứ trong tài liệu bạn đưa, không phải kiến thức chung của model. Không có thì im.
+3. Cuối cùng một lượt model, trong đó Agent vẫn được quyền tự chọn im nếu thấy không nên chen vào.
+
+Để bot không thành máy phát thanh: bot **chờ khoảng 20 giây** trước khi tự trả lời, và nếu trong lúc đó có người nhắn tay bằng nick này thì nhường. Mỗi nhóm bot chỉ tự trả lời tối đa **8 lần mỗi giờ**, mỗi người **3 lần mỗi giờ**, và giữa hai lần có một khoảng nghỉ. Lượt được tag không bị các giới hạn này chặn.
+
+Tin bị bỏ qua vì đáng lẽ trả lời được mà tài liệu không có, hay vì hết hạn mức, đều có **một dòng lý do trong nhật ký bot** (thẻ bot, mục nhật ký). Dòng "tài liệu không có phần nào khớp" chính là câu hỏi thật của người trong nhóm mà brain của bot còn thiếu, nên đó là danh sách để bổ sung tài liệu. Các dòng bỏ qua **không** tính vào số lượt hay tỉ lệ bí của bot.
+
+Chế độ này cũng chạy với nhóm Telegram nếu bạn đã tắt chế độ riêng tư (mục ngay dưới), nhưng phần chờ nhường và nhận tag theo tên chỉ có ở Zalo cá nhân.
+
+**Bot ở Zalo cá nhân khác bot ở Telegram** ở một điểm quan trọng: câu nó gửi mang tên nick, và nick có thể còn nhiều người khác nhắn vào. Vì thế bot chỉ xử lý tin dạng chữ (ảnh, tiếng, file bỏ qua), bỏ tin cũ quá 3 phút, và nhường 10 phút khi có người vừa nhắn tay ở cuộc chat đó.
+
+**Trong nhóm, bot tự tag người nó đang trả lời** (từ 0.65.7). Khách hỏi thì câu trả lời mở đầu bằng "@Tên ...", nên người hỏi được báo và cả nhóm biết bot đang nói với ai. Không có ô cài đặt nào, và chỉ áp dụng cho nhóm (chat riêng thì không cần). Nút **Trả lời giúp tin này** ở Hòm thư cũng tag người gửi tin đó. Tin có tag đi bằng chính công cụ `zalo-agent-cli` chứ không qua MCP (MCP chỉ gửi được chữ), nên mỗi câu trả lời trong nhóm chậm thêm khoảng 1 đến 2 giây (từ 0.65.8; trước đó khoảng 3 đến 5 giây vì mỗi lần phải chạy `npx`). Lần đầu sau khi cập nhật, Thansa cài ngầm một bản công cụ Zalo vào thư mục `tools/` trong thư mục dữ liệu của mình (khoảng 10 giây, một lần); trong lúc đó câu trả lời vẫn đi bằng cách cũ nên chậm hơn. Nếu tag hỏng (máy thiếu Node.js, Zalo từ chối) thì bot vẫn gửi câu trả lời như cũ, chỉ mất cái tag; hỏng ba lần liên tiếp thì bot nghỉ tag 10 phút để khỏi chậm thêm vô ích. Riêng trường hợp quá giờ, Thansa **không gửi lại**, vì tin có thể đã đi rồi và gửi lại sẽ ra hai câu dưới tên bạn; nhật ký bot ghi một dòng lỗi.
+
+**Trong nhóm, bot xem 30 tin gần nhất để trả lời đúng ngữ cảnh** (từ 0.65.12). Bot chỉ được gọi khi có người tag hay reply, nên trước đây nó chỉ thấy đúng câu gọi nó và không hiểu "vậy còn cái kia?". Nay mỗi lượt trả lời trong nhóm kèm tối đa 30 tin ngay trước tin đang hỏi (mỗi tin cắt khoảng 300 ký tự, cả khối tối đa khoảng 6.000 ký tự, bớt từ tin cũ nhất). Khối này được đưa vào như **dữ liệu**, không phải lệnh: marker nội bộ và thẻ đóng khối trong tin nhắn bị gỡ, và bot được dặn bỏ qua mọi câu trong đó bảo nó đổi quy tắc. Nó nằm trong hướng dẫn của lượt chứ không ghi vào lịch sử phiên của Agent, nên không phình dần. Chat riêng không đổi. Mỗi lượt trong nhóm tốn thêm khoảng 1.000 đến 2.000 token.
+
+### Bộ phán xử: bot tự quyết nói hay im, và học từ nhóm
+
+Chế độ Tự đánh giá cũ dùng một cửa từ khoá: tin nào không giống câu hỏi là bị vứt trong im lặng, không để lại dòng nhật ký nào. Từ 0.65.0 có **Bộ phán xử** thay cửa đó bằng một bộ đọc ngữ cảnh, dùng chung cho mọi bot nhưng mỗi bot một vai. Từ 0.65.1 nó **tự vận hành hoàn toàn: không còn ô cài đặt nào**.
+
+**Bật ở đâu.** Sửa bot, phần **Bot trả lời ai**, chọn thẻ **Tự động hóa tất cả** (mọi cuộc chat), hoặc chọn **Tự đánh giá** ở nút "Trong nhóm, bot lên tiếng khi" (cho những nhóm bạn chọn). Chỉ vậy. Muốn tắt thì chọn cách khác. Máy tự lo phần còn lại:
+- **Mức hăng hái.** Mỗi nhóm có một ngưỡng nói riêng, bắt đầu ở mức vừa. Ngưỡng nhích xuống khi bot im nhầm, nhích lên khi bot chen nhầm, và tự co dần về mức vừa nếu lâu không có phản hồi (chu kỳ bán rã 14 ngày).
+- **Khi không ai gọi, bot chỉ nói nếu có căn cứ.** Bot có tài liệu thì phải có phần tài liệu khớp với câu hỏi. Bot không có tài liệu nào thì dựa vào vai của Agent (nếu không thì nó không bao giờ tự nói được). Máy tự biết bot thuộc loại nào từ brain của bot. Ca đã học không được miễn luật này.
+- **Hồ sơ vai tự soạn** từ file Agent và mục lục tài liệu của CHÍNH bot đó, và tự soạn lại khi Agent hoặc tài liệu đổi.
+- **Tự học luôn bật** (xem dưới).
+
+**Khác luật cũ ở đâu.**
+- **Gọi tên trơn cũng là gọi bot**, không cần @: "nhi mai ơi", "alo nhi mai", hoặc tên đứng đầu câu. Riêng điều này áp dụng cho MỌI bot, kể cả khi chưa ở chế độ Tự đánh giá. Tên tự nhận là nhãn kết nối Zalo và tên hiển thị của nick. Muốn bot nhận thêm một tên (ví dụ "Thu") thì gọi bot rồi dạy, ví dụ "Nhi Mai ơi, từ giờ gọi em là Thu nhé", bằng tài khoản của người được dạy (xem dưới). Tên nằm giữa câu ("hỏi nhi mai xem") chưa đủ để coi là gọi: bộ phán xử sẽ cân nhắc.
+- **Đọc vài tin gần nhất** thay vì đúng một tin, nên người vừa được bot trả lời hỏi tiếp ("vậy còn cái kia?") được hiểu là hỏi tiếp cho bot, và không bị chặn bởi khoảng nghỉ 20 giây giữa hai lần bot tự nói.
+- **Mọi quyết định đều có dấu vết, kể cả lúc bot im.** Menu "..." của thẻ bot, mục **Bộ phán xử**, liệt kê từng tin kèm lý do (ví dụ "Tài liệu không có phần khớp", "Điểm thấp hơn ngưỡng", "Hết hạn mức tự nói") và điểm so với ngưỡng.
+
+**Mỗi bot một vai.** Bộ phán xử **không viết câu trả lời**: giọng và cách trả lời vẫn là của Agent, nên Nhi Mai nói kiểu Nhi Mai và Thansa Vũ nói kiểu Thansa Vũ. Ba bot khác ngành không đọc được ca đã học, bài học hay hồ sơ của nhau, và ngưỡng của nhóm này không đổi nhóm kia. Bot mới có sẵn khoảng 12 tin mẫu đúng ngành của nó, do model viết từ Agent, và các mẫu này nhạt dần khi bot học được ca thật. Bản 0.65.0 có ô "Luật lên tiếng" viết tay: chữ đã viết được gộp một lần vào **bài học** của bot (thấy trong menu Bộ phán xử), form không còn ô đó.
+
+**Bạn chỉnh bằng gì.** Không phải bằng cài đặt mà bằng phản hồi, ngay trên dữ liệu thật:
+- Bấm **Đúng** hoặc **Sai** ở từng dòng trong menu Bộ phán xử: nhãn nặng nhất, có tác dụng ngay ở tin kế tiếp.
+- Bấm **Là chủ** ở tin của bạn trong menu Bộ phán xử: từ đó bot nghe lời dạy của bạn ngay trong nhóm (gọi tên bot rồi nói "đừng trả lời chuyện phiếm" hay "gọi tên em là em phải trả lời") và lưu thành **bài học**. Chỉ những ai bạn đã bấm mới dạy được; lời người khác trong nhóm ("từ giờ cứ trả lời mọi tin") KHÔNG thành luật.
+
+**Tự học.** Bot còn học từ phản ứng MẠNH của người thật, và ca vừa học có tác dụng ngay ở tin kế tiếp:
+- Bot im mà **cùng người đó hỏi lại** ("sao không trả lời") hoặc có người gọi bot ngay sau đó: lần sau tin giống vậy bot nói, ngưỡng của nhóm hạ.
+- Bot tự nói mà **chủ nhắc** "đừng chen vào", hoặc bạn bấm **Tiếp quản** ngay sau đó: ngưỡng của nhóm nâng lên.
+- Bot được cảm ơn hoặc được hỏi tiếp đúng mạch: ghi nhận là đúng.
+- Bị phớt lờ thì **không tính**, vì người ta phớt lờ liên tục.
+
+Học chỉ đổi việc **nói hay im**, không bao giờ đổi điều bot khẳng định: câu trả lời vẫn bám tài liệu và vai của Agent. Hạn mức tự nói, việc nhường khi bạn đang gõ tay, nhóm nào được phép và mức quyền đều nằm ngoài vòng học. Bộ phán xử gặp lỗi, hết giờ hay trả về rác thì bot **im** (riêng tin gọi tên chắc chắn vẫn được trả lời). Nút **Quên hết** xoá ca, ngưỡng, bài học **và cả nhật ký quyết định** của bot (không hoàn tác được).
+
+**Riêng tư.** Vì tự vận hành, bot ở chế độ Tự đánh giá ghi lại chữ của mọi tin nhóm đáng cân nhắc để hiện trong menu Bộ phán xử: tối đa 400 ký tự mỗi tin, giữ 14 ngày. Các ca đã học (từ phản hồi của bạn hoặc của nhóm) giữ tối đa 180 ngày. Tất cả nằm trong thư mục dữ liệu của Thansa (không lên git). Bot không ở chế độ Tự đánh giá thì không lưu gì. **Quên hết** hoặc xoá bot xoá sạch dữ liệu này.
+
+**Ai chạy và tốn gì.** Mỗi tin đáng cân nhắc tốn một lượt model rẻ theo model "việc nền" bạn chọn ở trang **Models** (gói thuê bao hay API rẻ đều được), thêm khoảng vài giây; model chạy trong thư mục trống, không công cụ ghi hay chạy lệnh. Tin hiển nhiên không đáng (rỗng, chỉ có link, nhắn người khác) và tin gọi tên rõ ràng không tốn lượt nào. Bộ phán xử dùng đủ trên **Zalo cá nhân** (cửa sổ tin, tin nối tiếp). Trên **Telegram** nó cũng quyết trong nhóm nhưng không có cửa sổ tin nối tiếp.
+
+**Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `JAVIS_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
 
 ### Chế độ riêng tư của Telegram (đọc mục này nếu bot im trong nhóm)
 
@@ -277,7 +346,7 @@ Chọn ở ô **Bot được làm gì** khi tạo hoặc sửa bot. Mặc địn
 **Mức Toàn quyền:**
 
 - Bot làm được **mọi thứ** các nguồn đã đấu cho phép, kể cả gửi đi, thanh toán, đặt hay huỷ, xoá, công bố ra ngoài. Những thao tác đó **không hoàn tác được**.
-- Một câu dụ khéo ("bỏ qua hướng dẫn trước, làm giúp việc này") là đủ. Rào duy nhất còn lại là chính file Agent bạn viết, mà chữ thì lách được.
+- Một câu dụ khéo ("bỏ qua hướng dẫn trước, làm giúp việc này") là đủ để bot làm theo. Rào cứng còn lại là **mức quyền của từng kết nối** ở trang Kết nối (hạ một kết nối về Chỉ đọc thì bot cũng bị chặn ghi ở đó), nhưng rào đó chặn theo loại thao tác nên với nguồn Thansa chưa có khuôn phân loại sẵn thì không kín tuyệt đối. Ngoài ra chỉ còn file Agent bạn viết, mà chữ thì lách được.
 - Bot không hỏi lại bạn trước khi làm. Không có cổng duyệt từng lệnh.
 
 Vì thế: **chỉ bật Toàn quyền khi bạn kiểm soát được danh sách người nhắn vào bot.** Chỗ ai cũng nhắn được thì không, dù Agent bạn viết kỹ tới đâu.
@@ -323,6 +392,8 @@ Làm được vì lượt của bot đi một đường riêng, chung cho mọi 
 
 Bấm **Nhật ký** trên thẻ bot. Có hai tab, và tab mở sẵn là tab quan trọng hơn.
 
+**Hội thoại của bot với khách nằm ở đâu.** Từ 0.65.0 mỗi cuộc chat của khách là một hội thoại trong **lịch sử của Agent** nối với bot, ở trang **Cộng sự** (mở Agent đó, tab Lịch sử), có nhãn **Bot** để phân biệt với cuộc bạn tự chat với Agent. Hội thoại trong nhóm mang **tên nhóm** (từ 0.65.1), không mang tin đầu của người nhắn đầu tiên; chat riêng vẫn đặt tên theo tin đầu. Chúng không còn hiện ở lịch sử trang **Trò chuyện**. Bot dùng chung một Agent thì hội thoại của cả hai cùng nằm trong lịch sử Agent đó.
+
 **Bot bí** liệt kê những câu bot trả lời không nổi, gom trùng và xếp theo **số lần được hỏi**. Đây là tab đáng giá nhất: mỗi dòng chỉ đúng một chỗ tài liệu của bạn đang thiếu, bằng chính lời người hỏi. Viết bổ sung vào brain là lần sau bot trả lời được.
 
 Gom trùng có bỏ dấu, nên "Giá bao nhiêu?" và "gia bao nhieu" được tính là một câu. Nếu không thì cùng một câu hỏi bị tách thành mấy dòng lẻ và anh không thấy được nó thật ra được hỏi nhiều.
@@ -335,7 +406,7 @@ Gom trùng có bỏ dấu, nên "Giá bao nhiêu?" và "gia bao nhieu" được 
 
 ### Khi nào người trực bị gọi
 
-Có đặt Chat ID người trực thì bot gọi người trong hai trường hợp: người đang hỏi gõ `/nhanvien`, hoặc bot **bí hai câu liên tiếp** với cùng một người. Trả lời được một câu là đếm về 0.
+Bot đã đặt Chat ID người trực từ trước 0.64.83 thì gọi người trong hai trường hợp: người đang hỏi gõ `/nhanvien`, hoặc bot **bí hai câu liên tiếp** với cùng một người. Trả lời được một câu là đếm về 0.
 
 Bí một câu lẻ thì không gọi. Báo mọi câu vu vơ thì vài lần là người trực tắt thông báo, và lúc có người thật cần giúp thì không ai đọc nữa. Hai câu liên tiếp mới là dấu hiệu người ta đang mắc kẹt thật.
 
@@ -386,6 +457,8 @@ Cần thiết vì một người rảnh trong nhóm đủ đốt hết quota mod
 
 Bấm **Xoá** trên thẻ. Bot ngừng trả lời ngay.
 
+**Dữ liệu bộ phán xử của bot BỊ xoá** (nhật ký quyết định, ca đã học, bài học, hồ sơ vai): đó là chữ chat của khách nên không để mồ côi.
+
 **Brain và Agent của nó KHÔNG bị xoá.** Brain có thể chứa cả tháng tài liệu bạn tự soạn, Agent có thể đang được bot khác hoặc workflow dùng. Muốn xoá thì xoá ở trang của chúng.
 
 ## Câu hỏi thường gặp
@@ -415,6 +488,13 @@ Vì sao theo Agent chứ không theo model chính: bot vốn đã mượn nguyê
 **Tôi thả bot vào nhóm, tag tên nó mà nó không trả lời, nhưng nhắn riêng thì được?** Gõ **`/id`** trong chính nhóm đó - bot sẽ trả lời và nói luôn nguyên nhân. Ba nguyên nhân cho ra đúng một triệu chứng này: nhóm chưa được bật (bấm **Cho phép nhóm này** trên thẻ bot), chế độ riêng tư của Telegram còn bật (xem mục [Chế độ riêng tư](#chế-độ-riêng-tư-của-telegram-đọc-mục-này-nếu-bot-im-trong-nhóm)), hoặc bot chưa hỏi được danh tính của chính nó (tắt bật lại bot). Nếu ngay cả `/id` cũng không có phản hồi thì bot đang không chạy - xem chấm trạng thái trên thẻ.
 
 **Bot đặt "trả lời mọi tin" mà nó vẫn chỉ trả lời khi được gọi tên?** Chế độ riêng tư của Telegram còn bật, nó chặn từ phía Telegram nên Thansa không nhìn thấy những tin đó. Tắt nó ở @BotFather (`/setprivacy` → Disable) hoặc cho bot làm quản trị viên nhóm, rồi tắt bật lại bot. Thẻ bot có nhắc sẵn khi rơi vào tình huống này.
+
+**Tag bot trong nhóm Zalo mà bot im?** Kiểm theo thứ tự:
+
+1. Bot đang bật, chấm trạng thái xanh, và kết nối Zalo còn đăng nhập ở trang Kết nối.
+2. **Nhóm đã được cho phép chưa.** Xem hàng chờ trên thẻ bot, thấy nhóm thì bấm **Cho phép nhóm này**. Không thấy nhóm nào hiện lên thì vòng đọc chưa nhận được tin từ nhóm: mở Hộp thư xem tin nhóm có về không.
+3. **Bot nhận tag theo tên.** Chữ sau "@" phải trùng nhãn của kết nối Zalo (trang Kết nối) hoặc tên hiển thị của nick. Lệch thì đổi nhãn kết nối cho đúng tên hiển thị. Chọn **Tự đánh giá** thì bot vẫn bắt được câu hỏi thuộc tài liệu dù không nhận ra tag.
+4. Có người vừa nhắn tay bằng nick đó trong nhóm trong 10 phút thì bot nhường.
 
 **Tắt Thansa thì bot có chạy không?** Không. Bot chạy trong tiến trình Thansa, nên máy/VPS phải bật. Bật lại Thansa thì bot nào đang bật tự chạy lại.
 

@@ -74,6 +74,11 @@ def ghi(bot_id: str, rec: dict) -> None:
             # người đang hỏi vẫn nhận được câu trả lời tử tế - chỉ chủ mới cần biết là nó chạy
             # thiếu quyền. Tách hẳn hai trường vì `loi` còn kéo theo bộ đếm bí và gọi người trực.
             "canh_bao": str(rec.get("canh_bao") or "")[:500],
+            # Bot CHỌN không trả lời tin này (chế độ Tự đánh giá loại, hay Agent viết [IM_LANG]).
+            # Là mã lý do ngắn, rỗng nghĩa là một lượt trả lời bình thường. Cần tách hẳn vì
+            # những dòng này không phải "lượt bot trả lời": để chúng vào `tom_tat` thì mẫu số của
+            # tỉ lệ bí phình lên và thẻ bot báo bot ổn hơn thực tế.
+            "bo_qua": str(rec.get("bo_qua") or "")[:40],
         }
         p = _path(bot_id)
         with _lock:
@@ -169,16 +174,21 @@ def lo_hong(bot_id: str, limit: int = 30) -> List[dict]:
 
 def tom_tat(bot_id: str) -> dict:
     """Vài con số cho thẻ bot. Đọc cả file nên đừng gọi trong vòng lặp danh sách."""
-    rs = _nap(bot_id)
-    if not rs:
-        return {"luot": 0, "bi": 0, "chuyen_nguoi": 0, "ty_le_bi": 0.0, "lan_cuoi": 0.0}
+    tat_ca = _nap(bot_id)
+    if not tat_ca:
+        return {"luot": 0, "bi": 0, "chuyen_nguoi": 0, "ty_le_bi": 0.0, "lan_cuoi": 0.0,
+                "bo_qua": 0}
+    # Dòng bỏ qua (`bo_qua`) không phải lượt trả lời: đếm riêng, không vào luot/bi/ty_le_bi.
+    rs = [r for r in tat_ca if not r.get("bo_qua")]
+    n_bo = len(tat_ca) - len(rs)
     bi = sum(1 for r in rs if r.get("bi"))
     return {
         "luot": len(rs),
         "bi": bi,
         "chuyen_nguoi": sum(1 for r in rs if r.get("chuyen_nguoi")),
-        "ty_le_bi": round(100.0 * bi / len(rs), 1),
-        "lan_cuoi": max((r.get("ts") or 0) for r in rs),
+        "ty_le_bi": round(100.0 * bi / len(rs), 1) if rs else 0.0,
+        "lan_cuoi": max((r.get("ts") or 0) for r in tat_ca),
+        "bo_qua": n_bo,
     }
 
 

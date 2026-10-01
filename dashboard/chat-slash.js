@@ -2,6 +2,24 @@
 // phan menu DOM o cuoi file chi chay trong trinh duyet. Pattern giong chat-ask.js.
 (function () {
   var SESSION_COMMANDS = ["new", "reset", "stop"];
+  // Lệnh HỆ THỐNG: chạy tại chỗ trong khung chat, do chat-lenh.js xử lý. `needArg` = cần kèm nội
+  // dung (/plan, /goal): chọn từ menu thì chỉ điền "/plan " để người dùng gõ tiếp, không chạy ngay.
+  // Cũng như lệnh phiên, chỉ chạy khi đứng ĐẦU tin: "hãy /compact lại" giữa câu là một câu nói.
+  var SYSTEM_COMMANDS = [
+    { cmd: "help", nhan: "lenh.help_name", mota: "lenh.help_desc" },
+    { cmd: "status", nhan: "lenh.status_name", mota: "lenh.status_desc" },
+    { cmd: "model", nhan: "lenh.model_name", mota: "lenh.model_desc" },
+    { cmd: "brain", nhan: "lenh.brain_name", mota: "lenh.brain_desc" },
+    { cmd: "retry", nhan: "lenh.retry_name", mota: "lenh.retry_desc" },
+    { cmd: "usage", nhan: "lenh.usage_name", mota: "lenh.usage_desc" },
+    { cmd: "tasks", nhan: "lenh.tasks_name", mota: "lenh.tasks_desc" },
+    { cmd: "compact", nhan: "lenh.compact_name", mota: "lenh.compact_desc" },
+    { cmd: "plan", nhan: "lenh.plan_name", mota: "lenh.plan_desc", needArg: true },
+    { cmd: "memory", nhan: "lenh.memory_name", mota: "lenh.memory_desc" },
+    { cmd: "export", nhan: "lenh.export_name", mota: "lenh.export_desc" },
+    { cmd: "goal", nhan: "lenh.goal_name", mota: "lenh.goal_desc", needArg: true },
+  ];
+  var SYSTEM_NAMES = SYSTEM_COMMANDS.map(function (x) { return x.cmd; });
 
   // Chu hien ra lay tu tu dien. Trong trinh duyet la window.t (i18n/index.js nap dau tien);
   // duoi node (test require file nay) khong co window nen doc thang vi.json. Chu tw chu
@@ -69,7 +87,8 @@
   }
 
   function classify(cmd) {
-    return SESSION_COMMANDS.indexOf(cmd) !== -1 ? "session" : "skill";
+    if (SESSION_COMMANDS.indexOf(cmd) !== -1) return "session";
+    return SYSTEM_NAMES.indexOf(cmd) !== -1 ? "system" : "skill";
   }
 
   // Lệnh skill đi thành một KHỐI NGỮ CẢNH đặt TRƯỚC câu người dùng, không viết lại câu đó.
@@ -104,6 +123,9 @@
     var p = parseSlashAnywhere(text);
     if (!p) return { type: "passthrough" };
     if (classify(p.cmd) === "session") return { type: "session", cmd: p.cmd };
+    // Lệnh hệ thống chỉ ở ĐẦU tin. Giữa câu thì rơi xuống nhánh skill/cộng sự bên dưới (một skill
+    // tình cờ trùng tên vẫn gọi được ở giữa câu như cũ).
+    if (classify(p.cmd) === "system" && !p.giuaCau) return { type: "system", cmd: p.cmd, arg: p.arg };
     var partner = knownPartners.find(function (x) { return x.cmd === p.cmd; });
     if (partner) return { type: partner.kind, slug: partner.slug, message: p.arg };
     return { type: "skill", cmd: p.cmd,
@@ -120,8 +142,16 @@
     ];
   }
 
+  function systemItems() {
+    return SYSTEM_COMMANDS.map(function (x) {
+      // Khoá i18n là DỮ LIỆU ở bảng trên chứ không ghép chuỗi ở đây: test_i18n quét các lời gọi tw
+      // theo mặt chữ, ghép khoá lúc chạy thì nó không kiểm được khoá có tồn tại không.
+      return { kind: "system", cmd: x.cmd, needArg: !!x.needArg, name: tw(x.nhan), desc: tw(x.mota) };
+    });
+  }
+
   function buildMenu(skills, agents, workflows) {
-    var out = sessionItems();
+    var out = sessionItems().concat(systemItems());
     [["agent", agents], ["workflow", workflows]].forEach(function (group) {
       (group[1] || []).forEach(function (x) {
         if (!x.slug || (group[0] === "workflow" && x.status !== "active")) return;
@@ -130,6 +160,9 @@
     });
     (skills || []).forEach(function (s) {
       if (!s || !s.slug) return;
+      // Skill trùng tên lệnh phiên/hệ thống sẽ không bao giờ chạy được ở đầu tin (lệnh thắng),
+      // nên đừng bày ra một dòng bấm vào mà không ra skill.
+      if (classify(String(s.slug).toLowerCase()) !== "skill") return;
       out.push({ kind: "skill", cmd: s.slug, name: s.name || s.slug, group: s.group || "", desc: s.description || "" });
     });
     return out;
@@ -171,6 +204,7 @@
     setKnownSkills: setKnownSkills,
     setKnownPartners: setKnownPartners,
     SESSION_COMMANDS: SESSION_COMMANDS,
+    SYSTEM_COMMANDS: SYSTEM_NAMES,
     classify: classify,
     buildSkillInvocation: buildSkillInvocation,
     route: route,
@@ -249,7 +283,7 @@
       var input = document.getElementById("chatInput");
       var t = tok;
       hide();
-      if (it.kind !== "session") {
+      if (it.kind !== "session" && !(it.kind === "system" && !it.needArg)) {
         // Thay DUNG token dang go, giu nguyen chu hai ben - go lenh giua cau khong duoc
         // xoa cau dang viet. Khong ro token thi rot ve hanh vi cu (thay ca o).
         var val = input.value;
@@ -261,7 +295,7 @@
         try { input.setSelectionRange(caret, caret); } catch (e) {}
         input.dispatchEvent(new Event("input"));
       } else {
-        // Lenh phien: chay ngay.
+        // Lenh phien va lenh he thong khong can noi dung kem: chay ngay.
         input.value = "";
         if (typeof window.JavisSend === "function") window.JavisSend("/" + it.cmd);
       }
@@ -276,9 +310,9 @@
       var seq = ++inputSeq;
       var skills = await loadSkills();
       if (seq !== inputSeq || !api.tokenAtCaret(input.value, input.selectionStart)) return;
-      // Lenh phien (/new /reset /stop) chi hien khi token o DAU o nhap: giua cau ma bam
+      // Lenh phien (/new /reset /stop) va lenh he thong chi hien khi token o DAU o nhap: giua cau ma bam
       // /reset thi mat sach ngu canh dang viet do, khong ai muon vay.
-      var all = tok.atHead ? buildMenu(skills, agentsCache, workflowsCache) : buildMenu(skills, agentsCache, workflowsCache).filter(function (x) { return x.kind !== "session"; });
+      var all = tok.atHead ? buildMenu(skills, agentsCache, workflowsCache) : buildMenu(skills, agentsCache, workflowsCache).filter(function (x) { return x.kind !== "session" && x.kind !== "system"; });
       items = filterItems(all, tok.query);
       active = 0;
       if (!items.length) { hide(); return; }

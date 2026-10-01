@@ -114,6 +114,7 @@ Nếu tool bị chặn vì mức quyền, câu trả lời sẽ chứa nguyên v
 | Facebook Trang (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | toàn quyền | Bật |
 | Theo dõi Facebook (Apify) | `fb-monitor-apify` | `fb_monitor` | chỉ đọc | Bật |
 | Gửi ảnh & file qua Zalo | `zalo-image` | `zalo_send_image` | toàn quyền | Bật |
+| Tag người, ghi chú, nhắc hẹn, poll ở nhóm Zalo | `zalo-group` | `zalo_group_members`, `zalo_send_mention`, `zalo_create_note`, `zalo_create_reminder`, `zalo_create_poll` | toàn quyền (riêng danh sách thành viên: chỉ đọc) | Bật |
 | Nhật ký dùng tool | `tool-audit` | `javis_tool_stats` + hook `post_tool_call` | chỉ đọc | **Tắt** |
 
 Từng cái làm được gì:
@@ -121,6 +122,7 @@ Từng cái làm được gì:
 - **Giao việc Kanban**: giao một việc nền vào hàng đợi ngay từ chat (`op=add`) và xem việc đang chạy tới đâu (`op=list`). Có từ 0.17.1. Trước đó đường duy nhất để giao việc là `POST /kanban/task`, mà gọi được nó thì phải chạy được lệnh máy - nên chỉ Claude Code với Codex làm được, dù tài liệu vẫn hứa mọi bộ não đều làm được. Tool này gọi thẳng vào hàng đợi in-process, không mở thêm cửa HTTP nào. Hai rào cứng: **không tạo được việc mức `full`** (mức tự tiêu tiền, tạo đơn, gửi tin - phải do chính bạn đặt ở trang Việc), và mặc định là `suggest`. Chuyển cột, huỷ việc, duyệt việc chờ phê duyệt vẫn làm ở trang Việc.
 - **Đấu thêm MCP**: nhờ Thansa ngay trong chat đấu một nguồn MCP mới, và nó **hiện ra trang Kết nối** ở khu "Đã kết nối" như tài khoản bạn tự thêm bằng tay, dùng chung cho mọi bộ não. Trước plugin này Thansa không có đường nào ghi vào kho kết nối, nên nó chỉ còn cách chạy `claude mcp add` - server đó rơi vào cấu hình riêng của Claude Code, sáu bộ não còn lại không thấy, và trên trang Kết nối nó không nằm ở khu "Đã kết nối" mà lọt xuống khu gập "Kết nối sẵn của Claude Code và Codex" (mặc định đóng), nên nhìn vào tưởng như chẳng có gì được thêm. Ba rào an toàn: mức quyền mặc định là **chỉ đọc** (muốn cho ghi thì bạn tự nâng ở trang Kết nối); nguồn chạy bằng **lệnh trên máy** (stdio) được thêm ở trạng thái **tắt** để bạn tự đọc lệnh rồi mới bật; dịch vụ đã có sẵn trong Kho kết nối (Gmail, Lịch, POS...) thì Thansa chỉ tay sang đúng card chứ không đẻ một bản tự khai song song. Thử kết nối hỏng thì mục đó **vẫn nằm lại** trang Kết nối kèm lý do, chứ không biến mất im lặng.
 - **Gửi ảnh & file qua Zalo**: gửi ảnh (ví dụ ảnh Thansa vừa tạo) hoặc file kèm lời nhắn qua Zalo, bằng chính tài khoản đã quét QR ở trang Kết nối. Có vì tool `zalo_send_message` của MCP chuẩn chỉ gửi được chữ, trong khi thư viện bên dưới làm được từ lâu và bản 1.6.2 đã là bản mới nhất nên chờ upstream là chờ vô hạn. Chỉ gửi được file NẰM TRONG bộ não đang dùng - rào cố ý, vì tin nhắn Zalo gửi đi thì không thu hồi được. Cần Node.js 20+. Chi tiết ở [Zalo](12-zalo.md).
+- **Tag người, ghi chú, nhắc hẹn, poll ở nhóm Zalo**: năm tool để Thansa tag đúng người (chỉ cần nói tên, Thansa tìm ID Zalo thật và hỏi lại khi trùng tên), tạo ghi chú nhóm, nhắc hẹn hiện trong Zalo và poll. Cùng cách làm với gửi ảnh: gọi lại chính `zalo-agent-cli` bằng phiên đã đăng nhập, vì MCP chuẩn của nó chỉ có bảy tool. Cần Node.js 20+. Chi tiết ở [Zalo](12-zalo.md).
 - **Thời gian & ngày (VN)**: cho Thansa biết hôm nay là ngày nào, mấy giờ, thứ mấy theo giờ Việt Nam (UTC+7), và tính ngày tương đối ("3 ngày nữa", "tuần trước"). Thuần thư viện chuẩn, không cần mạng. Đây cũng là plugin mẫu đơn giản nhất để đọc khi bạn muốn tự viết plugin.
 - **Đặt việc định kỳ & nhắc hẹn**: cho phép tạo, liệt kê, huỷ việc định kỳ và nhắc hẹn **ngay trong câu chat**, khỏi gõ YAML tay. Việc lặp và bền được ghi ra `Javis/loops/<slug>.md` (mở sửa được trong Obsidian); nhắc một lần hoặc lịch cron thì vào kho nhắc hẹn. Chi tiết ở [Việc định kỳ & Nhắc hẹn](08-viec-dinh-ky.md).
 - **Tạo ảnh (ChatGPT)**: tạo ảnh từ mô tả bằng chính **gói ChatGPT** bạn đang đăng nhập (OAuth), không cần khoá API OpenAI. Ảnh lưu vào `attachments/` của brain rồi nhúng thẳng vào câu trả lời. Cần đã kết nối ChatGPT ở trang **Models**; chưa kết nối thì tool trả về câu "Chưa kết nối ChatGPT (OAuth). Vào trang Model đăng nhập ChatGPT rồi thử lại...".
@@ -266,7 +268,7 @@ Hook bọc **mọi** tool call, kể cả tool của MCP và tool lõi, chứ kh
 
 ## Trang riêng và đường HTTP (từ 0.64.26)
 
-Plugin mở được đường web của riêng nó, dưới `/ext/<slug>/`. Dùng cho trang cài đặt, hoặc cho dịch vụ bên ngoài gọi vào (webhook, cửa OAuth). Gói "Javis trong ChatGPT" trong kho là ví dụ chạy thật.
+Plugin mở được đường web của riêng nó, dưới `/ext/<slug>/`. Dùng cho trang cài đặt, hoặc cho dịch vụ bên ngoài gọi vào (webhook, cửa OAuth). Gói "Thansa trong ChatGPT" trong kho là ví dụ chạy thật.
 
 ```python
 def register(ctx):
@@ -278,7 +280,7 @@ def register(ctx):
 
 - **Mặc định phải đăng nhập bằng trình duyệt.** Token API không mở được trang của plugin.
 - **`public=True`**: vào không cần đăng nhập, plugin tự xác thực (chữ ký, token). Chỉ áp cho đúng method đã khai.
-- **`no_cookie=True`** (đi cùng `public`): miễn chặn CSRF, và Javis gỡ hẳn cookie trước khi giao request cho plugin.
+- **`no_cookie=True`** (đi cùng `public`): miễn chặn CSRF, và Thansa gỡ hẳn cookie trước khi giao request cho plugin.
 - **`register_well_known`**: chỉ GET, công khai, không cookie. Hai plugin xin cùng tên thì plugin nạp trước giữ.
 - Khai `page: ""` trong `plugin.yaml` thì thẻ plugin có nút **Mở trang**.
 - Chỉ plugin đi kèm app, plugin của gói đã cài và plugin toàn cục mới có đường. **Plugin trong brain thì không**, vì model ghi được vào brain.

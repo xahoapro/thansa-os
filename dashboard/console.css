@@ -1986,24 +1986,50 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
    Hai cột trên màn rộng (danh sách | lịch sử tin), một cột trên điện thoại (bấm một hội thoại
    là mở lịch sử, có nút quay lại). Chữ chính 16px trên màn nhỏ theo chuẩn đọc của chủ repo. */
 .ht-wrap { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
-.ht-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.ht-stat { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--surface-1);
-  display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ht-stat b { font-size: 22px; color: var(--text); line-height: 1.1; }
-.ht-stat span { font-size: 12.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ht-stat.warn b { color: var(--warn-ink); }
 .ht-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .ht-loc { display: flex; flex-wrap: wrap; gap: 6px; }
 .ht-loc-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 999px;
   border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-size: 13.5px; cursor: pointer; }
 .ht-loc-chip:hover { color: var(--text); border-color: var(--accent); }
 .ht-loc-chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
-.ht-bot, .ht-search { padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg3);
-  color: var(--text); font-size: 16px; min-width: 0; }
-.ht-search { flex: 1 1 200px; }
-.ht-body { display: flex; gap: 12px; flex: 1 1 auto; min-height: 0; height: calc(100vh - 300px); min-height: 420px; }
-.ht-list { width: 320px; flex: none; overflow: auto; display: flex; flex-direction: column; gap: 4px;
+.ht-search { padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text); font-size: 16px; min-width: 0; flex: 1 1 200px; }
+/* Bộ lọc dropdown (0.65.3): một hàng chung với ô tìm. Đang lọc thì dropdown sáng màu nhấn để nhìn là biết. */
+.ht-f { padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg3); color: var(--text);
+  font-size: 14px; min-width: 0; max-width: 100%; }
+.ht-f.on { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
+.ht-f[hidden], .ht-fclear[hidden] { display: none; }
+.ht-fsum { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text3);
+  min-height: 20px; padding: 0 4px; }
+.ht-fclear { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer;
+  text-decoration: underline; }
+.ht-item-tags { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-width: 0; }
+.ht-bot-tag, .ht-need { flex: none; max-width: 100%; font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+  font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ht-bot-tag.c0 { background: var(--accent2-wash); color: var(--accent2-ink); }
+.ht-bot-tag.c1 { background: var(--info-wash); color: var(--info-ink); }
+.ht-bot-tag.c2 { background: var(--ok-wash); color: var(--green); }
+.ht-bot-tag.c3 { background: var(--accent-wash); color: var(--accent-ink); }
+.ht-need { background: var(--warn-wash); color: var(--warn-ink); }
+@media (max-width: 640px) {
+  /* Điện thoại: ô tìm và dropdown Bot mỗi cái một hàng, Tình trạng và Loại chia đôi hàng thứ ba (cỡ chữ 16px nên
+     ba ô một hàng bị cắt mất chữ). */
+  .ht-f { flex: 1 1 42%; font-size: 16px; }
+  .ht-search, .ht-f-bot, .ht-f-channel { flex-basis: 100%; }
+}
+/* Từ 0.65.10 vùng làm việc lấp đầy phần còn lại của khung (trước là calc(100vh - 300px), thấp hơn thật khoảng 90px nên cả trang phải cuộn
+   và khung tin bị đẩy xuống). Cột trái = dòng đếm + danh sách; danh sách và khung tin tự cuộn bên trong. */
+.ht-body { display: flex; gap: 12px; flex: 1 1 auto; min-height: 260px; }
+.ht-listcol { width: 320px; flex: none; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.ht-list { flex: 1 1 auto; min-height: 0; width: 100%; overflow: auto; display: flex; flex-direction: column; gap: 4px;
   border: 1px solid var(--border); border-radius: 12px; padding: 6px; background: var(--surface-1); }
+/* Tải dần (0.65.11): nút Xem thêm ở cuối danh sách, nút Xem tin cũ hơn ở đầu khung tin. */
+.ht-more { display: flex; justify-content: center; padding: 8px 0 4px; flex: none; }
+.ht-more .s-btn-ghost { font-size: 12.5px; }
+.ht-older { align-self: center; flex: none; background: none; border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 12px; font-size: 12.5px; color: var(--text3); cursor: pointer; }
+.ht-older:hover { color: var(--text); border-color: var(--accent); }
+.ht-older.busy { opacity: .6; cursor: progress; }
 .ht-item { display: flex; align-items: flex-start; gap: 9px; width: 100%; text-align: left; padding: 9px 9px;
   border-radius: 10px; border: 1px solid transparent; background: none; color: var(--text2); cursor: pointer; }
 .ht-item:hover { background: var(--surface-2); color: var(--text); }
@@ -2030,8 +2056,43 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-head-text strong { font-size: 15px; color: var(--text); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ht-head-text small { font-size: 12.5px; color: var(--text3); display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .ht-back { display: none; padding: 6px 9px; }
-.ht-mode-btn { flex: none; white-space: nowrap; }
-.ht-mode-btn.on { color: var(--warn-ink); border-color: var(--warn-ink); }
+/* Công tắc hai nấc Tự động / Tôi trả lời (0.65.4). */
+.ht-seg { flex: none; display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 2px; gap: 2px;
+  background: var(--bg3); }
+.ht-seg-b { border: 0; background: none; color: var(--text2); padding: 5px 11px; border-radius: 999px; font-size: 13px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ht-seg-b:hover { color: var(--text); }
+.ht-seg-b.on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
+.ht-seg-b.on[data-m="human"] { background: var(--warn-wash); color: var(--warn-ink); }
+/* Điện thoại: công tắc xuống hàng riêng, rộng hết chiều ngang (dễ chạm một tay) thay vì chèn tiêu đề còn vài chục điểm ảnh. */
+@media (max-width: 640px) {
+  .ht-head { flex-wrap: wrap; }
+  .ht-seg { order: 3; flex: 1 1 100%; }
+  .ht-seg-b { flex: 1 1 50%; justify-content: center; padding: 8px 11px; font-size: 14px; }
+}
+/* Dòng trạng thái: ai đang trực cuộc chat. Đứng riêng một dòng, không chung hàng với nút nào. */
+.ht-status { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-top: 1px solid var(--hairline);
+  font-size: 12.5px; color: var(--text3); }
+.ht-status.ai { color: var(--green); }
+.ht-status.human { color: var(--warn-ink); background: var(--warn-wash); }
+.ht-status.off { color: var(--warn-ink); background: var(--warn-wash); }
+/* Hai nút hành động (0.65.5): cùng cao, chia đôi bề ngang, không bao giờ rớt dòng. Nút chưa dùng được vẫn hiện, viền đứt. */
+.ht-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 12px 0; }
+.ht-act { height: 34px; padding: 0 8px; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+  border-radius: 9px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 13px; cursor: pointer; }
+.ht-act span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ht-act:hover { border-color: var(--accent); }
+.ht-act.pri { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.ht-act.off, .ht-act.pri.off { background: var(--bg3); border: 1px dashed var(--border); color: var(--text3); font-weight: 400; }
+.ht-act.busy { cursor: progress; }
+.ht-act:disabled { cursor: progress; }
+.ht-acts-note { display: flex; align-items: flex-start; gap: 6px; padding: 6px 12px 0; font-size: 12.5px; color: var(--text2); }
+.ht-acts-note.err { color: var(--red, #e5484d); }
+.ht-acts ~ .ht-compose { border-top: 0; }
+.ht-silent { align-self: flex-start; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px;
+  color: var(--text3); }
+.ht-silent-why { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer;
+  text-decoration: underline; }
 .ht-chip { display: inline-flex; align-items: center; gap: 4px; }
 .ht-note { padding: 8px 12px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
 .ht-note.warn { background: var(--warn-wash); color: var(--warn-ink); }
@@ -2080,27 +2141,37 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-switch { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); cursor: pointer; }
 .ht-form-acts { display: flex; justify-content: flex-end; margin-top: 14px; }
 @media (max-width: 900px) {
-  .ht-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ht-body { height: auto; min-height: 0; flex: 1 1 auto; }
+  .ht-listcol { width: 100%; }
   .ht-list { width: 100%; }
   .ht-thread { display: none; }
+  .ht-wrap.thread-on .ht-listcol { display: none; }
   .ht-wrap.thread-on .ht-list { display: none; }
   .ht-wrap.thread-on .ht-thread { display: flex; min-height: 70vh; }
   .ht-back { display: inline-flex; }
   .ht-item-top strong, .ht-bubble, .ht-src-text strong { font-size: 16px; }
-  .ht-item-sub small, .ht-stat span, .ht-head-text small, .ht-foot, .ht-intro, .ht-src-text small, .ht-switch { font-size: 14px; }
+  .ht-item-sub small, .ht-head-text small, .ht-foot, .ht-intro, .ht-src-text small, .ht-switch { font-size: 14px; }
   .ht-msg { max-width: 88%; }
 }
 
 /* ---- Trang Hội thoại 0.61.0: ba tab (Hộp thư | Kênh | Chatbot) + thẻ tài khoản kênh + ô trả lời ---- */
 .ht-page { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; }
-.ht-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+/* Tiêu đề và hai tab cùng một hàng (0.65.10); đường kẻ dưới thuộc về hàng, tab đang chọn đè lên nó. */
+.ht-top { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.ht-title { display: inline-flex; align-items: center; gap: 8px; padding: 8px 0; font-family: var(--font); font-size: 18px;
+  font-weight: 700; letter-spacing: 1px; color: var(--text); }
+.ht-title svg { color: var(--accent); }
+.ht-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+/* Trang Chatbot tự lo đầu trang và chiều cao: ẩn đầu trang chung, thân không cuộn (từng tab tự cuộn), đệm gọn hơn. */
+.cview.cview-hoi-thoai .cview-head { display: none; }
+.cview.cview-hoi-thoai .cview-body { padding: 10px 20px 14px; overflow: hidden; display: flex; flex-direction: column; }
+.cview.cview-hoi-thoai .ht-page { flex: 1 1 auto; height: auto; margin-bottom: 0; }
 .ht-tab { background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px;
   font-size: 14px; color: var(--text3); display: inline-flex; align-items: center; gap: 6px; margin-bottom: -1px; }
 .ht-tab:hover { color: var(--text); }
 .ht-tab.on { color: var(--text); border-bottom-color: var(--accent); }
 .ht-tab .ht-badge { margin-left: 2px; }
-.ht-tab-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ht-tab-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
 .ht-tab-body > .ht-wrap, .ht-tab-body > .ht-kenh { flex: 1 1 auto; min-height: 0; }
 .ht-kenh { display: flex; flex-direction: column; gap: 12px; }
 .ht-kenh-intro { flex: 1 1 300px; margin: 0; }
@@ -2139,6 +2210,18 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-acc-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: auto; padding-top: 4px; }
 .ht-acc-acts .ht-switch { margin-right: auto; }
 .ht-kenh-khac { margin-top: 8px; }
+/* Tab Bot (0.65.9): danh sách bot ở trên, mục "Kênh chưa có bot" ngay dưới, gập lại được. */
+.ht-tab-bot { display: flex; flex-direction: column; gap: 18px; }
+.ht-kenh-sec { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--hairline); padding-top: 14px; }
+.ht-kenh-h { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ht-kenh-tog { background: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 0; margin-right: auto; font-size: 15px; font-weight: 600; color: var(--text); }
+.ht-kenh-tog svg { transition: transform .15s; }
+.ht-kenh-sec.dong .ht-kenh-tog svg { transform: rotate(-90deg); }
+.ht-kenh-sec.dong .ht-tk-loc { display: none; }
+.ht-kenh-n { font-size: 12.5px; font-weight: 400; color: var(--text3); }
+.ht-kenh-het { padding: 16px; }
+@media (max-width: 900px) { .ht-kenh-tog { font-size: 16px; } }
 .ht-form label { display: block; margin: 12px 0 4px; font-size: 13px; color: var(--text2); font-weight: 600; }
 .ht-form input { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border);
   background: var(--bg3); color: var(--text); font-size: 14px; }
@@ -2154,6 +2237,8 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-compose textarea:focus { border-color: var(--info-line); outline: none; }
 .ht-send { flex: none; white-space: nowrap; }
 @media (max-width: 900px) {
+  .cview.cview-hoi-thoai .cview-body { padding: 8px 14px 10px; }
+  .ht-title { font-size: 16px; }
   .ht-tab { font-size: 16px; padding: 10px 12px; }
   .ht-acc-title strong, .ht-compose textarea, .ht-form input { font-size: 16px; }
   .ht-acc-meta, .ht-acc-title small, .ht-compose-note, .ht-form label { font-size: 14px; }

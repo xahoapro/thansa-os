@@ -1295,6 +1295,14 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
   text-align: center; color: var(--text3); font-size: 12px; font-family: var(--font);
   padding: 2px 12px; opacity: 0.85;
 }
+/* Trả lời của lệnh "/" hệ thống (/status, /usage, /tasks...). Nền nhạt, chữ nhỏ hơn và viền
+   trái màu nhấn: nhìn ra ngay đây là KẾT QUẢ LỆNH của giao diện chứ không phải lời của model. */
+.msg-lenh .bubble {
+  background: var(--surface-2); border-left: 3px solid var(--accent);
+  border-radius: 3px 8px 8px 3px; padding: 10px 14px;
+  font-size: 14.5px; line-height: 1.6;
+}
+.msg-lenh .bubble ul { margin: 4px 0; padding-left: 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }   /* vẫn dùng cho .rs-spin */
 
 .mem-count {
@@ -2279,16 +2287,6 @@ body.jv-artpanel-open { overflow: hidden; }
 .jv-ap-tab.active { color: var(--accent); border-color: var(--accent); }
 .jv-artpanel.no-preview .jv-ap-tabs { display: none; }
 .jv-ap-actions { display: flex; align-items: center; gap: 6px; flex: none; }
-/* Nút gạt "Xuống dòng": mang CHỮ chứ không icon (bộ icon đóng gói sẵn không có wrap-text),
-   và bật sáng khi đang bật để nhìn là biết mã đang ngắt dòng hay đang cuộn ngang. */
-.jv-ap-tog { background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
-  border-radius: 8px; padding: 5px 11px; font: inherit; font-size: 12.5px; cursor: pointer;
-  white-space: nowrap; }
-.jv-ap-tog[aria-pressed="true"] { color: var(--accent); border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent); }
-/* Nút này chỉ có nghĩa khi đang nhìn MÃ. Ở tab xem trước (trang HTML, sơ đồ) nó không đổi
-   được gì, mà một cái nút bấm vào không thấy gì xảy ra còn tệ hơn là không có nút. */
-.jv-artpanel:not(.jv-ap-oncode) .jv-ap-tog { display: none; }
 .jv-ap-btn { display: inline-flex; align-items: center; justify-content: center;
   background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
   width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 14px; }
@@ -2301,11 +2299,15 @@ body.jv-artpanel-open { overflow: hidden; }
 .jv-ap-mermaid svg { max-width: 100%; height: auto; }
 /* MẶC ĐỊNH XUỐNG DÒNG. `overflow-wrap: anywhere` để một chuỗi dài không có dấu cách (URL,
    chuỗi base64, đường dẫn) cũng ngắt được - thiếu nó thì "xuống dòng" vẫn đẩy ngang một dòng
-   duy nhất ra ngoài hộp. Tắt nút thì quay về `pre` và có cuộn ngang như cũ. */
+   duy nhất ra ngoài hộp. Không còn nút tắt (bỏ 0.64.79): chủ repo không hiểu nó để làm gì. */
 .jv-ap-code { margin: 0; border: 0; border-radius: 0; min-height: 100%; box-sizing: border-box;
   padding: 16px 18px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere;
   tab-size: 2; }
-.jv-artpanel.jv-ap-nowrap .jv-ap-code { white-space: pre; overflow-wrap: normal; }
+.jv-ap-code { outline: none; cursor: text; }
+/* Dòng nhắc dưới khung, chỉ hiện khi xem MÃ (mã sửa được ngay trong khung). */
+.jv-ap-foot { display: none; flex: none; padding: 7px 14px; font-size: 12px; color: var(--text3);
+  border-top: 1px solid var(--border); background: var(--bg2); }
+.jv-artpanel.jv-ap-oncode .jv-ap-foot { display: block; }
 .jv-ap-note { color: var(--text3); font-size: 13px; padding: 10px 12px; }
 /* Điện thoại: hộp chiếm gần trọn màn, bỏ bo góc dưới cho đỡ phí chỗ. Đầu khung xếp hai hàng
    vì bốn nút cộng hai tab không đứng vừa một hàng ở bề ngang đó. */
@@ -2650,6 +2652,12 @@ body.ne-full-on .cview { z-index: 250; }
 .cb-ico-kenh { position: absolute; right: -5px; bottom: -5px; display: inline-flex;
   border-radius: 50%; background: var(--bg2); box-shadow: 0 0 0 2px var(--bg2); }
 .cb-kenh-chip { display: inline-flex; align-items: center; gap: 4px; }
+/* Chip kênh trên thẻ bot (0.65.9): viên thuốc có viền. Chip Telegram/Zalo Bot bấm được (sửa hoặc xoá kênh đó), chip "Thêm kênh"
+   viền đứt và mở form Sửa ở bước chọn kênh. Chip Zalo cá nhân chỉ để đọc (nó là một kết nối ở trang Kết nối). */
+.cb-meta .cb-kenh-chip { border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 8px; background: var(--bg3); }
+.cb-meta button.cb-kenh-chip { font: inherit; color: var(--text2); cursor: pointer; }
+.cb-meta button.cb-kenh-chip:hover { border-color: var(--info-line); color: var(--text); }
+.cb-meta .cb-kenh-them { border-style: dashed; color: var(--accent); }
 
 /* Hàng lọc theo kênh. Chỉ hiện khi thật sự có từ hai kênh trở lên (xem chatbots.js: người
    mới chỉ có bot Telegram mà đã phải nhìn nút lọc thì đó là trả lời một câu chưa ai hỏi). */
@@ -2798,6 +2806,95 @@ body.ne-full-on .cview { z-index: 250; }
   display: flex; align-items: center; gap: 6px; list-style: none; padding: 8px 0; }
 .cb-nangcao summary::-webkit-details-marker { display: none; }
 .cb-nangcao[open] summary { color: var(--text); }
+
+/* ---- Form bot 0.64.85: bốn phần, thẻ chọn, nút chọn một, ô chọn người và nhóm ----
+   Mỗi phần một quyết định, cách nhau bằng đường kẻ mảnh thay vì hộp lồng hộp. Chữ giải thích rút
+   về một dòng dưới ô chọn; phần dài chuyển sang tài liệu. */
+.cb-form input[type=radio], .cb-form input[type=checkbox] { width: auto; padding: 0; }
+.cb-sec { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.cb-sec0 { margin-top: 14px; padding-top: 0; border-top: 0; }
+.cb-sec-h { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600;
+  color: var(--text); margin-bottom: 10px; }
+.cb-sec-h svg { color: var(--text3); flex: none; }
+.cb-sec0 > input { margin-bottom: 8px; }
+.cb-sub { font-size: 13px; color: var(--text2); font-weight: 600; margin: 14px 0 6px; }
+
+/* Thẻ chọn (radio card): ba phương án "bot trả lời ai" đứng cạnh nhau để so sánh. */
+.cb-rcs { display: grid; gap: 8px; }
+.cb-form label.cb-rc { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1);
+  cursor: pointer; font-weight: 400; position: relative; }
+.cb-rc:hover { border-color: var(--info-line); }
+.cb-form label.cb-rc.on { border-color: var(--accent); background: var(--info-wash); }
+.cb-rc input, .cb-sg input { position: absolute; opacity: 0; pointer-events: none; width: 0 !important;
+  height: 0; margin: 0; }
+.cb-rc-dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--text3); flex: none;
+  margin-top: 2px; box-sizing: border-box; }
+.cb-rc.on .cb-rc-dot { border-color: var(--accent); background: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--bg2); }
+.cb-rc-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cb-rc-t b { font-size: 13.5px; color: var(--text); font-weight: 600; }
+.cb-rc-t small { font-size: 12.5px; color: var(--text3); line-height: 1.45; }
+
+/* Nút chọn một (segmented): 2-3 lựa chọn ngắn thay cho ô xổ xuống. */
+.cb-seg { display: flex; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.cb-form label.cb-sg { flex: 1 1 0; margin: 0; padding: 8px 6px; text-align: center; font-size: 13px;
+  font-weight: 500; color: var(--text2); cursor: pointer; border-right: 1px solid var(--border);
+  background: var(--surface-1); position: relative; }
+.cb-sg:last-child { border-right: 0; }
+.cb-sg:hover { color: var(--text); }
+.cb-form label.cb-sg.on { background: var(--info-wash); color: var(--accent); font-weight: 600; }
+
+/* Ô chọn người và nhóm: tab Nhóm / Người, ô tìm, danh sách tick, thêm bằng id. */
+.cb-pk { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  background: var(--surface-1); }
+.cb-pk-h { display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--surface-3);
+  border-bottom: 1px solid var(--border); }
+.cb-pk-tabs { display: flex; gap: 4px; }
+.cb-pk-tab { background: none; border: 1px solid transparent; border-radius: 7px; padding: 4px 10px;
+  font-size: 13px; color: var(--text3); cursor: pointer; font-weight: 600; }
+.cb-pk-tab.on { background: var(--bg2); color: var(--text); border-color: var(--border); }
+.cb-form input.cb-pk-q { margin-left: auto; max-width: 190px; padding: 5px 9px; font-size: 13px; }
+.cb-pk-body { max-height: 220px; overflow-y: auto; }
+.cb-form label.cb-pk-li { display: flex; align-items: center; gap: 10px; margin: 0; padding: 8px 12px;
+  border-top: 1px solid var(--border); font-size: 13.5px; color: var(--text); font-weight: 400;
+  cursor: pointer; }
+.cb-pk-li:first-child { border-top: 0; }
+.cb-pk-li:hover { background: var(--surface-3); }
+.cb-pk-n { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-pk-li small { color: var(--text3); font-size: 12px; flex: none; }
+.cb-bd { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--warn-wash);
+  color: var(--warn-ink); border: 1px solid var(--warn-line); flex: none; }
+.cb-pk-rong { padding: 16px; text-align: center; font-size: 13px; color: var(--text3); line-height: 1.6; }
+.cb-pk-add { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border);
+  background: var(--surface-3); }
+.cb-form .cb-pk-add input { flex: 1 1 auto; padding: 5px 9px; font-size: 13px; }
+.cb-pk-hint { padding: 0 12px 10px; margin-top: 8px; }
+/* Ô xác nhận "mọi cuộc chat": là một cảnh báo, không phải một dòng chú thích, nên có nền riêng. */
+.cb-form label.cb-ack-aud { margin: 10px 0 0; padding: 9px 11px; border-radius: 9px; font-size: 12.5px;
+  line-height: 1.5; font-weight: 500; color: var(--warn-ink); background: var(--warn-wash);
+  border: 1px solid var(--warn-line); }
+.cb-xem-du { background: none; border: 0; padding: 0; margin-top: 4px; cursor: pointer; font: inherit;
+  font-weight: 600; color: inherit; text-decoration: underline; }
+
+/* Thẻ bot gọn (0.64.85): mức quyền là một chip trong hàng meta, việc phụ vào menu "...". */
+.cb-meta .cb-quyen { padding: 1px 8px; border-radius: 999px; gap: 4px; line-height: 1.6; font-size: 12px;
+  align-items: center; }
+/* Dòng "Trả lời: ..." là MỘT câu chạy liền: .cb-meta span là flex nên chữ bị xé thành các ô rời
+   và nhãn "Trả lời:" xuống dòng giữa chừng. Ép về block để câu chảy tự nhiên. */
+.cb-meta.cb-tt .cb-tt-t { display: block; color: var(--text2); line-height: 1.5; }
+.cb-meta.cb-tt .cb-tt-t svg { vertical-align: -2px; margin-right: 4px; }
+.cb-mn { position: relative; margin-left: auto; }
+.cb-mn-b { font-size: 18px; line-height: 1; padding: 4px 10px; }
+.cb-mn-l { position: absolute; right: 0; bottom: calc(100% + 4px); min-width: 170px; z-index: 5;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 4px;
+  box-shadow: var(--shadow-3, 0 10px 30px rgba(0, 0, 0, .35)); display: flex; flex-direction: column; }
+.cb-mn-l[hidden] { display: none; }
+.cb-mn-l button { display: flex; align-items: center; gap: 8px; background: none; border: 0;
+  text-align: left; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--text2);
+  border-radius: 7px; cursor: pointer; }
+.cb-mn-l button:hover { background: var(--surface-3); color: var(--text); }
+.cb-mn-l .cb-del:hover { color: var(--red); }
 
 /* ---- Nhật ký bot: hai tab "Bot bí" / "Hội thoại gần đây" ---- */
 .cb-log-form { width: min(760px, 96vw); }
@@ -3324,6 +3421,10 @@ body.ne-full-on .cview { z-index: 250; }
   border-radius: 10px; cursor: pointer; background: var(--surface-1); margin: 0; font-weight: 400; }
 .cb-form .cb-tk input { width: auto; margin: 0; flex: none; }
 .cb-tk-logo { display: inline-flex; flex: none; }
+/* Kênh đang do bot khác trực (0.65.9): hiện mờ kèm ổ khoá và tên bot giữ, không tick được. */
+.cb-tk-list-khoa { margin-top: 6px; }
+.cb-tk-khoa { cursor: default; opacity: .65; background: transparent; }
+.cb-tk-khoa .cb-tk-luu-y { display: inline-flex; align-items: center; gap: 4px; }
 .cb-tk-text { display: flex; flex-direction: column; min-width: 0; }
 .cb-tk-text b { font-size: 14px; color: var(--text); }
 .cb-tk-text small { font-size: 12px; color: var(--text3); }
@@ -3342,3 +3443,25 @@ body.ne-full-on .cview { z-index: 250; }
 .qs-advanced .qs-field > .qs-hint, .qs-advanced .qs-field > .gcard-meta { flex-basis: 100%; margin-bottom: 0; }
 
 .adaptive-draft-controls{display:flex;flex-wrap:wrap;gap:8px;padding:10px;align-items:center}.adaptive-draft-controls[hidden]{display:none}.adaptive-draft-controls [data-status]{flex:1 1 100%;font-size:13px}.adaptive-draft-controls button{min-height:44px}
+
+/* ---- Bộ phán xử hội thoại nhóm (0.65.0) ---- */
+.cb-rp-note { margin-top: 10px; }
+.cb-form label.cb-rp-learn { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0 2px;
+  font-weight: 500; cursor: pointer; }
+.cb-rp-form { width: min(820px, 96vw); }
+.cb-rp-body { max-height: 64vh; overflow-y: auto; }
+.cb-rp-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.cb-rp-row { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--surface-1); }
+.cb-rp-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.cb-rp-ts { color: var(--text3); font-size: 12px; margin-left: auto; }
+.cb-rp-t { margin: 4px 0; font-size: 13.5px; color: var(--text); word-break: break-word; }
+.cb-rp-m { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text3); }
+.cb-rp-chip { font-size: 11.5px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border);
+  color: var(--text2); background: var(--surface-3); }
+.cb-rp-chip.ok { color: var(--accent); border-color: var(--info-line); background: var(--info-wash); }
+.cb-rp-chip.warn { color: var(--warn-ink); border-color: var(--warn-line); background: var(--warn-wash); }
+.cb-rp-lnk { background: none; border: 0; padding: 0 2px; font: inherit; font-size: 12.5px; color: var(--accent);
+  cursor: pointer; text-decoration: underline; }
+.cb-rp-ul { margin: 4px 0 8px 18px; padding: 0; font-size: 13.5px; }
+.cb-rp-pre { white-space: pre-wrap; font-size: 12.5px; background: var(--surface-3); border-radius: 8px;
+  padding: 8px 10px; margin: 4px 0; }

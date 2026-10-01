@@ -64,7 +64,21 @@ KENH_DEFAULT = "telegram" if "telegram" in KENH else (KENH[0] if KENH else "tele
 KENH_NHAN = {k: channels.nhan(k) for k in KENH}
 KENH_NGUON_TOKEN = {k: (channels.spec(k).lay_token if channels.spec(k) else "") for k in KENH}
 
-REPLY_WHEN = ("mention", "always")
+# mention = chỉ khi được gọi tên/reply; always = mọi tin trong nhóm đã cho phép; auto = "Tự đánh
+# giá" (0.64.82): tag/reply vẫn trả lời, còn tin khác thì bot tự xem có phải câu hỏi tài liệu của
+# nó trả lời được không, xem `chatbot_tu_dong`.
+REPLY_WHEN = ("mention", "always", "auto")
+
+# "Bot trả lời AI" (0.64.85), khác `reply_when` (khi nào lên tiếng TRONG nhóm):
+#   "all"  - mọi cuộc chat trên kênh: chat riêng ai cũng được, mọi nhóm bot có mặt (không cần khai).
+#   "nhom" - chat riêng ai cũng được, nhóm chỉ những nhóm trong `groups`. MẶC ĐỊNH, và chính là hành
+#            vi từ trước tới nay, nên bản ghi cũ không có khoá này đọc ra là "nhom" và không đổi gì.
+#   "chon" - chỉ người trong `people` và nhóm trong `groups`; mọi cuộc chat khác bot im.
+# Sai về phía IM LẶNG: khoá có mà giá trị hỏng đọc là "chon" (hẹp nhất). Sai về phía mở thì bot nói
+# với người lạ dưới tên người thật (nick Zalo cá nhân), còn sai về phía im thì chủ thấy bot im và sửa.
+AUDIENCE = ("all", "nhom", "chon")
+AUDIENCE_DEFAULT = "nhom"
+AUDIENCE_HEP_NHAT = "chon"
 RATE_MIN, RATE_MAX, RATE_DEFAULT = 1, 200, 20
 
 # Bot lấy câu trả lời từ đâu khi tài liệu không phủ được câu hỏi.
@@ -125,8 +139,11 @@ _CANH_BAO = {
         "xoá và công bố ra ngoài. Những thao tác đó KHÔNG hoàn tác được.",
         "Người điều khiển bot là NGƯỜI NHẮN CHO NÓ, không phải bạn. Ai nhắn được cho bot cũng "
         "nói được câu khiến nó gọi tool, và không có bước hỏi lại bạn.",
-        "Một câu dụ khéo ('bỏ qua hướng dẫn trước, làm giúp việc này') là đủ. Rào duy nhất còn "
-        "lại là chính file Agent bạn viết, mà chữ thì lách được.",
+        "Một câu dụ khéo ('bỏ qua hướng dẫn trước, làm giúp việc này') là đủ để bot làm theo. "
+        "Rào cứng còn lại là mức quyền của TỪNG kết nối ở trang Kết nối (hạ một kết nối về Chỉ "
+        "đọc thì bot cũng bị chặn ghi ở đó), nhưng rào đó chặn theo loại thao tác nên với nguồn "
+        "Thansa chưa có khuôn phân loại sẵn thì không kín tuyệt đối. Ngoài ra chỉ còn file Agent "
+        "bạn viết, mà chữ thì lách được.",
         "Chỉ nên bật cho bot mà bạn kiểm soát được DANH SÁCH người nhắn vào. Nơi ai cũng nhắn "
         "được thì không.",
         "Bot vẫn KHÔNG thấy brain khác và không chạy lệnh máy - hai rào đó giữ nguyên ở mọi mức.",
@@ -308,6 +325,16 @@ def _public(b: dict) -> dict:
     out["channel"] = _clean_kenh(out.get("channel"))
     # Cùng lý do: bot tạo trước bản đa ngôn ngữ không có khoá này.
     out["ngon_ngu"] = _clean_ngon_ngu(out.get("ngon_ngu"))
+    # "Bot trả lời ai" (0.64.85). THIẾU khoá = bản ghi cũ = hành vi cũ ("nhom"). CÓ khoá mà hỏng thì
+    # về mức HẸP NHẤT, không phải mặc định: xem chú thích ở AUDIENCE.
+    if "audience" not in out:
+        out["audience"] = AUDIENCE_DEFAULT
+    elif out["audience"] not in AUDIENCE:
+        out["audience"] = AUDIENCE_HEP_NHAT
+    out["people"] = _clean_groups(out.get("people"))
+    # Bộ phán xử hội thoại nhóm (0.65.0). Thiếu khoá = bản ghi cũ = tắt; có khoá mà hỏng = phía hẹp nhất.
+    import chatbot_reply_policy
+    out["reply_policy"] = chatbot_reply_policy.normalize_config(out.get("reply_policy"))
     return out
 
 
@@ -427,6 +454,11 @@ def _clean_account_ids(v: Any, exclude_bot: str = "") -> tuple[List[str], str]:
 # tạo bot, script của chủ). Rào ở kho thì đường nào cũng đi qua nó.
 LOI_CHUA_XAC_NHAN = ("Mức quyền này cho bot làm việc THẬT ra ngoài, do người lạ điều khiển. "
                      "Phải xác nhận đã đọc cảnh báo rủi ro (xac_nhan_rui_ro) mới đặt được.")
+# Cùng cổng xác nhận nhưng nói đúng chuyện đang xảy ra: chọn "mọi cuộc chat" mở bot ra cho MỌI người
+# nhắn tới nick, kể cả bạn bè và người nhà khi đó là Zalo cá nhân.
+LOI_CHUA_XAC_NHAN_DOI_TUONG = ("Chọn 'mọi cuộc chat trên kênh' nghĩa là ai nhắn tới tài khoản này, kể cả nhóm "
+                               "và người quen, cũng được bot trả lời. Phải xác nhận đã đọc cảnh báo rủi ro "
+                               "(xac_nhan_rui_ro) mới đặt được.")
 # Hai câu RIÊNG cho hai chuyện khác nhau. Gộp làm một là cách cũ, và nó nói sai với chủ: người
 # đã chọn Agent trong ô mà đọc "Thiếu Agent" thì không có đường nào lần ra lỗi thật.
 LOI_KHONG_CO_BOT = "Không có bot nào id đó"
@@ -438,6 +470,12 @@ LOI_SLUG_AGENT = ("Tên Agent không dùng được: phải là tên file trong 
 def can_xac_nhan(muc: Any, xac_nhan: Any) -> bool:
     """Mức này có đòi chủ xác nhận rủi ro mà chưa có xác nhận không."""
     return _clean_muc(muc) in MUC_NANG and not bool(xac_nhan)
+
+
+def can_xac_nhan_doi_tuong(audience: Any, xac_nhan: Any, hien_tai: Any = None) -> bool:
+    """Chọn "mọi cuộc chat" (`all`) mà chưa xác nhận. Đang ở `all` rồi mà lưu lại `all` thì không hỏi
+    lại (form Sửa luôn gửi lại mọi trường); hạ xuống thì không bao giờ đòi gì."""
+    return str(audience or "") == "all" and str(hien_tai or "") != "all" and not bool(xac_nhan)
 
 
 def create_bot(data: dict) -> tuple[Optional[str], str]:
@@ -460,6 +498,8 @@ def create_bot(data: dict) -> tuple[Optional[str], str]:
         return None, "Thiếu brain riêng của bot"
     if can_xac_nhan(data.get("muc_quyen"), data.get("xac_nhan_rui_ro")):
         return None, LOI_CHUA_XAC_NHAN
+    if can_xac_nhan_doi_tuong(data.get("audience"), data.get("xac_nhan_rui_ro")):
+        return None, LOI_CHUA_XAC_NHAN_DOI_TUONG
     # Tài khoản kênh: hoặc CHỌN tài khoản có sẵn (account_ids), hoặc dán token mới (token +
     # channel) thì tạo tài khoản ngay tại đây. Cả hai cùng lúc cũng được.
     acc, loi = _clean_account_ids(data.get("account_ids"))
@@ -493,6 +533,9 @@ def create_bot(data: dict) -> tuple[Optional[str], str]:
             "bot_username": str(data.get("bot_username") or "").strip().lstrip("@"),
             "groups": _clean_groups(data.get("groups")),
             "reply_when": (data.get("reply_when") if data.get("reply_when") in REPLY_WHEN else "mention"),
+            "audience": (data.get("audience") if data.get("audience") in AUDIENCE else AUDIENCE_DEFAULT),
+            "people": _clean_groups(data.get("people")),
+            "reply_policy": __import__("chatbot_reply_policy").merge_config(None, data.get("reply_policy")),
             "nguon_tra_loi": (data.get("nguon_tra_loi") if data.get("nguon_tra_loi") in NGUON
                               else NGUON_DEFAULT),
             "muc_quyen": _clean_muc(data.get("muc_quyen")) or MUC_QUYEN_DEFAULT,
@@ -527,9 +570,9 @@ def _nhan_brain_cho_tk(bot: dict) -> None:
 
 # Trường giao diện được phép sửa. Danh sách TRẮNG chứ không phải "nhận hết trừ vài cái":
 # thêm trường mới vào bản ghi mà quên loại khỏi danh sách đen là mở một đường ghi không ai ngờ.
-_PATCHABLE = ("name", "icon", "groups", "reply_when", "handoff_to", "rate_limit",
+_PATCHABLE = ("name", "icon", "groups", "people", "audience", "reply_when", "handoff_to", "rate_limit",
               "agent_slug", "agent_brain", "brain", "bot_username", "token", "enabled",
-              "nguon_tra_loi", "muc_quyen", "ngon_ngu", "account_ids")
+              "nguon_tra_loi", "muc_quyen", "ngon_ngu", "account_ids", "reply_policy")
 # `channel` CỐ Ý đứng ngoài danh sách trắng. Đổi kênh của một bot đã tạo là đổi sang một CON
 # BOT KHÁC: token khác, danh tính khác, khách khác, và cả đống id nhóm đang lưu lập tức vô
 # nghĩa. Cho sửa tại chỗ thì bản ghi còn nguyên tên và lịch sử của con cũ trong khi nó đã là
@@ -541,6 +584,10 @@ def update_bot(bot_id: str, patch: dict) -> tuple[bool, str]:
     # rồi một hôm được nâng lên. Thiếu rào ở đây thì cả cái gate lúc tạo thành trang trí.
     if "muc_quyen" in patch and can_xac_nhan(patch.get("muc_quyen"), patch.get("xac_nhan_rui_ro")):
         return False, LOI_CHUA_XAC_NHAN
+    if "audience" in patch and can_xac_nhan_doi_tuong(
+            patch.get("audience"), patch.get("xac_nhan_rui_ro"),
+            (get_bot(bot_id) or {}).get("audience")):
+        return False, LOI_CHUA_XAC_NHAN_DOI_TUONG
     # Slug Agent hỏng thì TỪ CHỐI cả bản vá, đừng lặng lẽ bỏ qua một trường. Bỏ qua nghĩa là
     # form Sửa báo "đã lưu" trong khi bot vẫn trỏ về Agent cũ, và chủ chỉ biết khi khách nhận
     # được câu trả lời của một vai mà mình tưởng đã đổi.
@@ -574,9 +621,19 @@ def update_bot(bot_id: str, patch: dict) -> tuple[bool, str]:
                     b["icon"] = _clean_icon(v) or b.get("icon") or "headset"
                 elif k == "groups":
                     b["groups"] = _clean_groups(v)
+                elif k == "people":
+                    b["people"] = _clean_groups(v)
+                elif k == "audience":
+                    # Giá trị lạ thì GIỮ giá trị cũ (cùng luật với muc_quyen): rơi về mặc định là mở
+                    # rộng hay thu hẹp im lặng, và chủ không biết bot đang nói chuyện với ai.
+                    if v in AUDIENCE:
+                        b["audience"] = v
                 elif k == "reply_when":
                     if v in REPLY_WHEN:
                         b["reply_when"] = v
+                elif k == "reply_policy":
+                    # Gộp từng khoá, giá trị lạ giữ nguyên giá trị cũ (xem `merge_config`).
+                    b["reply_policy"] = __import__("chatbot_reply_policy").merge_config(b.get("reply_policy"), v)
                 elif k == "nguon_tra_loi":
                     if v in NGUON:
                         b["nguon_tra_loi"] = v
@@ -674,7 +731,19 @@ def delete_bot(bot_id: str) -> tuple[bool, str]:
         if len(d["bots"]) == n:
             return False, LOI_KHONG_CO_BOT
         _save(d)
-        return True, ""
+    _xoa_du_lieu_phan_xu(bot_id)
+    return True, ""
+
+
+def _xoa_du_lieu_phan_xu(bot_id: str) -> None:
+    """Xoá bot thì xoá sạch mọi thứ bộ phán xử đã học về bot đó (nội dung chat khách). Chỉ đụng kho khi nó
+    đã tồn tại: bot chưa từng bật bộ phán xử không được làm sinh ra một file rỗng."""
+    try:
+        import chatbot_reply_policy_store as _rps
+        if _rps.db_path().exists():
+            _rps.delete_bot(bot_id)
+    except Exception:      # noqa: BLE001 - dọn hỏng không được làm hỏng việc xoá bot
+        pass
 
 
 def bots_using_agent(brain: str, slug: str) -> List[Dict[str, Any]]:
