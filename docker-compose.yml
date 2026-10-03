@@ -4,11 +4,16 @@
 # CÀI TRÊN HOSTINGER: dùng file RIÊNG cho Hostinger (1 container, deploy là chạy, không kén hạ tầng):
 #   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 #   (Docker Manager → Compose → URL. Cách gắn TÊN MIỀN + HTTPS ghi trong chú thích cuối file đó / DEPLOY.md.)
-#   File NÀY cũng chạy trên Hostinger được, nhưng file kia gọn hơn và có sẵn nhãn Traefik.
+#   File NÀY trên Hostinger thì PHẢI đặt JAVIS_CADDY=0 (Traefik của Hostinger đã giữ 80/443, Caddy
+#   bên dưới sẽ giành cổng và deploy hỏng) - nên dùng file kia, gọn hơn và có sẵn nhãn Traefik.
 #
 # CÀI TRÊN VPS BẤT KỲ (DigitalOcean/Vultr... - HTTPS bằng Caddy, xem DEPLOY.md):
 #   1) docker compose run --rm javis claude auth login --claudeai   # ĐĂNG NHẬP CLAUDE 1 LẦN
 #   2) docker compose up -d
+#
+# TÊN MIỀN + HTTPS: Caddy (service `caddy` bên dưới) chạy SẴN, giữ cổng 80/443 nhưng KHÔNG xin
+#   chứng chỉ nào cho tới khi bạn nhập tên miền trong app (⚙ Cài đặt → Tên miền & SSL → Kích hoạt).
+#   Cổng 80/443 đã bị web server khác chiếm → đặt JAVIS_CADDY=0 trong .env để tắt Caddy.
 #
 # ⚠️ BẢO MẬT: chạy public (0.0.0.0) tự BẬT JAVIS_REQUIRE_LOGIN → mở app ra là màn TẠO TÀI KHOẢN
 #    / ĐĂNG NHẬP, không ai vào điều khiển Claude được khi chưa có mật khẩu.
@@ -117,8 +122,51 @@ services:
     # Watchtower của bản này sẽ đi cập nhật (và restart) container của bản khác.
     command: ${JAVIS_NAME:-javis}
 
+  # Auto-HTTPS (Let's Encrypt, ON-DEMAND TLS). Trước đây là lớp tuỳ chọn docker-compose.https.yml,
+  # nên người cài xong vẫn phải chạy thêm lệnh mới có HTTPS. Nay chạy sẵn: Caddy hỏi /tls-check
+  # trước mỗi lần xin chứng chỉ, mà /tls-check chỉ gật cho ĐÚNG tên miền đã nhập trong app - chưa
+  # nhập thì Caddy đứng im, không xin gì, người lạ trỏ DNS bừa vào IP cũng không ép xin được.
+  caddy:
+    image: caddy:2-alpine
+    container_name: ${JAVIS_NAME:-javis}-caddy
+    restart: unless-stopped
+    depends_on:
+      - javis
+    deploy:
+      replicas: ${JAVIS_CADDY:-1}   # 0 = tắt (cổng 80/443 đã có web server khác)
+    ports:
+      - "80:80"
+      - "443:443"
+    configs:
+      - source: javis_caddyfile
+        target: /etc/caddy/Caddyfile
+    volumes:
+      - caddy-data:/data       # chứng chỉ đã cấp - giữ qua restart, không xin lại
+      - caddy-config:/config
+
 volumes:
   javis-data:
   javis-brains:
   claude-auth:
   codex-auth:
+  caddy-data:
+  caddy-config:
+
+# Cần Docker Compose v2.23.1+ (configs.content). Kiểm tra: docker compose version
+configs:
+  javis_caddyfile:
+    content: |
+      {
+        on_demand_tls {
+          ask http://javis:7777/tls-check
+        }
+      }
+      https:// {
+        tls {
+          on_demand
+        }
+        reverse_proxy javis:7777
+      }
+      http:// {
+        redir https://{host}{uri}
+      }
