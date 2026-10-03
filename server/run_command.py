@@ -168,7 +168,7 @@ def kiem_quyen(argv: list[str], muc: str) -> str:
 
     if prog in CHAN_CUNG:
         return (f"'{prog}' bị chặn ở MỌI mức quyền, kể cả toàn quyền. Đây là rào cứng của "
-                f"Javis để một lời gọi sai khuôn không phá được máy. Cần thật thì chủ máy tự "
+                f"Thansa để một lời gọi sai khuôn không phá được máy. Cần thật thì chủ máy tự "
                 f"chạy trong terminal.")
 
     if muc == FULL:

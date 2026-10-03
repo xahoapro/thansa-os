@@ -75,7 +75,7 @@ class ModelCorrections(unittest.TestCase):
         # NGỮ CẢNH GIAO DIỆN. Khối đó bị coi là lời nói, nên dòng JAVIS_NGHE (chỉ có lời nói)
         # trông như "cắt mất chữ", bị từ chối, và cả lượt lặng lẽ sang bộ não chính (chủ dự án
         # báo 02/10: chọn Antigravity mà lượt nói vẫn do Claude trả lời).
-        file_block = ("[FILE ĐANG MỞ trong trình sửa của Javis: /data/brain/ghi-chu.md\n"
+        file_block = ("[FILE ĐANG MỞ trong trình sửa của Thansa: /data/brain/ghi-chu.md\n"
                       "Đây là file người dùng ĐANG LÀM VIỆC TRÊN ĐÓ - coi như đầu vào của cuộc trò "
                       "chuyện này. Đọc nó trước khi trả lời. Khi được yêu cầu sửa/viết thêm/dọn lại mà "
                       "không nói rõ file nào thì ghi thẳng vào chính file này.]\n\n")

@@ -1,6 +1,6 @@
 <svg viewBox="0 0 1200 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
 <title id="t">Swappable brain: change the model, keep every tool</title>
-<desc id="d">Twelve AI brains take turns plugging into the Javis core while its six tools (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) stay connected the whole time.</desc>
+<desc id="d">Twelve AI brains take turns plugging into the Thansa core while its six tools (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) stay connected the whole time.</desc>
 <style>
 .c{opacity:0;animation:slot 12s linear infinite}
 .c.on{opacity:1}
