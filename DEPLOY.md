@@ -285,7 +285,7 @@ Dừng bằng `stop-javis.bat`. Mở http://localhost:7777
 >   Máy nào còn thiếu nút là đang chạy bằng file compose cũ (trước đó Watchtower nằm trong
 >   `profiles: ["update"]` nên `docker compose up -d` không bật nó). Lấy bản mới rồi dựng lại:
 >   ```bash
->   curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+>   curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 >   docker compose up -d --pull always
 >   ```
 >   Chưa muốn đổi file compose thì bật riêng cũng được: `docker compose --profile update up -d`.

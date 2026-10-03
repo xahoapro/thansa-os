@@ -1,18 +1,18 @@
 <!-- translated-from: QUICKSTART.en.md sha256:2f4928f341af -->
-# Javis OS - Быстрый старт
+# Thansa OS - Быстрый старт
 
 *[English](../../../QUICKSTART.en.md) · [Tiếng Việt](../../../QUICKSTART.md) · [简体中文](../zh/QUICKSTART.md) · [Español](../es/QUICKSTART.md) · [日本語](../ja/QUICKSTART.md) · [हिन्दी](../hi/QUICKSTART.md) · [Português](../pt-BR/QUICKSTART.md) · [한국어](../ko/QUICKSTART.md) · **Русский** · [Deutsch](../de/QUICKSTART.md) · [Français](../fr/QUICKSTART.md) · [Bahasa Indonesia](../id/QUICKSTART.md)*
 
 > Это автоматический перевод английского руководства по быстрому старту.
 
-Запустите Javis OS за несколько минут. Полные руководства: [docs/en/](../../../docs/en/README.md).
+Запустите Thansa OS за несколько минут. Полные руководства: [docs/en/](../../../docs/en/README.md).
 
 ## Вариант 1 - VPS на Hostinger (Docker Manager, в один клик)
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**.
 2. Вставьте этот URL:
    ```
-   https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
    ```
 3. (Необязательно, для HTTPS + домена) задайте в поле **Environment**:
    ```

@@ -110,7 +110,7 @@ def _tieu_de(text: str) -> str:
         if s:
             return s[:MAX_TITLE]
     import localefmt
-    return localefmt.chu("Javis vừa gửi một tin", "Javis just sent a message")
+    return localefmt.chu("Thansa vừa gửi một tin", "Thansa just sent a message")
 
 
 def add(text: str, *, kind: str = "answer", session_id: str = "", brain: str = "",

@@ -36,7 +36,7 @@ def test_health_names_rejected_composio_consumer_key():
     assert rec["ok"] is False and rec["kind"] == "auth"
     assert "consumer key" in rec["message"].lower()
     assert "Connect my agent" in rec["message"]
-    assert "Javis" in rec["message"]
+    assert "Thansa" in rec["message"]
     assert "Kết nối hoặc Kết nối lại" in rec["message"]
     assert "Hết phiên đăng nhập" not in rec["message"]
 

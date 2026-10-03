@@ -282,12 +282,12 @@ def _cau_bao_tam_thoi(loi: str) -> str:
     """Câu nói cho người dùng khi thử lại hết nhịp mà vẫn gãy. Nói rõ LỖI CỦA AI."""
     return localefmt.chu(
         "Google (Antigravity) đang trục trặc tạm thời nên lượt này không gửi đi được. "
-        "Javis đã tự thử lại " + str(len(_NHIP_THU_LAI)) + " lần, vẫn chưa được.\n\n"
+        "Thansa đã tự thử lại " + str(len(_NHIP_THU_LAI)) + " lần, vẫn chưa được.\n\n"
         "Chờ một lát rồi nhắn lại, hoặc đổi sang bộ não khác ở trang Models. Đây là lỗi "
         "phía Google, không phải cấu hình của bạn.\n\n"
         "_Nguyên văn:_ " + (loi or "")[:400],
         "Google (Antigravity) is having a temporary problem, so this turn could not be sent. "
-        "Javis retried " + str(len(_NHIP_THU_LAI)) + " times without success.\n\n"
+        "Thansa retried " + str(len(_NHIP_THU_LAI)) + " times without success.\n\n"
         "Wait a moment and send again, or switch to another brain on the Models page. This is an error "
         "on Google's side, not your configuration.\n\n"
         "_Raw message:_ " + (loi or "")[:400])
@@ -629,8 +629,8 @@ _CANH_BAO_CHUA_DOC = (
     "(nhận prompt qua stdin), hoặc đổi bộ não khác ở trang Models.)_"
 )
 _CANH_BAO_CHUA_DOC_EN = (
-    "\n\n_(Note from Javis: the `agy` version on this machine does not open the context file, so the last "
-    "answer was given without Javis's system prompt and memory. To fix this, upgrade `agy` to a newer version "
+    "\n\n_(Note from Thansa: the `agy` version on this machine does not open the context file, so the last "
+    "answer was given without Thansa's system prompt and memory. To fix this, upgrade `agy` to a newer version "
     "(that takes the prompt over stdin), or switch to another brain on the Models page.)_"
 )
 # Bơm stdin theo mẩu bao nhiêu byte. 4096 là kích thước một trang ống dẫn: đủ nhỏ để bên đọc
@@ -682,9 +682,9 @@ _CANH_BAO_HONG_DAU = (
     "Thansa không vá được - nâng cấp `agy` lên bản mới, hoặc đổi bộ não khác ở trang Models.)_"
 )
 _CANH_BAO_HONG_DAU_EN = (
-    "\n\n_(Note from Javis: the `agy` version on this machine breaks Vietnamese diacritics in long prompts "
+    "\n\n_(Note from Thansa: the `agy` version on this machine breaks Vietnamese diacritics in long prompts "
     "(letters turn into `�`), and switching the delivery route did not help. The bug is in the CLI itself, "
-    "Javis cannot patch it - upgrade `agy`, or switch to another brain on the Models page.)_"
+    "Thansa cannot patch it - upgrade `agy`, or switch to another brain on the Models page.)_"
 )
 _CANH_BAO_DOC_HONG = (
     "\n\n_(Lưu ý của Thansa: `agy` có thử mở file ngữ cảnh nhưng KHÔNG đọc được (thường là do mức "
@@ -692,8 +692,8 @@ _CANH_BAO_DOC_HONG = (
     "Thansa. Nâng cấp `agy` lên bản nhận prompt qua stdin là hết hẳn đường vòng này.)_"
 )
 _CANH_BAO_DOC_HONG_EN = (
-    "\n\n_(Note from Javis: `agy` tried to open the context file but could NOT read it (usually blocked by "
-    "the permission level or sandbox), so the last answer was given without Javis's system prompt and "
+    "\n\n_(Note from Thansa: `agy` tried to open the context file but could NOT read it (usually blocked by "
+    "the permission level or sandbox), so the last answer was given without Thansa's system prompt and "
     "memory. Upgrading `agy` to a version that takes the prompt over stdin removes this detour.)_"
 )
 
@@ -878,14 +878,14 @@ def auth_status(bo_qua_cache: bool = False) -> dict:
 _METHOD_KEYRING = "google (keyring của máy)"
 _AUTH_EN = {
     _METHOD_KEYRING: "google (machine keyring)",
-    "Đã cài Antigravity CLI nhưng phiên của Javis chưa đăng nhập. Mở trang "
-    "Code (Terminal) NGAY TRONG Javis, gõ `agy` rồi làm theo hướng dẫn - "
-    "phải đăng nhập bằng ĐÚNG user đang chạy Javis; SSH bằng user khác "
-    "(vd root) đăng nhập xong Javis vẫn không thấy.":
-        "Antigravity CLI is installed but Javis's session is not signed in. Open the "
-        "Terminal page RIGHT IN Javis, type `agy` and follow the steps - "
-        "you must sign in as the SAME user that runs Javis; signing in over SSH as another user "
-        "(e.g. root) still leaves Javis unable to see it.",
+    "Đã cài Antigravity CLI nhưng phiên của Thansa chưa đăng nhập. Mở trang "
+    "Code (Terminal) NGAY TRONG Thansa, gõ `agy` rồi làm theo hướng dẫn - "
+    "phải đăng nhập bằng ĐÚNG user đang chạy Thansa; SSH bằng user khác "
+    "(vd root) đăng nhập xong Thansa vẫn không thấy.":
+        "Antigravity CLI is installed but Thansa's session is not signed in. Open the "
+        "Terminal page RIGHT IN Thansa, type `agy` and follow the steps - "
+        "you must sign in as the SAME user that runs Thansa; signing in over SSH as another user "
+        "(e.g. root) still leaves Thansa unable to see it.",
 }
 
 

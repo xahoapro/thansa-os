@@ -1,18 +1,18 @@
 <!-- translated-from: QUICKSTART.en.md sha256:2f4928f341af -->
-# Javis OS - 快速开始
+# Thansa OS - 快速开始
 
 *[English](../../../QUICKSTART.en.md) · [Tiếng Việt](../../../QUICKSTART.md) · **简体中文** · [Español](../es/QUICKSTART.md) · [日本語](../ja/QUICKSTART.md) · [हिन्दी](../hi/QUICKSTART.md) · [Português](../pt-BR/QUICKSTART.md) · [한국어](../ko/QUICKSTART.md) · [Русский](../ru/QUICKSTART.md) · [Deutsch](../de/QUICKSTART.md) · [Français](../fr/QUICKSTART.md) · [Bahasa Indonesia](../id/QUICKSTART.md)*
 
 > 本文是英文快速开始指南的自动翻译版本。
 
-几分钟内让 Javis OS 跑起来。完整指南：[docs/en/](../../../docs/en/README.md)。
+几分钟内让 Thansa OS 跑起来。完整指南：[docs/en/](../../../docs/en/README.md)。
 
 ## 方式一 - Hostinger VPS（Docker Manager，一键部署）
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**。
 2. 粘贴这个 URL：
    ```
-   https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
    ```
 3. （可选，用于 HTTPS + 域名）在 **Environment** 框中设置：
    ```
