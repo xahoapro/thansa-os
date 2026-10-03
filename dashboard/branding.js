@@ -150,17 +150,21 @@
     if (row) row.style.display = "flex";
     if (sslRow) sslRow.style.display = "flex";
     var hostinger = j.deployment_target === "hostinger";
+    var nginx = j.ssl_method === "nginx";
+    var nj = j.nginx || {};
     if (j.dns_ok) _badge("dnsBadge", window.t("brand.dns_ok"), "ok");
     else if (j.dns_ip) _badge("dnsBadge", window.t("brand.dns_wrong_ip", { ip: j.dns_ip }), "bad");
     else _badge("dnsBadge", window.t("brand.dns_none"), "warn");
     if (j.ssl_active) _badge("sslBadge", window.t("brand.ssl_on"), "ok");
     else if (hostinger) _badge("sslBadge", window.t("brand.ssl_hostinger"), "warn");
+    else if (nginx && nj.running) _badge("sslBadge", window.t("brand.ssl_pending"), "warn");
     else if (j.ssl_enabled) _badge("sslBadge", window.t("brand.ssl_pending"), "warn");
     else _badge("sslBadge", window.t("brand.ssl_off"), "");
     var tog = $("sslToggle");
     if (tog) {
-      tog.style.display = hostinger ? "none" : "";
-      tog.textContent = j.ssl_active ? window.t("brand.reactivate") : window.t("qs.ssl_on");
+      tog.style.display = j.ui_can_enable_ssl === false ? "none" : "";
+      tog.disabled = !!(nginx && nj.running);
+      tog.textContent = j.ssl_active ? window.t("brand.reactivate") : window.t("brand.activate");
     }
     var check = $("checkDomain");
     if (check) check.textContent = window.t("qs.recheck");
@@ -176,16 +180,60 @@
       steps += '<div class="dom-step ' + (j.ssl_active && !j.requires_redeploy ? "done" : "warn") + '"><span class="dom-step-num">' + (j.ssl_active && !j.requires_redeploy ? ic("check") : "3") + '</span><div><b>3. ' + window.t("brand.step3_hostinger_title") + '</b>' +
         '<p>' + window.t("brand.step3_hostinger_a") + ' <b>Redeploy</b>. ' + window.t("brand.step3_hostinger_b") + ' <b>' + esc(route) + '</b>. ' + window.t("brand.step3_hostinger_c") + '</p>' +
         '<code>' + esc(envLine) + '</code><br><button class="dom-copy" type="button" data-copy="' + esc(envLine) + '">' + window.t("brand.copy_env") + '</button></div></div>';
+    } else if (nginx) {
+      steps += '<div class="dom-step ' + (j.ssl_active ? "done" : (j.dns_ok ? "warn" : "")) + '"><span class="dom-step-num">' + (j.ssl_active ? ic("check") : "3") + '</span><div><b>3. ' + window.t("brand.step3_title") + '</b>' +
+        '<p>' + _nginxDesc(j, nj) + '</p>' + (!j.ssl_active && j.auth_enabled && !nj.running && nj.sudo_ok === false && nj.cmd ? _cmdBlock(nj.cmd) : "") + '</div></div>';
+    } else if (j.ssl_method === "none") {
+      steps += '<div class="dom-step"><span class="dom-step-num">3</span><div><b>3. ' + window.t("brand.step3_title") + '</b><p>' + window.t("brand.nginx_unsupported") + '</p></div></div>';
     } else {
       steps += '<div class="dom-step ' + (j.ssl_active ? "done" : (j.dns_ok ? "warn" : "")) + '"><span class="dom-step-num">' + (j.ssl_active ? ic("check") : "3") + '</span><div><b>3. ' + window.t("brand.step3_title") + '</b>' +
         '<p>' + (j.ssl_active ? window.t("brand.ssl_active_desc") : window.t("brand.ssl_hint")) + '</p>' +
-        (j.deploy_mode === "docker" && !j.ssl_active ? '<code>docker compose -f docker-compose.yml -f docker-compose.https.yml up -d</code>' : "") + '</div></div>';
+        // Lệnh chạy tay CHỈ hiện khi lượt Kích hoạt vừa báo thiếu Caddy (bản Docker cài từ compose cũ).
+        (!j.ssl_active && j.caddy_need_cmd ? _cmdBlock(j.caddy_need_cmd) : "") + '</div></div>';
     }
     if (j.ssl_active) steps += '<a class="dom-open" href="https://' + esc(j.domain) + '" target="_blank" rel="noopener">' + window.t("brand.open") + ' https://' + esc(j.domain) + ' ↗</a>';
     if (guide) { guide.innerHTML = steps; guide.style.display = "block"; }
+    if (nginx && nj.running) { setStatus("domainStatus", _nginxStepText(nj.step), false); _pollNginx(); return; }
     if (j.ssl_active) setStatus("domainStatus", window.t("brand.https_running", { domain: j.domain }), false);
+    else if (nginx && nj.ok === false && nj.error_text) setStatus("domainStatus", window.t("brand.nginx_failed", { reason: nj.error_text }), true);
     else if (hostinger && j.requires_redeploy) setStatus("domainStatus", window.t("brand.saved_needs_redeploy"), false);
     else setStatus("domainStatus", j.ssl_reason || "", !!(j.dns_ip && !j.dns_ok));
+  }
+
+  // ---- Nhánh nginx (Linux native): job chạy nền trên server, ở đây chỉ vẽ và hỏi tiến độ ----
+  function _cmdBlock(cmd) {
+    return '<code>' + esc(cmd) + '</code><br><button class="dom-copy" type="button" data-copy="' + esc(cmd) + '">' + window.t("brand.copy_cmd") + '</button>';
+  }
+
+  function _nginxStepText(step) {
+    var k = { install: "brand.nginx_step_install", config: "brand.nginx_step_config", cert: "brand.nginx_step_cert", verify: "brand.nginx_step_verify" }[step];
+    return window.t("brand.nginx_running", { step: window.t(k || "brand.nginx_step_start") });
+  }
+
+  function _nginxDesc(j, nj) {
+    if (j.ssl_active) return window.t("brand.ssl_active_desc") + " " + window.t("brand.nginx_renew");
+    if (!j.auth_enabled) return window.t("brand.nginx_need_password");
+    if (nj.running) return _nginxStepText(nj.step);
+    if (nj.sudo_ok === false) return window.t("brand.nginx_need_sudo");
+    return window.t("brand.nginx_hint");
+  }
+
+  var _pollTimer = null;
+  function _pollNginx() {
+    if (_pollTimer) return;
+    _pollTimer = setTimeout(async function tick() {
+      _pollTimer = null;
+      try {
+        var r = await fetch("/domain/nginx");
+        var j = await r.json().catch(function () { return {}; });
+        if (j.running) {
+          setStatus("domainStatus", _nginxStepText(j.step), false);
+          _pollTimer = setTimeout(tick, 2000);
+          return;
+        }
+        await checkDomain();
+      } catch (e) { _pollTimer = setTimeout(tick, 4000); }
+    }, 2000);
   }
 
   async function saveDomain() {
@@ -224,14 +272,22 @@
       var fd = new FormData(); fd.append("enabled", "1");
       var r = await fetch("/domain/ssl", { method: "POST", body: fd });
       var j = await r.json().catch(function () { return {}; });
-      if (!r.ok || !j.ok) { setStatus("domainStatus", j.error || window.t("brand.ssl_failed"), true); return; }
+      if (!r.ok || !j.ok) {
+        setStatus("domainStatus", j.error || window.t("brand.ssl_failed"), true);
+        // Thiếu sudo: hiện lệnh chạy tay ngay trong bước 3 (không bắt đọc trong dòng trạng thái).
+        if (j.needs_sudo && j.cmd && _domCache) { _domCache.nginx = Object.assign({}, _domCache.nginx || {}, { sudo_ok: false, cmd: j.cmd }); var keep = $("domainStatus").textContent; renderDomainStatus(_domCache); setStatus("domainStatus", keep, true); }
+        if (j.needs_cmd && j.cmd && _domCache) { _domCache.caddy_need_cmd = j.cmd; var keep2 = $("domainStatus").textContent; renderDomainStatus(_domCache); setStatus("domainStatus", keep2, true); }
+        return;
+      }
+      if (j.method === "nginx") { setStatus("domainStatus", _nginxStepText((j.nginx || {}).step), false); if (tog) tog.disabled = true; _pollNginx(); return; }
       await checkDomain();
       if (!j.ssl_active) {
+        // Bản Docker không còn đi qua hint_cmd (đã có nhánh needs_cmd); giữ cho server cũ.
         var extra = j.hint_cmd ? (" " + window.t("brand.run_on_vps") + " " + j.hint_cmd) : "";
         setStatus("domainStatus", (j.ssl_reason || window.t("brand.ssl_not_on")) + "." + extra, true);
       }
     } catch (e) { setStatus("domainStatus", window.t("brand.net_err_ssl"), true); }
-    finally { if (tog) tog.disabled = false; }
+    finally { if (tog && !_pollTimer) tog.disabled = false; }
   }
 
   // Nạp giá trị hiện tại khi mở Cài đặt.

@@ -26,7 +26,7 @@ Cập nhật bản mới: bấm **Redeploy** trong Docker Manager (image `:lates
 ```
 docker compose -f docker-compose.yml up -d
 ```
-Mở http://localhost:7777. Muốn HTTPS qua Caddy: thêm `-f docker-compose.https.yml`.
+Mở http://localhost:7777. Muốn HTTPS: vào Cài đặt → Tên miền & SSL, nhập tên miền, trỏ DNS rồi bấm **Kích hoạt** (Caddy đã chạy sẵn trong compose).
 
 ## Cách 3 - Chạy trực tiếp (Windows, không Docker)
 
