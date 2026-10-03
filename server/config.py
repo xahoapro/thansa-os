@@ -1046,6 +1046,10 @@ def require_login():
         return True
     if v in ("0", "false", "no", "off"):
         return False
+    # nginx do Thansa dựng (routes/domain.py → nginx_ssl.py) đứng trước một bản nghe 127.0.0.1:
+    # mọi request Internet tới qua loopback, nên kiểm JAVIS_HOST bên dưới sẽ tưởng là chạy cá nhân.
+    if ((read_settings().get("domain") or {}).get("proxy") or "") == "nginx":
+        return True
     # FAIL-CLOSED: bind KHÔNG phải loopback (0.0.0.0, ::, IP LAN…) → coi là public → bắt buộc login.
     # Chỉ tắt khi nghe thuần localhost. (Localhost + tunnel: đặt JAVIS_REQUIRE_LOGIN=1.)
     host = os.getenv("JAVIS_HOST", "127.0.0.1").strip().lower()
