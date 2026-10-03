@@ -89,7 +89,7 @@ one two three four five six seven eight nine ten hundred thousand million
 # NGỮ CẢNH GIAO DIỆN. Cả hai không phải lời nói. 0.65.29: trước chỉ nhận khối sau, nên khi đang mở
 # file thì khối FILE bị tính là lời nói; dòng JAVIS_NGHE (chỉ có lời nói) bị coi là cắt chữ, và
 # cả lượt lặng lẽ rơi sang bộ não chính dù đã chọn bộ não trả lời nhanh.
-_UI_CONTEXT = re.compile(r"\A(?:\s*\[(?:FILE ĐANG MỞ trong trình sửa của Javis:|NGỮ CẢNH GIAO DIỆN:)"
+_UI_CONTEXT = re.compile(r"\A(?:\s*\[(?:FILE ĐANG MỞ trong trình sửa của Thansa:|NGỮ CẢNH GIAO DIỆN:)"
                          r"[^\]]*\]\s*)+")
 # Speech can contain literal identifiers. Do not rewrite pieces of paths, URLs or email.
 VERBATIM = re.compile(r"\S*(?:[/\\@:_]|\w\.\w)\S*")

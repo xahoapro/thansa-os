@@ -140,8 +140,8 @@ Thao tác này an toàn: chỉ di chuyển khi thư mục đích chưa có, khô
 
 Tab **Giọng nói** chỉ còn một thẻ cho cuộc gọi bằng giọng, ô nào cũng tự lưu ngay, không có nút Lưu. Ngôn ngữ giao diện, ảnh đại diện và tên miền nằm trong tab **Chung**:
 
-- Dòng **Đang dùng**: đường gọi đang chạy (ChatGPT Live, Live qua API key hoặc Cơ bản), kèm lý do và việc cần làm nếu Javis phải lùi xuống đường thấp hơn.
-- **Giọng Javis**: danh sách giọng theo đường gọi, chọn giọng là chọn luôn nhà cung cấp (Edge, OpenAI hay ElevenLabs), nút **▶ Nghe thử**. Giọng OpenAI cần OpenAI API key ở trang **Models**.
+- Dòng **Đang dùng**: đường gọi đang chạy (ChatGPT Live, Live qua API key hoặc Cơ bản), kèm lý do và việc cần làm nếu Thansa phải lùi xuống đường thấp hơn.
+- **Giọng Thansa**: danh sách giọng theo đường gọi, chọn giọng là chọn luôn nhà cung cấp (Edge, OpenAI hay ElevenLabs), nút **▶ Nghe thử**. Giọng OpenAI cần OpenAI API key ở trang **Models**.
 - Mục **Nâng cao** chứa **Đường gọi**, **Bộ não trả lời nhanh** và **Model** của nó (chỉ ở đường Cơ bản), **Tốc độ đọc** (chỉ ở đường Cơ bản), API key và Voice ID ElevenLabs (chỉ khi chọn giọng ElevenLabs). Ngôn ngữ nghe tự theo ngôn ngữ giao diện.
 - **ẢNH ĐẠI DIỆN**: **Tải ảnh lên** hoặc **Khôi phục mặc định**.
 - **TÊN MIỀN & SSL**: nhập tên miền, bấm **Lưu & kiểm tra**, xem hai nhãn `DNS:` và `SSL:`, rồi **Bật SSL** hoặc **Kiểm tra lại**.
@@ -188,7 +188,7 @@ Nút **⬆ Cập nhật ngay** chỉ hiện khi Thansa tự cập nhật tại c
 **Vì sao máy này có nút mà máy kia không.** Trước 0.55.56 Watchtower nằm trong `profiles: ["update"]`, nên lệnh `docker compose up -d` quen tay **không bật nó**; còn stack Hostinger thì không kèm nó. Máy nào vẫn thiếu nút là đang chạy bằng file compose cũ đó. Lấy bản mới rồi dựng lại, ở thư mục chứa file compose:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 docker compose up -d --pull always
 ```
 

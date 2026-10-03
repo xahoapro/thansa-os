@@ -1,4 +1,4 @@
-# Javis OS
+# Thansa OS
 
 **The English README has moved to [README.md](README.md)**, the front page of the repository.
 

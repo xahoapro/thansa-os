@@ -247,7 +247,7 @@ def _nap_mot(thu_muc, id_da_co) -> dict:
         return ban
 
     if str(m.get("format") or "") != FORMAT_MAGIC:
-        ban["error"] = f"không phải gói Javis (thiếu format: {FORMAT_MAGIC})"
+        ban["error"] = f"không phải gói Thansa (thiếu format: {FORMAT_MAGIC})"
         return ban
     try:
         spec = int(m.get("spec") or 0)
@@ -267,7 +267,7 @@ def _nap_mot(thu_muc, id_da_co) -> dict:
         ban["error"] = f"id trong manifest ('{khai_id}') khác tên thư mục ('{pid}')"
         return ban
     if pid in _module_server():
-        ban["error"] = f"id '{pid}' trùng tên một module của Javis, đổi tên gói"
+        ban["error"] = f"id '{pid}' trùng tên một module của Thansa, đổi tên gói"
         return ban
 
     ok, vi_sao = _hop_compat((m.get("compat") or {}).get("app"))

@@ -357,10 +357,10 @@ def map_message(msg):
             events.append({"type": "error", "resume_failed": True,
                            "content": localefmt.chu(
                                "Phiên Claude cũ không còn trên máy (mạch hội thoại phía "
-                               "Claude Code đã mất). Javis mở mạch mới và mồi lại từ "
+                               "Claude Code đã mất). Thansa mở mạch mới và mồi lại từ "
                                "lịch sử đã lưu.",
                                "The old Claude session is no longer on this machine (Claude Code lost "
-                               "the conversation thread). Javis opens a new thread and primes it from "
+                               "the conversation thread). Thansa opens a new thread and primes it from "
                                "the saved history.")})
         elif msg.is_error and not (msg.result or "").strip():
             events.append({"type": "error",

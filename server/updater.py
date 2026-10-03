@@ -476,8 +476,8 @@ def main():
         # Merge đã hủy hoặc fetch thất bại; xác nhận server cũ thật sự lên lại.
         start_server(mode, a.port)
         them = "" if poll_health(a.port, 60) else _chu(
-            " Server cũ CŨNG chưa lên lại - mở Javis bằng tay để chạy tiếp.",
-            " The old server has NOT come back up either - start Javis by hand to continue.")
+            " Server cũ CŨNG chưa lên lại - mở Thansa bằng tay để chạy tiếp.",
+            " The old server has NOT come back up either - start Thansa by hand to continue.")
         ly_do = chan_doan_pull_hong(git_error, merge_aborted=tree_safe)
         log("Chẩn đoán: " + (ly_do or "(không nhận ra nguyên nhân quen thuộc)"))
         tho = (git_error or _chu("Không hợp nhất được bản phát hành", "Could not merge the release")).strip()
@@ -614,7 +614,7 @@ def main():
             return 1
         us.write_state({"phase": "done", "result": "rolled_back",
                         "error": _chu("Bản mới lỗi, đã tự quay về bản cũ.",
-                                      "The new version failed, so Javis rolled back to the old one."),
+                                      "The new version failed, so Thansa rolled back to the old one."),
                         "finished_at": _now()})
         return 0
 

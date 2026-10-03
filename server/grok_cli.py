@@ -763,7 +763,7 @@ def _doc_luong(proc) -> None:
                     _ghi_nhat_ky(buf)
                     buf = ""
     except Exception as e:
-        _ghi_nhat_ky(f"[Javis đọc output lỗi] {type(e).__name__}: {e}")
+        _ghi_nhat_ky(f"[Thansa đọc output lỗi] {type(e).__name__}: {e}")
     if buf.strip():
         _bat_url_code(buf)
         _ghi_nhat_ky(buf)
@@ -800,7 +800,7 @@ def login_start(cho_giay: float = 30.0) -> dict:
                   log=deque(maxlen=NHAT_KY_TOI_DA), ma_thoat=None)
     # Ghi luôn lệnh đã chạy: bản CLI không khai `--device-auth` thì Javis chạy `grok login`
     # trần, và hai đường đó hỏng theo hai kiểu khác nhau. Không ghi lại thì đoán mò.
-    _ghi_nhat_ky("[Javis chạy] " + " ".join(args[1:]))
+    _ghi_nhat_ky("[Thansa chạy] " + " ".join(args[1:]))
     threading.Thread(target=_doc_luong, args=(proc,), name="javis-grok-login",
                      daemon=True).start()
     han = time.time() + cho_giay
@@ -1152,7 +1152,7 @@ class GrokCLI:
             if text:
                 # Ghi lại để còn biết mà đổi hẳn định dạng mặc định nếu đường kia luôn hụt.
                 print("[grok] `--output-format streaming-json` không ra nội dung, `json` qua "
-                      "argv thì được. Sơ đồ sự kiện của bản CLI này khác bảng Javis đang đoán.",
+                      "argv thì được. Sơ đồ sự kiện của bản CLI này khác bảng Thansa đang đoán.",
                       file=sys.stderr)
             else:
                 # Giữ cả hai để câu lỗi kể được cả hai lần, không chỉ lần sau.
@@ -1350,9 +1350,9 @@ class GrokCLI:
             en += (". Try running it by hand on the server to see what it says:\n"
                    "`grok -p \"hello\" --output-format streaming-json`")
         else:
-            noi = (f"Grok CLI in ra {n} dòng nhưng Javis không nhận ra loại sự kiện nào là "
+            noi = (f"Grok CLI in ra {n} dòng nhưng Thansa không nhận ra loại sự kiện nào là "
                    "câu trả lời")
-            en = f"Grok CLI printed {n} lines but Javis recognized no event type as the answer"
+            en = f"Grok CLI printed {n} lines but Thansa recognized no event type as the answer"
             if loai:
                 noi += " (thấy: " + ", ".join(loai[:12]) + ")"
                 en += " (seen: " + ", ".join(loai[:12]) + ")"
@@ -1570,7 +1570,7 @@ def kiem_tra_nhanh(timeout: float = 30.0) -> dict:
     if tra:
         return {"ok": True, "reply": tra[:200]}
     return {"ok": False,
-            "error": localefmt.chu("Grok CLI chạy xong nhưng Javis không đọc ra câu trả lời trong thứ nó "
+            "error": localefmt.chu("Grok CLI chạy xong nhưng Thansa không đọc ra câu trả lời trong thứ nó "
                                    "in ra. Nguyên văn: " + tho[:300],
-                                   "Grok CLI finished but Javis could not read an answer from its "
+                                   "Grok CLI finished but Thansa could not read an answer from its "
                                    "output. Raw output: " + tho[:300])}
