@@ -38,7 +38,7 @@ Thansa pins `zalo-agent-cli` to version `1.6.2`, which has been tested with the 
 
 The **GitHub Guide** button in the Zalo card always opens the documentation page at:
 
-<https://github.com/blogminhquy/thansa-os/blob/main/docs/12-zalo.md>
+<https://github.com/xahoapro/thansa-os/blob/main/docs/12-zalo.md>
 
 ## MCP Tools
 
