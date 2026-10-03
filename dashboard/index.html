@@ -319,7 +319,7 @@
         <!-- Thanh gọi (call-bar.js, 0.65.18): hiện khi bấm mic gọi Javis. Nằm trong CHAT_NODE_IDS
              (console.js) nên sang trang Trò chuyện là đi theo khung chat. -->
         <div class="call-bar" id="callBar" hidden></div>
-        <div class="transcript" id="chatArea" data-i18n-empty="chat.empty_hint" data-empty-hint="Nói hoặc gõ để bắt đầu hội thoại với Javis."></div>
+        <div class="transcript" id="chatArea" data-i18n-empty="chat.empty_hint" data-empty-hint="Nói hoặc gõ để bắt đầu hội thoại với Thansa."></div>
         <!-- Thanh #toolBar cũ ĐÃ BỎ: trạng thái "đang suy nghĩ / gọi tool" giờ hiện bằng
              chip hoạt động NGAY TRONG #chatArea (app.js showActivity) → tự đi theo cả khi
              phóng to chat workspace (chat-zoom chỉ dời #chatArea, trước đây toolBar bị bỏ lại). -->
@@ -360,7 +360,7 @@
               <div class="popover-label" data-i18n="settings.vc_title">GIỌNG NÓI</div>
               <div class="qs-hint" id="vcNow" role="status"></div>
               <div class="qs-field">
-                <label class="qs-lbl" for="vcVoice" data-i18n="settings.vc_voice">Giọng Javis</label>
+                <label class="qs-lbl" for="vcVoice" data-i18n="settings.vc_voice">Giọng Thansa</label>
                 <div class="v2-voice-row">
                   <select class="js-input" id="vcVoice"></select>
                   <button class="gcard-btn ghost" type="button" id="vcTry" data-i18n="qs.test_voice">▶ Nghe thử</button>
@@ -506,7 +506,7 @@
     <!-- ===== BOTTOM: voice bar ===== -->
     <div class="hud-voice" id="hudVoice">
       <button id="voiceFocusResume" class="voice-focus-resume" hidden></button>
-      <button class="mic-big" id="voiceBtn" title="Bấm để gọi Javis" data-i18n-title="bar.mic">
+      <button class="mic-big" id="voiceBtn" title="Bấm để gọi Thansa" data-i18n-title="bar.mic">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>

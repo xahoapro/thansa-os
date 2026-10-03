@@ -81,7 +81,7 @@ Mỗi trợ lý có một tủ tài liệu riêng: mở **Cài đặt trợ lý*
 
 - **Tab File**: tìm một file có sẵn trong brain để gắn vào, hoặc tải file từ máy lên (file tải lên nằm ở thư mục `sources` của brain). Kéo thả file vào khung cũng được.
 - **Tab Link**: dán một địa chỉ `http://` hoặc `https://` kèm tên gợi nhớ.
-- **Nút ghim** trên mỗi file: ghim là Javis **nạp sẵn nội dung file** vào đầu mỗi lượt trợ lý làm việc (tối đa 2000 ký tự mỗi file, 6000 ký tự tổng), thay vì chỉ cho nó biết tên file rồi tự mở khi cần. Ghim bảng giá vào là trợ lý trả lời được ngay mà không phải đi đọc.
+- **Nút ghim** trên mỗi file: ghim là Thansa **nạp sẵn nội dung file** vào đầu mỗi lượt trợ lý làm việc (tối đa 2000 ký tự mỗi file, 6000 ký tự tổng), thay vì chỉ cho nó biết tên file rồi tự mở khi cần. Ghim bảng giá vào là trợ lý trả lời được ngay mà không phải đi đọc.
 - **Nút X** gỡ khỏi trợ lý nhưng **không** xoá file trong brain. Muốn xoá hẳn thì dùng nút thùng rác bên cạnh.
 
 Phạm vi: danh sách này thuộc về **trợ lý**, nên mọi cuộc trò chuyện với nó và mọi bước quy trình gọi tới nó đều thấy. Muốn gắn tài liệu cho riêng một cuộc trò chuyện thì dùng nút **File & link** ở thanh trên khung chat. Chỗ lưu là chính file `.md` của trợ lý (khoá `assets` trong frontmatter), nên xuất trợ lý ra hay copy brain sang máy khác thì danh sách đi theo.

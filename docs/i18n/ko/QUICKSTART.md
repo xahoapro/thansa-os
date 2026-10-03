@@ -1,18 +1,18 @@
 <!-- translated-from: QUICKSTART.en.md sha256:2f4928f341af -->
-# Javis OS - 빠른 시작
+# Thansa OS - 빠른 시작
 
 *[English](../../../QUICKSTART.en.md) · [Tiếng Việt](../../../QUICKSTART.md) · [简体中文](../zh/QUICKSTART.md) · [Español](../es/QUICKSTART.md) · [日本語](../ja/QUICKSTART.md) · [हिन्दी](../hi/QUICKSTART.md) · [Português](../pt-BR/QUICKSTART.md) · **한국어** · [Русский](../ru/QUICKSTART.md) · [Deutsch](../de/QUICKSTART.md) · [Français](../fr/QUICKSTART.md) · [Bahasa Indonesia](../id/QUICKSTART.md)*
 
 > 이 문서는 영어 빠른 시작 안내를 자동 번역한 것입니다.
 
-몇 분이면 Javis OS를 실행할 수 있습니다. 전체 안내서: [docs/en/](../../../docs/en/README.md).
+몇 분이면 Thansa OS를 실행할 수 있습니다. 전체 안내서: [docs/en/](../../../docs/en/README.md).
 
 ## 방법 1 - Hostinger VPS (Docker Manager, 원클릭)
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**.
 2. 다음 URL을 붙여 넣습니다.
    ```
-   https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
    ```
 3. (선택, HTTPS + 도메인을 쓰려면) **Environment** 상자에 다음을 설정합니다.
    ```

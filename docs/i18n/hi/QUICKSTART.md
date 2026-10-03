@@ -1,18 +1,18 @@
 <!-- translated-from: QUICKSTART.en.md sha256:2f4928f341af -->
-# Javis OS - क्विक स्टार्ट
+# Thansa OS - क्विक स्टार्ट
 
 *[English](../../../QUICKSTART.en.md) · [Tiếng Việt](../../../QUICKSTART.md) · [简体中文](../zh/QUICKSTART.md) · [Español](../es/QUICKSTART.md) · [日本語](../ja/QUICKSTART.md) · **हिन्दी** · [Português](../pt-BR/QUICKSTART.md) · [한국어](../ko/QUICKSTART.md) · [Русский](../ru/QUICKSTART.md) · [Deutsch](../de/QUICKSTART.md) · [Français](../fr/QUICKSTART.md) · [Bahasa Indonesia](../id/QUICKSTART.md)*
 
 > यह अंग्रेज़ी quick start का स्वचालित (automatic) अनुवाद है।
 
-कुछ ही मिनटों में Javis OS चालू कीजिए। पूरी guides: [docs/en/](../../../docs/en/README.md)।
+कुछ ही मिनटों में Thansa OS चालू कीजिए। पूरी guides: [docs/en/](../../../docs/en/README.md)।
 
 ## विकल्प 1 - Hostinger VPS (Docker Manager, एक click में)
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**।
 2. यह URL paste कीजिए:
    ```
-   https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
    ```
 3. (वैकल्पिक, HTTPS + domain के लिए) **Environment** box में यह सेट कीजिए:
    ```

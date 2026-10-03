@@ -174,7 +174,7 @@ _CANH_BAO_EN = {
         "in the brain really changes, with no review step.",
         "The bot can call the data sources (MCP) you connected, for reading and writing. Everything in "
         "those sources is within reach of whoever is chatting with the bot.",
-        "Javis still hard-BLOCKS OUTSIDE actions at this level: nothing is sent, paid, "
+        "Thansa still hard-BLOCKS OUTSIDE actions at this level: nothing is sent, paid, "
         "booked or cancelled, deleted or published.",
         "The bot still CANNOT see other brains, run machine commands or reach outside the machine.",
     ],

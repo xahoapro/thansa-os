@@ -4596,16 +4596,16 @@ async def connect_add(request: Request):
             request.headers.get("x-forwarded-host", ""))
         if not web_security.host_kieu_local(host_thay):
             return {"ok": False, "can_force": True, "error": localefmt.chu(
-                    "Kết nối này chạy OAuth trên CHÍNH MÁY cài Javis (Google sẽ chuyển về "
-                    "localhost:8000), mà bạn đang mở Javis qua domain public - đăng nhập Google "
+                    "Kết nối này chạy OAuth trên CHÍNH MÁY cài Thansa (Google sẽ chuyển về "
+                    "localhost:8000), mà bạn đang mở Thansa qua domain public - đăng nhập Google "
                     "sẽ đứt giữa chừng với lỗi không kết nối được. Trên VPS hãy dùng thẻ Lịch "
                     "và Gmail riêng (hai thẻ đó đăng nhập ngay trong dashboard). Nếu máy chạy "
-                    "Javis có màn hình và bạn sẽ bấm đồng ý trên đó, bấm Kết nối lần nữa.",
-                    "This connection runs OAuth on the SAME MACHINE Javis is installed on (Google "
-                    "redirects back to localhost:8000), but you are opening Javis through a public "
+                    "Thansa có màn hình và bạn sẽ bấm đồng ý trên đó, bấm Kết nối lần nữa.",
+                    "This connection runs OAuth on the SAME MACHINE Thansa is installed on (Google "
+                    "redirects back to localhost:8000), but you are opening Thansa through a public "
                     "domain, so the Google sign-in will break halfway with a connection error. On a "
                     "VPS, use the separate Calendar and Gmail cards (those two sign in right inside "
-                    "the dashboard). If the machine running Javis has a screen and you will click "
+                    "the dashboard). If the machine running Thansa has a screen and you will click "
                     "Allow there, click Connect again.")}
     # Dùng lại key OAuth client của connection khác (vd Gmail dùng lại key đã tạo cho
     # Calendar) - copy server-side, secrets không bao giờ về browser.
@@ -7646,7 +7646,7 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
 def _share_chan(ban) -> str:
     """Dòng chân trang: nói rõ đây là file được chia sẻ, để người xem biết mình đang xem gì."""
     ten = os.path.basename(str(ban.get("path") or "")) or "file"
-    return share_render.esc(ten) + localefmt.chu(" · được chia sẻ từ Javis OS", " · shared from Javis OS")
+    return share_render.esc(ten) + localefmt.chu(" · được chia sẻ từ Thansa OS", " · shared from Thansa OS")
 
 
 def _share_file(ban):
@@ -9311,7 +9311,7 @@ def _workflow_agent_helpers(brain, tools):
 _AGENT_TOOLKIT_BLOCK = (
     "\n# Công cụ và giới hạn thật của bạn\n"
     "- Vai trò ở trên là CHUYÊN MÔN CHÍNH, không phải hàng rào. Bạn có TOÀN BỘ bộ công cụ của "
-    "Javis qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
+    "Thansa qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
     "`javis_list_dir`), gọi các kết nối ngoài đã nối như Google Drive, Composio, POS, Zalo... "
     "(`javis_connections` để xem đang nối gì, `javis_search_tools` rồi `javis_run_tool` để gọi), "
     "chạy skill (`javis_use_skill`), giao việc nền Kanban (`javis_task`), đặt nhắc hẹn "
@@ -9357,7 +9357,7 @@ def _agent_chat_prompt(brain, slug) -> str:
     if _resonance_turn_enabled(brain):
         sysprompt = (sysprompt.replace(_AGENT_HAI_LOI, _AGENT_BA_LOI)
                      + "\n# Cộng hưởng (đang bật cho bạn)\n- " + _RESONANCE_GOAL_HINT + "\n")
-    return (sysprompt + "\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ trên dashboard Javis "
+    return (sysprompt + "\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ trên dashboard Thansa "
             "(trang Cộng sự). Trả lời như đang nói chuyện, theo ngôn ngữ chủ đang dùng; "
             "không cần báo cáo dạng nhiệm vụ trừ khi được giao việc cụ thể.")
 
@@ -10314,7 +10314,7 @@ def _cat_cho_tg(text: str) -> str:
     t = str(text or "")
     if len(t) <= _TRAN_TIN_TG:
         return t
-    return t[:_TRAN_TIN_TG].rstrip() + "\n\n… (còn nữa - xem đầy đủ trong hòm thư của Javis)"
+    return t[:_TRAN_TIN_TG].rstrip() + "\n\n… (còn nữa - xem đầy đủ trong hòm thư của Thansa)"
 
 
 async def _gui_qua_kenh(owner_chat, text, *, ngan="", viec=None, web="", card="") -> tuple:
@@ -10821,7 +10821,7 @@ async def _khi_tien_trinh_xong(v: dict) -> None:
     if trang == "huy":
         dau, st = f"Đã dừng việc chạy nền sau {tl}.", "cancelled"
     elif trang == "bo_theo_doi":
-        dau, st = (f"Việc chạy nền vẫn chưa xong sau {tl}, Javis ngừng theo dõi để khỏi treo mãi. "
+        dau, st = (f"Việc chạy nền vẫn chưa xong sau {tl}, Thansa ngừng theo dõi để khỏi treo mãi. "
                    "Nó vẫn đang chạy trên máy."), "timeout"
     else:
         dau, st = f"Việc chạy nền đã xong sau {tl}.", "done"
@@ -15135,8 +15135,8 @@ async def websocket_endpoint(ws: WebSocket):
                     await ws.send_text(json.dumps({
                         "type": "system",
                         "content": localefmt.chu(
-                            "Phiên Claude cũ không còn trên máy - Javis đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
-                            "The old Claude session is no longer on this machine - Javis is restoring "
+                            "Phiên Claude cũ không còn trên máy - Thansa đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
+                            "The old Claude session is no longer on this machine - Thansa is restoring "
                             "the context from saved history.")
                     }))
                     cli.session_id = None
@@ -15449,8 +15449,8 @@ async def websocket_endpoint(ws: WebSocket):
 
             async def _giu_cau_goc():
                 await send_raw({"type": "status", "session_id": conv_sid,
-                                "content": localefmt.chu("Javis đang kiểm tra lại câu vừa nghe...",
-                                                         "Javis is double-checking what it just heard...")})
+                                "content": localefmt.chu("Thansa đang kiểm tra lại câu vừa nghe...",
+                                                         "Thansa is double-checking what it just heard...")})
                 # Kho phiên và bong bóng giữ câu gốc; chỉ lời gửi bộ não chính kèm ghi chú để
                 # nó tự hiểu từ nghe nhầm mà không giải thích ra (voice_brain.GHI_CHU_CAU_NGHE).
                 await run_turn(conv_sid, original_message + "\n\n" + voice_brain.GHI_CHU_CAU_NGHE,
@@ -15502,8 +15502,8 @@ async def websocket_endpoint(ws: WebSocket):
 
             try:
                 brain_obj = await voice_brain.get_brain(conv_sid, conf)
-                await send_raw({"type": "status", "content": localefmt.chu("Javis đang trả lời nhanh...",
-                                                                           "Javis is answering quickly..."),
+                await send_raw({"type": "status", "content": localefmt.chu("Thansa đang trả lời nhanh...",
+                                                                           "Thansa is answering quickly..."),
                                 "session_id": conv_sid})
                 # Đang có việc nền thì dặn bộ não giọng (V3): kết quả tự hiện, đừng bịa, đừng giao lại.
                 _dan = [x for x in (voice_brain.pending_note(conv_sid),
