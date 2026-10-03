@@ -26,7 +26,7 @@ To update: press **Redeploy** in Docker Manager (image `:latest`, `pull_policy: 
 ```
 docker compose -f docker-compose.yml up -d
 ```
-Open http://localhost:7777. For HTTPS through Caddy, add `-f docker-compose.https.yml`.
+Open http://localhost:7777. For HTTPS: go to Settings → Domain & SSL, enter your domain, point DNS, then press **Activate** (Caddy already runs in the compose file).
 
 ## Option 3 - Run directly (Windows, no Docker)
 
