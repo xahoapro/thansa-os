@@ -339,9 +339,9 @@ def soi(du_lieu: bytes, ten_tep: str = "") -> dict:
     if trung:
         shutil.rmtree(boc, ignore_errors=True)
         return {"ok": False, "stage": "validate",
-                "error": localefmt.chu("gói mang plugin trùng tên plugin có sẵn của Javis: "
+                "error": localefmt.chu("gói mang plugin trùng tên plugin có sẵn của Thansa: "
                                        + ", ".join(trung) + ". Đổi tên trong gói rồi thử lại.",
-                                       "the pack carries a plugin with the same name as a built-in Javis plugin: "
+                                       "the pack carries a plugin with the same name as a built-in Thansa plugin: "
                                        + ", ".join(trung) + ". Rename it in the pack and try again.")}
     return {
         "ok": bool(ban["ok"]), "stage": "" if ban["ok"] else "validate",
