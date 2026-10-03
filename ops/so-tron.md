@@ -671,3 +671,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - VERSION 1.17.0-javis-0.70.2, moc-goc thansa_version 1.17.0. tu-kiem-chung 5/5 XANH.
 - NGHIỆM THU (env -u JAVIS_*): đỏ còn đúng 4 = {form_chuoi_rong, route_table, run_command_quyen,
   terminal_cmd_goc} (sandbox, upstream đỏ y hệt) → **0 hồi quy fork**.
+  **ĐÃ PHÁT HÀNH 2026-10-03** (origin/main 5626dee, snapshot ff từ 13aa1c7; backup me-backup-1.17.0).
