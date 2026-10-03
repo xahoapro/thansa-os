@@ -659,4 +659,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   me-backup-0.65.12-pre (= me trước rebase, 8ff06dbc).
 - NGHIỆM THU (env -u JAVIS_*): fork 549/559 lần đầu → sửa 6 test coupled → đỏ còn đúng 4 = {form_chuoi_rong,
   route_table, run_command_quyen, terminal_cmd_goc}, upstream sạch ĐỎ y hệt (sandbox) → **0 hồi quy fork**.
-  CHƯA đẩy remote — chờ chủ bấm.
+  **ĐÃ PHÁT HÀNH 2026-10-03** (origin/main 13aa1c7, snapshot ff từ 592ac6c; backup me-backup-0.70.2).
