@@ -191,7 +191,7 @@ class AppServer:
                     # Yêu cầu từ server (duyệt lệnh, duyệt file, gọi tool động): luôn từ chối.
                     try:
                         self._write({"id": msg["id"], "error": {"code": -32000,
-                                     "message": "Javis không cho phiên realtime tự làm việc trên máy."}})
+                                     "message": "Thansa không cho phiên realtime tự làm việc trên máy."}})
                     except AppServerError:
                         pass
                     continue
