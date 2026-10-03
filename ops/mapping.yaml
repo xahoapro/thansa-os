@@ -1426,3 +1426,56 @@
     javis-os trong README*/docs/i18n/.github = 0; tu-kiem-chung 5/5; suite xanh trừ đỏ sandbox nền.
   dieu_kien_bo: >
     Nếu upstream đưa tên sản phẩm vào cấu hình branding (persona/brand config) thì bỏ, đặt qua cấu hình.
+
+- id: P049
+  ten: "Tên miền + HTTPS một nút Kích hoạt - tự nhận kiểu cài (native nginx / Docker Caddy sẵn / Hostinger)"
+  y_dinh: >
+    Thẻ TÊN MIỀN & SSL trước chỉ có hai nhánh: Docker (Caddy On-Demand) và Hostinger (Traefik hPanel);
+    bản cài native (systemd/install.sh) không có đường HTTPS nào. Thêm nhánh thứ ba ssl_method=nginx:
+    người dùng nhập tên miền, trỏ DNS, bấm "Kích hoạt" → server chạy nền bin/thansa-nginx-ssl.sh qua
+    `sudo -n` (cài nginx+certbot, ghi reverse proxy về JAVIS_PORT có WebSocket/SSE, certbot --nginx
+    --redirect --keep-until-expiring), dashboard hỏi tiến độ GET /domain/nginx. Không có sudo không
+    mật khẩu → trả lệnh chạy tay. Hàng rào: bắt buộc đã đặt mật khẩu (bản native nghe 127.0.0.1 nên
+    mặc định không bắt login, nginx đứng trước = Internet đi qua loopback) + DNS phải trỏ đúng IP;
+    kích hoạt ghi domain.proxy=nginx làm config.require_login() bật cứng (fail-closed). Kiểm SSL bằng
+    bắt tay TLS tại 127.0.0.1:443 với SNI tên miền (máy sau NAT không hairpin được IP công cộng).
+    DOCKER (chủ chốt 03/10: mọi kiểu cài cùng hành vi "điền tên miền + bấm Kích hoạt"): Caddy On-Demand
+    đưa từ lớp tuỳ chọn docker-compose.https.yml VÀO docker-compose.yml mặc định (replicas
+    ${JAVIS_CADDY:-1}, tên ${JAVIS_NAME}-caddy); multi overlay đặt replicas 0 (proxy chung giữ 443);
+    update.sh tắt Caddy khi 80/443 đã có web server khác. Kích hoạt = bắt tay TLS tới caddy:443 SNI tên
+    miền (Caddy xin cert ngay lúc đó); thiếu Caddy (compose cũ) → trả lệnh CỘNG THÊM https.yml, không đè
+    compose người dùng. HOSTINGER giữ hướng dẫn tay (chủ chọn; API Docker Manager chỉ thay CẢ project, chưa
+    có VPS thử volume). Nút đổi nhãn chung "Kích hoạt" cho mọi kiểu.
+  commit: "[me] P049: ten mien + HTTPS mot nut Kich hoat - native nginx, Docker Caddy san, Hostinger tay"
+  diem_neo:
+    - file: server/routes/domain.py
+      ky_hieu: "async def _activate_nginx("
+    - file: server/config.py
+      ky_hieu: '.get("proxy") or "") == "nginx":'
+    - file: dashboard/branding.js
+      ky_hieu: 'fetch("/domain/nginx")'
+    - file: bin/thansa-nginx-ssl.sh
+      ky_hieu: "$thansa_conn_upgrade"
+    - file: docker-compose.yml
+      ky_hieu: "replicas: ${JAVIS_CADDY:-1}"
+    - file: server/routes/domain.py
+      ky_hieu: "async def _activate_caddy("
+  vung_theo_doi:
+    - "server/routes/domain.py: domain_status / domain_ssl / _domain_deploy_target (upstream sửa thì ghép lại nhánh nginx)"
+    - "server/config.py: require_login (nhánh proxy=nginx phải đứng TRƯỚC kiểm JAVIS_HOST)"
+    - "dashboard/branding.js: renderDomainStatus bước 3 + toggleSsl"
+    - "dashboard/i18n/vi.json + en.json: khoá brand.nginx_* / brand.activate / brand.copy_cmd / brand.ssl_hint"
+    - "docker-compose.yml / docker-compose.multi.yml / update.sh: service caddy + JAVIS_CADDY (upstream sửa compose là xung đột ở đây)"
+    - "DEPLOY.md/.en.md, QUICKSTART.md/.en.md, docs/15: cách bật HTTPS Docker không còn lệnh -f https.yml"
+  anh_goc:
+    - file: server/routes/domain.py
+      doan: '"ui_can_enable_ssl": target != "hostinger",'
+  kiem_chung: >
+    test_nginx_ssl 30/30 (script chặn đầu vào bẩn + không root, phân nhánh hostinger/caddy/nginx/none,
+    409 khi chưa mật khẩu / DNS chưa trỏ, thiếu sudo trả lệnh tay, require_login bật sau kích hoạt);
+    chạy THẬT trên máy phát hành với thansa.tradingauto.org: job qua sudo -n ra RESULT:OK, local_tls_ok
+    True, check-host 3/3 nút HTTPS 200; test_domain_setup_ui/test_security xanh. Compose kiểm bằng
+    docker-compose v2.39.4 `config`: mặc định replicas 1, JAVIS_CADDY=0 → 0, multi → 0, cũ + https.yml hợp lệ.
+  dieu_kien_bo: >
+    Bỏ nếu upstream tự thêm nhánh HTTPS cho bản native (reverse proxy do app dựng) - khi đó chuyển
+    người dùng đã kích hoạt sang cơ chế gốc, giữ hàng rào bắt đăng nhập sau proxy.
