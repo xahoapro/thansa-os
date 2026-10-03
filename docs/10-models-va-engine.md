@@ -233,7 +233,7 @@ Vài điều cần biết:
 
 ### E1. Chỗ nào chạy model nào (bảng tra)
 
-Javis có ba chỗ đặt model, và câu hỏi hay gặp nhất là "cái nào thắng cái nào". Thứ tự: **model của Agent** (ô Model trong Cài đặt trợ lý) thắng **model chính**, còn **model việc nền** chỉ dùng cho các đường chạy nền.
+Thansa có ba chỗ đặt model, và câu hỏi hay gặp nhất là "cái nào thắng cái nào". Thứ tự: **model của Agent** (ô Model trong Cài đặt trợ lý) thắng **model chính**, còn **model việc nền** chỉ dùng cho các đường chạy nền.
 
 | Bạn đang ở đâu | Model chạy thật |
 |---|---|
@@ -243,7 +243,7 @@ Javis có ba chỗ đặt model, và câu hỏi hay gặp nhất là "cái nào 
 | Một bước trong quy trình (workflow) | Model của trợ lý ở bước đó; để **Mặc định** thì **model việc nền** |
 | Loop, việc Kanban, nhắc hẹn, tự học, tiêu hoá nguồn | Model việc nền |
 
-Nhà cung cấp mà trợ lý đã chọn nếu bị gỡ key thì Javis lui về model chính, chứ không để trợ lý hay bot chết câm.
+Nhà cung cấp mà trợ lý đã chọn nếu bị gỡ key thì Thansa lui về model chính, chứ không để trợ lý hay bot chết câm.
 
 Ô **Model** trong Cài đặt trợ lý dùng đúng bảng chọn của thanh model dưới khung chat: gõ để tìm, và nhà chưa cắm API key vẫn hiện ra kèm ổ khoá, bấm vào là sang trang Models để mở.
 

@@ -59,9 +59,9 @@ def _mo_ta_trinh_duyet() -> dict:
     return {
         "id": "browser",
         "ten": localefmt.chu("Trình duyệt (Chromium)", "Browser (Chromium)"),
-        "mo_ta": localefmt.chu("Cho Javis tự mở trang, chụp màn hình và kiểm thử giao diện sau khi sửa code. "
+        "mo_ta": localefmt.chu("Cho Thansa tự mở trang, chụp màn hình và kiểm thử giao diện sau khi sửa code. "
                                "Cần cho kết nối Playwright.",
-                               "Lets Javis open pages, take screenshots and test the interface after editing code. "
+                               "Lets Thansa open pages, take screenshots and test the interface after editing code. "
                                "Needed for the Playwright connection."),
         "dung_luong_uoc": localefmt.chu("khoảng 100 MB", "about 100 MB"),
     }
@@ -193,18 +193,18 @@ def chan_doan_trinh_duyet() -> str:
     """
     try:
         if not BROWSERS_DIR.exists():
-            return localefmt.chu(f"Javis đã tìm trong {BROWSERS_DIR} nhưng thư mục đó chưa có.",
-                                 f"Javis looked in {BROWSERS_DIR} but that folder does not exist.")
+            return localefmt.chu(f"Thansa đã tìm trong {BROWSERS_DIR} nhưng thư mục đó chưa có.",
+                                 f"Thansa looked in {BROWSERS_DIR} but that folder does not exist.")
         ten = sorted(d.name for d in BROWSERS_DIR.iterdir() if d.is_dir())
         if not ten:
-            return localefmt.chu(f"Javis đã tìm trong {BROWSERS_DIR} nhưng thư mục đó rỗng.",
-                                 f"Javis looked in {BROWSERS_DIR} but that folder is empty.")
-        return localefmt.chu(f"Javis đã tìm trong {BROWSERS_DIR}, thấy {', '.join(ten[:6])} "
+            return localefmt.chu(f"Thansa đã tìm trong {BROWSERS_DIR} nhưng thư mục đó rỗng.",
+                                 f"Thansa looked in {BROWSERS_DIR} but that folder is empty.")
+        return localefmt.chu(f"Thansa đã tìm trong {BROWSERS_DIR}, thấy {', '.join(ten[:6])} "
                              f"nhưng không có file chạy nào bên trong.",
-                             f"Javis looked in {BROWSERS_DIR}, found {', '.join(ten[:6])} "
+                             f"Thansa looked in {BROWSERS_DIR}, found {', '.join(ten[:6])} "
                              f"but no executable inside.")
     except OSError as e:
-        return localefmt.chu(f"Javis không đọc được {BROWSERS_DIR}: {e}", f"Javis could not read {BROWSERS_DIR}: {e}")
+        return localefmt.chu(f"Thansa không đọc được {BROWSERS_DIR}: {e}", f"Thansa could not read {BROWSERS_DIR}: {e}")
 
 
 def _so_ban(ten: str) -> int:
@@ -304,8 +304,8 @@ def _trang_thai_browser(d: dict, viec: dict) -> dict:
         tt, ly_do = "dang_cai", localefmt.chu("Đang tải trình duyệt về, việc này mất vài phút.",
                                                "Downloading the browser, this takes a few minutes.")
     elif tu_tai:
-        tt, ly_do = "san_sang", localefmt.chu("Javis đã tải sẵn một bản Chromium riêng.",
-                                               "Javis has downloaded its own copy of Chromium.")
+        tt, ly_do = "san_sang", localefmt.chu("Thansa đã tải sẵn một bản Chromium riêng.",
+                                               "Thansa has downloaded its own copy of Chromium.")
     elif chay_duoc:
         tt, ly_do = "san_sang", localefmt.chu(f"Dùng trình duyệt có sẵn trên máy: {chay_duoc}",
                                                f"Using the browser already on this machine: {chay_duoc}")
@@ -316,8 +316,8 @@ def _trang_thai_browser(d: dict, viec: dict) -> dict:
                                                "broke midway. Press Remove, then download again. ")
                                  + chan_doan_trinh_duyet())
     else:
-        tt, ly_do = "chua_cai", localefmt.chu("Máy này chưa có trình duyệt nào Javis lái được.",
-                                               "This machine has no browser Javis can drive yet.")
+        tt, ly_do = "chua_cai", localefmt.chu("Máy này chưa có trình duyệt nào Thansa lái được.",
+                                               "This machine has no browser Thansa can drive yet.")
     d.update({
         "trang_thai": tt, "ly_do": ly_do,
         "go_duoc": bool(tai_ve),           # chỉ gỡ được thứ CHÍNH JAVIS tải về
@@ -458,8 +458,8 @@ def go(cong_cu: str = "browser") -> dict:
         return {"ok": False, "error": localefmt.chu(f"không có công cụ tên {cong_cu!r}", f"no tool named {cong_cu!r}")}
     goc = BROWSERS_DIR
     if not _da_tai():
-        return {"ok": False, "error": localefmt.chu("Không có bản nào do Javis cài để gỡ.",
-                                                    "There is no copy installed by Javis to remove.")}
+        return {"ok": False, "error": localefmt.chu("Không có bản nào do Thansa cài để gỡ.",
+                                                    "There is no copy installed by Thansa to remove.")}
     try:
         shutil.rmtree(goc, ignore_errors=True)
         _viec.pop(cong_cu, None)

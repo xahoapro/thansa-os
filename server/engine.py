@@ -1766,10 +1766,10 @@ def _het_vong_msg() -> str:
     n = _max_tool_rounds()
     return _c(f"\n\n⚠ Đã chạy hết {n} vòng gọi tool cho lượt này nên phải dừng, câu trả lời ở "
               f"trên có thể còn dở. Cách xử lý: chia nhỏ yêu cầu thành từng bước, hoặc nâng trần "
-              f"bằng biến môi trường JAVIS_MAX_TOOL_ROUNDS (tối đa 120) rồi khởi động lại Javis.",
+              f"bằng biến môi trường JAVIS_MAX_TOOL_ROUNDS (tối đa 120) rồi khởi động lại Thansa.",
               f"\n\n⚠ All {n} tool-call rounds for this turn were used, so it had to stop; the answer "
               f"above may be incomplete. To fix: split the request into steps, or raise the limit "
-              f"with the environment variable JAVIS_MAX_TOOL_ROUNDS (up to 120) and restart Javis.")
+              f"with the environment variable JAVIS_MAX_TOOL_ROUNDS (up to 120) and restart Thansa.")
 
 
 class _LapGuard:
