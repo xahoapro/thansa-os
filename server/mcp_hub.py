@@ -474,7 +474,7 @@ def _connections_json(include_ambient=False, hidden=None, bo_qua=None):
     # này" rồi còn ghi điều đó vào bộ nhớ dài hạn. KHÔNG có khái niệm ấy: hub dựng tool từ
     # mcp_store.resolved() cho MỌI vault như nhau. Không thấy tool chỉ có hai lý do thật -
     # nguồn đang tắt, hoặc nguồn đang hỏng lúc dò - và cả hai đều phải nói ra ở đây.
-    out = [{"ghi_chu": ("Kết nối là của CẢ Javis, dùng chung cho MỌI brain. Không có chuyện "
+    out = [{"ghi_chu": ("Kết nối là của CẢ Thansa, dùng chung cho MỌI brain. Không có chuyện "
                         "'gắn nguồn vào brain' - đừng bao giờ nói vậy. Nguồn có mặt ở danh sách "
                         "này mà không thấy tool của nó thì xem trang_thai: đang TẮT (bật lại ở "
                         "trang Kết nối) hoặc đang HỎNG lúc dò (bảo người dùng bấm Kiểm tra ở "
@@ -583,7 +583,7 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
                         f"tương đối so với một trong số đó, hoặc file vừa đính kèm vào khung "
                         f"chat.")
             return (f"ERROR: '{rel}' nằm ngoài bộ não đang làm việc nên tool này không đọc "
-                    f"được. Javis khoá tool file trong brain để một lượt chat không đọc lung "
+                    f"được. Thansa khoá tool file trong brain để một lượt chat không đọc lung "
                     f"tung trên máy. Đọc được: đường dẫn tương đối trong brain, và file người "
                     f"dùng vừa đính kèm vào khung chat.")
         if not p.is_file():
@@ -1309,7 +1309,7 @@ def _ghi_chu_brain(nguon, vault_root, header_hong):
     """Dòng gắn vào kết quả tool để người dùng luôn biết lượt đó chạy trên brain nào."""
     if nguon not in _NGUON_CHU:
         return ""
-    ra = (f"(Javis đang làm việc trên brain \"{Path(vault_root).name}\" - {vault_root}. "
+    ra = (f"(Thansa đang làm việc trên brain \"{Path(vault_root).name}\" - {vault_root}. "
           f"Lượt gọi này tới hub không kèm header X-Javis-Vault nên hub lấy "
           f"{_NGUON_CHU[nguon]}. Muốn brain khác thì đổi brain trên dashboard, hoặc thêm "
           f"header X-Javis-Vault vào cấu hình MCP của client.)")
@@ -1326,12 +1326,12 @@ def _chan_doan_thieu_brain(header_hong):
     if header_hong:
         dau = (f"Header X-Javis-Vault có gửi nhưng trỏ vào \"{header_hong}\", đường dẫn này "
                f"không có thật trên máy chủ. ")
-    return ("\n\n(CHẨN ĐOÁN: " + dau + "lượt gọi này tới hub không mang brain nào, và Javis "
+    return ("\n\n(CHẨN ĐOÁN: " + dau + "lượt gọi này tới hub không mang brain nào, và Thansa "
             "cũng chưa suy ra được brain đang mở (chưa có cuộc trò chuyện nào, mà thư mục "
             f"{_brains_dir()} đang có nhiều hơn một brain nên hub không đoán bừa). Thiếu header "
-            "là chuyện của cấu hình MCP phía client: Javis chỉ tự gắn X-Javis-Vault khi CHÍNH "
+            "là chuyện của cấu hình MCP phía client: Thansa chỉ tự gắn X-Javis-Vault khi CHÍNH "
             "nó khởi động engine, còn phiên Codex do người dùng tự mở thì dùng profile chung "
-            "vốn không mang header. Cách chữa: chat một lượt ở dashboard để Javis biết brain "
+            "vốn không mang header. Cách chữa: chat một lượt ở dashboard để Thansa biết brain "
             "đang mở, hoặc thêm \"X-Javis-Vault\" = \"<đường dẫn brain>\" vào http_headers của "
             "server javis trong cấu hình MCP.)")
 
@@ -1823,7 +1823,7 @@ async def validate_connection(conn_id):
                             + ". Press Sign in again and tick every permission box."
                             " If Google shows no permission boxes when you sign in again, that is"
                             " normal: permissions already granted are passed straight through. To"
-                            " tick them again from scratch, remove Javis at"
+                            " tick them again from scratch, remove Thansa at"
                             " https://myaccount.google.com/permissions and then Connect again.")}
         except Exception as e:
             print(f"[hub scope] {e}", file=sys.stderr)

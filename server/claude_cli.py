@@ -1339,7 +1339,7 @@ _NOTE_SANDBOX_HONG = (
     "container vẫn là rào), hoặc chuyển việc nền này sang bộ não Claude."
 )
 _NOTE_SANDBOX_HONG_EN = (
-    "⚠ Javis self-check: Codex's own sandbox (ChatGPT) CANNOT start in this "
+    "⚠ Thansa self-check: Codex's own sandbox (ChatGPT) CANNOT start in this "
     "environment, so every file read/write command it runs is blocked from the start. This is a limit of "
     "the container, not a failure of this run, and retrying will not change it. Two ways out: "
     "set the environment variable JAVIS_CODEX_SANDBOX=off so Codex runs without its own sandbox (the "
