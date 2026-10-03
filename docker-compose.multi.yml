@@ -49,6 +49,11 @@ services:
       caddy: ${DOMAIN_NAME:?DOMAIN_NAME chưa đặt - thêm DOMAIN_NAME=ten-mien-cua-ban vào .env}
       caddy.reverse_proxy: "{{upstreams 7777}}"
 
+  # Proxy dùng chung (docker-compose.proxy.yml) đã giữ cổng 80/443 cho cả máy. Caddy riêng mà
+  # docker-compose.yml dựng sẵn cho máy một bản phải TẮT ở đây, không thì nó giành cổng 443.
+  caddy:
+    deploy:
+      replicas: 0
 networks:
   javis-web:
     external: true

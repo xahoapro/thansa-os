@@ -114,14 +114,21 @@ link riêng chạy HTTPS mà không cần mua tên miền. **Lưu ý (đã kiể
 
 **VPS có tên miền riêng - auto Let's Encrypt, đặt NGAY TRONG APP (khuyên dùng):**
 
-Không cần đặt `DOMAIN` lúc chạy nữa - bật Caddy một lần rồi khai báo tên miền trong giao diện.
-1. Bật Caddy (On-Demand TLS): `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d`
-   *(cần Docker Compose v2.23.1+ - kiểm tra `docker compose version`)*
+Không cần đặt `DOMAIN` lúc chạy, không cần chạy thêm lệnh nào: `docker-compose.yml` đã dựng sẵn Caddy
+(On-Demand TLS), nó đứng im cho tới khi bạn khai tên miền trong giao diện.
+1. `docker compose up -d` như bình thường *(cần Docker Compose v2.23.1+ - kiểm tra `docker compose version`)*.
+   Cổng 80/443 đã có web server khác → đặt `JAVIS_CADDY=0` trong `.env` để tắt Caddy.
 2. Mở `http://<ip-vps>:7777` → **Cài đặt → Giọng nói, thương hiệu & truy cập → Tên miền & SSL** → nhập `javis.tencuaban.com` → **Lưu & kiểm tra**.
 3. Wizard hiện đúng bản ghi DNS cần tạo (A: `javis.tencuaban.com → <ip-vps>`) và có nút sao chép.
    Trỏ DNS xong, đợi lan.
-4. Mở `https://javis.tencuaban.com` → Caddy **tự xin + gia hạn** chứng chỉ ở lần mở đầu, cookie
-   Secure tự bật. Xong.
+4. Bấm **Kích hoạt** ở bước 3 → Caddy **tự xin + gia hạn** chứng chỉ, cookie Secure tự bật. Mở
+   `https://javis.tencuaban.com`. Xong.
+
+> Cài bằng file compose cũ (chưa có Caddy dựng sẵn)? Bấm Kích hoạt, app hiện đúng lệnh cộng thêm lớp
+> HTTPS (`docker-compose.https.yml`) để chạy một lần.
+>
+> **Cài trực tiếp không Docker (Linux, `install.sh`)?** Cũng chỉ cần nhập tên miền và bấm **Kích hoạt**:
+> Thansa tự cài nginx + Let's Encrypt (cần đã đặt mật khẩu đăng nhập; xem docs/15-thuong-hieu-ten-mien.md).
 
 > An toàn: Caddy hỏi backend (`/tls-check`) trước khi xin cert → **chỉ** cấp cho đúng tên miền bạn đã
 > nhập trong app. Kẻ trỏ DNS bừa vào IP không ép server xin cert lung tung được (khỏi cạn rate-limit
