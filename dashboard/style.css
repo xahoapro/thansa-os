@@ -657,7 +657,7 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
 .orb-state.listening { color: var(--accent); }
 .orb-state.speaking { color: var(--accent2); }
 .orb-state.thinking { color: var(--yellow); }
-/* Voice V1: trạng thái thật (docs/dev/2026-09-voice-v1-spec.md mục 4) */
+/* Voice V1: trạng thái thật (docs/dev/2026-10-voice-call-spec.md phụ lục A1) */
 .orb-state.waiting { color: var(--accent2); }
 .orb-state.paused { color: var(--yellow); }
 .orb-state.reconnecting { color: var(--red); animation: orb-blink 1.2s ease-in-out infinite; }
@@ -959,6 +959,12 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
   z-index: 400; display: none; align-items: center; justify-content: center;
 }
 .modal-overlay.open { display: flex; }
+/* Màn đăng nhập là CỔNG, không phải hộp thoại nổi trên một trang đang dùng: người nhìn chưa được
+   thấy gì phía sau. Lớp mờ chung (--scrim + blur) vẫn để lộ bố cục dashboard, rõ nhất ở giao diện
+   sáng (alpha 0.34). Dữ liệu thì máy chủ đã chặn bằng 401, nên đây chỉ che nốt phần nhìn. Dùng
+   nền đặc của chính trang; --bg không có alpha ở cả hai giao diện nên che kín hẳn.
+   Chỉ riêng #authOverlay: các hộp thoại khác do người ĐÃ đăng nhập mở, cần thấy trang phía sau. */
+#authOverlay { background: var(--bg); backdrop-filter: none; }
 .folder-modal {
   width: 560px; max-width: 90vw; max-height: 80vh; background: var(--bg2);
   border: 1px solid var(--border); border-radius: 14px; display: flex; flex-direction: column;
@@ -1013,7 +1019,8 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
   min-height: clamp(280px, 46vh, 620px);
 }
 .transcript:empty::after {
-  content: "Nói hoặc gõ để bắt đầu hội thoại với Thansa.";
+  /* Câu mời lấy từ từ điển (data-i18n-empty -> data-empty-hint), không viết cứng ở đây. */
+  content: attr(data-empty-hint);
   color: var(--text3); font-size: 14px; font-style: italic;
 }
 .msg { animation: fadeIn 0.2s ease; }
@@ -1836,10 +1843,9 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 .qs-field > select, .qs-field > input { flex: 0 1 400px; min-width: 0; margin: 0; }
 .qs-field > .toggle { flex: none; }
 .qs-hint { font-size: 12.5px; line-height: 1.5; color: var(--text3); margin: -2px 0 10px; }
-/* Tiêu đề phụ TRONG một thẻ (vd "MICRO" nằm trong thẻ Chế độ nói chuyện): cùng cỡ chữ với
-   nhãn thẻ, thêm gạch mảnh phía trên để mắt thấy đây là phần hai của cùng một thẻ. */
-.qs-sub { font-family: var(--font); font-size: 12px; letter-spacing: 2px; color: var(--text3);
-  margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+/* Ô chọn kèm nút ngay bên phải (Giọng Javis + Nghe thử ở thẻ Giọng nói): cả cụm chiếm đúng chỗ
+   của một ô chọn trong hàng "nhãn trái, ô chọn phải". */
+.qs-field > .v2-voice-row { flex: 0 1 400px; min-width: 0; }
 .qs-block .opt-sub { font-size: 12.5px; line-height: 1.5; color: var(--text3); }
 /* Nút Lưu của MỌI thẻ: luôn ở góc dưới phải, luôn cùng một họ nút (.gcard-btn của trang Cài
    đặt). Trước đây mỗi thẻ một kiểu - nút tím tràn ngang, nút viền tràn ngang, nút thường canh
@@ -1856,6 +1862,8 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 @media (max-width: 700px) {
   .qs-field { flex-direction: column; align-items: stretch; gap: 6px; }
   .qs-field > select, .qs-field > input { flex: 1 1 auto; }
+  /* Cột dọc thì flex-basis 400px thành CHIỀU CAO: cụm ô chọn + Nghe thử phải cao theo nội dung. */
+  .qs-field > .v2-voice-row { flex: 0 0 auto; }
   .qs-field > .toggle { align-self: flex-end; }
 }
 
@@ -2376,7 +2384,13 @@ body.jv-artpanel-open { overflow: hidden; }
 .note-editor { position: absolute; inset: 0; z-index: 12; display: flex; flex-direction: column;
   background: var(--panel-solid); }
 .note-editor[hidden] { display: none; }
-.note-editor.ne-full { position: fixed; inset: 0; z-index: 1000; }
+.note-editor.ne-full { position: fixed; inset: 0; z-index: 1000;
+  /* VÙNG AN TOÀN (0.65.30, cùng bài với .jv-lb): mở Javis từ màn hình chính iPhone thì thanh
+     trạng thái trong suốt (black-translucent) đè lên mép trên, nên thanh tên file + nút nằm lẫn
+     dưới đồng hồ và vạch pin. Đệm ở chính lớp này; box-sizing border-box toàn cục nên inset:0
+     vẫn phủ kín màn hình. Máy không có tai thỏ thì env() bằng 0, không đổi gì. */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 /* Phóng to = phủ KÍN màn hình, kể cả rail bên trái.
    Vì sao phải thêm luật cho .cview: nó là position:fixed + z-index:40 nên TẠO MỘT
    STACKING CONTEXT. Trình sửa nằm trong đó (trang Trò chuyện, trang Tệp tin), nên
@@ -2433,6 +2447,10 @@ body.ne-full-on .cview { z-index: 250; }
 .ne-fmt button { background: var(--surface-1); border: 1px solid var(--border); color: var(--text2); cursor: pointer;
   font-size: 13px; min-width: 28px; height: 26px; border-radius: 5px; padding: 0 6px; }
 .ne-fmt button:hover { color: var(--text); border-color: var(--info-line); }
+/* Số từ · số ký tự (0.65.32): đứng cuối thanh công cụ, đẩy sang phải, chữ mờ để không tranh
+   chỗ với nút. Rê chuột vào thì hiện số ký tự không tính khoảng trắng. */
+.ne-count { margin-left: auto; align-self: center; padding: 0 4px; font-size: 12px;
+  color: var(--text3); white-space: nowrap; font-variant-numeric: tabular-nums; cursor: default; }
 .ne-panes { flex: 1; display: flex; min-height: 0; overflow: hidden; }
 .ne-wys { outline: none; border-left: none; }                  /* bản render sửa trực tiếp: full màn, không viền */
 .ne-wys:focus { outline: none; }
@@ -3446,6 +3464,10 @@ body.ne-full-on .cview { z-index: 250; }
 
 /* ---- Bộ phán xử hội thoại nhóm (0.65.0) ---- */
 .cb-rp-note { margin-top: 10px; }
+.cb-rp-owners { margin: 10px 0 4px; }
+.cb-rp-ownlist { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 4px 0; }
+.cb-rp-own { display: inline-flex; align-items: center; gap: 6px; }
+.cb-rp-thumbh { margin: 6px 0 2px; }
 .cb-form label.cb-rp-learn { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0 2px;
   font-weight: 500; cursor: pointer; }
 .cb-rp-form { width: min(820px, 96vw); }
@@ -3465,3 +3487,27 @@ body.ne-full-on .cview { z-index: 250; }
 .cb-rp-ul { margin: 4px 0 8px 18px; padding: 0; font-size: 13.5px; }
 .cb-rp-pre { white-space: pre-wrap; font-size: 12.5px; background: var(--surface-3); border-radius: 8px;
   padding: 8px 10px; margin: 4px 0; }
+
+/* ===== Thanh gọi (call-bar.js, 0.65.18): bấm mic là gọi Javis ===== */
+.call-bar { display: flex; align-items: center; gap: 10px; flex: none; margin: 0 0 8px; padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface-1, rgba(127,127,127,.06)); font-size: 13px; }
+.call-bar[hidden] { display: none; }
+.call-bar .call-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--text3); }
+.call-bar[data-state="listening"] .call-dot { background: #22c55e; }
+.call-bar[data-state="speaking"] .call-dot { background: var(--accent); animation: call-pulse 1.1s ease-in-out infinite; }
+.call-bar[data-state="working"] .call-dot { background: #f59e0b; animation: call-pulse 1.4s ease-in-out infinite; }
+.call-bar[data-state="connecting"] .call-dot, .call-bar[data-state="reconnecting"] .call-dot { background: #f59e0b; }
+.call-bar[data-state="muted"] .call-dot { background: #ef4444; }
+.call-bar .call-engine { font-weight: 600; color: var(--text1, inherit); flex: none; }
+.call-bar .call-state { color: var(--text2); min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.call-bar .call-clock { color: var(--text3); font-variant-numeric: tabular-nums; flex: none; }
+.call-bar .call-btn { flex: none; border: 1px solid var(--border); background: none; color: var(--text2); border-radius: 8px;
+  padding: 4px 10px; cursor: pointer; font-size: 12.5px; line-height: 1.3; }
+.call-bar .call-btn:hover { color: var(--accent); border-color: var(--accent); }
+.call-bar .call-mute[aria-pressed="true"] { color: #ef4444; border-color: #ef4444; }
+.call-bar .call-hangup { background: #ef4444; border-color: #ef4444; color: #fff; }
+.call-bar .call-hangup:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
+@keyframes call-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@media (max-width: 600px) { .call-bar { gap: 8px; padding: 6px 6px 6px 10px; } .call-bar .call-engine { display: none; } }
+/* Nút mic khi đang gọi: thành nút Cúp máy đỏ. */
+.mic-big.in-call { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }

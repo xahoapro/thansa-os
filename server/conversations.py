@@ -29,6 +29,7 @@ Tên file cố ý KHÔNG phải `conversations.db`: tên đó đã thuộc về 
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import sys
 import threading
@@ -495,14 +496,17 @@ def tin_gan_day(channel: str, account_id: str, external_chat_id: str, limit: int
 def _conv_public(r: dict) -> dict:
     d = dict(r)
     d["metadata"] = _loads(d.pop("metadata_json", "{}"), {})
-    d["channel_label"] = KENH_NHAN.get(d.get("channel") or "", d.get("channel") or "")
+    d["channel_label"] = (_channels.nhan_giao_dien(d.get("channel") or "")
+                          if _channels.spec(d.get("channel") or "") else (d.get("channel") or ""))
     if not d.get("title"):
         if d.get("chat_type") == "group":
             # KHÔNG mượn tên khách: khách gắn với cuộc chat là NGƯỜI NHẮN ĐẦU TIÊN, nên nhóm
             # chưa biết tên hiện thành tên một người trong nhóm (chủ thấy nhóm "Test Bot Zalo"
             # hiện là "Minh Quý"). Đuôi id đủ để phân biệt các nhóm chưa rõ tên với nhau.
             cid = str(d.get("external_chat_id") or "")
-            d["title"] = f"Nhóm …{cid[-6:]}" if cid else "Nhóm chưa rõ tên"
+            import localefmt
+            d["title"] = (localefmt.chu(f"Nhóm …{cid[-6:]}", f"Group …{cid[-6:]}") if cid
+                          else localefmt.chu("Nhóm chưa rõ tên", "Unnamed group"))
         else:
             d["title"] = d.get("customer_name") or d.get("external_chat_id") or ""
     return d
@@ -711,7 +715,9 @@ def dat_che_do(conversation_id: int, mode: str) -> tuple[bool, str]:
     """ai | human | waiting | closed. Chuẩn bị cho bước tiếp quản (V1.1); V1 chỉ đọc."""
     m = str(mode or "").strip().lower()
     if m not in CHE_DO:
-        return False, f"chế độ '{m}' không hợp lệ (một trong {', '.join(CHE_DO)})"
+        import localefmt
+        return False, localefmt.chu(f"chế độ '{m}' không hợp lệ (một trong {', '.join(CHE_DO)})",
+                                    f"invalid mode '{m}' (one of {', '.join(CHE_DO)})")
     with _lock:
         db = _conn()
         cur = db.execute("UPDATE conversations SET mode=?, updated_at=? WHERE id=?",
@@ -719,7 +725,10 @@ def dat_che_do(conversation_id: int, mode: str) -> tuple[bool, str]:
         db.commit()
     if cur.rowcount > 0 and m == "human":
         _bao_tiep_quan(conversation_id)
-    return (cur.rowcount > 0), ("" if cur.rowcount > 0 else "không có hội thoại nào id đó")
+    if cur.rowcount > 0:
+        return True, ""
+    import localefmt
+    return False, localefmt.chu("không có hội thoại nào id đó", "no conversation with that id")
 
 
 def _bao_tiep_quan(conversation_id: int) -> None:
@@ -870,6 +879,19 @@ _DAU_MEDIA = (
     ("audio", "audio"), ("video", "video"), ("sticker", "sticker"), ("file", "file"),
     ("tài liệu", "file"), ("document", "file"),
 )
+
+
+_NEN_ANH = re.compile(r"^(?:https?://\S+|\[(?:chat\.)?(?:photo|image)[^\]]*\]|\[[^\]]*khách gửi [a-z]+\])$", re.IGNORECASE)
+
+
+def chu_thich_anh(text: str) -> str:
+    """Chú thích thật của một tin ảnh, hoặc "" nếu tin ảnh trơn.
+
+    MCP của zalo-agent-cli chuẩn hoá tin không phải chữ thành `text = content.title || content.href || "[<msgType>]"` (xem `normalizeMessage` ở
+    `src/commands/mcp.js`, bản 1.6.2): ảnh CÓ chú thích thì `text` là chú thích; ảnh trơn thì `text` là đường dẫn ảnh, hoặc "[chat.photo]". Javis
+    cũng tự thay chữ trống bằng "[Zalo cá nhân: khách gửi image]". Cả ba loại "nền" đó không phải lời của người gửi nên trả rỗng."""
+    t = " ".join(str(text or "").split())
+    return "" if (not t or _NEN_ANH.match(t)) else t
 
 
 def loai_tin_tu_chu(text: str) -> str:

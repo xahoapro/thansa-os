@@ -627,4 +627,36 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   me-backup-0.64.77-pre (= me trước rebase, dc0282fa). Secret-scan cây = sạch.
 - NGHIỆM THU (env -u JAVIS_*): fork 528/533, upstream sạch 529/533. Đỏ chung = {form_chuoi_rong, route_table,
   run_command_quyen, terminal_cmd_goc} (sandbox). test_grok_cli đỏ khi chạy song song 2 suite, chạy riêng
-  XANH (flaky tải máy) → **0 hồi quy fork**. CHƯA đẩy remote — chờ chủ bấm.
+  XANH (flaky tải máy) → **0 hồi quy fork**. **ĐÃ PHÁT HÀNH 2026-10-01** (origin/main 592ac6c, snapshot ff từ e995f51; backup me-backup-0.65.12).
+
+## Vòng 2026-10-03 (goc d27172b → 4515680, upstream +29 commit, VERSION nền 0.65.12 → 0.70.2, thansa 1.15→1.16)
+- 29 commit: **gọi điện bằng giọng** (bấm mic là gọi, thanh gọi, ChatGPT Live qua gói ChatGPT, nối lại nhanh,
+  giữ màn hình sáng, nói chen không cắt câu trả lời, chọn model bộ não trả lời nhanh), **i18n đại tu** (0.66 UI
+  theo trình duyệt khi máy chưa chọn, 0.67 server song ngữ localefmt.chu + mỗi thiết bị một ngôn ngữ qua cookie
+  javis_lang, 0.68 changelog EN), README gốc tiếng Anh + 11 bản dịch docs/i18n, CONTRIBUTING/SECURITY/CoC/.github,
+  bỏ thư mục website/, bộ đếm từ trình sửa file, link chia sẻ có tên, vá iPhone, màn đăng nhập nền đặc.
+- Rebase 145 commit (42 patch). Xung đột: P001/P003 (main.py lấy HEAD localefmt.chu + Thansa), P007 (10 file
+  server: HEAD + regex an toàn), P008/P012/P021/P031/P034/P036/P039/P043/P044/P046 (HEAD + regex), chore gitignore
+  (union: server/stt_bench/ + ops/.telegram), P025 (VERSION 1.16.0-javis-0.70.2; main.py giữ _ver_thansa + nhận
+  kiểm image Docker mới), P026 (website/index.html upstream xoá → git rm; README hợp nhất lại ở P048), P038 (i18n).
+- **SỰ CỐ ĐÃ CHẶN:** giải P038 bằng HEAD làm RƠI 16 khoá cảnh báo cs.si_mqwarn_*/fullwarn_*/full_confirm/
+  toggle_confirm (console.js vẫn dùng). Phát hiện bằng so khoá với bản 1.15.0 → fixup + autosquash vào CHÍNH
+  commit P038 (cây sau squash y hệt). Bài học: i18n json của P038 phải giải UNION, không lấy HEAD.
+- **P047 mới:** đồng bộ lớp phủ EN (dich-en.js/thansa_lang) với cơ chế ngôn ngữ theo thiết bị của upstream
+  (đoán theo trình duyệt + nghe javis:i18n; _lang_en đọc javis_lang trước). Overlay en-goi.json còn 542/918
+  chuỗi sống → CHƯA khai tử (mốc <~200).
+- **P048 mới:** rebrand chuỗi hiển thị nền 0.70.2: string literal server (tokenize, bỏ docstring) ~110 chỗ kể cả
+  nửa tiếng Việt còn sót của cặp song ngữ; i18n bar.mic/call.*/chat.empty_hint; README EN + 11 bản dịch +
+  QUICKSTART + CONTRIBUTING/SECURITY/CoC/ARCHITECTURE/.github + 5 SVG theo luật P026/P027 (anchor README sửa
+  khớp); CODEOWNERS @xahoapro. GIỮ "cần Javis {compat}" ở packs.py (so với nền Javis, không phải semver Thansa).
+  Sửa 6 test bám chuỗi (cai_windows, composio_connection, tao_file_tu_chat, voice_transcript_integrity) + siết
+  test_update ("?v=72" trùng vân tay nội dung voice-turn.js → so nguyên văn `?v=72"`). P027 neo lại sang
+  docs/i18n/vi/README.md (README tiếng Việt dời về đây). so_patch 42→44.
+- **Soát hành vi:** ChatGPT Live/realtime không tự làm việc trên máy (codex_realtime chặn), giao việc vẫn qua
+  javis-task/schedule có _MODE_CHO_PHEP=("suggest","auto") → chốt P038 SỐNG. Người dùng cũ giữ ngôn ngữ đã lưu
+  (console.js áp ui_lang server khi máy chưa chọn).
+- VERSION 1.16.0-javis-0.70.2. moc-goc 4515680/0.70.2/so_patch 44. tu-kiem-chung 5/5 XANH. backup
+  me-backup-0.65.12-pre (= me trước rebase, 8ff06dbc).
+- NGHIỆM THU (env -u JAVIS_*): fork 549/559 lần đầu → sửa 6 test coupled → đỏ còn đúng 4 = {form_chuoi_rong,
+  route_table, run_command_quyen, terminal_cmd_goc}, upstream sạch ĐỎ y hệt (sandbox) → **0 hồi quy fork**.
+  CHƯA đẩy remote — chờ chủ bấm.

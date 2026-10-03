@@ -45,6 +45,7 @@ import chatbot_reply_policy_store
 import chatbot_store
 import chatbot_tu_dong
 import conversations
+import localefmt
 
 # Kênh -> lớp vận chuyển: tra SỔ ĐĂNG KÝ KÊNH (server/channels). Trước 0.61.0 là một bảng chép
 # tay ở đây; nay thêm kênh là thêm một module ở sổ, bộ giám sát không đổi.
@@ -261,6 +262,18 @@ def build_bot_prompt(bot: dict) -> str:
     if nc:
         phan.append(_NGU_CANH_NHOM.format(khoi=nc))
     return "\n".join(phan)
+
+
+# ============================================================
+# Tin kèm ảnh (0.65.13)
+# ============================================================
+_KEM_ANH = "(tin này kèm một ảnh mà bạn không xem được, chỉ có phần chú thích) "
+
+
+def gan_nhan_anh(text_engine: str, meta: dict) -> str:
+    """Tin ảnh có chú thích tới bot chỉ mang CHÚ THÍCH (bot không có ảnh). Nói thẳng cho model biết, kẻo nó trả lời như thể đã nhìn thấy ảnh,
+    hoặc ngơ ngác vì câu hỏi nhắc "ảnh này"."""
+    return (_KEM_ANH + text_engine) if (meta or {}).get("co_anh") else text_engine
 
 
 # ============================================================
@@ -915,8 +928,11 @@ async def _gui_nhan_vien(bot_cfg: dict, dich: str, chat_id: str, ly_do: str) -> 
         async with httpx.AsyncClient(timeout=15) as client:
             await client.post(tb._url("sendMessage"), json={
                 "chat_id": dich,
-                "text": (f"🔔 Bot \"{bot_cfg.get('name')}\" cần người thật.\n"
-                         f"Người nhắn: {chat_id}\nLý do: {ly_do}"),
+                # Tin cho CHỦ / người trực (không phải khách): theo ngôn ngữ giao diện của máy.
+                "text": localefmt.chu(f"🔔 Bot \"{bot_cfg.get('name')}\" cần người thật.\n"
+                                      f"Người nhắn: {chat_id}\nLý do: {ly_do}",
+                                      f"🔔 Bot \"{bot_cfg.get('name')}\" needs a human.\n"
+                                      f"Sender: {chat_id}\nReason: {ly_do}"),
             })
     except Exception as e:
         print(f"[chatbot handoff] {e}", file=sys.stderr)
@@ -1148,6 +1164,7 @@ def _make_answer_fn(bot_id: str):
             ten_nguoi = str((meta or {}).get("user_name") or "").strip()
             if ten_nguoi:
                 text_engine = f"[{ten_nguoi}] {text}"
+        text_engine = gan_nhan_anh(text_engine, meta)
 
         # Bản ghi truyền xuống lõi phải có brain và slug - lõi dựa vào đó để đổi brain, đổi
         # khoá phiên và đổi nhãn kênh.
@@ -1247,8 +1264,10 @@ def _make_answer_fn(bot_id: str):
             # bot đang gãy chứ không phải đang thiếu tài liệu. Hai chuyện đó sửa khác nhau hoàn toàn.
             asyncio.ensure_future(_gui_nhan_vien(
                 cfg, str(cfg["handoff_to"]), chat_id,
-                (f"Bot đang LỖI: {loi_ky_thuat[:300]}" if loi_ky_thuat else
-                 f"Bí {lien_tiep} câu liên tiếp. Câu gần nhất: {str(text)[:200]}")))
+                (localefmt.chu(f"Bot đang LỖI: {loi_ky_thuat[:300]}",
+                               f"The bot is FAILING: {loi_ky_thuat[:300]}") if loi_ky_thuat else
+                 localefmt.chu(f"Bí {lien_tiep} câu liên tiếp. Câu gần nhất: {str(text)[:200]}",
+                               f"Stuck on {lien_tiep} messages in a row. Latest: {str(text)[:200]}"))))
         return out
     return _answer
 
@@ -1265,12 +1284,15 @@ def manual_meta(conv: dict, last: dict) -> dict:
     key = str(conv.get("channel_account_id") or "")
     raw = key.split(":", 1)[1] if ":" in key else key
     grp = conv.get("chat_type") == "group"
-    return {"chat_id": str(conv.get("external_chat_id") or ""), "chat_type": "group" if grp else "private",
+    meta = {"chat_id": str(conv.get("external_chat_id") or ""), "chat_type": "group" if grp else "private",
             "chat_title": str(conv.get("title") or "") if grp else "",
             "user_id": str(last.get("sender_id") or ""), "user_name": str(last.get("sender_name") or ""), "username": "",
             "message_id": str(last.get("external_message_id") or ""), "account_id": raw,
             "platform": str(conv.get("channel") or ""), "_kenh": str(conv.get("channel") or ""), "mentioned": True,
             "ts": float(last.get("created_at") or time.time())}
+    if last.get("message_type") == "image":
+        meta["co_anh"] = True
+    return meta
 
 
 async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
@@ -1287,13 +1309,19 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
     bot_id = str(conv.get("bot_id") or "")
     cfg = chatbot_store.get_bot(bot_id)
     if not cfg:
-        return {"ok": False, "code": "no_bot", "error": "Bot của cuộc chat này không còn nữa"}
+        return {"ok": False, "code": "no_bot", "error": localefmt.chu("Bot của cuộc chat này không còn nữa",
+                                                                      "The bot of this chat no longer exists")}
     last = next((m for m in reversed(msgs or []) if m.get("sender_type") == "customer"), None)
-    if not last or not str(last.get("text") or "").strip():
-        return {"ok": False, "code": "no_message", "error": "Chưa có tin khách để trả lời"}
+    # Tin ảnh thì chỉ phần chú thích là lời của khách; ảnh trơn (đường dẫn hoặc chữ giữ chỗ) không có gì để trả lời.
+    chu_khach = (conversations.chu_thich_anh(last.get("text")) if (last or {}).get("message_type") == "image"
+                 else str((last or {}).get("text") or "").strip())
+    if not last or not chu_khach:
+        return {"ok": False, "code": "no_message", "error": localefmt.chu("Chưa có tin khách để trả lời",
+                                                                          "No customer message to reply to yet")}
     conv_id = conv.get("id")
     if conv_id in _MANUAL_BUSY:
-        return {"ok": False, "code": "busy", "error": "Bot đang soạn cho cuộc chat này, chờ một chút"}
+        return {"ok": False, "code": "busy", "error": localefmt.chu("Bot đang soạn cho cuộc chat này, chờ một chút",
+                                                                    "The bot is already drafting for this chat, wait a moment")}
     _MANUAL_BUSY.add(conv_id)
     meta = manual_meta(conv, last)
     key = f"bot:{bot_id}:{meta['chat_id']}"
@@ -1305,7 +1333,7 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
         except Exception as e:      # noqa: BLE001 - không đọc được phiên thì nháp không có ngữ cảnh kho, vẫn chạy
             print(f"[chatbot {bot_id}] đọc phiên cho bản nháp lỗi: {type(e).__name__}", file=sys.stderr)
     try:
-        text = str(last["text"])
+        text = chu_khach
         tl = await _tra_tai_lieu(bot_id, cfg, text)
         _aid, kenh = _tai_khoan_cua(cfg, meta)
         cfg["_tai_lieu"], cfg["_kenh_luot"], cfg["_tu_dong"] = tl, kenh, False
@@ -1313,6 +1341,7 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
         text_engine = text
         if kenh == "zalo_personal" and meta["chat_type"] == "group" and meta["user_name"]:
             text_engine = f"[{meta['user_name']}] {text}"      # cả nhóm chung một mạch: model phải biết ai đang nói
+        text_engine = gan_nhan_anh(text_engine, meta)
         kw = {"channel": kenh, "bot": cfg}
         if draft:
             kw.update(phien_kho=sid, ghi_kho=False)
@@ -1327,7 +1356,9 @@ async def manual_answer(conv: dict, msgs: list, draft: bool = False) -> dict:
             except Exception as e:      # noqa: BLE001
                 print(f"[chatbot {bot_id}] gỡ dấu vết bản nháp lỗi: {type(e).__name__}", file=sys.stderr)
     if isinstance(out, str):      # lõi trả CHUỖI khi lượt hỏng: giữ nguyên lý do cho chủ, không gửi cho khách
-        return {"ok": False, "code": "engine", "error": out.strip()[:300] or "Bot không soạn được câu trả lời"}
+        return {"ok": False, "code": "engine",
+                "error": out.strip()[:300] or localefmt.chu("Bot không soạn được câu trả lời",
+                                                            "The bot could not draft a reply")}
     dap = str((out or {}).get("text") or "").strip()
     if not dap or IM_LANG.lower() in dap.lower():
         return {"ok": True, "silent": True, "text": "", "meta": meta}
@@ -1399,13 +1430,13 @@ def start_bot(bot_id: str) -> tuple[bool, str]:
     """Bật một bot: MỖI tài khoản kênh của nó một poller. Đã chạy thì khởi động LẠI."""
     cfg = chatbot_store.get_bot(bot_id)
     if not cfg:
-        return False, "Không có bot nào id đó"
+        return False, localefmt.chu("Không có bot nào id đó", "No bot with that id")
     if not _deps.get("answer"):
-        return False, "Bộ giám sát chưa được nối vào server"
+        return False, localefmt.chu("Bộ giám sát chưa được nối vào server", "The supervisor is not wired into the server yet")
     ds = chatbot_store.tokens(bot_id)
     nhan_kenh = chatbot_store.KENH_NHAN.get(str(cfg.get("channel") or ""), str(cfg.get("channel") or ""))
     if not any(tok for _, tok in ds):
-        return False, f"Chưa có token {nhan_kenh} cho bot này"
+        return False, localefmt.chu(f"Chưa có token {nhan_kenh} cho bot này", f"This bot has no {nhan_kenh} token yet")
     stop_bot(bot_id)      # huỷ TRƯỚC khi tạo: hai poller cùng token thì máy chủ trả 409 và cả hai chết
     pollers = {}
     loi = []
@@ -1415,7 +1446,8 @@ def start_bot(bot_id: str) -> tuple[bool, str]:
         kenh = str(tk.get("channel") or "")
         Lop = _lop_kenh(kenh)
         if not Lop:
-            loi.append(f"Kênh '{kenh}' chưa có lớp vận chuyển nào")
+            loi.append(localefmt.chu(f"Kênh '{kenh}' chưa có lớp vận chuyển nào",
+                                     f"Channel '{kenh}' has no transport yet"))
             continue
         aid = tk["id"]
         chung = dict(
@@ -1445,7 +1477,8 @@ def start_bot(bot_id: str) -> tuple[bool, str]:
         tb.start()
         pollers[aid] = tb
     if not pollers:
-        return False, "; ".join(loi) or f"Chưa có token {nhan_kenh} cho bot này"
+        return False, "; ".join(loi) or localefmt.chu(f"Chưa có token {nhan_kenh} cho bot này",
+                                                      f"This bot has no {nhan_kenh} token yet")
     _RUNNING[bot_id] = {"pollers": pollers, "cfg": cfg, "started": time.time(), "answered": 0}
     return True, ("; ".join(loi) if loi else "")
 

@@ -2,7 +2,7 @@
 
 ***Tiếng Việt** · [English](en/02-chat-and-voice.md)*
 
-Đây là chỗ bạn làm việc với Thansa nhiều nhất: gõ chữ hoặc nói, Thansa trả lời bằng chữ kèm đọc thành tiếng. Trang này mô tả toàn bộ khung chat, từ phím tắt, lệnh gạch chéo, nút bấm dưới mỗi tin nhắn cho tới cách chọn giọng đọc và nhờ Thansa tạo ảnh.
+Đây là chỗ bạn làm việc với Thansa nhiều nhất: gõ chữ thì Thansa trả lời bằng chữ, bấm mic gọi Thansa thì nó nói thành tiếng. Trang này mô tả toàn bộ khung chat, từ phím tắt, lệnh gạch chéo, nút bấm dưới mỗi tin nhắn cho tới cách chọn giọng đọc và nhờ Thansa tạo ảnh.
 
 Nếu chưa cài đặt xong lần đầu, xem [Bắt đầu & thiết lập lần đầu](01-bat-dau-thiet-lap.md) trước.
 
@@ -11,8 +11,8 @@ Nếu chưa cài đặt xong lần đầu, xem [Bắt đầu & thiết lập l�
 Một chỗ duy nhất để làm việc với Thansa:
 
 - Gõ tin nhắn như chat bình thường.
-- Nói bằng giọng, Thansa nghe rồi tự gửi khi bạn ngừng nói.
-- Thansa trả lời bằng chữ, đồng thời đọc thành tiếng bằng giọng Việt.
+- Bấm mic để gọi Thansa, nói chuyện như gọi điện thoại; Thansa tự gửi khi bạn ngừng nói.
+- Thansa trả lời bằng chữ; trong cuộc gọi thì Thansa nói thêm thành tiếng.
 - Đính kèm file hoặc ảnh vào tin nhắn để Thansa đọc.
 - Thansa nhúng ngược ảnh, file, sơ đồ và trang HTML vào câu trả lời để bạn xem tại chỗ.
 - Xem quả cầu tri thức phản ứng theo âm thanh (sáng lên khi nghe / khi đọc).
@@ -35,7 +35,7 @@ Rail điều hướng bên trái, nhóm **Trợ lý** → mục **Thansa**. Đâ
 | Đồ thị tri thức + trạng thái | Chính giữa | Mạng ghi chú, dòng chữ trạng thái (SẴN SÀNG, ĐANG NGHE...), dải số **AGENTS** / **SKILLS** / **WORKFLOWS** ở đáy |
 | HỘI THOẠI | Cột phải | Lịch sử chat, badge engine, nút **⛶** sang trang Trò chuyện |
 | Thanh model | Ngay trên thanh nhập | Chip chọn model + Effort, dải **HỆ THỐNG** và **MCP** đang dùng |
-| Thanh nhập liệu | Dưới cùng | Nút mic, nút kẹp file, nút loa, ô gõ chữ, nút gửi (đang chạy thì thành nút dừng) |
+| Thanh nhập liệu | Dưới cùng | Nút mic, nút kẹp file, ô gõ chữ, nút gửi (đang chạy thì thành nút dừng) |
 
 Cột trái **không còn** bảng thẻ số liệu kinh doanh; đó là Vault explorer, bấm một note là mở ra sửa ngay trên màn hình (xem [Quản lý tệp tin](05-quan-ly-tep-tin.md)). Bấm vào số AGENTS / SKILLS / WORKFLOWS thì nhảy thẳng sang trang tương ứng trong nhóm **Năng lực**.
 
@@ -60,27 +60,20 @@ Dùng trang này khi bạn muốn màn hình rộng chỉ để chat. Muốn xem
 
 Câu trả lời của Thansa hiện dần ở cột HỘI THOẠI bên phải, chữ chạy ra theo thời gian thực.
 
-### Bước 2 - Nói bằng giọng: giữ phím Cách
+### Bước 2 - Gọi Thansa bằng giọng: bấm nút mic
 
-Cách nhanh nhất để nói một câu:
+Nút mic (hình micro to, bên trái thanh nhập) là nút **gọi Thansa**, như gọi điện thoại:
 
-1. Đảm bảo con trỏ **không** đang nằm trong ô gõ chữ hay ô nhập nào (nếu đang gõ thì phím Cách sẽ ra dấu cách chứ không bật mic).
-2. **Giữ phím Cách (Space)**. Dòng chữ giữa màn hình đổi thành **ĐANG NGHE**, nút mic sáng lên.
-3. Nói câu của bạn. Chữ bạn nói hiện ngay dưới trạng thái để bạn thấy Thansa nghe đúng chưa.
-4. **Thả phím Cách** ra. Thansa tự gửi toàn bộ câu vừa nói và bắt đầu trả lời.
+1. Bấm nút mic một lần. Nút đổi màu đỏ thành **Cúp máy**, và một **thanh gọi** hiện ngay trên khung chat: tên đường gọi (ví dụ **ChatGPT Live**), trạng thái (Đang nghe, Thansa đang nói, Đang làm việc, Đang chờ), đồng hồ cuộc gọi, nút **Tắt mic** và nút **Cúp máy**.
+2. Cứ nói tự nhiên. Lời hai bên hiện thành bong bóng chat như tin thường, nên bảng số, file hay kết quả việc vẫn hiện đầy đủ.
+3. Muốn chen ngang lúc Thansa đang nói thì cứ nói, Thansa thôi đọc để nghe. Câu trả lời đang viết dở vẫn viết nốt vào khung chat. Nói thêm lúc Thansa đang trả lời cũng không làm nó dừng: câu của bạn được giữ lại và Thansa trả lời ngay sau khi xong câu đang trả lời. Cuộc gọi chỉ dừng khi bạn cúp máy.
+4. Kết thúc: bấm **Cúp máy** (trên thanh gọi hoặc chính nút mic), hoặc nhấn **Esc**.
 
-Lần đầu bấm mic, trình duyệt sẽ hỏi quyền dùng micro. Bấm cho phép. Nếu từ chối, Thansa không nghe được và sẽ báo "Anh cần cấp quyền microphone cho trang này.".
+Thansa tự chọn đường gọi: **ChatGPT Live** khi bạn đã nối gói ChatGPT, rồi Live qua API key nếu có, không thì đường **Cơ bản** (nghe bằng trình duyệt, đọc bằng giọng Edge). Nếu ChatGPT Live chưa mở được, cuộc gọi tự chuyển sang đường Cơ bản và báo một dòng. Phím Cách (Space) không còn mở mic.
 
-### Bước 3 - Nói bằng giọng: bấm nút mic (chế độ rảnh tay)
+Lần đầu bấm mic, trình duyệt sẽ hỏi quyền dùng micro. Bấm cho phép. Nếu từ chối, Thansa không nghe được và sẽ báo cần cấp quyền microphone cho trang này.
 
-Nút mic (hình micro to, bên trái thanh nhập) bật **chế độ luôn nghe**, tiện khi bạn không muốn giữ phím:
-
-1. Bấm nút mic một lần. Trạng thái đổi thành **ĐANG NGHE • LUÔN** và nút mic sáng.
-2. Cứ nói tự nhiên. Khi bạn ngừng nói một chút (khoảng 1,5 giây im lặng), Thansa tự chốt câu và gửi đi.
-3. Sau khi trả lời xong, Thansa tự bật mic nghe lại, không cần bạn bấm.
-4. Muốn tắt chế độ này: bấm lại nút mic, hoặc nhấn phím **Esc**.
-
-Trong chế độ rảnh tay, khi bạn bắt đầu nói thì Thansa **tạm dừng** phần nó đang đọc để lắng nghe. Nếu trong 2 giây bạn thật sự nói thành câu, Thansa dừng hẳn và tin kế tiếp của bạn mang theo câu nó đang đọc dở, nên nó trả lời tiếp từ chỗ đó chứ không đọc lại từ đầu. Nếu chỉ là tiếng ho hay tiếng động, Thansa đọc tiếp từ chỗ dừng. Cơ chế đo độ to của giọng qua luồng mic đã khử vọng (nói liên tục khoảng 0,5 giây, to hơn hẳn nền), nên tiếng loa của chính Thansa không tự làm nó ngắt lời. Tắt cơ chế này bằng công tắc **Ngắt lời Thansa bằng giọng** trong Cài đặt nhanh.
+Trong cuộc gọi, khi bạn bắt đầu nói thì Thansa **tạm dừng** phần nó đang đọc để lắng nghe. Nếu trong 2 giây bạn thật sự nói thành câu, Thansa dừng hẳn và tin kế tiếp của bạn mang theo câu nó đang đọc dở, nên nó trả lời tiếp từ chỗ đó chứ không đọc lại từ đầu. Nếu chỉ là tiếng ho hay tiếng động, Thansa đọc tiếp từ chỗ dừng. Cơ chế đo độ to của giọng qua luồng mic đã khử vọng (nói liên tục khoảng 0,5 giây, to hơn hẳn nền), nên tiếng loa của chính Thansa không tự làm nó ngắt lời. Cơ chế này luôn bật.
 
 Chen ngang chỉ hoạt động khi **mic đang mở**. Mic đã tắt thì dù Thansa đang đọc, một tiếng động trong phòng cũng không bật mic trở lại.
 
@@ -90,7 +83,7 @@ Chen ngang chỉ hoạt động khi **mic đang mở**. Mic đã tắt thì dù 
 - **"Thôi"**, **"dừng lại"**, **"đủ rồi"** (hoặc "stop"): đang đọc thì im ngay, đang suy nghĩ thì bấm hộ nút Dừng. Không gửi gì.
 - Chỉ những câu **ngắn đúng cụm đó** mới được hiểu là lệnh. "Khoan, mở Chrome" là một tin nhắn bình thường.
 
-Thansa cũng tự chờ lâu hơn khi câu bạn nói kết bằng "và", "nhưng", "thì" hay dấu phẩy, vì lúc đó bạn thường chưa nói xong. Chỉnh mức im lặng trước khi gửi (Nhanh 0,5 giây, Vừa 0,8 giây, Chậm 1,2 giây) trong Cài đặt nhanh, mục **Im lặng rồi gửi**.
+Thansa cũng tự chờ lâu hơn khi câu bạn nói kết bằng "và", "nhưng", "thì" hay dấu phẩy, vì lúc đó bạn thường chưa nói xong. Còn lại, Thansa gửi câu sau 1,2 giây im lặng; mức bạn đã chọn ở bản cũ trên máy đó vẫn được dùng.
 
 ### Điều khiển Thansa và máy tính bằng lời
 
@@ -100,21 +93,21 @@ Nói (hoặc gõ) là được, Thansa dùng đúng công cụ và báo lại k�
 - **"Mở Chrome"**, **"bật Excel lên"**, **"mở trang youtube.com"**, **"tắt Chrome"**, **"đang mở app nào"**: Thansa mở hay đóng app trên **chính máy đang chạy Thansa**. Đóng app là đóng lịch sự (app có tài liệu chưa lưu sẽ tự hỏi lưu); nói "ép tắt" thì Thansa tắt hẳn. Nếu Thansa chạy trong Docker trên máy chủ thì nó nói rõ là không điều khiển được máy bạn.
 - Đang bôi đen một đoạn chữ rồi nói "tóm tắt đoạn này": Thansa biết bạn đang chỉ đoạn nào, không hỏi lại.
 
-### Bước 4 - Nghe Thansa trả lời bằng giọng
+### Bước 3 - Nghe Thansa trả lời bằng giọng
 
-Mặc định Thansa **đọc thành tiếng** mọi câu trả lời bằng giọng Việt (Edge TTS chạy trên máy chủ). Đồ thị sáng theo nhịp giọng đọc.
+Trong cuộc gọi, Thansa **nói thành tiếng** mọi câu trả lời. Đồ thị sáng theo nhịp giọng nói.
 
-Bật/tắt đọc bằng giọng có **3 chỗ** làm cùng một việc, luôn đồng bộ với nhau và nhớ lựa chọn sau khi tải lại trang:
+- Cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là Thansa im ngay.
+- Gõ chữ ngoài cuộc gọi thì Thansa chỉ trả lời bằng chữ.
+- Không còn nút loa hay công tắc bật tắt giọng riêng: cuộc gọi quyết định Thansa có nói hay không.
 
-- Nút hình **loa** ở góc trên phải (tên gợi ý khi rê chuột: "Bật/tắt giọng Thansa"). Đang tắt tiếng thì nút mờ hẳn đi.
-- Nút **loa** nằm ngay trên thanh nhập chat (gợi ý "Tắt giọng đọc" / "Bật giọng đọc"). Đang tắt tiếng thì nút chuyển đỏ và có một gạch chéo. Nút này bị ẩn trên điện thoại.
-- Vào **Cài đặt → Giọng nói**, gạt công tắc **"🔊 Đọc trả lời bằng giọng"**.
+Đổi giọng ở **Cài đặt → Giọng nói**, xem mục **Cài đặt Giọng nói** bên dưới.
 
-### Bước 5 - Dừng khi Thansa đang trả lời
+### Bước 4 - Dừng khi Thansa đang trả lời
 
 Khi Thansa đang suy nghĩ hoặc đang đọc, nút gửi ở thanh nhập biến thành **nút dừng** (hình vuông). Bấm nút đó là ngắt lượt đang chạy và dừng đọc ngay, trạng thái về SẴN SÀNG. Gõ **`/stop`** rồi Enter cũng ra đúng kết quả đó.
 
-**Phím Esc KHÔNG còn dừng câu trả lời hay ngắt giọng đọc.** Esc chỉ thoát chế độ rảnh tay, tắt mic và đóng popup đang mở. Chú thích trên nút dừng vẫn ghi "(Esc)" là chữ sót lại từ bản cũ.
+**Phím Esc là cúp máy, không dừng câu trả lời.** Esc tắt mic và tắt giọng, còn câu trả lời vẫn được viết tiếp và hiện thành chữ. Esc cũng đóng popup đang mở. Chú thích trên nút dừng vẫn ghi "(Esc)" là chữ sót lại từ bản cũ.
 
 Nút dừng chỉ dừng **phiên bạn đang xem**; phiên khác đang chạy nền vẫn tiếp tục. Xem [Phiên hội thoại](04-phien-hoi-thoai.md).
 
@@ -361,7 +354,7 @@ Từ bản 0.26.9, câu trả lời trên khung chat web được viết cho **m
 - Câu trả lời dài có nhiều phần rõ rệt thì mỗi phần một tiêu đề.
 - Bảng khi so sánh cùng một bộ trường giữa nhiều mục, ví dụ doanh thu ba kênh theo tuần.
 
-Trước đó Thansa được dặn viết văn xuôi trơn vì Thansa vốn hay được dùng bằng **giọng nói**. Nay không cần đánh đổi nữa: nút loa **tự bóc markdown** (tiêu đề, in đậm, gạch đầu dòng, link, khối mã) trước khi đọc thành tiếng, nên định dạng đẹp cho mắt không làm giọng đọc vấp.
+Trước đó Thansa được dặn viết văn xuôi trơn vì Thansa vốn hay được dùng bằng **giọng nói**. Nay không cần đánh đổi nữa: giọng đọc **tự bóc markdown** (tiêu đề, in đậm, gạch đầu dòng, link, khối mã) trước khi đọc thành tiếng, nên định dạng đẹp cho mắt không làm giọng đọc vấp.
 
 Câu hỏi ngắn vẫn được trả lời bằng một câu. Định dạng là để dễ đọc, không phải để mọi câu trả lời trông như một bản báo cáo.
 
@@ -369,55 +362,89 @@ Các kênh chữ thuần thì siết hơn vì bản thân chúng không vẽ đ�
 
 > Nếu Thansa vẫn trả lời bằng văn xuôi dài: nhiều khả năng bộ nhớ dài hạn của brain còn một ký ức cũ kiểu "không thích bảng markdown, thích văn nói ngắn" từ thời bạn dùng bằng giọng nói, và ký ức đó được nạp vào **mọi** lượt chat. Mở `memory/MEMORY.md` trong trang **Tệp tin**, tìm dòng nói về cách trả lời rồi xoá dòng đó cùng file tương ứng trong `memory/facts/`. Xem [Second Brain, bộ nhớ & wiki](13-second-brain-bo-nho-wiki.md).
 
-## Ba chế độ nói chuyện (Cài đặt → Giọng nói)
+## Cài đặt Giọng nói
 
-Thẻ **Chế độ và bộ não giọng nói** có ba lựa chọn:
+Mọi thứ về giọng nằm trong **Cài đặt → Giọng nói**. Trang chỉ còn một thẻ, ô nào cũng tự lưu ngay khi bạn đổi, không có nút Lưu.
 
-- **Chuẩn**: nghe bằng trình duyệt, bộ não chính trả lời. Đúng như trước.
-- **Làn nhanh**: khi bạn nói, một bộ não giọng riêng trả lời trong 1 đến 2 giây. Chọn được **Antigravity** (chạy trên gói Google đã đăng nhập, không tốn key; Thansa giữ một phiên `agy` sống suốt lúc bạn nói và tắt sau 5 phút im), hoặc Groq, Gemini, OpenAI, OpenRouter bằng key ở trang Models. Câu nào cần số liệu, file, việc, mở app thì bộ não giọng nói "để mình xem" rồi chuyển cho bộ não chính, tất cả trong cùng một hội thoại.
-- **Live**: nghe nói thẳng qua **Gemini Live**, **OpenAI Realtime** hoặc **OpenAI GPT-Live** (cần API key của hãng). Giọng có cảm xúc, ngắt lời tự nhiên, bản ghi chữ hai chiều hiện trong khung chat. Khi cần dữ liệu thật, model giao cho bộ não chính chạy nền rồi vẫn trò chuyện tiếp, có kết quả thì thuật lại (Gemini dòng 3.1 còn im chờ vì Google chưa hỗ trợ việc nền). Phiên Live cũng biết bạn đang mở trang nào, bôi đen đoạn nào.
+Thẻ có hai thứ:
 
-Ngoài ra ô **Nghe bằng** cho chọn **Groq Whisper** nếu đã có key Groq: chữ chính xác hơn với tiếng Việt, chữ tạm trên màn hình vẫn hiện tức thì.
+- **Dòng "Đang dùng: ..."**: đường gọi đang chạy là **ChatGPT Live**, **Live (tên hãng)** qua API key hay **Cơ bản**. Ở đường Cơ bản, dòng này nói thêm bộ não nào trả lời nhanh, ví dụ "Trả lời nhanh bằng Antigravity CLI (gói Google)".
+- **Giọng Thansa**: danh sách giọng đổi theo đường gọi, xem bên dưới.
 
-## Giọng đọc: nhà cung cấp, giọng, tốc độ
+Khi Thansa phải lùi xuống đường thấp hơn, dòng "Đang dùng" nói vì sao và cần làm gì, ví dụ nối ChatGPT ở trang **Models**, cài Codex CLI, hoặc cập nhật Codex CLI lên bản 0.153 trở lên.
 
-Mọi thứ về giọng nằm trong **Cài đặt → Giọng nói**.
+### Giọng Thansa
 
-### Chọn nhà cung cấp giọng đọc
+Danh sách giọng tuỳ đường gọi:
 
-Khối **NHÀ CUNG CẤP GIỌNG ĐỌC** có ba lựa chọn:
+- **ChatGPT Live**: 9 giọng juniper (mặc định), maple, spruce, ember, vale, breeze, arbor, sol, cove. **▶ Nghe thử** phát một đoạn mẫu thu sẵn.
+- **Live qua API key**: các giọng của hãng đang dùng, không có nút nghe thử.
+- **Cơ bản**: 7 giọng Edge miễn phí là Emma (mặc định), Hoài My, Nam Minh, Ava, Andrew, Brian, William. Có OpenAI API key ở trang **Models** thì có thêm 11 giọng OpenAI (alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse). Cuối danh sách là **Giọng ElevenLabs của bạn**. **▶ Nghe thử** đọc một câu mẫu.
 
-| Lựa chọn trong danh sách | Cần gì thêm |
-|---|---|
-| Edge TTS - miễn phí (mặc định) | Không cần gì |
-| OpenAI - mượt, đa ngôn ngữ | OpenAI API key (dùng chung với chat) + chọn một trong 11 giọng: alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse |
-| ElevenLabs - tự nhiên nhất | ElevenLabs API key + **Voice ID** (lấy ở ElevenLabs → Voices) |
+Chọn giọng là chọn luôn nhà cung cấp (Edge, OpenAI hay ElevenLabs). Giọng Edge và tốc độ đọc được lưu trên chính thiết bị này; cập nhật không ghi đè giọng bạn đã chọn.
 
-Chọn xong bấm **Lưu nhà cung cấp**. Dòng trạng thái bên dưới ghi đang dùng cái nào. Nếu giọng đã chọn gặp lỗi (hết hạn mức, sai key, mất mạng), Thansa báo lỗi để bạn thử lại hoặc chọn giọng khác; không tự chuyển giọng.
+Nếu giọng trả phí gặp lỗi (hết hạn mức, sai key, mất mạng), Thansa báo lỗi để bạn thử lại hoặc chọn giọng khác; không tự chuyển giọng.
 
-Khi chọn OpenAI hoặc ElevenLabs, khối giọng Edge (Hoài My, Nam Minh và 5 giọng đa ngôn ngữ) tự ẩn đi vì lúc đó giọng chọn ngay trong khối của nhà cung cấp.
+### Nâng cao
 
-### Chọn giọng Edge và tốc độ
+- **Đường gọi**: **Tự động (khuyên dùng)**, **ChatGPT Live**, **Live qua API key** hoặc **Cơ bản**. Tự động thử lần lượt ChatGPT Live, Live qua API key, rồi Cơ bản. Chọn tay một đường chưa chạy được thì Thansa dùng đường kế tiếp và nói lý do ở dòng "Đang dùng".
+- **Bộ não trả lời nhanh**: **Tự động** (mặc định, ghi kèm bộ não đang dùng), **Bộ não chính (như gõ chữ)**, hoặc một bộ não cụ thể; bộ não chưa cài hay chưa có key ghi "(chưa sẵn)". Ô này (cùng ô **Model** của nó) chỉ hiện khi cuộc gọi đang chạy đường Cơ bản, kể cả khi Tự động phải lùi xuống Cơ bản; xem mục **Đường Cơ bản và trả lời nhanh**. Gọi bằng ChatGPT Live hay Live qua API key thì model Live tự nghe và tự trả lời nên ô này ẩn đi.
+- **Model**: model của bộ não đang dùng, ví dụ `gemini-3.8-flash-low` cho Antigravity hay `haiku` cho Claude Code. Mặc định là model của hãng. Mỗi bộ não nhớ model riêng, nên đổi qua đổi lại giữa các bộ não không làm lẫn tên model. Ô này ẩn khi chọn Bộ não chính.
+- **Tốc độ đọc**: từ 0,85× tới 1,45×, mặc định 1,10×. Chỉ hiện ở đường Cơ bản.
+- **API key ElevenLabs** và **Voice ID** (lấy ở ElevenLabs → Voices): chỉ hiện khi bạn chọn giọng ElevenLabs. Để trống ô key là giữ key đã lưu.
 
-| Tuỳ chọn | Giá trị | Ghi chú |
-|---|---|---|
-| Giọng đọc | **Emma Multilingual** | Giọng nữ đa ngôn ngữ (mặc định; mã Edge: `en-US-EmmaMultilingualNeural`) |
-| Giọng đọc | **Nam Minh** | Nam, trầm (mã Edge: `vi-VN-NamMinhNeural`) |
-| Giọng đọc | **Ava, Emma** (nữ), **Andrew, Brian, William** (nam) | 5 giọng đa ngôn ngữ thế hệ mới của Edge: tự nhận tiếng Việt, ngữ điệu mượt hơn hai giọng trên nhưng có thể lơ lớ vài chữ. Nghe thử rồi chọn. |
-| Tốc độ | Thanh trượt 0.70× đến 1.80× | Mặc định 1.10× |
-| Ngôn ngữ nghe | **Tiếng Việt** (vi-VN) | Mặc định |
-| Ngôn ngữ nghe | **Tiếng Anh** (en-US) | Dùng khi bạn nói toàn tiếng Anh |
+Giọng OpenAI cần OpenAI API key ở trang **Models**; trang giọng nói không còn ô nhập key OpenAI.
 
-Các bước:
+### ChatGPT Live: gọi Thansa qua gói ChatGPT
 
-1. Chọn Hoài My, Nam Minh hoặc một trong 5 giọng đa ngôn ngữ.
-2. Kéo thanh **TỐC ĐỘ** để chỉnh nhanh/chậm; số bên cạnh hiện tốc độ hiện tại (ví dụ 1.10×).
-3. Bấm **▶ Nghe thử** để nghe một câu chào mẫu bằng giọng vừa chọn.
-4. "Ngôn ngữ nghe" là ngôn ngữ Thansa dùng để nhận diện lời bạn nói, khác với giọng đọc trả lời. Để mặc định Tiếng Việt trừ khi bạn quen nói tiếng Anh.
+**ChatGPT Live** dùng gói ChatGPT bạn đã nối ở trang **Models**, không cần API key. Thansa tự chọn đường này khi gói ChatGPT đã nối và máy có Codex CLI bản 0.153 trở lên, bạn không phải chọn gì.
 
-Mọi lựa chọn giọng, tốc độ, ngôn ngữ nghe đều được ghi nhớ trên trình duyệt hiện tại cho lần sau. Emma là mặc định khi chưa lưu lựa chọn; cập nhật không ghi đè giọng bạn đã chọn.
+- Bấm mic là bắt đầu nói chuyện: Thansa nghe liên tục, đáp sau chưa tới một giây, bạn chen ngang lúc nào cũng được.
+- Chuyện trò thì Thansa đáp ngay. Câu cần dữ liệu thật hay hành động (doanh thu, lịch, email, file, mở trang) thì Thansa nói một câu đệm kiểu "để xem nhé", giao bộ não chính bạn đã chọn (Claude hay bộ khác) làm với đủ MCP và tool, rồi đọc tóm tắt; bản đầy đủ (có bảng) hiện thành bong bóng trong khung chat. Lời Thansa đọc tóm tắt không hiện thành bong bóng thứ hai.
+- Trong lúc Thansa đang làm mà bạn nói thêm kiểu "ok, xong thì báo anh nhé", Thansa không làm lại từ đầu. Câu có ý mới (ví dụ "thêm cả số đơn huỷ nữa") được làm tiếp ngay sau việc đang chạy.
+- Đổi giọng ở ô **Giọng Thansa** (9 giọng, xem ở trên).
+- Âm thanh đi thẳng từ trình duyệt tới OpenAI, nên chạy được cả khi Thansa nằm trên VPS.
+- Cuộc gọi tính vào hạn mức gói ChatGPT của bạn.
+- Giữa cuộc gọi Thansa không tự đổi sang đường khác (giọng khác). Lỡ nối lại không được thì Thansa thử thêm một lần, vẫn không được thì báo một dòng và chờ, bạn nói lại là Thansa thử tiếp.
 
-Trong chế độ Chuẩn/Nhanh, chữ đã hiện lúc bạn kết thúc câu được giữ nguyên khi gửi và lưu lịch sử. Bộ nghe phụ Groq chỉ đối chiếu và báo khi khác; AI không sửa lại tin đã gửi. Chữ tạm vẫn có thể thay đổi trong lúc bạn đang nói.
+### Live qua API key
+
+Chưa có ChatGPT Live thì Thansa dùng **Gemini Live**, **OpenAI Realtime** hoặc **OpenAI GPT-Live**, bằng API key Gemini hay OpenAI bạn đã dán ở trang **Models**. Giọng có cảm xúc, ngắt lời tự nhiên, bản ghi chữ hai chiều hiện trong khung chat. Khi cần dữ liệu thật, model giao cho bộ não chính chạy nền rồi vẫn trò chuyện tiếp, có kết quả thì thuật lại (Gemini dòng 3.1 còn im chờ vì Google chưa hỗ trợ việc nền).
+
+### Đường Cơ bản và trả lời nhanh
+
+Đường Cơ bản nghe bằng trình duyệt và đọc bằng giọng bạn chọn. Câu nói thường được một bộ não giọng trả lời nhanh trong 1 đến 2 giây ("làn nhanh"). Thansa tự lấy bộ não đầu tiên sẵn sàng trên gói bạn đã đăng nhập, theo thứ tự:
+
+1. Antigravity CLI
+2. ChatGPT (qua Codex)
+3. Claude Code
+4. Grok Build
+
+Không có cái nào thì lượt nói đi thẳng bộ não chính. Câu cần số liệu, file, việc vẫn được giao cho bộ não chính, tất cả trong cùng một hội thoại. Muốn tự chọn thì đổi ô **Bộ não trả lời nhanh** ở **Nâng cao**; bộ não bạn đã chọn ở bản cũ vẫn được giữ.
+
+### Tai nghe lại: câu Việt xen tiếng Anh
+
+Ở đường Cơ bản, trình duyệt chỉ nghe được một ngôn ngữ, nên câu như "Mở dashboard Facebook ads" hay bị chép thành "Mở double Facebook add". **Tai nghe lại** là một model đa ngôn ngữ nghe lại chính âm thanh câu bạn vừa nói rồi mới chốt chữ vào bong bóng. Chữ tạm của trình duyệt vẫn hiện tức thì trong lúc bạn nói.
+
+- Thansa luôn tự chọn tai: có key Groq ở trang **Models** thì dùng **Groq Whisper**, không có thì dùng chữ của trình duyệt như trước.
+- Đo trên 20 câu lệnh Việt xen Anh: trình duyệt sai 41% số từ, qua tai Groq còn 14%. Mỗi câu mất thêm chừng 1 giây.
+- Tai lỗi, chậm quá 8 giây, hay ra câu lệch hẳn bản nháp (Whisper đôi khi bịa câu khi gặp tiếng ồn) thì Thansa giữ chữ của trình duyệt, không mất lượt nói.
+- Câu gửi đi là chữ của tai nếu có tai, không thì là chữ của trình duyệt lúc bạn kết thúc câu. Đã gửi rồi thì AI không sửa lại tin trong lịch sử.
+
+### Máy tự lo
+
+- **Im lâu thì tạm ngắt, nói là nối lại**: trong cuộc gọi ChatGPT Live, im 30 giây thì Thansa tạm ngắt cho đỡ tốn hạn mức, thanh gọi ghi "Đang chờ, cứ nói là Thansa nghe". Bạn cứ nói tiếp, không cần gọi tên: Thansa bắt đầu nối lại ngay khi nghe được mấy chữ đầu, nên thường chỉ khoảng 2 giây sau khi bạn ngừng nói là nghe Thansa trả lời câu đó. Tiếng TV hay người bên cạnh nói đủ rõ cũng làm nó nối lại. Từ 0.65.22 không còn công tắc "Tập trung khi đàm thoại".
+- **Giữ màn hình sáng khi đang gọi**: điện thoại khoá màn hình là trình duyệt cắt mic, nên trong lúc gọi Thansa giữ màn hình không tự tắt; cúp máy là màn hình tắt như thường. Bấm nút nguồn tắt hẳn thì cuộc gọi vẫn ngừng.
+Các ô dưới đây đã bỏ khỏi trang vì máy tự quyết được:
+
+- **Đọc trả lời bằng giọng**: bỏ vì trùng với nút mic. Trong cuộc gọi Thansa nói mọi câu trả lời; cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là im. Chat gõ chữ ngoài cuộc gọi chỉ trả lời bằng chữ.
+- **Ngôn ngữ nghe**: theo ngôn ngữ giao diện (giao diện tiếng Anh thì nghe `en-US`, còn lại `vi-VN`). Câu Việt xen tiếng Anh đã có tai nghe lại lo.
+- **Im lặng rồi gửi**: cố định 1,2 giây. Mức bạn đã chọn ở bản cũ trên máy đó vẫn được dùng. Thansa vẫn chờ lâu hơn sau "và", "nhưng", "thì" hay dấu phẩy, và nói "khoan", "đợi chút" vẫn làm Thansa chờ.
+- **Ngắt lời Thansa bằng giọng**: luôn bật.
+- **Nhịp hội thoại (thử nghiệm)**: bỏ hẳn.
+- **Tai nghe lại**: máy luôn tự chọn, xem mục ở trên.
+- **Chế độ nói chuyện** (Chuẩn, Làn nhanh, Live): thay bằng đường gọi. Bộ não giọng nói nay là ô **Bộ não trả lời nhanh** ở **Nâng cao**.
+- **Từ hay nghe nhầm**: Thansa tự dựng danh sách từ tên trợ lý và tên các MCP đã nối. Từ bạn đã lưu trước đó vẫn được dùng.
 
 ## Phóng to khung chat
 
@@ -439,9 +466,10 @@ Dưới 860px chiều ngang, giao diện đổi hẳn cho vừa màn hình:
 
 - Điều hướng thu thành ngăn kéo: bấm nút **☰** để mở, bấm nền mờ, chọn một mục hoặc nhấn Esc để đóng.
 - **Chip model** và nút **+** (hội thoại mới) dời lên header.
-- Nhóm **Hệ thống** (chọn brain, nút đổi tông sáng/tối, nút loa, dải HỆ THỐNG và MCP) dời xuống đáy ngăn kéo điều hướng.
+- Nhóm **Hệ thống** (chọn brain, nút đổi tông sáng/tối, dải HỆ THỐNG và MCP) dời xuống đáy ngăn kéo điều hướng.
 - Ô nhập rút gọn lời nhắc thành "Nói hoặc gõ cho Thansa…".
-- Nút loa trên thanh nhập và nút **🕘 Lịch sử** ở header bị ẩn (đã có nút loa trong ngăn kéo, và trang **Trò chuyện** có sẵn lịch sử).
+- Nút **🕘 Lịch sử** ở header bị ẩn (trang **Trò chuyện** có sẵn lịch sử).
+- Không có nút loa ở đâu cả: cuộc gọi bằng nút mic quyết định Thansa có nói thành tiếng hay không.
 - Không có chuột để rê, nên **chạm vào một tin nhắn** để hiện hàng nút của đúng tin đó; chạm ra chỗ khác thì ẩn đi.
 - Trong trang **Trò chuyện**, nút **🕘** ở thanh tiêu đề mở/đóng ngăn lịch sử trượt từ trái.
 
@@ -452,8 +480,8 @@ Dòng chữ ngay dưới quả cầu cho biết Thansa đang làm gì:
 | Chữ hiện | Nghĩa |
 |---|---|
 | SẴN SÀNG | Đang nghỉ, chờ bạn |
-| ĐANG NGHE | Đang nghe bạn nói (giữ phím Cách) |
-| ĐANG NGHE • LUÔN | Chế độ rảnh tay đang bật |
+| ĐANG NGHE | Đang nghe bạn nói |
+| ĐANG NGHE • LUÔN | Đang trong cuộc gọi, mic mở liên tục |
 | ĐANG SUY NGHĨ | Bộ não đang xử lý câu hỏi |
 | ĐANG GỌI <tên tool> | Bộ não đang gọi một công cụ (POS, lịch, mở trang...) |
 | ĐANG NÓI | Thansa đang đọc câu trả lời |
@@ -469,9 +497,8 @@ Nút quanh khung chat:
 
 | Nút | Ở đâu | Làm gì |
 |---|---|---|
-| Mic to | Trái thanh nhập | Bật/tắt chế độ rảnh tay (luôn nghe) |
+| Mic to | Trái thanh nhập | Gọi Thansa; trong cuộc gọi nút thành **Cúp máy** |
 | Kẹp giấy | Cạnh nút mic | Chọn file đính kèm |
-| Loa | Cạnh nút kẹp giấy | Bật/tắt đọc trả lời (ẩn trên điện thoại) |
 | Mũi tên | Phải thanh nhập | Gửi tin nhắn |
 | Ô vuông | Thay nút gửi khi đang chạy | Dừng lượt đang trả lời + dừng đọc |
 | ⛶ | Góc mục HỘI THOẠI | Phóng to khung chat |
@@ -483,32 +510,29 @@ Phím tắt:
 
 | Thao tác | Kết quả |
 |---|---|
-| Giữ **Space** (khi không ở ô nhập) | Bật mic, nghe cho tới khi thả phím |
-| Thả **Space** | Gửi câu vừa nói |
 | **Enter** | Gửi tin nhắn đang gõ |
 | **Shift + Enter** | Xuống dòng trong tin nhắn |
 | **Ctrl + V** | Dán ảnh, hoặc dán văn bản dài thành file .txt đính kèm |
 | **/** (đầu ô nhập) | Mở menu lệnh; ↑ ↓ chọn, Enter hoặc Tab chốt |
-| **Esc** | Thoát chế độ rảnh tay + tắt mic; đóng menu lệnh; đóng panel artifact. **Không** dừng câu trả lời |
+| **Esc** | Cúp máy (kết thúc cuộc gọi bằng giọng); đóng menu lệnh; đóng panel artifact. **Không** dừng câu trả lời |
 
 ## Mẹo
 
-- Muốn nói dài nhiều câu mà không sợ Thansa gửi sớm, dùng chế độ rảnh tay (nút mic) và nói liền mạch; chỉ ngừng hẳn khi thật sự nói xong.
-- Nghe Thansa đọc lâu, muốn im lặng đọc chữ: tắt công tắc "🔊 Đọc trả lời bằng giọng", câu trả lời vẫn hiện đầy đủ dạng chữ.
+- Muốn nói dài nhiều câu mà không sợ Thansa gửi sớm, gọi Thansa (nút mic) và nói liền mạch; chỉ ngừng hẳn khi thật sự nói xong.
+- Muốn im lặng đọc chữ: cúp máy rồi gõ, Thansa chỉ trả lời bằng chữ.
 - Đưa nhiều ảnh chụp màn hình cùng lúc bằng cách kéo - thả tất cả vào cửa sổ, Thansa xử lý từng cái.
-- Nếu bạn quen nói tiếng Anh, đổi "Ngôn ngữ nghe" sang Tiếng Anh để nhận diện chính xác hơn.
+- Nếu bạn quen nói tiếng Anh, đổi ngôn ngữ giao diện sang tiếng Anh (**Cài đặt → Chung**): Thansa nghe theo ngôn ngữ giao diện.
 - Dán nguyên một bài dài vào ô chat cứ dán thoải mái: Thansa tự biến thành file `.txt` đính kèm, khung chat vẫn gọn.
 - Hỏi lại một câu đã hỏi mà muốn đổi vài chữ: bấm **✎** trên tin cũ, sửa trong ô nhập rồi gửi, khỏi gõ lại từ đầu.
 - Nút **⛶** trên mục HỘI THOẠI và mục **Trò chuyện** trong nhóm Trợ lý dẫn tới cùng một chỗ, dùng đường nào tiện hơn thì dùng.
 
 ## Sự cố thường gặp
 
-- **Giữ phím Cách không bật mic.** Con trỏ đang nằm trong ô gõ chữ hoặc một ô nhập khác. Bấm ra vùng trống của trang rồi giữ lại phím Cách.
-- **Trong chat hiện ra một câu bạn không hề gõ.** Gần như chắc chắn là mic nghe được tiếng trong phòng (nhạc, TV, người khác nói) rồi chép thành chữ và gửi luôn, vì câu nói xong là Thansa gửi ngay chứ không hỏi lại. Nhìn dòng chữ giữa màn hình: còn **ĐANG NGHE** hay **ĐANG NGHE • LUÔN** nghĩa là mic vẫn mở, bấm nút mic hoặc **Esc** để tắt. Từ bản 0.52.6, mic không còn kẹt mở khi bạn bấm rồi thả phím Cách quá nhanh, và Thansa đang đọc thành tiếng cũng không tự bật mic lại nữa. Xoá câu lạ đó thì bắt đầu một hội thoại mới; Thansa không có cách nào tự gõ vào ô chat của bạn, mọi kết quả chạy nền đều hiện ở bong bóng bên trái.
+- **Trong chat hiện ra một câu bạn không hề gõ.** Gần như chắc chắn là mic nghe được tiếng trong phòng (nhạc, TV, người khác nói) rồi chép thành chữ và gửi luôn, vì câu nói xong là Thansa gửi ngay chứ không hỏi lại. Nhìn dòng chữ giữa màn hình: còn **ĐANG NGHE** hay **ĐANG NGHE • LUÔN** nghĩa là mic vẫn mở, bấm nút mic hoặc **Esc** để tắt. Thansa đang đọc thành tiếng cũng không tự bật mic lại khi bạn đã cúp máy. Xoá câu lạ đó thì bắt đầu một hội thoại mới; Thansa không có cách nào tự gõ vào ô chat của bạn, mọi kết quả chạy nền đều hiện ở bong bóng bên trái.
 - **Trình duyệt không nghe được.** Thansa báo "Trình duyệt không hỗ trợ giọng nói. Dùng Chrome/Edge." Hãy mở dashboard bằng Chrome hoặc Edge.
 - **Micro không hoạt động.** Trình duyệt chặn quyền micro. Vào phần quyền của trang trong trình duyệt và cho phép micro, rồi tải lại trang.
-- **Nhấn Esc mà Thansa vẫn nói tiếp.** Đúng như thiết kế hiện tại: Esc không dừng lượt nữa. Bấm nút dừng (ô vuông) trên thanh nhập, hoặc bấm nút loa để tắt tiếng.
-- **Không nghe thấy Thansa đọc.** Kiểm tra nút loa (góc trên phải bị mờ, hoặc nút trên thanh nhập bị gạch chéo đỏ) có đang tắt tiếng không; kiểm tra âm lượng máy. Bấm "▶ Nghe thử" để kiểm tra riêng phần đọc. Nếu đang dùng OpenAI hoặc ElevenLabs mà giọng nghe lạ, nhiều khả năng nhà cung cấp đó lỗi và Thansa đã tự quay về Edge.
+- **Nhấn Esc rồi mà câu trả lời vẫn hiện tiếp.** Đúng như thiết kế: Esc là cúp máy, tắt mic và tắt giọng, còn câu trả lời vẫn viết tiếp thành chữ. Muốn dừng hẳn lượt thì bấm nút dừng (ô vuông) trên thanh nhập hoặc gõ `/stop`.
+- **Không nghe thấy Thansa nói.** Thansa chỉ nói thành tiếng trong cuộc gọi, nên bấm mic để gọi. Đang gọi mà vẫn im: kiểm tra âm lượng máy, rồi bấm "▶ Nghe thử" trong **Cài đặt → Giọng nói** để thử riêng phần đọc. Nếu dùng giọng OpenAI hoặc ElevenLabs, xem Thansa có báo lỗi giọng không (hết hạn mức, sai key, mất mạng); Thansa không tự chuyển sang giọng khác.
 - **Gõ "/" mà không thấy menu.** Menu chỉ mở khi dấu "/" đứng đầu ô nhập và chưa có dấu cách theo sau. Nếu vẫn không có dòng skill nào, brain đang chọn chưa có skill nào bật.
 - **Bấm nút lựa chọn của Thansa mà không ăn gì.** Đó là hàng nút của lượt cũ, đã bị đông cứng khi bạn gửi tin mới. Cứ gõ câu trả lời bằng tay.
 - **Ảnh trong hội thoại thành ô xám "Ảnh đã hết hạn".** File nằm trong vùng cache `attachments/` đã quá 30 ngày hoặc bị dọn do chạm trần 300MB. Nhờ Thansa tạo lại, hoặc lần sau chép ảnh quan trọng sang thư mục khác trong brain.
@@ -528,20 +552,3 @@ Phím tắt:
 - [Kênh Telegram](11-telegram.md) và [Kênh Zalo](12-zalo.md) - chat với Thansa ngoài dashboard.
 
 Vẫn kẹt? Xem [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md).
-
-Từ 0.64.34, cài đặt trò chuyện ưu tiên giọng, tốc độ, chế độ và tập trung. Mở **Nâng cao** để chỉnh bộ não/model, bộ nghe phụ, từ gợi ý và micro. Mở **Nhà cung cấp và kết nối** để cấu hình API và lưu nhà cung cấp. Các lựa chọn không tác động tới chế độ đang dùng được ẩn; ngôn ngữ nghe vẫn có trong Live vì dùng cho tiếng gọi Thansa.
-
-
-## Nhịp hội thoại thử nghiệm (0.64.35)
-
-Vào **Cài đặt → Trò chuyện → Nâng cao → Nhịp hội thoại (thử nghiệm)**:
-
-- **Chờ cố định**: mặc định, giữ cách nghe hiện tại.
-- **Quan sát để kiểm tra**: giữ cách nghe hiện tại, chỉ tính quyết định thử trong bộ nhớ.
-- **Tự nhiên**: chờ theo câu nói và nhịp ngắt nghỉ trong phiên; chọn Nhanh/Cân bằng/Kiên nhẫn. Chỉ dùng ở Chuẩn/Làn nhanh với máy chủ hỗ trợ, không thêm API.
-
-Câu dang dở không tự gửi. Sau 10 giây chưa nói tiếp, phần chữ ở lại dưới dạng bản nháp với **Gửi phần đã nói / Tiếp tục / Bỏ**. Nói “khoan để anh nghĩ” giữ lượt tối đa 90 giây. Có thể gọi Thansa hoặc bấm Tiếp tục để mở lại bản nháp. Tới 120 giây hoặc 4.000 ký tự, cần kiểm tra phần đã nghe trước khi tiếp tục; không cắt chữ âm thầm.
-
-Bản đầu chỉ tự im lặng với lời kết thúc rõ ràng và một số lời giải thích đã được server xác định chắc chắn là hoàn tất. Ngữ cảnh khác vẫn trả lời; không coi mọi câu “vâng” là lời kết thúc. Tin được ghi nhận có nút **Yêu cầu trả lời** và vẫn nằm trong lịch sử.
-
-**Tải chẩn đoán** xuất tối đa 200 sự kiện về trạng thái/thời điểm từ RAM, không chứa nội dung câu nói, âm thanh hay khóa API. Đặt lại nhịp đã học không xóa hội thoại. Chưa có kiểm chứng âm học trên mọi tablet: giữ Chờ cố định nếu Tự nhiên chưa phù hợp, và thử lại cùng một đoạn nói để so sánh.

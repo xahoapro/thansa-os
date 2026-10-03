@@ -25,6 +25,7 @@ from urllib.parse import quote, unquote
 from fastapi.responses import JSONResponse, Response
 
 import config
+import localefmt
 import mcp_catalog
 import mcp_client
 import mcp_store
@@ -461,7 +462,7 @@ def _connections_json(include_ambient=False, hidden=None, bo_qua=None):
     # này" rồi còn ghi điều đó vào bộ nhớ dài hạn. KHÔNG có khái niệm ấy: hub dựng tool từ
     # mcp_store.resolved() cho MỌI vault như nhau. Không thấy tool chỉ có hai lý do thật -
     # nguồn đang tắt, hoặc nguồn đang hỏng lúc dò - và cả hai đều phải nói ra ở đây.
-    out = [{"ghi_chu": ("Kết nối là của CẢ Javis, dùng chung cho MỌI brain. Không có chuyện "
+    out = [{"ghi_chu": ("Kết nối là của CẢ Thansa, dùng chung cho MỌI brain. Không có chuyện "
                         "'gắn nguồn vào brain' - đừng bao giờ nói vậy. Nguồn có mặt ở danh sách "
                         "này mà không thấy tool của nó thì xem trang_thai: đang TẮT (bật lại ở "
                         "trang Kết nối) hoặc đang HỎNG lúc dò (bảo người dùng bấm Kiểm tra ở "
@@ -570,7 +571,7 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
                         f"tương đối so với một trong số đó, hoặc file vừa đính kèm vào khung "
                         f"chat.")
             return (f"ERROR: '{rel}' nằm ngoài bộ não đang làm việc nên tool này không đọc "
-                    f"được. Javis khoá tool file trong brain để một lượt chat không đọc lung "
+                    f"được. Thansa khoá tool file trong brain để một lượt chat không đọc lung "
                     f"tung trên máy. Đọc được: đường dẫn tương đối trong brain, và file người "
                     f"dùng vừa đính kèm vào khung chat.")
         if not p.is_file():
@@ -1279,7 +1280,7 @@ def _ghi_chu_brain(nguon, vault_root, header_hong):
     """Dòng gắn vào kết quả tool để người dùng luôn biết lượt đó chạy trên brain nào."""
     if nguon not in _NGUON_CHU:
         return ""
-    ra = (f"(Javis đang làm việc trên brain \"{Path(vault_root).name}\" - {vault_root}. "
+    ra = (f"(Thansa đang làm việc trên brain \"{Path(vault_root).name}\" - {vault_root}. "
           f"Lượt gọi này tới hub không kèm header X-Javis-Vault nên hub lấy "
           f"{_NGUON_CHU[nguon]}. Muốn brain khác thì đổi brain trên dashboard, hoặc thêm "
           f"header X-Javis-Vault vào cấu hình MCP của client.)")
@@ -1296,12 +1297,12 @@ def _chan_doan_thieu_brain(header_hong):
     if header_hong:
         dau = (f"Header X-Javis-Vault có gửi nhưng trỏ vào \"{header_hong}\", đường dẫn này "
                f"không có thật trên máy chủ. ")
-    return ("\n\n(CHẨN ĐOÁN: " + dau + "lượt gọi này tới hub không mang brain nào, và Javis "
+    return ("\n\n(CHẨN ĐOÁN: " + dau + "lượt gọi này tới hub không mang brain nào, và Thansa "
             "cũng chưa suy ra được brain đang mở (chưa có cuộc trò chuyện nào, mà thư mục "
             f"{_brains_dir()} đang có nhiều hơn một brain nên hub không đoán bừa). Thiếu header "
-            "là chuyện của cấu hình MCP phía client: Javis chỉ tự gắn X-Javis-Vault khi CHÍNH "
+            "là chuyện của cấu hình MCP phía client: Thansa chỉ tự gắn X-Javis-Vault khi CHÍNH "
             "nó khởi động engine, còn phiên Codex do người dùng tự mở thì dùng profile chung "
-            "vốn không mang header. Cách chữa: chat một lượt ở dashboard để Javis biết brain "
+            "vốn không mang header. Cách chữa: chat một lượt ở dashboard để Thansa biết brain "
             "đang mở, hoặc thêm \"X-Javis-Vault\" = \"<đường dẫn brain>\" vào http_headers của "
             "server javis trong cấu hình MCP.)")
 
@@ -1715,7 +1716,9 @@ def chan_doan_loi(err, conn_id=""):
 def _friendly_tool_error(err, conn_id=""):
     """Bản cho nút Test: nhận ra thì nói đúng bệnh, không nhận ra thì giữ nguyên câu cũ kèm
     nguyên văn lỗi (hành vi lịch sử, có canary trong test canh)."""
-    return chan_doan_loi(err, conn_id) or ("Key chưa đúng hoặc chưa đủ quyền: " + (err or "").strip()[:200])
+    return chan_doan_loi(err, conn_id) or (
+        localefmt.chu("Key chưa đúng hoặc chưa đủ quyền: ", "The key is wrong or lacks permission: ")
+        + (err or "").strip()[:200])
 
 
 async def validate_connection(conn_id):
@@ -1723,7 +1726,8 @@ async def validate_connection(conn_id):
     Trả {ok, label, tools, error}."""
     conn = next((c for c in mcp_store.resolved(enabled_only=False) if c["id"] == conn_id), None)
     if not conn:
-        return {"ok": False, "label": "", "tools": 0, "error": "Không tìm thấy kết nối"}
+        return {"ok": False, "label": "", "tools": 0,
+                "error": localefmt.chu("Không tìm thấy kết nối", "Connection not found")}
     # Connector ẢO (không URL, không command, không phải internal): tool do PLUGIN phục vụ (vd
     # Meta/Facebook gọi Graph API/cookie), không có MCP server để dial. Coi là hợp lệ; đếm tool
     # theo tool_meta để hiển thị.
@@ -1744,9 +1748,17 @@ async def validate_connection(conn_id):
             rep = oauth_mcp.scope_report(conn_id)
             if rep.get("missing"):
                 return {"ok": False, "label": "", "tools": 0,
-                        "error": "Đăng nhập rồi nhưng token thiếu quyền: "
-                                 + ", ".join(oauth_mcp.short_scopes(rep["missing"]))
-                                 + ". Bấm Đăng nhập lại và tick đủ mọi ô quyền." + REVOKE_HINT}
+                        "error": localefmt.chu(
+                            "Đăng nhập rồi nhưng token thiếu quyền: "
+                            + ", ".join(oauth_mcp.short_scopes(rep["missing"]))
+                            + ". Bấm Đăng nhập lại và tick đủ mọi ô quyền." + REVOKE_HINT,
+                            "Signed in, but the token is missing permissions: "
+                            + ", ".join(oauth_mcp.short_scopes(rep["missing"]))
+                            + ". Press Sign in again and tick every permission box."
+                            " If Google shows no permission boxes when you sign in again, that is"
+                            " normal: permissions already granted are passed straight through. To"
+                            " tick them again from scratch, remove Thansa at"
+                            " https://myaccount.google.com/permissions and then Connect again.")}
         except Exception as e:
             print(f"[hub scope] {e}", file=sys.stderr)
     spec = mcp_client._conn_spec(conn)
@@ -1770,11 +1782,15 @@ async def validate_connection(conn_id):
         # có hệ thống (họ sẽ tạo lại key/service account mãi mà không bao giờ ra).
         la_loi_goi = any(k in chi_tiet for k in (
             "ModuleNotFoundError", "ImportError", "Traceback", "No module named"))
-        goi_y = ("Gói MCP này hỏng phụ thuộc - lỗi nằm ở gói, KHÔNG phải key của bạn. "
-                 "Cần ghim phiên bản thư viện trong lệnh chạy (vd uvx --with 'mcp<2' ...)."
-                 if la_loi_goi else "Kiểm tra lại key/URL hoặc thử lại.")
+        goi_y = (localefmt.chu(
+                    "Gói MCP này hỏng phụ thuộc - lỗi nằm ở gói, KHÔNG phải key của bạn. "
+                    "Cần ghim phiên bản thư viện trong lệnh chạy (vd uvx --with 'mcp<2' ...).",
+                    "This MCP package has a broken dependency - the fault is in the package, NOT your key. "
+                    "Pin the library version in the run command (e.g. uvx --with 'mcp<2' ...).")
+                 if la_loi_goi else localefmt.chu("Kiểm tra lại key/URL hoặc thử lại.",
+                                                  "Check the key/URL again or try again."))
         return {"ok": False, "label": "", "tools": 0,
-                "error": "Không kết nối được (" + type(e).__name__
+                "error": localefmt.chu("Không kết nối được (", "Could not connect (") + type(e).__name__
                          + (": " + chi_tiet if chi_tiet else "")
                          + "). " + goi_y}
     label = ""

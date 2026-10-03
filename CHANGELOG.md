@@ -1,8 +1,164 @@
 # Nhật ký cập nhật
 
+***Tiếng Việt** · [English](CHANGELOG.en.md)*
+
 Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay trong app tại **Cài đặt → Cập nhật**.
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
+
+## [0.70.2] - 2026-10-03
+### Bảo mật
+- **Màn đăng nhập che kín hẳn.** Trước đây ô đăng nhập nằm đè lên dashboard qua một lớp mờ, nên vẫn thấy lờ mờ bố cục phía sau, rõ nhất ở giao diện sáng. Giờ nền đặc hoàn toàn: chưa đăng nhập thì chỉ thấy đúng ô đăng nhập. Dữ liệu vốn đã bị máy chủ chặn từ trước, thay đổi này che nốt phần nhìn.
+
+## [0.70.1] - 2026-10-03
+### Cải thiện
+- **README nói rõ vì sao nên dùng Javis: dữ liệu là của bạn.** Mục "Why Javis" giải thích nỗi lo bị khoá vào một nhà cung cấp AI, và liệt kê từng thứ bạn tích luỹ (lịch sử chat, trí nhớ, skill, agent, workflow) nằm ở file nào trên máy bạn, để khi có model mới chỉ cần đổi, không phải làm lại từ đầu.
+- **Hàng lá cờ ở đầu README.** 12 lá cờ, bấm vào là sang đúng bản dịch. Trên Windows biểu tượng cờ hay hiện thành chữ cái, nay là hình thật.
+
+## [0.70.0] - 2026-10-03
+### Cải thiện
+- **README có 5 hình động.** Cài đặt bằng một lệnh, đổi bộ não mà giữ nguyên công cụ, một câu chat thành đúng hành động, Second Brain lớn dần, việc chạy nền qua đêm. Hình nhẹ, nét trên điện thoại, và đứng yên nếu máy bật chế độ giảm chuyển động.
+- **README có thêm 7 thứ tiếng:** Hindi, Bồ Đào Nha, Hàn, Nga, Đức, Pháp, Indonesia. Tổng cộng 12 thứ tiếng, thanh chọn ngôn ngữ tự sinh từ một danh sách nên không bao giờ thiếu hay trỏ vào trang không có.
+
+## [0.69.0] - 2026-10-03
+### Cải thiện
+- **README có thêm tiếng Trung, Tây Ban Nha và Nhật.** Cả hướng dẫn cài nhanh cũng vậy. Mỗi bản ghi rõ đây là bản máy dịch, Javis trả lời bằng mọi thứ tiếng, còn giao diện có tiếng Anh và tiếng Việt.
+- **Tự báo khi bản dịch đã cũ.** Sửa README tiếng Anh xong, GitHub chỉ ra bản dịch nào cần cập nhật, không chặn việc phát hành.
+- **Bỏ thư mục website.** Trang giới thiệu sẽ đặt ở nơi khác, repo gọn hơn.
+
+## [0.68.1] - 2026-10-03
+### Cải thiện
+- **Ảnh giới thiệu trên GitHub dùng một brain thật.** Ảnh đầu README và ảnh xem trước khi chia sẻ link giờ là graph của một brain hơn 1.600 ghi chú, thay cho brain trống trước đây.
+
+## [0.68.0] - 2026-10-03
+### Cải thiện
+- **Trang Cập nhật có bản tiếng Anh.** Thiết bị đọc tiếng Anh thấy nhật ký phiên bản bằng tiếng Anh từ bản 0.66.0 trở đi; các bản cũ hơn vẫn hiện tiếng Việt.
+- **Mở cửa cho người đóng góp quốc tế.** Repo có hướng dẫn đóng góp, sơ đồ kiến trúc và bảng giải nghĩa tên hàm tiếng Việt bằng tiếng Anh, cùng mẫu báo lỗi, đề xuất tính năng và đăng ký dịch.
+- **Có chính sách bảo mật và quy tắc ứng xử.** Lỗi bảo mật được báo riêng tư, không qua Issue công khai.
+
+## [0.67.0] - 2026-10-02
+### Cải thiện
+- **Javis nói tiếng Anh trọn vẹn với người dùng nước ngoài.** Thông báo lỗi, trang Models, kho Kết nối (mô tả, hướng dẫn, cảnh báo quyền), trang Plugins và brain mới tạo đều ra tiếng Anh khi trình duyệt để tiếng Anh. Người dùng tiếng Việt thấy y như cũ.
+- **Mỗi thiết bị một ngôn ngữ.** Điện thoại để tiếng Việt, laptop để tiếng Anh thì mỗi máy thấy đúng tiếng của mình, kể cả chữ do máy chủ trả về.
+- **Trang giới thiệu có bản tiếng Anh**, bản tiếng Việt vẫn ở nút "Tiếng Việt" trên thanh menu.
+
+## [0.66.0] - 2026-10-02
+### Cải thiện
+- **Trang GitHub của Javis giờ là tiếng Anh**, có ảnh chụp màn hình thật, bảng 12 bộ não và thanh chọn ngôn ngữ. Bản tiếng Việt vẫn đầy đủ, bấm "Tiếng Việt" ngay đầu trang là sang.
+- **Giao diện tự theo ngôn ngữ của trình duyệt** khi máy đó chưa chọn ngôn ngữ nào. Máy đang dùng tiếng Việt thì giữ nguyên, không bị đổi sang tiếng Anh.
+- **Chỗ nào chưa dịch sẽ hiện tiếng Anh** thay vì tiếng Việt, để người dùng thứ tiếng khác vẫn đọc được.
+- **Lệnh cài đặt và cập nhật trên Linux/macOS in thông báo bằng tiếng Anh.**
+
+## [0.65.33] - 2026-10-02
+### Sửa lỗi
+- **Nhờ AI sửa ảnh, khung chat hiện ngay ảnh mới.** Trước đây AI sửa ảnh và ghi đè đúng đường dẫn cũ thì khung chat vẫn hiện ảnh cũ, phải tải lại trang mới thấy, vì trình duyệt dùng lại ảnh đã nạp. Nay mỗi câu trả lời mang một phiên bản ảnh riêng nên ảnh vừa sửa luôn được nạp mới; tin cũ vẫn giữ nguyên, tải lại trang không phải tải lại ảnh.
+
+## [0.65.32] - 2026-10-02
+### Thêm mới
+- **Trình sửa file có bộ đếm từ và ký tự** ở cuối thanh công cụ, tự cập nhật khi gõ. Ghi chú `.md` chỉ đếm chữ hiện ra, không tính ký hiệu định dạng (`#`, `**`, đường link). Rê chuột vào số để xem số ký tự không tính khoảng trắng.
+
+## [0.65.31] - 2026-10-02
+### Cải thiện
+- **Ô Bộ não trả lời nhanh và Model chỉ hiện khi cuộc gọi chạy đường Cơ bản.** Gọi bằng ChatGPT Live thì ChatGPT tự nghe và tự trả lời, nên để ô đó hiện (ví dụ ghi Antigravity) dễ hiểu nhầm là Antigravity đang trả lời. Đường Tự động mà đang phải dùng đường Cơ bản thì ô vẫn hiện, vì lúc đó nó đang được dùng thật.
+
+## [0.65.30] - 2026-10-02
+### Thêm mới
+- **Link chia sẻ có tên.** Link mới tự lấy tên theo tiêu đề file (tiêu đề trang `.html`, tiêu đề ghi chú `.md`), không còn cả loạt cùng tên "index.html". Ở trang Chia sẻ bấm **Đổi tên** để đặt tên khác; link đã gửi đi vẫn giữ nguyên. Ô tìm kiếm tìm được theo tên.
+
+### Sửa lỗi
+- **iPhone mở Javis từ màn hình chính: thanh công cụ của trình sửa file không còn bị thanh trạng thái che.** Trình sửa chừa đúng phần mép trên cho đồng hồ và pin, nút Đóng luôn bấm được.
+- **Kéo ảnh vừa chụp vào ô chat trên iPhone gửi được.** Trước đây ảnh hiện trên chip mà bấm gửi thì hỏng, vì iPhone chỉ cho đọc ảnh kéo thả ngay lúc thả. Nay Javis chép ảnh ngay khi thả; ảnh không đọc được thì báo rõ trên chip.
+
+## [0.65.29] - 2026-10-02
+### Sửa lỗi
+- **Đang mở file trong trình sửa, câu nói vẫn do bộ não trả lời nhanh đã chọn trả lời.** Trước đây hễ có file đang mở là mọi câu nói trong cuộc gọi lặng lẽ chuyển sang bộ não chính: chậm hơn (khoảng 18 giây thay vì 2 đến 5 giây) và không dùng Antigravity dù đã chọn.
+- Hỏi "sao em lại trả lời bằng tiếng Anh?" không còn bị hiểu là lệnh "trả lời bằng tiếng Anh".
+
+## [0.65.28] - 2026-10-02
+### Sửa lỗi
+- **Đang gọi, nói chen không còn làm Javis dừng câu trả lời.** Trước đây ở đường Cơ bản, nói thêm một câu lúc Javis đang trả lời là hiện "Đã dừng lượt này" và câu trả lời bị cắt, nói nhiều thì bị cắt liên tục. Nay câu trả lời luôn được viết trọn; câu bạn nói thêm được giữ lại và Javis trả lời ngay sau khi đọc xong. Cắt lời hay nói "thôi" chỉ làm Javis thôi đọc. Cuộc gọi chỉ dừng khi bạn cúp máy.
+
+## [0.65.27] - 2026-10-02
+### Sửa lỗi
+- **Nút Cập nhật ngay trên Docker/VPS không còn kẹt "Đang cập nhật rồi, chờ chút".** Bấm ngay sau khi có bản mới thì image Docker có thể chưa đóng gói xong (thường mất 2 đến 5 phút), nên máy kéo về đúng bản cũ rồi khoá nút 15 phút. Nay Javis kiểm tra image trước và báo "đang đóng gói, thử lại sau ít phút". Nếu Watchtower chạy xong mà không thay được bản mới, trang báo lý do và nút bấm lại được ngay.
+
+## [0.65.26] - 2026-10-02
+### Sửa lỗi
+- **Sửa lỗi bộ não giọng Antigravity báo "invalid model selection".** Đổi bộ não ở bản 0.65.25 thì tên model của bộ não cũ (ví dụ model ChatGPT) bị gửi nhầm sang Antigravity. Nay mỗi bộ não nhớ model riêng, và tên model cũ bị lẫn được bỏ qua để dùng model mặc định. Không phải do bị đăng xuất.
+- Khi lỗi là do tên model, câu báo trong khung chat chỉ tới ô Model thay vì trang Models.
+
+### Thêm mới
+- **Chọn được model cho bộ não trả lời nhanh**: ô **Model** ngay dưới ô bộ não ở Cài đặt, Giọng nói, Nâng cao, liệt kê các model mà bộ não đó có (Antigravity, ChatGPT, Claude Code, Grok Build).
+
+## [0.65.25] - 2026-10-02
+### Sửa lỗi
+- **Giữa cuộc gọi ChatGPT Live, Javis không còn tự đổi giọng.** Trước đây lúc nối lại sau khi tạm ngắt mà hỏng, Javis lặng lẽ chuyển sang đường Cơ bản đọc bằng giọng khác (nữ thành nam). Nay Javis giữ ChatGPT Live: thử lại một lần, vẫn hỏng thì báo một dòng và chờ, bạn nói lại là thử tiếp.
+- Nối lại trên iPhone không còn có thể treo ở bước bật âm thanh.
+
+### Thêm mới
+- **Trả lại ô chọn bộ não trả lời nhanh** ở Cài đặt, Giọng nói, Nâng cao: Tự động, Bộ não chính, hoặc một bộ não cụ thể. Ô này chỉ dùng ở đường Cơ bản; gọi bằng ChatGPT Live thì ChatGPT tự nghe và trả lời.
+
+## [0.65.24] - 2026-10-02
+### Cải thiện
+- **Javis nối lại nhanh hơn sau lúc tạm ngắt.** Nghe được mấy chữ đầu là Javis bắt đầu nối lại ngay trong lúc bạn còn đang nói, và chốt câu sau 0,7 giây im thay vì 1,2 giây. Đo trên máy thử: từ lúc ngừng nói tới lúc nghe Javis giảm từ khoảng 5 giây xuống khoảng 2 giây.
+
+## [0.65.23] - 2026-10-01
+### Sửa lỗi
+- **ChatGPT Live đọc các câu trả lời lần lượt.** Khi kết quả thứ hai về lúc Javis còn đang đọc kết quả thứ nhất, hai câu từng bị đọc trộn vào nhau như hai giọng chồng lên nhau. Nay Javis đọc xong câu đang nói rồi mới đọc câu tiếp theo.
+
+## [0.65.22] - 2026-10-01
+### Cải thiện
+- **Im lâu thì tạm ngắt, nói là Javis tự nối lại.** Trong cuộc gọi ChatGPT Live, im 30 giây (trước là 20) thì tạm ngắt cho đỡ tốn hạn mức; cứ nói tiếp là Javis nối lại và trả lời luôn câu đó. Không cần gọi "Javis" nữa, nên hết cảnh gọi mãi không nối lại vì máy nghe thành "David".
+- **Giữ màn hình sáng khi đang gọi**, để điện thoại không tự khoá màn hình rồi cắt mic giữa cuộc gọi.
+- Bỏ công tắc "Tập trung khi đàm thoại" ở trang Giọng nói.
+
+## [0.65.21] - 2026-10-01
+### Sửa lỗi
+- **ChatGPT Live không còn lặp câu trả lời.** Đang chờ Javis làm việc mà nói thêm "ok, xong thì báo anh nhé" từng làm bộ não chính chạy lần hai, ra hai bong bóng kết quả khác chữ. Nay câu xác nhận không chạy lại gì; câu có ý mới được làm tiếp sau việc đang chạy.
+- Lời Javis đọc tóm tắt kết quả không còn hiện thành bong bóng thứ hai, vì bản đầy đủ đã nằm ngay trên.
+
+## [0.65.20] - 2026-10-01
+### Sửa lỗi
+- **Nút "Cập nhật ngay" chạy lại trên VPS cài mới, nhất là Hostinger.** Bộ phận cập nhật đi kèm (Watchtower) dùng bản cũ đã ngừng phát triển, nói chuyện với Docker bằng phiên bản quá cũ nên Docker mới từ chối và nó khởi động lại liên tục. Nay đổi sang bản còn được bảo trì, tự thương lượng phiên bản với Docker.
+- Máy đã cài trước bản này cần **Redeploy một lần** bằng file compose mới (Hostinger: Docker Manager, dán lại URL compose rồi Deploy). Sau đó nút cập nhật tự chạy, không phải làm lại.
+
+## [0.65.19] - 2026-10-01
+### Cải thiện
+- **Trang cài đặt Giọng nói gọn còn 3 ô, đổi là tự lưu.** Dòng "Đang dùng" cho biết cuộc gọi đang chạy đường nào và vì sao, ô **Giọng Javis** đổi theo đường gọi (có nút nghe thử), và công tắc **Tập trung**. Đường gọi, tốc độ đọc và ElevenLabs nằm trong Nâng cao.
+- Máy tự lo phần còn lại: ngôn ngữ nghe theo ngôn ngữ giao diện, ngắt lời bằng giọng luôn bật, bộ não trả lời nhanh tự chọn trên gói bạn đã đăng nhập (Antigravity, ChatGPT, Claude Code, Grok Build). Cài đặt cũ vẫn dùng tiếp.
+- Bỏ công tắc "Đọc trả lời bằng giọng" (trùng nút mic), nhịp hội thoại thử nghiệm, ô từ hay nghe nhầm và ô API key OpenAI trong trang Giọng nói (key nằm ở trang Models).
+
+## [0.65.18] - 2026-10-01
+### Cải thiện
+- **Bấm mic là gọi Javis.** Nút mic thành nút Cúp máy màu đỏ, và một thanh gọi hiện trên khung chat: đang nghe, Javis đang nói hay đang làm việc, kèm đồng hồ, nút Tắt mic và Cúp máy. Esc cũng cúp máy.
+- Javis tự chọn đường gọi: ChatGPT Live khi đã nối gói ChatGPT, rồi Live qua API key, không thì đường Cơ bản. ChatGPT Live mở không được thì cuộc gọi tự chuyển sang Cơ bản thay vì tắt.
+- Phím Space không còn mở mic, để không ai lỡ chạm mà bật nghe.
+
+## [0.65.17] - 2026-10-01
+### Thêm mới
+- **ChatGPT Live: nói chuyện với Javis qua gói ChatGPT, không cần API key.** Vào Cài đặt → Giọng nói, chọn Live rồi ChatGPT Live. Nói liền mạch, Javis đáp chưa tới một giây, chen ngang lúc nào cũng được.
+- Câu cần dữ liệu thật thì Javis giao bộ não chính bạn đã chọn rồi đọc tóm tắt; bản đầy đủ (có bảng) hiện thành bong bóng trong khung chat.
+- Có 9 giọng, mặc định juniper, kèm nút nghe thử. Cuộc gọi tính vào hạn mức gói ChatGPT.
+
+## [0.65.16] - 2026-10-01
+### Cải thiện
+- **Bản thiết kế ChatGPT Live.** Bấm mic là gọi Javis như gọi điện thoại: nói chuyện liền mạch, chen ngang lúc nào cũng được, chạy trên gói ChatGPT không cần API key, việc nặng vẫn giao bộ não bạn chọn. Trang cài đặt giọng nói sẽ còn 3 ô.
+- Chưa có gì đổi trên giao diện ở bản này. 13 tài liệu thiết kế giọng nói cũ được gộp vào một tài liệu duy nhất.
+
+## [0.65.15] - 2026-10-01
+### Cải thiện
+- **Nghe câu Việt xen tiếng Anh đúng hơn hẳn.** Có key Groq thì Javis tự bật "tai nghe lại": một model đa ngôn ngữ nghe lại âm thanh rồi mới chốt chữ vào bong bóng. Đo trên 20 câu lệnh, trình duyệt sai 41% số từ, qua tai còn 14%.
+- Tai giờ chạy đủ mọi lượt: cả câu đầu tiên sau khi mở trang, chế độ tự nhiên, và câu "Javis ơi" mà trình duyệt nghe thành "David ơi".
+- Trang Cài đặt có ô **Tai nghe lại** (Tự chọn / Groq / Tắt) kèm dòng cho biết tai nào đang chạy và vì sao.
+
+## [0.65.14] - 2026-10-01
+### Cải thiện
+- **Nút "Là chủ" trong Bộ phán xử dễ hiểu hơn.** Đổi thành "Đặt làm chủ bot", rê chuột có giải thích. Người đã đặt hiện nhãn "Chủ", đầu menu có danh sách chủ bot kèm nút "Bỏ chủ".
+- **Đúng/Sai có giải thích.** Một dòng nói rõ nghĩa, và rê chuột vào từng nút thấy nghĩa theo dòng đó (ví dụ "Đáng lẽ bot phải im").
+
+## [0.65.13] - 2026-10-01
+### Sửa lỗi
+- **Bot trong nhóm Zalo trả lời cả khi bạn tag bằng chú thích của ảnh.** Trước đây tin ảnh bị bỏ qua hết, nên "@Javis Vũ ..." viết trong phần chú thích của ảnh không bao giờ tới bot. Nay chú thích được coi như nội dung tin, và bot biết tin có kèm một ảnh. Ảnh không có chú thích thì vẫn bỏ qua.
 
 ## [0.65.12] - 2026-09-30
 ### Cải thiện

@@ -138,11 +138,11 @@ It is safe: it only moves when the destination does not exist, it never overwrit
 
 ### Voice tab and branding in General
 
-The **Voice** tab contains speech, conversation modes and microphone controls. Interface language, avatar and domain settings live in **General**:
+The **Voice** tab is a single card for voice calls, and every field saves itself at once; there is no Save button. Interface language, avatar and domain settings live in **General**:
 
-- The **🔊 Read answers aloud** switch.
-- The **VOICE PROVIDER** block: choose "Edge TTS - free (default)", "OpenAI - smooth, multilingual" or "ElevenLabs - most natural", paste the matching key and press **Save provider**. A paid provider that errors falls back to Edge.
-- **LISTENING LANGUAGE** (Vietnamese `vi-VN` or English `en-US`), **VOICE (Edge)**, **SPEED** and a **▶ Preview** button. The Edge voice block only appears when the provider is Edge.
+- The **Using** line: the call path in use (ChatGPT Live, Live with an API key or Basic), plus the reason and what to do when Thansa had to fall back to a lower path.
+- **Thansa's voice**: the voice list for the call path; picking a voice also picks the provider (Edge, OpenAI or ElevenLabs), with a **▶ Preview** button. OpenAI voices need an OpenAI API key on the **Models** page.
+- **Advanced**, with **Call path**, **Quick-reply brain** and its **Model** (Basic path only), **Speaking rate** (Basic path only), and the ElevenLabs API key and Voice ID (only when the ElevenLabs voice is picked). The listening language follows the interface language.
 - **AVATAR**: **Upload an image** or **Restore default**.
 - **DOMAIN & SSL**: enter a domain, press **Save & check**, watch the `DNS:` and `SSL:` labels, then **Enable SSL** or **Re-check**.
 
@@ -188,7 +188,7 @@ This lives under **System → Settings → Updates**. The Thansa OS panel at the
 **Why one machine has the button and another does not.** Before 0.55.56 Watchtower sat inside `profiles: ["update"]`, so the habitual `docker compose up -d` **did not start it**, and the Hostinger stack shipped without it. A machine still missing the button is running from one of those older files. Fetch the new one and bring it up again, in the folder holding the compose file:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 docker compose up -d --pull always
 ```
 
@@ -261,6 +261,7 @@ When Thansa runs publicly (listening on `0.0.0.0`, i.e. VPS/Docker/Hostinger) wi
 - **Forgot the admin password:** press "Forgot password?" on the sign-in screen for instructions. The procedure is to open `server/settings.json`, delete the `"auth"` block (or empty it), and restart the server; reopening the app returns you to the wizard to create a new account. See [Security & accounts](../14-bao-mat-tai-khoan.md).
 - **Too many failed sign-ins, "Too many attempts":** Thansa locks temporarily to stop password guessing. Wait a few minutes and try again.
 - **Update says "Already updating, hold on.":** another update is in flight. Wait for it to finish and try again.
+- **Docker/VPS says the Docker image is still being packaged:** the new version was just released and its image is usually ready 2 to 5 minutes later. Try again in a few minutes. If Watchtower finishes without replacing the version, the page shows why and the button works again right away.
 - **No "⬆ Update now" button:** you are on Docker without Watchtower running, which since 0.55.56 means the stack was built from an older compose file. The Updates panel says exactly what your machine is missing. On a self-managed VPS, fetch the current `docker-compose.yml` and run `docker compose up -d --pull always`; on Hostinger, hit Redeploy in Docker Manager. Sticking with the old file? `docker compose --profile update up -d` starts Watchtower on its own.
 - **The port is right but nothing loads:** check that the address really is `http://localhost:7777` (or the VPS IP with port 7777). If you just changed code, restart the server and try again.
 

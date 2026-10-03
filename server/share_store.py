@@ -26,6 +26,7 @@ import time
 from pathlib import Path
 
 from config import STATE_DIR
+import localefmt
 
 _LOCK = threading.RLock()
 STORE = STATE_DIR / "share_links.json"
@@ -64,14 +65,15 @@ def tao(brain: str, path: str, nhan: str = "") -> dict:
     brain = str(brain or "brain")
     path = _chuan_path(path)
     if not path:
-        raise ValueError("Thiếu đường dẫn file")
+        raise ValueError(localefmt.chu("Thiếu đường dẫn file", "Missing file path"))
     with _LOCK:
         d = _doc_tho()
         for tok, ban in d.items():
             if isinstance(ban, dict) and ban.get("brain") == brain and _chuan_path(ban.get("path")) == path:
                 return dict(ban, token=tok)          # đã có link: trả lại đúng cái cũ
         if len(d) >= TRAN:
-            raise ValueError(f"Đã đạt trần {TRAN} link chia sẻ, gỡ bớt link cũ trước")
+            raise ValueError(localefmt.chu(f"Đã đạt trần {TRAN} link chia sẻ, gỡ bớt link cũ trước",
+                                           f"Reached the limit of {TRAN} share links, remove some old links first"))
         tok = secrets.token_urlsafe(18)
         d[tok] = {"brain": brain, "path": path, "nhan": str(nhan or ""), "tao_luc": time.time()}
         _ghi_tho(d)
@@ -99,6 +101,22 @@ def xoa(token: str) -> bool:
         d.pop(tok, None)
         _ghi_tho(d)
         return True
+
+
+def doi_ten(token: str, nhan: str):
+    """Đổi tên hiển thị của một link (0.65.30). Rỗng = bỏ tên tự đặt, trang lại tự lấy tiêu đề
+    file. Trả bản ghi mới, hoặc None nếu token không có. Token và đường dẫn KHÔNG đổi: link đã
+    gửi đi vẫn sống."""
+    tok = str(token or "").strip()
+    ten = " ".join(str(nhan or "").split())[:120]
+    with _LOCK:
+        d = _doc_tho()
+        ban = d.get(tok)
+        if not isinstance(ban, dict):
+            return None
+        ban["nhan"] = ten
+        _ghi_tho(d)
+        return dict(ban, token=tok)
 
 
 def danh_sach(brain: str = "") -> list:

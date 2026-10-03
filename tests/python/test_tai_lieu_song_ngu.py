@@ -29,11 +29,14 @@ R = pathlib.Path(ROOT)
 
 # Cặp bản gốc <-> bản dịch. Thêm một trang dịch = thêm một dòng ở đây.
 CAP = [
-    ("README.md", "README.en.md"),
+    # Từ 0.66.0 README gốc là tiếng Anh, bản tiếng Việt dời vào docs/i18n/vi/.
+    ("docs/i18n/vi/README.md", "README.md"),
     ("QUICKSTART.md", "QUICKSTART.en.md"),
-    ("CONTRIBUTING.md", "CONTRIBUTING.en.md"),
+    # Từ 0.68.0 CONTRIBUTING.md gốc là tiếng Anh (GitHub tự hiện link tới nó), bản Việt ở docs/i18n/vi/.
+    ("docs/i18n/vi/CONTRIBUTING.md", "CONTRIBUTING.md"),
     ("DEPLOY.md", "DEPLOY.en.md"),
     ("docs/README.md", "docs/en/README.md"),
+    ("docs/dev/them-mot-ngon-ngu.md", "docs/dev/adding-a-language.md"),
     ("docs/01-bat-dau-thiet-lap.md", "docs/en/01-getting-started.md"),
     ("docs/02-tro-chuyen-va-giong-noi.md", "docs/en/02-chat-and-voice.md"),
     ("docs/03-do-thi-tri-thuc.md", "docs/en/03-knowledge-graph.md"),
@@ -125,8 +128,14 @@ _groups = _groups[:_groups.find("\n  ];")]
 _so_nhom = len(re.findall(r"\bids:\s*\[", _groups))
 check(f"đọc được số nhóm rail từ mã nguồn ({_so_nhom})", _so_nhom >= 5)
 
-_readme_vi = (R / "README.md").read_text(encoding="utf-8")
-_readme_en = (R / "README.en.md").read_text(encoding="utf-8")
+_readme_vi = (R / "docs" / "i18n" / "vi" / "README.md").read_text(encoding="utf-8")
+_readme_en = (R / "README.md").read_text(encoding="utf-8")
+# README.en.md còn lại chỉ để link cũ (bài chia sẻ, bookmark) không chết: nó phải dẫn về đúng hai bản.
+_readme_cu = (R / "README.en.md").read_text(encoding="utf-8")
+check("README.en.md cũ dẫn về README.md và bản tiếng Việt",
+      "(README.md)" in _readme_cu and "(docs/i18n/vi/README.md)" in _readme_cu)
+check("README.md (tiếng Anh) là mặt tiền: không còn câu tiếng Việt nào ngoài tên riêng",
+      "Cài đặt" not in _readme_en and "nhà cung cấp" not in _readme_en)
 check(f"README (vi) nói đúng {_so_provider} nhà cung cấp",
       f"{_so_provider} nhà cung cấp" in _readme_vi)
 check(f"README (en) nói đúng {_so_provider} nhà cung cấp",

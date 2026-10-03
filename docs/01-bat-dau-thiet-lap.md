@@ -138,11 +138,11 @@ Thao tác này an toàn: chỉ di chuyển khi thư mục đích chưa có, khô
 
 ### Tab Giọng nói và phần thương hiệu trong tab Chung
 
-Tab **Giọng nói** chứa giọng đọc, chế độ trò chuyện và micro. Ngôn ngữ giao diện, ảnh đại diện và tên miền nằm trong tab **Chung**:
+Tab **Giọng nói** chỉ còn một thẻ cho cuộc gọi bằng giọng, ô nào cũng tự lưu ngay, không có nút Lưu. Ngôn ngữ giao diện, ảnh đại diện và tên miền nằm trong tab **Chung**:
 
-- Công tắc **🔊 Đọc trả lời bằng giọng**.
-- Khối **NHÀ CUNG CẤP GIỌNG ĐỌC**: chọn "Edge TTS - miễn phí (mặc định)", "OpenAI - mượt, đa ngôn ngữ" hoặc "ElevenLabs - tự nhiên nhất", dán key tương ứng rồi bấm **Lưu nhà cung cấp**. Provider trả phí lỗi sẽ tự về Edge.
-- **NGÔN NGỮ NGHE** (Tiếng Việt `vi-VN` hoặc Tiếng Anh `en-US`), **GIỌNG ĐỌC (Edge)** (Hoài My, Nam Minh hoặc 5 giọng đa ngôn ngữ), **TỐC ĐỘ** và nút **▶ Nghe thử**. Khối giọng Edge chỉ hiện khi nhà cung cấp là Edge.
+- Dòng **Đang dùng**: đường gọi đang chạy (ChatGPT Live, Live qua API key hoặc Cơ bản), kèm lý do và việc cần làm nếu Thansa phải lùi xuống đường thấp hơn.
+- **Giọng Thansa**: danh sách giọng theo đường gọi, chọn giọng là chọn luôn nhà cung cấp (Edge, OpenAI hay ElevenLabs), nút **▶ Nghe thử**. Giọng OpenAI cần OpenAI API key ở trang **Models**.
+- Mục **Nâng cao** chứa **Đường gọi**, **Bộ não trả lời nhanh** và **Model** của nó (chỉ ở đường Cơ bản), **Tốc độ đọc** (chỉ ở đường Cơ bản), API key và Voice ID ElevenLabs (chỉ khi chọn giọng ElevenLabs). Ngôn ngữ nghe tự theo ngôn ngữ giao diện.
 - **ẢNH ĐẠI DIỆN**: **Tải ảnh lên** hoặc **Khôi phục mặc định**.
 - **TÊN MIỀN & SSL**: nhập tên miền, bấm **Lưu & kiểm tra**, xem hai nhãn `DNS:` và `SSL:`, rồi **Bật SSL** hoặc **Kiểm tra lại**.
 
@@ -188,7 +188,7 @@ Nút **⬆ Cập nhật ngay** chỉ hiện khi Thansa tự cập nhật tại c
 **Vì sao máy này có nút mà máy kia không.** Trước 0.55.56 Watchtower nằm trong `profiles: ["update"]`, nên lệnh `docker compose up -d` quen tay **không bật nó**; còn stack Hostinger thì không kèm nó. Máy nào vẫn thiếu nút là đang chạy bằng file compose cũ đó. Lấy bản mới rồi dựng lại, ở thư mục chứa file compose:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 docker compose up -d --pull always
 ```
 
@@ -261,6 +261,7 @@ Khi Thansa chạy công khai (nghe trên `0.0.0.0`, tức VPS/Docker/Hostinger) 
 - **Quên mật khẩu admin:** ở màn đăng nhập bấm "Quên mật khẩu?" để xem hướng dẫn. Cách xử lý là mở file `server/settings.json`, xóa khối `"auth"` (hoặc đặt rỗng), rồi khởi động lại server; mở lại app sẽ về wizard để tạo tài khoản mới. Xem thêm [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 - **Sai quá nhiều lần khi đăng nhập, bị báo "Quá nhiều lần sai":** Thansa khóa tạm để chống dò mật khẩu. Đợi ít phút rồi thử lại.
 - **Bấm cập nhật nhưng báo "Đang cập nhật rồi, chờ chút.":** một lần cập nhật khác đang chạy. Chờ tiến trình chạy xong rồi thử lại.
+- **Docker/VPS báo "image Docker còn đang đóng gói":** bản mới vừa phát hành, image Docker thường xong sau 2 đến 5 phút. Thử lại sau ít phút. Nếu Watchtower chạy xong mà không thay được bản mới, trang báo lý do và nút bấm lại được ngay.
 - **Không thấy nút "⬆ Cập nhật ngay":** bạn đang chạy Docker mà Watchtower chưa chạy. Khung Cập nhật nói rõ máy bạn thiếu gì. Trên VPS tự quản, chạy `docker compose --profile update up -d` một lần rồi tải lại trang - `docker compose up -d` thường lệ KHÔNG bật Watchtower vì nó nằm trong profile riêng. Trên Hostinger thì không bật được, dùng Redeploy.
 - **Mở đúng cổng nhưng không thấy app:** kiểm tra địa chỉ có đúng `http://localhost:7777` (hoặc IP VPS kèm cổng 7777) không. Nếu vừa sửa code, khởi động lại server rồi thử lại.
 

@@ -5,6 +5,7 @@ Kiến trúc: Voice (browser) ⇄ FastAPI WebSocket ⇄ Claude Code CLI subproce
 Javis KHÔNG gọi Anthropic API trực tiếp. Mọi reasoning + tool calling đi qua
 `claude` CLI đã cài trên máy → tự kế thừa MCP, skills, auth.
 """
+import brain_seed_i18n   # file hạt giống của brain mới theo ngôn ngữ người dùng
 import localefmt   # múi giờ theo cấu hình, thay UTC+7 nhúng cứng
 import posixpath
 import os
@@ -152,6 +153,9 @@ import ui_targets   # đổi lời nói ("mở trang công cụ") thành id tran
 import voice_turn_protocol
 import voice_brain   # Voice V2: bộ não giọng nói riêng (Antigravity sống lâu / Groq / Gemini...)
 import voice_live    # Voice V2: nghe nói thẳng qua Gemini Live / OpenAI Realtime
+import voice_ear     # tai nghe lại: model đa ngôn ngữ nghe âm thanh rồi mới chốt chữ (0.65.15)
+import codex_realtime  # ChatGPT Live: một Codex app-server sống lâu, realtime trên gói ChatGPT (0.65.17)
+import voice_call     # nút mic là gọi Javis: tự chọn ChatGPT Live / Live API / Cơ bản (0.65.18)
 
 app = FastAPI(title="Thansa OS")
 _CHAT_RUNTIME = ChatRuntime()
@@ -392,6 +396,20 @@ async def _static_cache_headers(request: Request, call_next):
         resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
     return resp
 
+
+@app.middleware("http")
+async def _ngon_ngu_thiet_bi(request: Request, call_next):
+    """Mỗi request mang ngôn ngữ giao diện của THIẾT BỊ gọi nó (cookie `javis_lang`, do
+    dashboard/i18n/index.js đặt), để `localefmt.chu()` trả đúng thứ tiếng người đang nhìn.
+
+    Đặt SAU cùng nên chạy NGOÀI cùng (Starlette bọc từ ngoài vào): câu báo lỗi của cả hàng
+    rào CSRF và đăng nhập cũng được trả đúng ngôn ngữ."""
+    tok = localefmt.dat_ngon_ngu_yeu_cau(request.cookies.get("javis_lang", ""))
+    try:
+        return await call_next(request)
+    finally:
+        localefmt.bo_ngon_ngu_yeu_cau(tok)
+
 CLAUDE_MD_PATH = Path(__file__).parent.parent / "CLAUDE.md"
 SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exists() else None
 
@@ -584,7 +602,7 @@ def _brain_memory_dir(brain: str) -> Path:
         (mem / "conversations").mkdir(parents=True, exist_ok=True)
         idx = mem / "MEMORY.md"
         if not idx.exists():
-            idx.write_text(MEMORY_SEED, encoding="utf-8")
+            idx.write_text(brain_seed_i18n.chon(MEMORY_SEED), encoding="utf-8")
     except Exception as e:
         print(f"[memory dir error] {e}", file=__import__('sys').stderr)
     return mem
@@ -1215,8 +1233,12 @@ async def app_version():
         html = ""
     return {"version": _app_version() or "0", "assets": _asset_fps(html)}
 def _lang_en(request: Request) -> bool:
-    """Người dùng đã chọn giao diện English? (cookie do client đặt theo javis.ui_lang)."""
-    return request.cookies.get("thansa_lang") == "en"
+    """Thiết bị này đang xem giao diện English? Từ 0.67 nguồn chuẩn là cookie `javis_lang` theo
+    thiết bị (i18n gốc đặt sau khi chọn/đoán); `thansa_lang` của lớp phủ chỉ còn là dự phòng."""
+    ma = request.cookies.get("javis_lang") or request.cookies.get("thansa_lang") or ""
+    if ma:
+        return ma == "en"
+    return localefmt.ngon_ngu_giao_dien() == "en"
 
 
 def _dashboard_file(rel: str, en: bool) -> Path:
@@ -1351,12 +1373,12 @@ async def auth_setup(request: Request, username: str = Form(...), password: str 
                      setup_token: str = Form("")):
     cfg = cfgmod.read_settings()
     if cfgmod.auth_enabled(cfg):
-        return JSONResponse({"ok": False, "error": "Đã có tài khoản - hãy đăng nhập."}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Đã có tài khoản - hãy đăng nhập.", "An account already exists - please sign in.")}, status_code=400)
     # MÃ THIẾT LẬP đã bỏ (0.64.47, chủ dự án chốt 24/09): lần đầu chỉ cần tên + mật khẩu, bảo
     # vệ tiếp theo là 2FA. `setup_token` vẫn nhận nhưng bỏ qua, để client cũ còn gửi không lỗi.
     # Máy cài bằng install.sh có admin sẵn từ .env nên màn này không bao giờ hiện ra ở đó.
     if len(password) < 8:
-        return JSONResponse({"ok": False, "error": "Mật khẩu tối thiểu 8 ký tự"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Mật khẩu tối thiểu 8 ký tự", "Password must be at least 8 characters")}, status_code=400)
     h, salt = cfgmod.hash_password(password)
     cfg["auth"] = {"username": username.strip() or "admin", "password_hash": h, "salt": salt}
     cfgmod.write_settings(cfg)
@@ -1393,14 +1415,14 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
     """
     ip = request.client.host if request.client else "?"
     if _login_locked(ip):
-        return JSONResponse({"ok": False, "error": "Quá nhiều lần sai - thử lại sau ít phút."}, status_code=429)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Quá nhiều lần sai - thử lại sau ít phút.", "Too many failed attempts - try again in a few minutes.")}, status_code=429)
     cfg = cfgmod.read_settings()
     if not cfgmod.auth_enabled(cfg):
-        return {"ok": True, "note": "auth chưa bật"}
+        return {"ok": True, "note": localefmt.chu("auth chưa bật", "auth is not enabled")}
     if username.strip() != cfg["auth"].get("username") or not cfgmod.verify_password(password, cfg):
         _login_fail(ip)
         await asyncio.sleep(0.5)   # làm chậm brute-force online
-        return JSONResponse({"ok": False, "error": "Sai tài khoản hoặc mật khẩu"}, status_code=401)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Sai tài khoản hoặc mật khẩu", "Wrong username or password")}, status_code=401)
     # totp_hong: 2FA bật trong file nhưng secret không giải mã được (mất .secret_key).
     # Vẫn PHẢI hỏi mã (fail-closed) - chỉ mã khôi phục qua được vì nó băm, không mã hoá.
     # Trước 0.35.6 nhánh này fail-open: totp_enabled trả False nên cổng thôi hỏi mã luôn,
@@ -1412,8 +1434,12 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
             # 401 kèm needs_2fa để giao diện hiện ô mã. KHÔNG tính là một lần sai: người dùng
             # chưa gõ gì cả, tính vào hạn mức là tự khoá chính chủ sau vài lần mở màn đăng nhập.
             return JSONResponse({"ok": False, "needs_2fa": True,
-                                 "error": ("Máy chủ không giải mã được khoá 2FA - nhập MÃ KHÔI PHỤC "
-                                           "để vào." if _tfa_hong else "Nhập mã xác thực 2 lớp.")},
+                                 "error": (localefmt.chu("Máy chủ không giải mã được khoá 2FA - nhập MÃ KHÔI PHỤC "
+                                                         "để vào.",
+                                                         "The server cannot decrypt the 2FA key - enter a RECOVERY CODE "
+                                                         "to sign in.")
+                                           if _tfa_hong else localefmt.chu("Nhập mã xác thực 2 lớp.",
+                                                                           "Enter your two-factor code."))},
                                 status_code=401)
         buoc = totp.kiem(cfgmod.totp_secret(cfg), ma,
                          buoc_da_dung=cfgmod.totp_last_step(cfg))
@@ -1426,12 +1452,19 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
             _login_fail(ip)
             await asyncio.sleep(0.5)
             return JSONResponse({"ok": False, "needs_2fa": True,
-                                 "error": ("Khoá 2FA trên máy chủ không giải mã được (file "
-                                           ".secret_key đổi/mất?) nên mã 6 số KHÔNG dùng được - "
-                                           "chỉ MÃ KHÔI PHỤC vào được. Mất cả mã khôi phục thì "
-                                           "SSH vào server xoá khối auth.totp trong "
-                                           "settings.json." if _tfa_hong
-                                           else "Mã xác thực không đúng hoặc đã dùng rồi.")},
+                                 "error": (localefmt.chu(
+                                     "Khoá 2FA trên máy chủ không giải mã được (file "
+                                     ".secret_key đổi/mất?) nên mã 6 số KHÔNG dùng được - "
+                                     "chỉ MÃ KHÔI PHỤC vào được. Mất cả mã khôi phục thì "
+                                     "SSH vào server xoá khối auth.totp trong "
+                                     "settings.json.",
+                                     "The 2FA key on the server cannot be decrypted (was the "
+                                     ".secret_key file changed or lost?), so 6-digit codes do NOT work - "
+                                     "only a RECOVERY CODE gets you in. If the recovery codes are lost too, "
+                                     "SSH into the server and delete the auth.totp block in "
+                                     "settings.json.") if _tfa_hong
+                                           else localefmt.chu("Mã xác thực không đúng hoặc đã dùng rồi.",
+                                                              "The code is wrong or has already been used."))},
                                 status_code=401)
     _LOGIN_FAILS.pop(ip, None)
     return _session_cookie(JSONResponse({"ok": True}), cfgmod.new_session(), request)
@@ -1443,7 +1476,7 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
 # của mình vào rồi khoá chính chủ ra ngoài.
 def _doi_phien_that(request: Request):
     if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
-        return JSONResponse({"ok": False, "error": "Thao tác này phải đăng nhập bằng trình duyệt."},
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thao tác này phải đăng nhập bằng trình duyệt.", "This action requires signing in from a browser.")},
                             status_code=403)
     return None
 
@@ -1478,7 +1511,7 @@ async def auth_2fa_start(request: Request):
         return loi
     cfg = cfgmod.read_settings()
     if cfgmod.totp_enabled(cfg):
-        return JSONResponse({"ok": False, "error": "2FA đang bật rồi - tắt trước nếu muốn đổi."},
+        return JSONResponse({"ok": False, "error": localefmt.chu("2FA đang bật rồi - tắt trước nếu muốn đổi.", "2FA is already on - turn it off first to change it.")},
                             status_code=400)
     secret = totp.sinh_secret()
     _TOTP_CHO.clear()
@@ -1495,12 +1528,15 @@ async def auth_2fa_enable(request: Request, code: str = Form(...)):
         return loi
     cho = dict(_TOTP_CHO)
     if not cho.get("secret") or time.time() - float(cho.get("ts") or 0) > _TOTP_CHO_TTL:
-        return JSONResponse({"ok": False, "error": "Phiên bật 2FA đã hết hạn - bấm Bật lại."},
+        return JSONResponse({"ok": False, "error": localefmt.chu("Phiên bật 2FA đã hết hạn - bấm Bật lại.", "The 2FA setup session expired - click Enable again.")},
                             status_code=400)
     buoc = totp.kiem(cho["secret"], code)
     if buoc is None:
-        return JSONResponse({"ok": False, "error": "Mã không đúng. Kiểm tra giờ trên điện thoại "
-                                                   "rồi nhập mã đang hiện."}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+            "Mã không đúng. Kiểm tra giờ trên điện thoại "
+            "rồi nhập mã đang hiện.",
+            "Wrong code. Check the time on your phone, "
+            "then enter the code it shows now.")}, status_code=400)
     ma_khoi_phuc = totp.sinh_ma_khoi_phuc()
     cfgmod.totp_set(secret=cho["secret"], enabled=True, recovery=ma_khoi_phuc, last_step=buoc)
     _TOTP_CHO.clear()
@@ -1518,13 +1554,13 @@ async def auth_2fa_disable(request: Request, password: str = Form(...), code: st
         return loi
     cfg = cfgmod.read_settings()
     if not cfgmod.totp_enabled(cfg):
-        return {"ok": True, "note": "2FA vốn đã tắt"}
+        return {"ok": True, "note": localefmt.chu("2FA vốn đã tắt", "2FA was already off")}
     if not cfgmod.verify_password(password, cfg):
-        return JSONResponse({"ok": False, "error": "Sai mật khẩu."}, status_code=401)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Sai mật khẩu.", "Wrong password.")}, status_code=401)
     ma = (code or "").strip()
     if totp.kiem(cfgmod.totp_secret(cfg), ma, buoc_da_dung=cfgmod.totp_last_step(cfg)) is None \
             and not cfgmod.totp_dung_ma_khoi_phuc(ma):
-        return JSONResponse({"ok": False, "error": "Mã xác thực không đúng."}, status_code=401)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Mã xác thực không đúng.", "Wrong verification code.")}, status_code=401)
     cfgmod.totp_tat()
     return {"ok": True}
 
@@ -1536,9 +1572,9 @@ async def auth_2fa_recovery(request: Request, password: str = Form(...)):
         return loi
     cfg = cfgmod.read_settings()
     if not cfgmod.totp_enabled(cfg):
-        return JSONResponse({"ok": False, "error": "2FA chưa bật."}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("2FA chưa bật.", "2FA is not on.")}, status_code=400)
     if not cfgmod.verify_password(password, cfg):
-        return JSONResponse({"ok": False, "error": "Sai mật khẩu."}, status_code=401)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Sai mật khẩu.", "Wrong password.")}, status_code=401)
     ma_khoi_phuc = totp.sinh_ma_khoi_phuc()
     cfgmod.totp_set(secret=None, recovery=ma_khoi_phuc)
     return {"ok": True, "recovery": ma_khoi_phuc}
@@ -1564,16 +1600,16 @@ async def auth_password(request: Request, current_password: str = Form(""),
         return loi
     cfg = cfgmod.read_settings()
     if not cfgmod.auth_enabled(cfg):
-        return JSONResponse({"ok": False, "error": "Chưa có tài khoản nào - đặt mật khẩu lần đầu đã."},
+        return JSONResponse({"ok": False, "error": localefmt.chu("Chưa có tài khoản nào - đặt mật khẩu lần đầu đã.", "No account yet - set the first password first.")},
                             status_code=400)
     if not cfgmod.verify_password(current_password, cfg):
         await asyncio.sleep(0.5)   # cùng nhịp làm chậm với /auth/login
-        return JSONResponse({"ok": False, "error": "Sai mật khẩu hiện tại."}, status_code=401)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Sai mật khẩu hiện tại.", "Wrong current password.")}, status_code=401)
     ten = (username or "").strip()
     if password and len(password) < 8:
-        return JSONResponse({"ok": False, "error": "Mật khẩu tối thiểu 8 ký tự"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Mật khẩu tối thiểu 8 ký tự", "Password must be at least 8 characters")}, status_code=400)
     if not password and not ten:
-        return JSONResponse({"ok": False, "error": "Không có gì để đổi."}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có gì để đổi.", "Nothing to change.")}, status_code=400)
     # GHI ĐÈ TỪNG KHOÁ, không thay cả object `auth`: 2FA cũng nằm trong đó, gán đè nguyên cục
     # là lặng lẽ tắt xác thực 2 lớp của người ta ngay lúc họ vừa đổi mật khẩu.
     a = dict(cfg.get("auth") or {})
@@ -1608,8 +1644,11 @@ async def auth_tokens_create(request: Request, name: str = Form(""), scope: str 
     thu hồi cái đã rò cũng vô nghĩa.
     """
     if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
-        return JSONResponse({"ok": False, "error": "Tạo token phải đăng nhập bằng trình duyệt "
-                                                  "(không dùng token để tạo token)."},
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+            "Tạo token phải đăng nhập bằng trình duyệt "
+            "(không dùng token để tạo token).",
+            "Creating a token requires signing in from a browser "
+            "(a token cannot create another token).")},
                             status_code=403)
     return {"ok": True, **cfgmod.create_api_token(name, scope)}
 
@@ -2211,7 +2250,7 @@ async def _claude_sub_doc(cli, prompt, model):
             if ti or to:
                 yield {"type": "usage", "input": ti, "output": to}
         elif et == "error":
-            yield {"type": "error", "content": str(ev.get("content") or "lỗi không rõ")}
+            yield {"type": "error", "content": str(ev.get("content") or localefmt.chu("lỗi không rõ", "unknown error"))}
 
 
 def _claude_sub_stream(model, messages, reasoning="off", *, brain=None, tag="chat",
@@ -2300,7 +2339,7 @@ async def _cli_sub_doc(g, prompt, model):
             yield {"type": "usage", "input": int(ev.get("input_tokens") or 0),
                    "output": int(ev.get("output_tokens") or 0)}
         elif et == "error":
-            yield {"type": "error", "content": str(ev.get("content") or "lỗi không rõ")}
+            yield {"type": "error", "content": str(ev.get("content") or localefmt.chu("lỗi không rõ", "unknown error"))}
 
 
 # Tool NATIVE của Claude Code mà bot chuyên trách TUYỆT ĐỐI không được chạm, ở mọi mức quyền.
@@ -3853,14 +3892,14 @@ async def mcp_list():
 async def mcp_add(request: Request):
     data = await request.json()
     if not (data.get("name") or "").strip():
-        return JSONResponse({"ok": False, "error": "Thiếu tên server"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu tên server", "Missing server name")}, status_code=400)
     codex_ok = False
     if (data.get("auth") or "header") == "oauth":
         # Đăng ký native để Claude Code tự lo OAuth (cần xác thực 1 lần trong terminal: claude → /mcp)
         res = mcp_native_add(data["name"].strip(), (data.get("url") or "").strip(),
                              data.get("transport", "http"), None, data.get("client_id") or None)
         if not res.get("ok"):
-            return JSONResponse({"ok": False, "error": res.get("error") or res.get("out") or "native add lỗi"}, status_code=400)
+            return JSONResponse({"ok": False, "error": res.get("error") or res.get("out") or localefmt.chu("native add lỗi", "native add failed")}, status_code=400)
         # Đối xứng cho engine ChatGPT: server OAuth không đi qua hub được (CLI tự lo OAuth) nên
         # đăng ký thêm vào kho MCP gốc của Codex (best-effort - chưa cài codex thì bỏ qua).
         # User xác thực 1 lần bằng `codex mcp login <tên>`.
@@ -4016,7 +4055,7 @@ async def _goi_plugin_http(request: Request, lp, handler, bo_cookie: bool):
             kq = await asyncio.to_thread(handler, request, lp.ctx)
     except Exception as e:
         print(f"[plugin-http] {lp.slug}: {type(e).__name__}: {e}", file=__import__('sys').stderr)
-        return JSONResponse({"error": f"plugin {lp.slug} lỗi: {type(e).__name__}"}, status_code=500)
+        return JSONResponse({"error": localefmt.chu(f"plugin {lp.slug} lỗi: {type(e).__name__}", f"plugin {lp.slug} failed: {type(e).__name__}")}, status_code=500)
     if isinstance(kq, Response):
         return kq
     if isinstance(kq, (dict, list)):
@@ -4037,7 +4076,7 @@ async def plugin_http(request: Request, slug: str, rest: str = ""):
     # qua, nhưng một token rò ra không được mở trang cài đặt của plugin.
     if (not r["public"] and cfgmod.gate_active()
             and not cfgmod.valid_session(request.cookies.get("javis_session", ""))):
-        return JSONResponse({"error": "Trang này phải đăng nhập bằng trình duyệt."}, status_code=401)
+        return JSONResponse({"error": localefmt.chu("Trang này phải đăng nhập bằng trình duyệt.", "This page requires signing in from a browser.")}, status_code=401)
     return await _goi_plugin_http(request, lp, r["handler"], r["no_cookie"])
 
 
@@ -4064,7 +4103,7 @@ async def connect_core_toggle(request: Request):
     cid = (data.get("id") or "").strip()
     off = bool(data.get("off"))
     if cid not in mcp_catalog.tat_ca():
-        return JSONResponse({"ok": False, "error": "Không có connector này trong kho"},
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có connector này trong kho", "This connector is not in the catalog")},
                             status_code=400)
     anh_huong = [{"id": c["id"], "label": c.get("label") or c["id"]}
                  for c in mcp_store.list_connections() if c.get("connector_id") == cid]
@@ -4102,12 +4141,18 @@ async def connect_add(request: Request):
             request.headers.get("x-forwarded-proto", ""),
             request.headers.get("x-forwarded-host", ""))
         if not web_security.host_kieu_local(host_thay):
-            return {"ok": False, "can_force": True, "error":
-                    "Kết nối này chạy OAuth trên CHÍNH MÁY cài Javis (Google sẽ chuyển về "
-                    "localhost:8000), mà bạn đang mở Javis qua domain public - đăng nhập Google "
+            return {"ok": False, "can_force": True, "error": localefmt.chu(
+                    "Kết nối này chạy OAuth trên CHÍNH MÁY cài Thansa (Google sẽ chuyển về "
+                    "localhost:8000), mà bạn đang mở Thansa qua domain public - đăng nhập Google "
                     "sẽ đứt giữa chừng với lỗi không kết nối được. Trên VPS hãy dùng thẻ Lịch "
                     "và Gmail riêng (hai thẻ đó đăng nhập ngay trong dashboard). Nếu máy chạy "
-                    "Javis có màn hình và bạn sẽ bấm đồng ý trên đó, bấm Kết nối lần nữa."}
+                    "Thansa có màn hình và bạn sẽ bấm đồng ý trên đó, bấm Kết nối lần nữa.",
+                    "This connection runs OAuth on the SAME MACHINE Thansa is installed on (Google "
+                    "redirects back to localhost:8000), but you are opening Thansa through a public "
+                    "domain, so the Google sign-in will break halfway with a connection error. On a "
+                    "VPS, use the separate Calendar and Gmail cards (those two sign in right inside "
+                    "the dashboard). If the machine running Thansa has a screen and you will click "
+                    "Allow there, click Connect again.")}
     # Dùng lại key OAuth client của connection khác (vd Gmail dùng lại key đã tạo cho
     # Calendar) - copy server-side, secrets không bao giờ về browser.
     fields_in = mcp_store.reuse_client_fields(
@@ -4127,7 +4172,7 @@ async def connect_add(request: Request):
     val = await mcp_hub.validate_connection(cid)
     if not val.get("ok"):
         mcp_store.delete_connection(cid)
-        return {"ok": False, "error": val.get("error") or "Không kết nối được"}
+        return {"ok": False, "error": val.get("error") or localefmt.chu("Không kết nối được", "Could not connect")}
     if val.get("label") and not (data.get("label") or "").strip():
         mcp_store.update_connection(cid, {"label": val["label"]})
     mcp_hub.invalidate_cache()
@@ -4177,7 +4222,9 @@ async def connect_substack_resolve_uid(q: str = Query("")):
     m = re.search(r"@([A-Za-z0-9_-]+)", raw) or re.search(r"substack\.com/([A-Za-z0-9_-]+)", raw)
     handle = (m.group(1) if m else raw).lstrip("@").strip().strip("/")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", handle):
-        return {"ok": False, "error": "Handle không hợp lệ. Dán link trang Hồ sơ (vd substack.com/@ten) hoặc chính handle."}
+        return {"ok": False, "error": localefmt.chu(
+            "Handle không hợp lệ. Dán link trang Hồ sơ (vd substack.com/@ten) hoặc chính handle.",
+            "Invalid handle. Paste the Profile page link (e.g. substack.com/@name) or the handle itself.")}
     # Substack đứng sau Cloudflare - chặn httpx theo TLS fingerprint (403), nhưng để curl qua.
     # Dùng curl (có sẵn cả trên Windows lẫn Docker image); handle đã validate + truyền dạng argv
     # riêng (không qua shell) nên không có nguy cơ chèn lệnh/SSRF.
@@ -4191,16 +4238,22 @@ async def connect_substack_resolve_uid(q: str = Query("")):
             **winproc.kwargs_no_window())
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
     except Exception as e:
-        return {"ok": False, "error": f"Không gọi được Substack ({type(e).__name__}). Dùng Cách B (Console) nếu vẫn lỗi."}
+        return {"ok": False, "error": localefmt.chu(
+            f"Không gọi được Substack ({type(e).__name__}). Dùng Cách B (Console) nếu vẫn lỗi.",
+            f"Could not reach Substack ({type(e).__name__}). Use Method B (Console) if it keeps failing.")}
     try:
         d = json.loads(out.decode("utf-8", "replace"))
     except Exception:
-        return {"ok": False, "error": f"Không đọc được hồ sơ '{handle}'. Kiểm tra lại handle, hoặc dùng Cách B (Console)."}
+        return {"ok": False, "error": localefmt.chu(
+            f"Không đọc được hồ sơ '{handle}'. Kiểm tra lại handle, hoặc dùng Cách B (Console).",
+            f"Could not read the profile '{handle}'. Check the handle, or use Method B (Console).")}
     if isinstance(d, dict) and d.get("error"):
-        return {"ok": False, "error": f"Substack: {d.get('error')} - kiểm tra lại handle '{handle}'."}
+        return {"ok": False, "error": localefmt.chu(
+            f"Substack: {d.get('error')} - kiểm tra lại handle '{handle}'.",
+            f"Substack: {d.get('error')} - check the handle '{handle}'.")}
     uid = d.get("id")
     if not uid:
-        return {"ok": False, "error": "Hồ sơ Substack không trả về id."}
+        return {"ok": False, "error": localefmt.chu("Hồ sơ Substack không trả về id.", "The Substack profile returned no id.")}
     pubs, seen = [], set()
     for pu in (d.get("publicationUsers") or []):
         p = pu.get("publication") or {}
@@ -4270,16 +4323,20 @@ async def connect_relogin(request: Request):
     data = await request.json()
     cid = (data.get("id") or "").strip()
     if not cid:
-        return JSONResponse({"ok": False, "error": "Thiếu id kết nối"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu id kết nối", "Missing connection id")}, status_code=400)
     done = mcp_store.forget_cred_dir_by_id(cid)
     mcp_client.pool.invalidate(cid)   # giết tiến trình con đang giữ token cũ trong RAM
     mcp_hub.invalidate_cache()
     connect_health.forget(cid)
     return {"ok": True, "cleared": done,
-            "message": ("Đã xoá đăng nhập Google cũ. Nhờ Thansa làm một việc bất kỳ với nguồn này, "
-                        "trình duyệt trên máy chạy Thansa sẽ mở để bạn cấp lại quyền."
+            "message": (localefmt.chu(
+                "Đã xoá đăng nhập Google cũ. Nhờ Thansa làm một việc bất kỳ với nguồn này, "
+                "trình duyệt trên máy chạy Thansa sẽ mở để bạn cấp lại quyền.",
+                "The old Google sign-in was removed. Ask Thansa to do anything with this source and "
+                "the browser on the machine running Thansa will open so you can grant access again.")
                         if done else
-                        "Kết nối này không tự giữ token riêng, hoặc chưa từng đăng nhập.")}
+                        localefmt.chu("Kết nối này không tự giữ token riêng, hoặc chưa từng đăng nhập.",
+                                      "This connection keeps no token of its own, or was never signed in."))}
 
 
 @app.post("/connect/default")
@@ -4360,12 +4417,12 @@ async def connect_oauth_start(request: Request):
             mcp_store.update_connection(conn_id, {"auth": "header"})
             mcp_hub.invalidate_cache()
             return {"ok": False, "id": conn_id, "auth": "header",
-                    "error": res.get("error") or "Không mở được trang đăng nhập."}
+                    "error": res.get("error") or localefmt.chu("Không mở được trang đăng nhập.", "Could not open the sign-in page.")}
         oauth_mcp.forget(conn_id)
         connect_health.forget(conn_id)
         mcp_store.delete_connection(conn_id)
         mcp_hub.invalidate_cache()
-        return {"ok": False, "error": res.get("error") or "Không mở được trang đăng nhập."}
+        return {"ok": False, "error": res.get("error") or localefmt.chu("Không mở được trang đăng nhập.", "Could not open the sign-in page.")}
     res["id"] = conn_id
     if not res.get("ok") and conn_id:
         res["auth"] = (mcp_store.get_connection(conn_id) or {}).get("auth")
@@ -4402,10 +4459,13 @@ async def connect_oauth_callback(state: str = Query(""), code: str = Query("")):
         except Exception as e:
             print(f"[oauth label] {e}")
         html = ("<html><body style='font-family:sans-serif;background:#111;color:#eee;text-align:center;padding-top:80px'>"
-                "<h2>✓ Đã kết nối thành công</h2><p>Đóng tab này và quay lại Thansa, bấm Làm mới ở trang Kết nối.</p></body></html>")
+                + localefmt.chu("<h2>✓ Đã kết nối thành công</h2><p>Đóng tab này và quay lại Thansa, bấm Làm mới ở trang Kết nối.</p>",
+                                "<h2>✓ Connected successfully</h2><p>Close this tab, go back to Thansa and click Refresh on the Connections page.</p>")
+                + "</body></html>")
     else:
         html = (f"<html><body style='font-family:sans-serif;background:#111;color:#eee;text-align:center;padding-top:80px'>"
-                f"<h2>⚠ Kết nối thất bại</h2><p>{res.get('error', '')}</p></body></html>")
+                + localefmt.chu("<h2>⚠ Kết nối thất bại</h2>", "<h2>⚠ Connection failed</h2>")
+                + f"<p>{res.get('error', '')}</p></body></html>")
     return HTMLResponse(html)
 
 
@@ -4454,7 +4514,7 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
     try:
         patch = json.loads(data)
     except json.JSONDecodeError:
-        return JSONResponse({"ok": False, "error": "data không phải JSON"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("data không phải JSON", "data is not JSON")}, status_code=400)
 
     if section == "locale":
         # Nhánh RIÊNG chứ không nhét vào "general": endpoint này dùng allowlist TỪNG KEY chứ
@@ -4469,6 +4529,11 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             lc["reply_lang"] = "auto" if v in ("", "auto") else (lang_registry.chuan_hoa(v) or "auto")
         if "ui_lang" in patch:
             lc["ui_lang"] = lang_registry.chuan_hoa(patch["ui_lang"]) or lang_registry.MAC_DINH
+            # Nguồn của giá trị: "tu_dong" = dashboard tự ghi theo trình duyệt của thiết bị ghé
+            # đầu tiên, "chon" = người dùng chọn. Chỉ giá trị người CHỌN mới được áp lên thiết bị
+            # khác (console.js); không thì người ghé đầu tiên quyết định ngôn ngữ của mọi người.
+            lc["ui_lang_nguon"] = "tu_dong" if patch.get("tu_dong") else "chon"
+            _doi_ngon_ngu_hat_giong(lc["ui_lang"])
         if "tz" in patch:
             lc["tz"] = str(patch["tz"] or "").strip() or "Asia/Ho_Chi_Minh"
         if "currency" in patch:
@@ -4633,6 +4698,15 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             v["brain_provider"] = str(patch["brain_provider"] or "")
         if patch.get("stt_provider") in voice_brain.STT_PROVIDERS:
             v["stt_provider"] = patch["stt_provider"]
+        # Tai nghe lại (0.65.15) thay cho stt_provider: auto | groq | off (voice_ear.CHOICES).
+        if patch.get("ear") in voice_ear.CHOICES:
+            v["ear"] = patch["ear"]
+        # Giọng của ChatGPT Live (realtime v3 chỉ nhận 9 giọng riêng, mặc định juniper).
+        if patch.get("chatgpt_voice") in voice_live.CHATGPT_VOICES:
+            v["chatgpt_voice"] = patch["chatgpt_voice"]
+        # Đường gọi của nút mic (0.65.18): auto | chatgpt | api | basic (voice_call.ENGINES).
+        if patch.get("call_engine") in voice_call.ENGINES:
+            v["call_engine"] = patch["call_engine"]
         if patch.get("live_provider") in voice_live.PROVIDERS:
             v["live_provider"] = patch["live_provider"]
         # Focus is a browser attention gate. Keep the legacy setting for older clients.
@@ -4640,8 +4714,20 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             v["loc_tap_am"] = bool(patch["loc_tap_am"])
         if "focus_mode" in patch:
             v["focus_mode"] = bool(patch["focus_mode"])
+        # 0.65.26: model của bộ não giọng lưu theo TỪNG bộ não (brain_models = {bộ não: model}); ô
+        # Model gửi kèm brain_model_for. Client cũ không gửi brain_model_for thì vẫn ghi khoá chung
+        # brain_model như trước, nhưng khoá đó nay bị bỏ qua lúc chạy (voice_brain.brain_model_for).
+        model_for = str(patch.get("brain_model_for") or "")
+        if "brain_model" in patch and model_for and model_for in voice_brain.BRAIN_PROVIDERS:
+            models = dict(v["brain_models"]) if isinstance(v.get("brain_models"), dict) else {}
+            name = str(patch["brain_model"] or "").strip()
+            if name:
+                models[model_for] = name
+            else:
+                models.pop(model_for, None)   # rỗng = về model mặc định của hãng
+            v["brain_models"] = models
         for k in ("brain_model", "stt_model", "live_model", "live_voice"):
-            if k in patch:
+            if k in patch and not (k == "brain_model" and model_for):
                 v[k] = str(patch[k] or "").strip()
         # Từ hay nghe nhầm (hotwords): chuỗi tự do, chuẩn hoá qua nghe_sua để lưu gọn; rỗng là
         # xoá hết từ người dùng khai (tên trợ lý vẫn luôn có, không cần lưu).
@@ -4652,11 +4738,15 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # hiện tại VÀ nhận cả token API scope `full`, nghĩa là một token rò ra là đổi được mật
         # khẩu chủ máy rồi khoá chính chủ ra ngoài. Nó cũng nhận mật khẩu 4 ký tự trong khi mọi
         # đường khác đòi 8.
-        return JSONResponse({"ok": False, "error": "Đổi mật khẩu chuyển sang trang Tài khoản "
-                                                   "(phải nhập mật khẩu hiện tại). Tải lại trang "
-                                                   "nếu vẫn thấy form cũ."}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+            "Đổi mật khẩu chuyển sang trang Tài khoản "
+            "(phải nhập mật khẩu hiện tại). Tải lại trang "
+            "nếu vẫn thấy form cũ.",
+            "Changing the password moved to the Account page "
+            "(the current password is required). Reload the page "
+            "if you still see the old form.")}, status_code=400)
     else:
-        return JSONResponse({"ok": False, "error": "section không hợp lệ"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("section không hợp lệ", "invalid section")}, status_code=400)
 
     cfgmod.write_settings(cfg)
     if section == "model":
@@ -4698,7 +4788,7 @@ def _do_backup(brain: str = "") -> dict:
     cfg = cfgmod.read_settings()
     b = cfg.get("backup", {}) or {}
     if not (b.get("repo_url") and b.get("token")):
-        return {"ok": False, "error": "Chưa cấu hình repo URL + token"}
+        return {"ok": False, "error": localefmt.chu("Chưa cấu hình repo URL + token", "Repo URL and token are not configured yet")}
     mirror = str(cfgmod.STATE_DIR / "brains-backup")   # repo mirror riêng (tránh nested git từng brain)
     res = git_brain.sync_brains(BRAINS_DIR, mirror, b["repo_url"], b["token"], b.get("branch") or "main",
                                 trash_dir=str(cfgmod.STATE_DIR / "brain-trash"),
@@ -5027,29 +5117,46 @@ def _vi_sao_khong_co_model(provider: str, m: dict) -> str:
     d = _provider_def(provider) or {}
     if provider == "openai-oauth":
         if not (openai_oauth.valid_creds() or {}).get("access_token"):
-            return ("Chưa kết nối ChatGPT (hoặc phiên đăng nhập đã hết hạn) - "
-                    "đăng nhập lại ở thẻ ChatGPT.")
+            return localefmt.chu("Chưa kết nối ChatGPT (hoặc phiên đăng nhập đã hết hạn) - "
+                                 "đăng nhập lại ở thẻ ChatGPT.",
+                                 "ChatGPT is not connected (or the sign-in expired) - "
+                                 "sign in again on the ChatGPT card.")
         if not find_codex_cli():
-            return ("Không thấy Codex CLI trên máy - danh sách model của gói ChatGPT do chính "
-                    "Codex cấp. Cài bằng `npm i -g @openai/codex` (macOS có thể dùng "
-                    "`brew install codex`) rồi bấm lại. Cài ở chỗ lạ thì trỏ thẳng bằng biến "
-                    "môi trường JAVIS_CODEX_BIN.")
-        return ("Có Codex CLI nhưng nó chưa trả được danh sách model. Thường là bản Codex quá "
-                "cũ (`npm i -g @openai/codex@latest`), hoặc máy chưa chạy `codex login` lần nào.")
+            return localefmt.chu(
+                "Không thấy Codex CLI trên máy - danh sách model của gói ChatGPT do chính "
+                "Codex cấp. Cài bằng `npm i -g @openai/codex` (macOS có thể dùng "
+                "`brew install codex`) rồi bấm lại. Cài ở chỗ lạ thì trỏ thẳng bằng biến "
+                "môi trường JAVIS_CODEX_BIN.",
+                "Codex CLI was not found on this machine - the model list of the ChatGPT plan comes "
+                "from Codex itself. Install it with `npm i -g @openai/codex` (on macOS you can use "
+                "`brew install codex`), then click again. If it is installed somewhere unusual, point "
+                "to it with the JAVIS_CODEX_BIN environment variable.")
+        return localefmt.chu(
+            "Có Codex CLI nhưng nó chưa trả được danh sách model. Thường là bản Codex quá "
+            "cũ (`npm i -g @openai/codex@latest`), hoặc máy chưa chạy `codex login` lần nào.",
+            "Codex CLI is present but has not returned a model list yet. Usually Codex is too "
+            "old (`npm i -g @openai/codex@latest`), or `codex login` has never been run on this machine.")
     if provider == "ollama":
-        return "Không gọi được Ollama. Kiểm tra máy chủ Ollama còn chạy và key còn hạn."
+        return localefmt.chu("Không gọi được Ollama. Kiểm tra máy chủ Ollama còn chạy và key còn hạn.",
+                             "Could not reach Ollama. Check that the Ollama server is running and the key is still valid.")
     if provider == "ollama-local":
         if not (m.get("ollama_local_endpoint") or "").strip():
-            return "Chưa đặt địa chỉ Ollama - vào trang Models, tab Local Model để kết nối."
-        return ("Không gọi được Ollama ở địa chỉ đã lưu. Mở trang Models, tab Local Model để "
-                "xem lỗi cụ thể.")
+            return localefmt.chu("Chưa đặt địa chỉ Ollama - vào trang Models, tab Local Model để kết nối.",
+                                 "No Ollama address set - go to the Models page, Local Model tab, to connect.")
+        return localefmt.chu("Không gọi được Ollama ở địa chỉ đã lưu. Mở trang Models, tab Local Model để "
+                             "xem lỗi cụ thể.",
+                             "Could not reach Ollama at the saved address. Open the Models page, Local Model "
+                             "tab, to see the exact error.")
     if provider == "openai-compat":
         if not (m.get("openai_compat_base") or "").strip():
-            return "Chưa đặt Base URL cho OpenAI Compatible."
-        return ("Không đọc được danh sách model từ {base}/models. Kiểm tra Base URL (tính tới /v1) "
-                "và key, hoặc gõ tên model bằng tay.")
+            return localefmt.chu("Chưa đặt Base URL cho OpenAI Compatible.",
+                                 "No Base URL set for OpenAI Compatible.")
+        return localefmt.chu("Không đọc được danh sách model từ {base}/models. Kiểm tra Base URL (tính tới /v1) "
+                             "và key, hoặc gõ tên model bằng tay.",
+                             "Could not read the model list from {base}/models. Check the Base URL (up to /v1) "
+                             "and the key, or type the model name by hand.")
     if d.get("key_field") and not m.get(d["key_field"]):
-        return "Chưa có API key cho nhà cung cấp này."
+        return localefmt.chu("Chưa có API key cho nhà cung cấp này.", "No API key for this provider yet.")
     return ""
 
 
@@ -5123,7 +5230,7 @@ async def reflect(brain: str = Form("brain")):
     except Exception:
         pass
     if not res.get("ok"):
-        return {"ok": False, "error": res.get("error", "reflect lỗi"), "git": g}
+        return {"ok": False, "error": res.get("error", localefmt.chu("reflect lỗi", "reflect failed")), "git": g}
     rep = res.get("report", {})
     return {"ok": True, "summary": res.get("summary", ""), "facts": facts,
             "status": res.get("status", ""), "report": rep, "git": g}
@@ -5362,7 +5469,7 @@ async def upload(file: UploadFile = File(...), brain: str = Form("")):
     except Exception as e:
         import sys, traceback
         traceback.print_exc(file=sys.stderr)
-        return {"ok": False, "error": f"Không lưu được file tạm: {e}"}
+        return {"ok": False, "error": localefmt.chu(f"Không lưu được file tạm: {e}", f"Could not save the temporary file: {e}")}
 
 
 def _duong_staging(name: str) -> Path:
@@ -5373,11 +5480,11 @@ def _duong_staging(name: str) -> Path:
     viết lạ) còn lớp sau là sự thật của hệ thống tệp (symlink, "..", tên Windows)."""
     ten = str(name or "").strip()
     if not ten or ten in (".", "..") or "/" in ten or "\\" in ten or "\x00" in ten:
-        raise ValueError("Tên file không hợp lệ")
+        raise ValueError(localefmt.chu("Tên file không hợp lệ", "Invalid file name"))
     goc = Path(STAGING).resolve()
     f = (goc / ten).resolve()
     if f.parent != goc:      # symlink trỏ ra ngoài cũng rơi vào đây (resolve đã đi theo nó)
-        raise ValueError("Tên file không hợp lệ")
+        raise ValueError(localefmt.chu("Tên file không hợp lệ", "Invalid file name"))
     return f
 
 
@@ -5400,7 +5507,7 @@ async def upload_raw(name: str = Query(...), dl: int = Query(0)):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not f.is_file():
-        return JSONResponse({"error": "File tạm đã hết hạn hoặc đã được dọn"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("File tạm đã hết hạn hoặc đã được dọn", "The temporary file expired or was cleaned up")}, status_code=404)
     if dl:
         return FileResponse(str(f), filename=f.name)
     mt, _ = mimetypes.guess_type(f.name)
@@ -5418,7 +5525,7 @@ async def ingest_upload(
     cli = claude_engine(system_prompt=SYSTEM_PROMPT, cwd=CLAUDE_CWD)
     cli = _aux_swap(cli, mode="auto", tag="ingest")   # việc nền: theo model phụ đã chọn
     if not cli.is_available():
-        return {"ok": False, "error": "Engine việc nền chưa sẵn sàng (kiểm tra trang Model)"}
+        return {"ok": False, "error": localefmt.chu("Engine việc nền chưa sẵn sàng (kiểm tra trang Model)", "The background engine is not ready (check the Models page)")}
     slug = _sanitize_filename(os.path.splitext(name)[0]) or "source"
 
     if kind == "image":
@@ -5456,7 +5563,7 @@ async def ingest_upload(
     if os.path.exists(md_path):
         return {"ok": True, "md_path": md_path, "md_name": os.path.basename(md_path),
                 "folder": os.path.basename(sources)}
-    return {"ok": False, "error": "Không tạo được .md", "raw": final[:200]}
+    return {"ok": False, "error": localefmt.chu("Không tạo được .md", "Could not create the .md file"), "raw": final[:200]}
 
 # Cấu trúc chuẩn Javis - kiểm tra khi mở vault
 # detect: regex khớp tên folder top-level (linh hoạt "06 - Sources" / "Sources")
@@ -5569,7 +5676,7 @@ def _ensure_brain_scaffold(root):
     jr = root / "Javis" / "README.md"
     if not jr.exists():
         jr.parent.mkdir(parents=True, exist_ok=True)
-        jr.write_text(JAVIS_README, encoding="utf-8")
+        jr.write_text(brain_seed_i18n.chon(JAVIS_README), encoding="utf-8")
     try:
         # Seed trang Dashboard trong thư mục dashboard (create-if-missing, user sửa gì giữ
         # nấy). Khối ```tasks trong seed chạy thật trên dashboard Javis.
@@ -5579,7 +5686,7 @@ def _ensure_brain_scaffold(root):
         # người không dùng tính năng đó - chủ repo báo 03/09 là chưa mở tới nó lần nào.
         dash = Path(_resolve_subfolder(str(root), r"^(\d+\s*[-_.]\s*)?dashboard$", "00 - Dashboard"))
         if not (dash / "Dashboard.md").exists():
-            (dash / "Dashboard.md").write_text(DASHBOARD_SEED, encoding="utf-8")
+            (dash / "Dashboard.md").write_text(brain_seed_i18n.chon(DASHBOARD_SEED), encoding="utf-8")
     except Exception as e:
         print(f"[brain scaffold] dashboard seed: {e}", file=__import__('sys').stderr)
     try:
@@ -5631,6 +5738,21 @@ def _sync_system_all_brains():
                 system_sync.ensure_synced(p)
     except Exception as e:
         print(f"[system sync all] {e}", file=__import__('sys').stderr)
+
+
+def _doi_ngon_ngu_hat_giong(ma: str):
+    """Người dùng vừa chốt ngôn ngữ giao diện: viết lại file hạt giống CÒN NGUYÊN của mọi brain
+    sang ngôn ngữ đó (brain_seed_i18n.doi_ngon_ngu). Brain mặc định được tạo lúc khởi động, trước
+    khi biết người dùng đọc tiếng gì, nên đây là lúc duy nhất nó ra đúng ngôn ngữ."""
+    try:
+        base = Path(BRAINS_DIR)
+        if not base.is_dir():
+            return
+        for p in sorted(base.iterdir()):
+            if p.is_dir() and not p.name.startswith("."):
+                brain_seed_i18n.doi_ngon_ngu(p, ma)
+    except Exception as e:
+        print(f"[brain seed lang] {e}", file=__import__('sys').stderr)
 
 
 def _migrate_legacy_brain():
@@ -5697,7 +5819,8 @@ async def brain_migrate(brain: str = Form("brain")):
     for old_rel, new_rel in [("Javis/agents", "agents"), ("Javis/workflows", "workflows"), ("Memory", "memory")]:
         src, dst = root / old_rel, root / new_rel
         if dst.exists():
-            skipped.append(f"{new_rel} (đã tồn tại - bỏ qua)")
+            skipped.append(localefmt.chu(f"{new_rel} (đã tồn tại - bỏ qua)",
+                                         f"{new_rel} (already exists - skipped)"))
             continue
         if src.is_dir():
             try:
@@ -5771,10 +5894,10 @@ async def new_brain(name: str = Form(...)):
     """Tạo brain mới = folder con trong BRAINS_DIR + seed cấu trúc chuẩn."""
     safe = _safe_brain_name(name)
     if not safe:
-        return JSONResponse({"ok": False, "error": "Tên brain không hợp lệ"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Tên brain không hợp lệ", "Invalid brain name")}, status_code=400)
     root = Path(BRAINS_DIR) / safe
     if root.exists():
-        return JSONResponse({"ok": False, "error": "Brain đã tồn tại"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain đã tồn tại", "Brain already exists")}, status_code=400)
     try:
         _ensure_brain_scaffold(root)
     except Exception as e:
@@ -5792,17 +5915,17 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
     sang mọi máy đồng bộ. Yêu cầu confirm == name. Chặn xoá não mặc định + chỉ trong BRAINS_DIR."""
     safe = _safe_brain_name(name)
     if not safe:
-        return JSONResponse({"ok": False, "error": "Tên brain không hợp lệ"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Tên brain không hợp lệ", "Invalid brain name")}, status_code=400)
     if (confirm or "").strip() != safe:
-        return JSONResponse({"ok": False, "error": "Xác nhận không khớp tên brain"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Xác nhận không khớp tên brain", "The confirmation does not match the brain name")}, status_code=400)
     root = (Path(BRAINS_DIR) / safe).resolve()
     base = Path(BRAINS_DIR).resolve()
     if root == base or base not in root.parents:
-        return JSONResponse({"ok": False, "error": "Brain ngoài phạm vi quản lý"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain ngoài phạm vi quản lý", "Brain is outside the managed area")}, status_code=400)
     if root == _default_brain_dir().resolve():
-        return JSONResponse({"ok": False, "error": "Không thể xoá Brain mặc định"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không thể xoá Brain mặc định", "The default Brain cannot be deleted")}, status_code=400)
     if not root.is_dir():
-        return JSONResponse({"ok": False, "error": "Brain không tồn tại"}, status_code=404)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Brain không tồn tại", "Brain does not exist")}, status_code=404)
     trash_dir = str(cfgmod.STATE_DIR / "brain-trash")
 
     def _trash_and_mark():
@@ -5820,7 +5943,7 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
     try:
         dest = await asyncio.to_thread(_trash_and_mark)
     except Exception as e:
-        return JSONResponse({"ok": False, "error": f"Không xoá được (brain đang bận?): {e}"},
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"Không xoá được (brain đang bận?): {e}", f"Could not delete (is the brain busy?): {e}")},
                             status_code=500)
 
     # Eager sync (nền, best-effort): đẩy lệnh xoá + tombstone lên remote NGAY thay vì chờ chu kỳ 6h.
@@ -6035,7 +6158,7 @@ def agent_get(slug: str = Query(...), brain: str = Query("brain")):
     """
     path = _agent_md_path(brain, slug)
     if not path:
-        return JSONResponse({"error": "Không tìm thấy trợ lý"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy trợ lý", "Assistant not found")}, status_code=404)
     meta, body = _read_md(path)
     return {"slug": slug, "name": meta.get("name", slug), "role": meta.get("role", ""),
             "skills": meta.get("skills", []) or [], "model": meta.get("model", ""),
@@ -6153,7 +6276,7 @@ async def agent_assets_add_file(slug: str, path: str = Form(...), name: str = Fo
     # `is_file` chứ không phải `exists`: một đường dẫn rỗng giải ra chính thư mục trần, mà
     # thư mục thì "có tồn tại" - gắn được một hàng trỏ vào thư mục, ghim vào là đọc lỗi.
     if not alo.is_file():
-        return JSONResponse({"error": "Không tìm thấy file trong brain này"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này", "File not found in this brain")}, status_code=404)
     fid, loi = _agent_assets_sua(
         brain, slug, lambda m: agent_assets.them_file(m, path, name or alo.name))
     return loi or {"ok": True, "id": fid}
@@ -6181,7 +6304,7 @@ async def agent_assets_add_link(slug: str, url: str = Form(...), label: str = Fo
     # Chỉ nhận http/https, cùng rào với link của project: `javascript:` hay `file:` lọt vào
     # danh sách là thành một liên kết bấm được ngay trong giao diện.
     if not re.match(r"^https?://", u, re.I):
-        return JSONResponse({"error": "URL phải bắt đầu bằng http:// hoặc https://"},
+        return JSONResponse({"error": localefmt.chu("URL phải bắt đầu bằng http:// hoặc https://", "The URL must start with http:// or https://")},
                             status_code=400)
     lid, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.them_link(m, u, label))
     return loi or {"ok": True, "id": lid}
@@ -6262,7 +6385,7 @@ async def skill_toggle(slug: str = Form(...), enabled: str = Form(...), brain: s
     tắt bên dưới, đây là chỗ vá CRITICAL 1 của bản 0.9.64 (tắt rồi bật lại làm mất mirror vĩnh viễn)."""
     want = enabled in ("1", "true", "True", "on")
     if not skill_router.valid_slug(slug):   # chống traversal: slug 1 đoạn, dùng cho rmtree/rename bên dưới
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "invalid slug")}, status_code=400)
     root = _brain_root(brain)
     try:
         system_sync.migrate_brain(root)   # brain cũ: kéo skill legacy .claude/skills → skills/ trước
@@ -6273,7 +6396,7 @@ async def skill_toggle(slug: str = Form(...), enabled: str = Form(...), brain: s
     src = (dis / slug) if want else (sk / slug)
     dst = (sk / slug) if want else (dis / slug)
     if not src.is_dir():
-        return {"ok": True} if dst.is_dir() else JSONResponse({"error": "Không tìm thấy skill"}, status_code=404)
+        return {"ok": True} if dst.is_dir() else JSONResponse({"error": localefmt.chu("Không tìm thấy skill", "Skill not found")}, status_code=404)
     try:
         dst.parent.mkdir(parents=True, exist_ok=True)
         if dst.exists():
@@ -6302,7 +6425,7 @@ async def skill_toggle(slug: str = Form(...), enabled: str = Form(...), brain: s
 @app.get("/skills/get")
 async def skill_get(slug: str = Query(...), brain: str = Query("brain")):
     if not skill_router.valid_slug(slug):
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "invalid slug")}, status_code=400)
     root = _brain_root(brain)
     smd = skill_router.resolve_skill_file(root, slug)   # canonical → .claude → .agents (bản BẬT)
     if not smd:
@@ -6312,7 +6435,7 @@ async def skill_get(slug: str = Query(...), brain: str = Query("brain")):
                 smd = cand
                 break
     if not smd or not smd.is_file():
-        return JSONResponse({"error": "Không tìm thấy skill"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy skill", "Skill not found")}, status_code=404)
     meta, body = _read_md(smd)
     return {"slug": slug, "name": meta.get("name", slug), "description": meta.get("description", ""),
             "group": meta.get("group") or "Chung", "body": body}
@@ -6325,7 +6448,7 @@ async def save_skill(name: str = Form(...), description: str = Form(""), group: 
     nhóm. Sau khi ghi, mirror sang .claude/skills để Claude native (cwd=brain) thấy ngay."""
     slug = (slug or _ascii_slug(name)).strip()
     if not skill_router.valid_slug(slug):
-        return JSONResponse({"error": "Tên skill không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Tên skill không hợp lệ", "Invalid skill name")}, status_code=400)
     # Ép trần description NGAY, trước khi tạo bất cứ thư mục nào -> request bị từ chối không
     # để lại folder skill rỗng trên đĩa. Router cắt ở SKILL_DESC_MAX nên vượt trần = mất chữ
     # im lặng; chặn ở đây tốt hơn là ghi bừa rồi để runtime cắt.
@@ -6362,11 +6485,15 @@ async def save_skill(name: str = Form(...), description: str = Form(""), group: 
 @app.post("/skills/delete")
 async def delete_skill(slug: str = Form(...), brain: str = Form("brain")):
     if system_sync.is_system_skill(slug):
-        return JSONResponse({"error": "Skill hệ thống của Thansa OS - không xoá được (đi theo "
-                             "phiên bản app, xoá cũng tự cài lại khi cập nhật). Muốn ngừng dùng "
-                             "thì TẮT skill (bỏ tích)."}, status_code=400)
+        return JSONResponse({"error": localefmt.chu(
+            "Skill hệ thống của Thansa OS - không xoá được (đi theo "
+            "phiên bản app, xoá cũng tự cài lại khi cập nhật). Muốn ngừng dùng "
+            "thì TẮT skill (bỏ tích).",
+            "This is a Thansa OS system skill and cannot be deleted (it ships with "
+            "the app version and would reinstall itself on update). To stop using it, "
+            "turn the skill OFF (untick it).")}, status_code=400)
     if not skill_router.valid_slug(slug):
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "invalid slug")}, status_code=400)
     root = Path(_brain_root(brain))
     # Xoá ở MỌI nơi: canonical (bật+tắt) + bản mirror .claude (bật+tắt) + legacy .agents.
     targets = [root / "skills" / slug, root / "skills" / ".disabled" / slug,
@@ -6380,17 +6507,17 @@ async def delete_skill(slug: str = Form(...), brain: str = Form("brain")):
                 found = True
             except Exception as e:
                 return JSONResponse({"error": str(e)}, status_code=500)
-    return {"ok": True} if found else JSONResponse({"error": "Không tìm thấy skill"}, status_code=404)
+    return {"ok": True} if found else JSONResponse({"error": localefmt.chu("Không tìm thấy skill", "Skill not found")}, status_code=404)
 
 
 @app.post("/skills/group")
 async def skill_set_group(slug: str = Form(...), group: str = Form(...), brain: str = Form("brain")):
     """Đổi nhóm 1 skill (chỉ cập nhật field group, giữ nguyên body)."""
     if not skill_router.valid_slug(slug):
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "invalid slug")}, status_code=400)
     smd = skill_router.resolve_skill_file(_brain_root(brain), slug)
     if not smd or not smd.is_file():
-        return JSONResponse({"error": "Không tìm thấy"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy", "Not found")}, status_code=404)
     meta, body = _read_md(smd)
     meta["group"] = (group or "Chung").strip()
     _write_md(smd, meta, body)
@@ -6451,7 +6578,7 @@ def _safe_path(brain: str, rel: str) -> Path:
     rel = (rel or "").strip().replace("\\", "/").lstrip("/")
     target = (root / rel).resolve()
     if target != root and root not in target.parents:
-        raise ValueError("Đường dẫn ngoài phạm vi cho phép")
+        raise ValueError(localefmt.chu("Đường dẫn ngoài phạm vi cho phép", "The path is outside the allowed area"))
     return target
 
 
@@ -6475,7 +6602,7 @@ def _safe_serve_path(brain: str, rel: str) -> Path:
         if (brain_target == broot or broot in brain_target.parents) and brain_target.exists():
             return brain_target                         # đường dẫn vault, vẫn nằm trong gốc brain
     if not ceil_in:
-        raise ValueError("Đường dẫn ngoài phạm vi cho phép")
+        raise ValueError(localefmt.chu("Đường dẫn ngoài phạm vi cho phép", "The path is outside the allowed area"))
     return ceil_target                                  # không thấy: trả theo trần để 404 nhất quán
 
 
@@ -6716,7 +6843,7 @@ async def files_md_hong_sua(brain: str = Form("brain"), paths: str = Form("")):
         try:
             chi = {str(x).replace("\\", "/").strip("/") for x in json.loads(paths)}
         except (ValueError, TypeError):
-            return JSONResponse({"error": "Danh sách đường dẫn không đọc được"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("Danh sách đường dẫn không đọc được", "Could not read the path list")}, status_code=400)
 
     def _lam():
         da_sua, loi = [], []
@@ -6741,13 +6868,13 @@ async def files_read(brain: str = Query("brain"), path: str = Query(...)):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not f.is_file():
-        return JSONResponse({"error": "Không tìm thấy file"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file", "File not found")}, status_code=404)
     if f.stat().st_size > 2_000_000:
-        return JSONResponse({"error": "File quá lớn để xem (>2MB) - hãy tải về"}, status_code=413)
+        return JSONResponse({"error": localefmt.chu("File quá lớn để xem (>2MB) - hãy tải về", "File too large to view (>2MB) - download it instead")}, status_code=413)
     try:
         text = f.read_text(encoding="utf-8")
     except Exception:
-        return JSONResponse({"error": "File nhị phân - không xem được dạng văn bản"}, status_code=415)
+        return JSONResponse({"error": localefmt.chu("File nhị phân - không xem được dạng văn bản", "Binary file - cannot be shown as text")}, status_code=415)
     # `abs` để trình sửa ghim được file đang mở vào khung chat: engine cần ĐƯỜNG DẪN THẬT
     # mới mở được file, mà đường dẫn tương đối ở đây tính theo TRẦN DUYỆT chứ không theo gốc
     # brain (hai cái khác nhau khi trần cao hơn brain) nên client tự ghép là ghép sai.
@@ -6783,7 +6910,7 @@ async def files_delete(brain: str = Form("brain"), path: str = Form(...)):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if p == _files_root(brain) or p == Path(_brain_root(brain)).resolve():
-        return JSONResponse({"error": "Không thể xoá thư mục gốc / brain"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Không thể xoá thư mục gốc / brain", "Cannot delete the root / brain folder")}, status_code=400)
     try:
         if p.is_dir():
             shutil.rmtree(p)
@@ -6803,7 +6930,7 @@ async def files_rename(brain: str = Form("brain"), path: str = Form(...), newnam
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not p.exists():
-        return JSONResponse({"error": "Không tìm thấy"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy", "Not found")}, status_code=404)
     p.rename(dst)
     return {"ok": True}
 
@@ -6825,14 +6952,14 @@ async def files_upload(file: UploadFile = File(...), brain: str = Form("brain"),
     if folder:
         mau = _THU_MUC_LOGIC.get(folder.strip().lower())
         if not mau:
-            return JSONResponse({"error": "Thư mục không hợp lệ"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("Thư mục không hợp lệ", "Invalid folder")}, status_code=400)
         d = Path(_resolve_subfolder(_brain_root(brain), *mau))
         try:
             # Client lưu và mở file bằng đường dẫn tương đối TRẦN duyệt, nên phải quy về đó -
             # trả đường tuyệt đối là đẩy một đường dẫn máy chủ vào cơ sở dữ liệu project.
             rel_dir = d.relative_to(_files_root(brain)).as_posix()
         except ValueError:
-            return JSONResponse({"error": "Thư mục nằm ngoài phạm vi duyệt"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("Thư mục nằm ngoài phạm vi duyệt", "The folder is outside the browsable area")}, status_code=400)
     else:
         try:
             d = _safe_path(brain, path)
@@ -6844,7 +6971,7 @@ async def files_upload(file: UploadFile = File(...), brain: str = Form("brain"),
     try:
         await _save_upload_stream(file, dest)
     except Exception as e:
-        return JSONResponse({"error": f"Ghi file thất bại: {e}"}, status_code=500)
+        return JSONResponse({"error": localefmt.chu(f"Ghi file thất bại: {e}", f"Writing the file failed: {e}")}, status_code=500)
     ten = os.path.basename(dest)
     # Trả luôn đường dẫn ĐÃ DÙNG: caller khỏi phải ghép lại và khỏi đoán sai tên thư mục.
     return {"ok": True, "name": ten, "dir": rel_dir,
@@ -6860,7 +6987,7 @@ async def files_download(brain: str = Query("brain"), path: str = Query(...)):
     if f.is_dir():
         return await zip_dir_response(brain, path)   # trỏ vào thư mục → tự nén .zip
     if not f.is_file():
-        return JSONResponse({"error": "Không tìm thấy file"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file", "File not found")}, status_code=404)
     return FileResponse(str(f), filename=f.name)
 
 
@@ -6920,8 +7047,10 @@ def _rm_quiet(p):
 
 
 def _zip_too_big_msg():
-    return (f"Thư mục quá lớn để nén (trần {_ZIP_MAX_FILES:,} file hoặc "
-            f"{_ZIP_MAX_BYTES // (1024 ** 3)}GB). Hãy tải từng thư mục con.")
+    return localefmt.chu(f"Thư mục quá lớn để nén (trần {_ZIP_MAX_FILES:,} file hoặc "
+                         f"{_ZIP_MAX_BYTES // (1024 ** 3)}GB). Hãy tải từng thư mục con.",
+                         f"Folder too large to compress (limit {_ZIP_MAX_FILES:,} files or "
+                         f"{_ZIP_MAX_BYTES // (1024 ** 3)}GB). Download the subfolders one by one.")
 
 
 async def zip_dir_response(brain: str, path: str, probe: bool = False):
@@ -6938,7 +7067,7 @@ async def zip_dir_response(brain: str, path: str, probe: bool = False):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not d.is_dir():
-        return JSONResponse({"error": "Không phải thư mục"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không phải thư mục", "Not a folder")}, status_code=404)
     name = (d.name or "brain") + ".zip"
     if probe:
         try:
@@ -6946,7 +7075,7 @@ async def zip_dir_response(brain: str, path: str, probe: bool = False):
         except _ZipTooBig:
             return JSONResponse({"error": _zip_too_big_msg()}, status_code=413)
         except Exception as e:
-            return JSONResponse({"error": f"Không đọc được thư mục: {e}"}, status_code=500)
+            return JSONResponse({"error": localefmt.chu(f"Không đọc được thư mục: {e}", f"Could not read the folder: {e}")}, status_code=500)
         return {"ok": True, "files": files, "bytes": total, "name": name}
     fd, tmp = tempfile.mkstemp(prefix="javis-zip-", suffix=".zip")
     os.close(fd)
@@ -6957,7 +7086,7 @@ async def zip_dir_response(brain: str, path: str, probe: bool = False):
         return JSONResponse({"error": _zip_too_big_msg()}, status_code=413)
     except Exception as e:
         _rm_quiet(tmp)
-        return JSONResponse({"error": f"Nén thất bại: {e}"}, status_code=500)
+        return JSONResponse({"error": localefmt.chu(f"Nén thất bại: {e}", f"Compression failed: {e}")}, status_code=500)
     return FileResponse(tmp, media_type="application/zip", filename=name,
                         background=BackgroundTask(_rm_quiet, tmp))
 
@@ -6979,7 +7108,7 @@ def raw_file_response(brain: str, path: str, dl: bool = False):
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not f.is_file():
-        return JSONResponse({"error": "Không tìm thấy file"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file", "File not found")}, status_code=404)
     if dl:
         return FileResponse(str(f), filename=f.name)   # ép tải (giữ tên, kể cả tên tiếng Việt)
     mt, _ = mimetypes.guess_type(f.name)
@@ -7009,7 +7138,7 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
 def _share_chan(ban) -> str:
     """Dòng chân trang: nói rõ đây là file được chia sẻ, để người xem biết mình đang xem gì."""
     ten = os.path.basename(str(ban.get("path") or "")) or "file"
-    return share_render.esc(ten) + " · được chia sẻ từ Javis OS"
+    return share_render.esc(ten) + localefmt.chu(" · được chia sẻ từ Thansa OS", " · shared from Thansa OS")
 
 
 def _share_file(ban):
@@ -7097,9 +7226,13 @@ def _share_asset(ban, p: str):
 @app.post("/share/create")
 async def share_create(body: dict = Body(...)):
     """Bật chia sẻ cho một file. Gọi lại trên cùng file thì trả đúng link cũ, không đẻ link mới."""
+    nhan = str(body.get("nhan") or "").strip()
+    if not nhan:
+        # 0.65.30: link mới tự lấy tên theo TIÊU ĐỀ file (chủ dự án chọn 01/10), không có thì tên
+        # thư mục của index.html hoặc tên file. Sửa lại được ở trang Chia sẻ (/share/rename).
+        nhan = _share_ten_tu_dong({"brain": body.get("brain") or "brain", "path": body.get("path") or ""})
     try:
-        ban = share_store.tao(body.get("brain") or "brain", body.get("path") or "",
-                              body.get("nhan") or "")
+        ban = share_store.tao(body.get("brain") or "brain", body.get("path") or "", nhan)
     except ValueError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
     # Trả ĐƯỜNG DẪN TƯƠNG ĐỐI, để trình duyệt tự ghép với location.origin. Dựng URL tuyệt đối ở
@@ -7121,12 +7254,26 @@ async def share_of(brain: str = Query("brain"), path: str = Query(...)):
                                   if ban else None)}
 
 
+def _share_ten_tu_dong(ban) -> str:
+    """Tên tự đặt của một link: tiêu đề file, không có thì tên dự phòng (share_render)."""
+    f = _share_file(ban)
+    return (share_render.tieu_de_file(f) if f else "") or share_render.ten_du_phong(ban.get("path") or "")
+
+
+def _share_ten(ban) -> str:
+    """Tên hiển thị: tên đã đặt (tự lúc tạo hoặc người dùng sửa), link cũ chưa có tên thì tự lấy."""
+    return str(ban.get("nhan") or "").strip() or _share_ten_tu_dong(ban)
+
+
 @app.get("/share/list")
 async def share_list(brain: str = Query("")):
     ds = share_store.danh_sach(brain)
+    # Link tạo trước 0.65.30 chưa có tên: đọc đầu file lấy tiêu đề. Luồng phụ vì có thể là vài
+    # trăm file; kho không bị ghi đè (tên vẫn theo file cho tới khi người dùng đặt tên).
+    ten = await asyncio.to_thread(lambda: [_share_ten(b) for b in ds])
     return {"ok": True, "items": [{"token": b["token"], "brain": b.get("brain"),
                                    "path": b.get("path"), "tao_luc": b.get("tao_luc"),
-                                   "url": "/s/" + b["token"]} for b in ds]}
+                                   "ten": t, "url": "/s/" + b["token"]} for b, t in zip(ds, ten)]}
 
 
 @app.get("/s/{token}")
@@ -7134,11 +7281,11 @@ async def share_xem(token: str):
     """TRANG XEM công khai. Không cần đăng nhập - xem chú thích đầu khối."""
     ban = share_store.doc(token)
     if not ban:
-        return HTMLResponse(share_render.trang_loi("Link không tồn tại hoặc đã bị thu hồi."),
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.", "This link does not exist or has been revoked.")),
                             status_code=404)
     f = _share_file(ban)
     if f is None:
-        return HTMLResponse(share_render.trang_loi("File đã bị xoá hoặc đổi tên."), status_code=404)
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("File đã bị xoá hoặc đổi tên.", "The file was deleted or renamed.")), status_code=404)
     duoi = f.suffix.lower()
     goc_asset = "/s/" + ban["token"] + "/asset"
     chan = _share_chan(ban)
@@ -7159,7 +7306,7 @@ async def share_xem(token: str):
     try:
         noi = f.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return HTMLResponse(share_render.trang_loi("Không đọc được file."), status_code=404)
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("Không đọc được file.", "Could not read the file.")), status_code=404)
     if duoi in share_render.DUOI_MD:
         trang = share_render.trang_markdown(f.stem, noi, goc_asset, chan)
     else:
@@ -7261,18 +7408,18 @@ async def share_xem_html(token: str):
     """Trang .html chia sẻ, ở địa chỉ có dấu gạch cuối (xem share_xem vì sao)."""
     ban = share_store.doc(token)
     if not ban:
-        return HTMLResponse(share_render.trang_loi("Link không tồn tại hoặc đã bị thu hồi."),
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.", "This link does not exist or has been revoked.")),
                             status_code=404)
     f = _share_file(ban)
     if f is None:
-        return HTMLResponse(share_render.trang_loi("File đã bị xoá hoặc đổi tên."), status_code=404)
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("File đã bị xoá hoặc đổi tên.", "The file was deleted or renamed.")), status_code=404)
     if f.suffix.lower() not in share_render.DUOI_HTML:
         return RedirectResponse(url="/s/" + ban["token"], status_code=307)
     # Nội dung của NGƯỜI DÙNG, có script: phục vụ nguyên văn nhưng trong hộp cách ly.
     try:
         noi = f.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return HTMLResponse(share_render.trang_loi("Không đọc được file."), status_code=404)
+        return HTMLResponse(share_render.trang_loi(localefmt.chu("Không đọc được file.", "Could not read the file.")), status_code=404)
     # Thứ DUY NHẤT được thêm vào trang của người dùng: bản vá kho lưu trữ. Hộp cách ly cho
     # trang gốc "null", mà gốc null thì localStorage ném SecurityError ngay dòng đầu chạm vào
     # nó và giết cả script - trang trắng dù dữ liệu đã tải xong. Xem share_render.
@@ -7322,11 +7469,11 @@ async def brain_file_compat(brain_name: str, path: str, dl: int = Query(0)):
     """
     safe_name = _safe_brain_name(brain_name)
     if not safe_name or safe_name != str(brain_name or "").strip():
-        return JSONResponse({"error": "Tên brain không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Tên brain không hợp lệ", "Invalid brain name")}, status_code=400)
     base = Path(BRAINS_DIR).resolve()
     root = (base / safe_name).resolve()
     if root.parent != base or not root.is_dir():
-        return JSONResponse({"error": "Không tìm thấy brain"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy brain", "Brain not found")}, status_code=404)
     return raw_file_response(str(root), path, dl=bool(dl))
 
 
@@ -7548,15 +7695,15 @@ async def files_taskadd(brain: str = Form("brain"), text: str = Form(...),
     Đây là chỗ DUY NHẤT sinh ra file đó - brain mới không còn được rải sẵn nó nữa. `due` dạng YYYY-MM-DD thì gắn "📅 due" kiểu obsidian-tasks."""
     text = " ".join((text or "").split())
     if not text:
-        return JSONResponse({"error": "Nội dung việc trống"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Nội dung việc trống", "The task text is empty")}, status_code=400)
     broot = Path(_brain_root(brain)).resolve()
     rel = (path or "").strip().replace("\\", "/").strip("/")
     if rel:
         target = (broot / rel).resolve()
         if target != broot and broot not in target.parents:
-            return JSONResponse({"error": "Đường dẫn ngoài phạm vi cho phép"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("Đường dẫn ngoài phạm vi cho phép", "The path is outside the allowed area")}, status_code=400)
         if target.suffix.lower() not in (".md", ".txt"):
-            return JSONResponse({"error": "Chỉ thêm task vào file .md/.txt"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("Chỉ thêm task vào file .md/.txt", "Tasks can only be added to .md/.txt files")}, status_code=400)
     else:
         dash = _resolve_subfolder(str(broot), r"^(\d+\s*[-_.]\s*)?dashboard$", "00 - Dashboard")
         target = Path(dash) / "Task Inbox.md"
@@ -7591,11 +7738,11 @@ async def files_taskcheck(brain: str = Form("brain"), path: str = Form(...),
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not f.is_file() or f.suffix.lower() not in (".md", ".txt"):
-        return JSONResponse({"error": "Không tìm thấy file task"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file task", "Task file not found")}, status_code=404)
     try:
         text = f.read_text(encoding="utf-8")
     except Exception:
-        return JSONResponse({"error": "Không đọc được file"}, status_code=415)
+        return JSONResponse({"error": localefmt.chu("Không đọc được file", "Could not read the file")}, status_code=415)
     lines = text.split("\n")
     exp = (expect or "").strip()
     idx = None
@@ -7607,7 +7754,7 @@ async def files_taskcheck(brain: str = Form("brain"), path: str = Form(...),
         if len(hits) == 1:
             idx = hits[0]
     if idx is None:
-        return JSONResponse({"error": "File đã thay đổi - tải lại rồi tick lại giúp nhé"},
+        return JSONResponse({"error": localefmt.chu("File đã thay đổi - tải lại rồi tick lại giúp nhé", "The file has changed - reload, then tick it again")},
                             status_code=409)
     m = _MD_TASK_RE.match(lines[idx])
     want = bool(int(checked))
@@ -7740,11 +7887,11 @@ async def capability_meta(kind: str = Form(...), slug: str = Form(...),
     """
     thu_muc = _META_KIND.get((kind or "").strip())
     if not thu_muc:
-        return JSONResponse({"ok": False, "error": "kind phải là agent hoặc workflow"},
+        return JSONResponse({"ok": False, "error": localefmt.chu("kind phải là agent hoặc workflow", "kind must be agent or workflow")},
                             status_code=400)
     f = thu_muc(brain) / f"{slug}.md"
     if not f.is_file():
-        return JSONResponse({"ok": False, "error": f"không thấy {kind} '{slug}'"},
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"không thấy {kind} '{slug}'", f"{kind} '{slug}' not found")},
                             status_code=404)
     # Gọi THẲNG hàm này từ Python (test, Telegram) thì tham số không truyền vẫn là object
     # `Form(...)` chứ không phải None - truthy, nên nhánh "không gửi thì không đụng" bên dưới
@@ -7792,20 +7939,20 @@ async def export_capability(kind: str = Query(...), slug: str = Query(...),
     `slug` nhận MỘT slug hoặc NHIỀU slug cách nhau bằng dấu phẩy (chọn nhiều / chọn tất
     cả trên trang Studio, 16/08) - nhiều cái vẫn ra một gói duy nhất, nhập lại một phát."""
     if kind not in ("agent", "skill", "workflow"):
-        return JSONResponse({"error": "kind phải là agent/skill/workflow"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("kind phải là agent/skill/workflow", "kind must be agent/skill/workflow")}, status_code=400)
     slugs = [s.strip() for s in str(slug or "").split(",") if s.strip()]
     if not slugs or len(slugs) > 200:
-        return JSONResponse({"error": "slug rỗng hoặc quá nhiều (tối đa 200)"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug rỗng hoặc quá nhiều (tối đa 200)", "slug is empty or there are too many (max 200)")}, status_code=400)
     xau = [s for s in slugs if not skill_router.valid_slug(s)]
     if xau:
-        return JSONResponse({"error": f"slug không hợp lệ: {', '.join(xau[:5])}"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu(f"slug không hợp lệ: {', '.join(xau[:5])}", f"invalid slug: {', '.join(xau[:5])}")}, status_code=400)
     data, fname = share_bundle.build_bundle(
         kind, slugs if len(slugs) > 1 else slugs[0],
         agents_dir=_agents_dir(brain), workflows_dir=_workflows_dir(brain),
         skills_root=_skills_dir(brain), include_deps=bool(deps),
         system_slugs=system_sync.system_skill_slugs(), app_version=_app_version())
     if not data:
-        return JSONResponse({"error": f"Không tìm thấy {kind} '{slug}' để xuất"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu(f"Không tìm thấy {kind} '{slug}' để xuất", f"{kind} '{slug}' not found for export")}, status_code=404)
     return Response(content=data, media_type="application/zip",
                     headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
@@ -7817,9 +7964,9 @@ async def import_capability(file: UploadFile = File(...), brain: str = Form("bra
     tick ghi đè. Có rào chống zip-slip + giới hạn dung lượng ở share_bundle."""
     data = await file.read()
     if not data:
-        return JSONResponse({"error": "File rỗng"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("File rỗng", "Empty file")}, status_code=400)
     if len(data) > 25 * 1024 * 1024:
-        return JSONResponse({"error": "File quá lớn (>25MB)"}, status_code=413)
+        return JSONResponse({"error": localefmt.chu("File quá lớn (>25MB)", "File too large (>25MB)")}, status_code=413)
     root = _brain_root(brain)
     res = share_bundle.import_bundle(
         data, file.filename,
@@ -7984,47 +8131,40 @@ def _cau_mo_dau(d: dict, en: bool = False) -> str:
     goi = t.get("goi") or {}
     that = float((t.get("that") or {}).get("usd") or 0)
     quy = float((t.get("quy_doi") or {}).get("usd") or 0)
-    ky = d.get("ten_ky") or ("This period" if en else "Kỳ này")
+    ky = d.get("ten_ky") or localefmt.chu("Kỳ này", "This period")
     ve = []
     if goi.get("so_duoc"):
         lan = goi.get("roi_lan") or 0
         # Nói đủ cả ba ca. Chỉ khoe khi thật sự lời, và dám nói khi gói đang đắt hơn API -
         # một trang chỉ biết khen thì lần sau không ai tin nó nữa.
-        if en:
-            if lan >= 1.2:
-                ket = f", i.e. the plan is paying off {lan:g}x."
-            elif lan >= 0.8:
-                ket = ", i.e. the plan breaks even versus API pricing."
-            elif lan > 0:
-                ket = ", i.e. at this usage rate the plan costs more than paying per API."
-            else:
-                ket = "."
-            ve.append(f"{ky} you paid ${goi['gia_thang_usd']:g} for the plan; "
-                      f"the work run would cost about ${quy:,.0f} at API prices" + ket)
+        if lan >= 1.2:
+            ket = localefmt.chu(f", tức gói đang lời {lan:g} lần.",
+                                f", so the plan is paying off {lan:g} times over.")
+        elif lan >= 0.8:
+            ket = localefmt.chu(", tức gói đang hoà vốn so với giá API.",
+                                ", so the plan is breaking even against API prices.")
+        elif lan > 0:
+            ket = localefmt.chu(", tức với nhịp dùng này thì gói đang đắt hơn trả theo API.",
+                                ", so at this pace the plan costs more than paying per API call.")
         else:
-            if lan >= 1.2:
-                ket = f", tức gói đang lời {lan:g} lần."
-            elif lan >= 0.8:
-                ket = ", tức gói đang hoà vốn so với giá API."
-            elif lan > 0:
-                ket = ", tức với nhịp dùng này thì gói đang đắt hơn trả theo API."
-            else:
-                ket = "."
-            ve.append(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
-                      f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}" + ket)
+            ket = "."
+        ve.append(localefmt.chu(f"{ky} bạn trả ${goi['gia_thang_usd']:g} tiền gói, "
+                                f"lượng việc đã chạy nếu tính theo giá API đáng ${quy:,.0f}",
+                                f"{ky} you paid ${goi['gia_thang_usd']:g} for the plan, "
+                                f"and the work done would be worth ${quy:,.0f} at API prices") + ket)
     elif quy > 0:
-        ve.append(f"{ky} the work run comes to about ${quy:,.2f} at API prices." if en
-                  else f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.")
+        ve.append(localefmt.chu(f"{ky} lượng việc đã chạy quy theo giá API là khoảng ${quy:,.2f}.",
+                                f"{ky} the work done comes to about ${quy:,.2f} at API prices."))
     if that > 0:
-        ve.append((f"Real cash spent: ${that:,.2f}." if en
-                   else f"Tiền mặt thật đã tiêu: ${that:,.2f}."))
+        ve.append(localefmt.chu(f"Tiền mặt thật đã tiêu: ${that:,.2f}.",
+                                f"Real cash spent: ${that:,.2f}."))
     else:
-        ve.append("No branch charges per token, so real cash spent is $0." if en
-                  else "Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.")
+        ve.append(localefmt.chu("Chưa có nhánh nào tính tiền theo token, nên tiền mặt thật là $0.",
+                                "Nothing is billed per token yet, so real cash spent is $0."))
     tk = d.get("tiet_kiem") or {}
     if tk.get("token"):
-        ve.append((f"Saver mode avoided {_fmt_tok_en(tk['token'])} tokens." if en
-                   else f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token."))
+        ve.append(localefmt.chu(f"Chế độ tiết kiệm đã tránh được {_fmt_tok_vn(tk['token'])} token.",
+                                f"Saving mode avoided {_fmt_tok_en(tk['token'])} tokens."))
     return " ".join(ve)
 
 
@@ -8050,13 +8190,24 @@ def _fmt_tok_vn(n) -> str:
     return str(n)
 
 
+def _fmt_tok_en(n) -> str:
+    """Bản tiếng Anh của `_fmt_tok_vn`, cho chữ hiện trên màn hình giao diện tiếng Anh."""
+    n = int(n or 0)
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K"
+    return str(n)
+
+
 _TEN_KY = {"today": "Hôm nay", "yesterday": "Hôm qua", "this_week": "Tuần này",
            "last_week": "Tuần trước", "this_month": "Tháng này", "last_month": "Tháng trước",
            "last_3_months": "3 tháng qua", "this_year": "Năm nay"}
-# Bản EN cho tên kỳ (fork): câu tóm tắt server ghép nên overlay không phủ được, dịch tại nguồn.
 _TEN_KY_EN = {"today": "Today", "yesterday": "Yesterday", "this_week": "This week",
               "last_week": "Last week", "this_month": "This month", "last_month": "Last month",
-              "last_3_months": "Last 3 months", "this_year": "This year"}
+              "last_3_months": "Past 3 months", "this_year": "This year"}
 
 
 @app.get("/usage/tong-quan")
@@ -8146,9 +8297,8 @@ async def usage_tong_quan(period: str = "this_month", brain: str = "brain", refr
     usd_cache = _tien_cache(s.get("by_model") or [], prices)
     en = _lang_en(request) if request is not None else False
     d = {
-        "period": period,
-        "ten_ky": (_TEN_KY_EN if en else _TEN_KY).get(period, "This period" if en else "Kỳ này"),
-        "range": s.get("range"),
+        "period": period, "range": s.get("range"),
+        "ten_ky": localefmt.chu(_TEN_KY.get(period, "Kỳ này"), _TEN_KY_EN.get(period, "This period")),
         "engine": _engine_runtime_view(cfgmod.read_settings().get("context_runtime") or {}),
         "tien": {
             "that": {"usd": tien_that, "usd_thang": tien_that_thang, "openrouter": orb},
@@ -8219,11 +8369,17 @@ async def usage_ngan_sach(gia_goi_thang_usd: str = Form(""), ngan_sach_thang_usd
     canh_bao = []
     co_ngoai, ly_do = _kenh_con_thieu()
     if not co_ngoai and (m.get("bao_cao_tuan") or m["ngan_sach_thang_usd"] > 0):
-        canh_bao.append("Chưa đấu Telegram hoặc Zalo (" + (ly_do or "chưa bật kênh nào") +
-                        ") nên báo cáo và cảnh báo ngân sách chỉ nằm trong hòm thư trên "
-                        "dashboard, không tới được điện thoại.")
+        canh_bao.append(localefmt.chu(
+            "Chưa đấu Telegram hoặc Zalo (" + (ly_do or "chưa bật kênh nào") +
+            ") nên báo cáo và cảnh báo ngân sách chỉ nằm trong hòm thư trên "
+            "dashboard, không tới được điện thoại.",
+            "Telegram or Zalo is not connected (" + (ly_do or "no channel is on") +
+            "), so reports and budget alerts stay in the dashboard inbox "
+            "and cannot reach your phone."))
     if m["ngan_sach_thang_usd"] > 0 and not m.get("tu_phanh"):
-        canh_bao.append("Tự phanh đang tắt, nên chạm trần Thansa chỉ nhắc chứ không dừng tiêu tiền.")
+        canh_bao.append(localefmt.chu(
+            "Tự phanh đang tắt, nên chạm trần Thansa chỉ nhắc chứ không dừng tiêu tiền.",
+            "Auto-brake is off, so when the cap is hit Thansa only reminds you and does not stop spending."))
 
     await _kiem_ngan_sach(nhac=False)     # đặt lại phanh ngay, đừng đợi vòng lặp nền
     return {"ok": True, "gia_goi_thang_usd": m["gia_goi_thang_usd"],
@@ -8646,7 +8802,7 @@ def _workflow_agent_helpers(brain, tools):
 _AGENT_TOOLKIT_BLOCK = (
     "\n# Công cụ và giới hạn thật của bạn\n"
     "- Vai trò ở trên là CHUYÊN MÔN CHÍNH, không phải hàng rào. Bạn có TOÀN BỘ bộ công cụ của "
-    "Javis qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
+    "Thansa qua hub: đọc/ghi file trong brain (`javis_read_file`, `javis_write_file`, "
     "`javis_list_dir`), gọi các kết nối ngoài đã nối như Google Drive, Composio, POS, Zalo... "
     "(`javis_connections` để xem đang nối gì, `javis_search_tools` rồi `javis_run_tool` để gọi), "
     "chạy skill (`javis_use_skill`), giao việc nền Kanban (`javis_task`), đặt nhắc hẹn "
@@ -8679,7 +8835,7 @@ def _agent_chat_prompt(brain, slug) -> str:
         raise FileNotFoundError(slug)
     _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
     _name, sysprompt, _model, _prov = _agent_sysprompt(slug)
-    return (sysprompt + "\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ trên dashboard Javis "
+    return (sysprompt + "\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ trên dashboard Thansa "
             "(trang Cộng sự). Trả lời như đang nói chuyện, theo ngôn ngữ chủ đang dùng; "
             "không cần báo cáo dạng nhiệm vụ trừ khi được giao việc cụ thể.")
 
@@ -8880,8 +9036,11 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
             # Đã phát event ra client rồi thì chạy lại bằng runner cũ là CHẠY HAI LẦN.
             # Báo lỗi và dừng, để người dùng quyết định chạy lại.
             yield {"type": "error",
-                   "content": "Workflow dừng giữa chừng ở đường mới. Không tự chạy lại "
-                              "để tránh làm hai lần; bạn chạy lại nếu cần."}
+                   "content": localefmt.chu(
+                       "Workflow dừng giữa chừng ở đường mới. Không tự chạy lại "
+                       "để tránh làm hai lần; bạn chạy lại nếu cần.",
+                       "The workflow stopped halfway on the new path. It will not rerun by itself "
+                       "to avoid doing the work twice; run it again if needed.")}
             return
     meta, _ = _read_md(wf_file)
     steps = meta.get("steps", []) or []
@@ -9100,7 +9259,8 @@ async def _execute_workflow_resume_raw(brain, slug, task_id, node_id, code, tool
         return
     trace = _CONTEXT_RUNTIME.resume_trace(task_id)
     if trace is None:
-        yield {"type": "error", "content": "Không tìm thấy hoặc không resume được task này."}
+        yield {"type": "error", "content": localefmt.chu("Không tìm thấy hoặc không resume được task này.",
+                                                         "This task was not found or cannot be resumed.")}
         return
     canary = _get_workflow_canary(brain)
     mk, agent_sysprompt, log_run, learn = _workflow_agent_helpers(brain, tools)
@@ -9607,7 +9767,7 @@ def _cat_cho_tg(text: str) -> str:
     t = str(text or "")
     if len(t) <= _TRAN_TIN_TG:
         return t
-    return t[:_TRAN_TIN_TG].rstrip() + "\n\n… (còn nữa - xem đầy đủ trong hòm thư của Javis)"
+    return t[:_TRAN_TIN_TG].rstrip() + "\n\n… (còn nữa - xem đầy đủ trong hòm thư của Thansa)"
 
 
 async def _gui_qua_kenh(owner_chat, text, *, ngan="", viec=None, web="") -> tuple:
@@ -9807,14 +9967,15 @@ def _kenh_con_thieu() -> tuple:
     for khoa, ten in (("telegram", "Telegram"), ("zalo_bot", "Zalo")):
         c = cfg.get(khoa, {}) or {}
         if not c.get("enabled"):
-            thieu.append(f"bot {ten} chưa bật")
+            thieu.append(localefmt.chu(f"bot {ten} chưa bật", f"{ten} bot is not enabled"))
         elif not c.get("token"):
-            thieu.append(f"bot {ten} chưa có token")
+            thieu.append(localefmt.chu(f"bot {ten} chưa có token", f"{ten} bot has no token"))
         elif not tg_parse_ids(c.get("chat_id")):
-            thieu.append(f"bot {ten} chưa có Chat ID được phép")
+            thieu.append(localefmt.chu(f"bot {ten} chưa có Chat ID được phép",
+                                       f"{ten} bot has no allowed Chat ID"))
         else:
             return True, ""
-    return False, " và ".join(thieu)
+    return False, localefmt.chu(" và ", " and ").join(thieu)
 
 
 def _notify_live_warn() -> str:
@@ -9824,9 +9985,12 @@ def _notify_live_warn() -> str:
     try:
         loi = []
         if _TG_BOT and _TG_BOT.status in ("error", "conflict"):
-            loi.append(f"bot Telegram đang lỗi ({_TG_BOT.status}): {(_TG_BOT.last_error or '')[:160]}")
+            loi.append(localefmt.chu(
+                f"bot Telegram đang lỗi ({_TG_BOT.status}): {(_TG_BOT.last_error or '')[:160]}",
+                f"Telegram bot error ({_TG_BOT.status}): {(_TG_BOT.last_error or '')[:160]}"))
         if _ZALO_BOT and _ZALO_BOT.status == "error":
-            loi.append(f"bot Zalo đang lỗi: {(_ZALO_BOT.last_error or '')[:160]}")
+            loi.append(localefmt.chu(f"bot Zalo đang lỗi: {(_ZALO_BOT.last_error or '')[:160]}",
+                                     f"Zalo bot error: {(_ZALO_BOT.last_error or '')[:160]}"))
         return "; ".join(loi)
     except Exception:
         return ""
@@ -10093,7 +10257,7 @@ async def _khi_tien_trinh_xong(v: dict) -> None:
     if trang == "huy":
         dau, st = f"Đã dừng việc chạy nền sau {tl}.", "cancelled"
     elif trang == "bo_theo_doi":
-        dau, st = (f"Việc chạy nền vẫn chưa xong sau {tl}, Javis ngừng theo dõi để khỏi treo mãi. "
+        dau, st = (f"Việc chạy nền vẫn chưa xong sau {tl}, Thansa ngừng theo dõi để khỏi treo mãi. "
                    "Nó vẫn đang chạy trên máy."), "timeout"
     else:
         dau, st = f"Việc chạy nền đã xong sau {tl}.", "done"
@@ -10749,11 +10913,11 @@ async def plugins_toggle(slug: str = Form(...), enabled: str = Form(...), brain:
     """Bật/tắt 1 plugin. Bundled → ghi STATE_DIR/plugins.json (không đụng file app); vault → ghi
     frontmatter plugin.yaml. Làm mới cache hub để tool xuất hiện/biến mất ngay."""
     if not plugins_host.valid_slug(slug):
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "Invalid slug")}, status_code=400)
     want = enabled in ("1", "true", "True", "on")
     res = plugins_host.set_enabled(slug, want, _brain_root(brain))
     if not res.get("ok"):
-        return JSONResponse({"error": res.get("error", "lỗi")}, status_code=400)
+        return JSONResponse({"error": res.get("error", localefmt.chu("lỗi", "error"))}, status_code=400)
     mcp_hub.invalidate_cache()   # tool builtin/plugin nằm trong route cache của hub → phải làm mới
     try:
         rebuild_javis_index(brain)
@@ -10775,10 +10939,10 @@ async def plugins_remove(slug: str = Form(...), removed: str = Form("1"),
     hơn một thứ đang tắt. Lựa chọn ghi vào `STATE_DIR/plugins.json` nên sống qua cập nhật, và
     cài lại chỉ mất một cú bấm."""
     if not plugins_host.valid_slug(slug):
-        return JSONResponse({"error": "slug không hợp lệ"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("slug không hợp lệ", "Invalid slug")}, status_code=400)
     res = plugins_host.set_removed(slug, removed in ("1", "true", "True", "on"))
     if not res.get("ok"):
-        return JSONResponse({"error": res.get("error", "lỗi")}, status_code=400)
+        return JSONResponse({"error": res.get("error", localefmt.chu("lỗi", "error"))}, status_code=400)
     mcp_hub.invalidate_cache()
     try:
         rebuild_javis_index(brain)
@@ -11078,7 +11242,7 @@ def _browse_sync(path: str, dem_md: bool = True) -> dict:
         path = os.path.expanduser("~")
 
     if not os.path.isdir(path):
-        return {"error": "Không phải thư mục", "path": path, "parent": None, "dirs": []}
+        return {"error": localefmt.chu("Không phải thư mục", "Not a folder"), "path": path, "parent": None, "dirs": []}
 
     try:
         dirs = []
@@ -11103,7 +11267,7 @@ def _browse_sync(path: str, dem_md: bool = True) -> dict:
         return {"path": path, "parent": parent, "here_md": here_md,
                 "git": _la_repo(path), "dirs": dirs}
     except PermissionError:
-        return {"error": "Không có quyền truy cập", "path": path, "parent": None, "dirs": []}
+        return {"error": localefmt.chu("Không có quyền truy cập", "Access denied"), "path": path, "parent": None, "dirs": []}
     except Exception as e:
         return {"error": str(e), "path": path, "parent": None, "dirs": []}
 
@@ -11184,7 +11348,7 @@ async def config():
     s = cfgmod.read_settings()
     return {
         "workspace_name": s.get("workspace_name") or os.getenv("WORKSPACE_NAME", "Thansa OS"),
-        "user_name": os.getenv("USER_NAME", "Bạn"),
+        "user_name": os.getenv("USER_NAME", localefmt.chu("Bạn", "You")),
         "tts_voice": os.getenv("TTS_VOICE", "en-US-EmmaMultilingualNeural"),
         "tts_rate": os.getenv("TTS_RATE", "+5%"),
     }
@@ -11275,9 +11439,11 @@ async def _watchtower_ly_do() -> str:
       `docker compose up -d --pull always`.
     - watchtower_off: token có nhưng không nối được tới container. Hai khả năng, và câu trả
       lời cho cả hai đều là "deploy lại bằng compose mới": stack cũ có Watchtower trong
-      `profiles: ["update"]` nên `docker compose up -d` không bật nó; hoặc Watchtower có chạy
-      nhưng không đụng được Docker socket của host (Hostinger từng dính, xem log container
-      `<tên>-watchtower`).
+      `profiles: ["update"]` nên `docker compose up -d` không bật nó; hoặc Watchtower Restarting
+      mãi. Khả năng sau là cảnh của MỌI máy cài bằng compose trước 0.65.20: image
+      `containrrr/watchtower` nói Docker API 1.25, Docker Engine mới từ chối ("client version
+      1.25 is too old"). Từng bị đoán nhầm là "không đụng được socket" - log container
+      `<tên>-watchtower` mới là bằng chứng.
 
     Điều KHÔNG đổi: cả hai đều là app CÒN SỐNG, chỉ mất cái nút. Không được vẽ chúng như lỗi.
     """
@@ -11319,7 +11485,8 @@ async def _latest_remote_version(cur: str = ""):
             if r.status_code == 200:
                 latest = (r.text or "").strip() or None
             else:
-                err = f"VERSION chưa có trên nhánh main (HTTP {r.status_code})"
+                err = localefmt.chu(f"VERSION chưa có trên nhánh main (HTTP {r.status_code})",
+                                    f"VERSION is not on the main branch yet (HTTP {r.status_code})")
     except Exception as e:
         err = f"{type(e).__name__}: {e}"
     try:
@@ -11400,6 +11567,96 @@ def _git_head(root: str) -> str:
         return ""
 
 
+async def _docker_image_published(version: str):
+    """Image `ghcr.io/<repo>:<version>` đã lên GHCR chưa: True/False, None = không hỏi được.
+
+    VERSION trên nhánh main đổi NGAY lúc gộp PR, còn image Docker đóng gói xong sau đó 2 đến 5 phút.
+    Bấm Cập nhật ngay trong khoảng đó thì Watchtower kéo `latest` vẫn là bản cũ, không thay gì, và
+    nút kẹt "Đang cập nhật rồi" 15 phút (chủ dự án gặp 02/10 với 0.65.26). Hỏi kho ẩn danh (gói
+    công khai), không cần token; lỗi mạng thì trả None để không chặn oan."""
+    if not version:
+        return None
+    repo = GITHUB_REPO.lower()
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=8) as client:
+            tok = (await client.get(f"https://ghcr.io/token?scope=repository:{repo}:pull")).json().get("token")
+            if not tok:
+                return None
+            r = await client.head(f"https://ghcr.io/v2/{repo}/manifests/{version}", headers={
+                "Authorization": f"Bearer {tok}",
+                "Accept": ", ".join(("application/vnd.oci.image.index.v1+json",
+                                     "application/vnd.docker.distribution.manifest.list.v2+json",
+                                     "application/vnd.docker.distribution.manifest.v2+json",
+                                     "application/vnd.oci.image.manifest.v1+json"))})
+        if r.status_code == 200:
+            return True
+        if r.status_code == 404:
+            return False
+    except Exception:
+        return None
+    return None
+
+
+async def _watchtower_post(token: str):
+    """POST /v1/update của Watchtower: (mã HTTP, JSON hoặc None). Watchtower trả lời SAU KHI chạy
+    xong (chế độ đồng bộ); nếu nó thay chính container này thì tiến trình chết trước lúc có trả lời."""
+    import httpx
+    async with httpx.AsyncClient(timeout=180) as client:
+        r = await client.post("http://watchtower:8080/v1/update",
+                              headers={"Authorization": f"Bearer {token}"})
+    try:
+        body = r.json()
+    except Exception:
+        body = None
+    return r.status_code, body
+
+
+def _watchtower_no_update_reason(status: int, body) -> str:
+    """Watchtower đã TRẢ LỜI mà container này vẫn sống, tức là nó không thay bản mới. Trả câu báo
+    cho người dùng; "" khi Watchtower báo đã thay (container mới sắp lên, không có gì để nói)."""
+    if status == 429:
+        return localefmt.chu("Watchtower đang bận một lần cập nhật khác. Chờ một phút rồi thử lại.",
+                             "Watchtower is busy with another update. Wait a minute and try again.")
+    if status >= 400:
+        return localefmt.chu(f"Watchtower báo lỗi (HTTP {status}). Thử lại sau ít phút; vẫn lỗi thì Redeploy.",
+                             f"Watchtower reported an error (HTTP {status}). Try again in a few minutes; "
+                             "if it still fails, Redeploy.")
+    summary = body.get("summary") if isinstance(body, dict) else None
+    if isinstance(summary, dict):
+        if summary.get("failed"):
+            return localefmt.chu("Watchtower kéo hoặc khởi động bản mới bị lỗi. Thử lại sau ít phút; vẫn lỗi thì Redeploy.",
+                                 "Watchtower failed to pull or start the new version. Try again in a few "
+                                 "minutes; if it still fails, Redeploy.")
+        if summary.get("updated"):
+            return ""
+    return localefmt.chu("Watchtower chưa thấy image mới để kéo (bản mới có thể chưa đóng gói xong). Thử lại sau ít phút.",
+                         "Watchtower found no new image to pull (the new version may still be building). "
+                         "Try again in a few minutes.")
+
+
+async def _watchtower_update(token: str, started_at: str):
+    """Gọi Watchtower rồi, nếu nó trả lời mà không thay container này, nhả trạng thái "restarting"
+    ngay kèm lý do. Trước 0.65.27 trạng thái đó nằm nguyên 15 phút và mọi lần bấm lại đều bị chặn
+    "Đang cập nhật rồi, chờ chút"."""
+    import sys as _sys
+    import datetime as _dt
+    try:
+        status, body = await _watchtower_post(token)
+    except Exception as e:
+        # Mất kết nối thường là vì Watchtower đang dừng chính container này để thay bản mới.
+        print(f"[update] watchtower trigger: {e}", file=_sys.stderr)
+        return
+    reason = _watchtower_no_update_reason(status, body)
+    if not reason:
+        return
+    print(f"[update] watchtower trả lời mà không thay container (HTTP {status}, {body}): {reason}", file=_sys.stderr)
+    st = _read_update_state()
+    if st.get("phase") == "restarting" and st.get("started_at") == started_at:
+        _write_update_state({"phase": "idle", "result": "error", "error": reason,
+                             "finished_at": _dt.datetime.now().isoformat(timespec="seconds")})
+
+
 @app.post("/update")
 async def do_update():
     """Cập nhật lên bản mới nhất. Git checkout (windows/native) → spawn updater.py TÁCH RỜI
@@ -11411,7 +11668,8 @@ async def do_update():
 
     st = _read_update_state()
     if st.get("phase") in _UPDATE_ACTIVE and _update_recent(st.get("started_at")):
-        return JSONResponse({"ok": False, "error": "Đang cập nhật rồi, chờ chút.",
+        return JSONResponse({"ok": False, "error": localefmt.chu("Đang cập nhật rồi, chờ chút.",
+                                                                 "An update is already running, please wait."),
                              "phase": st.get("phase")}, status_code=409)
 
     # Claim NGAY sau guard (KHÔNG có await ở giữa → nguyên tử với event loop) để chặn double-click:
@@ -11428,35 +11686,46 @@ async def do_update():
         if not await _watchtower_reachable():
             _write_update_state({"phase": "idle"})   # nhả claim, không kẹt "preparing"
             return JSONResponse({"ok": False,
-                "error": "Bản Docker cập nhật bằng REDEPLOY để kéo image mới: trên Hostinger bấm Redeploy trong Docker Manager; trên VPS chạy lệnh dưới. Nếu bản mới lỗi, pin tag phiên bản cũ rồi Redeploy để lùi.",
+                "error": localefmt.chu(
+                    "Bản Docker cập nhật bằng REDEPLOY để kéo image mới: trên Hostinger bấm Redeploy trong Docker Manager; trên VPS chạy lệnh dưới. Nếu bản mới lỗi, pin tag phiên bản cũ rồi Redeploy để lùi.",
+                    "The Docker version updates by REDEPLOYING to pull the new image: on Hostinger click "
+                    "Redeploy in Docker Manager; on a VPS run the command below. If the new version breaks, "
+                    "pin the old version tag and Redeploy to roll back."),
                 "manual": "docker compose up -d --pull always",
                 "current": _ver_thansa(cur), "latest": _ver_thansa(latest) if latest else latest,
                 "previous_version": _ver_thansa(st.get("previous_version")) if st.get("previous_version") else st.get("previous_version")}, status_code=400)
+        # Bản mới đã có trên main nhưng image chưa đóng gói xong: báo chờ, đừng gọi Watchtower
+        # (nó sẽ kéo lại đúng bản cũ rồi không làm gì).
+        if latest and _ver_newer(latest, cur) and await _docker_image_published(latest) is False:
+            _write_update_state({"phase": "idle"})   # nhả claim
+            return JSONResponse({"ok": False, "retry": True, "current": cur, "latest": latest,
+                "error": localefmt.chu(
+                    f"Bản v{_ver_thansa(latest)} vừa phát hành, image Docker còn đang đóng gói (thường 2 đến 5 phút "
+                    f"sau khi phát hành). Thử lại sau ít phút.",
+                    f"v{_ver_thansa(latest)} was just released and its Docker image is still building (usually 2 to 5 "
+                    f"minutes after release). Try again in a few minutes.")}, status_code=409)
         token = os.getenv("WATCHTOWER_TOKEN", "")
+        started_at = now()
         _write_update_state({"phase": "restarting", "old_version": cur, "target_version": latest,
                              "old_sha": None, "result": None, "error": None, "stashed": False,
-                             "started_at": now(), "finished_at": None})
+                             "started_at": started_at, "finished_at": None})
         import asyncio
-        import httpx
-
-        async def _trigger():
-            try:
-                async with httpx.AsyncClient(timeout=180) as client:
-                    await client.post("http://watchtower:8080/v1/update",
-                                      headers={"Authorization": f"Bearer {token}"})
-            except Exception as e:
-                print(f"[update] watchtower trigger: {e}", file=_sys.stderr)
-        t = asyncio.create_task(_trigger())
+        t = asyncio.create_task(_watchtower_update(token, started_at))
         _UPDATE_TASKS.add(t)
         t.add_done_callback(_UPDATE_TASKS.discard)
-        return {"ok": True, "mode": "docker", "message": "Đang kéo image mới + khởi động lại (~20-40s)."}
+        return {"ok": True, "mode": "docker",
+                "message": localefmt.chu("Đang kéo image mới + khởi động lại (~20-40s).",
+                                         "Pulling the new image and restarting (~20-40s).")}
 
     # git checkout (windows / native)
     root = str(PROJECT_ROOT)
     if not _is_git_checkout(root):
         _write_update_state({"phase": "idle"})   # nhả claim, không kẹt "preparing"
         return JSONResponse({"ok": False,
-            "error": "Thư mục cài đặt không phải git checkout → không tự cập nhật được. Cài lại bằng 'git clone' hoặc cập nhật thủ công.",
+            "error": localefmt.chu(
+                "Thư mục cài đặt không phải git checkout → không tự cập nhật được. Cài lại bằng 'git clone' hoặc cập nhật thủ công.",
+                "The install folder is not a git checkout, so it cannot update itself. Reinstall with "
+                "'git clone' or update manually."),
             "manual": "./update.sh"}, status_code=400)
     old_sha = _git_head(root)
     _write_update_state({"phase": "preparing", "old_version": cur, "old_sha": old_sha,
@@ -11474,7 +11743,8 @@ async def do_update():
         else:
             subprocess.Popen(args, cwd=root, start_new_session=True)
         return {"ok": True, "mode": mode,
-                "message": "Đang cập nhật + khởi động lại (theo dõi ở thanh tiến trình)."}
+                "message": localefmt.chu("Đang cập nhật + khởi động lại (theo dõi ở thanh tiến trình).",
+                                         "Updating and restarting (follow the progress bar).")}
     except Exception as e:
         _write_update_state({"phase": "error", "result": "error", "error": str(e), "finished_at": now()})
         return JSONResponse({"ok": False, "error": str(e), "manual": "./update.sh"}, status_code=500)
@@ -11539,14 +11809,24 @@ def _autostart_ly_do(st: dict) -> str:
     if not st.get("enabled"):
         return ""
     if st.get("blocked"):
-        return ("Windows đang chặn mục khởi động này (ai đó tắt nó trong Task Manager, thẻ "
-                "Startup, hoặc một phần mềm dọn máy đã tắt hộ). Bấm bật lại để gỡ chặn.")
+        return localefmt.chu(
+            "Windows đang chặn mục khởi động này (ai đó tắt nó trong Task Manager, thẻ "
+            "Startup, hoặc một phần mềm dọn máy đã tắt hộ). Bấm bật lại để gỡ chặn.",
+            "Windows is blocking this startup entry (someone disabled it in Task Manager's "
+            "Startup tab, or a cleanup tool turned it off). Turn it on again to unblock it.")
     if st.get("stale"):
-        return ("Thư mục cài đặt đã đổi chỗ nên lệnh khởi động đang trỏ vào đường dẫn cũ. "
-                "Bấm bật lại để cập nhật.")
+        return localefmt.chu(
+            "Thư mục cài đặt đã đổi chỗ nên lệnh khởi động đang trỏ vào đường dẫn cũ. "
+            "Bấm bật lại để cập nhật.",
+            "The install folder has moved, so the startup command points to the old path. "
+            "Turn it on again to update it.")
     if st.get("missing"):
-        return ("Thiếu " + ", ".join(st["missing"]) + " trong thư mục cài đặt nên lúc đăng nhập "
-                "sẽ không có gì chạy. Chạy lại setup.bat để dựng lại phần thiếu.")
+        return localefmt.chu(
+            "Thiếu {ds} trong thư mục cài đặt nên lúc đăng nhập "
+            "sẽ không có gì chạy. Chạy lại setup.bat để dựng lại phần thiếu.",
+            "{ds} is missing from the install folder, so nothing will run at sign-in. "
+            "Run setup.bat again to restore the missing parts.",
+            ds=", ".join(st["missing"]))
     return ""
 
 
@@ -11589,7 +11869,7 @@ def _autostart_status() -> dict:
 
 def _autostart_set(enabled: bool) -> dict:
     if os.name != "nt":
-        return {"ok": False, "error": "Chỉ hỗ trợ trên Windows"}
+        return {"ok": False, "error": localefmt.chu("Chỉ hỗ trợ trên Windows", "Only supported on Windows")}
     try:
         import winreg
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_RUN_KEY) as k:
@@ -11869,6 +12149,77 @@ async def changelog_full(refresh: bool = False):
     return data
 
 
+# ── Nhật ký cập nhật theo ngôn ngữ (0.68.0) ──────────────────────────────────────────────
+# CHANGELOG.md tiếng Việt vẫn là gốc (lịch sử 680+ phiên bản, chủ repo đọc trên điện thoại).
+# CHANGELOG.<mã>.md chỉ chứa bản dịch của các phiên bản đã dịch (tiếng Anh từ 0.66.0). Phủ lên
+# SAU khi gộp và cắt trang, theo ngôn ngữ của thiết bị đang xem, nên ba lớp cache ở trên giữ
+# nguyên một bản tiếng Việt duy nhất; phiên bản chưa có bản dịch thì hiện bản gốc.
+_CL_DICH_LOCAL: dict = {}    # mã -> {"sig":…, "map":{version: release}}
+_CL_DICH_REMOTE: dict = {}   # mã -> {"at":…, "map":{…}}
+
+
+def _cl_dich_local(ma: str) -> dict:
+    p = PROJECT_ROOT / f"CHANGELOG.{ma}.md"
+    try:
+        st = p.stat()
+        sig = (st.st_mtime_ns, st.st_size)
+    except OSError:
+        return {}
+    c = _CL_DICH_LOCAL.get(ma)
+    if c and c["sig"] == sig:
+        return c["map"]
+    try:
+        m = {r["version"]: r for r in _parse_changelog(p.read_text(encoding="utf-8"))}
+    except Exception:
+        return (c or {}).get("map", {})
+    _CL_DICH_LOCAL[ma] = {"sig": sig, "map": m}
+    return m
+
+
+async def _cl_dich_remote(ma: str, refresh: bool = False) -> dict:
+    """Bản dịch trên GitHub, để phiên bản CHƯA cài cũng hiện đúng ngôn ngữ. Cache như bản gốc;
+    hỏng mạng thì giữ bản đã có (thiếu thì chỉ là hiện bản tiếng Việt, không sao)."""
+    now = time.monotonic()
+    c = _CL_DICH_REMOTE.get(ma) or {"at": 0.0, "map": {}}
+    if not refresh and c["map"] and now - c["at"] < _CL_REMOTE_TTL:
+        return c["map"]
+    try:
+        import httpx
+        url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/CHANGELOG.{ma}.md"
+        async with httpx.AsyncClient(timeout=8) as client:
+            r = await client.get(url)
+        if r.status_code == 200:
+            rel = await asyncio.to_thread(_parse_changelog, r.text)
+            c = {"at": now, "map": {x["version"]: x for x in rel}}
+        else:
+            c = {"at": now - _CL_REMOTE_TTL + 300, "map": c["map"]}
+    except Exception:
+        c = {"at": now - _CL_REMOTE_TTL + 30, "map": c["map"]}
+    _CL_DICH_REMOTE[ma] = c
+    return c["map"]
+
+
+async def _cl_theo_ngon_ngu(rels: list, refresh: bool = False) -> list:
+    """Thay phần chữ của từng phiên bản bằng bản dịch theo ngôn ngữ giao diện, nếu có.
+    Thứ tiếng chưa có CHANGELOG riêng thì dùng của DU_PHONG_GIAO_DIEN."""
+    ma = localefmt.ngon_ngu_giao_dien()
+    if ma == lang_registry.MAC_DINH or not rels:
+        return rels
+    if not (PROJECT_ROOT / f"CHANGELOG.{ma}.md").exists():
+        ma = lang_registry.DU_PHONG_GIAO_DIEN
+        if ma == lang_registry.MAC_DINH:
+            return rels
+    ban = dict(await asyncio.to_thread(_cl_dich_local, ma))
+    for v, r in (await _cl_dich_remote(ma, refresh)).items():
+        ban[v] = r   # bản trên GitHub mới hơn: thắng bản cục bộ
+    out = []
+    for r in rels:
+        d = ban.get(r.get("version"))
+        out.append(dict(r, sections=d["sections"], date=d.get("date") or r.get("date"), lang=ma)
+                   if d and d.get("sections") else r)
+    return out
+
+
 async def changelog_index(limit: int = 0, offset: int = 0, refresh: bool = False):
     """Lõi thuần của GET /changelog. Dùng chung với /notifications (gọi nội bộ).
 
@@ -11882,6 +12233,7 @@ async def changelog_index(limit: int = 0, offset: int = 0, refresh: bool = False
         rels = rels[offset:offset + limit]
     else:
         offset = 0
+    rels = await _cl_theo_ngon_ngu(rels, refresh)
     return dict(d, releases=rels, offset=offset)
 
 
@@ -11903,8 +12255,10 @@ _NOTIFICATION_CACHE = {"at": 0.0, "data": None}
 async def notifications_info():
     """Hộp thư thống nhất: release tự động + tin cộng đồng/marketing từ GitHub main."""
     now = time.monotonic()
+    ngon_ngu = localefmt.ngon_ngu_giao_dien()
     cached = _NOTIFICATION_CACHE.get("data")
-    if cached is not None and now - float(_NOTIFICATION_CACHE.get("at") or 0) < 120:
+    if (cached is not None and _NOTIFICATION_CACHE.get("lang") == ngon_ngu
+            and now - float(_NOTIFICATION_CACHE.get("at") or 0) < 120):
         return cached
 
     changelog_task = asyncio.create_task(changelog_index())
@@ -11928,7 +12282,8 @@ async def notifications_info():
             "id": f"release:{rel.get('version')}",
             "kind": "update",
             "title": f"Thansa OS v{rel.get('version')}",
-            "summary": bullets[0] if bullets else "Bản cập nhật Thansa OS mới.",
+            "summary": bullets[0] if bullets else localefmt.chu("Bản cập nhật Thansa OS mới.",
+                                                                "A new Thansa OS update."),
             "body": "\n".join(f"• {item}" for item in bullets[1:5]),
             "published_at": rel.get("date") or "",
             "priority": "high" if (is_current or (is_new and is_latest)) else "normal",
@@ -11936,7 +12291,8 @@ async def notifications_info():
             "is_current": is_current,
             "update_available": is_new,
             "action": "changelog",
-            "cta": {"label": "Xem chi tiết bản cập nhật →", "action": "changelog"},
+            "cta": {"label": localefmt.chu("Xem chi tiết bản cập nhật →", "See update details →"),
+                    "action": "changelog"},
         })
 
     priority_rank = {"high": 2, "normal": 1, "low": 0}
@@ -11959,7 +12315,7 @@ async def notifications_info():
             "announcements": announcement_error,
         },
     }
-    _NOTIFICATION_CACHE.update({"at": now, "data": data})
+    _NOTIFICATION_CACHE.update({"at": now, "data": data, "lang": ngon_ngu})
     return data
 
 
@@ -12032,8 +12388,11 @@ async def push_test():
     """Gửi thử một thông báo. Không có nút này thì người dùng bật quyền xong vẫn không biết
     nó có chạy thật hay không, mà lần "thật" đầu tiên có khi phải đợi tới sáng hôm sau."""
     ok, don, chi_tiet = await webpush.gui_het(
-        "Thansa", "Thông báo đẩy đã chạy. Từ giờ có kết quả là Thansa báo ngay cả khi bạn "
-                 "không mở dashboard.", "/?mo_thu=test", tag="javis-test")
+        "Thansa", localefmt.chu("Thông báo đẩy đã chạy. Từ giờ có kết quả là Thansa báo ngay cả khi bạn "
+                               "không mở dashboard.",
+                               "Push notifications work. From now on Thansa tells you as soon as there "
+                               "is a result, even when the dashboard is closed."),
+        "/?mo_thu=test", tag="javis-test")
     # Trả CHI TIẾT theo từng thiết bị, không chỉ một con số. Bản đầu trả ok=true khi có BẤT KỲ
     # thiết bị nào nhận được, nên máy tính nhận còn điện thoại hỏng thì màn hình vẫn báo
     # "đã gửi" - người dùng không có đường nào lần ra. Đây đúng là lỗi chủ repo gặp 27/08.
@@ -12103,12 +12462,15 @@ async def branding_logo_set(file: UploadFile = File(...)):
     if ext == ".jpe":
         ext = ".jpg"
     if ext not in _LOGO_EXTS:
-        return JSONResponse({"ok": False, "error": "Chỉ nhận ảnh PNG / JPG / WEBP / GIF"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Chỉ nhận ảnh PNG / JPG / WEBP / GIF",
+                                                                 "Only PNG / JPG / WEBP / GIF images are accepted")},
+                            status_code=400)
     data = await file.read()
     if not data:
-        return JSONResponse({"ok": False, "error": "File rỗng"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("File rỗng", "File is empty")}, status_code=400)
     if len(data) > _MAX_LOGO_BYTES:
-        return JSONResponse({"ok": False, "error": "Ảnh quá lớn (tối đa 5MB)"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Ảnh quá lớn (tối đa 5MB)",
+                                                                 "Image too large (max 5MB)")}, status_code=400)
     try:
         cfgmod.BRANDING_DIR.mkdir(parents=True, exist_ok=True)
         for old in cfgmod.BRANDING_DIR.glob("logo.*"):   # xoá ảnh cũ mọi đuôi, tránh file thừa
@@ -12118,7 +12480,8 @@ async def branding_logo_set(file: UploadFile = File(...)):
                 pass
         (cfgmod.BRANDING_DIR / f"logo{ext}").write_bytes(data)
     except Exception as e:
-        return JSONResponse({"ok": False, "error": f"Lưu ảnh thất bại: {e}"}, status_code=500)
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"Lưu ảnh thất bại: {e}",
+                                                                 f"Failed to save image: {e}")}, status_code=500)
     cfg = cfgmod.read_settings()
     cfg.setdefault("branding", {})
     cfg["branding"]["logo_ext"] = ext
@@ -12272,9 +12635,11 @@ async def tts(
             return await _edge_streaming()
     except Exception as e:
         print(f"[TTS {provider}] {type(e).__name__}", file=sys.stderr)
-        raise HTTPException(502, "Giọng đã chọn hiện không phát được. Vui lòng thử lại hoặc chọn giọng khác.")
+        raise HTTPException(502, localefmt.chu(
+            "Giọng đã chọn hiện không phát được. Vui lòng thử lại hoặc chọn giọng khác.",
+            "The selected voice cannot play right now. Please try again or choose another voice."))
     if not audio:
-        raise HTTPException(502, "TTS không trả audio.")
+        raise HTTPException(502, localefmt.chu("TTS không trả audio.", "TTS returned no audio."))
     return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-cache"})
 
 
@@ -12289,47 +12654,77 @@ async def stt_route(file: UploadFile = File(...), lang: str = Form(""), draft: s
     `{"ok": false, "ly_do": ...}`; trình duyệt lỗi thì giữ chữ của Web Speech, không mất lượt.
     """
     cfg = cfgmod.read_settings()
-    key = (cfg.get("model", {}) or {}).get("groq_api_key", "")
-    v = cfg.get("voice", {}) or {}
     data = await file.read()
-    # "auto" = ô "Ngôn ngữ nghe" chọn Đa ngôn ngữ: truyền "" xuống để Whisper TỰ DÒ tiếng (xem
-    # chú thích ba giá trị trong stt.groq_nghe). Rỗng hay thiếu vẫn là None -> mặc định "vi".
-    lang = (lang or "").strip()
-    ngon_ngu = "" if lang.lower() == "auto" else (lang.split("-")[0].strip() or None)
-    # Bộ từ vựng (tên trợ lý + từ người dùng khai) đi hai đường: mồi cho Whisper viết đúng, rồi
-    # lớp sửa theo ngữ cảnh quét lại chữ nghe được. WebSocket còn quét thêm lần nữa (cho cả chữ
-    # của Web Speech); nghe_sua.sua idempotent nên hai lần không hại gì.
-    _tv = nghe_sua.tu_vung(cfg)
-    res = await stt.groq_nghe(data, file.filename or "voice.webm", key, v.get("stt_model") or "", ngon_ngu,
-                              hotwords=nghe_sua.goi_y_whisper(_tv))
-    _text = nghe_sua.sua(res.get("text", ""), _tv) if res.get("ok") else res.get("text", "")
-    # Đối chiếu với bản nháp của trình duyệt (stt.khop_ban_nhap): Groq nhận audio thiếu tiếng
-    # thì BỊA câu kết video, lệch hẳn bản nháp. Lệch thì trả ok=false để trình duyệt giữ bản
-    # nháp. Log chỉ ghi SỐ ĐO (độ dài, độ giống), không ghi lời người dùng, để lần sau lần ra
-    # vì sao audio thiếu tiếng.
-    if res.get("ok") and draft.strip():
-        _dung, _tu, _am = stt.khop_ban_nhap(draft, _text)
-        print(f"[stt] audio={len(data)//1024}KB nhap={len(draft.split())}tu groq={len(_text.split())}tu "
-              f"giong_tu={_tu} giong_am={_am} -> {'groq' if _dung else 'GIU NHAP'}", file=sys.stderr)
-        if not _dung:
-            return {"ok": False, "text": "", "ly_do": "lech_ban_nhap", "model": res.get("model", "")}
-    return {"ok": bool(res.get("ok")), "text": _text, "ly_do": res.get("ly_do", ""),
-            "model": res.get("model", "")}
+    # Tai đang được chọn (voice_ear.select_ear). Trình duyệt chỉ tải lên khi /voice/ear báo có
+    # tai dạng tải lên; chặn thêm ở đây phòng trang cũ còn mở. Không có tai thì trả ok=false,
+    # trình duyệt giữ chữ Web Speech như trước.
+    ear = voice_ear.select_ear(cfg, _effective_main(cfg).get("provider", ""))
+    if ear["kind"] != "upload":
+        return {"ok": False, "text": "", "model": "",
+                "ly_do": "tai_tat" if ear["reason"] == voice_ear.REASON_OFF else "thieu_key"}
+    # Mồi từ vựng, sửa tên trợ lý, đối chiếu bản nháp: xem voice_ear.transcribe_upload.
+    # WebSocket còn quét nghe_sua.sua thêm lần nữa (cho cả chữ Web Speech); hàm idempotent.
+    return await voice_ear.transcribe_upload(cfg, data, file.filename or "voice.webm", lang, draft)
+
+
+@app.get("/voice/call")
+async def voice_call_route():
+    """Đường gọi của nút mic (voice_call.select_call_engine). Nhẹ, không hỏi mạng: dashboard gọi
+    mỗi lần nạp cài đặt giọng để biết bấm mic là mở ChatGPT Live, Live API hay đường Cơ bản."""
+    return {"ok": True, **voice_call.select_call_engine(cfgmod.read_settings())}
+
+
+@app.get("/voice/ear")
+async def voice_ear_route():
+    """Tai nghe lại đang dùng cho lượt nói (voice_ear.select_ear). Nhẹ, không hỏi mạng: dashboard
+    gọi mỗi lần nạp cài đặt giọng, khác /voice/options (có thể mất tới 30 giây vì `agy models`)."""
+    cfg = cfgmod.read_settings()
+    return {"ok": True, **voice_ear.select_ear(cfg, _effective_main(cfg).get("provider", ""))}
+
+
+def _voice_models_items(lst):
+    """Danh sách model của CLI hay catalog (chuỗi hoặc dict) về dạng [{id, label}]."""
+    return [{"id": x.get("id") or x.get("name") or x, "label": x.get("label") or x.get("name") or x}
+            if isinstance(x, dict) else {"id": str(x), "label": str(x)} for x in (lst or [])]
+
+
+def _voice_brain_models(pid: str, cfg: dict) -> list:
+    """Model chọn được của MỘT bộ não giọng (ô Model ở Nâng cao, 0.65.26). Chạy ở luồng phụ: `agy
+    models` có khi tới 30 giây. Bộ não API chưa có danh sách: rỗng, trang chỉ hiện "Mặc định"."""
+    m = (cfg or {}).get("model", {}) or {}
+    try:
+        if pid == "antigravity":
+            return _voice_models_items(antigravity_cli.list_models() or [])
+        if pid == "codex":
+            return _voice_models_items((m.get("catalog", {}) or {}).get("openai-oauth") or [])
+        if pid == "claude":
+            return _voice_models_items(claude_cli.list_models() or [])
+        if pid == "grok":
+            return _voice_models_items(grok_cli.list_models() or []) if grok_cli.find_grok_cli() else []
+    except Exception:
+        return []
+    return []
 
 
 @app.get("/voice/options")
-async def voice_options():
-    """Cho thẻ 'Chế độ và bộ não giọng nói' ở trang Cài đặt: cái gì đang sẵn, key nào đã có."""
+async def voice_options(brains: int = 1):
+    """Cho thẻ Giọng nói ở trang Cài đặt: cái gì đang sẵn, key nào đã có, đường gọi đang dùng.
+
+    `brains=0` (thẻ gọn từ 0.65.19): bỏ danh sách bộ não giọng, nên không chạy `agy models` (có khi
+    tới 30 giây). Thẻ gọn chọn bộ não giọng bằng `brain_choices` (không có danh sách model), mặc định
+    máy tự chọn (voice_brain.auto_brain)."""
     cfg = cfgmod.read_settings()
     m = cfg.get("model", {}) or {}
     v = cfg.get("voice", {}) or {}
     agy_models = None
-    try:
-        # Luồng phụ: `agy models` có thể mất tới 30 giây, chạy trên loop là cả app đứng theo.
-        agy_models = await asyncio.to_thread(antigravity_cli.list_models)
-    except Exception:
-        agy_models = None
+    if brains:
+        try:
+            # Luồng phụ: `agy models` có thể mất tới 30 giây, chạy trên loop là cả app đứng theo.
+            agy_models = await asyncio.to_thread(antigravity_cli.list_models)
+        except Exception:
+            agy_models = None
     keys = {k: bool(m.get(k)) for k in ("groq_api_key", "gemini_api_key", "openai_api_key", "openrouter_key")}
+    _chatgpt_live_ok = codex_realtime.realtime_available(cfg)
 
     def _san(key_field):
         return True if not key_field else bool(m.get(key_field))
@@ -12337,27 +12732,30 @@ async def voice_options():
     # Vẽ từ voice_brain.BRAIN_PROVIDERS / STT_PROVIDERS chứ không chép lại danh sách ở đây:
     # trang Cài đặt và đường LƯU phải soi CÙNG một danh sách, không thì thêm nhà cung cấp mới
     # là giao diện cho chọn mà server lặng lẽ bỏ.
-    def _models_items(lst):
-        return [{"id": x.get("id") or x.get("name") or x, "label": x.get("label") or x.get("name") or x}
-                if isinstance(x, dict) else {"id": str(x), "label": str(x)} for x in (lst or [])]
+    _models_items = _voice_models_items
 
     brain_list = []
-    for pid, p in voice_brain.BRAIN_PROVIDERS.items():
+    for pid, p in (voice_brain.BRAIN_PROVIDERS.items() if brains else ()):
         item = {"id": pid, "label": p["label"], "available": _san(p["key_field"])}
         if p["default_model"]:
             item["default_model"] = p["default_model"]
         if pid == "antigravity":
             item["available"] = agy_models is not None
             item["models"] = _models_items(agy_models)
-            item["hint"] = "" if agy_models is not None else "Chưa cài agy. Cài rồi Re-check ở trang Models."
+            item["hint"] = "" if agy_models is not None else localefmt.chu(
+                "Chưa cài agy. Cài rồi Re-check ở trang Models.",
+                "agy is not installed. Install it, then Re-check on the Models page.")
         # Ba bộ não trên gói (Voice V3): sẵn hay không đọc từ CHÍNH trạng thái đăng nhập của
         # trang Models, không hỏi mạng ở đây (trang Cài đặt vẽ thẻ này mỗi lần mở).
         elif pid == "codex":
             o = m.get("openai_oauth") or {}
             item["available"] = bool(o.get("access_token") or o.get("refresh_token"))
             item["models"] = _models_items((m.get("catalog", {}) or {}).get("openai-oauth") or [])
-            item["hint"] = ("Đi HTTP stream trên gói ChatGPT, không dựng tiến trình: đường gói nhanh nhất."
-                            if item["available"] else "Chưa kết nối ChatGPT. Vào trang Models bấm Kết nối.")
+            item["hint"] = (localefmt.chu("Đi HTTP stream trên gói ChatGPT, không dựng tiến trình: đường gói nhanh nhất.",
+                                          "HTTP streaming on the ChatGPT plan, no process to start: the fastest plan route.")
+                            if item["available"] else
+                            localefmt.chu("Chưa kết nối ChatGPT. Vào trang Models bấm Kết nối.",
+                                          "ChatGPT is not connected. Go to the Models page and click Connect."))
         elif pid == "claude":
             try:
                 import claude_sdk_engine as _cse
@@ -12368,9 +12766,12 @@ async def voice_options():
                 item["models"] = _models_items(claude_cli.list_models() or [])
             except Exception:
                 item["models"] = []
-            item["hint"] = ("Giữ một phiên Claude Code sống suốt lúc nói, không tool, không MCP. "
-                            "Chọn haiku cho nhanh nhất." if item["available"]
-                            else "Chưa cài hoặc chưa đăng nhập Claude Code. Xem trang Models.")
+            item["hint"] = (localefmt.chu("Giữ một phiên Claude Code sống suốt lúc nói, không tool, không MCP. "
+                                          "Chọn haiku cho nhanh nhất.",
+                                          "Keeps one Claude Code session alive while you talk, no tools, no MCP. "
+                                          "Pick haiku for the fastest replies.") if item["available"]
+                            else localefmt.chu("Chưa cài hoặc chưa đăng nhập Claude Code. Xem trang Models.",
+                                               "Claude Code is not installed or not signed in. See the Models page."))
         elif pid == "grok":
             try:
                 item["available"] = bool(grok_cli.find_grok_cli())
@@ -12380,20 +12781,34 @@ async def voice_options():
                 item["models"] = _models_items(grok_cli.list_models() or []) if item["available"] else []
             except Exception:
                 item["models"] = []
-            item["hint"] = ("Mỗi câu một lượt grok headless, nối lại mạch cũ nên có ký ức. Trả lời về "
-                            "một cục chứ không stream từng chữ." if item["available"]
-                            else "Chưa cài Grok Build (grok). Xem trang Models.")
+            item["hint"] = (localefmt.chu("Mỗi câu một lượt grok headless, nối lại mạch cũ nên có ký ức. Trả lời về "
+                                          "một cục chứ không stream từng chữ.",
+                                          "One headless grok turn per sentence, resuming the thread so it remembers. "
+                                          "Replies arrive in one block rather than streaming word by word.")
+                            if item["available"]
+                            else localefmt.chu("Chưa cài Grok Build (grok). Xem trang Models.",
+                                               "Grok Build (grok) is not installed. See the Models page."))
         brain_list.append(item)
+    _vb = voice_brain.config_from_settings(cfg).get("provider") or ""
     return {
         "ok": True,
         "voice": dict(
             {k: v.get(k, "") for k in ("mode", "brain_provider", "brain_model", "stt_provider",
                                        "stt_model", "live_provider", "live_model", "live_voice",
                                        "hotwords")},
+            # Model đã chọn theo từng bộ não giọng (0.65.26), {bộ não: model}.
+            brain_models=v.get("brain_models") if isinstance(v.get("brain_models"), dict) else {},
             # Ô gạt, không phải ô chữ: mặc định BẬT, nên brain cũ chưa có khoá vẫn trả về true.
             loc_tap_am=False,
             focus_mode=v.get("focus_mode") is not False,
+            ear=voice_ear.setting(cfg),
         ),
+        # Tai nghe lại đang dùng và vì sao (trang Cài đặt hiện "Đang dùng: ..."), cùng các tai
+        # chọn được. Vẽ từ voice_ear để trang và đường LƯU soi cùng một danh sách.
+        "ear": voice_ear.select_ear(cfg, _effective_main(cfg).get("provider", "")),
+        "ear_choices": [{"id": c, "label": (voice_ear.EARS.get(c) or {}).get("label", ""),
+                         "available": c in ("auto", "off") or voice_ear.availability(cfg).get(c, False)}
+                        for c in voice_ear.CHOICES],
         # Từ luôn có sẵn trong bộ từ vựng nghe (không cần khai): trang Cài đặt hiện cho biết.
         "hotwords_goc": list(nghe_sua.TU_VUNG_GOC),
         "brain_providers": brain_list,
@@ -12401,12 +12816,32 @@ async def voice_options():
         "last_error": voice_brain.loi_lan_nhanh_gan_nhat(),
         "stt_providers": [{"id": pid, "label": p["label"], "available": _san(p["key_field"])}
                           for pid, p in voice_brain.STT_PROVIDERS.items()],
+        # ChatGPT Live không cần key: sẵn hay không là có Codex CLI và đã nối ChatGPT chưa.
         "live_providers": [
-            {"id": k, "label": p["label"], "available": keys.get(p["key_field"], False),
-             "default_model": p["default_model"], "voices": p["voices"]}
+            {"id": k, "label": p["label"],
+             "available": (_chatgpt_live_ok[0] if k == "chatgpt" else keys.get(p["key_field"], False)),
+             "hint": (voice_live.CHATGPT_UNAVAILABLE.get(_chatgpt_live_ok[1], "") if k == "chatgpt" else ""),
+             "default_model": p["default_model"], "voices": p["voices"],
+             "default_voice": p["default_voice"], "transport": p["transport"]}
             for k, p in voice_live.catalog().items()
         ],
+        "chatgpt_voice": v.get("chatgpt_voice") or voice_live.PROVIDERS["chatgpt"]["default_voice"],
         "voice_brains_active": voice_brain.active_count(),
+        # Thẻ gọn (0.65.19): dòng "Đang dùng", ô Giọng Javis đổi theo đường gọi, ô Đường gọi.
+        "call": voice_call.select_call_engine(cfg),
+        # Bộ não giọng của đường Cơ bản (đã chọn từ bản cũ, hoặc máy tự chọn trên gói), "" = bộ não chính.
+        "voice_brain": {"id": _vb, "label": (voice_brain.BRAIN_PROVIDERS.get(_vb) or {}).get("label", "")},
+        # Ô "Bộ não trả lời nhanh" ở Nâng cao (0.65.25, chủ dự án xin trả lại để tự chỉnh). Chỉ soi
+        # máy và key đã lưu, không chạy `agy models`, nên thẻ gọn vẫn nhanh.
+        "brain_auto": voice_brain.auto_brain(cfg),
+        "brain_choices": [{"id": pid, "label": p["label"], "available": voice_brain.brain_available(pid, cfg),
+                           "default_model": p["default_model"]}
+                          for pid, p in voice_brain.BRAIN_PROVIDERS.items() if pid],
+        "tts": {"provider": v.get("tts_provider") or "edge",
+                "openai_voice": v.get("openai_tts_voice") or "alloy",
+                "openai_key_set": bool(m.get("openai_api_key")),
+                "elevenlabs_voice": v.get("elevenlabs_voice") or "",
+                "elevenlabs_key_set": bool(str(v.get("elevenlabs_key") or "").strip())},
     }
 
 
@@ -12464,9 +12899,26 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         except Exception:
             pass
 
-    cfg = cfgmod.read_settings()
+    # Nhà cung cấp theo ĐƯỜNG GỌI đã chọn (voice_call), không theo khoá live_provider cũ: auto
+    # với ChatGPT sẵn sàng là ChatGPT Live dù live_provider còn ghi gemini mặc định.
+    cfg = voice_call.live_settings(cfgmod.read_settings())
+    memory_index = ""
+    if str(((cfg.get("voice") or {}).get("live_provider")) or "") == "chatgpt":
+        # ChatGPT Live chạy qua Codex app-server: bắc cầu token đã nối ở trang Models sang
+        # ~/.codex/auth.json như đường chat Codex, và nạp mục lục bộ nhớ để model nói chuyện
+        # biết người dùng (xưng hô, việc kinh doanh) ngay từ câu đầu.
+        try:
+            await asyncio.to_thread(openai_oauth.write_codex_auth)
+        except Exception as e:
+            print(f"[chatgpt live] bắc cầu token: {e}", file=sys.stderr)
+        try:
+            idx = _brain_memory_dir(_brain_root(brain)) / "MEMORY.md"
+            if idx.exists():
+                memory_index = _fit_memory_index(idx.read_text(encoding="utf-8"), cap=voice_live.MEMORY_CHARS)
+        except Exception:
+            memory_index = ""
     try:
-        prov = voice_live.make_provider(cfg, recognition_lang=lang)
+        prov = voice_live.make_provider(cfg, recognition_lang=lang, memory_index=memory_index)
         await prov.connect()
     except Exception as e:
         await _j({"type": "error", "message": f"{type(e).__name__}: {e}" if not isinstance(e, RuntimeError) else str(e)})
@@ -12485,15 +12937,26 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         history = store.get_messages_page(conv_sid, limit=12).get("messages", [])
         await prov.restore_history(history)
     except Exception:
-        await _j({"type": "error", "message": "Không khôi phục được ngữ cảnh Live. Hãy mở mic lại."})
+        await _j({"type": "error", "message": localefmt.chu("Không khôi phục được ngữ cảnh Live. Hãy mở mic lại.",
+                                                            "Could not restore the Live context. Please turn the mic on again.")})
         await prov.close()
         await ws.close()
         return
+    # transport "webrtc" (ChatGPT Live): trình duyệt nối THẲNG nhà cung cấp, gửi offer qua khung
+    # webrtc_offer; route này chỉ chuyển SDP và chữ, không có byte audio nào đi qua.
     await _j({"type": "ready", "provider": prov.name, "model": prov.model, "session_id": conv_sid,
-              "async_tools": prov.supports_async_tools()})
+              "async_tools": prov.supports_async_tools(),
+              "transport": getattr(prov, "transport", "pcm")})
     asst_buf = {"text": ""}
     ui_ctx = {"text": ""}          # khối [NGỮ CẢNH GIAO DIỆN: ...] mới nhất từ trình duyệt
     tool_tasks: set = set()
+    # Không lặp câu trả lời (0.65.21, chủ dự án báo 01/10). Lần giao việc tới khi bộ não chính còn đang
+    # làm là LỜI NÓI THÊM ("Ok, xong thì báo anh nhé"): xếp hàng sau việc đang chạy chứ không chạy song
+    # song (voice_live.is_followup_ack / followup_request). `readback`: model đọc lại kết quả đã có bong
+    # bóng đầy đủ, nên lời đọc đó không thành bong bóng thứ hai và không vào lịch sử.
+    ask_lock = asyncio.Lock()
+    ask_state = {"waiting": 0, "last": ""}
+    readback = {"pending": 0, "active": False}
 
     async def from_client():
         while True:
@@ -12508,6 +12971,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 except Exception:
                     continue
                 if d.get("type") == "text" and d.get("text"):
+                    readback["pending"] = 0   # gõ chữ cũng là nói tiếp: lời đáp sau đó phải hiện
                     try:
                         store.append_message(conv_sid, "user", str(d["text"]))
                     except Exception:
@@ -12527,8 +12991,21 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                         await prov.truncate_played(int(d.get("ms") or 0))
                     except Exception:
                         pass
+                elif d.get("type") == "webrtc_offer" and hasattr(prov, "start_webrtc"):
+                    # Chạy nền: chờ answer mất 1 đến 3 giây, vòng đọc trình duyệt không được đứng.
+                    task = asyncio.create_task(_answer_webrtc(str(d.get("sdp") or "")))
+                    tool_tasks.add(task)
+                    task.add_done_callback(tool_tasks.discard)
                 elif d.get("type") == "stop":
                     return
+
+    async def _answer_webrtc(sdp: str):
+        try:
+            answer = await prov.start_webrtc(sdp)
+        except Exception as e:
+            await _j({"type": "error", "message": str(e) if isinstance(e, RuntimeError) else f"{type(e).__name__}: {e}"})
+            return
+        await _j({"type": "webrtc_answer", "sdp": answer})
 
     async def _run_tool(ev: dict):
         """Tool chạy NỀN: vòng đọc sự kiện không đứng lại, model vẫn nghe/nói trong lúc chờ.
@@ -12539,12 +13016,35 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         """
         name = str(ev.get("name") or "")
         cid = str(ev.get("id") or "")
+        req = str((ev.get("args") or {}).get("request") or "")
+        if name != "ask_javis":
+            return await _run_one(name, cid, req, None)
+        previous = ask_state["last"] if ask_state["waiting"] else None
+        if previous is not None and (voice_live.is_followup_ack(req) or voice_live.is_same_request(previous, req)):
+            # Chỉ là xác nhận trong lúc chờ, hay model bắn lặp chính yêu cầu đang chạy: kết quả việc đang
+            # chạy sẽ tới, không chạy bộ não lần nữa.
+            print(f"[voice live] bỏ lời nói thêm (xác nhận hoặc lặp): {req[:80]!r}", file=sys.stderr)
+            try:
+                await prov.send_tool_ack(cid, name, voice_live.FOLLOWUP_ACK)
+            except Exception:
+                pass
+            return
+        ask_state["waiting"] += 1
+        try:
+            async with ask_lock:
+                ask_state["last"] = req
+                await _run_one(name, cid, req, previous)
+        finally:
+            ask_state["waiting"] -= 1
+
+    async def _run_one(name: str, cid: str, req: str, previous):
         await _j({"type": "tool", "name": name, "status": "running"})
         try:
             await prov.send_tool_running(cid, name)
         except Exception:
             pass
-        req = str((ev.get("args") or {}).get("request") or "")
+        if previous is not None:
+            req = voice_live.followup_request(previous, req)
         if ui_ctx["text"]:
             req = ui_ctx["text"] + "\n\n" + req
         try:
@@ -12552,10 +13052,30 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 else f"Tool {name} không có."
         except Exception as e:
             result = f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+        if previous is not None and voice_live.is_noop_result(result):
+            # Bộ não thấy câu nói thêm không có việc mới: không bong bóng, không đọc ra loa.
+            print(f"[voice live] lời nói thêm không có việc mới: {str(previous)[:60]!r}", file=sys.stderr)
+            try:
+                await prov.send_tool_ack(cid, name, voice_live.FOLLOWUP_ACK)
+            except Exception:
+                pass
+            await _j({"type": "tool", "name": name, "status": "done"})
+            return
+        # Bản ĐẦY ĐỦ (bảng, link, file) hiện thành bong bóng và vào lịch sử; model chỉ đọc phần
+        # tóm tắt (spec mục 3.2), nên không có bong bóng này thì số liệu chi tiết mất hút.
+        if name == "ask_javis" and str(result or "").strip():
+            try:
+                store.append_message(conv_sid, "assistant", str(result))
+            except Exception:
+                pass
+            await _j({"type": "tool_result", "name": name, "text": str(result)})
+            # Đặt TRƯỚC khi trả model: lời đọc lại có thể về ngay khi lệnh vừa đi.
+            readback["pending"] += 1
         try:
             await prov.send_tool_result(cid, name, result)
         except Exception as e:
-            await _j({"type": "error", "message": f"Không trả được kết quả cho model: {e}"})
+            await _j({"type": "error", "message": localefmt.chu(f"Không trả được kết quả cho model: {e}",
+                                                                f"Could not return the result to the model: {e}")})
         await _j({"type": "tool", "name": name, "status": "done"})
 
     async def from_provider():
@@ -12570,7 +13090,9 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             try:
                 await prov.reconnect()
             except Exception as e:
-                await _j({"type": "error", "message": f"Nối lại nhà cung cấp thất bại: {type(e).__name__}: {e}"})
+                await _j({"type": "error", "message": localefmt.chu(
+                    f"Nối lại nhà cung cấp thất bại: {type(e).__name__}: {e}",
+                    f"Reconnecting to the provider failed: {type(e).__name__}: {e}")})
                 return
             await _j({"type": "reconnected"})
 
@@ -12589,14 +13111,22 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 task.add_done_callback(tool_tasks.discard)
             elif t == "transcript":
                 if ev.get("role") == "assistant":
+                    if readback["active"] or readback["pending"]:
+                        # Lượt nói đầu tiên sau khi trả kết quả là lời đọc lại bản đã hiện đầy đủ.
+                        if not readback["active"]:
+                            readback["active"] = True
+                            readback["pending"] -= 1
+                        return True
                     asst_buf["text"] += str(ev.get("text") or "")
                 elif ev.get("final") and ev.get("text"):
+                    readback["pending"] = 0   # người dùng nói tiếp: lời sau đó là lời đáp mới
                     try:
                         store.append_message(conv_sid, "user", str(ev["text"]))
                     except Exception:
                         pass
                 await _j(ev)
             elif t == "turn_done":
+                readback["active"] = False
                 if asst_buf["text"].strip():
                     try:
                         store.append_message(conv_sid, "assistant", asst_buf["text"].strip())
@@ -12605,6 +13135,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                 asst_buf["text"] = ""
                 await _j(ev)
             elif t == "interrupted":
+                readback["active"], readback["pending"] = False, 0
                 # Đoạn đã đọc dở vẫn là lời Javis đã nói: chốt vào phiên rồi xoá bộ đệm,
                 # không để nó dính sang lượt sau.
                 if asst_buf["text"].strip():
@@ -12813,9 +13344,10 @@ def _bao_lan_nhanh_bo_qua(vconf) -> bool:
         _LAN_NHANH_DA_BAO.add(khoa)
         ly_do = ("không đọc được cài đặt giọng nói" if not vconf
                  else f"chế độ giọng nói = {mode or 'standard'!r}" if mode != "fast"
-                 else "chế độ Làn nhanh nhưng chưa chọn bộ não giọng")
+                 else "chế độ Làn nhanh nhưng chưa chọn bộ não giọng và không có bộ não nào sẵn trên gói "
+                      "(Antigravity, ChatGPT, Claude Code, Grok Build)")
         print(f"[voice lane] tin từ mic đi bộ não chính: {ly_do}. "
-              f"Chỉnh ở Cài đặt, mục Giọng nói.", file=sys.stderr)
+              f"Đăng nhập một gói ở trang Models để có làn nhanh.", file=sys.stderr)
     return True
 
 
@@ -12923,7 +13455,9 @@ async def websocket_endpoint(ws: WebSocket):
             _persona = workflow_chat.persona_cua_phien(_row0)
             if _persona and _persona[0] == "agent" and not (_agents_dir(brain) / f"{_persona[1]}.md").exists():
                 await ws.send_text(json.dumps({"type": "error",
-                    "content": f"Trợ lý '{_persona[1]}' không còn trong brain này. Mở trang Cộng sự để chọn trợ lý khác."}))
+                    "content": localefmt.chu(
+                        f"Trợ lý '{_persona[1]}' không còn trong brain này. Mở trang Cộng sự để chọn trợ lý khác.",
+                        f"Assistant '{_persona[1]}' is no longer in this brain. Open the Partners page to pick another one.")}))
                 return ""
             prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _row0)
             reasoning = _reasoning_level(mcfg)
@@ -12961,7 +13495,7 @@ async def websocket_endpoint(ws: WebSocket):
 
             await ws.send_text(json.dumps({
                 "type": "status",
-                "content": "Thansa đang suy nghĩ..."
+                "content": localefmt.chu("Thansa đang suy nghĩ...", "Thansa is thinking...")
             }))
 
             # Dựng prompt cũ theo nhu cầu. Fast Path không đọc/nạp memory hoặc lịch sử cũ.
@@ -13059,7 +13593,8 @@ async def websocket_endpoint(ws: WebSocket):
                 for _call in _schedule_action.get("calls") or []:
                     await ws.send_text(json.dumps({
                         "type": "tool_call", "tool": "javis_schedule",
-                        "content": f"⚙ Lịch: {_call.split(':')[-1]}",
+                        "content": localefmt.chu(f"⚙ Lịch: {_call.split(':')[-1]}",
+                                                 f"⚙ Schedule: {_call.split(':')[-1]}"),
                     }))
                 final_text = _schedule_cancel_reply(_schedule_action)
                 await ws.send_text(json.dumps({
@@ -13155,7 +13690,8 @@ async def websocket_endpoint(ws: WebSocket):
                              "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                         await ws.send_text(json.dumps({
                             "type": "tool_call", "tool": "javis_nen_mach",
-                            "content": "⚙ Mạch hội thoại đã dài, Thansa mở mạch mới."}))
+                            "content": localefmt.chu("⚙ Mạch hội thoại đã dài, Thansa mở mạch mới.",
+                                                     "⚙ The conversation thread got long, Thansa started a new one.")}))
                     kcli.session_id = _k_mach or None
                     # Mạch mới thì mồi lại bằng transcript đã lưu, y như Codex/Gemini: không có
                     # bước này là mở mạch mới = mất sạch ngữ cảnh cuộc đang nói dở.
@@ -13177,7 +13713,8 @@ async def websocket_endpoint(ws: WebSocket):
                             await ws.send_text(json.dumps({
                                 "type": "tool_call", "tool": ev.get("name", ""),
                                 "detail": tool_label.chi_tiet(ev),
-                                "content": f"⚙ Đang gọi: {ev.get('name', '')}"}))
+                                "content": localefmt.chu(f"⚙ Đang gọi: {ev.get('name', '')}",
+                                                         f"⚙ Calling: {ev.get('name', '')}")}))
                         elif et == "final":
                             final_text = ev.get("content") or ""
                         elif et == "usage":
@@ -13251,7 +13788,8 @@ async def websocket_endpoint(ws: WebSocket):
                             await ws.send_text(json.dumps({
                                 "type": "tool_call", "tool": ev.get("name", ""),
                                 "detail": tool_label.chi_tiet(ev),
-                                "content": f"⚙ Đang gọi: {ev.get('name', '')}"}))
+                                "content": localefmt.chu(f"⚙ Đang gọi: {ev.get('name', '')}",
+                                                         f"⚙ Calling: {ev.get('name', '')}")}))
                         elif et == "final":
                             final_text = ev.get("content") or ""
                         elif et == "usage":
@@ -13277,7 +13815,10 @@ async def websocket_endpoint(ws: WebSocket):
                             # Phiên ghim một model đã bị gỡ khỏi catalog: sửa luôn cái ghim, nếu
                             # không lượt nào cũng đọc lại ghim cũ và nhắc câu này lần nữa.
                             store.set_pinned_model(conv_sid, "openai-oauth", actual_model)
-                        await ws.send_text(json.dumps({"type": "system", "content": f"⚠ Model '{api_model}' không chạy được qua Codex (tài khoản ChatGPT) - đã tự đổi sang '{actual_model}'. Đổi model khác ở trang Models nếu muốn."}))
+                        await ws.send_text(json.dumps({"type": "system", "content": localefmt.chu(
+                            f"⚠ Model '{api_model}' không chạy được qua Codex (tài khoản ChatGPT) - đã tự đổi sang '{actual_model}'. Đổi model khác ở trang Models nếu muốn.",
+                            f"⚠ Model '{api_model}' does not run through Codex (ChatGPT account) - switched to "
+                            f"'{actual_model}' automatically. Pick another model on the Models page if you like.")}))
                     except Exception as _e:
                         print(f"[codex model self-heal] {_e}", file=__import__('sys').stderr)
                 openai_oauth.write_codex_auth()   # bắc cầu token đã nối ở Models → ~/.codex/auth.json (codex dùng được)
@@ -13306,13 +13847,20 @@ async def websocket_endpoint(ws: WebSocket):
                          "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                     await ws.send_text(json.dumps({
                         "type": "tool_call", "tool": "javis_nen_mach",
-                        "content": ("⚙ Mạch hội thoại đã dài "
-                                    f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
-                                    "Thansa mở mạch mới và mang theo tóm tắt."),
+                        "content": localefmt.chu(
+                            "⚙ Mạch hội thoại đã dài "
+                            f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
+                            "Thansa mở mạch mới và mang theo tóm tắt.",
+                            "⚙ The conversation thread got long "
+                            f"({int(_row0.get('last_input_tokens') or 0):,} tokens per turn), "
+                            "Thansa started a new one and carried a summary over."),
                     }))
                 ccli.session_id = stored_codex_thread or None
                 if not ccli.is_available():
-                    await ws.send_text(json.dumps({"type": "error", "content": "Chưa cài Codex CLI trong container. ChatGPT subscription là THỬ NGHIỆM - dùng Claude Code hoặc OpenRouter cho ổn định (đổi ở Models)."}))
+                    await ws.send_text(json.dumps({"type": "error", "content": localefmt.chu(
+                        "Chưa cài Codex CLI trong container. ChatGPT subscription là THỬ NGHIỆM - dùng Claude Code hoặc OpenRouter cho ổn định (đổi ở Models).",
+                        "Codex CLI is not installed in the container. The ChatGPT subscription is EXPERIMENTAL - "
+                        "use Claude Code or OpenRouter for stability (change it on the Models page).")}))
                 else:
                     _codex_current = _codex_do_sau(ccli, reasoning, user_message)
                     _codex_raw = [{"role": _m["role"], "content": _m["content"]}
@@ -13380,7 +13928,10 @@ async def websocket_endpoint(ws: WebSocket):
                         # tạo thread mới từ transcript SQLite, lưu ID mới, rồi các lượt sau resume nó.
                         await ws.send_text(json.dumps({
                             "type": "system",
-                            "content": "Phiên Codex cũ không còn trên máy - Thansa đang khôi phục ngữ cảnh từ lịch sử đã lưu."
+                            "content": localefmt.chu(
+                                "Phiên Codex cũ không còn trên máy - Thansa đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
+                                "The old Codex session is no longer on this machine - Thansa is restoring "
+                                "the context from saved history.")
                         }))
                         ccli.session_id = None
                         _fallback = compaction.bootstrap_prompt(
@@ -13701,9 +14252,13 @@ async def websocket_endpoint(ws: WebSocket):
                                 })
                             await ws.send_text(json.dumps({
                                 "type": "tool_call", "tool": "javis_autoshrink",
-                                "content": (f"⚙ Vượt hạn mức {_limit_hit.get('limit', 0):,} "
-                                            f"{_LIMIT_KIND_LABEL.get(_limit_hit.get('kind') or '', 'token')}, "
-                                            f"đang rút gọn ngữ cảnh xuống {_target:,} token rồi thử lại..."),
+                                "content": localefmt.chu(
+                                    f"⚙ Vượt hạn mức {_limit_hit.get('limit', 0):,} "
+                                    f"{_LIMIT_KIND_LABEL.get(_limit_hit.get('kind') or '', 'token')}, "
+                                    f"đang rút gọn ngữ cảnh xuống {_target:,} token rồi thử lại...",
+                                    f"⚙ Over the {_limit_hit.get('limit', 0):,} "
+                                    f"{_LIMIT_KIND_LABEL_EN.get(_limit_hit.get('kind') or '', 'token')} limit, "
+                                    f"shrinking the context to {_target:,} tokens and retrying..."),
                             }))
                             or_messages = _shrink_messages(or_messages, _target)
                         if _limit_hit:
@@ -13743,9 +14298,13 @@ async def websocket_endpoint(ws: WebSocket):
                          "threshold": compaction.SUBSCRIPTION_THREAD_MAX_TOKENS})
                     await ws.send_text(json.dumps({
                         "type": "tool_call", "tool": "javis_nen_mach",
-                        "content": ("⚙ Mạch hội thoại đã dài "
-                                    f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
-                                    "Thansa mở mạch mới."),
+                        "content": localefmt.chu(
+                            "⚙ Mạch hội thoại đã dài "
+                            f"({int(_row0.get('last_input_tokens') or 0):,} token mỗi lượt), "
+                            "Thansa mở mạch mới.",
+                            "⚙ The conversation thread got long "
+                            f"({int(_row0.get('last_input_tokens') or 0):,} tokens per turn), "
+                            "Thansa started a new one."),
                     }))
                 sysprompt, _sub_plan = await _subscription_system_prompt(
                     "cli", cli.model or mcfg.get("claude_model") or "mặc định", kind)
@@ -13795,7 +14354,9 @@ async def websocket_endpoint(ws: WebSocket):
                     async for event in cli.query(prompt):
                         etype = event["type"]
                         if etype == "tool_call":
-                            await ws.send_text(json.dumps({"type": "tool_call", "tool": event["name"], "detail": tool_label.chi_tiet(event), "content": f"⚙ Đang gọi: {event['name']}"}))
+                            await ws.send_text(json.dumps({"type": "tool_call", "tool": event["name"], "detail": tool_label.chi_tiet(event),
+                                                           "content": localefmt.chu(f"⚙ Đang gọi: {event['name']}",
+                                                                                    f"⚙ Calling: {event['name']}")}))
                             # Nhặt mọi thứ trông giống đường dẫn trong tham số tool (Write/Edit có
                             # file_path, Bash thì lẫn trong lệnh). Lọc "có thật + vừa đổi" ở dưới.
                             try:
@@ -13839,7 +14400,10 @@ async def websocket_endpoint(ws: WebSocket):
                     # SQLite rồi chạy lại, lượt sau resume mạch mới. Cùng cách nhánh Codex.
                     await ws.send_text(json.dumps({
                         "type": "system",
-                        "content": "Phiên Claude cũ không còn trên máy - Javis đang khôi phục ngữ cảnh từ lịch sử đã lưu."
+                        "content": localefmt.chu(
+                            "Phiên Claude cũ không còn trên máy - Thansa đang khôi phục ngữ cảnh từ lịch sử đã lưu.",
+                            "The old Claude session is no longer on this machine - Thansa is restoring "
+                            "the context from saved history.")
                     }))
                     cli.session_id = None
                     _cli_raw2 = [{"role": _m["role"], "content": _m["content"]}
@@ -14003,12 +14567,14 @@ async def websocket_endpoint(ws: WebSocket):
                 )
             except asyncio.CancelledError:
                 _CONTEXT_RUNTIME.finish(runtime_trace, "CANCELLED", "cancelled")
-                await send_raw({"type": "system", "content": "Đã dừng lượt này.", "session_id": conv_sid,
+                await send_raw({"type": "system", "content": localefmt.chu("Đã dừng lượt này.", "Stopped this turn."),
+                                "session_id": conv_sid,
                                 **context_runtime.event_fields(runtime_trace)})
             except Exception as e:
                 _CONTEXT_RUNTIME.note_error(runtime_trace, type(e).__name__)
                 _CONTEXT_RUNTIME.finish(runtime_trace, "FAILED", type(e).__name__)
-                await send_raw({"type": "error", "content": f"Lỗi xử lý: {type(e).__name__}: {e}",
+                await send_raw({"type": "error", "content": localefmt.chu(f"Lỗi xử lý: {type(e).__name__}: {e}",
+                                                                          f"Processing error: {type(e).__name__}: {e}"),
                                 "session_id": conv_sid, **context_runtime.event_fields(runtime_trace)})
             finally:
                 luot_dang_chay.ket_thuc(_khoa_luot)
@@ -14077,7 +14643,7 @@ async def websocket_endpoint(ws: WebSocket):
 
         async def run_voice_turn(conv_sid, user_message, brain, turn_tag, runtime_trace, conf,
                                  voice_turn_id="", giu_ban_chep=False):
-            """LÀN NHANH giọng nói (Voice V2, docs/dev/2026-09-voice-v2-spec.md mục 2).
+            """LÀN NHANH giọng nói (Voice V2, docs/dev/2026-10-voice-call-spec.md phụ lục A3).
 
             Tin đến từ mic đi qua bộ não giọng (voice_brain) thay vì bộ não chính: trả lời
             ngắn trong 1-2 giây. Câu nào cần dữ liệu, tool hay hành động thì bộ não giọng trả
@@ -14126,7 +14692,8 @@ async def websocket_endpoint(ws: WebSocket):
 
             async def _giu_cau_goc():
                 await send_raw({"type": "status", "session_id": conv_sid,
-                                "content": "Javis đang kiểm tra lại câu vừa nghe..."})
+                                "content": localefmt.chu("Thansa đang kiểm tra lại câu vừa nghe...",
+                                                         "Thansa is double-checking what it just heard...")})
                 # Kho phiên và bong bóng giữ câu gốc; chỉ lời gửi bộ não chính kèm ghi chú để
                 # nó tự hiểu từ nghe nhầm mà không giải thích ra (voice_brain.GHI_CHU_CAU_NGHE).
                 await run_turn(conv_sid, original_message + "\n\n" + voice_brain.GHI_CHU_CAU_NGHE,
@@ -14178,7 +14745,9 @@ async def websocket_endpoint(ws: WebSocket):
 
             try:
                 brain_obj = await voice_brain.get_brain(conv_sid, conf)
-                await send_raw({"type": "status", "content": "Javis đang trả lời nhanh...", "session_id": conv_sid})
+                await send_raw({"type": "status", "content": localefmt.chu("Thansa đang trả lời nhanh...",
+                                                                           "Thansa is answering quickly..."),
+                                "session_id": conv_sid})
                 # Đang có việc nền thì dặn bộ não giọng (V3): kết quả tự hiện, đừng bịa, đừng giao lại.
                 _dan = [x for x in (voice_brain.pending_note(conv_sid),
                                     voice_brain.GHI_CHU_TAT_LOC)
@@ -14201,7 +14770,8 @@ async def websocket_endpoint(ws: WebSocket):
                     if _nghe_hop_le:
                         await _flush()
             except asyncio.CancelledError:
-                await send_raw({"type": "system", "content": "Đã dừng lượt này.", "session_id": conv_sid})
+                await send_raw({"type": "system", "content": localefmt.chu("Đã dừng lượt này.", "Stopped this turn."),
+                                "session_id": conv_sid})
                 await send_raw({"type": "turn_done", "session_id": conv_sid})
                 _CHAT_RUNTIME.finish_job(conv_sid, asyncio.current_task())
                 return
@@ -14217,7 +14787,9 @@ async def websocket_endpoint(ws: WebSocket):
                 voice_brain.ghi_loi_lan_nhanh(conf.get("provider"), e)
                 await send_raw({"type": "system", "session_id": conv_sid,
                                 "content": voice_brain.cau_roi_ve_bo_nao_chinh(conf.get("provider"), e)})
-                await send_raw({"type": "status", "content": f"Bộ não giọng nói lỗi ({e}), dùng bộ não chính...",
+                await send_raw({"type": "status", "content": localefmt.chu(
+                                    f"Bộ não giọng nói lỗi ({e}), dùng bộ não chính...",
+                                    f"Voice brain error ({e}), using the main brain..."),
                                 "session_id": conv_sid})
                 await run_turn(conv_sid, user_message, brain, turn_tag, runtime_trace)
                 return
@@ -14528,10 +15100,12 @@ async def websocket_endpoint(ws: WebSocket):
                 _row = store.get_session(_sid) or {}
                 _pers = workflow_chat.persona_cua_phien(_row)
                 if not (_pers and _pers[0] == "workflow"):
-                    await send_raw({"type": "error", "session_id": _sid, "content": "Phiên này không phải phiên quy trình."})
+                    await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
+                        "Phiên này không phải phiên quy trình.", "This session is not a workflow session.")})
                     continue
                 if _CHAT_RUNTIME.get_job(_sid):
-                    await send_raw({"type": "error", "session_id": _sid, "content": "Quy trình đang chạy, đợi xong đã."})
+                    await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
+                        "Quy trình đang chạy, đợi xong đã.", "The workflow is running, wait for it to finish.")})
                     continue
                 _node = str(payload.get("node") or "")
                 _msg = f"Đã duyệt bước \"{_node}\"."
@@ -14552,7 +15126,9 @@ async def websocket_endpoint(ws: WebSocket):
                 _sid = payload.get("session_id") or ""
                 if _CHAT_RUNTIME.get_job(_sid):
                     await send_raw({"type": "error", "session_id": _sid,
-                                    "content": "Phiên này đang trả lời - đợi lượt hiện tại xong đã."})
+                                    "content": localefmt.chu(
+                                        "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
+                                        "This session is still answering - wait for the current turn to finish.")})
                     continue
                 if not await limit_resume.REGISTRY.run_now(_sid):
                     await send_raw({"type": "resume", "session_id": _sid, "state": "gone"})
@@ -14663,7 +15239,10 @@ async def websocket_endpoint(ws: WebSocket):
                 if payload.get("voice") and payload.get("utterance_id"):
                     await send_client({"type":"voice_busy", "session_id":conv_sid, "utterance_id":str(payload["utterance_id"])})
                 else:
-                    await send_raw({"type": "error", "content": "Phiên này đang trả lời - đợi lượt hiện tại xong đã.", "session_id": conv_sid})
+                    await send_raw({"type": "error", "content": localefmt.chu(
+                        "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
+                        "This session is still answering - wait for the current turn to finish."),
+                        "session_id": conv_sid})
                 continue
             # Tin mới thay cho câu hỏi đang chờ hạn mức: bỏ lịch chạy lại, kẻo hai lượt chen
             # nhau trên cùng một phiên. Muốn hỏi lại câu cũ thì bấm "Gửi lại" ở tin đó.
@@ -14840,7 +15419,8 @@ async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Quer
         await ws.close()
 
     if not terminal.bat():
-        await bao_loi("Terminal đang tắt trên máy này (biến môi trường JAVIS_TERMINAL=0).")
+        await bao_loi(localefmt.chu("Terminal đang tắt trên máy này (biến môi trường JAVIS_TERMINAL=0).",
+                                    "The terminal is turned off on this machine (environment variable JAVIS_TERMINAL=0)."))
         return
     try:
         phien = terminal.KHO.mo(session, _terminal_cwd(brain), cols, rows, asyncio.get_running_loop(),
@@ -14849,7 +15429,8 @@ async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Quer
         await bao_loi(str(e))
         return
     except Exception as e:
-        await bao_loi(f"Không mở được terminal: {type(e).__name__}: {e}")
+        await bao_loi(localefmt.chu(f"Không mở được terminal: {type(e).__name__}: {e}",
+                                    f"Could not open the terminal: {type(e).__name__}: {e}"))
         return
 
     q = phien.gan()
@@ -14984,7 +15565,9 @@ def sessions_new(brain: str = Form("brain"), channel: str = Form("web")):
     ch = (channel or "").strip()
     m = _KENH_CONG_SU_RE.match(ch)
     if not m:
-        return JSONResponse({"error": "channel phải là agent:<slug>, workflow:<slug> hoặc coding:<repo>"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu(
+            "channel phải là agent:<slug>, workflow:<slug> hoặc coding:<repo>",
+            "channel must be agent:<slug>, workflow:<slug> or coding:<repo>")}, status_code=400)
     loai, slug = m.group(1), m.group(2)
     if loai == "coding":
         # Phiên của trang Coding. KHÔNG đòi phải có thư mục nào: 0.63.0 bắt phải chọn repo
@@ -14995,7 +15578,8 @@ def sessions_new(brain: str = Form("brain"), channel: str = Form("web")):
         return {"id": sid, "channel": ch}
     thu_muc = _agents_dir(brain) if loai == "agent" else _workflows_dir(brain)
     if not (thu_muc / f"{slug}.md").exists():
-        return JSONResponse({"error": f"{loai} '{slug}' không có trong brain này"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu(f"{loai} '{slug}' không có trong brain này",
+                                                    f"{loai} '{slug}' is not in this brain")}, status_code=404)
     store = get_store()
     sid = store.create_session(brain=_brain_key(brain), engine="cli", channel=ch)
     if loai == "agent":
@@ -15263,11 +15847,13 @@ async def sessions_add_file(session_id: str, path: str = Form(...), name: str = 
     # mục thì "có tồn tại" - thế là gắn được một hàng trỏ vào một cái thư mục, ghim vào thì
     # đọc lỗi. Ở đây chỉ nhận đúng file.
     if not alo.is_file():
-        return JSONResponse({"error": "Không tìm thấy file trong brain này"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này",
+                                                    "File not found in this brain")}, status_code=404)
     fid = get_store().add_session_file(session_id, path, name or alo.name)
     if not fid:
         return JSONResponse(
-            {"error": f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} tài liệu"},
+            {"error": localefmt.chu(f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} tài liệu",
+                                    f"This chat already has the maximum of {sessions.SESSION_ASSETS_MAX} documents")},
             status_code=400)
     return {"ok": True, "id": fid}
 
@@ -15299,12 +15885,14 @@ async def sessions_add_link(session_id: str, url: str = Form(...), label: str = 
     # Chỉ nhận http/https, cùng lý do như route link của project: không rào thì `javascript:`
     # hay `file:` lọt vào danh sách rồi hiện thành liên kết bấm được ngay trong giao diện.
     if not re.match(r"^https?://", u, re.I):
-        return JSONResponse({"error": "URL phải bắt đầu bằng http:// hoặc https://"},
+        return JSONResponse({"error": localefmt.chu("URL phải bắt đầu bằng http:// hoặc https://",
+                                                    "URL must start with http:// or https://")},
                             status_code=400)
     lid = get_store().add_session_link(session_id, u, label)
     if not lid:
         return JSONResponse(
-            {"error": f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} link"},
+            {"error": localefmt.chu(f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} link",
+                                    f"This chat already has the maximum of {sessions.SESSION_ASSETS_MAX} links")},
             status_code=400)
     return {"ok": True, "id": lid}
 
@@ -15385,10 +15973,11 @@ async def sessions_set_model(session_id: str, provider: str = Form(""),
     TOÀN CỤC, ghim theo phiên mà đi qua đó là rác hoá biểu đồ token."""
     prov = (provider or "").strip()
     if prov and not _provider_def(prov):
-        return JSONResponse({"error": f"provider không tồn tại: {prov}"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu(f"provider không tồn tại: {prov}",
+                                                    f"provider does not exist: {prov}")}, status_code=400)
     ok = get_store().set_pinned_model(session_id, prov, model, brain=(brain or "").strip() or None)
     if not ok:
-        return JSONResponse({"error": "phiên không tồn tại"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("phiên không tồn tại", "session does not exist")}, status_code=404)
     return {"ok": True, "pinned_provider": prov or None, "pinned_model": (model or "").strip() or None}
 
 
@@ -15404,7 +15993,7 @@ async def sessions_set_project(session_id: str, project_id: str = Form(""),
     pid = (project_id or "").strip()
     store = get_store()
     if pid and not store.get_project(pid):
-        return JSONResponse({"error": "project không tồn tại"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("project không tồn tại", "project does not exist")}, status_code=404)
     if not store.set_project(session_id, pid, brain=(brain or "").strip() or None):
         return JSONResponse({"error": "not found"}, status_code=404)
     return {"ok": True}
@@ -15422,7 +16011,7 @@ async def projects_list(brain: str = Query(None)):
 async def projects_create(name: str = Form(...), icon: str = Form(""),
                           brain: str = Form("brain")):
     if not (name or "").strip():
-        return JSONResponse({"error": "thiếu tên project"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("thiếu tên project", "missing project name")}, status_code=400)
     pid = get_store().create_project(name, icon=icon, brain=brain or "brain")
     return {"ok": True, "id": pid}
 
@@ -15474,10 +16063,11 @@ async def projects_add_file(project_id: str, path: str = Form(...), name: str = 
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     if not alo.exists():
-        return JSONResponse({"error": "Không tìm thấy file trong brain này"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này",
+                                                    "File not found in this brain")}, status_code=404)
     fid = get_store().add_project_file(project_id, path, name or alo.name)
     if not fid:
-        return JSONResponse({"error": "thiếu đường dẫn"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("thiếu đường dẫn", "missing path")}, status_code=400)
     return {"ok": True, "id": fid}
 
 
@@ -15508,7 +16098,8 @@ async def projects_add_link(project_id: str, url: str = Form(...), label: str = 
     # Chỉ nhận http/https. Không rào thì `javascript:` hay `file:` lọt vào danh sách rồi hiện
     # thành liên kết bấm được ngay trong giao diện.
     if not re.match(r"^https?://", u, re.I):
-        return JSONResponse({"error": "URL phải bắt đầu bằng http:// hoặc https://"},
+        return JSONResponse({"error": localefmt.chu("URL phải bắt đầu bằng http:// hoặc https://",
+                                                    "URL must start with http:// or https://")},
                             status_code=400)
     lid = get_store().add_project_link(project_id, u, label)
     return {"ok": True, "id": lid}
@@ -15681,7 +16272,8 @@ async def openai_compat_connect(request: Request):
     if base.endswith("/chat/completions"):
         base = base[: -len("/chat/completions")]
     if not base.lower().startswith(("http://", "https://")):
-        return {"ok": False, "error": "Base URL phải bắt đầu bằng http:// hoặc https://"}
+        return {"ok": False, "error": localefmt.chu("Base URL phải bắt đầu bằng http:// hoặc https://",
+                                                    "Base URL must start with http:// or https://")}
     cfg = cfgmod.read_settings()
     m = cfg.setdefault("model", {})
     # A blank input reuses the secret only for the same endpoint. Reusing it for another URL
@@ -15694,23 +16286,31 @@ async def openai_compat_connect(request: Request):
         async with httpx.AsyncClient(timeout=20) as c:
             r = await c.get(base + "/models", headers={"Authorization": f"Bearer {key or 'none'}"})
     except Exception as e:
-        return {"ok": False, "error": f"Không gọi được {base}/models ({type(e).__name__}). "
-                                      "Kiểm tra lại Base URL."}
+        return {"ok": False, "error": localefmt.chu(f"Không gọi được {base}/models ({type(e).__name__}). "
+                                                    "Kiểm tra lại Base URL.",
+                                                    f"Could not reach {base}/models ({type(e).__name__}). "
+                                                    "Check the Base URL.")}
     if r.status_code in (401, 403):
-        return {"ok": False, "error": f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì."}
+        return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì.",
+                                                    f"Invalid API key (HTTP {r.status_code}). Nothing was saved.")}
     if r.status_code == 404:
-        return {"ok": False, "error": f"Không thấy {base}/models (HTTP 404). Base URL phải tính tới "
-                                      "/v1, ví dụ https://api.example.com/v1."}
+        return {"ok": False, "error": localefmt.chu(f"Không thấy {base}/models (HTTP 404). Base URL phải tính tới "
+                                                    "/v1, ví dụ https://api.example.com/v1.",
+                                                    f"{base}/models not found (HTTP 404). The Base URL must include "
+                                                    "/v1, for example https://api.example.com/v1.")}
     if r.status_code != 200:
-        return {"ok": False, "error": f"Endpoint trả HTTP {r.status_code}: {r.text[:160]}"}
+        return {"ok": False, "error": localefmt.chu(f"Endpoint trả HTTP {r.status_code}: {r.text[:160]}",
+                                                    f"Endpoint returned HTTP {r.status_code}: {r.text[:160]}")}
     try:
         ids = sorted(x.get("id") for x in (r.json().get("data") or [])
                      if isinstance(x, dict) and x.get("id"))
     except Exception:
         ids = []
     if not ids:
-        return {"ok": False, "error": "Endpoint trả lời nhưng không có model nào - không giống "
-                                      "endpoint chuẩn OpenAI."}
+        return {"ok": False, "error": localefmt.chu("Endpoint trả lời nhưng không có model nào - không giống "
+                                                    "endpoint chuẩn OpenAI.",
+                                                    "The endpoint answered but lists no models - it does not "
+                                                    "look like a standard OpenAI endpoint.")}
     m["openai_compat_base"] = base
     m["openai_compat_key"] = key
     m.setdefault("catalog", {})["openai-compat"] = ids
@@ -15739,7 +16339,8 @@ async def ollama_local_set_specs(ram_gb: float = Form(0), has_gpu: str = Form("0
 async def ollama_local_installed():
     ep, key = _ol_cfg()
     if not ep:
-        return {"ok": False, "models": [], "error": "Chưa đặt địa chỉ Ollama"}
+        return {"ok": False, "models": [], "error": localefmt.chu("Chưa đặt địa chỉ Ollama",
+                                                                  "Ollama address is not set")}
     p = await ollama_local.probe(ep, key)
     if not p["reachable"]:
         return {"ok": False, "models": [], "error": p["error"]}
@@ -15806,7 +16407,8 @@ async def ollama_local_pull(model: str = Form(...)):
     ep, key = _ol_cfg()
     ten = (model or "").strip()
     if not ep or not ten:
-        return JSONResponse({"error": "Thiếu địa chỉ Ollama hoặc tên model"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Thiếu địa chỉ Ollama hoặc tên model",
+                                                    "Missing Ollama address or model name")}, status_code=400)
 
     async def phat():
         try:
@@ -15825,7 +16427,8 @@ async def ollama_local_pull(model: str = Form(...)):
 async def ollama_local_delete(model: str = Form(...)):
     ep, key = _ol_cfg()
     if not ep:
-        return JSONResponse({"error": "Chưa đặt địa chỉ Ollama"}, status_code=400)
+        return JSONResponse({"error": localefmt.chu("Chưa đặt địa chỉ Ollama", "Ollama address is not set")},
+                            status_code=400)
     r = await ollama_local.delete_model(ep, (model or "").strip(), key)
     return r if r.get("ok") else JSONResponse(r, status_code=502)
 
@@ -15888,7 +16491,7 @@ async def runtime_diagnostics(hours: float = Query(24.0), limit: int = Query(200
             # Mức tiết kiệm token đang chọn + danh sách mức, để giao diện vẽ ba nút thay
             # vì bắt người dùng tự hiểu 10 đường canary và đơn vị basis point.
             "preset": current_preset(settings),
-            "presets": [{"id": k, **{x: v[x] for x in ("nhan", "mo_ta")}}
+            "presets": [{"id": k, **_preset_chu(k, v)}
                         for k, v in RUNTIME_PRESETS.items()],
             # Mức đang chạy là do NGƯỜI DÙNG chọn, hay chỉ là mặc định của bản đã cài? Hai
             # thứ đó trông y hệt nhau trên màn hình mà ý nghĩa ngược nhau: cái sau sẽ đi lên
@@ -16019,18 +16622,29 @@ async def _uoc_tinh_tiet_kiem(brain: str = "brain") -> dict:
         "chi_tiet": {"claude_md_va_bo_nho": cu, "capsule": vien, "mo_ta_cong_cu": cong_cu},
         "muc": {
             "off": {"token_moi_request": goc, "phan_tram": 0, "ap_dung": True,
-                    "ghi_chu": "Gửi nguyên bộ luật, bộ nhớ và danh sách skill mỗi lượt."},
+                    "ghi_chu": localefmt.chu("Gửi nguyên bộ luật, bộ nhớ và danh sách skill mỗi lượt.",
+                                             "Sends the full rules, memory and skill list every turn.")},
             "saving": {"token_moi_request": vien + cong_cu, "phan_tram": muc(vien + cong_cu),
                        "ap_dung": True,
-                       "ghi_chu": "Thay bộ luật dài bằng bản rút gọn; nhớ và skill chỉ nạp phần liên quan."},
+                       "ghi_chu": localefmt.chu(
+                           "Thay bộ luật dài bằng bản rút gọn; nhớ và skill chỉ nạp phần liên quan.",
+                           "Replaces the long rules with a short version; memory and skills load only "
+                           "what is relevant.")},
             "max": {"token_moi_request": max_token, "phan_tram": muc(max_token),
                     "ap_dung": fast_hop,
-                    "ghi_chu": ("Như trên, và câu hỏi đơn giản đi thẳng không kèm mô tả công cụ. "
-                                "Câu cần tra cứu vẫn đi đường đầy đủ, nên không phải lượt nào "
-                                "cũng thấy khác."
+                    "ghi_chu": (localefmt.chu(
+                                    "Như trên, và câu hỏi đơn giản đi thẳng không kèm mô tả công cụ. "
+                                    "Câu cần tra cứu vẫn đi đường đầy đủ, nên không phải lượt nào "
+                                    "cũng thấy khác.",
+                                    "As above, and simple questions go straight through without tool "
+                                    "descriptions. Questions that need a lookup still take the full "
+                                    "route, so not every turn looks different.")
                                 if fast_hop else
-                                "Đường tắt cho câu hỏi đơn giản chưa mở cho loại bộ não đang "
-                                "chạy, nên bấm mức này cũng chỉ bằng mức Tối ưu."),
+                                localefmt.chu(
+                                    "Đường tắt cho câu hỏi đơn giản chưa mở cho loại bộ não đang "
+                                    "chạy, nên bấm mức này cũng chỉ bằng mức Tối ưu.",
+                                    "The shortcut for simple questions is not open for the kind of "
+                                    "brain in use, so this level is the same as Optimized.")),
                     },
         },
     }
@@ -16207,16 +16821,22 @@ def _engine_runtime_view(settings: dict) -> dict:
             kinds = [str(x) for x in (value.get("provider_kinds") or ["api"])]
             (hop if kind in kinds else khong).append(name)
         if not (hop or khong):
-            giai_thich = "Chưa bật mảng nào, nên mọi lượt vẫn đi đường cũ. Chọn một mức ở trên."
+            giai_thich = localefmt.chu("Chưa bật mảng nào, nên mọi lượt vẫn đi đường cũ. Chọn một mức ở trên.",
+                                       "No saving path is on, so every turn still takes the old route. "
+                                       "Pick a level above.")
         elif hop:
-            giai_thich = (f"{label} đang ăn được {len(hop)} mảng tiết kiệm."
-                          + (f" {len(khong)} mảng khác không áp cho loại bộ não này."
+            giai_thich = (localefmt.chu(f"{label} đang ăn được {len(hop)} mảng tiết kiệm.",
+                                        f"{label} benefits from {len(hop)} saving path(s).")
+                          + (localefmt.chu(f" {len(khong)} mảng khác không áp cho loại bộ não này.",
+                                           f" {len(khong)} other path(s) do not apply to this kind of brain.")
                              if khong else ""))
         else:
-            giai_thich = (f"Đã bật {len(khong)} mảng nhưng không mảng nào áp cho {label}, "
-                          "nên thực tế chưa tiết kiệm được gì.")
+            giai_thich = localefmt.chu(f"Đã bật {len(khong)} mảng nhưng không mảng nào áp cho {label}, "
+                                       "nên thực tế chưa tiết kiệm được gì.",
+                                       f"{len(khong)} path(s) on, but none applies to {label}, "
+                                       "so nothing is actually being saved yet.")
         return {"provider": prov, "nhan": label, "kind": kind, "model": model or "",
-                "loai": "Gói thuê bao" if thue_bao else "API key",
+                "loai": localefmt.chu("Gói thuê bao", "Subscription plan") if thue_bao else "API key",
                 # Cờ máy đọc: `loai` là nhãn tiếng Việt, giao diện không được so chuỗi với nó.
                 "thue_bao": bool(thue_bao),
                 "duong_hop": sorted(hop), "duong_khong_hop": sorted(khong),
@@ -16224,7 +16844,8 @@ def _engine_runtime_view(settings: dict) -> dict:
     except Exception:   # noqa: BLE001 - xem docstring
         return {"provider": "", "nhan": "", "kind": "", "model": "", "loai": "",
                 "thue_bao": False, "duong_hop": [], "duong_khong_hop": [],
-                "giai_thich": "Chưa đọc được cấu hình bộ não."}
+                "giai_thich": localefmt.chu("Chưa đọc được cấu hình bộ não.",
+                                            "Could not read the brain configuration.")}
 
 
 def _shrink_messages(messages: list, target_tokens: int) -> list:
@@ -16270,6 +16891,13 @@ _LIMIT_KIND_LABEL = {
     "tpm": "token mỗi phút", "tpd": "token mỗi ngày",
     "rpm": "số lượt mỗi phút", "rpd": "số lượt mỗi ngày",
     "context": "cửa sổ ngữ cảnh", "rate": "nhịp gọi",
+}
+# Bản tiếng Anh cho dòng trạng thái trên màn hình (khung `javis_autoshrink`). Câu trả lời
+# `_limit_autoshrink_message` vẫn dùng bản tiếng Việt ở trên vì nó vào lịch sử hội thoại.
+_LIMIT_KIND_LABEL_EN = {
+    "tpm": "tokens per minute", "tpd": "tokens per day",
+    "rpm": "requests per minute", "rpd": "requests per day",
+    "context": "context window", "rate": "request rate",
 }
 
 
@@ -16453,12 +17081,15 @@ def _canary_inert_reason(entry: dict) -> str:
     hành nhận một lý do SAI - còn khó hiểu hơn là không chặn."""
     has_quota_field = "quota_profiles" in entry or "models" in entry
     if has_quota_field and not (entry.get("quota_profiles") or entry.get("models")):
-        return ("chưa khai quota profile (rolling_tpm, context_window, giá) nên fail-closed "
-                "sẽ cho mọi task rơi về legacy")
+        return localefmt.chu("chưa khai quota profile (rolling_tpm, context_window, giá) nên fail-closed "
+                             "sẽ cho mọi task rơi về legacy",
+                             "no quota profile declared (rolling_tpm, context_window, price), so "
+                             "fail-closed will send every task to legacy")
     has_allowlist_field = "capability_profiles" in entry or "allowed_slugs" in entry
     if has_allowlist_field and not (entry.get("capability_profiles")
                                     or entry.get("allowed_slugs")):
-        return "allowlist rỗng nên fail-closed sẽ cho mọi task rơi về legacy"
+        return localefmt.chu("allowlist rỗng nên fail-closed sẽ cho mọi task rơi về legacy",
+                             "the allowlist is empty, so fail-closed will send every task to legacy")
     return ""
 
 
@@ -16473,16 +17104,20 @@ def canary_set_decision(path: str, allocation_basis_points, entry: dict, allow_i
     status_code 0 nghĩa là cho phép ghi."""
     keys = _canary_keys()
     if path not in keys:
-        return 400, {"ok": False, "error": f"đường canary '{path}' không tồn tại",
+        return 400, {"ok": False, "error": localefmt.chu(f"đường canary '{path}' không tồn tại",
+                                                         f"canary path '{path}' does not exist"),
                      "hop_le": sorted(keys)}
     try:
         bp = int(allocation_basis_points)
     except (TypeError, ValueError):
-        return 400, {"ok": False, "error": "allocation_basis_points phải là số"}
+        return 400, {"ok": False, "error": localefmt.chu("allocation_basis_points phải là số",
+                                                         "allocation_basis_points must be a number")}
     if not 0 <= bp <= 10000:
         return 400, {"ok": False,
-                     "error": "allocation_basis_points phải trong khoảng 0..10000 "
-                              "(10000 = 100 phần trăm)"}
+                     "error": localefmt.chu("allocation_basis_points phải trong khoảng 0..10000 "
+                                            "(10000 = 100 phần trăm)",
+                                            "allocation_basis_points must be between 0 and 10000 "
+                                            "(10000 = 100 percent)")}
     # Tắt về 0 LUÔN được phép: đường lui phải rẻ hơn đường tiến, nếu không thì người vận
     # hành sẽ ngại thử.
     if bp > 0 and not allow_inert:
@@ -16492,16 +17127,22 @@ def canary_set_decision(path: str, allocation_basis_points, entry: dict, allow_i
         # endpoint trả ok, và không có gì chạy.
         if str(mode or "").strip().casefold() not in ("canary", "on"):
             return 409, {"ok": False, "can_force": True,
-                         "error": f"context_runtime.mode đang là '{mode}', mọi canary chỉ "
-                                  "chạy khi mode là 'canary' hoặc 'on'",
-                         "goi_y": "đổi mode sang canary trước (POST /runtime/mode), "
-                                  "hoặc gửi lại với allow_inert=true nếu cố ý"}
+                         "error": localefmt.chu(f"context_runtime.mode đang là '{mode}', mọi canary chỉ "
+                                                "chạy khi mode là 'canary' hoặc 'on'",
+                                                f"context_runtime.mode is '{mode}', and every canary only "
+                                                "runs when mode is 'canary' or 'on'"),
+                         "goi_y": localefmt.chu("đổi mode sang canary trước (POST /runtime/mode), "
+                                                "hoặc gửi lại với allow_inert=true nếu cố ý",
+                                                "switch mode to canary first (POST /runtime/mode), "
+                                                "or resend with allow_inert=true if intended")}
         reason = _canary_inert_reason(entry)
         if reason:
             # Cùng quy ước với POST /reminders: trả can_force kèm lý do thay vì âm thầm làm.
             return 409, {"ok": False, "can_force": True, "error": reason,
-                         "goi_y": "khai quota profile trước, hoặc gửi lại với "
-                                  "allow_inert=true nếu cố ý bật để quan sát"}
+                         "goi_y": localefmt.chu("khai quota profile trước, hoặc gửi lại với "
+                                                "allow_inert=true nếu cố ý bật để quan sát",
+                                                "declare a quota profile first, or resend with "
+                                                "allow_inert=true if you mean to turn it on just to observe")}
     return 0, {"ok": True, "allocation_basis_points": bp}
 
 
@@ -16535,6 +17176,26 @@ QUOTA_OWNER_OF = {
 def _muc(key: str, nhan: str, mo_ta: str) -> dict:
     p = cfgmod.PRESET_DUONG[key]
     return {"nhan": nhan, "mo_ta": mo_ta, "mode": p["mode"], "duong": dict(p["duong"])}
+
+
+# Bản tiếng Anh của nhãn và mô tả ba mức, cho màn hình. RUNTIME_PRESETS dựng lúc nạp module,
+# lúc đó chưa có request nào để biết người đang nhìn đọc thứ tiếng gì, nên chọn bản lúc TRẢ VỀ
+# qua `_preset_chu`. Nhật ký mốc (`usage_saving.ghi_moc`) vẫn ghi bản tiếng Việt.
+_RUNTIME_PRESETS_EN = {
+    "off": ("Off", "Full mode: sends everything to the model every turn. "
+                   "Safest, uses the most tokens."),
+    "saving": ("Optimized", "Sends only what is relevant to the question: selective memory, "
+                            "skills loaded when needed. Cuts tokens per turn sharply, good for "
+                            "models with tight limits."),
+    "max": ("Max saving", "Like the Saving level, plus a shortcut for simple questions that need "
+                          "no lookup. Fastest and cheapest, but newest, so the least tested."),
+}
+
+
+def _preset_chu(key: str, v: dict) -> dict:
+    """Nhãn + mô tả của một mức, đúng ngôn ngữ giao diện của người đang nhìn."""
+    en = _RUNTIME_PRESETS_EN.get(key) or (v["nhan"], v["mo_ta"])
+    return {"nhan": localefmt.chu(v["nhan"], en[0]), "mo_ta": localefmt.chu(v["mo_ta"], en[1])}
 
 
 RUNTIME_PRESETS = {
@@ -16611,7 +17272,7 @@ async def runtime_muc(brain: str = Query("brain")):
         print(f"[runtime/muc] đọc trace hỏng: {type(exc).__name__}: {exc}", file=sys.stderr)
     return {
         "muc": current_preset(settings),
-        "danh_sach": [{"id": k, "nhan": v["nhan"], "mo_ta": v["mo_ta"]}
+        "danh_sach": [{"id": k, **_preset_chu(k, v)}
                       for k, v in RUNTIME_PRESETS.items()],
         # Người dùng đã tự chọn mức, hay đây chỉ là mặc định của bản đã cài? Hai thứ trông y
         # hệt nhau trên màn hình mà ý nghĩa ngược nhau: cái sau còn đi lên theo bản cập nhật.
@@ -16633,7 +17294,8 @@ async def runtime_preset_set(level: str = Form(...)):
     key = str(level or "").strip().casefold()
     preset = RUNTIME_PRESETS.get(key)
     if not preset:
-        return JSONResponse({"ok": False, "error": f"mức '{level}' không có",
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"mức '{level}' không có",
+                                                                 f"level '{level}' does not exist"),
                              "hop_le": list(RUNTIME_PRESETS)}, status_code=400)
     cfg = cfgmod.read_settings()
     runtime_cfg = cfg.setdefault("context_runtime", {})
@@ -16680,9 +17342,14 @@ async def runtime_preset_set(level: str = Form(...)):
             # báo oan, sẽ dạy người dùng bỏ qua mọi cảnh báo khác.
             continue
         canh_bao.append(
-            f"Chưa có bảng hạn mức sẵn cho '{prov}', nên Thansa biên soạn ngữ cảnh theo trần "
-            "mặc định (context_runtime.api_context). Vẫn tiết kiệm được ngay; sau lần đầu "
-            "nhà cung cấp báo vượt hạn mức, Thansa dùng đúng con số thật của họ.")
+            localefmt.chu(
+                f"Chưa có bảng hạn mức sẵn cho '{prov}', nên Thansa biên soạn ngữ cảnh theo trần "
+                "mặc định (context_runtime.api_context). Vẫn tiết kiệm được ngay; sau lần đầu "
+                "nhà cung cấp báo vượt hạn mức, Thansa dùng đúng con số thật của họ.",
+                f"There is no built-in limit table for '{prov}' yet, so Thansa builds the context "
+                "under the default ceiling (context_runtime.api_context). It still saves right "
+                "away; the first time the provider reports a limit hit, Thansa uses their real "
+                "numbers."))
 
     da_bat, da_tat = [], []
     for name in _canary_keys():
@@ -16696,7 +17363,7 @@ async def runtime_preset_set(level: str = Form(...)):
         elif muon == 0 and truoc > 0:
             da_tat.append(name)
     cfgmod.write_settings(cfg)
-    return {"ok": True, "level": key, "nhan": preset["nhan"],
+    return {"ok": True, "level": key, "nhan": _preset_chu(key, preset)["nhan"],
             "mode": preset["mode"], "da_bat": da_bat, "da_tat": da_tat,
             "dang_bat": sorted(preset["duong"]), "canh_bao": canh_bao,
             "co_hieu_luc_ngay": True}
@@ -16712,7 +17379,8 @@ async def runtime_mode_set(mode: str = Form(...)):
     """
     value = str(mode or "").strip().casefold()
     if value not in _RUNTIME_MODES:
-        return JSONResponse({"ok": False, "error": f"mode '{mode}' không hợp lệ",
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"mode '{mode}' không hợp lệ",
+                                                                 f"invalid mode '{mode}'"),
                              "hop_le": list(_RUNTIME_MODES)}, status_code=400)
     cfg = cfgmod.read_settings()
     runtime_cfg = cfg.setdefault("context_runtime", {})
@@ -16724,8 +17392,10 @@ async def runtime_mode_set(mode: str = Form(...)):
     active = [k for k, v in (cfgmod.read_settings().get("context_runtime") or {}).items()
               if isinstance(v, dict) and int(v.get("allocation_basis_points") or 0) > 0]
     return {"ok": True, "mode": value, "duong_dang_bat": active,
-            "luu_y": ("Mode đã sang canary nhưng chưa đường nào có allocation > 0, "
-                      "nên vẫn chưa có gì đổi.") if value in ("canary", "on") and not active
+            "luu_y": localefmt.chu("Mode đã sang canary nhưng chưa đường nào có allocation > 0, "
+                                   "nên vẫn chưa có gì đổi.",
+                                   "Mode is now canary but no path has allocation > 0, "
+                                   "so nothing has changed yet.") if value in ("canary", "on") and not active
                      else ""}
 
 
@@ -16745,18 +17415,22 @@ async def runtime_quota_apply(provider: str = Form(...), model: str = Form(""),
     if not suggestions:
         return JSONResponse({
             "ok": False,
-            "error": f"chưa có hạn mức gợi ý cho provider '{provider}'"
+            "error": localefmt.chu(f"chưa có hạn mức gợi ý cho provider '{provider}'",
+                                   f"no suggested limits for provider '{provider}'")
                      + (f" model '{model}'" if model else ""),
             "provider_da_biet": model_limits.known_providers(),
-            "goi_y": "khai tay quota_profiles cho đường canary, hoặc bổ sung mục vào "
-                     "server/model_limits.py nếu đã tra được hạn mức chính thức",
+            "goi_y": localefmt.chu("khai tay quota_profiles cho đường canary, hoặc bổ sung mục vào "
+                                   "server/model_limits.py nếu đã tra được hạn mức chính thức",
+                                   "declare quota_profiles for the canary path by hand, or add an "
+                                   "entry to server/model_limits.py once you have the official limits"),
         }, status_code=404)
 
     profiles = [model_limits.as_quota_profile(s) for s in suggestions]
     wanted = {p.strip() for p in (paths or "").split(",") if p.strip()}
     keys = _canary_keys()
     if wanted - keys:
-        return JSONResponse({"ok": False, "error": "có đường canary không tồn tại",
+        return JSONResponse({"ok": False, "error": localefmt.chu("có đường canary không tồn tại",
+                                                                 "some canary paths do not exist"),
                              "sai": sorted(wanted - keys), "hop_le": sorted(keys)},
                             status_code=400)
 
@@ -16777,8 +17451,10 @@ async def runtime_quota_apply(provider: str = Form(...), model: str = Form(""),
     return {"ok": True, "provider": provider, "model": model or "(mọi model)",
             "so_rule": len(profiles), "da_ap_cho": applied,
             "can_doi_chieu": [s.get("source") for s in suggestions if s.get("verify")],
-            "luu_y": "Đây là hạn mức GỢI Ý theo tài liệu công khai. Đối chiếu với gói cước "
-                     "thật của tài khoản trước khi tin vào nó."}
+            "luu_y": localefmt.chu("Đây là hạn mức GỢI Ý theo tài liệu công khai. Đối chiếu với gói cước "
+                                   "thật của tài khoản trước khi tin vào nó.",
+                                   "These are SUGGESTED limits from public documentation. Check them "
+                                   "against your account's real plan before relying on them.")}
 
 
 @app.post("/runtime/canary")
@@ -18935,7 +19611,7 @@ async def zalo_bot_allow(chat_id: str = Form(...), on: str = Form("1")):
     """Cho phép (hoặc bỏ qua) một chat đang chờ, bằng ĐÚNG một cú bấm."""
     cid = str(chat_id or "").strip()
     if not cid:
-        return JSONResponse({"ok": False, "error": "Thiếu chat_id"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu chat_id", "Missing chat_id")}, status_code=400)
     if str(on).strip() not in ("", "0", "false"):
         z = cfgmod.read_settings().get("zalo_bot", {})
         ids = tg_parse_ids(z.get("chat_id"))
@@ -18954,7 +19630,8 @@ async def zalo_bot_test():
     z = cfgmod.read_settings().get("zalo_bot", {})
     ids = tg_parse_ids(z.get("chat_id"))
     if not z.get("token") or not ids:
-        return {"ok": False, "error": "Thiếu token hoặc chat ID (lưu trước đã)"}
+        return {"ok": False, "error": localefmt.chu("Thiếu token hoặc chat ID (lưu trước đã)",
+                                                    "Missing token or chat ID (save them first)")}
     import httpx
     sent, errs = 0, []
     url = f"https://bot-api.zaloplatforms.com/bot{z['token']}/sendMessage"
@@ -18968,7 +19645,7 @@ async def zalo_bot_test():
                     if d.get("ok"):
                         sent += 1
                     else:
-                        errs.append(f"{cid}: {str(d.get('description') or 'lỗi')[:80]}")
+                        errs.append(f"{cid}: {str(d.get('description') or localefmt.chu('lỗi', 'error'))[:80]}")
                 except Exception as e:
                     errs.append(f"{cid}: {type(e).__name__}")
     except Exception as e:
@@ -19150,10 +19827,11 @@ async def chatbots_people(bot_id: str, chat_id: str = Form(...), on: str = Form(
     bản ghi bot MỖI LƯỢT, nên người vừa cho phép ăn ngay từ tin kế tiếp."""
     bot = chatbot_store.get_bot(bot_id)
     if not bot:
-        return JSONResponse({"ok": False, "error": "Không có bot nào id đó"}, status_code=404)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có bot nào id đó", "No bot with that id")},
+                            status_code=404)
     cid = str(chat_id or "").strip()
     if not cid:
-        return JSONResponse({"ok": False, "error": "Thiếu id người"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu id người", "Missing person id")}, status_code=400)
     bat = str(on).strip() not in ("0", "false", "")
     ds = [str(x) for x in (bot.get("people") or [])]
     if bat:
@@ -19282,10 +19960,11 @@ async def chatbots_groups(bot_id: str, chat_id: str = Form(...), on: str = Form(
     """
     bot = chatbot_store.get_bot(bot_id)
     if not bot:
-        return JSONResponse({"ok": False, "error": "Không có bot nào id đó"}, status_code=404)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có bot nào id đó", "No bot with that id")},
+                            status_code=404)
     cid = str(chat_id or "").strip()
     if not cid:
-        return JSONResponse({"ok": False, "error": "Thiếu id nhóm"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu id nhóm", "Missing group id")}, status_code=400)
     bat = str(on).strip() not in ("0", "false", "")
     ds = [str(x) for x in (bot.get("groups") or [])]
     if bat:
@@ -19310,7 +19989,8 @@ async def chatbots_log(bot_id: str, limit: int = 50):
     đó nên tách ra chỉ tốn hai lượt đọc đĩa cho cùng một dữ liệu.
     """
     if not chatbot_store.get_bot(bot_id):
-        return JSONResponse({"ok": False, "error": "Không có bot nào id đó"}, status_code=404)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có bot nào id đó", "No bot with that id")},
+                            status_code=404)
     return {"ok": True, "turns": chatbot_log.doc(bot_id, limit),
             "gaps": chatbot_log.lo_hong(bot_id), "tom_tat": chatbot_log.tom_tat(bot_id)}
 
@@ -19360,7 +20040,8 @@ async def telegram_test():
     t = cfgmod.read_settings().get("telegram", {})
     ids = tg_parse_ids(t.get("chat_id"))
     if not t.get("token") or not ids:
-        return {"ok": False, "error": "Thiếu token hoặc chat ID (lưu trước đã)"}
+        return {"ok": False, "error": localefmt.chu("Thiếu token hoặc chat ID (lưu trước đã)",
+                                                    "Missing token or chat ID (save them first)")}
     import httpx
     sent, errs = 0, []
     try:
@@ -19373,7 +20054,7 @@ async def telegram_test():
                     if d.get("ok"):
                         sent += 1
                     else:
-                        errs.append(f"{cid}: {d.get('description', 'lỗi')}")
+                        errs.append(f"{cid}: {d.get('description', localefmt.chu('lỗi', 'error'))}")
                 except Exception as e:
                     errs.append(f"{cid}: {type(e).__name__}")
         return {"ok": sent > 0, "sent": sent, "total": len(ids),
@@ -19442,7 +20123,7 @@ async def chat_once(message: str = Form(...), brain: str = Form(""),
     /chat/stream.
     """
     if not str(message or "").strip():
-        return JSONResponse({"ok": False, "error": "message rỗng"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("message rỗng", "message is empty")}, status_code=400)
     out, key = await _cli_turn(message, brain, session, host)
     return _cli_payload(out, key)
 
@@ -19462,7 +20143,7 @@ async def chat_stream(message: str = Form(...), brain: str = Form(""),
     thường, và một CLI cũ không được vỡ vì điều đó.
     """
     if not str(message or "").strip():
-        return JSONResponse({"ok": False, "error": "message rỗng"}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("message rỗng", "message is empty")}, status_code=400)
 
     hang = asyncio.Queue()
 
@@ -19542,9 +20223,10 @@ async def sessions_compact(session_id: str):
     st = get_store()
     row = st.get_session(session_id)
     if not row:
-        return JSONResponse({"error": "phiên không tồn tại"}, status_code=404)
+        return JSONResponse({"error": localefmt.chu("phiên không tồn tại", "session does not exist")}, status_code=404)
     if _CHAT_RUNTIME.get_job(session_id):
-        return JSONResponse({"error": "phiên đang trả lời", "ly_do": "dang_chay"}, status_code=409)
+        return JSONResponse({"error": localefmt.chu("phiên đang trả lời", "session is still answering"),
+                             "ly_do": "dang_chay"}, status_code=409)
     mcfg = cfgmod.read_settings().get("model", {})
     prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, row)
     res = await lenh_he_thong.nen_phien(
@@ -19619,11 +20301,13 @@ async def slash_block(kind: str = Form(...), dk: str = Form(""), vong: int = For
         return {"block": lenh_he_thong.khoi_ke_hoach()}
     if kind == "goal":
         if not (dk or "").strip():
-            return JSONResponse({"error": "thiếu điều kiện của mục tiêu"}, status_code=400)
+            return JSONResponse({"error": localefmt.chu("thiếu điều kiện của mục tiêu", "missing the goal condition")},
+                                status_code=400)
         toi_da = max(1, min(int(toi_da), 20))
         vong = max(1, min(int(vong), toi_da))
         return {"block": lenh_he_thong.khoi_muc_tieu(dk, vong, toi_da)}
-    return JSONResponse({"error": "kind phải là plan hoặc goal"}, status_code=400)
+    return JSONResponse({"error": localefmt.chu("kind phải là plan hoặc goal", "kind must be plan or goal")},
+                        status_code=400)
 
 
 # ============================================================
@@ -19672,7 +20356,10 @@ async def reply_policy_label(bot_id: str, decision_id: int = Form(...), thumb: s
     profile = chatbot_runtime._rp_profile(bot, with_role=False)
     label = chatbot_reply_policy.owner_label(chatbot_reply_policy_store, profile, decision_id, thumb)
     if not label:
-        return JSONResponse({"ok": False, "error": "Không gắn được nhãn (quyết định không thuộc bot này, hoặc nút lạ)"},
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+                                "Không gắn được nhãn (quyết định không thuộc bot này, hoặc nút lạ)",
+                                "Could not apply the label (the decision does not belong to this bot, or "
+                                "the button is unknown)")},
                             status_code=400)
     return {"ok": True, "label": label}
 
@@ -19696,6 +20383,34 @@ async def reply_policy_forget(bot_id: str, chat_id: str = Form("")):
     if not chatbot_reply_policy_store.db_path().exists():
         return {"ok": True, "cases": 0, "lessons": 0}
     return {"ok": True, **chatbot_reply_policy_store.forget(bot_id, chat_id)}
+
+
+@app.get("/voice/brain-models")
+async def voice_brain_models_route(provider: str = ""):
+    """Ô Model của bộ não trả lời nhanh (0.65.26): danh sách model của ĐÚNG một bộ não, để trang
+    Cài đặt không phải chờ `agy models` khi người dùng không chọn Antigravity. Đặt sau route cuối
+    để bảng route chỉ thêm một dòng."""
+    pid = str(provider or "").strip().lower()
+    p = voice_brain.BRAIN_PROVIDERS.get(pid)
+    if not pid or not p:
+        return {"ok": False, "error": "unknown provider"}
+    cfg = cfgmod.read_settings()
+    models = await asyncio.to_thread(_voice_brain_models, pid, cfg)
+    v = cfg.get("voice", {}) or {}
+    return {"ok": True, "provider": pid, "models": models, "default_model": p["default_model"],
+            "current": voice_brain.brain_model_for(v, pid)}
+
+
+@app.post("/share/rename")
+async def share_rename(body: dict = Body(...)):
+    """Đổi tên hiển thị của một link ở trang Chia sẻ (0.65.30). Tên rỗng thì quay về tên tự lấy
+    theo tiêu đề file. Đặt sau route cuối để bảng route chỉ thêm một dòng."""
+    ban = share_store.doi_ten(body.get("token") or "", body.get("nhan") or "")
+    if not ban:
+        return {"ok": False, "error": localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.",
+                                                    "The link does not exist or has been revoked.")}
+    return {"ok": True, "token": ban["token"], "nhan": ban.get("nhan") or "",
+            "ten": await asyncio.to_thread(_share_ten, ban)}
 
 
 @app.on_event("startup")

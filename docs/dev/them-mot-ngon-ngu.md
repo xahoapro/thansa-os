@@ -1,5 +1,7 @@
 # Thêm một ngôn ngữ vào Javis
 
+***Tiếng Việt** · [English](adding-a-language.md)*
+
 Tài liệu này là **bài kiểm tra nghiệm thu** của cả tầng đa ngôn ngữ. Nếu thêm một thứ tiếng mà
 phải sửa file ngoài danh sách dưới đây, thì kiến trúc đã hỏng ở đâu đó - **sửa kiến trúc trước,
 đừng vá lén một chỗ cho xong**.
@@ -20,7 +22,7 @@ Vậy đăng ký để được gì. Đúng bốn thứ, đều là chỗ **khô
 
 | Được gì | Không đăng ký thì sao |
 |---------|-----------------------|
-| Chữ trên màn hình dịch được | giao diện vẫn tiếng Việt |
+| Chữ trên màn hình dịch được | giao diện hiện tiếng Anh (từ 0.66.0; trước đó là tiếng Việt) |
 | Giọng đọc TTS đúng tiếng | đọc bằng giọng Việt, nghe như máy hỏng |
 | Múi giờ, tiền tệ, định dạng số mặc định | dùng của Việt Nam cho tới khi user tự đổi |
 | Đường tắt tiết kiệm token bật được | vẫn chạy, chỉ tốn hơn |
@@ -70,8 +72,8 @@ trước tiếng Trung vì văn bản Nhật có kanji lẫn kana.
 cp dashboard/i18n/vi.json dashboard/i18n/th.json
 ```
 
-Rồi dịch phần giá trị. **Không cần dịch hết ngay.** Key thiếu tự rơi về `vi`, rồi rơi về chính
-tên key - giao diện không bao giờ vỡ, chỉ lẫn tiếng cho tới khi bản dịch đầy dần.
+Rồi dịch phần giá trị. **Không cần dịch hết ngay.** Từ 0.66.0 key thiếu rơi về `en`, rồi `vi`,
+rồi mới tới chính tên key - giao diện không bao giờ vỡ, chỉ lẫn tiếng cho tới khi bản dịch đầy dần.
 
 Hai key kỹ thuật phải sửa: `_meta.name` (tên hiện trong ô chọn) và `_meta.number_locale`.
 
@@ -105,7 +107,7 @@ python tests/run.py
 
 ---
 
-## Hai bước tuỳ chọn, làm sau cũng được
+## Các bước tuỳ chọn, làm sau cũng được
 
 ### 5. Mô tả skill theo ngôn ngữ
 
@@ -127,10 +129,27 @@ gõ và danh sách skill, nên cùng thứ tiếng thì định tuyến sắc h�
 Bản dịch cũng chịu đúng trần `SKILL_DESC_MAX` (150 ký tự) như bản gốc, vì nó đi vào cùng chỗ
 trong prompt. `system_sync._cap_desc` cắt mọi khoá mô tả, không riêng khoá gốc.
 
-### 6. Tài liệu
+### 6. Chữ phía server, kho Kết nối, brain mẫu
 
-Tài liệu người dùng dịch tay, không qua từ điển. Quy ước đặt tên: `README.en.md`,
-`QUICKSTART.en.md`, `docs/en/*.md`. Mỗi bản đặt một dòng link qua lại ở đầu file.
+Từ 0.67.0 chữ phía server đi theo ngôn ngữ giao diện của THIẾT BỊ đang gọi (cookie
+`javis_lang`, do `dashboard/i18n/index.js` đặt). Thứ gì chưa có bản cho tiếng Thái thì hiện
+tiếng Anh, nên không bước nào dưới đây là bắt buộc để mời người dùng Thái vào.
+
+- **Thông báo của server** viết hai bản ngay tại chỗ: `localefmt.chu("Đã lưu", "Saved")`. Bản
+  thứ ba chưa có chỗ, tức tiếng Thái hiện tiếng Anh. Khi cần thật, mở rộng `chu()` bằng một tham
+  số RIÊNG nhận map `{mã: chữ}` (không dùng `**kwargs`: `**bien` đã là biến điền vào chữ), đừng rẽ
+  nhánh `if lang == ...` ở chỗ gọi.
+- **Kho Kết nối:** chép `system/mcp-catalog.en.json` thành `system/mcp-catalog.th.json` rồi
+  dịch phần chữ. Bước wizard và link cài đặt khớp theo VỊ TRÍ, giữ đúng số lượng.
+- **File hạt giống của brain mới:** thêm bản `"th"` cho từng mục trong `HAT_GIONG` ở
+  `server/brain_seed_i18n.py`.
+
+### 7. Tài liệu
+
+Tài liệu người dùng dịch tay, không qua từ điển. Từ 0.66.0 README gốc (`README.md`) là bản
+**tiếng Anh**; bản dịch README nằm ở `docs/i18n/<mã>/README.md` (tiếng Việt: `docs/i18n/vi/`),
+và thanh chọn ngôn ngữ đầu README.md phải có thêm thứ tiếng mới. Các tài liệu khác vẫn theo quy
+ước cũ: `QUICKSTART.en.md`, `docs/en/*.md`. Mỗi bản đặt một dòng link qua lại ở đầu file.
 
 ---
 

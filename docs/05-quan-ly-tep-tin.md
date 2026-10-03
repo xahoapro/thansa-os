@@ -121,6 +121,7 @@ Vài điều nên biết về tìm kiếm:
 3. Sửa xong bấm **💾 Lưu** (hoặc `Ctrl` + `S`). Khi lưu thành công, nút đổi thành **✓ Đã lưu** rồi trở lại như cũ.
 4. Bấm **✕** (hoặc phím `Esc`) để đóng và quay lại danh sách file. Danh sách tự nạp lại, nên file bạn vừa đổi tên hay xoá ngay trong trình sửa hiện đúng trạng thái mới.
 5. Thanh trên trình sửa còn có: đổi tên, xoá, **↗** mở tab mới, **⤓ Tải** về máy, và nút phóng to toàn màn hình.
+6. **Số từ và số ký tự** hiện ở cuối thanh công cụ, tự cập nhật khi bạn gõ. Ghi chú `.md` chỉ đếm chữ hiện ra, không tính ký hiệu định dạng (`#`, `**`, đường link). Rê chuột vào con số để xem số ký tự không tính khoảng trắng.
 
 **Khối "Thuộc tính" ở đầu note .md.** Nếu file mở đầu bằng khối `---` (frontmatter: `type`, `status`, `created`...), Thansa hiện nó thành một khối riêng, **khoá lại không cho sửa** trong chế độ Sửa. Đó là metadata chứ không phải văn bản, và khoá lại chính là thứ giữ cho nó nguyên vẹn từng ký tự sau mỗi lần lưu. Muốn sửa metadata thì chuyển sang chế độ **Nguồn**.
 
@@ -243,15 +244,17 @@ Cảnh báo: thao tác xoá không có thùng rác, không hoàn tác được. 
 
 ### Chia sẻ một file ra ngoài (link `/s/`)
 
-Trong khung mở file có nút **Chia sẻ**: nó cho ra một đường link gửi cho ai người đó cũng xem được, không cần đăng nhập Javis. File `.md` hiện thành trang đã dựng sẵn (đậm, nghiêng, ảnh), còn file `.html` thì **chạy thật** như một app nhỏ.
+Trong khung mở file có nút **Chia sẻ**: nó cho ra một đường link gửi cho ai người đó cũng xem được, không cần đăng nhập Thansa. File `.md` hiện thành trang đã dựng sẵn (đậm, nghiêng, ảnh), còn file `.html` thì **chạy thật** như một app nhỏ.
 
-Trang chia sẻ chạy trong một hộp cách ly: script trong đó không đọc được cookie đăng nhập của bạn và không gọi được API của Javis. Đó là điều kiện để dám mở một file `.html` do AI viết ra cho người lạ xem. Cái giá của nó là ba điều cần biết khi làm app để chia sẻ:
+Trang chia sẻ chạy trong một hộp cách ly: script trong đó không đọc được cookie đăng nhập của bạn và không gọi được API của Thansa. Đó là điều kiện để dám mở một file `.html` do AI viết ra cho người lạ xem. Cái giá của nó là ba điều cần biết khi làm app để chia sẻ:
 
 - **Đọc dữ liệu bằng đường dẫn tương đối** (`./data.json`), đừng trỏ vào `/files/raw`. Link chia sẻ phục vụ được các file nằm **cạnh** trang; còn `/files/raw` đòi cookie đăng nhập nên người xem nhận lỗi 401 và app hiện trống trơn.
 - **Để app trong một thư mục riêng** (`apps/bang-gia/index.html` cùng dữ liệu của nó), đừng để ngay gốc brain. Chỉ trang nằm trong thư mục riêng mới được đọc file dữ liệu bên cạnh, vì "thư mục" của một trang ở gốc brain chính là cả kho ghi chú của bạn.
-- **Lưu tạm (localStorage) vẫn dùng được** nhưng chỉ sống tới khi đóng tab. Javis tự vá chỗ này khi phục vụ trang, nên app không bị chết giữa chừng như trước; đừng để trong đó thứ người xem không được phép mất.
+- **Lưu tạm (localStorage) vẫn dùng được** nhưng chỉ sống tới khi đóng tab. Thansa tự vá chỗ này khi phục vụ trang, nên app không bị chết giữa chừng như trước; đừng để trong đó thứ người xem không được phép mất.
 
 Thu hồi link: bấm lại nút Chia sẻ rồi chọn thu hồi. Link chết ngay, và mọi file kèm theo nó cũng ngừng phục vụ.
+
+Mọi link đang sống nằm ở trang **Chia sẻ**. Mỗi link có một **tên** tự lấy theo tiêu đề file: thẻ `<title>` của trang `.html`, `title:` hoặc dòng `#` đầu tiên của ghi chú `.md`. File không có tiêu đề thì lấy tên file, riêng `index.html` lấy tên thư mục chứa nó, nên năm app nhỏ không còn cùng hiện là "index.html". Bấm **Đổi tên** để đặt tên khác; để trống là quay về tên theo tiêu đề. Đổi tên không đổi đường link đã gửi đi. Ô tìm kiếm tìm theo tên link, tên file và thư mục.
 
 ## Hai thư mục là vùng cache, đừng để dữ liệu quý ở đó
 
