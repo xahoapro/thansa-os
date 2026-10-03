@@ -659,4 +659,15 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   me-backup-0.65.12-pre (= me trước rebase, 8ff06dbc).
 - NGHIỆM THU (env -u JAVIS_*): fork 549/559 lần đầu → sửa 6 test coupled → đỏ còn đúng 4 = {form_chuoi_rong,
   route_table, run_command_quyen, terminal_cmd_goc}, upstream sạch ĐỎ y hệt (sandbox) → **0 hồi quy fork**.
-  CHƯA đẩy remote — chờ chủ bấm.
+  **ĐÃ PHÁT HÀNH 2026-10-03** (origin/main 13aa1c7, snapshot ff từ 592ac6c; backup me-backup-0.70.2).
+
+## Vòng 2026-10-03b (KHÔNG trộn upstream, nền giữ 0.70.2; thansa 1.16→1.17 - tính năng riêng P049)
+- **P049:** tên miền + HTTPS một nút Kích hoạt, tự nhận kiểu cài. Native Linux → bin/thansa-nginx-ssl.sh qua
+  sudo -n (nginx + certbot --nginx --redirect), hàng rào mật khẩu + DNS, domain.proxy=nginx bật cứng
+  require_login. Docker → Caddy On-Demand vào docker-compose.yml mặc định (JAVIS_CADDY, multi tắt, update.sh
+  tắt khi 80/443 bận), Kích hoạt = bắt tay TLS caddy:443. Hostinger giữ tay (chủ chọn). so_patch 44→45.
+- Chạy thật nhánh nginx trên máy phát hành (thansa.tradingauto.org): RESULT:OK, check-host 3/3 HTTPS 200.
+  Nhánh Docker kiểm compose bằng docker-compose v2.39.4 `config` (4 biến thể) - CHƯA chạy trên VPS Docker thật.
+- VERSION 1.17.0-javis-0.70.2, moc-goc thansa_version 1.17.0. tu-kiem-chung 5/5 XANH.
+- NGHIỆM THU (env -u JAVIS_*): đỏ còn đúng 4 = {form_chuoi_rong, route_table, run_command_quyen,
+  terminal_cmd_goc} (sandbox, upstream đỏ y hệt) → **0 hồi quy fork**.

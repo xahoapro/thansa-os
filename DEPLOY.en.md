@@ -124,15 +124,23 @@ you **must set a `DOMAIN_NAME` variable**:
 
 **A VPS with your own domain, automatic Let's Encrypt, configured RIGHT IN THE APP (recommended):**
 
-You no longer set `DOMAIN` at run time; enable Caddy once then declare the domain in the interface.
-1. Enable Caddy (On-Demand TLS): `docker compose -f docker-compose.yml -f docker-compose.https.yml up -d`
-   *(needs Docker Compose v2.23.1+, check with `docker compose version`)*
+You don't set `DOMAIN` at run time and you don't run any extra command: `docker-compose.yml` already
+ships Caddy (On-Demand TLS), which stays idle until you declare the domain in the interface.
+1. `docker compose up -d` as usual *(needs Docker Compose v2.23.1+, check with `docker compose version`)*.
+   Ports 80/443 already used by another web server → set `JAVIS_CADDY=0` in `.env` to turn Caddy off.
 2. Open `http://<vps-ip>:7777` → **Settings → Voice, branding and access → Domain and SSL** → enter
    `javis.yourname.com` → **Save and check**.
 3. The wizard shows the exact DNS record to create (A: `javis.yourname.com → <vps-ip>`) with a copy
    button. Point the DNS then wait for propagation.
-4. Open `https://javis.yourname.com` and Caddy **obtains and renews** the certificate on the first
-   visit, with the Secure cookie turned on automatically. Done.
+4. Press **Activate** in step 3 and Caddy **obtains and renews** the certificate, with the Secure
+   cookie turned on automatically. Open `https://javis.yourname.com`. Done.
+
+> Installed from an OLD compose file (no built-in Caddy)? Press Activate and the app shows the exact
+> command that adds the HTTPS layer (`docker-compose.https.yml`), to run once.
+>
+> **Installed directly without Docker (Linux, `install.sh`)?** Same thing: enter the domain and press
+> **Activate**. Thansa installs nginx + Let's Encrypt by itself (a login password must be set first;
+> see docs/15-thuong-hieu-ten-mien.md).
 
 > Safety: Caddy asks the backend (`/tls-check`) before requesting a certificate, so it **only** issues
 > for the domain you entered in the app. Someone pointing arbitrary DNS at the IP cannot force the
