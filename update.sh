@@ -32,6 +32,11 @@ if [ "$MODE" = "docker" ] || { [ "$MODE" = "auto" ] && is_docker; }; then
   if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$NAME-caddy"; then
     HTTPS_ARGS="-f docker-compose.yml -f docker-compose.https.yml"
     echo "==> Caddy (HTTPS) detected → keeping the HTTPS setup."
+  elif command -v ss >/dev/null 2>&1 && ss -tlnH '( sport = :80 or sport = :443 )' 2>/dev/null | grep -q .; then
+    # docker-compose.yml nay dựng sẵn Caddy. Máy chưa có Caddy mà 80/443 đã có web server khác
+    # (nginx/Apache tự dựng) thì Caddy mới sẽ giành cổng và hỏng `up` - tắt nó cho lượt này.
+    export JAVIS_CADDY=0
+    echo "==> Ports 80/443 are already in use by another web server → leaving the built-in Caddy off (JAVIS_CADDY=0)."
   fi
   # Đứng sau proxy dùng chung (nhiều bản, mỗi bản một tên miền) thì giữ luôn override multi,
   # không thì lượt cập nhật này gỡ mất nhãn Caddy và bản đó rơi khỏi proxy.
