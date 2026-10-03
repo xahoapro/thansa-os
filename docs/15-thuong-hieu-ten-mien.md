@@ -75,18 +75,25 @@ Sau khi lưu (hoặc khi bấm **Kiểm tra lại**), wizard hiện bước **2.
 
 2. Đợi DNS lan (vài phút đến vài giờ), bấm **Kiểm tra lại**. Khi DNS đúng, bước 2 chuyển sang dấu ✓ và dòng mô tả đổi thành "Bản ghi A đã trỏ đúng IP máy chủ."
 
-### Bước C: bấm Bật SSL để xin chứng chỉ
+### Bước C: bấm Kích hoạt để xin chứng chỉ
 
-Khi bước 2 đã ✓, wizard hiện bước **3. Bật HTTPS** với dòng "Khi DNS đã đúng, bấm Bật SSL để Thansa xin chứng chỉ."
+Khi bước 2 đã ✓, wizard hiện bước **3. Bật HTTPS**. Bạn chỉ cần bấm **Kích hoạt**: Thansa tự nhận ra mình đang chạy kiểu cài nào và làm đúng cách cho kiểu đó.
 
-1. Bấm nút **Bật SSL**. Thansa hiện **Đang bật SSL và xin chứng chỉ… (có thể mất khoảng 10 giây)**.
-2. Server lưu ý định bật SSL rồi tự mở `https://<tên miền>/health` từ chính nó. Chính cú gọi này buộc Caddy đi xin chứng chỉ ở lần đầu, thay vì bạn phải mở trình duyệt thủ công.
-3. Xong, Thansa chạy lại kiểm tra và cập nhật badge. Khi chứng chỉ đã sống, dòng trạng thái ghi **HTTPS đang chạy cho `<tên miền>`.**, nút đổi nhãn thành **Kích hoạt lại**, và wizard hiện thêm liên kết **Mở https://`<tên miền>` ↗**.
-4. Nếu chưa lên, Thansa nói rõ lý do và bổ sung câu **"Chạy trên VPS: docker compose -f docker-compose.yml -f docker-compose.https.yml up -d"** khi bạn đang chạy bản Docker mà chưa bật lớp HTTPS.
+| Kiểu cài | Bấm Kích hoạt thì Thansa làm gì |
+|---|---|
+| **Docker** (`docker-compose.yml`) | Caddy đã chạy sẵn trong compose. Thansa bắt tay TLS với Caddy bằng đúng tên miền, Caddy tự xin chứng chỉ Let's Encrypt ngay lúc đó (vài giây đến nửa phút). |
+| **Cài trực tiếp trên Linux** (`install.sh`, systemd) | Thansa tự cài nginx + certbot, dựng reverse proxy, xin chứng chỉ (xem mục "Nếu bạn cài native trên Linux" bên dưới). |
+| **Hostinger** | Nút bị ẩn: Traefik của hPanel cấp chứng chỉ, bạn đặt `DOMAIN_NAME` rồi Redeploy (xem mục Hostinger). |
+
+1. Bấm **Kích hoạt**. Dòng trạng thái báo tiến độ.
+2. Xong, Thansa chạy lại kiểm tra và cập nhật badge. Khi chứng chỉ đã sống, dòng trạng thái ghi **HTTPS đang chạy cho `<tên miền>`.**, nút đổi nhãn thành **Kích hoạt lại**, và wizard hiện thêm liên kết **Mở https://`<tên miền>` ↗**.
+3. Nếu chưa lên, Thansa nói rõ lý do (DNS chưa trỏ, cổng 80/443 chưa mở...).
+
+Bản Docker cài bằng file compose CŨ (trước khi Caddy được đưa vào mặc định) chưa có Caddy: bấm Kích hoạt sẽ hiện sẵn một lệnh kèm nút **Sao chép lệnh**. Chạy lệnh đó một lần trong thư mục chứa `docker-compose.yml` trên máy chủ (nó chỉ CỘNG THÊM lớp HTTPS, không đè file compose bạn đã sửa) rồi bấm Kích hoạt lại.
 
 Nút **Kiểm tra lại** dùng được bất cứ lúc nào: nó chỉ đọc trạng thái (hiện **Đang kiểm tra…** rồi vẽ lại badge), không đụng chứng chỉ.
 
-Trên Hostinger, nút **Bật SSL** bị ẩn đi, vì Traefik của hPanel mới là bên cấp chứng chỉ. Xem mục Hostinger bên dưới.
+Trên Hostinger, nút **Kích hoạt** bị ẩn đi, vì Traefik của hPanel mới là bên cấp chứng chỉ. Xem mục Hostinger bên dưới.
 
 ## Bảng tra nhanh nút và trạng thái
 
@@ -135,6 +142,29 @@ Dòng trạng thái dưới cùng của card có thể là:
 | Không kiểm tra được (lỗi mạng). | Trình duyệt không gọi được server. | Thử lại sau ít phút. |
 | Lỗi mạng khi lưu / Lỗi mạng khi bật SSL | Mất kết nối giữa chừng. | Thử lại. |
 
+## Nếu bạn cài native trên Linux (không Docker): nginx tự động
+
+Bản cài trực tiếp trên VPS/máy Linux (systemd, `install.sh`) không có Caddy. Thansa tự dựng **nginx + chứng chỉ Let's Encrypt** cho bạn, nên bước 3 của wizard có nút **Kích hoạt** thay cho **Bật SSL**:
+
+1. Nhập tên miền, bấm **Lưu & kiểm tra**.
+2. Trỏ bản ghi `A <tên miền> → <IP máy chủ>` và chờ bước 2 hiện ✓. Mở cổng **80** và **443** trên router/firewall (máy ở nhà sau NAT thì chuyển tiếp hai cổng này về máy chạy Thansa).
+3. Bấm **Kích hoạt**. Thansa chạy nền `bin/thansa-nginx-ssl.sh`: cài nginx + certbot (lần đầu mất 1–3 phút), ghi cấu hình reverse proxy về cổng app, xin chứng chỉ, bật chuyển hướng HTTP → HTTPS. Dòng trạng thái hiện từng bước đang chạy.
+4. Xong, bước 3 hiện ✓ và liên kết **Mở https://`<tên miền>` ↗**. Chứng chỉ tự gia hạn bằng `certbot.timer` của hệ thống.
+
+Hai điều kiện Thansa kiểm **trước** khi đụng vào hệ thống:
+
+- **Phải đặt mật khẩu đăng nhập.** Bản native nghe `127.0.0.1` nên mặc định không bắt đăng nhập; khi nginx đứng trước, mọi truy cập từ Internet đều đi qua `127.0.0.1`. Vì vậy Thansa từ chối kích hoạt khi chưa có mật khẩu, và từ lúc kích hoạt trở đi luôn **bắt buộc đăng nhập**.
+- **DNS phải trỏ đúng IP máy chủ.** Let's Encrypt giới hạn số lần xác thực hỏng, xin khi DNS chưa đúng dễ bị khoá cả giờ.
+
+Tài khoản chạy Thansa không có quyền `sudo` không mật khẩu thì Thansa không tự cài được: bước 3 hiện sẵn lệnh (vd `sudo bash /đường/dẫn/thansa/bin/thansa-nginx-ssl.sh <tên miền> 7777`) kèm nút **Sao chép lệnh**. Chạy lệnh đó một lần trong terminal của máy chủ rồi bấm **Kiểm tra lại**.
+
+Lưu ý:
+
+- Mở tên miền từ **chính mạng LAN của máy chủ** có thể không vào được nếu router không hỗ trợ hairpin NAT; đó không phải lỗi. Thansa kiểm chứng chỉ ngay trên máy (cổng 443 nội bộ) nên badge SSL vẫn đúng.
+- Cổng 80/443 đang bị chương trình khác giữ (Apache, Caddy…) thì Thansa báo tên chương trình đó và dừng, không động vào.
+- Bấm **Kích hoạt lại** bao nhiêu lần cũng được; cấu hình `/etc/nginx/sites-available/thansa-<tên miền>.conf` được ghi lại, chứng chỉ còn hạn thì giữ nguyên. Nhật ký nằm ở `nginx-ssl.log` trong thư mục state của Thansa.
+- Windows/macOS native không có nhánh này: hãy dùng reverse proxy riêng hoặc bản Docker.
+
 ## Về Caddy và On-Demand TLS (nên biết)
 
 - Thansa dùng Caddy để tự xin và tự gia hạn chứng chỉ HTTPS (Let's Encrypt) theo cơ chế On-Demand TLS. Bạn không phải tự cài chứng chỉ.
@@ -145,14 +175,14 @@ Dòng trạng thái dưới cùng của card có thể là:
 
 ## Nếu bạn deploy trên Hostinger (khác cách trên)
 
-Hostinger VPS đã cài sẵn reverse proxy Traefik lo SSL, và cổng 80/443 đã bị Traefik chiếm. Thansa vẫn cho nhập tên miền, kiểm tra DNS và tạo sẵn biến cần dùng ngay trên UI, nhưng container không có quyền sửa route Traefik của hPanel. Vì thế nút **Bật SSL** bị ẩn, badge SSL ghi **SSL: qua Hostinger**, và bước 3 của wizard đổi thành **3. Kích hoạt route HTTPS trên Hostinger**:
+Hostinger VPS đã cài sẵn reverse proxy Traefik lo SSL, và cổng 80/443 đã bị Traefik chiếm. Thansa vẫn cho nhập tên miền, kiểm tra DNS và tạo sẵn biến cần dùng ngay trên UI, nhưng container không có quyền sửa route Traefik của hPanel. Vì thế nút **Kích hoạt** bị ẩn, badge SSL ghi **SSL: qua Hostinger**, và bước 3 của wizard đổi thành **3. Kích hoạt route HTTPS trên Hostinger**:
 
 1. Trỏ DNS: bản ghi `A  <tên miền của bạn> → <IP VPS Hostinger>`.
 2. Deploy bằng file compose có nhãn Traefik của Hostinger: `docker-compose.hostinger.yml` (Docker Manager → Compose → URL).
 3. Bấm **Sao chép biến** trong wizard, đặt `DOMAIN_NAME=<tên miền của bạn>` trong Docker Manager rồi bấm **Redeploy**. Wizard hiện luôn route Traefik hiện tại để bạn đối chiếu.
 4. Mở `https://<tên miền>`; Traefik tự xin chứng chỉ ở lần đầu. Không còn phải vào bằng `:7777`.
 
-Nếu bạn cố bấm Bật SSL trên Hostinger (ví dụ qua API), Thansa từ chối và nói rõ: Hostinger quản lý HTTPS bằng Traefik, hãy đặt `DOMAIN_NAME` trong Docker Manager rồi Redeploy.
+Nếu bạn cố kích hoạt SSL trên Hostinger (ví dụ qua API), Thansa từ chối và nói rõ: Hostinger quản lý HTTPS bằng Traefik, hãy đặt `DOMAIN_NAME` trong Docker Manager rồi Redeploy.
 
 Sau khi Redeploy, trở lại Cài đặt và bấm **Kiểm tra lại**. Chi tiết và xử lý sự cố xem mục "Tên miền + HTTPS trên Hostinger" trong `DEPLOY.md`; hai link tài liệu cũng nằm ngay dưới card tên miền.
 
@@ -162,16 +192,16 @@ Sau khi Redeploy, trở lại Cài đặt và bấm **Kiểm tra lại**. Chi ti
 - Sau khi tải ảnh mới mà chỗ nào đó vẫn còn ảnh cũ, chờ khoảng 1 phút hoặc tải lại trang; hệ thống có bộ nhớ đệm ngắn cho ảnh logo (favicon lâu hơn, khoảng 5 phút).
 - Nếu chưa có tên miền riêng nhưng vẫn muốn truy cập từ xa có HTTPS, có thể dùng cách khác (ví dụ Cloudflare Tunnel) mô tả trong `DEPLOY.md`.
 - Dùng đúng bản ghi loại **A** (trỏ theo IPv4). Đừng dùng CNAME cho tên miền này trừ khi bạn hiểu rõ hệ quả.
-- Đừng bấm **Bật SSL** liên tục khi DNS chưa đúng. Mỗi lần bấm là một lần Thansa buộc Caddy đi xin chứng chỉ, xin hỏng nhiều lần sẽ chạm giới hạn của Let's Encrypt.
+- Đừng bấm **Kích hoạt** liên tục khi DNS chưa đúng. Mỗi lần bấm là một lần Thansa buộc Caddy đi xin chứng chỉ, xin hỏng nhiều lần sẽ chạm giới hạn của Let's Encrypt.
 
 ## Sự cố thường gặp
 
 - **Bấm Lưu báo "Tên miền không hợp lệ":** kiểm tra lại chính tả, không có khoảng trắng, không kèm đường dẫn phía sau. Định dạng đúng là dạng `tên.tencuaban.com`.
 - **Đã tạo bản ghi A nhưng badge vẫn ghi "DNS: chưa trỏ":** DNS cần thời gian lan. Đợi thêm vài phút đến vài giờ rồi bấm **Kiểm tra lại**.
 - **Badge ghi "DNS: sai IP (...)":** IP trong bản ghi A khác IP máy chủ Thansa. Copy đúng IP mà Thansa hiển thị ở bước 2 của wizard và cập nhật lại bản ghi A.
-- **DNS đã đúng nhưng bấm Bật SSL báo "Không kết nối được cổng 443":** lớp HTTPS chưa chạy. Trên VPS Docker, chạy đúng lệnh Thansa gợi ý (`docker compose -f docker-compose.yml -f docker-compose.https.yml up -d`) rồi bấm lại, và kiểm tra cổng 80/443 đã mở, không bị proxy khác chiếm.
-- **Bấm Bật SSL báo "Chứng chỉ chưa hợp lệ":** thường là DNS vừa mới đúng, Caddy chưa cấp xong. Đợi một hai phút rồi bấm lại.
-- **Không thấy nút Bật SSL:** bạn đang chạy trên Hostinger. Thansa ẩn nút này vì Traefik của hPanel mới cấp được chứng chỉ; làm theo wizard Hostinger ở trên.
+- **Bản Docker bấm Kích hoạt báo "chưa có Caddy":** bạn cài bằng compose cũ. Chạy đúng lệnh Thansa hiện ra rồi bấm lại. Nếu cổng 80/443 đã có web server khác, Caddy không lên được: tắt web server đó, hoặc đặt `JAVIS_CADDY=0` trong `.env` và tự trỏ web server đó về cổng 7777.
+- **Bấm Kích hoạt báo chưa xin được chứng chỉ:** thường là DNS vừa mới đúng, Caddy chưa cấp xong. Đợi một hai phút rồi bấm lại.
+- **Không thấy nút Kích hoạt:** bạn đang chạy trên Hostinger. Thansa ẩn nút này vì Traefik của hPanel mới cấp được chứng chỉ; làm theo wizard Hostinger ở trên.
 - **Tải ảnh báo lỗi định dạng hoặc quá lớn:** chỉ dùng PNG, JPG, WEBP hoặc GIF, dung lượng dưới 5MB.
 - **Không thấy ô Tên miền hoạt động như mong đợi trên máy cá nhân:** đây là tính năng cho bản deploy Docker trên VPS có cổng 80/443. Trên máy cá nhân, phần tên miền/HTTPS sẽ không kích hoạt.
 
