@@ -826,7 +826,7 @@
     Bổ sung cho P026 (bản quyền/link) để repo nhất quán thương hiệu Thansa.
   commit: "[me] P027: ten san pham Javis OS -> Thansa OS trong README + docs"
   diem_neo:
-    - file: README.md
+    - file: docs/i18n/vi/README.md
       ky_hieu: "# 🧠 Thansa OS"
     - file: docs/16-cau-hinh-env.md
       ky_hieu: "Thansa OS"
@@ -1364,3 +1364,65 @@
     trừ đỏ sandbox nền.
   dieu_kien_bo: >
     Nếu upstream đưa chuỗi đầu ra lệnh / vào i18n gốc thì thu hẹp P046 về phần server/docs còn lại.
+
+- id: P047
+  ten: "Đồng bộ lớp phủ EN theo ngôn ngữ theo thiết bị (0.66-0.67)"
+  y_dinh: >
+    Upstream 0.66/0.67 đổi cơ chế ngôn ngữ: máy chưa chọn thì i18n gốc đoán theo trình duyệt (vi/en
+    đầu tiên trong navigator.languages, không khớp thì en), mỗi thiết bị một ngôn ngữ qua cookie
+    `javis_lang` + localefmt.chu() phía server; console.js áp lại ui_lang đã lưu cho người dùng cũ.
+    Lớp phủ fork (dich-en.js + cookie thansa_lang) trước chỉ đọc localStorage nên lệch: phần gốc EN
+    nhưng overlay tắt và câu tóm usage/Store (P042) vẫn tiếng Việt. Sửa: dich-en.js đoán y như i18n
+    gốc + nghe sự kiện `javis:i18n` để nạp lại khi i18n gốc đổi ngôn ngữ; `_lang_en()` đọc
+    javis_lang trước, thansa_lang dự phòng, rồi ui_lang của máy.
+  commit: "[me] P047: dong bo lop phu EN theo ngon ngu theo thiet bi (0.66-0.67)"
+  diem_neo:
+    - file: dashboard/i18n/dich-en.js
+      ky_hieu: 'window.addEventListener("javis:i18n"'
+    - file: server/main.py
+      ky_hieu: 'ma = request.cookies.get("javis_lang") or request.cookies.get("thansa_lang")'
+  vung_theo_doi:
+    - "dashboard/i18n/index.js: _doan_tu_trinh_duyet, setLang, sự kiện javis:i18n, cookie javis_lang"
+    - "dashboard/console.js: khối áp ui_lang server khi máy chưa chọn (daChon)"
+    - "server/main.py: middleware _ngon_ngu_thiet_bi + _lang_en"
+  anh_goc:
+    - file: server/main.py
+      doan: 'return request.cookies.get("thansa_lang") == "en"'
+  kiem_chung: >
+    Trình duyệt tiếng Anh chưa chọn ngôn ngữ: phần gốc + overlay cùng EN, /usage tóm tắt EN; đổi ô
+    ngôn ngữ ở rail/Cài đặt -> nạp lại một lần, không lặp; test_da_ngon_ngu + test_i18n_theo_trinh_duyet xanh.
+  dieu_kien_bo: >
+    Bỏ khi overlay en-goi.json bị khai tử (P041 dieu_kien_bo) và P042 chuyển sang localefmt.chu() -
+    khi đó chỉ còn cơ chế javis_lang của upstream.
+
+- id: P048
+  ten: "Rebrand nền 0.70.2 - chuỗi EN server, README đa ngôn ngữ, mẫu GitHub"
+  y_dinh: >
+    Nền 0.65.12→0.70.2 (29 commit) thêm chuỗi tiếng Anh phía server (localefmt.chu song ngữ 0.67),
+    README gốc tiếng Anh + 11 bản dịch docs/i18n, ARCHITECTURE/SECURITY/CODE_OF_CONDUCT, mẫu issue/PR
+    .github, 5 sơ đồ SVG README, khoá i18n gọi Thansa (chat.empty_hint, bar.mic, call.*). Rebrand chuỗi
+    HIỂN THỊ theo luật P007/P026/P027/P039: string literal server (bỏ docstring) Javis->Thansa kể cả
+    nửa tiếng Việt còn sót của các cặp song ngữ; link repo -> xahoapro/thansa-os, tác giả -> Duy
+    Quang, anchor README khớp tiêu đề mới; CODEOWNERS -> @xahoapro. GIỮ: đường Javis/, JAVIS_*,
+    javis_*, X-Javis-*, SQL schema sessions, tên commit git_brain, header "# Javis adaptive source
+    contract" (test canh), clientInfo codex_realtime, ví dụ @minhquy trong docs Zalo.
+  commit: "[me] P048: rebrand nen 0.70.2 - chuoi EN server, README da ngon ngu, mau GitHub"
+  diem_neo:
+    - file: server/optional_tools.py
+      ky_hieu: "Thansa đã tải sẵn một bản Chromium riêng."
+    - file: README.md
+      ky_hieu: "# Thansa OS"
+    - file: .github/CODEOWNERS
+      ky_hieu: "* @xahoapro"
+  vung_theo_doi:
+    - "server/*.py: localefmt.chu(...) song ngữ - chuỗi EN mới"
+    - "README.md + docs/i18n/*/README.md|QUICKSTART.md: bản máy dịch, sinh lại theo README gốc"
+    - "dashboard/i18n/*.json + index.html: khoá cuộc gọi (bar.mic, call.*)"
+  anh_goc:
+    - file: server/optional_tools.py
+      doan: "Javis đã tải sẵn một bản Chromium riêng."
+  kiem_chung: >
+    Liệt kê string literal server chứa Javis (bỏ docstring) chỉ còn danh sách GIỮ; grep blogminhquy/
+    javis-os trong README*/docs/i18n/.github = 0; tu-kiem-chung 5/5; suite xanh trừ đỏ sandbox nền.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding (persona/brand config) thì bỏ, đặt qua cấu hình.
