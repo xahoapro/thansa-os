@@ -1273,8 +1273,12 @@ async def app_version():
         html = ""
     return {"version": _app_version() or "0", "assets": _asset_fps(html)}
 def _lang_en(request: Request) -> bool:
-    """Người dùng đã chọn giao diện English? (cookie do client đặt theo javis.ui_lang)."""
-    return request.cookies.get("thansa_lang") == "en"
+    """Thiết bị này đang xem giao diện English? Từ 0.67 nguồn chuẩn là cookie `javis_lang` theo
+    thiết bị (i18n gốc đặt sau khi chọn/đoán); `thansa_lang` của lớp phủ chỉ còn là dự phòng."""
+    ma = request.cookies.get("javis_lang") or request.cookies.get("thansa_lang") or ""
+    if ma:
+        return ma == "en"
+    return localefmt.ngon_ngu_giao_dien() == "en"
 
 
 def _dashboard_file(rel: str, en: bool) -> Path:
