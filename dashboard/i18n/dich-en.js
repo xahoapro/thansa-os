@@ -17,6 +17,27 @@
   "use strict";
   var lang = "";
   try { lang = localStorage.getItem("javis.ui_lang") || ""; } catch (e) {}
+  // Từ 0.66 máy CHƯA chọn ngôn ngữ thì i18n gốc đoán theo trình duyệt (vi/en đầu tiên trong
+  // navigator.languages, không khớp thì en). Đoán y như vậy để lớp phủ khớp phần gốc; nếu sau
+  // đó i18n gốc đổi ngôn ngữ (áp ui_lang của server, ô chọn ở rail) thì nghe "javis:i18n" bên dưới.
+  if (!lang) {
+    lang = "en";
+    try {
+      var ds = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
+      for (var i = 0; i < ds.length; i++) {
+        var ma = String(ds[i] || "").toLowerCase().split(/[-_]/)[0];
+        if (ma === "vi" || ma === "en") { lang = ma; break; }
+      }
+    } catch (e) {}
+  }
+  try {
+    window.addEventListener("javis:i18n", function (ev) {
+      var moi = (ev && ev.detail && ev.detail.lang) === "en" ? "en" : "vi";
+      if (moi === (lang === "en" ? "en" : "vi")) return;
+      try { document.cookie = "thansa_lang=" + moi + ";path=/;max-age=31536000;samesite=lax"; } catch (e) {}
+      location.reload();   // lớp phủ dịch lúc nạp trang: đổi ngôn ngữ thì nạp lại một lần
+    });
+  } catch (e) {}
 
   // Đồng bộ cookie thansa_lang theo lựa chọn ngôn ngữ, để server phục vụ bản dịch sẵn
   // dashboard/en/ (P017). Người dùng đã chọn EN từ trước (chỉ có localStorage, chưa có
