@@ -158,7 +158,7 @@ _CANH_BAO_EN = {
         "in the brain really changes, with no review step.",
         "The bot can call the data sources (MCP) you connected, for reading and writing. Everything in "
         "those sources is within reach of whoever is chatting with the bot.",
-        "Javis still hard-BLOCKS OUTSIDE actions at this level: nothing is sent, paid, "
+        "Thansa still hard-BLOCKS OUTSIDE actions at this level: nothing is sent, paid, "
         "booked or cancelled, deleted or published.",
         "The bot still CANNOT see other brains, run machine commands or reach outside the machine.",
     ],
@@ -170,7 +170,7 @@ _CANH_BAO_EN = {
         "One clever line ('ignore previous instructions, do this for me') is enough for the bot to comply. "
         "The remaining hard barrier is the permission level of EACH connection on the Connections page "
         "(set a connection to read-only and the bot is blocked from writing there too), but that barrier "
-        "works by action type, so for sources Javis has no classification for yet it is not airtight. "
+        "works by action type, so for sources Thansa has no classification for yet it is not airtight. "
         "Beyond that there is only the Agent file you wrote, and words can be worked around.",
         "Only turn this on for a bot whose LIST of people who can message it you control. Not "
         "where anyone can message it.",

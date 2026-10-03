@@ -1,19 +1,19 @@
 <!-- translated-from: README.md sha256:a93defe7ef8b -->
 <div align="center">
 
-<img src="../../../dashboard/logo.svg" width="88" alt="Javis OS Logo">
+<img src="../../../dashboard/logo.svg" width="88" alt="Thansa OS Logo">
 
-# Javis OS
+# Thansa OS
 
 ### Dein selbst gehosteter KI-Agent mit austauschbarem Gehirn und einem Second Brain, das jeden Tag schlauer wird.
 
 Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Stimme. Schließ Claude, ChatGPT, Grok, Gemini oder einen von 12 Anbietern an, behalte beim Wechsel jedes Tool und lass ihn im Hintergrund arbeiten, während du schläfst.
 
-[![GitHub stars](https://img.shields.io/github/stars/blogminhquy/javis-os?style=flat&logo=github&label=stars)](https://github.com/blogminhquy/javis-os/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/xahoapro/thansa-os?style=flat&logo=github&label=stars)](https://github.com/xahoapro/thansa-os/stargazers)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
-[![Last commit](https://img.shields.io/github/last-commit/blogminhquy/javis-os?color=f97316)](https://github.com/blogminhquy/javis-os/commits/main)
+[![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/blogminhquy/javis-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -36,42 +36,42 @@ Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Sti
 
 [🇬🇧 English](../../../README.md) · [🇻🇳 Tiếng Việt](../vi/README.md) · [🇨🇳 简体中文](../zh/README.md) · [🇪🇸 Español](../es/README.md) · [🇯🇵 日本語](../ja/README.md) · [🇮🇳 हिन्दी](../hi/README.md) · [🇧🇷 Português](../pt-BR/README.md) · [🇰🇷 한국어](../ko/README.md) · [🇷🇺 Русский](../ru/README.md) · 🇩🇪 **Deutsch** · [🇫🇷 Français](../fr/README.md) · [🇮🇩 Bahasa Indonesia](../id/README.md) · [🌍 Beim Übersetzen helfen](../../../CONTRIBUTING.md#translations)
 
-[Schnellstart](#-schnellstart) · [Warum Javis](#-warum-javis) · [Gehirne](#-12-gehirne-ein-werkzeugkasten) · [Funktionen](#-funktionen) · [Installation](#-installation) · [Dokumentation](../../../docs/en/README.md) · [Unterstützen](#-unterstütze-javis-os)
+[Schnellstart](#-schnellstart) · [Warum Thansa](#-warum-thansa) · [Gehirne](#-12-gehirne-ein-werkzeugkasten) · [Funktionen](#-funktionen) · [Installation](#-installation) · [Dokumentation](../../../docs/en/README.md) · [Unterstützen](#-unterstütze-thansa-os)
 
 <br>
 
-<img src="../../../docs/assets/screenshots/graph.jpg" alt="Das Javis OS Dashboard auf einem echten Brain mit 1.633 Notizen und 2.413 Verknüpfungen: links der Dateibaum, in der Mitte der Wissensgraph und unten die Chatleiste" width="100%">
+<img src="../../../docs/assets/screenshots/graph.jpg" alt="Das Thansa OS Dashboard auf einem echten Brain mit 1.633 Notizen und 2.413 Verknüpfungen: links der Dateibaum, in der Mitte der Wissensgraph und unten die Chatleiste" width="100%">
 
 </div>
 
-> 🌍 Dies ist eine automatische Übersetzung der englischen README. Javis antwortet in der Sprache, in der du schreibst; die Oberfläche gibt es derzeit auf Englisch und Vietnamesisch. Die vollständige Dokumentation ist auf Englisch ([docs/en](../../../docs/en/README.md)). Korrekturen sind willkommen ([CONTRIBUTING](../../../CONTRIBUTING.md#translations)).
+> 🌍 Dies ist eine automatische Übersetzung der englischen README. Thansa antwortet in der Sprache, in der du schreibst; die Oberfläche gibt es derzeit auf Englisch und Vietnamesisch. Die vollständige Dokumentation ist auf Englisch ([docs/en](../../../docs/en/README.md)). Korrekturen sind willkommen ([CONTRIBUTING](../../../CONTRIBUTING.md#translations)).
 
 ---
 
 ## ⚡ Schnellstart
 
-**Der einfache Weg: Lass deine eigene KI die Installation erledigen.** Gib Claude Code oder Codex auf deinem Rechner den Link zu diesem Repo und sag *„installiere mir Javis OS“*. Es muss nur einen einzigen Befehl ausführen:
+**Der einfache Weg: Lass deine eigene KI die Installation erledigen.** Gib Claude Code oder Codex auf deinem Rechner den Link zu diesem Repo und sag *„installiere mir Thansa OS“*. Es muss nur einen einzigen Befehl ausführen:
 
 | Rechner | Ein Befehl installiert alles |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/blogminhquy/javis-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/blogminhquy/javis-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
-| **Docker** | `curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml && docker compose up -d` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 Öffne danach **http://localhost:7777**. Der Installer richtet Python, die vier Abo-CLI-Gehirne (`claude`, `codex`, `agy`, `grok`) und eine `.env` ein und startet dann den Server. Bei jedem Gehirn meldest du dich **auf der Seite Models im Dashboard** an, ganz ohne weitere Befehle.
 
 > [!NOTE]
-> Du hast eine weitere CLI installiert, **nachdem** Javis schon lief? **Starte Javis neu.** Ein laufender Prozess behält den PATH, mit dem er gestartet wurde, und sieht daher keine später installierte CLI.
+> Du hast eine weitere CLI installiert, **nachdem** Thansa schon lief? **Starte Thansa neu.** Ein laufender Prozess behält den PATH, mit dem er gestartet wurde, und sieht daher keine später installierte CLI.
 
 <p align="center">
-<img src="../../../docs/assets/diagrams/install-terminal.svg" width="100%" alt="Animiertes Terminal: Der Einzeiler-Installer richtet Python, die vier Abo-CLI-Gehirne und eine .env ein und meldet dann, dass Javis unter http://localhost:7777 läuft">
+<img src="../../../docs/assets/diagrams/install-terminal.svg" width="100%" alt="Animiertes Terminal: Der Einzeiler-Installer richtet Python, die vier Abo-CLI-Gehirne und eine .env ein und meldet dann, dass Thansa unter http://localhost:7777 läuft">
 </p>
 
 ---
 
-## 🤔 Warum Javis?
+## 🤔 Warum Thansa?
 
-Javis OS ist **kein** Chatbot. Es ist eine **selbst gehostete agentische KI**, die auf deinem eigenen Rechner oder VPS läuft: Sie liest und schreibt Dateien, ruft Tools über MCP auf, führt Skills aus, stellt Hintergrundarbeit in eine Warteschlange und plant sich selbst ein. All das steckt hinter einem **sprachgesteuerten Dashboard** mit einem **Second Brain** (Gedächtnis + Wiki), das mit der Zeit Wissen ansammelt.
+Thansa OS ist **kein** Chatbot. Es ist eine **selbst gehostete agentische KI**, die auf deinem eigenen Rechner oder VPS läuft: Sie liest und schreibt Dateien, ruft Tools über MCP auf, führt Skills aus, stellt Hintergrundarbeit in eine Warteschlange und plant sich selbst ein. All das steckt hinter einem **sprachgesteuerten Dashboard** mit einem **Second Brain** (Gedächtnis + Wiki), das mit der Zeit Wissen ansammelt.
 
 ### Der Lock-in, vor dem dich niemand warnt
 
@@ -86,9 +86,9 @@ All das liegt auf den Servern des Anbieters, im Format des Anbieters. Dann ersch
 
 Also bleibst du. Nicht weil das alte Modell noch das beste wäre, sondern weil ein Wechsel heißt, bei null anzufangen. Und wenn der Anbieter die Preise erhöht, die Limits verschärft, ein Modell einstellt oder dein Konto sperrt, gibt es keinen Plan B.
 
-### Javis dreht den Spieß um: Miete das Modell, besitze das Brain
+### Thansa dreht den Spieß um: Miete das Modell, besitze das Brain
 
-In Javis ist das Modell ein Bauteil, das du austauschen kannst. Alles, was du aufbaust, bleibt bei dir, als Dateien, die du öffnen kannst:
+In Thansa ist das Modell ein Bauteil, das du austauschen kannst. Alles, was du aufbaust, bleibt bei dir, als Dateien, die du öffnen kannst:
 
 | Was du aufbaust | Wo es liegt | Format |
 |---|---|---|
@@ -103,13 +103,13 @@ Was dir das bringt:
 
 - **Ein neues Modell ist erschienen? Wechsle auf der Seite Models und mach einfach weiter.** Es liest dasselbe Gedächtnis, führt dieselben Skills, Agents und Workflows aus und ruft über den MCP Hub dieselben Verbindungen auf. Nichts zu migrieren, nichts neu aufzubauen.
 - **Nutze mehrere Gehirne gleichzeitig.** Ein starkes Modell für das Gespräch, ein günstigeres für die Hintergrundarbeit, ein lokales Ollama-Modell für private Notizen, und alle arbeiten am selben Brain.
-- **Lesbar auch ohne Javis.** Dein Brain ist ein Ordner voller Markdown-Dateien. Öffne ihn in Obsidian oder einem beliebigen Editor. Wäre Javis morgen verschwunden, wäre dein Wissen immer noch da, als reiner Text.
+- **Lesbar auch ohne Thansa.** Dein Brain ist ein Ordner voller Markdown-Dateien. Öffne ihn in Obsidian oder einem beliebigen Editor. Wäre Thansa morgen verschwunden, wäre dein Wissen immer noch da, als reiner Text.
 - **Versioniert und portabel.** Jeder Lerndurchgang ist ein Git-Commit, den du mit einem Tippen rückgängig machen kannst, und das ganze Brain lässt sich mit deinem eigenen privaten GitHub-Repo synchronisieren, gemeinsam genutzt von deinem Laptop und deinem VPS.
 - **Deine Daten bleiben auf deiner Hardware.** Es gibt keine Javis-Cloud dazwischen. Eine Anfrage geht nur an den Modellanbieter, den du dafür gewählt hast, und mit einem lokalen Ollama-Modell verlässt sie deinen Rechner nie.
 
-### Javis neben einem gewöhnlichen Chatbot
+### Thansa neben einem gewöhnlichen Chatbot
 
-| | Ein gewöhnlicher Chatbot | **Javis OS** |
+| | Ein gewöhnlicher Chatbot | **Thansa OS** |
 |---|---|---|
 | **Gehirn** | An ein Modell gebunden, ein zustandsloser API-Aufruf pro Nachricht | **Austauschbar**: 12 Anbieter, jeder mit allen Tools, MCP, Skills und Sitzungen, einschließlich Modellen, die über Ollama auf deinem eigenen Rechner laufen |
 | **Gedächtnis** | Vergisst nach jeder Sitzung alles | **Ein lebendiges Second Brain**, das sich an dich erinnert und mit jedem Gespräch wächst |
@@ -119,17 +119,17 @@ Was dir das bringt:
 | **Deine Arbeit** | Bleibt auf den Servern des Anbieters, im Format des Anbieters | **Einfache Dateien auf deinem Rechner**: Verlauf, Gedächtnis, Skills, Agents und Workflows lassen sich zu jedem neuen Modell mitnehmen |
 | **Bereitstellung** | Die Cloud von jemand anderem | **Selbst gehostet**: Hostinger mit einem Klick, Docker oder ein beliebiger VPS |
 
-> 💡 **Die Philosophie: Die Fähigkeiten stecken in Javis, nicht im Modell.** Jedes Gehirn bekommt denselben Werkzeugkasten über einen gemeinsamen Verbindungs-Hub (den MCP Hub). Der Wechsel von Claude zu Gemini kostet dich nichts außer dem Shell-Zugriff, den nur die CLI-Engines haben.
+> 💡 **Die Philosophie: Die Fähigkeiten stecken in Thansa, nicht im Modell.** Jedes Gehirn bekommt denselben Werkzeugkasten über einen gemeinsamen Verbindungs-Hub (den MCP Hub). Der Wechsel von Claude zu Gemini kostet dich nichts außer dem Shell-Zugriff, den nur die CLI-Engines haben.
 
 <p align="center">
-<img src="../../../docs/assets/diagrams/chat-to-action.svg" width="100%" alt="Animiertes Diagramm: Eine Chatnachricht geht an Javis, das das kleinste Werkzeug wählt, das die Aufgabe erledigt, von der direkten Antwort über eine Aufgabe in der Warteschlange bis zum Anlegen eines Agents, eines Workflows, einer Erinnerung oder eines Loops">
+<img src="../../../docs/assets/diagrams/chat-to-action.svg" width="100%" alt="Animiertes Diagramm: Eine Chatnachricht geht an Thansa, das das kleinste Werkzeug wählt, das die Aufgabe erledigt, von der direkten Antwort über eine Aufgabe in der Warteschlange bis zum Anlegen eines Agents, eines Workflows, einer Erinnerung oder eines Loops">
 </p>
 
 ---
 
 ## 🧠 12 Gehirne, ein Werkzeugkasten
 
-Wähle das Gehirn auf der Seite **Models** und wechsle es, wann immer du willst. Javis unterstützt heute **12 Anbieter**.
+Wähle das Gehirn auf der Seite **Models** und wechsle es, wann immer du willst. Thansa unterstützt heute **12 Anbieter**.
 
 <p align="center">
 <img src="../../../docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Animiertes Diagramm: Der Javis-Kern in der Mitte mit seinem Werkzeugkasten (MCP Hub, Skills, Second Brain, Aufgaben, Zeitpläne, Plugins) ringsum, während die 12 Gehirne abwechselnd andocken und jedes Tool aktiv bleibt">
@@ -149,7 +149,7 @@ Wähle das Gehirn auf der Seite **Models** und wechsle es, wann immer du willst.
 Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und schreiben, Skills ausführen, Kanban-Arbeit einreihen und Agents, Workflows, Loops und Erinnerungen anlegen. Die CLI-Engines können zusätzlich **Shell-Befehle ausführen**, **das Web abrufen und durchsuchen** und **parallele Sub-Agents starten**.
 
 > [!WARNING]
-> **Lies das, bevor du ein Abo Hintergrundarbeit erledigen lässt.** Anthropic beschränkt Claude Pro/Max auf die **gewöhnliche persönliche Nutzung** von Claude Code. Dauerhafte Ausführung im Hintergrund (Loops, Erinnerungen, Kanban-Jobs, Chatbots), der Betrieb auf einem VPS oder mehrere Personen, die sich ein Konto teilen, fallen alle nicht darunter, und Konten **wurden deswegen bereits gesperrt**. Javis liest nie dein Login-Token: Es führt das echte `claude`-Binary aus, aber das macht eine Hintergrundnutzung rund um die Uhr nicht zulässig. Stell Claude Code sicherheitshalber auf der Seite Models auf einen **API-Schlüssel** um oder richte das **Modell für Hintergrundarbeit** auf einen anderen Anbieter. Dieselbe Vorsicht gilt für das xAI-Abo. Siehe `server/claude_auth.py`.
+> **Lies das, bevor du ein Abo Hintergrundarbeit erledigen lässt.** Anthropic beschränkt Claude Pro/Max auf die **gewöhnliche persönliche Nutzung** von Claude Code. Dauerhafte Ausführung im Hintergrund (Loops, Erinnerungen, Kanban-Jobs, Chatbots), der Betrieb auf einem VPS oder mehrere Personen, die sich ein Konto teilen, fallen alle nicht darunter, und Konten **wurden deswegen bereits gesperrt**. Thansa liest nie dein Login-Token: Es führt das echte `claude`-Binary aus, aber das macht eine Hintergrundnutzung rund um die Uhr nicht zulässig. Stell Claude Code sicherheitshalber auf der Seite Models auf einen **API-Schlüssel** um oder richte das **Modell für Hintergrundarbeit** auf einen anderen Anbieter. Dieselbe Vorsicht gilt für das xAI-Abo. Siehe `server/claude_auth.py`.
 
 ---
 
@@ -164,15 +164,15 @@ Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und sch
 <td width="50%" valign="top">
 
 ### 🗣️ Mit ihm sprechen
-- **Freihändige Sprachsteuerung**: Du sprichst, Javis hört zu und antwortet laut (standardmäßig kostenlos mit Edge TTS, oder mit OpenAI und ElevenLabs).
+- **Freihändige Sprachsteuerung**: Du sprichst, Thansa hört zu und antwortet laut (standardmäßig kostenlos mit Edge TTS, oder mit OpenAI und ElevenLabs).
 - **Chatsitzungen**, die du speichern, wieder öffnen und im Volltext durchsuchen kannst. Lange Sitzungen werden zu Zusammenfassungen verdichtet, statt abgeschnitten zu werden.
-- **Telegram, eine CLI und ein Web-Dashboard**, die alle mit demselben Javis sprechen.
-- **Jede Sprache**: Javis antwortet in der Sprache, in der du schreibst. Die Oberfläche gibt es auf Englisch und Vietnamesisch.
+- **Telegram, eine CLI und ein Web-Dashboard**, die alle mit demselben Thansa sprechen.
+- **Jede Sprache**: Thansa antwortet in der Sprache, in der du schreibst. Die Oberfläche gibt es auf Englisch und Vietnamesisch.
 
 ### 🧠 Sich an alles erinnern
 - **Second Brain**: ein Markdown-Vault (Obsidian-kompatibel) mit Langzeitgedächtnis, einem Wiki und Rohquellen (Sources).
 - **Wissensgraph** deiner Notizen, verbunden über `[[wikilink]]`, auf einer hellen Leinwand, die auch offline funktioniert.
-- **Selbstlernen**: Nach jedem Gespräch destilliert Javis Erinnerungen, Wiki-Wissen und Skills. Jeder Lerndurchgang ist ein Git-Commit und lässt sich daher **mit einem Tippen rückgängig machen**.
+- **Selbstlernen**: Nach jedem Gespräch destilliert Thansa Erinnerungen, Wiki-Wissen und Skills. Jeder Lerndurchgang ist ein Git-Commit und lässt sich daher **mit einem Tippen rückgängig machen**.
 - **Sicherung auf GitHub**: Zwei-Wege-Synchronisation jedes Brains mit einem privaten Repo, gemeinsam genutzt von deinem Laptop und deinem VPS.
 
 </td>
@@ -185,7 +185,7 @@ Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und sch
 - **Chatbots**: Stell einen Agent mit einem eigenen Telegram- oder Zalo-Bot vor deine Kunden, mit einem gemeinsamen Posteingang, den du jederzeit übernehmen kannst.
 
 ### 🔌 Alles anbinden
-- **MCP-Verbindungsstore** mit mehreren Konten pro Dienst und drei Berechtigungsstufen, die Javis **strikt durchsetzt**.
+- **MCP-Verbindungsstore** mit mehreren Konten pro Dienst und drei Berechtigungsstufen, die Thansa **strikt durchsetzt**.
 - **Skills und Plugins**: Leg einen Ordner ab, um Know-how (Skill) oder ein natives Python-Tool (Plugin) für jede Engine hinzuzufügen.
 - **Bilderzeugung** über das ChatGPT-Abo, bei dem du bereits angemeldet bist.
 - **Nutzungserfassung**: Tokens und Kosten pro Tag und pro Anbieter, getrennt nach dem, was du eingegeben hast, und dem, was von selbst lief.
@@ -212,10 +212,10 @@ flowchart LR
     subgraph You
         W[Web dashboard<br>voice + graph]
         T[Telegram]
-        C[Javis CLI]
+        C[Thansa CLI]
         Z[Zalo / bot channels]
     end
-    subgraph Javis["Javis OS (FastAPI, self-hosted)"]
+    subgraph Thansa["Thansa OS (FastAPI, self-hosted)"]
         R[Engine router]
         H[MCP Hub<br>shared toolbox]
         B[(Second Brain<br>Memory + Wiki + Sources)]
@@ -242,7 +242,7 @@ flowchart LR
 ## 🚀 Installation
 
 > [!IMPORTANT]
-> Javis betreibt ein KI-Gehirn mit **vollen Rechten** auf dem Rechner. Läuft es öffentlich (Docker, VPS, Hostinger), **erzwingt Javis die Anmeldung von selbst**: Beim Öffnen der App erscheint ein Bildschirm zum Anlegen eines Kontos oder zum Anmelden, und ohne Passwort kann niemand es steuern.
+> Thansa betreibt ein KI-Gehirn mit **vollen Rechten** auf dem Rechner. Läuft es öffentlich (Docker, VPS, Hostinger), **erzwingt Thansa die Anmeldung von selbst**: Beim Öffnen der App erscheint ein Bildschirm zum Anlegen eines Kontos oder zum Anmelden, und ohne Passwort kann niemand es steuern.
 
 <details open>
 <summary><b>Option 1: Hostinger Docker Manager (Domain + HTTPS, ein Klick)</b></summary>
@@ -250,10 +250,10 @@ flowchart LR
 Hostinger VPS → **Docker Manager → Compose → URL** → füge die Hostinger-Datei ein und klicke auf **Deploy**:
 
 ```
-https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-Das Feld **Environment** braucht nur drei Einträge: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, dazu optional `JAVIS_AUTO_UPDATE` (auf `true` gesetzt, aktualisiert sich Javis täglich selbst).
+Das Feld **Environment** braucht nur drei Einträge: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, dazu optional `JAVIS_AUTO_UPDATE` (auf `true` gesetzt, aktualisiert sich Thansa täglich selbst).
 
 Setze `DOMAIN_NAME`, damit Traefik bei Hostinger HTTPS ausstellt:
 - **Kostenloser Link** (ohne Domainkauf): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (Hostname unter hPanel → VPS, z. B. `javis.srv1562015.hstgr.cloud`).
@@ -276,7 +276,7 @@ Details und Fehlerbehebung: [DEPLOY.en.md](../../../DEPLOY.en.md).
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
 mkdir javis && cd javis
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
@@ -292,7 +292,7 @@ Fernzugriff ohne Domain: `docker compose --profile tunnel up -d`, dann gibt `doc
 <summary><b>Option 3: Linux oder macOS, ohne Docker</b></summary>
 
 ```bash
-git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
 chmod +x install.sh && ./install.sh
 ```
 
@@ -306,7 +306,7 @@ Das Skript installiert Python, Node und die CLI-Gehirne, legt ein venv an, regis
 <summary><b>Option 4: Windows (persönlicher Rechner)</b></summary>
 
 ```powershell
-git clone https://github.com/blogminhquy/javis-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -338,16 +338,16 @@ Schritt für Schritt: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
 ### 🎬 Erster Start
 
-Öffne Javis, und der Einrichtungsassistent führt dich in der Sprache deines Browsers durch alles:
+Öffne Thansa, und der Einrichtungsassistent führt dich in der Sprache deines Browsers durch alles:
 
 1. **Admin-Konto**: Pflicht im öffentlichen Betrieb, damit Fremde draußen bleiben.
 2. **Ein Gehirn wählen**: Melde dich einmal mit einem Abo an oder füge einen API-Schlüssel ein. Die Karte von Claude Code hat einen Schalter **"Runs on"**, um zwischen deinem angemeldeten Abo und einem Anthropic API-Schlüssel zu wechseln.
 3. **Ein Modell wählen**: Ein späterer Anbieterwechsel kostet keine Funktionen (außer Shell-Befehlen, die nur die CLI-Engines haben).
-4. **Verbindungen einrichten** (optional): Öffne **Connections**, wähle einen Dienst und füge einen Schlüssel ein oder scanne einen QR-Code. Javis berichtet dann mit echten Zahlen daraus.
+4. **Verbindungen einrichten** (optional): Öffne **Connections**, wähle einen Dienst und füge einen Schlüssel ein oder scanne einen QR-Code. Thansa berichtet dann mit echten Zahlen daraus.
 
 ---
 
-## 📖 Javis benutzen
+## 📖 Thansa benutzen
 
 Die linke Leiste fasst die Seiten in **6 Gruppen** zusammen. Für jede Seite gibt es eine Anleitung in [docs/en/](../../../docs/en/README.md).
 
@@ -357,21 +357,21 @@ Die linke Leiste fasst die Seiten in **6 Gruppen** zusammen. Für jede Seite gib
 | **Code** | Terminal, Coding | [Code-Terminal](../../../docs/en/27-code-terminal.md) |
 | **Capabilities** | Partners (Agents und Workflows), Chatbot, Skills, Plugins | [Agents und Workflows](../../../docs/en/07-agents-and-workflows.md) · [Chatbots](../../../docs/en/25-chatbots.md) · [Kundengespräche](../../../docs/en/28-customer-conversations.md) · [Skills](../../../docs/en/06-skills.md) · [Plugins](../../../docs/en/20-plugins.md) |
 | **Work** | Tasks, Scheduled | [Aufgaben (Kanban)](../../../docs/en/21-kanban-work.md) · [Wiederkehrende Jobs und Erinnerungen](../../../docs/en/08-recurring-jobs.md) |
-| **Connections** | Connections, Javis Store, Channels, Models | [Verbindungen und Geschäftsdaten](../../../docs/en/09-connections-and-business-data.md) · [Telegram](../../../docs/en/11-telegram.md) · [Zalo](../../../docs/en/12-zalo-agent-mcp.md) · [Modelle und Engines](../../../docs/en/10-models-and-engines.md) |
-| **System** | Settings, Share links, Account | [Erste Schritte](../../../docs/en/01-getting-started.md) · [Sicherheit und Konten](../../../docs/en/14-security-and-accounts.md) · [Nutzung und Kosten](../../../docs/en/23-usage-and-cost.md) · [Javis CLI](../../../docs/en/24-cli.md) |
+| **Connections** | Connections, Thansa Store, Channels, Models | [Verbindungen und Geschäftsdaten](../../../docs/en/09-connections-and-business-data.md) · [Telegram](../../../docs/en/11-telegram.md) · [Zalo](../../../docs/en/12-zalo-agent-mcp.md) · [Modelle und Engines](../../../docs/en/10-models-and-engines.md) |
+| **System** | Settings, Share links, Account | [Erste Schritte](../../../docs/en/01-getting-started.md) · [Sicherheit und Konten](../../../docs/en/14-security-and-accounts.md) · [Nutzung und Kosten](../../../docs/en/23-usage-and-cost.md) · [Thansa CLI](../../../docs/en/24-cli.md) |
 
 Mehr: [Second Brain: Gedächtnis, Wiki und INGEST](../../../docs/en/13-second-brain.md) · [GitHub-Sicherung](../../../docs/en/18-github-backup.md) · [Aufgaben und Dataview in Notizen](../../../docs/en/19-tasks-and-dataview.md) · [Branding und eigene Domains](../../../docs/en/15-branding-and-domains.md) · [Fehlerbehebung](../../../docs/en/17-troubleshooting.md)
 
 ### Ein paar Dinge zum Ausprobieren
 
-- **Nach Zahlen fragen:** *„Wie ist der Umsatz heute im Vergleich zu gestern?“* Javis ruft die passende Verbindung auf und antwortet mit echten Zahlen plus Vorschlägen.
-- **Wissen verarbeiten:** Leg eine Datei oder eine Notiz ab. Javis fasst sie zusammen, zieht Erkenntnisse heraus, schreibt sie ins Wiki und schlägt Aufgaben vor.
+- **Nach Zahlen fragen:** *„Wie ist der Umsatz heute im Vergleich zu gestern?“* Thansa ruft die passende Verbindung auf und antwortet mit echten Zahlen plus Vorschlägen.
+- **Wissen verarbeiten:** Leg eine Datei oder eine Notiz ab. Thansa fasst sie zusammen, zieht Erkenntnisse heraus, schreibt sie ins Wiki und schlägt Aufgaben vor.
 - **Hintergrundarbeit übergeben:** **Tasks** → **+ Assign goal** → *„fasse die Verkäufe dieser Woche zusammen, finde Ladenhüter und entwirf drei Captions, um sie anzukurbeln“*. Die KI spezifiziert die Aufgabe, führt sie aus und erstattet Bericht.
 - **Etwas planen:** *„erinnere mich jeden Werktag um 8:30, das Werbebudget zu prüfen“*, im Chat oder auf der Seite **Scheduled**.
-- **Deine Stimme nutzen:** Drück auf das Mikrofon (oder schalte den Freisprechmodus ein), sprich, und Javis antwortet laut.
+- **Deine Stimme nutzen:** Drück auf das Mikrofon (oder schalte den Freisprechmodus ein), sprich, und Thansa antwortet laut.
 
 <div align="center">
-<img src="../../../docs/assets/screenshots/mobile.jpg" alt="Javis OS auf einem Smartphone: oben der Wissensgraph, darunter das Gespräch und ganz unten die Chatleiste" width="300">
+<img src="../../../docs/assets/screenshots/mobile.jpg" alt="Thansa OS auf einem Smartphone: oben der Wissensgraph, darunter das Gespräch und ganz unten die Chatleiste" width="300">
 <br><sub>Funktioniert auch auf dem Smartphone: Füge es zum Startbildschirm hinzu, dann öffnet es sich wie eine App.</sub>
 </div>
 
@@ -379,7 +379,7 @@ Mehr: [Second Brain: Gedächtnis, Wiki und INGEST](../../../docs/en/13-second-br
 
 ## ⚙️ Konfiguration (`.env`)
 
-Jede Zeile darf leer bleiben, und Javis läuft trotzdem. Kopiere `env.example` → `.env` und ergänze, was du brauchst. Die vollständige Liste mit einer Erklärung zu jeder Variablen steht in [docs/en/16-env-configuration.md](../../../docs/en/16-env-configuration.md).
+Jede Zeile darf leer bleiben, und Thansa läuft trotzdem. Kopiere `env.example` → `.env` und ergänze, was du brauchst. Die vollständige Liste mit einer Erklärung zu jeder Variablen steht in [docs/en/16-env-configuration.md](../../../docs/en/16-env-configuration.md).
 
 | Variable | Bedeutung | Standard |
 |---|---|---|
@@ -418,7 +418,7 @@ In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und 
 
 | Symptom | Was zu tun ist |
 |---|---|
-| Die Seite Models meldet, eine CLI sei nicht installiert, obwohl sie es ist | **Starte Javis neu**: Der laufende Prozess behält den PATH vom Zeitpunkt seines Starts. |
+| Die Seite Models meldet, eine CLI sei nicht installiert, obwohl sie es ist | **Starte Thansa neu**: Der laufende Prozess behält den PATH vom Zeitpunkt seines Starts. |
 | Port 7777 ist belegt und der neue Build startet nicht | Beende zuerst den alten Prozess (`stop-javis.bat` oder die PID beenden) und starte dann erneut. |
 | Hostinger kann das Image nicht ziehen | Stell das GHCR-Paket auf **Public** und warte, bis der Build der GitHub Action fertig ist. |
 | Ein Gehirn meldet, es sei nicht angemeldet | **Models** → Karte des Anbieters → anmelden. |
@@ -440,7 +440,7 @@ javis-os/
 ├── tests/           # Python + JS test suite (python tests/run.py)
 ├── install.sh · install.ps1 · update.sh
 ├── Dockerfile · docker-compose*.yml
-└── CLAUDE.md        # The system prompt Javis runs on
+└── CLAUDE.md        # The system prompt Thansa runs on
 ```
 
 ---
@@ -449,7 +449,7 @@ javis-os/
 
 | Was | Heute verfügbare Sprachen |
 |---|---|
-| **Antworten von Javis** | Jede Sprache: Javis antwortet in der Sprache, in der du schreibst, oder in einer, die du in Settings festlegst |
+| **Antworten von Thansa** | Jede Sprache: Thansa antwortet in der Sprache, in der du schreibst, oder in einer, die du in Settings festlegst |
 | **Dashboard und Servermeldungen** | 🇬🇧 English · 🇻🇳 Tiếng Việt, pro Gerät: Jeder Browser bekommt seine eigene Sprache, bis du eine auswählst |
 | **Verbindungsstore, Plugins, Startdateien eines neuen Brains** | 🇬🇧 English · 🇻🇳 Tiếng Việt |
 | **README und Schnellstart** | 🇬🇧 English · 🇻🇳 Tiếng Việt · 🇨🇳 简体中文 · 🇪🇸 Español · 🇯🇵 日本語 · 🇮🇳 हिन्दी · 🇧🇷 Português · 🇰🇷 한국어 · 🇷🇺 Русский · 🇩🇪 Deutsch · 🇫🇷 Français · 🇮🇩 Bahasa Indonesia |
@@ -468,21 +468,21 @@ Fehlerberichte, Ideen, Übersetzungen und Pull Requests sind willkommen, auf Eng
 | [CONTRIBUTING.md](../../../CONTRIBUTING.md) | Einrichtung, Ausführen der Tests (`python tests/run.py`), die Code-Konventionen |
 | [ARCHITECTURE.md](../../../ARCHITECTURE.md) | Wie die Teile zusammenspielen, und eine Übersicht der Server-Module |
 | [docs/dev/GLOSSARY.md](../../../docs/dev/GLOSSARY.md) | Die Codebasis wurde auf Vietnamesisch geschrieben: Hier werden Namen wie `nhac_hen` (Erinnerung) entschlüsselt |
-| [docs/dev/adding-a-language.md](../../../docs/dev/adding-a-language.md) | Javis Schritt für Schritt in deine Sprache übersetzen |
-| [Issue-Vorlagen](https://github.com/blogminhquy/javis-os/issues/new/choose) | Fehlerbericht, Feature-Wunsch, Übersetzungsangebot |
+| [docs/dev/adding-a-language.md](../../../docs/dev/adding-a-language.md) | Thansa Schritt für Schritt in deine Sprache übersetzen |
+| [Issue-Vorlagen](https://github.com/xahoapro/thansa-os/issues/new/choose) | Fehlerbericht, Feature-Wunsch, Übersetzungsangebot |
 
 Bitte halte dich an den [Code of Conduct](../../../CODE_OF_CONDUCT.md) und melde Sicherheitsprobleme vertraulich, wie in [SECURITY.md](../../../SECURITY.md) beschrieben.
 
-Wenn Javis dir nützt, hilft ein ⭐ für das Repo anderen, es zu finden.
+Wenn Thansa dir nützt, hilft ein ⭐ für das Repo anderen, es zu finden.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=blogminhquy/javis-os&type=Date)](https://star-history.com/#blogminhquy/javis-os&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=xahoapro/thansa-os&type=Date)](https://star-history.com/#xahoapro/thansa-os&Date)
 
 ---
 
 ## 🙏 Danksagungen
 
 - **Gehirne:** [Claude Code](https://claude.com/claude-code) und das [Claude Agent SDK](https://docs.claude.com/en/api/agent-sdk/overview) (Anthropic), [Codex CLI](https://developers.openai.com/codex/cli) (OpenAI), [Grok Build](https://x.ai) (xAI), [Antigravity](https://antigravity.google) (Google), dazu die APIs von [OpenRouter](https://openrouter.ai), OpenAI, [Google Gemini](https://ai.google.dev), Anthropic, [Groq](https://groq.com) und [Ollama](https://ollama.com).
-- **Tool-Standard:** [Model Context Protocol](https://modelcontextprotocol.io). Der gesamte Verbindungsstore von Javis basiert darauf.
+- **Tool-Standard:** [Model Context Protocol](https://modelcontextprotocol.io). Der gesamte Verbindungsstore von Thansa basiert darauf.
 - Die Muster von Second Brain und digitalem Bullet Journal.
 
 ## 📄 Lizenz
@@ -491,17 +491,17 @@ Open Source unter der **MIT License**: frei nutzen, ändern und weitergeben, nur
 
 ---
 
-## ☕ Unterstütze Javis OS
+## ☕ Unterstütze Thansa OS
 
-Javis OS ist kostenlos und Open Source, und noch immer schreibt eine einzige Person den Code und bezahlt die Testserver. Wenn Javis dir bei der Arbeit oder im Leben hilft, verschafft eine kleine Spende mehr Zeit für Fehlerbehebungen und neue Funktionen.
+Thansa OS ist kostenlos und Open Source, und noch immer schreibt eine einzige Person den Code und bezahlt die Testserver. Wenn Thansa dir bei der Arbeit oder im Leben hilft, verschafft eine kleine Spende mehr Zeit für Fehlerbehebungen und neue Funktionen.
 
 - 🌍 **PayPal**: [paypal.me/quy01](https://paypal.me/quy01)
 - 🏦 **MB Bank** (Vietnam): `6636966369`
 - 📱 **MoMo-Wallet** (Vietnam): `0372752740`
 
-Du kannst nicht spenden? Javis zu nutzen, Feedback zu schicken oder einen Pull Request zu eröffnen zählt auch als Unterstützung.
+Du kannst nicht spenden? Thansa zu nutzen, Feedback zu schicken oder einen Pull Request zu eröffnen zählt auch als Unterstützung.
 
 <div align="center">
 <br>
-Mit ☕ in Vietnam gemacht von <b><a href="https://minhquy.vn">Minh Quý</a></b>
+Mit ☕ in Vietnam gemacht von <b><a href="https://tradingauto.org">Duy Quang</a></b>
 </div>

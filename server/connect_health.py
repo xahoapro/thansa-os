@@ -30,8 +30,8 @@ _task = None
 _EN = {
     "Hết phiên đăng nhập - bấm Kết nối lại để đăng nhập lại.":
         "Signed out - click Reconnect to sign in again.",
-    "Không khởi động được trình kết nối trên máy chạy Javis.":
-        "Could not start the connector on the machine running Javis.",
+    "Không khởi động được trình kết nối trên máy chạy Thansa.":
+        "Could not start the connector on the machine running Thansa.",
     "Dịch vụ không phản hồi - có thể do mạng hoặc máy chủ dịch vụ.":
         "The service is not responding - possibly the network or the service's server.",
     "Lỗi không rõ": "Unknown error",
@@ -50,13 +50,13 @@ _EN = {
     "Phiên đăng nhập Claude Code đã hết hạn và không tự làm mới được.":
         "The Claude Code session has expired and could not refresh itself.",
     "Chưa kết nối ChatGPT (OAuth).": "ChatGPT (OAuth) is not connected.",
-    "Composio từ chối consumer key mà Javis đang dùng. Vào Composio "
+    "Composio từ chối consumer key mà Thansa đang dùng. Vào Composio "
     "For You → Connect my agent, lấy key ck_*, nhập vào thẻ Composio "
-    "trong Javis rồi bấm Kết nối hoặc Kết nối lại. Kết nối lại riêng "
+    "trong Thansa rồi bấm Kết nối hoặc Kết nối lại. Kết nối lại riêng "
     "Calendar không thay đổi key này.":
-        "Composio rejected the consumer key Javis is using. In Composio go to "
+        "Composio rejected the consumer key Thansa is using. In Composio go to "
         "For You → Connect my agent, get a ck_* key, enter it on the Composio card "
-        "in Javis, then click Connect or Reconnect. Reconnecting only "
+        "in Thansa, then click Connect or Reconnect. Reconnecting only "
         "Calendar does not change this key.",
 }
 
@@ -92,9 +92,9 @@ def classify_error(err: str, conn=None) -> tuple[str, str]:
     low = (err or "").lower()
     if (conn or {}).get("connector_id") == "composio" and (
             "401" in low or "bearer token rejected" in low):
-        message = ("Composio từ chối consumer key mà Javis đang dùng. Vào Composio "
+        message = ("Composio từ chối consumer key mà Thansa đang dùng. Vào Composio "
                    "For You → Connect my agent, lấy key ck_*, nhập vào thẻ Composio "
-                   "trong Javis rồi bấm Kết nối hoặc Kết nối lại. Kết nối lại riêng "
+                   "trong Thansa rồi bấm Kết nối hoặc Kết nối lại. Kết nối lại riêng "
                    "Calendar không thay đổi key này.")
         return "auth", message
     if any(s in low for s in _AUTH_HINTS):
@@ -276,7 +276,7 @@ def _set_engine(name, ok, message="", source="probe"):
                 "⚠ Thansa chưa dùng được: chưa kết nối được Model AI. "
                 + ENGINE_FIX.get(name, ENGINE_FIX_DEFAULT)
                 + f" (chi tiết: {name} - {message})",
-                "⚠ Javis is not usable yet: no AI model is connected. "
+                "⚠ Thansa is not usable yet: no AI model is connected. "
                 + ENGINE_FIX_EN.get(name, ENGINE_FIX_DEFAULT_EN)
                 + f" (details: {name} - {_EN.get(message) or message})"))
             if asyncio.iscoroutine(coro):

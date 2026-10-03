@@ -1091,6 +1091,6 @@ def set_enabled(slug: str, enabled: bool, vault_root: Optional[str] = None) -> d
         "Đã bật trong manifest NHƯNG plugin do người dùng cài chỉ chạy khi đặt biến môi trường "
         "JAVIS_ENABLE_USER_PLUGINS=true rồi khởi động lại (bảo vệ chống chạy code lạ).",
         "Enabled in the manifest, BUT user-installed plugins only run once the environment variable "
-        "JAVIS_ENABLE_USER_PLUGINS=true is set and Javis is restarted (protection against running "
+        "JAVIS_ENABLE_USER_PLUGINS=true is set and Thansa is restarted (protection against running "
         "unknown code).") if gated else ""
     return {"ok": True, "source": source, "gated": gated, "note": note}

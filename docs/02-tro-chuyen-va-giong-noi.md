@@ -60,9 +60,9 @@ Dùng trang này khi bạn muốn màn hình rộng chỉ để chat. Muốn xem
 
 Câu trả lời của Thansa hiện dần ở cột HỘI THOẠI bên phải, chữ chạy ra theo thời gian thực.
 
-### Bước 2 - Gọi Javis bằng giọng: bấm nút mic
+### Bước 2 - Gọi Thansa bằng giọng: bấm nút mic
 
-Nút mic (hình micro to, bên trái thanh nhập) là nút **gọi Javis**, như gọi điện thoại:
+Nút mic (hình micro to, bên trái thanh nhập) là nút **gọi Thansa**, như gọi điện thoại:
 
 1. Bấm nút mic một lần. Nút đổi màu đỏ thành **Cúp máy**, và một **thanh gọi** hiện ngay trên khung chat: tên đường gọi (ví dụ **ChatGPT Live**), trạng thái (Đang nghe, Thansa đang nói, Đang làm việc, Đang chờ), đồng hồ cuộc gọi, nút **Tắt mic** và nút **Cúp máy**.
 2. Cứ nói tự nhiên. Lời hai bên hiện thành bong bóng chat như tin thường, nên bảng số, file hay kết quả việc vẫn hiện đầy đủ.
@@ -71,7 +71,7 @@ Nút mic (hình micro to, bên trái thanh nhập) là nút **gọi Javis**, nh�
 
 Thansa tự chọn đường gọi: **ChatGPT Live** khi bạn đã nối gói ChatGPT, rồi Live qua API key nếu có, không thì đường **Cơ bản** (nghe bằng trình duyệt, đọc bằng giọng Edge). Nếu ChatGPT Live chưa mở được, cuộc gọi tự chuyển sang đường Cơ bản và báo một dòng. Phím Cách (Space) không còn mở mic.
 
-Lần đầu bấm mic, trình duyệt sẽ hỏi quyền dùng micro. Bấm cho phép. Nếu từ chối, Javis không nghe được và sẽ báo cần cấp quyền microphone cho trang này.
+Lần đầu bấm mic, trình duyệt sẽ hỏi quyền dùng micro. Bấm cho phép. Nếu từ chối, Thansa không nghe được và sẽ báo cần cấp quyền microphone cho trang này.
 
 Trong cuộc gọi, khi bạn bắt đầu nói thì Thansa **tạm dừng** phần nó đang đọc để lắng nghe. Nếu trong 2 giây bạn thật sự nói thành câu, Thansa dừng hẳn và tin kế tiếp của bạn mang theo câu nó đang đọc dở, nên nó trả lời tiếp từ chỗ đó chứ không đọc lại từ đầu. Nếu chỉ là tiếng ho hay tiếng động, Thansa đọc tiếp từ chỗ dừng. Cơ chế đo độ to của giọng qua luồng mic đã khử vọng (nói liên tục khoảng 0,5 giây, to hơn hẳn nền), nên tiếng loa của chính Thansa không tự làm nó ngắt lời. Cơ chế này luôn bật.
 
@@ -97,9 +97,9 @@ Nói (hoặc gõ) là được, Thansa dùng đúng công cụ và báo lại k�
 
 Trong cuộc gọi, Thansa **nói thành tiếng** mọi câu trả lời. Đồ thị sáng theo nhịp giọng nói.
 
-- Cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là Javis im ngay.
-- Gõ chữ ngoài cuộc gọi thì Javis chỉ trả lời bằng chữ.
-- Không còn nút loa hay công tắc bật tắt giọng riêng: cuộc gọi quyết định Javis có nói hay không.
+- Cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là Thansa im ngay.
+- Gõ chữ ngoài cuộc gọi thì Thansa chỉ trả lời bằng chữ.
+- Không còn nút loa hay công tắc bật tắt giọng riêng: cuộc gọi quyết định Thansa có nói hay không.
 
 Đổi giọng ở **Cài đặt → Giọng nói**, xem mục **Cài đặt Giọng nói** bên dưới.
 
@@ -369,11 +369,11 @@ Mọi thứ về giọng nằm trong **Cài đặt → Giọng nói**. Trang ch�
 Thẻ có hai thứ:
 
 - **Dòng "Đang dùng: ..."**: đường gọi đang chạy là **ChatGPT Live**, **Live (tên hãng)** qua API key hay **Cơ bản**. Ở đường Cơ bản, dòng này nói thêm bộ não nào trả lời nhanh, ví dụ "Trả lời nhanh bằng Antigravity CLI (gói Google)".
-- **Giọng Javis**: danh sách giọng đổi theo đường gọi, xem bên dưới.
+- **Giọng Thansa**: danh sách giọng đổi theo đường gọi, xem bên dưới.
 
-Khi Javis phải lùi xuống đường thấp hơn, dòng "Đang dùng" nói vì sao và cần làm gì, ví dụ nối ChatGPT ở trang **Models**, cài Codex CLI, hoặc cập nhật Codex CLI lên bản 0.153 trở lên.
+Khi Thansa phải lùi xuống đường thấp hơn, dòng "Đang dùng" nói vì sao và cần làm gì, ví dụ nối ChatGPT ở trang **Models**, cài Codex CLI, hoặc cập nhật Codex CLI lên bản 0.153 trở lên.
 
-### Giọng Javis
+### Giọng Thansa
 
 Danh sách giọng tuỳ đường gọi:
 
@@ -387,7 +387,7 @@ Nếu giọng trả phí gặp lỗi (hết hạn mức, sai key, mất mạng),
 
 ### Nâng cao
 
-- **Đường gọi**: **Tự động (khuyên dùng)**, **ChatGPT Live**, **Live qua API key** hoặc **Cơ bản**. Tự động thử lần lượt ChatGPT Live, Live qua API key, rồi Cơ bản. Chọn tay một đường chưa chạy được thì Javis dùng đường kế tiếp và nói lý do ở dòng "Đang dùng".
+- **Đường gọi**: **Tự động (khuyên dùng)**, **ChatGPT Live**, **Live qua API key** hoặc **Cơ bản**. Tự động thử lần lượt ChatGPT Live, Live qua API key, rồi Cơ bản. Chọn tay một đường chưa chạy được thì Thansa dùng đường kế tiếp và nói lý do ở dòng "Đang dùng".
 - **Bộ não trả lời nhanh**: **Tự động** (mặc định, ghi kèm bộ não đang dùng), **Bộ não chính (như gõ chữ)**, hoặc một bộ não cụ thể; bộ não chưa cài hay chưa có key ghi "(chưa sẵn)". Ô này (cùng ô **Model** của nó) chỉ hiện khi cuộc gọi đang chạy đường Cơ bản, kể cả khi Tự động phải lùi xuống Cơ bản; xem mục **Đường Cơ bản và trả lời nhanh**. Gọi bằng ChatGPT Live hay Live qua API key thì model Live tự nghe và tự trả lời nên ô này ẩn đi.
 - **Model**: model của bộ não đang dùng, ví dụ `gemini-3.8-flash-low` cho Antigravity hay `haiku` cho Claude Code. Mặc định là model của hãng. Mỗi bộ não nhớ model riêng, nên đổi qua đổi lại giữa các bộ não không làm lẫn tên model. Ô này ẩn khi chọn Bộ não chính.
 - **Tốc độ đọc**: từ 0,85× tới 1,45×, mặc định 1,10×. Chỉ hiện ở đường Cơ bản.
@@ -395,25 +395,25 @@ Nếu giọng trả phí gặp lỗi (hết hạn mức, sai key, mất mạng),
 
 Giọng OpenAI cần OpenAI API key ở trang **Models**; trang giọng nói không còn ô nhập key OpenAI.
 
-### ChatGPT Live: gọi Javis qua gói ChatGPT
+### ChatGPT Live: gọi Thansa qua gói ChatGPT
 
 **ChatGPT Live** dùng gói ChatGPT bạn đã nối ở trang **Models**, không cần API key. Thansa tự chọn đường này khi gói ChatGPT đã nối và máy có Codex CLI bản 0.153 trở lên, bạn không phải chọn gì.
 
-- Bấm mic là bắt đầu nói chuyện: Javis nghe liên tục, đáp sau chưa tới một giây, bạn chen ngang lúc nào cũng được.
-- Chuyện trò thì Javis đáp ngay. Câu cần dữ liệu thật hay hành động (doanh thu, lịch, email, file, mở trang) thì Javis nói một câu đệm kiểu "để xem nhé", giao bộ não chính bạn đã chọn (Claude hay bộ khác) làm với đủ MCP và tool, rồi đọc tóm tắt; bản đầy đủ (có bảng) hiện thành bong bóng trong khung chat. Lời Javis đọc tóm tắt không hiện thành bong bóng thứ hai.
-- Trong lúc Javis đang làm mà bạn nói thêm kiểu "ok, xong thì báo anh nhé", Javis không làm lại từ đầu. Câu có ý mới (ví dụ "thêm cả số đơn huỷ nữa") được làm tiếp ngay sau việc đang chạy.
-- Đổi giọng ở ô **Giọng Javis** (9 giọng, xem ở trên).
-- Âm thanh đi thẳng từ trình duyệt tới OpenAI, nên chạy được cả khi Javis nằm trên VPS.
+- Bấm mic là bắt đầu nói chuyện: Thansa nghe liên tục, đáp sau chưa tới một giây, bạn chen ngang lúc nào cũng được.
+- Chuyện trò thì Thansa đáp ngay. Câu cần dữ liệu thật hay hành động (doanh thu, lịch, email, file, mở trang) thì Thansa nói một câu đệm kiểu "để xem nhé", giao bộ não chính bạn đã chọn (Claude hay bộ khác) làm với đủ MCP và tool, rồi đọc tóm tắt; bản đầy đủ (có bảng) hiện thành bong bóng trong khung chat. Lời Thansa đọc tóm tắt không hiện thành bong bóng thứ hai.
+- Trong lúc Thansa đang làm mà bạn nói thêm kiểu "ok, xong thì báo anh nhé", Thansa không làm lại từ đầu. Câu có ý mới (ví dụ "thêm cả số đơn huỷ nữa") được làm tiếp ngay sau việc đang chạy.
+- Đổi giọng ở ô **Giọng Thansa** (9 giọng, xem ở trên).
+- Âm thanh đi thẳng từ trình duyệt tới OpenAI, nên chạy được cả khi Thansa nằm trên VPS.
 - Cuộc gọi tính vào hạn mức gói ChatGPT của bạn.
-- Giữa cuộc gọi Javis không tự đổi sang đường khác (giọng khác). Lỡ nối lại không được thì Javis thử thêm một lần, vẫn không được thì báo một dòng và chờ, bạn nói lại là Javis thử tiếp.
+- Giữa cuộc gọi Thansa không tự đổi sang đường khác (giọng khác). Lỡ nối lại không được thì Thansa thử thêm một lần, vẫn không được thì báo một dòng và chờ, bạn nói lại là Thansa thử tiếp.
 
 ### Live qua API key
 
-Chưa có ChatGPT Live thì Javis dùng **Gemini Live**, **OpenAI Realtime** hoặc **OpenAI GPT-Live**, bằng API key Gemini hay OpenAI bạn đã dán ở trang **Models**. Giọng có cảm xúc, ngắt lời tự nhiên, bản ghi chữ hai chiều hiện trong khung chat. Khi cần dữ liệu thật, model giao cho bộ não chính chạy nền rồi vẫn trò chuyện tiếp, có kết quả thì thuật lại (Gemini dòng 3.1 còn im chờ vì Google chưa hỗ trợ việc nền).
+Chưa có ChatGPT Live thì Thansa dùng **Gemini Live**, **OpenAI Realtime** hoặc **OpenAI GPT-Live**, bằng API key Gemini hay OpenAI bạn đã dán ở trang **Models**. Giọng có cảm xúc, ngắt lời tự nhiên, bản ghi chữ hai chiều hiện trong khung chat. Khi cần dữ liệu thật, model giao cho bộ não chính chạy nền rồi vẫn trò chuyện tiếp, có kết quả thì thuật lại (Gemini dòng 3.1 còn im chờ vì Google chưa hỗ trợ việc nền).
 
 ### Đường Cơ bản và trả lời nhanh
 
-Đường Cơ bản nghe bằng trình duyệt và đọc bằng giọng bạn chọn. Câu nói thường được một bộ não giọng trả lời nhanh trong 1 đến 2 giây ("làn nhanh"). Javis tự lấy bộ não đầu tiên sẵn sàng trên gói bạn đã đăng nhập, theo thứ tự:
+Đường Cơ bản nghe bằng trình duyệt và đọc bằng giọng bạn chọn. Câu nói thường được một bộ não giọng trả lời nhanh trong 1 đến 2 giây ("làn nhanh"). Thansa tự lấy bộ não đầu tiên sẵn sàng trên gói bạn đã đăng nhập, theo thứ tự:
 
 1. Antigravity CLI
 2. ChatGPT (qua Codex)
@@ -426,25 +426,25 @@ Không có cái nào thì lượt nói đi thẳng bộ não chính. Câu cần 
 
 Ở đường Cơ bản, trình duyệt chỉ nghe được một ngôn ngữ, nên câu như "Mở dashboard Facebook ads" hay bị chép thành "Mở double Facebook add". **Tai nghe lại** là một model đa ngôn ngữ nghe lại chính âm thanh câu bạn vừa nói rồi mới chốt chữ vào bong bóng. Chữ tạm của trình duyệt vẫn hiện tức thì trong lúc bạn nói.
 
-- Javis luôn tự chọn tai: có key Groq ở trang **Models** thì dùng **Groq Whisper**, không có thì dùng chữ của trình duyệt như trước.
+- Thansa luôn tự chọn tai: có key Groq ở trang **Models** thì dùng **Groq Whisper**, không có thì dùng chữ của trình duyệt như trước.
 - Đo trên 20 câu lệnh Việt xen Anh: trình duyệt sai 41% số từ, qua tai Groq còn 14%. Mỗi câu mất thêm chừng 1 giây.
-- Tai lỗi, chậm quá 8 giây, hay ra câu lệch hẳn bản nháp (Whisper đôi khi bịa câu khi gặp tiếng ồn) thì Javis giữ chữ của trình duyệt, không mất lượt nói.
+- Tai lỗi, chậm quá 8 giây, hay ra câu lệch hẳn bản nháp (Whisper đôi khi bịa câu khi gặp tiếng ồn) thì Thansa giữ chữ của trình duyệt, không mất lượt nói.
 - Câu gửi đi là chữ của tai nếu có tai, không thì là chữ của trình duyệt lúc bạn kết thúc câu. Đã gửi rồi thì AI không sửa lại tin trong lịch sử.
 
 ### Máy tự lo
 
-- **Im lâu thì tạm ngắt, nói là nối lại**: trong cuộc gọi ChatGPT Live, im 30 giây thì Javis tạm ngắt cho đỡ tốn hạn mức, thanh gọi ghi "Đang chờ, cứ nói là Javis nghe". Bạn cứ nói tiếp, không cần gọi tên: Javis bắt đầu nối lại ngay khi nghe được mấy chữ đầu, nên thường chỉ khoảng 2 giây sau khi bạn ngừng nói là nghe Javis trả lời câu đó. Tiếng TV hay người bên cạnh nói đủ rõ cũng làm nó nối lại. Từ 0.65.22 không còn công tắc "Tập trung khi đàm thoại".
-- **Giữ màn hình sáng khi đang gọi**: điện thoại khoá màn hình là trình duyệt cắt mic, nên trong lúc gọi Javis giữ màn hình không tự tắt; cúp máy là màn hình tắt như thường. Bấm nút nguồn tắt hẳn thì cuộc gọi vẫn ngừng.
+- **Im lâu thì tạm ngắt, nói là nối lại**: trong cuộc gọi ChatGPT Live, im 30 giây thì Thansa tạm ngắt cho đỡ tốn hạn mức, thanh gọi ghi "Đang chờ, cứ nói là Thansa nghe". Bạn cứ nói tiếp, không cần gọi tên: Thansa bắt đầu nối lại ngay khi nghe được mấy chữ đầu, nên thường chỉ khoảng 2 giây sau khi bạn ngừng nói là nghe Thansa trả lời câu đó. Tiếng TV hay người bên cạnh nói đủ rõ cũng làm nó nối lại. Từ 0.65.22 không còn công tắc "Tập trung khi đàm thoại".
+- **Giữ màn hình sáng khi đang gọi**: điện thoại khoá màn hình là trình duyệt cắt mic, nên trong lúc gọi Thansa giữ màn hình không tự tắt; cúp máy là màn hình tắt như thường. Bấm nút nguồn tắt hẳn thì cuộc gọi vẫn ngừng.
 Các ô dưới đây đã bỏ khỏi trang vì máy tự quyết được:
 
-- **Đọc trả lời bằng giọng**: bỏ vì trùng với nút mic. Trong cuộc gọi Javis nói mọi câu trả lời; cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là im. Chat gõ chữ ngoài cuộc gọi chỉ trả lời bằng chữ.
+- **Đọc trả lời bằng giọng**: bỏ vì trùng với nút mic. Trong cuộc gọi Thansa nói mọi câu trả lời; cúp máy (nút **Cúp máy**, nút mic hoặc **Esc**) là im. Chat gõ chữ ngoài cuộc gọi chỉ trả lời bằng chữ.
 - **Ngôn ngữ nghe**: theo ngôn ngữ giao diện (giao diện tiếng Anh thì nghe `en-US`, còn lại `vi-VN`). Câu Việt xen tiếng Anh đã có tai nghe lại lo.
-- **Im lặng rồi gửi**: cố định 1,2 giây. Mức bạn đã chọn ở bản cũ trên máy đó vẫn được dùng. Javis vẫn chờ lâu hơn sau "và", "nhưng", "thì" hay dấu phẩy, và nói "khoan", "đợi chút" vẫn làm Javis chờ.
-- **Ngắt lời Javis bằng giọng**: luôn bật.
+- **Im lặng rồi gửi**: cố định 1,2 giây. Mức bạn đã chọn ở bản cũ trên máy đó vẫn được dùng. Thansa vẫn chờ lâu hơn sau "và", "nhưng", "thì" hay dấu phẩy, và nói "khoan", "đợi chút" vẫn làm Thansa chờ.
+- **Ngắt lời Thansa bằng giọng**: luôn bật.
 - **Nhịp hội thoại (thử nghiệm)**: bỏ hẳn.
 - **Tai nghe lại**: máy luôn tự chọn, xem mục ở trên.
 - **Chế độ nói chuyện** (Chuẩn, Làn nhanh, Live): thay bằng đường gọi. Bộ não giọng nói nay là ô **Bộ não trả lời nhanh** ở **Nâng cao**.
-- **Từ hay nghe nhầm**: Javis tự dựng danh sách từ tên trợ lý và tên các MCP đã nối. Từ bạn đã lưu trước đó vẫn được dùng.
+- **Từ hay nghe nhầm**: Thansa tự dựng danh sách từ tên trợ lý và tên các MCP đã nối. Từ bạn đã lưu trước đó vẫn được dùng.
 
 ## Phóng to khung chat
 
@@ -497,7 +497,7 @@ Nút quanh khung chat:
 
 | Nút | Ở đâu | Làm gì |
 |---|---|---|
-| Mic to | Trái thanh nhập | Gọi Javis; trong cuộc gọi nút thành **Cúp máy** |
+| Mic to | Trái thanh nhập | Gọi Thansa; trong cuộc gọi nút thành **Cúp máy** |
 | Kẹp giấy | Cạnh nút mic | Chọn file đính kèm |
 | Mũi tên | Phải thanh nhập | Gửi tin nhắn |
 | Ô vuông | Thay nút gửi khi đang chạy | Dừng lượt đang trả lời + dừng đọc |

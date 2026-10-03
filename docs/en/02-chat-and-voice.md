@@ -60,9 +60,9 @@ Use this page when you want the full width just for chatting. To see the globe a
 
 Thansa's answer streams into the CONVERSATION column on the right, character by character.
 
-### Step 2 - Call Javis by voice: click the mic button
+### Step 2 - Call Thansa by voice: click the mic button
 
-The mic button (the large microphone on the left of the input bar) **calls Javis**, like a phone call:
+The mic button (the large microphone on the left of the input bar) **calls Thansa**, like a phone call:
 
 1. Click the mic button once. It turns red and becomes **Hang up**, and a **call bar** appears right above the chat: the call path (for example **ChatGPT Live**), the status (Listening, Thansa is speaking, Working, Waiting), a call timer, a **Mute** button and a **Hang up** button.
 2. Talk naturally. Both sides appear as normal chat bubbles, so tables, files and task results still show in full.
@@ -83,7 +83,7 @@ During a call, Thansa **speaks every answer** out loud. The graph pulses along w
 
 - Hanging up (the **Hang up** button, the mic button or **Esc**) silences it at once.
 - Typed chat outside a call is answered in text only.
-- There is no separate speaker button or voice switch any more: the call decides whether Javis speaks.
+- There is no separate speaker button or voice switch any more: the call decides whether Thansa speaks.
 
 To change the voice, go to **Settings → Voice**, see **Voice settings** below.
 
@@ -353,9 +353,9 @@ Everything about the voice lives in **Settings → Voice**. The page is a single
 The card holds two things:
 
 - **The "Using: ..." line**: the call path in use, **ChatGPT Live**, **Live (provider name)** with an API key, or **Basic**. On Basic it also says which brain gives quick replies, for example Antigravity CLI on your Google plan.
-- **Javis's voice**: the list depends on the call path, see below.
+- **Thansa's voice**: the list depends on the call path, see below.
 
-When Javis had to fall back to a lower path, the "Using" line says why and what to do, for example connect ChatGPT on the **Models** page, install Codex CLI, or update Codex CLI to 0.153 or later.
+When Thansa had to fall back to a lower path, the "Using" line says why and what to do, for example connect ChatGPT on the **Models** page, install Codex CLI, or update Codex CLI to 0.153 or later.
 
 ### Thansa's voice
 
@@ -367,11 +367,11 @@ The voice list depends on the call path:
 
 Picking a voice also picks the provider (Edge, OpenAI or ElevenLabs). The Edge voice and the speaking rate are stored on this device; updates do not overwrite the voice you picked.
 
-If a paid voice fails (quota used up, wrong key, no network), Javis reports the error so you can retry or pick another voice. It does not switch voices on its own.
+If a paid voice fails (quota used up, wrong key, no network), Thansa reports the error so you can retry or pick another voice. It does not switch voices on its own.
 
 ### Advanced
 
-- **Call path**: **Automatic (recommended)**, **ChatGPT Live**, **Live with an API key** or **Basic**. Automatic tries ChatGPT Live, then Live with an API key, then Basic. If you pick a path that is not ready, Javis uses the next one and says why on the "Using" line.
+- **Call path**: **Automatic (recommended)**, **ChatGPT Live**, **Live with an API key** or **Basic**. Automatic tries ChatGPT Live, then Live with an API key, then Basic. If you pick a path that is not ready, Thansa uses the next one and says why on the "Using" line.
 - **Quick-reply brain**: **Automatic** (default, shows the brain in use), **Main brain (same as typing)**, or a specific brain; one that is not installed or has no key is marked "(not ready)". This box (with its **Model** box) only appears while calls run on the Basic path, including when Automatic falls back to Basic; see **The Basic path and quick replies**. On ChatGPT Live or Live with an API key the Live model listens and replies itself, so the box is hidden.
 - **Model**: the model of the brain in use, for example `gemini-3.8-flash-low` for Antigravity or `haiku` for Claude Code. The default is the provider's model. Each brain remembers its own model, so switching between brains never mixes up model names. Hidden when Main brain is picked.
 - **Speaking rate**: 0.85× to 1.45×, default 1.10×. Shown only on the Basic path.
@@ -379,25 +379,25 @@ If a paid voice fails (quota used up, wrong key, no network), Javis reports the 
 
 OpenAI voices need an OpenAI API key on the **Models** page; the voice page no longer has an OpenAI key field.
 
-### ChatGPT Live: call Javis on your ChatGPT plan
+### ChatGPT Live: call Thansa on your ChatGPT plan
 
-**ChatGPT Live** uses the ChatGPT plan you connected on the **Models** page, no API key needed. Javis picks this path itself when the ChatGPT plan is connected and the machine has Codex CLI 0.153 or later; there is nothing to select.
+**ChatGPT Live** uses the ChatGPT plan you connected on the **Models** page, no API key needed. Thansa picks this path itself when the ChatGPT plan is connected and the machine has Codex CLI 0.153 or later; there is nothing to select.
 
-- Press the mic to start talking: Javis listens continuously, answers in under a second, and you can interrupt at any time.
-- Small talk gets an instant answer. Anything that needs real data or an action (revenue, calendar, email, files, opening a page) is handed to the main brain you chose (Claude or another), which works with all your MCPs and tools; Javis reads back a summary and the full result (with tables) appears as a chat bubble. The spoken summary does not show up as a second bubble.
-- If you add something like "ok, tell me when it's done" while Javis is working, it does not start over. A remark with something new (for example "add the cancelled orders too") is handled right after the current task.
-- Change the voice in **Javis's voice** (9 voices, see above).
-- Audio goes straight from the browser to OpenAI, so it works even when Javis runs on a VPS.
+- Press the mic to start talking: Thansa listens continuously, answers in under a second, and you can interrupt at any time.
+- Small talk gets an instant answer. Anything that needs real data or an action (revenue, calendar, email, files, opening a page) is handed to the main brain you chose (Claude or another), which works with all your MCPs and tools; Thansa reads back a summary and the full result (with tables) appears as a chat bubble. The spoken summary does not show up as a second bubble.
+- If you add something like "ok, tell me when it's done" while Thansa is working, it does not start over. A remark with something new (for example "add the cancelled orders too") is handled right after the current task.
+- Change the voice in **Thansa's voice** (9 voices, see above).
+- Audio goes straight from the browser to OpenAI, so it works even when Thansa runs on a VPS.
 - Calls count against your ChatGPT plan's usage.
-- Mid-call, Javis does not switch to another path (and another voice) on its own. If reconnecting fails, it tries once more; if that fails too it shows one line and waits, and speaking again makes it retry.
+- Mid-call, Thansa does not switch to another path (and another voice) on its own. If reconnecting fails, it tries once more; if that fails too it shows one line and waits, and speaking again makes it retry.
 
 ### Live with an API key
 
-Without ChatGPT Live, Javis uses **Gemini Live**, **OpenAI Realtime** or **OpenAI GPT-Live**, with the Gemini or OpenAI API key you pasted on the **Models** page. Expressive voices, natural interruptions, and a two-way transcript in the chat. When real data is needed, the model hands the work to the main brain in the background and keeps talking, then relays the result (the Gemini 3.1 line still waits silently because Google does not support background work yet).
+Without ChatGPT Live, Thansa uses **Gemini Live**, **OpenAI Realtime** or **OpenAI GPT-Live**, with the Gemini or OpenAI API key you pasted on the **Models** page. Expressive voices, natural interruptions, and a two-way transcript in the chat. When real data is needed, the model hands the work to the main brain in the background and keeps talking, then relays the result (the Gemini 3.1 line still waits silently because Google does not support background work yet).
 
 ### The Basic path and quick replies
 
-The Basic path listens through the browser and speaks with the voice you picked. Ordinary spoken turns get a quick reply in 1 to 2 seconds from a voice brain (the "fast lane"). Javis takes the first voice brain available on a plan you are already signed in to, in this order:
+The Basic path listens through the browser and speaks with the voice you picked. Ordinary spoken turns get a quick reply in 1 to 2 seconds from a voice brain (the "fast lane"). Thansa takes the first voice brain available on a plan you are already signed in to, in this order:
 
 1. Antigravity CLI
 2. ChatGPT (via Codex)
@@ -410,25 +410,25 @@ If none is available, spoken turns go to the main brain. Questions that need dat
 
 On the Basic path the browser only hears one language, so a sentence like "Mở dashboard Facebook ads" often comes out as "Mở double Facebook add". The **listening ear** is a multilingual model that listens to the audio of what you just said again before settling the text in the bubble. The browser's interim text still shows instantly while you talk.
 
-- Javis always picks the ear itself: **Groq Whisper** when a Groq key is on the **Models** page, otherwise the browser's text as before.
+- Thansa always picks the ear itself: **Groq Whisper** when a Groq key is on the **Models** page, otherwise the browser's text as before.
 - Measured on 20 Vietnamese-English mixed commands: the browser got 41% of words wrong, the Groq ear 14%. Each sentence takes about 1 second longer.
-- If the ear fails, takes over 8 seconds, or returns a sentence far from the draft (Whisper sometimes invents sentences from noise), Javis keeps the browser's text and the turn is not lost.
+- If the ear fails, takes over 8 seconds, or returns a sentence far from the draft (Whisper sometimes invents sentences from noise), Thansa keeps the browser's text and the turn is not lost.
 - The message sent is the ear's text when there is an ear, otherwise the browser's text when you finished the sentence. Once sent, the AI does not rewrite the message in history.
 
 ### Handled by the machine
 
-- **Long silence pauses the line, speaking resumes it**: on a ChatGPT Live call, after 30 quiet seconds Javis pauses the connection to save plan usage and the call bar says "Waiting, just speak to continue". Just keep talking, no need to say its name: Javis starts reconnecting as soon as it hears your first few words, so it usually answers about 2 seconds after you stop talking. A TV or someone nearby speaking clearly also resumes it. Since 0.65.22 there is no "Focused conversation" switch.
-- **The screen stays on during a call**: phones cut the microphone when the screen locks, so during a call Javis keeps the screen from turning off; hanging up lets it sleep as usual. Pressing the power button still ends the call.
+- **Long silence pauses the line, speaking resumes it**: on a ChatGPT Live call, after 30 quiet seconds Thansa pauses the connection to save plan usage and the call bar says "Waiting, just speak to continue". Just keep talking, no need to say its name: Thansa starts reconnecting as soon as it hears your first few words, so it usually answers about 2 seconds after you stop talking. A TV or someone nearby speaking clearly also resumes it. Since 0.65.22 there is no "Focused conversation" switch.
+- **The screen stays on during a call**: phones cut the microphone when the screen locks, so during a call Thansa keeps the screen from turning off; hanging up lets it sleep as usual. Pressing the power button still ends the call.
 These fields were removed from the page because the machine decides them:
 
-- **Read answers aloud**: removed because it duplicated the mic. During a call Javis speaks every answer; hanging up (the **Hang up** button, the mic button or **Esc**) mutes it. Typed chat outside a call is answered in text only.
+- **Read answers aloud**: removed because it duplicated the mic. During a call Thansa speaks every answer; hanging up (the **Hang up** button, the mic button or **Esc**) mutes it. Typed chat outside a call is answered in text only.
 - **Listening language**: follows the interface language (an English interface listens in `en-US`, otherwise `vi-VN`). Mixed Vietnamese and English is handled by the listening ear.
-- **Send after silence**: fixed at 1.2 seconds. A level you picked earlier on that device is still used. Javis still waits longer after "và", "nhưng", "thì" (and, but, then) or a comma, and saying "khoan" or "đợi chút" (wait, hold on) still makes it wait.
-- **Interrupt Javis by voice**: always on.
+- **Send after silence**: fixed at 1.2 seconds. A level you picked earlier on that device is still used. Thansa still waits longer after "và", "nhưng", "thì" (and, but, then) or a comma, and saying "khoan" or "đợi chút" (wait, hold on) still makes it wait.
+- **Interrupt Thansa by voice**: always on.
 - **Conversation timing (experimental)**: removed entirely.
 - **Listening ear**: always picked automatically, see above.
 - **Conversation mode** (Standard, Fast lane, Live): replaced by the call path. The voice brain is now **Quick-reply brain** under **Advanced**.
-- **Often-misheard words**: Javis builds the list itself from the assistant name and the names of connected MCPs. Words you saved earlier are still used.
+- **Often-misheard words**: Thansa builds the list itself from the assistant name and the names of connected MCPs. Words you saved earlier are still used.
 
 ## Enlarging the chat
 
@@ -475,7 +475,7 @@ Buttons around the chat frame:
 
 | Button | Where | What it does |
 |---|---|---|
-| Large mic | Left of the input | Call Javis; during a call it becomes **Hang up** |
+| Large mic | Left of the input | Call Thansa; during a call it becomes **Hang up** |
 | Paperclip | Next to the mic | Pick files to attach |
 | Arrow | Right of the input | Send the message |
 | Square | Replaces send while running | Stop the running turn and stop speaking |
