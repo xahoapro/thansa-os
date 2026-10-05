@@ -51,8 +51,41 @@ if os.geteuid() != 0:
     check("không phải root thì dừng, không cài gì", code != 0 and "RESULT:FAIL:need-root" in out
           and "STEP:install" not in out)
 src = SCRIPT.read_text(encoding="utf-8")
-check("biến map riêng, không đụng $connection_upgrade của site khác",
-      "$thansa_conn_upgrade" in src and "map \\$http_upgrade \\$connection_upgrade" not in src)
+check("biến map RIÊNG từng site (hai bản Thansa một máy không trùng biến, không đụng $connection_upgrade)",
+      'MAPVAR="thansa_conn_upgrade_$(' in src and "map \\$http_upgrade \\$$MAPVAR" in src
+      and "$connection_upgrade" not in src)
+check("PATH đầy đủ có /usr/sbin, không thừa kế PATH thiếu sbin của dịch vụ (certbot tìm nginx theo PATH)",
+      'export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' in src)
+for _unit in ("install.sh", "javis.service"):
+    check(f"{_unit}: unit systemd có /usr/sbin trong PATH",
+          "/usr/sbin:" in [l for l in (ROOT / _unit).read_text(encoding="utf-8").splitlines() if 'Environment="PATH=' in l][0])
+check("nginx -t đỏ thì trả lại cấu hình cũ (không để file hỏng trong sites-enabled)", "rollback" in src)
+
+# ---- Lối vào tạm bằng IP (--ip) cho lần cài đầu chưa có tên miền ----
+code, out = chay("--ip", "77;id")
+check("--ip: từ chối cổng bẩn", code != 0 and "RESULT:FAIL:invalid-port" in out)
+if os.geteuid() != 0:
+    code, out = chay("--ip", "7777")
+    check("--ip: không phải root thì dừng", code != 0 and "RESULT:FAIL:need-root" in out)
+check("--ip chỉ dựng trên nginx trống (không cướp web có sẵn)", 'fail "other-sites:' in src)
+check("--ip nhận mọi host lạ bằng default_server", "listen 80 default_server;" in src and "server_name _;" in src)
+check("kích hoạt tên miền xong thì đóng lối vào IP (http trần)", "close-ip-entry" in src)
+check("server dịch được mã lỗi other-sites", "nginx" in dom._nginx_error_text("other-sites"))
+
+# ---- install.sh: tên miền + HTTPS ngay lúc cài ----
+INS = (ROOT / "install.sh").read_text(encoding="utf-8")
+check("install.sh nhận THANSA_DOMAIN / hỏi tên miền", "THANSA_DOMAIN" in INS and "Domain, e.g." in INS)
+check("install.sh gọi script cho tên miền và lối IP", '"$NGX_SH" "$NGX_DOMAIN" "$PORT"' in INS and '"$NGX_SH" --ip "$PORT"' in INS)
+check("install.sh ghi proxy=nginx TRƯỚC khi dịch vụ khởi động",
+      INS.index("_settings_set proxy") < INS.index("# --- 9. service"))
+check("install.sh không xin chứng chỉ khi DNS chưa trỏ đúng", '"$DNS_IP" != "$NGX_PUBIP"' in INS)
+check("install.sh tắt được nhánh nginx", 'THANSA_NGINX:-1' in INS)
+
+# ---- Docker: vào bằng IP đi thẳng vào app, không bị đẩy sang https://<ip> ----
+for _fn in ("docker-compose.yml", "docker-compose.https.yml"):
+    _t = (ROOT / _fn).read_text(encoding="utf-8")
+    check(f"{_fn}: Caddy cho IP vào thẳng app, tên miền mới chuyển HTTPS",
+          "@ip header_regexp Host" in _t and "handle @ip" in _t and "reverse_proxy javis:7777" in _t)
 check("certbot không hỏi, tự chuyển HTTPS, giữ chứng chỉ còn hạn",
       all(x in src for x in ("--non-interactive", "--redirect", "--keep-until-expiring")))
 check("proxy giữ WebSocket + stream", "proxy_buffering off" in src and "Upgrade \\$http_upgrade" in src)

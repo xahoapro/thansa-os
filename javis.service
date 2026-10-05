@@ -17,7 +17,7 @@ WorkingDirectory=__APP_DIR__/server
 Environment="JAVIS_HOST=127.0.0.1"
 Environment="JAVIS_PORT=7777"
 Environment="JAVIS_STATE_DIR=__APP_DIR__/server"
-Environment="PATH=__APP_DIR__/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=__APP_DIR__/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=__APP_DIR__/.venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 7777
 Restart=always
 RestartSec=5
