@@ -278,6 +278,15 @@ git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
 chmod +x install.sh && ./install.sh
 ```
 
+**Domain + HTTPS at install time (Linux):** the script asks *"Domain, e.g. app.yourdomain.com"* (or preset
+`THANSA_DOMAIN=app.yourdomain.com ./install.sh`). With the A record already pointing at the VPS it installs
+nginx + Let's Encrypt and ends with **`OPEN THANSA: https://app.yourdomain.com`**. Left blank, it opens a
+**temporary `http://<vps-ip>` entrance** so you can reach the dashboard the first time, then enter the domain
+under **Settings → Domain & SSL** and press **Activate**; the IP entrance closes once HTTPS is on (it is NOT
+encrypted, use it only for setup). Cannot reach it? Allow ports 80 and 443 in your VPS provider's firewall.
+If nginx already serves other sites, no temporary entrance is opened (use `ssh -L 7777:localhost:7777
+user@<vps-ip>`). `THANSA_NGINX=0` skips the nginx step entirely.
+
 The script installs Python, Node and the Claude CLI, creates a venv, installs dependencies, registers
 a service to start at boot (systemd) and prints the address. If it reports that Claude is not signed
 in, run once:

@@ -254,7 +254,20 @@ chmod +x install.sh && ./install.sh
 ```
 
 Script tự cài Python + Node + Claude CLI, tạo venv, cài deps, đăng ký dịch vụ tự chạy khi
-boot (systemd) và in ra địa chỉ. Nếu nó báo Claude chưa đăng nhập, chạy 1 lần:
+boot (systemd) và in ra địa chỉ để mở.
+
+**Tên miền + HTTPS ngay lúc cài (Linux):** script hỏi *"Domain, e.g. app.yourdomain.com"*
+(hoặc đặt sẵn `THANSA_DOMAIN=app.tenmien.com ./install.sh`).
+- Đã trỏ bản ghi A của tên miền về VPS → script tự cài nginx + Let's Encrypt, cuối cùng in
+  **`OPEN THANSA: https://app.tenmien.com`**. Mở là đăng nhập được, không cần cổng 7777.
+- Chưa có tên miền (bỏ trống) → script mở **lối vào tạm `http://<ip-vps>`** để bạn vào giao
+  diện lần đầu, rồi vào **Cài đặt → Tên miền & SSL**, nhập tên miền, bấm **Kích hoạt**. Có
+  HTTPS rồi thì lối vào bằng IP tự đóng. Lối tạm này KHÔNG mã hoá, chỉ dùng để thiết lập.
+- Không vào được? Mở cổng **80** và **443** trong tường lửa của nhà cung cấp VPS.
+- Máy đã chạy web khác trên nginx thì script không mở lối tạm (tránh cướp truy cập của web đó):
+  vào bằng SSH tunnel `ssh -L 7777:localhost:7777 user@<ip-vps>`. `THANSA_NGINX=0` để bỏ hẳn bước nginx.
+
+Nếu nó báo Claude chưa đăng nhập, chạy 1 lần:
 ```bash
 claude auth login --claudeai
 ```
