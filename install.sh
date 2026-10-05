@@ -5,6 +5,12 @@
 # Installs python3 + node + Claude Code CLI, creates a venv, installs deps,
 # seeds .env, and registers a systemd service (or falls back to nohup).
 #
+# TEN MIEN + HTTPS NGAY LUC CAI (Linux co systemd): script hoi ten mien (hoac dat san bien):
+#   THANSA_DOMAIN=app.tenmien.com ./install.sh
+# DNS da tro ve may nay -> tu cai nginx + Let's Encrypt, cai xong mo thang https://app.tenmien.com.
+# Chua co ten mien -> mo tam http://<ip-may-chu> de vao giao dien lan dau, khai ten mien sau trong app.
+# THANSA_NGINX=0 = khong dung nginx (vao bang SSH tunnel / Cloudflare Tunnel nhu truoc).
+#
 # NHIEU BAN TREN CUNG MOT MAY: clone vao THU MUC KHAC roi dat hai bien truoc khi chay.
 #   JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh
 # JAVIS_NAME dat ten dich vu systemd (javis-shop.service); JAVIS_PORT la cong nghe.
@@ -294,6 +300,52 @@ if ! claude auth status >/dev/null 2>&1; then
   echo "      claude auth login --claudeai"
 fi
 
+# --- 8b. Truy cập từ xa: tên miền + HTTPS ngay lúc cài ---
+#
+# Bản native chỉ nghe 127.0.0.1 (an toàn mặc định), nên trước đây cài xong người dùng KHÔNG vào
+# được giao diện từ máy mình nếu không biết dựng SSH tunnel - mà tên miền + nút Kích hoạt lại nằm
+# trong giao diện. Bước này cắt vòng luẩn quẩn đó: nginx đứng trước app, có tên miền thì HTTPS
+# luôn, chưa có thì mở tạm http://<ip>. Chỉ làm trên Linux có systemd và có quyền root/sudo.
+NGX_DOMAIN=""; NGX_RUN=0; NGX_RESULT=""; NGX_PUBIP=""
+_DOMAIN_RE='^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$'
+_settings_set() {   # _settings_set <khoá-trong-domain> <giá-trị-json>
+  python3 - "$APP_DIR/server/settings.json" "$1" "$2" <<'PY'
+import json, os, sys
+path, key, val = sys.argv[1], sys.argv[2], json.loads(sys.argv[3])
+d = {}
+if os.path.exists(path):
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f) or {}
+d.setdefault("domain", {})[key] = val
+tmp = path + ".tmp"
+with open(tmp, "w", encoding="utf-8") as f:
+    json.dump(d, f, ensure_ascii=False, indent=2)
+os.chmod(tmp, (os.stat(path).st_mode & 0o777) if os.path.exists(path) else 0o600)
+os.replace(tmp, path)
+PY
+}
+if [ "${THANSA_NGINX:-1}" != "0" ] && [ "$(uname -s)" = "Linux" ] && command -v systemctl >/dev/null 2>&1 \
+   && [ -d /run/systemd/system ] && { [ "$(id -u)" -eq 0 ] || [ -n "$SUDO" ]; }; then
+  NGX_RUN=1
+  CU="$(python3 -c "import json,sys;print((json.load(open(sys.argv[1])).get('domain') or {}).get('custom',''))" "$APP_DIR/server/settings.json" 2>/dev/null || true)"
+  NGX_DOMAIN="$(printf '%s' "${THANSA_DOMAIN:-$CU}" | tr 'A-Z' 'a-z' | sed 's#^https\?://##; s#/.*##')"
+  if [ -z "$NGX_DOMAIN" ] && [ -t 0 ]; then
+    echo ""
+    log "Domain for opening Thansa from anywhere (HTTPS is set up automatically)."
+    echo "    Point an A record of the domain to this server's IP first."
+    read -rp "  Domain, e.g. app.yourdomain.com [blank = none yet]: " ND || true
+    NGX_DOMAIN="$(printf '%s' "${ND:-}" | tr 'A-Z' 'a-z' | sed 's#^https\?://##; s#/.*##')"
+  fi
+  if [ -n "$NGX_DOMAIN" ] && ! [[ "$NGX_DOMAIN" =~ $_DOMAIN_RE ]]; then
+    warn "'$NGX_DOMAIN' is not a valid domain - skipping it (you can enter it later in the app)."
+    NGX_DOMAIN=""
+  fi
+  # Ghi TRƯỚC khi dịch vụ khởi động: proxy=nginx bắt app đòi đăng nhập ngay từ request đầu tiên
+  # (mọi request qua nginx đều tới từ 127.0.0.1 - xem config.require_login).
+  _settings_set proxy '"nginx"'
+  [ -z "$NGX_DOMAIN" ] || _settings_set custom "\"$NGX_DOMAIN\""
+fi
+
 # --- 9. service: systemd if available, else nohup ---
 PY="$APP_DIR/.venv/bin/python"
 if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
@@ -312,7 +364,7 @@ WorkingDirectory=$APP_DIR/server
 Environment="JAVIS_HOST=127.0.0.1"
 Environment="JAVIS_PORT=$PORT"
 Environment="JAVIS_STATE_DIR=$APP_DIR/server"
-Environment="PATH=$APP_DIR/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PATH=$APP_DIR/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=$PY -m uvicorn main:app --host 127.0.0.1 --port $PORT
 Restart=always
 RestartSec=5
@@ -332,6 +384,39 @@ else
   ok "Started. Logs: $APP_DIR/server/javis.log"
 fi
 
+# --- 9b. nginx: HTTPS cho tên miền, hoặc lối vào tạm bằng IP ---
+if [ "$NGX_RUN" = "1" ]; then
+  NGX_PUBIP="$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || true)"
+  NGX_SH="$APP_DIR/bin/thansa-nginx-ssl.sh"
+  if [ -n "$NGX_DOMAIN" ]; then
+    DNS_IP="$(getent ahostsv4 "$NGX_DOMAIN" 2>/dev/null | awk 'NR==1{print $1}' || true)"
+    if [ -n "$NGX_PUBIP" ] && [ "$DNS_IP" != "$NGX_PUBIP" ]; then
+      # Xin chứng chỉ khi DNS chưa đúng chỉ tốn lượt của Let's Encrypt (giới hạn số lần hỏng).
+      warn "DNS of $NGX_DOMAIN points to '${DNS_IP:-nothing}', this server is $NGX_PUBIP - HTTPS will wait."
+      warn "Fix the A record, then press Activate in the app (Settings -> Domain & SSL)."
+    else
+      log "Setting up nginx + Let's Encrypt for $NGX_DOMAIN (first time: 1-3 minutes)..."
+      if $SUDO bash "$NGX_SH" "$NGX_DOMAIN" "$PORT" | grep -E '^(STEP|RESULT):' | sed 's/^/    /' | tee /tmp/thansa-ngx.$$ >/dev/null \
+         && grep -q '^    RESULT:OK' /tmp/thansa-ngx.$$; then
+        NGX_RESULT="https"
+        _settings_set ssl_enabled true
+      else
+        warn "HTTPS for $NGX_DOMAIN did not come up ($(grep -o 'RESULT:FAIL:.*' /tmp/thansa-ngx.$$ 2>/dev/null || echo unknown))."
+        warn "You can retry later with the Activate button in the app."
+      fi
+      rm -f /tmp/thansa-ngx.$$
+    fi
+  fi
+  if [ -z "$NGX_RESULT" ]; then
+    OUT="$($SUDO bash "$NGX_SH" --ip "$PORT" 2>&1 || true)"
+    case "$OUT" in
+      *RESULT:OK*) NGX_RESULT="ip" ;;
+      *RESULT:FAIL:other-sites*) warn "nginx already serves other sites on this machine - not opening a temporary IP entrance." ;;
+      *) warn "Could not open the temporary IP entrance ($(printf '%s' "$OUT" | grep -o 'RESULT:FAIL:.*' || echo unknown))." ;;
+    esac
+  fi
+fi
+
 echo ""
 ok "Javis OS is up at: http://127.0.0.1:$PORT"
 log "Remote access (SSH tunnel): ssh -L $PORT:localhost:$PORT $(whoami)@<vps-ip>"
@@ -346,6 +431,24 @@ if [ -n "${ADMIN_PW_SINH:-}" ]; then
   echo "      Username:  ${ADMIN_USER:-admin}"
   echo "      Password:  $ADMIN_PW_SINH"
   echo "  Copy it somewhere safe now. You can change it later under Dashboard → Account."
+  echo "=================================================================="
+fi
+if [ "$NGX_RESULT" = "https" ]; then
+  echo ""
+  echo "=================================================================="
+  echo "  OPEN THANSA:   https://$NGX_DOMAIN"
+  echo "  Sign in with the admin account. Certificate renews automatically."
+  echo "=================================================================="
+  exit 0
+fi
+if [ "$NGX_RESULT" = "ip" ]; then
+  echo ""
+  echo "=================================================================="
+  echo "  OPEN THANSA:   http://${NGX_PUBIP:-<server-ip>}"
+  echo "  TEMPORARY and NOT encrypted - use it only to finish setup:"
+  echo "    sign in -> Settings -> Domain & SSL -> enter your domain -> Activate."
+  echo "  After HTTPS is on, this IP entrance closes by itself."
+  echo "  Cannot open it? Allow ports 80 and 443 in your VPS provider's firewall."
   echo "=================================================================="
 fi
 echo ""

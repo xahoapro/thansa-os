@@ -34,7 +34,15 @@ configs:
         reverse_proxy javis:7777
       }
       http:// {
-        redir https://{host}{uri}
+        # Vào bằng IP (http://<ip-vps>) = chưa có tên miền: đưa thẳng vào app. Đẩy sang
+        # https://<ip> là trang lỗi chứng chỉ, vì không cấp được chứng chỉ cho địa chỉ IP.
+        @ip header_regexp Host ^(\[[0-9a-fA-F:]+\]|[0-9.]+)(:[0-9]+)?$$
+        handle @ip {
+          reverse_proxy javis:7777
+        }
+        handle {
+          redir https://{host}{uri}
+        }
       }
 
 services:
