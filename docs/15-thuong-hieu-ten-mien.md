@@ -144,7 +144,11 @@ Dòng trạng thái dưới cùng của card có thể là:
 
 ## Nếu bạn cài native trên Linux (không Docker): nginx tự động
 
-Bản cài trực tiếp trên VPS/máy Linux (systemd, `install.sh`) không có Caddy. Thansa tự dựng **nginx + chứng chỉ Let's Encrypt** cho bạn, nên bước 3 của wizard có nút **Kích hoạt** thay cho **Bật SSL**:
+Bản cài trực tiếp trên VPS/máy Linux (systemd, `install.sh`) không có Caddy. Thansa tự dựng **nginx + chứng chỉ Let's Encrypt** cho bạn.
+
+**Ngay lúc cài:** `install.sh` hỏi tên miền (hoặc đặt sẵn `THANSA_DOMAIN=...`). DNS đã trỏ đúng thì cài xong là có HTTPS, mở thẳng `https://<tên miền>`. Bỏ trống thì script mở **lối vào tạm `http://<ip máy chủ>`** để bạn vào giao diện lần đầu và làm các bước dưới; kích hoạt xong tên miền thì lối tạm này tự đóng (nó không mã hoá, chỉ để thiết lập).
+
+**Trong app** (đổi tên miền, hoặc lúc cài DNS chưa kịp trỏ):
 
 1. Nhập tên miền, bấm **Lưu & kiểm tra**.
 2. Trỏ bản ghi `A <tên miền> → <IP máy chủ>` và chờ bước 2 hiện ✓. Mở cổng **80** và **443** trên router/firewall (máy ở nhà sau NAT thì chuyển tiếp hai cổng này về máy chạy Thansa).
