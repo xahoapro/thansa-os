@@ -683,3 +683,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   phục vụ http://<ip> (/health 200, /settings 401) và đóng khi kích hoạt tên miền; install.sh trọn vẹn không
   bàn phím vào thư mục/cổng riêng (exit 0) rồi dọn; Caddy validate + chạy thật (IP 200, tên miền 302).
 - VERSION 1.18.0-javis-0.70.2. NGHIỆM THU (env -u JAVIS_*): 556/560, đỏ đúng 4 sandbox nền → 0 hồi quy.
+  **ĐÃ PHÁT HÀNH 2026-10-05** (origin/main a1ff8a7, snapshot ff từ 5626dee; backup me-backup-1.18.0).
