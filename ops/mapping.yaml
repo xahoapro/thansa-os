@@ -1455,7 +1455,7 @@
     - file: dashboard/branding.js
       ky_hieu: 'fetch("/domain/nginx")'
     - file: bin/thansa-nginx-ssl.sh
-      ky_hieu: "$thansa_conn_upgrade"
+      ky_hieu: 'MAPVAR="thansa_conn_upgrade_$('
     - file: docker-compose.yml
       ky_hieu: "replicas: ${JAVIS_CADDY:-1}"
     - file: server/routes/domain.py
@@ -1479,3 +1479,41 @@
   dieu_kien_bo: >
     Bỏ nếu upstream tự thêm nhánh HTTPS cho bản native (reverse proxy do app dựng) - khi đó chuyển
     người dùng đã kích hoạt sang cơ chế gốc, giữ hàng rào bắt đăng nhập sau proxy.
+
+- id: P050
+  ten: "Cài lần đầu vào được giao diện: tên miền + HTTPS ngay trong install.sh, lối vào tạm bằng IP"
+  y_dinh: >
+    Bản native nghe 127.0.0.1 nên cài xong khách KHÔNG vào được giao diện (chỉ SSH tunnel /
+    cloudflared) - mà tên miền + nút Kích hoạt (P049) lại nằm trong giao diện. install.sh (Linux có
+    systemd + root/sudo) hỏi tên miền hoặc THANSA_DOMAIN: DNS đúng → gọi bin/thansa-nginx-ssl.sh, in
+    OPEN THANSA https://<tên miền>; chưa có → `--ip` mở tạm http://<ip> (default_server, chỉ khi nginx
+    chưa phục vụ site nào khác), kích hoạt tên miền xong tự đóng (close-ip-entry). Ghi
+    domain.proxy=nginx vào settings TRƯỚC khi dịch vụ chạy. THANSA_NGINX=0 bỏ qua. Kèm: biến map nginx
+    riêng từng site (hai bản một máy không "duplicate variable"), nginx -t đỏ thì rollback; script tự
+    đặt PATH có /usr/sbin (chủ báo 05/10: certbot không tìm thấy nginx vì PATH unit thiếu /usr/sbin) +
+    unit trong install.sh/javis.service thêm /usr/sbin:/sbin. Docker: Caddy cho http://<ip> vào thẳng
+    app (header_regexp Host IP) thay vì đẩy sang https://<ip> lỗi chứng chỉ.
+  commit: "[me] P050: cai lan dau vao duoc giao dien - ten mien + HTTPS trong install.sh, loi vao tam bang IP"
+  diem_neo:
+    - file: install.sh
+      ky_hieu: '"$NGX_SH" --ip "$PORT"'
+    - file: bin/thansa-nginx-ssl.sh
+      ky_hieu: 'export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"'
+    - file: docker-compose.yml
+      ky_hieu: "@ip header_regexp Host"
+  vung_theo_doi:
+    - "install.sh: bước 8b/9b + unit systemd (upstream sửa installer là xung đột ở đây)"
+    - "javis.service: dòng PATH"
+    - "docker-compose.yml / docker-compose.https.yml: khối http:// của Caddyfile"
+  anh_goc:
+    - file: install.sh
+      doan: 'Environment="PATH=$APP_DIR/.venv/bin:/usr/local/bin:/usr/bin:/bin"'
+  kiem_chung: >
+    test_nginx_ssl 57/57. Chạy thật trên máy phát hành: lỗi certbot tái hiện với PATH dịch vụ rồi hết
+    sau sửa (RESULT:OK); --ip từ chối khi đã có site (other-sites); --ip trên nginx trống (mount
+    namespace, bản sao /etc/nginx) phục vụ http://<ip> → app (/health 200, /settings 401), kích hoạt
+    tên miền sau đó đóng lối IP; install.sh chạy trọn không bàn phím vào thư mục/cổng riêng (exit 0,
+    proxy=nginx ghi trước, unit PATH có /usr/sbin, 401 khi chưa đăng nhập) rồi dọn sạch. Caddyfile
+    `caddy validate` + chạy thật: Host IP → 200, Host tên miền → 302 https.
+  dieu_kien_bo: >
+    Bỏ nếu upstream tự thêm bước truy cập từ xa / reverse proxy vào install.sh.

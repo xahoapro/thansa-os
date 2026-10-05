@@ -671,3 +671,15 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - VERSION 1.17.0-javis-0.70.2, moc-goc thansa_version 1.17.0. tu-kiem-chung 5/5 XANH.
 - NGHIỆM THU (env -u JAVIS_*): đỏ còn đúng 4 = {form_chuoi_rong, route_table, run_command_quyen,
   terminal_cmd_goc} (sandbox, upstream đỏ y hệt) → **0 hồi quy fork**.
+  **ĐÃ PHÁT HÀNH 2026-10-03** (origin/main 5626dee, snapshot ff từ 13aa1c7; backup me-backup-1.17.0).
+
+## Vòng 2026-10-05 (KHÔNG trộn upstream, nền giữ 0.70.2; thansa 1.17→1.18 - tính năng riêng P050)
+- **P050:** cài lần đầu vào được giao diện. install.sh hỏi tên miền / THANSA_DOMAIN → HTTPS ngay; chưa có
+  → `--ip` lối tạm http://<ip> (chỉ trên nginx trống, tự đóng khi kích hoạt tên miền). Vá chủ báo: certbot
+  "Could not find a usable 'nginx' binary" do PATH unit thiếu /usr/sbin (script tự đặt PATH + unit thêm sbin).
+  Biến map nginx riêng từng site + rollback khi nginx -t đỏ. Docker Caddy: Host IP vào thẳng app.
+  so_patch 45→46; neo P049 dời sang MAPVAR.
+- Chạy thật: lỗi PATH tái hiện rồi hết; --ip từ chối khi có site; --ip trên nginx trống (mount namespace)
+  phục vụ http://<ip> (/health 200, /settings 401) và đóng khi kích hoạt tên miền; install.sh trọn vẹn không
+  bàn phím vào thư mục/cổng riêng (exit 0) rồi dọn; Caddy validate + chạy thật (IP 200, tên miền 302).
+- VERSION 1.18.0-javis-0.70.2. NGHIỆM THU (env -u JAVIS_*): 556/560, đỏ đúng 4 sandbox nền → 0 hồi quy.
