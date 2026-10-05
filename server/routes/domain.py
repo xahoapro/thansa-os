@@ -99,6 +99,7 @@ def _nginx_error_text(code: str) -> str:
         "no-package-manager": ("Không tìm thấy apt hay dnf để cài nginx.", "Neither apt nor dnf was found to install nginx."),
         "need-root": ("Script cần quyền root.", "The script needs root."),
         "timeout": ("Quá 15 phút chưa xong - đã dừng.", "Did not finish within 15 minutes - stopped."),
+        "other-sites": ("nginx trên máy này đang phục vụ site khác.", "nginx on this machine already serves other sites."),
     }
     vi, en = table.get(code, (f"Lỗi: {code}", f"Error: {code}"))
     return localefmt.chu(vi, en)
