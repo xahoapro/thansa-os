@@ -497,15 +497,15 @@ Lưu ý cách hiểu đúng: những giới hạn trên nằm ở **mức quyề
 
 ## Bot gửi ảnh cho khách (từ 0.84.3)
 
-Bot gửi được ảnh trên Telegram, Zalo cá nhân, Slack và WhatsApp, ở **mọi mức quyền**. Cách dùng: dặn trong file Agent khi nào gửi ảnh nào, ví dụ "khách hỏi mẫu áo thì gửi `![Mẫu áo](attachments/mau-ao.jpg)`". Agent chèn cú pháp ảnh đó vào câu trả lời, Javis gỡ nó khỏi câu chữ rồi gửi ảnh thật ngay sau tin chữ. Trong nhóm Zalo, tin chữ vẫn tag người đang hỏi.
+Bot gửi được ảnh trên Telegram, Zalo cá nhân, Slack và WhatsApp, ở **mọi mức quyền**. Cách dùng: dặn trong file Agent khi nào gửi ảnh nào, ví dụ "khách hỏi mẫu áo thì gửi `![Mẫu áo](attachments/mau-ao.jpg)`". Agent chèn cú pháp ảnh đó vào câu trả lời, Thansa gỡ nó khỏi câu chữ rồi gửi ảnh thật ngay sau tin chữ. Trong nhóm Zalo, tin chữ vẫn tag người đang hỏi.
 
-Javis chỉ gửi khi đủ các điều kiện:
+Thansa chỉ gửi khi đủ các điều kiện:
 
 - Ảnh **nằm trong brain của chính bot** (đường dẫn tính từ gốc brain đó). Ảnh ở brain khác hay chỗ khác trên máy thì không.
 - Đúng là ảnh (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`), có thật, không quá 10 MB. File tài liệu như PDF hay ghi chú `.md` thì không gửi.
 - Tối đa 4 ảnh mỗi câu trả lời.
 
-Ảnh không qua được điều kiện thì cú pháp ảnh ở lại nguyên trong câu chữ, để bạn thấy trong Hộp thư bot đã định gửi gì. Javis **không** tự đính kèm file nào bot vừa tạo ra: người đang lái bot là khách lạ, nên chỉ ảnh mà Agent chủ động gọi tên mới đi.
+Ảnh không qua được điều kiện thì cú pháp ảnh ở lại nguyên trong câu chữ, để bạn thấy trong Hộp thư bot đã định gửi gì. Thansa **không** tự đính kèm file nào bot vừa tạo ra: người đang lái bot là khách lạ, nên chỉ ảnh mà Agent chủ động gọi tên mới đi.
 
 ## Bot nói như người, không lộ trạng thái máy
 

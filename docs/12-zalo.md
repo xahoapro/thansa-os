@@ -72,12 +72,12 @@ nối (khoảng hai tuần gần nhất); tin cũ hơn thì không API nào lấ
 
 ## Duyệt người xin vào nhóm
 
-Từ Javis 0.84.7 (javis-zalo 1.2.0), với nhóm bật "duyệt thành viên":
+Từ Thansa 0.84.7 (javis-zalo 1.2.0), với nhóm bật "duyệt thành viên":
 
-- **Javis báo bạn khi có người xin vào**, qua chuông hòm thư và Telegram của bạn: một tin cho mỗi nhóm, có tên người
+- **Thansa báo bạn khi có người xin vào**, qua chuông hòm thư và Telegram của bạn: một tin cho mỗi nhóm, có tên người
   xin và tên nhóm.
-- **Bạn ra lệnh, Javis làm.** Hỏi "ai đang xin vào nhóm Zoom | Javis OS?" thì Javis liệt kê; bảo "duyệt hết" hay
-  "duyệt Lan, từ chối Minh" thì Javis làm và nói lại kết quả từng người.
+- **Bạn ra lệnh, Thansa làm.** Hỏi "ai đang xin vào nhóm Zoom | Thansa OS?" thì Thansa liệt kê; bảo "duyệt hết" hay
+  "duyệt Lan, từ chối Minh" thì Thansa làm và nói lại kết quả từng người.
 - **Bot chuyên trách không bao giờ tự duyệt.** Sự kiện xin vào nhóm không tới bot.
 - Tài khoản Zalo đã quét QR phải là **trưởng hoặc phó nhóm**, không thì Zalo từ chối. Duyệt là thao tác nguy hiểm
   (đổi thành viên nhóm), nên kết nối Zalo phải ở mức Toàn quyền.
