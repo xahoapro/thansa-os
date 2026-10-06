@@ -708,3 +708,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   tu-kiem-chung 5/5. backup me-backup-1.18.0-pre (= me trước rebase, d0c419aa).
 - NGHIỆM THU (env -u JAVIS_*, chạy tuần tự): fork 577/582, upstream sạch 575/580. Đỏ chung = {form_chuoi_rong,
   image_vision (mới, môi trường), route_table, run_command_quyen, terminal_cmd_goc} → **0 hồi quy fork**.
+  **ĐÃ PHÁT HÀNH 2026-10-06** (origin/main 0a5035f, snapshot ff từ a1ff8a7; backup me-backup-1.19.0).
