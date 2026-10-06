@@ -277,8 +277,16 @@ def drop_update_stash(stash_oid, restored):
 
 
 def release_source():
-    """The same official release branch that /version checks in main.py."""
-    return "https://github.com/blogminhquy/javis-os.git", "main"
+    """The same official release branch that /version checks in main.py.
+
+    Thansa: PHẢI cùng repo với GITHUB_REPO của main.py (env THANSA_UPDATE_REPO, mặc định
+    xahoapro/thansa-os). Upstream ghi cứng repo Javis gốc; giữ nguyên thì nút Cập nhật đi kéo
+    Javis về `git merge` vào bản Thansa - 251 xung đột, tự huỷ, máy KHÔNG BAO GIỜ lên được bản mới
+    bằng nút trong app (lọt từ Thansa 1.14 tới 1.18, bắt được 06/10)."""
+    repo = (os.getenv("THANSA_UPDATE_REPO") or "xahoapro/thansa-os").strip().strip("/")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+        repo = "xahoapro/thansa-os"
+    return f"https://github.com/{repo}.git", "main"
 
 
 def _clean_tracked_tree():
