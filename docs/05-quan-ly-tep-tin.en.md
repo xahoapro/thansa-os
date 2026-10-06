@@ -36,7 +36,7 @@ How to set environment variables see [Environment Config](16-cau-hinh-env.md).
 2. On the left navigation rail, open the **Memory** group and click the **Files** item.
 3. The page shows a search box at the top, toolbar below it, and below that a file/folder list. First time you enter, Thansa shows the root folder of your selected brain.
 
-If the list shows an error like "Thansa server doesn't have the Files feature yet", restart the server (run `stop-javis.bat` then `start-javis.vbs`) and reload the page. See also [Troubleshooting & FAQ](17-khac-phuc-su-co.md).
+If the list shows an error like "Thansa server doesn't have the Files feature yet", restart the server (run `stop-thansa.bat` then `start-thansa.vbs`) and reload the page. See also [Troubleshooting & FAQ](17-khac-phuc-su-co.md).
 
 ## Choose which brain to work with
 
@@ -282,7 +282,7 @@ Practical takeaway: documents you want to keep long-term, move to Sources or Wik
 
 ## Common issues
 
-**List says "Thansa server doesn't have the Files feature yet".** Server is running an old version without this feature. Restart the server (`stop-javis.bat` then `start-javis.vbs`) and reload the page.
+**List says "Thansa server doesn't have the Files feature yet".** Server is running an old version without this feature. Restart the server (`stop-thansa.bat` then `start-thansa.vbs`) and reload the page.
 
 **Says "Session expired" or error 401.** Reload the page and log in again. See [Security & Accounts](14-bao-mat-tai-khoan.md).
 

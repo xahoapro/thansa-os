@@ -10,8 +10,8 @@
 #   3) Trỏ DNS (bản ghi A: ten-mien → <ip-vps>) theo hướng dẫn hiện trong app.
 #   4) Mở https://ten-mien-cua-ban → chứng chỉ tự cấp + tự gia hạn. Xong.
 #
-# CHỈ DÙNG CHO MÁY CHẠY MỘT BẢN JAVIS. Caddy ở đây nằm CHUNG project với Javis, mà một máy chỉ
-# có một cổng 443 - dựng bản Javis thứ hai kèm file này là hai Caddy tranh cổng và con sau chết.
+# CHỈ DÙNG CHO MÁY CHẠY MỘT BẢN JAVIS. Caddy ở đây nằm CHUNG project với Thansa, mà một máy chỉ
+# có một cổng 443 - dựng bản Thansa thứ hai kèm file này là hai Caddy tranh cổng và con sau chết.
 # Nhiều bản, mỗi bản một tên miền → dùng docker-compose.proxy.yml + docker-compose.multi.yml
 # (proxy đứng ngoài, chạy một lần cho cả VPS, tự phát hiện bản mới qua nhãn Docker).
 #
@@ -49,7 +49,7 @@ services:
   # Backend giữ nguyên; cookie Secure tự bật khi Host khớp tên miền (server tự xử, không cần env).
   caddy:
     image: caddy:2-alpine
-    container_name: javis-caddy
+    container_name: ${JAVIS_NAME:-thansa}-caddy
     restart: unless-stopped
     depends_on:
       - javis

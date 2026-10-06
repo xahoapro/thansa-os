@@ -11,9 +11,9 @@ If you have just installed Thansa for the first time, read [Getting started and 
 A great many errors disappear after one of these, so try them before worrying:
 
 1. **Restart the server (when you or an update just changed Python `.py` code).**
-   - On **Windows**: run `stop-javis.bat` to stop it, then `start-javis.vbs` (runs in the background) or `setup.bat` (shows a window) to start it again.
+   - On **Windows**: run `stop-thansa.bat` to stop it, then `start-thansa.vbs` (runs in the background) or `setup.bat` (shows a window) to start it again.
    - On **Docker / VPS**: `docker compose restart`.
-   - On **Linux (systemd)**: `sudo systemctl restart javis`.
+   - On **Linux (systemd)**: `sudo systemctl restart thansa`.
 2. **Reload the interface with a clean cache (when the screen is wrong, a button is missing, or you just changed the interface).** Press **Ctrl+Shift+R** in the browser (Mac: Cmd+Shift+R). This is a hard refresh, forcing the browser to reload every interface file instead of using the cached copy.
 
 > The simple rule to remember: change the core (a `.py` file) means **restart the server**; the interface displaying wrong means **Ctrl+Shift+R**.
@@ -22,8 +22,8 @@ A great many errors disappear after one of these, so try them before worrying:
 
 | Symptom | What to do |
 |---|---|
-| You edited code (or just updated) and **nothing changed** | If a `.py` file changed: **restart the server** (Windows: `stop-javis.bat` then `start-javis.vbs`; Docker: `docker compose restart`). If only the interface changed: press **Ctrl+Shift+R**. |
-| **Port 7777 is held** and the new build will not come up | Kill the old process FIRST, then start again. Windows: run `stop-javis.bat`, or `taskkill /F /PID <pid>` with the PID holding the port. Docker: `docker compose down` then `docker compose up -d`. |
+| You edited code (or just updated) and **nothing changed** | If a `.py` file changed: **restart the server** (Windows: `stop-thansa.bat` then `start-thansa.vbs`; Docker: `docker compose restart`). If only the interface changed: press **Ctrl+Shift+R**. |
+| **Port 7777 is held** and the new build will not come up | Kill the old process FIRST, then start again. Windows: run `stop-thansa.bat`, or `taskkill /F /PID <pid>` with the PID holding the port. Docker: `docker compose down` then `docker compose up -d`. |
 | **Hostinger cannot pull the image** | Set the GHCR package to **Public** (GitHub, the repo, Packages, choose `javis-os`, Package settings, Visibility = Public). Then wait for the GitHub Action build to finish (the repo's Actions tab) and Deploy again. |
 | Opening the app shows the **create-admin screen** on a public server | No admin exists yet, so whoever opens the link first can create it. Create the account now (password at least 8 characters), or next time preset the env vars `JAVIS_ADMIN_USER` and `JAVIS_ADMIN_PASSWORD` at deploy time and sign straight in. Once inside, turn on 2FA. |
 | **Claude reports it is not signed in** (Thansa cannot answer) | Sign the Claude "brain" in once. In the app: open **Models**, on the Claude Code card click **Sign in to Claude**, open the link, paste the code if asked. By command: `claude auth login --claudeai` (on Docker, run it in the App terminal). |
@@ -42,9 +42,9 @@ The sections below explain each row in more detail.
 Thansa has two parts that run differently, so refreshing them differs too:
 
 1. **Changing the core (Python `.py` files in `server/`)**: the running server still holds the old build in memory. You must **stop and start the server**:
-   - Windows: run `stop-javis.bat`, wait a few seconds, then run `start-javis.vbs`.
+   - Windows: run `stop-thansa.bat`, wait a few seconds, then run `start-thansa.vbs`.
    - Docker / VPS: `docker compose restart`.
-   - Linux systemd: `sudo systemctl restart javis`.
+   - Linux systemd: `sudo systemctl restart thansa`.
 2. **Changing the interface (HTML/CSS/JS in `dashboard/`)**: the server needs no restart, but the browser often keeps the old build in cache. Press **Ctrl+Shift+R** for a clean reload.
 
 If neither helps, check that you are on the right port and the right brain.
@@ -53,8 +53,8 @@ If neither helps, check that you are on the right port and the right brain.
 
 Thansa's default port is **7777**. When an old process has not fully stopped and you start a new build, the new one errors because the port is busy. Work through it in order:
 
-1. Stop the old process first. Windows: run `stop-javis.bat`. If it persists, find the PID holding the port then `taskkill /F /PID <pid>`. Docker: `docker compose down`.
-2. Start again. Windows: `start-javis.vbs`. Docker: `docker compose up -d`.
+1. Stop the old process first. Windows: run `stop-thansa.bat`. If it persists, find the PID holding the port then `taskkill /F /PID <pid>`. Docker: `docker compose down`.
+2. Start again. Windows: `start-thansa.vbs`. Docker: `docker compose up -d`.
 
 To move to another port (when 7777 collides with other software), set `JAVIS_PORT` in the `.env` file; see [.env configuration](16-env-configuration.md).
 
@@ -86,7 +86,7 @@ The login token lives in `~/.claude` (Docker: the `claude-auth` volume), so it s
 
 ## The Files page errors at "Loading..."
 
-If you open **Files** (**Brain** group) and the file list errors instead of appearing, the server is usually running an old build with no Files endpoint (a 404). The interface itself says so: **restart the server** (Windows: `stop-javis.bat` then `start-javis.vbs`) then **reload the page** with Ctrl+Shift+R.
+If you open **Files** (**Brain** group) and the file list errors instead of appearing, the server is usually running an old build with no Files endpoint (a 404). The interface itself says so: **restart the server** (Windows: `stop-thansa.bat` then `start-thansa.vbs`) then **reload the page** with Ctrl+Shift+R.
 
 If it reports an expired session (a 401), just reload the page and sign in again. The full Files guide is at [File manager](05-file-manager.md).
 
@@ -148,9 +148,9 @@ There are several places, depending on what you want to see:
 2. **The self-learning log**: the **Self-learning** page (**Brain** group) has two separate panels, **What Thansa taught itself (latest commit)** and **Learning log**. See [Self-learning](22-self-learning.md).
 3. **The Updates page** (**System** group, the page title is **Update log**): this is where you see the running version and the feature history per release. There is no separate "Logs" or "Activity log" page any more; the `logs` item on the rail is this page.
 4. **The server's technical log** (when you need to dig into an error):
-   - Windows running in the background through `start-javis.vbs`: the log is at `server\javis.log`.
+   - Windows running in the background through `start-thansa.vbs`: the log is at `server\thansa.log`.
    - Docker / VPS: `docker compose logs javis` (add `-f` to follow: `docker compose logs -f`).
-   - Linux systemd: `journalctl -u javis -f`.
+   - Linux systemd: `journalctl -u thansa -f`.
 5. **The update log** when you click the update button in the app: the `update.log` file in the state folder, so `server/update.log` locally and `/data/state/update.log` on Docker (the path follows `JAVIS_STATE_DIR`). You usually do not need to open it: when an update fails the interface already shows the notice, and the app reads the last 50 lines of this file to report the state.
 
 ## Frequently asked questions

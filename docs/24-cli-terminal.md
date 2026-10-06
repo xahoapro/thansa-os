@@ -150,7 +150,7 @@ Nếu máy bạn đã cài Thansa (clone repo về):
 javis up
 ```
 
-Nó tìm bản cài (qua biến `JAVIS_HOME`, thư mục hiện tại, hoặc `~/javis-os`), bật lên rồi lưu sẵn hồ sơ `local` để lần sau `javis "..."` là chạy. Thansa đang chạy sẵn rồi thì nó nhận ra và không bật thêm cái thứ hai.
+Nó tìm bản cài (qua biến `JAVIS_HOME`, thư mục hiện tại, hoặc `~/thansa-os`), bật lên rồi lưu sẵn hồ sơ `local` để lần sau `javis "..."` là chạy. Thansa đang chạy sẵn rồi thì nó nhận ra và không bật thêm cái thứ hai.
 
 Không tìm thấy bản cài thì nó nói thẳng: **`javis up` không chứa server bên trong**, và chỉ ba cách xử lý (đặt `JAVIS_HOME`, chạy từ trong thư mục Thansa, hoặc `javis login` tới một Thansa ở nơi khác).
 

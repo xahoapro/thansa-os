@@ -158,9 +158,9 @@ Opening the machine and seeing **ERR_CONNECTION_REFUSED** at `localhost:7777`—
 
 - **Windows is blocking this startup item.** Task Manager, **Startup** tab, when you hit Disable it doesn't delete anything, just sets a flag for Windows to skip. Many "PC cleanup, speed up" apps also turn things off using the same flag without asking. Click **Enable auto-start** again and Thansa removes the flag.
 - **Installation directory has moved**, but the startup command still points to the old path. Click enable again to update.
-- **Missing `start-javis.vbs` or `.venv\Scripts\python.exe`.** Run `setup.bat` again to rebuild the missing part.
+- **Missing `start-thansa.vbs` or `.venv\Scripts\python.exe`.** Run `setup.bat` again to rebuild the missing part.
 
-If the card says **On** without any warning but the machine still doesn't start it, open `server\javis.log` in the installation directory: that's where the server logs errors if it did run but died mid-execution.
+If the card says **On** without any warning but the machine still doesn't start it, open `server\thansa.log` in the installation directory: that's where the server logs errors if it did run but died mid-execution.
 
 For Second Brain (memory, Wiki, vault structure), see [Second Brain: memory, Wiki, INGEST](13-second-brain-bo-nho-wiki.md).
 
