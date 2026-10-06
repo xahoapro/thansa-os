@@ -1350,8 +1350,7 @@
   diem_neo:
     - file: server/lenh_he_thong.py
       ky_hieu: "📋 Việc nền của Thansa"
-    - file: system/plugins/zalo-group/plugin.yaml
-      ky_hieu: "author: Thansa (bundled)"
+    # (neo system/plugins/zalo-group bỏ 06/10: upstream 0.73.0 xoá plugin, chuyển sang gói Store javis.zalo)
   vung_theo_doi:
     - "server/lenh_he_thong.py + dashboard/chat-lenh.js: chuỗi đầu ra lệnh /"
     - "system/plugins/zalo-*: mô tả tool + author"
@@ -1561,3 +1560,59 @@
     bản phát hành sửa file giấu thì file hiện lại (không vỡ) → cầu nối không được sửa.
   dieu_kien_bo: >
     Cầu nối bỏ được khi chắc không còn máy Windows nào chạy bản ≤1.18 (updater cũ). Phần đổi tên thì giữ.
+
+- id: P052
+  ten: "Rebrand nền 0.84.2 - Slack/WhatsApp, chatbot, Zalo CLI riêng, tên file cài"
+  y_dinh: >
+    Nền 0.70.2→0.84.2 (23 commit): kênh Slack + WhatsApp (điều khiển + bot khách), bot đọc ảnh khách bằng
+    model riêng, mức quyền bot "Đọc tài liệu", bộ phán xử tự soát/tự chỉnh (plugin javis-reply-policy), Zalo
+    chạy CLI riêng javis-zalo (phần Zalo mở rộng sang gói Store javis.zalo, plugin zalo-image/zalo-group bị
+    upstream XOÁ), theme Sáng/Tối/Tự động, trang Skills mới, thử bot. Rebrand chuỗi HIỂN THỊ Javis→Thansa
+    theo luật P007/P026/P027/P048: string literal server (tokenize, bỏ docstring), i18n vi/en, docs 12/14/20/
+    25/29 (+en), mcp-catalog (vi+en), mô tả/author plugin javis-reply-policy, CLAUDE.md, index.html
+    reset_server. Kèm phần P051 nền mới mang lại/sót: link repo gốc (8 URL compose DEPLOY.en, link docs
+    Slack/WhatsApp console.js, guide_url Zalo catalog) → xahoapro/thansa-os; SVG install-terminal; chú
+    thích thansa.service + .gitattributes. GIỮ: đường Javis/ vault trong main.py, clientInfo codex_realtime,
+    tên gói/CLI javis-zalo, id gói javis.zalo, chú thích.
+  commit: "[me] P052: rebrand nen 0.84.2 - Slack/WhatsApp, chatbot, Zalo CLI rieng, ten file cai"
+  diem_neo:
+    - file: server/slack_bot.py
+      ky_hieu: "Bạn không có quyền dùng bot Thansa này."
+    - file: system/plugins/javis-reply-policy/plugin.yaml
+      ky_hieu: "author: Thansa (bundled)"
+  vung_theo_doi:
+    - "server/{slack_bot,whatsapp_bot,owner_channels,channel_context}.py + channels/*: chuỗi kênh mới"
+    - "docs 29-slack-whatsapp (+en), 25-chatbot, 12-zalo: prose"
+    - "system/mcp-catalog*.json: mô tả javis-zalo"
+  anh_goc:
+    - file: server/slack_bot.py
+      doan: "Bạn không có quyền dùng bot Javis này."
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so với bản 1.18 (dem.py): 190 chỗ mới / 47 file → đổi 29 chuỗi server + 187
+    chỗ docs/i18n/catalog/plugin; phần còn tăng chỉ là chú thích/docstring. grep blogminhquy/javis-os ngoài
+    lịch sử + bộ lọc = 0. JSON hợp lệ, py_compile sạch.
+  dieu_kien_bo: >
+    Như P048: bỏ khi upstream đưa tên sản phẩm vào cấu hình branding.
+
+- id: P053
+  ten: "Nút Cập nhật lấy bản phát hành từ repo Thansa (không kéo Javis gốc)"
+  y_dinh: >
+    Upstream 0.64.55 ghi cứng updater.release_source() = github.com/blogminhquy/javis-os. Ở Thansa, nút Cập
+    nhật (bản cài git) kéo Javis gốc về `git merge` vào bản Thansa → 251 xung đột, tự huỷ, lùi lại: máy cài
+    native KHÔNG lên được bản mới bằng nút trong app suốt 1.14→1.18 (chỉ update.sh/git pull chạy). Mô phỏng
+    trên bản clone 1.18 ngày 06/10. Sửa: release_source() dùng cùng repo với /version (THANSA_UPDATE_REPO,
+    mặc định xahoapro/thansa-os, kiểm dạng owner/name). Test upstream test_update_diagnose sửa theo.
+  commit: "[me] P053: nut Cap nhat lay ban phat hanh tu repo Thansa (khong keo Javis goc)"
+  diem_neo:
+    - file: server/updater.py
+      ky_hieu: 'repo = (os.getenv("THANSA_UPDATE_REPO") or "xahoapro/thansa-os")'
+  vung_theo_doi:
+    - "server/updater.py release_source + merge_release; main.py GITHUB_REPO (phải CÙNG repo)"
+  anh_goc:
+    - file: server/updater.py
+      doan: 'return "https://github.com/blogminhquy/javis-os.git", "main"'
+  kiem_chung: >
+    release_source() = xahoapro/thansa-os, THANSA_UPDATE_REPO bẩn rơi về mặc định; test_update_diagnose +
+    test_updater_merge xanh. Mỗi vòng trộn: grep blogminhquy/javis-os trong server/ (ngoài bộ lọc rebrand) = 0.
+  dieu_kien_bo: >
+    Không bỏ - chừng nào Thansa còn phát hành từ repo riêng.
