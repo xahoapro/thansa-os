@@ -85,7 +85,7 @@ check(
     "JAVIS_AUTO_UPDATE có mặc định TẮT → bỏ trống là hành vi cũ, không ai bị tự restart bất ngờ",
     "${JAVIS_AUTO_UPDATE:-false}" in hostinger_src,
 )
-for knob, mac_dinh in (("JAVIS_NAME", "javis"), ("JAVIS_HOST_PORT", "7777")):
+for knob, mac_dinh in (("JAVIS_NAME", "thansa"), ("JAVIS_HOST_PORT", "7777")):
     check(
         f"{knob} có mặc định ({mac_dinh}) → cài bản đầu bỏ trống vẫn chạy y như trước",
         f"${{{knob}:-{mac_dinh}}}" in hostinger_src,

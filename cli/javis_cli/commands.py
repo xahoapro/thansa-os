@@ -232,6 +232,7 @@ def _tim_javis() -> Path:
     if os.getenv("JAVIS_HOME"):
         ung_vien.append(Path(os.environ["JAVIS_HOME"]))
     ung_vien += [Path.cwd(), Path.cwd().parent,
+                 Path(os.path.expanduser("~")) / "thansa-os",   # thư mục clone mặc định của Thansa
                  Path(os.path.expanduser("~")) / "javis-os",
                  Path(os.path.expanduser("~")) / "Javis-OS"]
     for p in ung_vien:

@@ -21,7 +21,7 @@ khớp với dự án.
 ## Dựng môi trường
 
 ```bash
-git clone https://github.com/<bạn>/javis-os.git && cd javis-os
+git clone https://github.com/<bạn>/thansa-os.git && cd thansa-os
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt pytest
 .venv/bin/python -m uvicorn main:app --app-dir server --port 7777   # http://localhost:7777
 ```
