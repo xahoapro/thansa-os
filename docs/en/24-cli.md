@@ -150,7 +150,7 @@ If the machine has Thansa installed (the repo cloned):
 javis up
 ```
 
-It finds the install (through the `JAVIS_HOME` variable, the current folder, or `~/javis-os`), starts it, then saves a `local` profile so `javis "..."` works next time. If Thansa is already running, it recognises that and does not start a second one.
+It finds the install (through the `JAVIS_HOME` variable, the current folder, or `~/thansa-os`), starts it, then saves a `local` profile so `javis "..."` works next time. If Thansa is already running, it recognises that and does not start a second one.
 
 When it cannot find an install it says so plainly: **`javis up` does not contain the server inside it**, and there are only three ways forward (set `JAVIS_HOME`, run from inside the Thansa folder, or `javis login` to a Thansa somewhere else).
 
