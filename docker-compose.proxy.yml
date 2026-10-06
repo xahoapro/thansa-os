@@ -1,11 +1,11 @@
 # ============================================================================
-# Javis OS - PROXY DÙNG CHUNG cho NHIỀU BẢN Javis trên cùng một VPS.
+# Thansa OS - PROXY DÙNG CHUNG cho NHIỀU BẢN Thansa trên cùng một VPS.
 #
 # Chạy MỘT LẦN cho cả máy (không phải mỗi bản một cái). Nó giữ cổng 80/443, tự xin
-# và tự gia hạn chứng chỉ Let's Encrypt, rồi lái mỗi tên miền về đúng bản Javis của nó.
+# và tự gia hạn chứng chỉ Let's Encrypt, rồi lái mỗi tên miền về đúng bản Thansa của nó.
 #
 # VÌ SAO PHẢI TÁCH RA MỘT FILE RIÊNG: một máy chỉ có MỘT cổng 443. Bản Caddy trong
-# docker-compose.https.yml nằm chung project với Javis, nên bản Javis thứ hai dựng lên là
+# docker-compose.https.yml nằm chung project với Thansa, nên bản Thansa thứ hai dựng lên là
 # hai Caddy tranh nhau cổng 443 và con thứ hai chết. Proxy phải sống ngoài mọi bản.
 #
 # CÀI (làm một lần cho cả VPS):
@@ -13,9 +13,9 @@
 #   curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.proxy.yml
 #   docker compose -f docker-compose.proxy.yml -p javis-proxy up -d
 #
-# SAU ĐÓ mỗi bản Javis chạy ở THƯ MỤC RIÊNG với .env riêng (xem docker-compose.multi.yml):
-#   JAVIS_NAME=javis-shop     JAVIS_HOST_PORT=7777   DOMAIN_NAME=shop.tencuaban.com
-#   JAVIS_NAME=javis-ca-nhan  JAVIS_HOST_PORT=7778   DOMAIN_NAME=canhan.tencuaban.com
+# SAU ĐÓ mỗi bản Thansa chạy ở THƯ MỤC RIÊNG với .env riêng (xem docker-compose.multi.yml):
+#   JAVIS_NAME=thansa-shop     JAVIS_HOST_PORT=7777   DOMAIN_NAME=shop.tencuaban.com
+#   JAVIS_NAME=thansa-ca-nhan  JAVIS_HOST_PORT=7778   DOMAIN_NAME=canhan.tencuaban.com
 #
 # Proxy TỰ PHÁT HIỆN bản mới qua nhãn Docker - thêm hay bớt một bản KHÔNG phải sửa gì ở đây,
 # cũng không phải khởi động lại proxy. Đúng cách Traefik của Hostinger đang làm.

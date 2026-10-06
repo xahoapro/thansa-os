@@ -35,7 +35,7 @@ Buka http://localhost:7777. Untuk HTTPS lewat Caddy, tambahkan `-f docker-compos
 
 1. Instal Python 3.12 + Node 22.
 2. Di folder proyek, jalankan `setup.bat` sekali: script ini membuat .venv, menginstal dependency, dan menginstalkan dua engine CLI (Claude Code, Codex) untuk Anda.
-3. `start-javis.bat` untuk menjalankan di background (`stop-javis.bat` untuk menghentikan).
+3. `start-thansa.bat` untuk menjalankan di background (`stop-thansa.bat` untuk menghentikan).
 4. Buka http://localhost:7777.
 
 ## Setelah berjalan

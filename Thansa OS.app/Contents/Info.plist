@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>JAVIS OS</string>
+    <string>Thansa OS</string>
     <key>CFBundleDisplayName</key>
-    <string>JAVIS OS</string>
+    <string>Thansa OS</string>
     <key>CFBundleIdentifier</key>
-    <string>vn.minhquy.javis-os</string>
+    <string>org.tradingauto.thansa-os</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleShortVersionString</key>
@@ -15,9 +15,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>javis</string>
+    <string>thansa</string>
     <key>CFBundleIconFile</key>
-    <string>javis</string>
+    <string>thansa</string>
     <key>LSMinimumSystemVersion</key>
     <string>11.0</string>
     <key>LSUIElement</key>
