@@ -1616,3 +1616,26 @@
     test_updater_merge xanh. Mỗi vòng trộn: grep blogminhquy/javis-os trong server/ (ngoài bộ lọc rebrand) = 0.
   dieu_kien_bo: >
     Không bỏ - chừng nào Thansa còn phát hành từ repo riêng.
+
+- id: P054
+  ten: "Rebrand nền 0.84.8 - Zalo gửi ảnh, duyệt vào nhóm, giới hạn theo người"
+  y_dinh: >
+    Nền 0.84.2→0.84.8 (4 commit): bot Zalo gửi ảnh, duyệt yêu cầu vào nhóm Zalo, giới hạn tốc độ bot đếm theo
+    từng người trong nhóm, hướng dẫn Chatbots nêu đúng giới hạn. Rebrand hiển thị: câu nhắc duyệt/từ chối
+    (zalo_personal_channel.py, string literal), docs 12-zalo + 25-chatbot (vi+en). guide_url Zalo lại bị rebase
+    quay về repo gốc (vòng thứ hai liên tiếp) → sửa + canh bằng test_ten_thansa_cai_dat (catalog/console.js/
+    updater.py không được chứa blogminhquy/javis-os).
+  commit: "[me] P054: rebrand nen 0.84.8 - Zalo gui anh, duyet vao nhom, gioi han theo nguoi"
+  diem_neo:
+    - file: server/zalo_personal_channel.py
+      ky_hieu: 'Nhắn Thansa \"duyệt\"'
+  vung_theo_doi:
+    - "system/mcp-catalog.json guide_url Zalo: MỖI vòng rebase hay bị lấy HEAD → test canh"
+  anh_goc:
+    - file: server/zalo_personal_channel.py
+      doan: 'Nhắn Javis \"duyệt\"'
+  kiem_chung: >
+    dem.py so 1.19: 21 chỗ mới / 6 file → đổi hết phần hiển thị (bot_images.py chỉ docstring, giữ).
+    test_ten_thansa_cai_dat xanh kể cả mục link repo gốc.
+  dieu_kien_bo: >
+    Như P048/P052.
