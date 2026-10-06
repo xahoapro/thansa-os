@@ -158,9 +158,9 @@ Mở máy lên mà `localhost:7777` báo **ERR_CONNECTION_REFUSED** thì mở l�
 
 - **Windows đang chặn mục khởi động này.** Task Manager, thẻ **Startup**, khi bạn bấm Disable thì nó không xoá gì cả, chỉ ghi một cờ để Windows bỏ qua. Nhiều phần mềm "dọn máy, tăng tốc khởi động" cũng tắt bằng đúng cờ đó mà không hỏi. Bấm **Bật tự khởi động** lại là Thansa tự gỡ cờ.
 - **Thư mục cài đặt đã đổi chỗ**, lệnh khởi động còn trỏ đường dẫn cũ. Bấm bật lại để cập nhật.
-- **Thiếu `start-javis.vbs` hoặc `.venv\Scripts\python.exe`.** Chạy lại `setup.bat` để dựng lại phần thiếu.
+- **Thiếu `start-thansa.vbs` hoặc `.venv\Scripts\python.exe`.** Chạy lại `setup.bat` để dựng lại phần thiếu.
 
-Nếu thẻ ghi **Bật** không kèm cảnh báo nào mà mở máy vẫn không lên, mở `server\javis.log` trong thư mục cài đặt: đó là nơi server ghi lỗi khi nó có chạy nhưng chết giữa chừng.
+Nếu thẻ ghi **Bật** không kèm cảnh báo nào mà mở máy vẫn không lên, mở `server\thansa.log` trong thư mục cài đặt: đó là nơi server ghi lỗi khi nó có chạy nhưng chết giữa chừng.
 
 Về Second Brain (bộ nhớ, Wiki, cấu trúc vault), xem [Second Brain: bộ nhớ, Wiki, INGEST](13-second-brain-bo-nho-wiki.md).
 

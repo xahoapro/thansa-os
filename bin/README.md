@@ -1,6 +1,6 @@
-# JAVIS OS - macOS launchers
+# Thansa OS - macOS launchers
 
-Portable helpers to run JAVIS OS natively on macOS (no Docker), so you can
+Portable helpers to run Thansa OS natively on macOS (no Docker), so you can
 start it like a normal app.
 
 ## Prereqs (once)
@@ -14,13 +14,13 @@ start it like a normal app.
 
 ## Run
 
-- **`JAVIS OS.app`** (repo root) - double-click in Finder to start the server and
+- **`Thansa OS.app`** (repo root) - double-click in Finder to start the server and
   open `http://127.0.0.1:7777`. Keep the `.app` inside the repo folder (it finds
   the repo relative to its own location).
-- **`Start JAVIS OS.command`** / **`Stop JAVIS OS.command`** - double-clickable
+- **`Start Thansa OS.command`** / **`Stop Thansa OS.command`** - double-clickable
   Finder alternatives.
-- **`bin/javis-start.sh`** / **`bin/javis-stop.sh`** - the underlying scripts.
-- **`bin/javis-autostart.sh [install|uninstall]`** - run the server at login via a
+- **`bin/thansa-start.sh`** / **`bin/thansa-stop.sh`** - the underlying scripts.
+- **`bin/thansa-autostart.sh [install|uninstall]`** - run the server at login via a
   macOS LaunchAgent, and open the dashboard in the browser once it is up (a second,
   run-once agent; `JAVIS_AUTOSTART_OPEN=0` skips it). `./install.sh` turns this on by
   default since 0.306.0 (`JAVIS_NO_AUTOSTART=1` to skip). The plists are generated with

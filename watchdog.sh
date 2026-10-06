@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Javis OS - watchdog cho Mac chạy dưới launchd.
+# Thansa OS - watchdog cho Mac chạy dưới launchd.
 #
 # Vì sao có file này: vụ treo 14/08/2026. Server SỐNG (vẫn giữ cổng 7777, kernel vẫn nhận
 # TCP) nhưng event loop đông cứng - /health không trả lời, SIGTERM bị phớt, phải kill -9.
@@ -8,18 +8,18 @@
 # này gọi /health mỗi phút; hỏng NGUONG lần liên tiếp thì `launchctl kickstart -k` - launchd
 # tự hạ tiến trình cũ (SIGKILL nếu lì) rồi bật bản mới, không cần ai gõ tay lúc 4h sáng.
 #
-#   ./watchdog.sh install     cài LaunchAgent com.javis.watchdog (chạy check mỗi 60 giây)
+#   ./watchdog.sh install     cài LaunchAgent com.thansa.watchdog (chạy check mỗi 60 giây)
 #   ./watchdog.sh uninstall   gỡ LaunchAgent
 #   ./watchdog.sh check       một nhát kiểm tra (launchd gọi định kỳ; chạy tay cũng được)
 #   ./watchdog.sh status      đang cài chưa + đếm hỏng + mấy dòng log cuối
 #
 # Cấu hình qua env hoặc .env cùng thư mục: JAVIS_PORT (7777), JAVIS_LAUNCHD_LABEL
-# (com.javis.os), JAVIS_STATE_DIR (./server), JAVIS_WATCHDOG_FAILS (3).
+# (com.thansa.os; máy cũ com.javis.os), JAVIS_STATE_DIR (./server), JAVIS_WATCHDOG_FAILS (3).
 # ============================================================================
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# Đọc .env như update.sh: nhiều bản Javis trên một máy thì mỗi bản một cổng/nhãn riêng.
+# Đọc .env như update.sh: nhiều bản Thansa trên một máy thì mỗi bản một cổng/nhãn riêng.
 # Env truyền vào thắng .env (`:=` chỉ gán khi biến chưa đặt).
 if [ -f .env ]; then
   _env() { sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -1; }
@@ -28,13 +28,22 @@ if [ -f .env ]; then
   : "${JAVIS_STATE_DIR:=$(_env JAVIS_STATE_DIR)}"
 fi
 PORT="${JAVIS_PORT:-7777}"
-LABEL="${JAVIS_LAUNCHD_LABEL:-com.javis.os}"
+# Nhãn job chính: đặt tường minh, không thì bản mới com.thansa.os, máy cài trước 1.19 com.javis.os.
+LABEL="${THANSA_LAUNCHD_LABEL:-${JAVIS_LAUNCHD_LABEL:-}}"
+if [ -z "$LABEL" ]; then
+  LABEL="com.thansa.os"
+  [ -f "$HOME/Library/LaunchAgents/com.thansa.os.plist" ] || { [ -f "$HOME/Library/LaunchAgents/com.javis.os.plist" ] && LABEL="com.javis.os"; }
+fi
 STATE_DIR="${JAVIS_STATE_DIR:-$PWD/server}"
 TARGET="gui/$(id -u)/$LABEL"
 NGUONG="${JAVIS_WATCHDOG_FAILS:-3}"
 DEM_FILE="$STATE_DIR/watchdog-fails"
 LOG="$STATE_DIR/watchdog.log"
-PLIST="$HOME/Library/LaunchAgents/com.javis.watchdog.plist"
+# Nhãn của chính watchdog: máy đã cài watchdog cũ (com.javis.watchdog) thì giữ, để install/uninstall
+# lần sau vẫn gỡ đúng job đang chạy.
+WD_LABEL="com.thansa.watchdog"
+[ -f "$HOME/Library/LaunchAgents/com.javis.watchdog.plist" ] && WD_LABEL="com.javis.watchdog"
+PLIST="$HOME/Library/LaunchAgents/$WD_LABEL.plist"
 # Lệnh kick tách ra biến để test thay bằng `echo` được - còn lại không ai cần đổi.
 KICK_CMD="${JAVIS_WATCHDOG_KICK_CMD:-launchctl kickstart -k $TARGET}"
 
@@ -91,7 +100,7 @@ install() {
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.javis.watchdog</string>
+  <key>Label</key><string>$WD_LABEL</string>
   <key>ProgramArguments</key><array>
     <string>/bin/bash</string>
     <string>$PWD/watchdog.sh</string>
@@ -103,20 +112,20 @@ install() {
   <key>StandardErrorPath</key><string>$STATE_DIR/watchdog.log</string>
 </dict></plist>
 EOF
-  launchctl bootout "gui/$(id -u)/com.javis.watchdog" 2>/dev/null || true
+  launchctl bootout "gui/$(id -u)/$WD_LABEL" 2>/dev/null || true
   launchctl bootstrap "gui/$(id -u)" "$PLIST"
   ghi "đã cài: kiểm /health cổng $PORT mỗi 60 giây, $NGUONG lần hỏng liên tiếp → kickstart $TARGET"
   ghi "log tại: $LOG"
 }
 
 uninstall() {
-  launchctl bootout "gui/$(id -u)/com.javis.watchdog" 2>/dev/null || true
+  launchctl bootout "gui/$(id -u)/$WD_LABEL" 2>/dev/null || true
   rm -f "$PLIST"
-  echo "đã gỡ watchdog (com.javis.watchdog)."
+  echo "đã gỡ watchdog ($WD_LABEL)."
 }
 
 status() {
-  if launchctl print "gui/$(id -u)/com.javis.watchdog" >/dev/null 2>&1; then
+  if launchctl print "gui/$(id -u)/$WD_LABEL" >/dev/null 2>&1; then
     echo "watchdog ĐANG chạy: kiểm /health cổng $PORT mỗi 60 giây, ngưỡng $NGUONG lần → kickstart $TARGET"
   else
     echo "watchdog CHƯA cài. Cài bằng: ./watchdog.sh install"
