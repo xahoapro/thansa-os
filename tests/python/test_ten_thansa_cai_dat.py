@@ -103,6 +103,12 @@ for f in ("README.md", "DEPLOY.md", "DEPLOY.en.md", "QUICKSTART.md"):
     check(f"{f}: không còn clone vào thư mục javis", not re.search(r"\.git javis\b|cd javis\b|blogminhquy/javis-os\.git", t))
 check("README: lệnh cài clone vào thansa-os", "thansa-os.git && cd thansa-os" in doc("README.md"))
 
+# ---- 7. Link trong app không trỏ về repo Javis gốc ----
+# guide_url Zalo trong catalog bị rebase lấy bản upstream làm quay về blogminhquy/javis-os HAI vòng
+# liền (0.84.2, 0.84.8) - canh ở đây để vòng sau đỏ ngay thay vì lọt tới người dùng.
+for f in ("system/mcp-catalog.json", "system/mcp-catalog.en.json", "dashboard/console.js", "server/updater.py"):
+    check(f"{f}: không còn link repo Javis gốc", "blogminhquy/javis-os" not in doc(f))
+
 if FAIL:
     raise SystemExit(f"\nFAIL - test_ten_thansa_cai_dat: {len(FAIL)} lỗi")
 print("\nOK - test_ten_thansa_cai_dat: tất cả pass")
