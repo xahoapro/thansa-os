@@ -234,15 +234,19 @@
    *   ký dựng bằng chuỗi; danh sách có nút bấm (trang Kỹ năng) phải dựng bằng node, vì gắn
    *   handler qua chuỗi HTML thì mỗi lần lật trang lại phải đi dò lại từng nút mà nối.
    * @param emptyHtml HTML hiện khi không có mục nào
+   * @param opts      tuỳ chọn: { page, onPage }. `page` = trang mở ra (đếm từ 0), `onPage(p)`
+   *   báo lại mỗi lần lật để nơi gọi nhớ trang. Trang Kỹ năng cần cái này: vẽ lại danh sách
+   *   sau khi bật/tắt một skill mà quay về trang 1 thì người đang ở trang 3 phải lật lại từ đầu.
    */
-  function pager(box, items, perPage, renderPage, emptyHtml) {
+  function pager(box, items, perPage, renderPage, emptyHtml, opts) {
     if (!box) return;
     const all = items || [];
     if (!all.length) { box.innerHTML = emptyHtml || `<div class="dim" style="color:var(--text3)">${window.t("common.none")}</div>`; return; }
     const pages = Math.max(1, Math.ceil(all.length / perPage));
-    let page = 0;
+    let page = (opts && opts.page) || 0;
     const draw = () => {
       page = Math.min(Math.max(0, page), pages - 1);
+      if (opts && typeof opts.onPage === "function") opts.onPage(page);
       const nav = pages > 1 ? `<div class="jv-pager">
           <button class="s-btn-ghost" data-pg="prev"${page === 0 ? " disabled" : ""}>← ${window.t("cs.pager_prev")}</button>
           <span class="jv-pager-n">${window.t("cs.pager_info", { trang: page + 1, tong: pages, so: all.length })}</span>
@@ -4961,6 +4965,13 @@
     };
   }
 
+  // Open the consent screen of a connector's companion store pack. Returns what `caiGoiKho` returned,
+  // or "" when there is nothing to offer. Never installs anything by itself.
+  async function moiGoiDiKem(el, pack) {
+    if (!pack || !window.JavisPacks || typeof window.JavisPacks.caiGoiKho !== "function") return "";
+    return window.JavisPacks.caiGoiKho(pack, { batSan: true, sauKhiCai: () => renderConnect(el) });
+  }
+
   function openQrFlow(el, con, isFirst) {
     const risk = con.risk ? '<div class="conn-risk">' + WARN_ICON + ' ' + esc(con.risk) + '</div>' : "";
     const guide = con.guide
@@ -4992,7 +5003,13 @@
           clearInterval(_connPoll); _connPoll = null;
           zone.innerHTML = '<div class="conn-ok">' + CHECK_ICON + ' ' + esc(window.t("cs.cn_signed_in")) + ' <b>' + esc(st.label || "Zalo") + '</b>'
             + (isFirst ? '<div class="conn-hint">' + esc(window.t("cs.cn_hint_zalo")) + '</div>' : "") + '</div>';
-          setTimeout(() => { closeConnModal(); renderConnect(el); }, 1800);
+          setTimeout(() => {
+            closeConnModal(); renderConnect(el);
+            // 0.73.0: the extra tools of this service (Zalo: send images, tag people, read group images)
+            // live in a store pack. Offer it right away, through the pack's own consent screen, with
+            // "run now" pre-set: the user just connected this very service on purpose.
+            moiGoiDiKem(el, con.companion_pack);
+          }, 1800);
         } else if (st.state === "error") {
           clearInterval(_connPoll); _connPoll = null;
           zone.innerHTML = "";
@@ -5494,6 +5511,16 @@
             : "")
         + '</div>'
       : "";
+    // A connected service whose extra tools moved to a store pack the machine does not have yet
+    // (0.73.0: Zalo -> javis.zalo). Javis never installs a pack silently, so it has to be said here.
+    const banDiKem = (d.companions || []).filter(c => c.state !== "installed").map(c =>
+      '<div class="conn-guide" style="border-left:3px solid var(--warn,#e0a33e);padding-left:10px;margin-bottom:12px">'
+      + WARN_ICON + ' ' + esc(window.t(c.state === "disabled" ? "cs.cn_companion_disabled" : "cs.cn_companion_missing",
+                                    { ten: c.name, goi: c.pack }))
+      + '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center">'
+      + '<button class="gcard-btn" style="width:auto;flex:none" data-dikem="' + esc(c.pack) + '" data-dikem-tt="' + esc(c.state) + '">'
+      + esc(window.t(c.state === "disabled" ? "cs.cn_companion_enable" : "cs.cn_companion_install")) + '</button>'
+      + '<span class="mp-note" data-dikem-note="' + esc(c.pack) + '"></span></div></div>').join("");
     const khuDaGo = removed.length
       ? '<details class="cview-section"><summary><h3 style="display:inline">◆ ' + esc(window.t("cs.cn_removed_head")) + ' '
         + '<span style="opacity:.5">' + esc(window.t("cs.cn_removed_n", { count: removed.length })) + '</span></h3></summary>'
@@ -5505,7 +5532,7 @@
             + '<button class="gcard-btn" data-coreon="' + esc(r.id) + '">' + esc(window.t("store.reinstall")) + '</button></div>').join("")
         + '</div></details>'
       : "";
-    el.innerHTML = warn + banMoCoi
+    el.innerHTML = warn + banMoCoi + banDiKem
       // Hai TAB, không phải một mạch cuộn. Trang này gộp hai danh sách rất khác nhau:
       // thứ đang chạy, và thứ có thể đấu thêm. Gộp lại thì người đã đấu vài chục tài
       // khoản phải cuộn qua hết đống đó mới tới chỗ đấu cái mới.
@@ -5559,6 +5586,19 @@
     if (nutSanCo) nutSanCo.onclick = () => doiTab("sanco");
     // Từ banner mồ côi sang thẳng gói cần cài, ô tìm điền sẵn id connector. Thả người dùng vào
     // một kho ba chục mục rồi bảo tự tìm cái vừa biến mất là bắt họ làm việc của mình.
+    el.querySelectorAll("[data-dikem]").forEach(b => b.onclick = async () => {
+      const pack = b.dataset.dikem;
+      const note = el.querySelector('[data-dikem-note="' + pack + '"]');
+      if (b.dataset.dikemTt === "disabled") {
+        const r = await postJson("/packs/toggle", { id: pack, enabled: true });
+        if (r && r.ok) renderConnect(el);
+        else if (note) note.textContent = (r && r.error) || window.t("app.err_cap");
+        return;
+      }
+      const kq = await moiGoiDiKem(el, pack);
+      if (kq === "khong_co" && note) note.textContent = window.t("cs.cn_companion_unavail", { goi: pack });
+      else if (kq === "da_cai" || kq === "da_tat") renderConnect(el);
+    });
     el.querySelectorAll("[data-mocoi]").forEach(b => b.onclick = () => {
       if (window.JavisPacks && window.JavisPacks.moKho) {
         window.JavisPacks.moKho("connector", "mcp",
@@ -5960,7 +6000,11 @@
           <div id="zlCho"></div>
         </div>
       </div>
+      ${ownerChannelHtml("slack", s.slack || {})}
+      ${ownerChannelHtml("whatsapp", s.whatsapp || {})}
       ${placeholder("channels", window.t("cs.ch_soon"))}`;
+    wireOwnerChannel("slack");
+    wireOwnerChannel("whatsapp");
     const st = document.getElementById("tgStatus");
     async function refreshTgStatus() {
       let d; try { d = await (await fetch("/telegram/status")).json(); } catch (e) { return; }
@@ -6059,6 +6103,119 @@
           : Icons.warn(r.error || window.t("cs.ch_no_bot_cfg"));
       }
       catch (e) { zst.innerHTML = WARN_ICON + " " + esc(window.t("cs.ch_net_err")); }
+    };
+  }
+
+  // ---- Slack and WhatsApp control channels (0.71.0) ----
+  // One renderer for both: same card shape as Zalo (enable, credentials, allow-list, pairing
+  // queue), only the credential fields differ. Secrets are never echoed back: an empty field
+  // means "keep what is saved", exactly like the Telegram token.
+  const OWNER_CH = {
+    slack: { title: "Slack", fields: [["bot_token", true, "xoxb-..."], ["app_token", true, "xapp-..."]] },
+    whatsapp: { title: "WhatsApp", fields: [["phone_number_id", false, "123456789012345"], ["access_token", true, "EAA..."], ["app_secret", true, ""]] },
+  };
+  const DOC_CH = "https://github.com/xahoapro/thansa-os/blob/main/docs/en/29-slack-whatsapp.md";
+
+  function ownerChannelHtml(key, c) {
+    const def = OWNER_CH[key];
+    const id = (f) => `oc_${key}_${f}`;
+    const fields = def.fields.map(([f, secret, ph]) => {
+      const isSet = secret && c[f + "_set"];
+      const label = esc(window.t(`cs.oc_${key}_${f}`)) + (isSet ? ' <span class="dim">' + esc(window.t("cs.ch_token_set")) + "</span>" : "");
+      const val = secret ? "" : esc(c[f] || "");
+      const pholder = esc(isSet ? window.t("cs.ch_token_keep") : ph);
+      return `<label class="js-lbl">${label}</label><input class="js-input" id="${id(f)}" type="${secret ? "password" : "text"}" value="${val}" placeholder="${pholder}" autocomplete="off">`;
+    }).join("");
+    const webhook = key === "whatsapp"
+      ? `<div class="gcard-meta oc-hook" id="${id("hook")}"></div>`
+      : "";
+    return `
+      <div class="cview-section">
+        <h3>${Icons.kenh(key, { size: "18px" })} ${esc(def.title)}</h3>
+        <div class="gcard" style="max-width:560px">
+          <div class="gcard-meta" style="margin-bottom:8px">${esc(window.t(`cs.oc_${key}_intro`))}</div>
+          <label class="js-row"><span>${esc(window.t(`cs.oc_${key}_enable`))}</span><input type="checkbox" id="${id("enabled")}" ${c.enabled ? "checked" : ""}></label>
+          ${fields}
+          <div class="gcard-meta">${esc(window.t(`cs.oc_${key}_guide`))} <a href="${DOC_CH}" target="_blank" rel="noopener">${esc(window.t("cs.oc_guide_link"))} ↗</a></div>
+          ${webhook}
+          <label class="js-lbl">${esc(window.t(`cs.oc_${key}_allow`))} <span class="dim">${esc(window.t("cs.oc_allow_hint"))}</span></label>
+          <input class="js-input" id="${id("allow")}" value="${esc(c.allow || "")}" placeholder="${esc(window.t(`cs.oc_${key}_allow_ph`))}">
+          <div class="js-actions"><button class="gcard-btn" id="${id("save")}">${esc(window.t("cs.ch_save_enable"))}</button><button class="gcard-btn ghost" id="${id("test")}">${esc(window.t("cs.ch_send_test"))}</button></div>
+          <div class="gcard-meta" id="${id("status")}"></div>
+          <div id="${id("cho")}"></div>
+        </div>
+      </div>`;
+  }
+
+  function wireOwnerChannel(key) {
+    const def = OWNER_CH[key];
+    const el = (f) => document.getElementById(`oc_${key}_${f}`);
+    const st = el("status");
+    const cho = el("cho");
+    if (!st) return;
+    async function refresh() {
+      let d; try { d = await (await fetch(`/${key}/status`)).json(); } catch (e) { return; }
+      let line;
+      if (!d.enabled) line = ic("circle", { cls: "ic-dim" }) + " " + esc(window.t("cs.oc_st_off"));
+      else if (!d.configured) line = ic("circle", { cls: "ic-dim" }) + " " + esc(window.t("cs.oc_st_missing"));
+      else if (d.status === "polling") {
+        const n = (d.allow_ids || []).length;
+        line = `${ic("circle", { cls: "ic-fill ic-ok" })} ${esc(window.t("cs.oc_st_running"))}${d.bot_name ? " (" + esc(d.bot_name) + ")" : ""} - ${esc(n ? window.t("cs.ch_n_ids", { count: n }) : window.t("cs.ch_zl_st_noallow"))}.`;
+      }
+      else if (d.status === "error") line = WARN_ICON + " " + esc(window.t("cs.ch_st_boterr")) + " " + esc(d.last_error || "");
+      else if (d.status === "starting") line = ic("loader", { cls: "ic-spin" }) + " " + esc(window.t("cs.ch_st_starting"));
+      else line = ic("circle", { cls: "ic-dim" }) + " " + esc(window.t("cs.ch_st_stopped"));
+      if (d.status !== "error" && d.last_error) line += "<br>" + WARN_ICON + " " + esc(d.last_error);
+      st.innerHTML = line;
+      const hook = el("hook");
+      if (hook && d.webhook_url) {
+        hook.innerHTML = `<b>${esc(window.t("cs.oc_wa_hook_url"))}</b> <code>${esc(d.webhook_url)}</code><br>`
+          + `<b>${esc(window.t("cs.oc_wa_hook_token"))}</b> <code>${esc(d.verify_token || "")}</code><br>`
+          + esc(window.t("cs.oc_wa_hook_field"))
+          + (d.https ? "" : "<br>" + WARN_ICON + " " + esc(window.t("cs.oc_wa_need_https")));
+      }
+      const q = d.cho || [];
+      cho.innerHTML = q.length
+        ? '<div class="gcard-meta" style="margin-top:10px"><b>' + esc(window.t("cs.ch_zl_wait_head")) + "</b></div>" +
+          q.map(g => `<div class="zl-cho" data-cid="${esc(g.chat_id)}">
+              <div><b>${esc(g.ten || g.chat_id)}</b> <span class="dim">${esc(window.t("cs.ch_zl_code"))} ${esc(g.ma)}</span></div>
+              <div class="dim">${esc(window.t("cs.ch_zl_sent_n", { count: Number(g.lan) || 1 }))} ${esc(window.t("cs.ch_zl_verify"))}</div>
+              <div class="js-actions"><button class="gcard-btn zl-ok">${esc(window.t("cs.ch_zl_allow"))}</button><button class="gcard-btn ghost zl-bo">${esc(window.t("cs.ch_zl_skip"))}</button></div>
+            </div>`).join("")
+        : "";
+      cho.querySelectorAll(".zl-cho").forEach(n => {
+        const cid = n.dataset.cid;
+        const send = async (on) => {
+          const f = new FormData(); f.append("chat_id", cid); f.append("on", on ? "1" : "0");
+          try { await fetch(`/${key}/allow`, { method: "POST", body: f }); } catch (e) {}
+          const inp = el("allow");
+          if (on && inp) inp.value = inp.value ? inp.value + ", " + cid : cid;
+          refresh();
+        };
+        n.querySelector(".zl-ok").onclick = () => send(true);
+        n.querySelector(".zl-bo").onclick = () => send(false);
+      });
+    }
+    refresh();
+    el("save").onclick = async () => {
+      const data = { enabled: el("enabled").checked, allow: el("allow").value.trim() };
+      def.fields.forEach(([f, secret]) => {
+        const v = el(f).value.trim();
+        if (v || !secret) data[f] = v;
+      });
+      st.textContent = window.t("settings.saving");
+      const r = await saveSetting(key, data);
+      st.innerHTML = r.ok ? OK_ICON + " " + esc(window.t("cs.ch_saved_starting")) : WARN_ICON + " " + esc(window.t("cs.ch_save_err"));
+      if (r.ok) setTimeout(refresh, 1800);
+    };
+    el("test").onclick = async () => {
+      st.textContent = window.t("cs.ch_sending_test");
+      try {
+        const r = await (await fetch(`/${key}/test`, { method: "POST" })).json();
+        st.innerHTML = r.ok
+          ? `${OK_ICON} ${esc(window.t("cs.ch_test_sent_n", { sent: Number(r.sent) || 0, tong: Number(r.total) || 0 }))}` + (r.error ? " " + esc(window.t("app.err_cap")) + ": " + esc(r.error) : "")
+          : Icons.warn(r.error || window.t("cs.ch_no_bot_cfg"));
+      } catch (e) { st.innerHTML = WARN_ICON + " " + esc(window.t("cs.ch_net_err")); }
     };
   }
 
@@ -6882,6 +7039,72 @@
     ve();
   }
 
+  // TÔNG MÀU (0.74.0): Tối / Sáng / Tự động theo giờ. Mọi thứ nằm ở theme.js và localStorage
+  // của MÁY NÀY, không gọi server: điện thoại để tự động còn máy bàn ghim tối là hợp lệ. Thẻ tự
+  // vẽ lại khi tông đổi từ chỗ khác (nút trên thanh trên cùng, đồng hồ tự động, tab khác), nên
+  // dòng "bây giờ đang nền..." không bao giờ nói sai tông đang thấy.
+  function themeNowText(T) {
+    const at = T.nextChange();
+    if (!at) return t("settings.theme.now_flat");
+    const light = T.isLight();
+    return t("settings.theme.now_auto", {
+      cur: t(light ? "settings.theme.cur_light" : "settings.theme.cur_dark"),
+      next: t(light ? "settings.theme.cur_dark" : "settings.theme.cur_light"),
+      at,
+    });
+  }
+  function renderThemeBox(box) {
+    const T = window.javisTheme;
+    if (!box || !T || !T.mode) return;
+    const mode = T.mode();
+    const sch = T.schedule();
+    // Khoá viết rõ từng cái (không ghép chuỗi) để test_i18n soát được chúng có trong từ điển.
+    const segBtn = (v, lb, d) => `<button type="button" class="seg-btn ${mode === v ? "sel" : ""}" data-theme-mode="${v}"
+      aria-pressed="${mode === v}"><span class="seg-lb">${esc(lb)}</span>
+      <span class="seg-d">${esc(d)}</span></button>`;
+    const now = mode === "auto" ? themeNowText(T) : "";
+    // Hai ô giờ chỉ VẼ khi đang tự động, không dùng thuộc tính hidden: .qs-field là flex và
+    // display của nó đè hidden (đã cắn một lần ở thẻ giọng nói).
+    box.innerHTML = `
+      <div class="popover-label">${esc(t("settings.theme.title"))}</div>
+      <div class="seg" role="group" aria-label="${esc(t("settings.theme.title"))}">
+        ${segBtn("dark", t("settings.theme.dark"), t("settings.theme.dark_d"))}
+        ${segBtn("light", t("settings.theme.light"), t("settings.theme.light_d"))}
+        ${segBtn("auto", t("settings.theme.auto"), t("settings.theme.auto_d"))}
+      </div>
+      ${mode === "auto" ? `
+      <div class="qs-field">
+        <label class="qs-lbl" for="vpThemeLight">${esc(t("settings.theme.light_from"))}</label>
+        <input type="time" class="js-input" id="vpThemeLight" value="${esc(sch.light)}">
+      </div>
+      <div class="qs-field">
+        <label class="qs-lbl" for="vpThemeDark">${esc(t("settings.theme.dark_from"))}</label>
+        <input type="time" class="js-input" id="vpThemeDark" value="${esc(sch.dark)}">
+      </div>
+      <div class="qs-hint" role="status">${esc(now)}</div>` : ""}
+      <div class="qs-hint">${esc(t("settings.theme.hint"))}</div>`;
+    box.querySelectorAll("[data-theme-mode]").forEach(b => {
+      b.onclick = () => T.setMode(b.dataset.themeMode);   // sự kiện javis-theme-change vẽ lại thẻ
+    });
+    const inL = box.querySelector("#vpThemeLight");
+    const inD = box.querySelector("#vpThemeDark");
+    const saveSch = () => {
+      if (!T.setSchedule(inL.value, inD.value)) { toast(t("settings.theme.bad_time"), true); return; }
+      // Ô giờ còn giữ con trỏ nên thẻ không vẽ lại (xem bộ nghe bên dưới): chỉ thay dòng trạng thái.
+      const st = box.querySelector("[role=status]");
+      if (st) st.textContent = themeNowText(T);
+    };
+    if (inL) inL.onchange = saveSch;
+    if (inD) inD.onchange = saveSch;
+  }
+  // Đăng ký MỘT lần cho cả phiên; thẻ không có trên trang thì bỏ qua. Đang gõ dở ô giờ thì
+  // không vẽ lại, kẻo đồng hồ tự động hay tab khác giật mất ô người dùng đang sửa.
+  window.addEventListener("javis-theme-change", () => {
+    const box = document.getElementById("vpThemeBox");
+    if (!box || box.contains(document.activeElement) && document.activeElement.type === "time") return;
+    renderThemeBox(box);
+  });
+
   async function renderSettingsPage(el) {
     const tabs = ["general", "voice", "pet", "usage", "updates"];
     const tab = Alpine.store("nav").settingsTab || "general";
@@ -7044,7 +7267,8 @@
     }
     const langHost = document.getElementById("replyLangHost");
     if (langHost) {
-      langHost.innerHTML = langHtml;
+      langHost.innerHTML = `<div class="qs-block" id="vpThemeBox"></div>` + langHtml;
+      renderThemeBox(document.getElementById("vpThemeBox"));
       const sel = document.getElementById("vpReplyLang");
       if (sel) sel.onchange = async () => {
         const r = await saveSetting("locale", { reply_lang: sel.value });

@@ -1,4 +1,4 @@
-"""Kênh Zalo CÁ NHÂN: tài khoản đã quét QR ở trang Kết nối (MCP `zalo-agent-cli`). Đọc tin bằng
+"""Kênh Zalo CÁ NHÂN: tài khoản đã quét QR ở trang Kết nối (MCP `javis-zalo`). Đọc tin bằng
 vòng cursor ở `zalo_personal_channel`, gửi tin bằng tool `zalo_send_message` của chính MCP đó.
 
 Gửi từ kênh này là gửi DƯỚI DANH TÍNH CHỦ (không phải bot), nên Hộp thư nói rõ điều đó ở ô
@@ -25,6 +25,31 @@ SPEC = KenhSpec(
     tom_tat="Tài khoản Zalo của chính bạn. Bot trực thì tự trả lời chat riêng và nhóm đã cho phép, dưới tên bạn.",
     nang_luc={"nhom": True, "gui_chu": True, "gui_file": False},
 )
+
+
+def cau_vao_nhom(ev: dict) -> str:
+    """What the Agent reads when someone joins a group (0.84.2). Written for the model, so Vietnamese like the
+    rest of the bot prompts. It says plainly this is an event and not a message, gives the join time Zalo
+    reported, and tells the Agent to stay silent unless its own instructions cover newcomers: Javis has no
+    greeting of its own, so a bot whose owner never asked for one must not start greeting people."""
+    from datetime import datetime
+    md = (ev.get("metadata") or {}).get("member_join") or {}
+    ten = str(ev.get("sender_name") or "").strip() or str(ev.get("sender_id") or "").strip() or "Một người"
+    try:
+        luc = datetime.fromtimestamp(float(md.get("time") or ev.get("created_at") or time.time()), localefmt.tz())
+        gio = luc.strftime("%H:%M ngày %d/%m/%Y")
+    except (TypeError, ValueError, OverflowError, OSError):
+        gio = ""
+    if md.get("added_by_me"):
+        cach = ", do chính tài khoản này thêm vào"
+    elif md.get("added_by"):
+        cach = ", do một thành viên khác thêm vào"
+    else:
+        cach = ""
+    return (f"[Sự kiện nhóm, KHÔNG phải tin nhắn: {ten} vừa vào nhóm"
+            + (f" lúc {gio}" if gio else "") + cach + ". "
+            "Làm đúng theo chỉ dẫn của bạn về người mới vào nhóm; câu bạn gửi sẽ tự tag người này. "
+            "Chỉ dẫn của bạn không nói gì về người mới vào nhóm thì trả đúng [IM_LANG].]")
 
 
 def tai_khoan():
@@ -131,10 +156,10 @@ async def gui(tk: dict, chat_id: str, text: str, chat_type: str = "private", men
 
     `mention={"uid", "name"}` (chỉ có nghĩa trong nhóm): tag người đó, xem `_send_tagged`.
 
-    Khoá kiểu cuộc chat mà MCP zalo-agent-cli 1.6.2 THẬT SỰ đọc là `threadType` (mcp-tools.js), không
+    Khoá kiểu cuộc chat mà MCP javis-zalo (và zalo-agent-cli 1.6.2 trước nó) THẬT SỰ đọc là `threadType` (mcp-tools.js), không
     phải `type` như tài liệu mcp-guide ghi. MCP bỏ qua khoá lạ mà không báo lỗi, nên gửi `type` một
     mình thì tin nhóm đi như chat riêng và Zalo không giao được (chủ thấy bot trả lời trong Hộp thư
-    mà nhóm im, 29/09/2026). Gửi cả hai: `threadType` cho bản 1.6.2 đang ghim, `type` cho bản khác
+    mà nhóm im, 29/09/2026). Gửi cả hai: `threadType` cho bản đang ghim, `type` cho bản khác
     đọc theo tài liệu; khoá thừa bị MCP bỏ qua.
     """
     import zalo_personal_channel
@@ -264,13 +289,22 @@ class Transport:
         import zalo_personal_channel as zc
         loai = ev.get("chat_type")
         kieu = ev.get("message_type")
-        if loai not in ("private", "group") or kieu not in ("text", "image"):
+        vao_nhom = (ev.get("metadata") or {}).get("member_join")
+        if vao_nhom and loai != "group":
+            return
+        if loai not in ("private", "group") or (kieu not in ("text", "image") and not vao_nhom):
             return
         nhom = loai == "group"
         # Tin ảnh có CHÚ THÍCH (0.65.13) xử lý như tin chữ với chú thích làm nội dung: "@Javis Vũ ..." viết trong phần chú thích của ảnh
         # là một cái tag thật. Trước đây mọi tin không phải chữ bị bỏ, nên tag kèm ảnh không bao giờ tới bot. Ảnh trơn (không chú thích) vẫn bỏ.
         co_anh = kieu == "image"
-        text = (conversations.chu_thich_anh(ev.get("text")) if co_anh else str(ev.get("text") or "").strip())
+        if vao_nhom:
+            # 0.84.2: someone joined the group. The newcomer is the "sender", so a reply tags them (`_gui`).
+            # Javis writes no greeting of its own: the bot's Agent decides, and stays silent when its
+            # instructions say nothing about newcomers.
+            text = cau_vao_nhom(ev)
+        else:
+            text = (conversations.chu_thich_anh(ev.get("text")) if co_anh else str(ev.get("text") or "").strip())
         thread = str(ev.get("external_chat_id") or "")
         if not text or not thread:
             return
@@ -300,9 +334,16 @@ class Transport:
         }
         if co_anh:
             meta["co_anh"] = True
+            # 0.74.1: the photo's link, so the bot can actually look at it (see `chatbot_runtime.anh_cho_bot`).
+            meta["image_url"] = str((ev.get("metadata") or {}).get("image_url") or "")
         duoc_goi = False
         pol = None
-        if nhom:
+        if vao_nhom:
+            # An event, not chat: it reaches the Agent in every enabled group whatever "reply when" says
+            # (see `chatbot_runtime._ly_do_im`), and skips the reply-policy judge, which scores chat.
+            meta["member_join"] = True
+            duoc_goi = True
+        elif nhom:
             conn = zc.ket_noi_theo_id(self.conn_id) or {}
             tag, rep = zc.nhan_dien_goi(self.conn_id, ev, (conn.get("label") or "",))
             meta["mentioned"], meta["reply_to_bot"] = tag, rep

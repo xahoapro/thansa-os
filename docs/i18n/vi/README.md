@@ -136,7 +136,8 @@ Nhờ vậy:
 - 🗃️ **Việc (Kanban)** - giao một "goal" bằng lời, AI tự đặc tả, chọn worker, chạy nền và chỉ gọi bạn khi có ngoại lệ.
 - 🧠 **Tự học** - sau mỗi hội thoại Thansa tự rút ký ức, đúc tri thức Wiki và kỹ năng; mỗi lần học là một commit git nên **hoàn tác được một chạm**.
 - 🔌 **Kho kết nối đa tài khoản** - Pancake POS, Zalo, Meta/Google/TikTok Ads, Google Workspace, Slack, Webcake, Substack… nhiều tài khoản cùng một dịch vụ, mỗi tài khoản một mức quyền riêng, Thansa **chặn cứng** thao tác vượt quyền.
-- 📱 **Telegram & Zalo** - hỏi Thansa qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP chuẩn của `zalo-agent-cli`.
+- 📱 **Telegram & Zalo** - hỏi Thansa qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP của `javis-zalo`, bản CLI Zalo riêng của Thansa.
+- 💬 **Slack & WhatsApp** - chat với Thansa và đặt bot khách hàng trên Slack (không cần tên miền) và WhatsApp (API chính thức của Meta). Hướng dẫn: [docs/29](../../../docs/29-slack-whatsapp.md).
 - 🎨 **Tạo ảnh** bằng chính gói ChatGPT đã đăng nhập, không cần API key riêng.
 - 📊 **Mức dùng** - Thansa tự đo token vào/ra và chi phí theo ngày, theo nhà cung cấp, tách rõ phần bạn gõ tay với phần Thansa tự chạy nền.
 - ⇅ **Sao lưu brain lên GitHub** - đồng bộ 2 chiều mọi brain lên một repo riêng tư, dùng chung giữa máy nhà và VPS.
@@ -187,7 +188,7 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 
 ```bash
 # Cần Docker (chưa có?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # đăng nhập Claude 1 lần
@@ -198,19 +199,19 @@ Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăn
 ### Cách 3 - Cài trực tiếp lên Linux/macOS (không Docker)
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv, đăng ký dịch vụ systemd tự chạy khi boot, in ra địa chỉ. Báo Claude chưa đăng nhập thì chạy 1 lần: `claude auth login --claudeai`.
 
-> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `JAVIS OS.app` (hoặc `Start JAVIS OS.command`) để chạy server + mở dashboard; tự chạy khi đăng nhập máy: `./bin/javis-autostart.sh install`. Chi tiết: [bin/README.md](../../../bin/README.md).
+> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `Thansa OS.app` (hoặc `Start Thansa OS.command`) để chạy server + mở dashboard; tự chạy khi đăng nhập máy: `./bin/thansa-autostart.sh install`. Chi tiết: [bin/README.md](../../../bin/README.md).
 
 ### Cách 4 - Windows (máy cá nhân)
 
 **Một lệnh, cài hết:**
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -220,14 +221,14 @@ Không có `winget` để tự cài Python/Node thì cài tay trước: Python 3
 
 ```
 Chạy hiện cửa sổ (xem log trực tiếp):  setup.bat
-Chạy ngầm từ lần sau:                  start-javis.vbs   (log ở server\javis.log)
-Dừng:                                  stop-javis.bat
+Chạy ngầm từ lần sau:                  start-thansa.vbs   (log ở server\thansa.log)
+Dừng:                                  stop-thansa.bat
 Mở dashboard:                          http://localhost:7777
 ```
 
-> ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-javis.bat` rồi `start-javis.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
+> ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-thansa.bat` rồi `start-thansa.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
 
-> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`JAVIS OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `javis-autostart.bat install` (gỡ: `uninstall`).
+> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`Thansa OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `thansa-autostart.bat install` (gỡ: `uninstall`).
 
 ### Nhiều bản Thansa trên cùng một VPS (mỗi bản một link riêng)
 
@@ -238,7 +239,7 @@ Chỉ cần ba giá trị khác nhau giữa các bản: `JAVIS_NAME`, `JAVIS_HOS
 - **VPS tự quản:** chạy proxy dùng chung `docker-compose.proxy.yml` **một lần cho cả máy**, rồi
   mỗi bản một thư mục riêng dùng kèm `docker-compose.multi.yml`. Proxy tự phát hiện bản mới,
   tự xin SSL - thêm bản không phải sửa gì ở proxy.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Bỏ trống các biến = y hệt cách cài cũ. Từng bước một: **[DEPLOY.md](../../../DEPLOY.md)**.
 
@@ -274,12 +275,12 @@ Thanh điều hướng bên trái gom **22 trang** thành **6 nhóm** (bấm tê
 | | **Skills** | Gom nhóm + tìm kiếm + **bật/tắt** + thêm/sửa/xoá + nhập/xuất skill. | [Skills](../../../docs/06-skills.md) |
 | | **Workflows** | Tạo/chạy chuỗi tự động (agent → agent), có bước kiểm chứng. | [Agents & Workflows](../../../docs/07-agents-va-workflows.md) |
 | | **Plugins** | Thêm tool/hook native cho mọi engine bằng một thư mục Python. | [Plugins](../../../docs/20-plugins.md) |
-| | **Chatbot** | Đem Agent ra trả lời khách qua bot Telegram/Zalo riêng, brain riêng. | [Chatbot](../../../docs/25-chatbot.md) |
+| | **Chatbot** | Đem Agent ra trả lời khách qua bot Telegram/Zalo/Slack/WhatsApp riêng, brain riêng. | [Chatbot](../../../docs/25-chatbot.md) |
 | | **Hội thoại** | Hộp thư gom mọi cuộc chat khách nhắn cho bot và Zalo cá nhân; đọc lại, tiếp quản khi cần người thật. | [Hội thoại khách](../../../docs/28-hoi-thoai-khach.md) |
 | **Việc** | **Việc** | Hàng đợi task nền do AI tự đặc tả và tự chạy; bạn chỉ xử lý ngoại lệ. | [Việc (Kanban)](../../../docs/21-viec-kanban.md) |
 | | **Việc định kỳ** | Nhiều vòng lặp chạy nền + nhắc hẹn theo giờ hoặc cron. | [Việc định kỳ & Nhắc hẹn](../../../docs/08-viec-dinh-ky.md) |
 | **Kết nối** | **Kết nối** | Kho dịch vụ ngoài, đa tài khoản cùng một dịch vụ, phân quyền 3 mức. | [Kết nối & số liệu](../../../docs/09-mcp-va-so-lieu.md) |
-| | **Kênh** | Bật bot Telegram (hỏi Thansa qua điện thoại). | [Kênh Telegram](../../../docs/11-telegram.md) · [Kênh Zalo](../../../docs/12-zalo.md) |
+| | **Kênh** | Bật bot Telegram, Zalo, Slack, WhatsApp (hỏi Thansa qua điện thoại). | [Kênh Telegram](../../../docs/11-telegram.md) · [Kênh Zalo](../../../docs/12-zalo.md) · [Slack và WhatsApp](../../../docs/29-slack-whatsapp.md) |
 | | *(terminal)* | `pip install javis-cli` rồi gõ `javis "..."` - kênh thứ ba, cùng một Thansa. | [Thansa CLI](../../../docs/24-cli-terminal.md) |
 | | **Models** | Main model + các provider + mức suy nghĩ + model việc nền. | [Models & engine](../../../docs/10-models-va-engine.md) |
 | **Hệ thống** | **Mức dùng** | Token và chi phí theo ngày, theo nhà cung cấp, theo nguồn phát sinh. | [Mức dùng](../../../docs/23-muc-dung-token.md) |
@@ -345,7 +346,7 @@ Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs
 git add -A && git commit -m "..." && git push     # → CI tự build image mới lên GHCR
 
 # Trên VPS: kéo bản mới
-cd javis && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
+cd thansa-os && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
 ```
 
 Trong app: mở **Cập nhật** (nhóm Hệ thống) → **⬆ Cập nhật ngay** nếu môi trường hỗ trợ, có thanh tiến trình và nút lùi bản khi bản mới hỏng.
@@ -384,8 +385,8 @@ Zalo Agent MCP ──────────────┤          │       
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-javis.bat` → `start-javis.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
-| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-javis.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
+| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-thansa.bat` → `start-thansa.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
+| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-thansa.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
 | Hostinger không pull được image | Để package GHCR = **Public**; đợi GitHub Action build xong (tab Actions). |
 | Bộ não báo chưa đăng nhập | Vào **Models**, thẻ nhà cung cấp tương ứng, bấm đăng nhập. Hoặc chạy 1 lần `claude auth login --claudeai` (Docker: trong App terminal). |
 | Ảnh cũ trong hội thoại hiện ô xám | Đúng thiết kế: `attachments/` là vùng cache, hết hạn 30 ngày hoặc 300MB. Xem [Khắc phục sự cố](../../../docs/17-khac-phuc-su-co.md). |

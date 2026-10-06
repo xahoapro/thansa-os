@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:a93defe7ef8b -->
+<!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Thansa OS Logo">
@@ -54,8 +54,8 @@ Lass ihn auf deinem Laptop oder einem kleinen VPS laufen. Sprich mit ihm per Sti
 
 | Rechner | Ein Befehl installiert alles |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 Öffne danach **http://localhost:7777**. Der Installer richtet Python, die vier Abo-CLI-Gehirne (`claude`, `codex`, `agy`, `grok`) und eine `.env` ein und startet dann den Server. Bei jedem Gehirn meldest du dich **auf der Seite Models im Dashboard** an, ganz ohne weitere Befehle.
@@ -115,7 +115,7 @@ Was dir das bringt:
 | **Gedächtnis** | Vergisst nach jeder Sitzung alles | **Ein lebendiges Second Brain**, das sich an dich erinnert und mit jedem Gespräch wächst |
 | **Daten** | Erfunden oder gar nicht vorhanden | **Echte Zahlen** aus den Verbindungen, die du einrichtest (Verkauf, Werbung, Kalender, E-Mail, Messaging) |
 | **Arbeit** | Antwortet und wartet dann | **Hintergrund-Loops, Erinnerungen und eine von der KI gesteuerte Aufgabenwarteschlange**, die dir Bericht erstatten |
-| **Oberfläche** | Ein Chatfenster | Dashboard + Wissensgraph + **freihändige Sprachsteuerung** + Telegram + eine CLI |
+| **Oberfläche** | Ein Chatfenster | Dashboard + Wissensgraph + **freihändige Sprachsteuerung** + Telegram, Slack, WhatsApp, Zalo + eine CLI |
 | **Deine Arbeit** | Bleibt auf den Servern des Anbieters, im Format des Anbieters | **Einfache Dateien auf deinem Rechner**: Verlauf, Gedächtnis, Skills, Agents und Workflows lassen sich zu jedem neuen Modell mitnehmen |
 | **Bereitstellung** | Die Cloud von jemand anderem | **Selbst gehostet**: Hostinger mit einem Klick, Docker oder ein beliebiger VPS |
 
@@ -166,7 +166,7 @@ Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und sch
 ### 🗣️ Mit ihm sprechen
 - **Freihändige Sprachsteuerung**: Du sprichst, Thansa hört zu und antwortet laut (standardmäßig kostenlos mit Edge TTS, oder mit OpenAI und ElevenLabs).
 - **Chatsitzungen**, die du speichern, wieder öffnen und im Volltext durchsuchen kannst. Lange Sitzungen werden zu Zusammenfassungen verdichtet, statt abgeschnitten zu werden.
-- **Telegram, eine CLI und ein Web-Dashboard**, die alle mit demselben Thansa sprechen.
+- **Telegram, Slack, WhatsApp, Zalo, eine CLI und ein Web-Dashboard**, die alle mit demselben Thansa sprechen ([Einrichtung von Slack und WhatsApp](../../../docs/en/29-slack-whatsapp.md)).
 - **Jede Sprache**: Thansa antwortet in der Sprache, in der du schreibst. Die Oberfläche gibt es auf Englisch und Vietnamesisch.
 
 ### 🧠 Sich an alles erinnern
@@ -182,7 +182,7 @@ Jedes Gehirn kann deine verbundenen MCP-Server aufrufen, das Brain lesen und sch
 - **Aufgaben (Kanban)**: Übergib ein Ziel in einfachen Worten. Die KI schreibt die Spezifikation, wählt einen Worker, führt ihn im Hintergrund aus und meldet sich nur bei Ausnahmen.
 - **Loops und Erinnerungen**: Hintergrundjobs in einem Intervall, zu einer Uhrzeit oder per Cron-Ausdruck, die jeweils ihre eigene Arbeit überprüfen.
 - **Agents und Workflows**: spezialisierte Assistenten mit eigenem Gedächtnis, verkettet zu mehrstufigen Workflows mit Verifikation.
-- **Chatbots**: Stell einen Agent mit einem eigenen Telegram- oder Zalo-Bot vor deine Kunden, mit einem gemeinsamen Posteingang, den du jederzeit übernehmen kannst.
+- **Chatbots**: Stell einen Agent mit einem eigenen Telegram-, Slack-, WhatsApp- oder Zalo-Bot vor deine Kunden, mit einem gemeinsamen Posteingang, den du jederzeit übernehmen kannst.
 
 ### 🔌 Alles anbinden
 - **MCP-Verbindungsstore** mit mehreren Konten pro Dienst und drei Berechtigungsstufen, die Thansa **strikt durchsetzt**.
@@ -275,7 +275,7 @@ Details und Fehlerbehebung: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ Fernzugriff ohne Domain: `docker compose --profile tunnel up -d`, dann gibt `doc
 <summary><b>Option 3: Linux oder macOS, ohne Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 Das Skript installiert Python, Node und die CLI-Gehirne, legt ein venv an, registriert einen Dienst, der beim Booten startet, und gibt die Adresse aus.
 
-🍎 **macOS, wie eine App öffnen:** Doppelklick auf `JAVIS OS.app` (oder `Start JAVIS OS.command`). Start bei der Anmeldung: `./bin/javis-autostart.sh install`. Details: [bin/README.md](../../../bin/README.md).
+🍎 **macOS, wie eine App öffnen:** Doppelklick auf `Thansa OS.app` (oder `Start Thansa OS.command`). Start bei der Anmeldung: `./bin/thansa-autostart.sh install`. Details: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -306,7 +306,7 @@ Das Skript installiert Python, Node und die CLI-Gehirne, legt ein venv an, regis
 <summary><b>Option 4: Windows (persönlicher Rechner)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Wie eine App öffnen:** Nach dem ersten Start doppelklickst du auf **`JAVIS OS.bat`**. Der Server startet im Hintergrund und das Dashboard öffnet sich in **einem eigenen Fenster** mit eigenem Eintrag in der Taskleiste. Start bei der Anmeldung: `javis-autostart.bat install` (entfernen: `uninstall`).
+🪟 **Wie eine App öffnen:** Nach dem ersten Start doppelklickst du auf **`Thansa OS.bat`**. Der Server startet im Hintergrund und das Dashboard öffnet sich in **einem eigenen Fenster** mit eigenem Eintrag in der Taskleiste. Start bei der Anmeldung: `thansa-autostart.bat install` (entfernen: `uninstall`).
 
 </details>
 
@@ -330,7 +330,7 @@ Brains, Einstellungen und Konten bleiben pro Instanz vollständig getrennt. Nur 
 
 - **Hostinger:** Stelle `docker-compose.hostinger.yml` erneut als zweiten Stack bereit und fülle diese drei Felder aus.
 - **Selbst verwalteter VPS:** Starte den gemeinsamen Proxy `docker-compose.proxy.yml` einmal für den ganzen Rechner und gib dann jeder Instanz mit `docker-compose.multi.yml` einen eigenen Ordner. Der Proxy erkennt neue Instanzen und fordert SSL von selbst an.
-- **Nativ:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Nativ:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Schritt für Schritt: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -410,7 +410,7 @@ Eine Sicherheitslücke gefunden? Bitte folge [SECURITY.md](../../../SECURITY.md)
 
 ## 🔄 Aktualisieren
 
-In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und einem Rollback-Button, falls der neue Build etwas kaputt macht. Auf einem VPS: `cd javis && ./update.sh` (zieht das neue Image und startet neu; deine Daten in den Volumes bleiben erhalten).
+In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und einem Rollback-Button, falls der neue Build etwas kaputt macht. Auf einem VPS: `cd thansa-os && ./update.sh` (zieht das neue Image und startet neu; deine Daten in den Volumes bleiben erhalten).
 
 ---
 
@@ -419,7 +419,7 @@ In der App: **Settings → Updates → Update now**, mit Fortschrittsbalken und 
 | Symptom | Was zu tun ist |
 |---|---|
 | Die Seite Models meldet, eine CLI sei nicht installiert, obwohl sie es ist | **Starte Thansa neu**: Der laufende Prozess behält den PATH vom Zeitpunkt seines Starts. |
-| Port 7777 ist belegt und der neue Build startet nicht | Beende zuerst den alten Prozess (`stop-javis.bat` oder die PID beenden) und starte dann erneut. |
+| Port 7777 ist belegt und der neue Build startet nicht | Beende zuerst den alten Prozess (`stop-thansa.bat` oder die PID beenden) und starte dann erneut. |
 | Hostinger kann das Image nicht ziehen | Stell das GHCR-Paket auf **Public** und warte, bis der Build der GitHub Action fertig ist. |
 | Ein Gehirn meldet, es sei nicht angemeldet | **Models** → Karte des Anbieters → anmelden. |
 

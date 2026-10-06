@@ -683,3 +683,28 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   phục vụ http://<ip> (/health 200, /settings 401) và đóng khi kích hoạt tên miền; install.sh trọn vẹn không
   bàn phím vào thư mục/cổng riêng (exit 0) rồi dọn; Caddy validate + chạy thật (IP 200, tên miền 302).
 - VERSION 1.18.0-javis-0.70.2. NGHIỆM THU (env -u JAVIS_*): 556/560, đỏ đúng 4 sandbox nền → 0 hồi quy.
+  **ĐÃ PHÁT HÀNH 2026-10-05** (origin/main a1ff8a7, snapshot ff từ 5626dee; backup me-backup-1.18.0).
+
+## Vòng 2026-10-06 (goc 4515680 → bacb1cf, upstream +23 commit, VERSION nền 0.70.2 → 0.84.2, thansa 1.18→1.19)
+- 23 commit: Slack + WhatsApp (kênh điều khiển + bot khách), bot đọc ảnh khách bằng model riêng, mức quyền bot
+  "Đọc tài liệu", thử bot, bộ phán xử tự soát/tự chỉnh qua chat (plugin javis-reply-policy), Zalo chạy CLI riêng
+  javis-zalo (Zalo mở rộng sang gói Store javis.zalo; upstream XOÁ plugin zalo-image + zalo-group), theme
+  Sáng/Tối/Tự động, trang Skills mới, mật khẩu admin env áp lại, khoá sai không xoá secret, MCP bên thứ ba theo
+  bản chính thức, tzdata vào requirements.
+- Rebase 159 commit (47 patch + ops) bằng vòng tự gỡ (giai.py: lấy HEAD + regex rebrand; --ep cho docs). Xung đột:
+  P007 (claude_cli: HEAD env=codex_env + Thansa), P012 (2 plugin upstream xoá → git rm; catalog/plugin tự gỡ),
+  P025 (VERSION 1.19.0-javis-0.84.2), P027 (docs 12/20 vi+en lấy HEAD + rebrand), P036 (theme.js), fix 7c8445c5
+  (guide_url bị quay về repo gốc → sửa lại ở P052), P046 (zalo-group xoá → git rm), ops 1.17/1.18 (VERSION),
+  P051 (index.html reset + test_ignore_files: HEAD + tên thansa). P038 áp sạch; khoá cảnh báo vi/en bằng 1.18.
+- **P052 mới:** rebrand nền 0.84.2 - đếm Javis hiển thị theo file so 1.18 (190 chỗ/47 file): 29 chuỗi server
+  (tokenize, bỏ docstring) + 187 chỗ docs/i18n/catalog/plugin/CLAUDE.md; GIỮ Javis/ vault trong main.py,
+  clientInfo codex_realtime, javis-zalo/javis.zalo. Kèm P051 sót: 8 URL compose repo gốc trong DEPLOY.en, link
+  Slack/WhatsApp console.js, guide_url Zalo, SVG install-terminal, chú thích thansa.service, .gitattributes.
+- **P053 mới - LỖI LỚN BẮT ĐƯỢC:** updater.release_source() (upstream 0.64.55) ghi cứng repo Javis gốc → nút
+  Cập nhật bản cài git kéo Javis về `git merge` (mô phỏng clone 1.18: 251 xung đột, tự huỷ) → bản cài native
+  KHÔNG lên được bằng nút suốt 1.14→1.18. Sửa: THANSA_UPDATE_REPO (mặc định xahoapro/thansa-os). Máy ≤1.18 vẫn
+  chạy updater cũ trong bộ nhớ → lên 1.19 phải bằng update.sh / git pull; từ 1.19 nút chạy đúng.
+- Neo P046 zalo-group bỏ (file upstream xoá). VERSION 1.19.0-javis-0.84.2. moc-goc bacb1cf/0.84.2/so_patch 49.
+  tu-kiem-chung 5/5. backup me-backup-1.18.0-pre (= me trước rebase, d0c419aa).
+- NGHIỆM THU (env -u JAVIS_*, chạy tuần tự): fork 577/582, upstream sạch 575/580. Đỏ chung = {form_chuoi_rong,
+  image_vision (mới, môi trường), route_table, run_command_quyen, terminal_cmd_goc} → **0 hồi quy fork**.

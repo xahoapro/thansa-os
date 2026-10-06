@@ -1350,8 +1350,7 @@
   diem_neo:
     - file: server/lenh_he_thong.py
       ky_hieu: "📋 Việc nền của Thansa"
-    - file: system/plugins/zalo-group/plugin.yaml
-      ky_hieu: "author: Thansa (bundled)"
+    # (neo system/plugins/zalo-group bỏ 06/10: upstream 0.73.0 xoá plugin, chuyển sang gói Store javis.zalo)
   vung_theo_doi:
     - "server/lenh_he_thong.py + dashboard/chat-lenh.js: chuỗi đầu ra lệnh /"
     - "system/plugins/zalo-*: mô tả tool + author"
@@ -1517,3 +1516,103 @@
     `caddy validate` + chạy thật: Host IP → 200, Host tên miền → 302 https.
   dieu_kien_bo: >
     Bỏ nếu upstream tự thêm bước truy cập từ xa / reverse proxy vào install.sh.
+
+- id: P051
+  ten: "Bộ cài mang tên Thansa: cài mới 100% thansa, máy đang chạy có cầu nối"
+  y_dinh: >
+    Chủ báo 06/10: lệnh cài `git clone ... javis && cd javis` và file cài còn dính javis. Chủ chốt: máy
+    ĐANG CHẠY dùng cầu nối (phương án 1), máy CÀI MỚI 100% thansa. Đổi tên (git mv) start/stop-thansa.*,
+    thansa-autostart.*, "Thansa OS.bat/.app" (+MacOS/thansa, Info.plist CFBundleExecutable), Start/Stop
+    Thansa OS.command, bin/thansa-*.sh, thansa.service, log server/thansa.log. Cầu nối TRACKED: start-javis.vbs
+    + stop-javis.bat (updater CŨ đang chạy trong bộ nhớ lúc bấm Cập nhật gọi đích danh 2 tên này; shortcut
+    Startup "JAVIS OS.lnk" trỏ start-javis.vbs). install.sh/install.ps1 giấu cầu nối bằng git skip-worktree +
+    xoá (install.ps1 đổi shortcut cũ sang "Thansa OS.lnk" TRƯỚC khi giấu). Mặc định bản mới: dịch vụ thansa
+    (THANSA_NAME/THANSA_PORT, JAVIS_* vẫn nhận; unit ghi JAVIS_SERVICE_NAME), launchd com.thansa.os /
+    com.thansa.watchdog, container ${JAVIS_NAME:-thansa}, mục Run registry "ThansaOS". Máy cũ: install.sh giữ
+    javis.service của chính thư mục; update.sh dò container/dịch vụ javis rồi export JAVIS_NAME; updater.py
+    systemd_unit() dò JAVIS_SERVICE_NAME→thansa→javis (trước gọi cứng "javis"), _launchd_label() theo plist;
+    main.py _autostart_chuyen_ten_cu() chuyển JavisOS→ThansaOS kèm cờ StartupApproved. Docs: clone vào
+    thansa-os, lệnh systemctl/journalctl thansa, CLI tìm thêm ~/thansa-os. GIỮ: khoá JAVIS_* trong .env (server
+    đọc), service key `javis` + volume javis-* + mạng javis-web của compose (giữ dữ liệu/đa bản), /home/javis
+    trong image (token đăng nhập), tên MCP hub "javis", đường vault Javis/.
+  commit: "[me] P051: bo cai mang ten Thansa - cai moi 100% thansa, may dang chay co cau noi"
+  diem_neo:
+    - file: stop-javis.bat
+      ky_hieu: 'call "%~dp0stop-thansa.bat"'
+    - file: server/updater.py
+      ky_hieu: "def systemd_unit():"
+    - file: install.sh
+      ky_hieu: "update-index --skip-worktree"
+    - file: server/main.py
+      ky_hieu: "def _autostart_chuyen_ten_cu() -> None:"
+  vung_theo_doi:
+    - "start-javis.vbs / stop-javis.bat: CẦU NỐI - KHÔNG BAO GIỜ sửa nội dung (máy cài mới giấu bằng skip-worktree; bản phát hành nào sửa chúng là file hiện lại trên máy mới). Upstream sửa 2 file này khi trộn → GIẢI lấy bản cầu nối của fork, port thay đổi thật sang start-thansa.vbs / stop-thansa.bat."
+    - "Upstream sửa file đã đổi tên (start-javis.bat, javis-autostart.ps1, bin/javis-*.sh, JAVIS OS.app, javis.service...) → git rebase dò rename; kiểm lại tay đã áp vào tên thansa."
+    - "server/updater.py stop/start_server + has_systemd; server/main.py khối autostart Windows; install.sh/update.sh/watchdog.sh dò tên."
+    - "docker-compose*.yml: ${JAVIS_NAME:-thansa}."
+  anh_goc:
+    - file: server/updater.py
+      doan: 'subprocess.run(["systemctl", "stop", "javis"]'
+  kiem_chung: >
+    test_ten_thansa_cai_dat (file mới, cầu nối chuyển tiếp, giấu cầu nối, updater dò javis/thansa/
+    JAVIS_SERVICE_NAME, autostart ThansaOS + chuyển JavisOS, docs clone thansa-os) + test cũ cập nhật kỳ vọng
+    (nhieu_ban_mot_vps, deploy_environment, nginx_ssl). git skip-worktree thử thật: pull ff / reset --hard êm,
+    bản phát hành sửa file giấu thì file hiện lại (không vỡ) → cầu nối không được sửa.
+  dieu_kien_bo: >
+    Cầu nối bỏ được khi chắc không còn máy Windows nào chạy bản ≤1.18 (updater cũ). Phần đổi tên thì giữ.
+
+- id: P052
+  ten: "Rebrand nền 0.84.2 - Slack/WhatsApp, chatbot, Zalo CLI riêng, tên file cài"
+  y_dinh: >
+    Nền 0.70.2→0.84.2 (23 commit): kênh Slack + WhatsApp (điều khiển + bot khách), bot đọc ảnh khách bằng
+    model riêng, mức quyền bot "Đọc tài liệu", bộ phán xử tự soát/tự chỉnh (plugin javis-reply-policy), Zalo
+    chạy CLI riêng javis-zalo (phần Zalo mở rộng sang gói Store javis.zalo, plugin zalo-image/zalo-group bị
+    upstream XOÁ), theme Sáng/Tối/Tự động, trang Skills mới, thử bot. Rebrand chuỗi HIỂN THỊ Javis→Thansa
+    theo luật P007/P026/P027/P048: string literal server (tokenize, bỏ docstring), i18n vi/en, docs 12/14/20/
+    25/29 (+en), mcp-catalog (vi+en), mô tả/author plugin javis-reply-policy, CLAUDE.md, index.html
+    reset_server. Kèm phần P051 nền mới mang lại/sót: link repo gốc (8 URL compose DEPLOY.en, link docs
+    Slack/WhatsApp console.js, guide_url Zalo catalog) → xahoapro/thansa-os; SVG install-terminal; chú
+    thích thansa.service + .gitattributes. GIỮ: đường Javis/ vault trong main.py, clientInfo codex_realtime,
+    tên gói/CLI javis-zalo, id gói javis.zalo, chú thích.
+  commit: "[me] P052: rebrand nen 0.84.2 - Slack/WhatsApp, chatbot, Zalo CLI rieng, ten file cai"
+  diem_neo:
+    - file: server/slack_bot.py
+      ky_hieu: "Bạn không có quyền dùng bot Thansa này."
+    - file: system/plugins/javis-reply-policy/plugin.yaml
+      ky_hieu: "author: Thansa (bundled)"
+  vung_theo_doi:
+    - "server/{slack_bot,whatsapp_bot,owner_channels,channel_context}.py + channels/*: chuỗi kênh mới"
+    - "docs 29-slack-whatsapp (+en), 25-chatbot, 12-zalo: prose"
+    - "system/mcp-catalog*.json: mô tả javis-zalo"
+  anh_goc:
+    - file: server/slack_bot.py
+      doan: "Bạn không có quyền dùng bot Javis này."
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so với bản 1.18 (dem.py): 190 chỗ mới / 47 file → đổi 29 chuỗi server + 187
+    chỗ docs/i18n/catalog/plugin; phần còn tăng chỉ là chú thích/docstring. grep blogminhquy/javis-os ngoài
+    lịch sử + bộ lọc = 0. JSON hợp lệ, py_compile sạch.
+  dieu_kien_bo: >
+    Như P048: bỏ khi upstream đưa tên sản phẩm vào cấu hình branding.
+
+- id: P053
+  ten: "Nút Cập nhật lấy bản phát hành từ repo Thansa (không kéo Javis gốc)"
+  y_dinh: >
+    Upstream 0.64.55 ghi cứng updater.release_source() = github.com/blogminhquy/javis-os. Ở Thansa, nút Cập
+    nhật (bản cài git) kéo Javis gốc về `git merge` vào bản Thansa → 251 xung đột, tự huỷ, lùi lại: máy cài
+    native KHÔNG lên được bản mới bằng nút trong app suốt 1.14→1.18 (chỉ update.sh/git pull chạy). Mô phỏng
+    trên bản clone 1.18 ngày 06/10. Sửa: release_source() dùng cùng repo với /version (THANSA_UPDATE_REPO,
+    mặc định xahoapro/thansa-os, kiểm dạng owner/name). Test upstream test_update_diagnose sửa theo.
+  commit: "[me] P053: nut Cap nhat lay ban phat hanh tu repo Thansa (khong keo Javis goc)"
+  diem_neo:
+    - file: server/updater.py
+      ky_hieu: 'repo = (os.getenv("THANSA_UPDATE_REPO") or "xahoapro/thansa-os")'
+  vung_theo_doi:
+    - "server/updater.py release_source + merge_release; main.py GITHUB_REPO (phải CÙNG repo)"
+  anh_goc:
+    - file: server/updater.py
+      doan: 'return "https://github.com/blogminhquy/javis-os.git", "main"'
+  kiem_chung: >
+    release_source() = xahoapro/thansa-os, THANSA_UPDATE_REPO bẩn rơi về mặc định; test_update_diagnose +
+    test_updater_merge xanh. Mỗi vòng trộn: grep blogminhquy/javis-os trong server/ (ngoài bộ lọc rebrand) = 0.
+  dieu_kien_bo: >
+    Không bỏ - chừng nào Thansa còn phát hành từ repo riêng.

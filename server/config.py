@@ -205,6 +205,13 @@ _DEFAULT = {
     # cho bot thì Javis đưa họ vào hàng chờ kèm mã ghép nối, chủ bấm một nút là xong.
     # Xem `_ZALO_CHO` trong main.py.
     "zalo_bot": {"enabled": False, "token": "", "chat_id": ""},
+    # Owner's control channels on Slack (Socket Mode) and WhatsApp (Cloud API), 0.71.0. `allow`
+    # is the allow-list: Slack user ids (U...) / phone numbers. Empty = nobody (fail-closed,
+    # strangers get a pairing code, see server/owner_channels.py). `verify_token` is the
+    # handshake string Meta sends when the webhook is set up; it is generated, not secret.
+    "slack": {"enabled": False, "bot_token": "", "app_token": "", "allow": ""},
+    "whatsapp": {"enabled": False, "phone_number_id": "", "access_token": "", "app_secret": "",
+                 "allow": "", "verify_token": ""},
     # Backup brain lên GitHub (repo RIÊNG TƯ). token = GitHub PAT (fine-grained, quyền Contents).
     # Lưu trong settings.json (đã gitignored) - KHÔNG bao giờ đẩy lên brain repo.
     # sync_images: đồng bộ CẢ ẢNH (jpg/png/gif/webp, mỗi ảnh <= trần ~10MB) lên repo backup.
@@ -501,6 +508,7 @@ _SECRET_PATHS = (
     # Gemini CLI (đăng nhập Google ngay trên dashboard). Refresh token ở đây mở được cả gói
     # Code Assist của tài khoản Google, nên nó ngang hàng mọi secret khác trong danh sách.
     "telegram.token", "zalo_bot.token", "backup.token", "voice.elevenlabs_key",
+    "slack.bot_token", "slack.app_token", "whatsapp.access_token", "whatsapp.app_secret",
     # Secret TOTP là thứ SINH RA mã đăng nhập, nên nó ngang hàng mật khẩu chứ không phải một
     # tuỳ chọn. Ai đọc được nó thì tự sinh mã 2FA mãi mãi, và chủ máy không hề hay biết.
     "auth.totp.secret",
@@ -819,7 +827,44 @@ def write_settings(cfg):
                 t["secret"] = cu
     except Exception:
         pass
+    try:
+        _giu_secret_khong_giai_duoc(out)
+    except Exception as e:      # noqa: BLE001 - tấm che hỏng thì vẫn ghi như cũ, không chặn việc lưu
+        print(f"[config] giữ secret khi khoá lệch lỗi: {e}", file=__import__('sys').stderr)
     SETTINGS_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _giu_secret_khong_giai_duoc(out):
+    """KHÔNG ghi rỗng đè lên một secret mà máy này không giải mã được (0.81.1).
+
+    Khoá `.secret_key` lệch (volume dựng lại, file khoá mất hay chép từ máy khác) thì read_settings giải mã mọi secret ra
+    "". Ghi lại dict đó là ghi "" đè lên bản mã hoá, và trả đúng khoá về cũng không cứu được nữa: mọi kết nối phải nhập
+    lại. Trước 0.77.1 lúc khởi động không ai ghi settings nên trả khoá là đủ; từ 0.77.1 việc áp mật khẩu admin từ env ghi
+    lại settings một lần lúc boot trên hầu hết máy Hostinger, biến một lỗi tạm thành mất vĩnh viễn.
+
+    Luật: bản CŨ trong file là "enc:..." mà máy này KHÔNG giải được, và bản MỚI rỗng hoặc thiếu -> giữ bản cũ. Khoá đúng
+    thì không đụng gì: chủ xoá key là xoá được. Giá trị mới chủ vừa gõ (khác rỗng) luôn thắng."""
+    if not SETTINGS_PATH.exists():
+        return
+    import secrets_store
+    raw_cu = json.loads(SETTINGS_PATH.read_text(encoding="utf-8")) or {}
+    for path in _SECRET_PATHS:
+        if path == "auth.totp.secret":
+            # 2FA có tấm che RIÊNG ngay trên (giữ khi còn bật): tắt 2FA lúc khoá lệch (đăng nhập bằng mã khôi phục rồi
+            # tắt) phải xoá được secret, không được hồi sinh nó ở đây.
+            continue
+        parts = path.split(".")
+        for cha_cu, key in _secret_keys(raw_cu, path):
+            cu = cha_cu.get(key)
+            if not (isinstance(cu, str) and cu.startswith("enc:")) or secrets_store.decrypt(cu):
+                continue
+            cha_moi = out
+            for p in parts[:-1]:
+                if not isinstance(cha_moi.get(p), dict):
+                    cha_moi[p] = {}
+                cha_moi = cha_moi[p]
+            if not cha_moi.get(key):
+                cha_moi[key] = cu
 
 
 _TOOL_ENV_OWNED = False   # ELEVENLABS_API_KEY trong env hiện do apply_tool_env đặt → được phép gỡ khi user xoá key
@@ -1244,16 +1289,49 @@ def clear_setup_token():
 
 
 def provision_admin_from_env():
-    """Có JAVIS_ADMIN_PASSWORD (+ tùy chọn JAVIS_ADMIN_USER) và CHƯA có admin → tạo admin lúc boot
-    → đóng /auth/setup cho mọi người (cách an toàn nhất cho deploy public). Trả True nếu vừa tạo."""
-    if auth_enabled():
-        return False
+    """Apply JAVIS_ADMIN_PASSWORD (+ optional JAVIS_ADMIN_USER) at boot.
+
+    - No admin yet: create it, which also closes /auth/setup (safest for a public deploy).
+    - Admin exists and the env value CHANGED since it was last applied: reset to it, keep 2FA,
+      drop other sessions. Before 0.77.1 this case was silently ignored, so a customer who
+      changed the password on Hostinger and redeployed got "Wrong username or password"
+      forever, and a VPS owner had no reset path short of editing settings.json over SSH.
+    - Env unchanged: do nothing, so a password changed later in the dashboard survives reboots.
+
+    `auth.env_applied` keeps only a salted hash of the last applied env value, never the value.
+    Returns "created", "reset" or "" (nothing done).
+    """
     pw = os.getenv("JAVIS_ADMIN_PASSWORD", "")
     if not pw:
-        return False
+        return ""
     user = (os.getenv("JAVIS_ADMIN_USER", "admin").strip() or "admin")
-    h, salt = hash_password(pw)
     cfg = read_settings()
-    cfg["auth"] = {"username": user, "password_hash": h, "salt": salt}
+    a = dict(cfg.get("auth") or {})
+    m_salt = secrets.token_hex(16)
+    marker = {"username": user, "hash": hash_password(pw, m_salt)[0], "salt": m_salt}
+    if not a.get("password_hash"):
+        h, salt = hash_password(pw)
+        cfg["auth"] = {"username": user, "password_hash": h, "salt": salt, "env_applied": marker}
+        write_settings(cfg)
+        return "created"
+    applied = a.get("env_applied") if isinstance(a.get("env_applied"), dict) else {}
+    if applied.get("hash"):
+        same = (applied.get("username") == user and secrets.compare_digest(
+            hash_password(pw, str(applied.get("salt") or ""))[0], str(applied["hash"])))
+        if same:
+            return ""
+    elif a.get("username") == user and verify_password(pw, cfg):
+        # Upgrade from a version without the marker, and the env already matches the account:
+        # just remember it, so a later dashboard change is not reverted on the next boot.
+        a["env_applied"] = marker
+        cfg["auth"] = a
+        write_settings(cfg)
+        return ""
+    # Overwrite key by key: `auth` also holds the 2FA config, replacing it whole would turn 2FA off.
+    a["username"] = user
+    a["password_hash"], a["salt"] = hash_password(pw)
+    a["env_applied"] = marker
+    cfg["auth"] = a
     write_settings(cfg)
-    return True
+    clear_sessions()
+    return "reset"

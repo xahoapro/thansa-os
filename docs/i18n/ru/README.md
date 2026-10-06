@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:a93defe7ef8b -->
+<!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Логотип Thansa OS">
@@ -54,8 +54,8 @@
 
 | Машина | Одна команда ставит всё |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 Затем откройте **http://localhost:7777**. Установщик ставит Python, четыре CLI-мозга по подписке (`claude`, `codex`, `agy`, `grok`) и файл `.env`, после чего запускает сервер. Вход в каждый мозг выполняется **на странице Models в панели**, никаких команд вводить больше не нужно.
@@ -115,7 +115,7 @@ Thansa OS **не** чат-бот. Это **самостоятельно разм
 | **Память** | Забывает всё после каждой сессии | **Живой Second Brain**, который помнит вас и пополняется с каждым разговором |
 | **Данные** | Выдуманные или отсутствуют | **Реальные цифры** из подключённых вами источников (продажи, реклама, календарь, почта, мессенджеры) |
 | **Работа** | Отвечает и ждёт | **Фоновые циклы (loops), напоминания и очередь задач под управлением ИИ**, которые отчитываются перед вами |
-| **Интерфейс** | Окно чата | Панель + граф знаний + **голос без рук** + Telegram + CLI |
+| **Интерфейс** | Окно чата | Панель + граф знаний + **голос без рук** + Telegram, Slack, WhatsApp, Zalo + CLI |
 | **Ваша работа** | Остаётся на серверах поставщика, в формате поставщика | **Обычные файлы на вашей машине**: история, память, skills, агенты и workflows переходят к любой новой модели |
 | **Развёртывание** | Чужое облако | **Self-hosted**: Hostinger в один клик, Docker или любой VPS |
 
@@ -166,7 +166,7 @@ Thansa OS **не** чат-бот. Это **самостоятельно разм
 ### 🗣️ Говорите с ним
 - **Голос без рук**: вы говорите, Thansa слушает и отвечает вслух (по умолчанию бесплатный Edge TTS, либо OpenAI и ElevenLabs).
 - **Сессии чата**, которые можно сохранять, открывать снова и искать по полному тексту. Длинные сессии сжимаются в краткие сводки, а не обрезаются.
-- **Telegram, CLI и веб-панель**, и все они общаются с одним и тем же Thansa.
+- **Telegram, Slack, WhatsApp, Zalo, CLI и веб-панель**, и все они общаются с одним и тем же Thansa ([настройка Slack и WhatsApp](../../../docs/en/29-slack-whatsapp.md)).
 - **Любой язык**: Thansa отвечает на том языке, на котором вы пишете. Интерфейс поставляется на английском и вьетнамском.
 
 ### 🧠 Помнит всё
@@ -182,7 +182,7 @@ Thansa OS **не** чат-бот. Это **самостоятельно разм
 - **Задачи (Kanban)**: поставьте цель обычными словами. ИИ пишет спецификацию, выбирает исполнителя, выполняет её в фоне и зовёт вас только в исключительных случаях.
 - **Loops и напоминания**: фоновые задания по интервалу, по времени суток или по cron-выражению, каждое из которых само проверяет свою работу.
 - **Агенты и workflows**: специализированные ассистенты с собственной памятью, объединённые в многошаговые workflows с проверкой.
-- **Чат-боты**: поставьте агента общаться с вашими клиентами через отдельного бота в Telegram или Zalo, с общим почтовым ящиком, где вы можете перехватить разговор.
+- **Чат-боты**: поставьте агента общаться с вашими клиентами через отдельного бота в Telegram, Slack, WhatsApp или Zalo, с общим почтовым ящиком, где вы можете перехватить разговор.
 
 ### 🔌 Подключайте что угодно
 - **Магазин MCP-подключений** с несколькими аккаунтами на сервис и тремя уровнями прав, которые Thansa **строго соблюдает**.
@@ -275,7 +275,7 @@ https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hosting
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>Вариант 3: Linux или macOS без Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 Скрипт ставит Python, Node и CLI-мозги, создаёт venv, регистрирует службу, которая стартует при загрузке системы, и выводит адрес.
 
-🍎 **macOS, запуск как приложения:** дважды щёлкните `JAVIS OS.app` (или `Start JAVIS OS.command`). Запуск при входе в систему: `./bin/javis-autostart.sh install`. Подробности: [bin/README.md](../../../bin/README.md).
+🍎 **macOS, запуск как приложения:** дважды щёлкните `Thansa OS.app` (или `Start Thansa OS.command`). Запуск при входе в систему: `./bin/thansa-autostart.sh install`. Подробности: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -306,7 +306,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>Вариант 4: Windows (личный компьютер)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Запуск как приложения:** после первого запуска дважды щёлкните **`JAVIS OS.bat`**. Сервер стартует в фоне, а панель открывается в **отдельном окне** со своим значком на панели задач. Запуск при входе в систему: `javis-autostart.bat install` (удалить: `uninstall`).
+🪟 **Запуск как приложения:** после первого запуска дважды щёлкните **`Thansa OS.bat`**. Сервер стартует в фоне, а панель открывается в **отдельном окне** со своим значком на панели задач. Запуск при входе в систему: `thansa-autostart.bat install` (удалить: `uninstall`).
 
 </details>
 
@@ -330,7 +330,7 @@ Dashboard:                             http://localhost:7777
 
 - **Hostinger:** разверните `docker-compose.hostinger.yml` ещё раз как второй стек и заполните эти три поля.
 - **Собственный VPS:** один раз на всю машину запустите общий прокси `docker-compose.proxy.yml`, затем дайте каждому экземпляру свою папку с `docker-compose.multi.yml`. Прокси сам находит новые экземпляры и запрашивает SSL.
-- **Без Docker:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Без Docker:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Пошагово: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -410,7 +410,7 @@ Dashboard:                             http://localhost:7777
 
 ## 🔄 Обновление
 
-В приложении: **Settings → Updates → Update now**, с индикатором прогресса и кнопкой отката, если новая сборка что-то сломает. На VPS: `cd javis && ./update.sh` (скачивает новый образ и перезапускает; ваши данные в томах сохраняются).
+В приложении: **Settings → Updates → Update now**, с индикатором прогресса и кнопкой отката, если новая сборка что-то сломает. На VPS: `cd thansa-os && ./update.sh` (скачивает новый образ и перезапускает; ваши данные в томах сохраняются).
 
 ---
 
@@ -419,7 +419,7 @@ Dashboard:                             http://localhost:7777
 | Симптом | Что делать |
 |---|---|
 | Страница Models пишет, что CLI не установлен, хотя он установлен | **Перезапустите Thansa**: работающий процесс хранит PATH на момент своего запуска. |
-| Порт 7777 занят, и новая сборка не стартует | Сначала остановите старый процесс (`stop-javis.bat` или завершите PID), затем запустите снова. |
+| Порт 7777 занят, и новая сборка не стартует | Сначала остановите старый процесс (`stop-thansa.bat` или завершите PID), затем запустите снова. |
 | Hostinger не может скачать образ | Сделайте пакет GHCR **Public** и дождитесь окончания сборки в GitHub Action. |
 | Мозг сообщает, что вход не выполнен | **Models** → карточка этого провайдера → войти. |
 

@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:a93defe7ef8b -->
+<!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Thansa OS 로고">
@@ -54,8 +54,8 @@
 
 | 환경 | 명령 하나로 전부 설치 |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 그런 다음 **http://localhost:7777** 을 엽니다. 설치 프로그램이 Python, 구독형 CLI 브레인 네 가지(`claude`, `codex`, `agy`, `grok`), `.env` 를 준비한 뒤 서버를 시작합니다. 각 브레인 로그인은 **대시보드의 Models 페이지에서** 하므로 더 이상 명령을 입력할 필요가 없습니다.
@@ -115,7 +115,7 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 | **메모리** | 세션이 끝나면 모두 잊음 | 사용자를 기억하고 대화할수록 두터워지는 **살아 있는 Second Brain** |
 | **데이터** | 지어내거나 아예 없음 | 연결한 서비스(매출, 광고, 캘린더, 이메일, 메신저)에서 가져온 **실제 수치** |
 | **작업** | 답하고 나서 기다림 | 결과를 보고해 주는 **백그라운드 Loop, 리마인더, AI가 운영하는 작업 대기열** |
-| **인터페이스** | 채팅창 하나 | 대시보드 + 지식 그래프 + **핸즈프리 음성** + Telegram + CLI |
+| **인터페이스** | 채팅창 하나 | 대시보드 + 지식 그래프 + **핸즈프리 음성** + Telegram, Slack, WhatsApp, Zalo + CLI |
 | **내 작업** | 업체의 서버에, 업체의 형식으로 남음 | **내 컴퓨터에 있는 일반 파일**: 기록, 메모리, Skill, Agent, Workflow가 어떤 새 모델로든 그대로 넘어감 |
 | **배포** | 남의 클라우드 | **셀프 호스팅**: 원클릭 Hostinger, Docker, 또는 어떤 VPS든 |
 
@@ -166,8 +166,8 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 ### 🗣️ 말로 대화하기
 - **핸즈프리 음성**: 말하면 Thansa가 듣고 소리 내어 답합니다(기본은 무료 Edge TTS, 또는 OpenAI와 ElevenLabs).
 - **채팅 세션** 을 저장하고 다시 열고 전문 검색할 수 있습니다. 긴 세션은 잘라 내지 않고 요약으로 압축합니다.
-- **Telegram, CLI, 웹 대시보드** 가 모두 같은 Thansa와 대화합니다.
-- **모든 언어**: Thansa는 사용자가 쓰는 언어로 답합니다. 인터페이스는 영어와 베트남어로 제공됩니다.
+- **Telegram, Slack, WhatsApp, Zalo, CLI, 웹 대시보드** 가 모두 같은 Javis와 대화합니다 ([Slack 및 WhatsApp 설정](../../../docs/en/29-slack-whatsapp.md)).
+- **모든 언어**: Javis는 사용자가 쓰는 언어로 답합니다. 인터페이스는 영어와 베트남어로 제공됩니다.
 
 ### 🧠 모든 것을 기억하기
 - **Second Brain**: 장기 메모리, Wiki, 원본 Sources를 담은 마크다운 볼트(Obsidian 호환)입니다.
@@ -182,7 +182,7 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 - **Tasks (Kanban)**: 목표를 평범한 말로 맡기세요. AI가 명세를 쓰고, 담당 워커를 고르고, 백그라운드에서 실행하며, 예외 상황에서만 사용자를 부릅니다.
 - **Loop와 리마인더**: 일정 간격, 지정 시각, cron 표현식으로 도는 백그라운드 작업이며, 각 작업이 스스로 결과를 검증합니다.
 - **Agent와 Workflow**: 자체 메모리를 가진 전문 어시스턴트를 검증 단계가 있는 다단계 Workflow로 엮습니다.
-- **챗봇**: 전용 Telegram 또는 Zalo 봇으로 Agent를 고객 앞에 세우고, 공유 받은편지함에서 언제든 대화를 넘겨받을 수 있습니다.
+- **챗봇**: 전용 Telegram, Slack, WhatsApp 또는 Zalo 봇으로 Agent를 고객 앞에 세우고, 공유 받은편지함에서 언제든 대화를 넘겨받을 수 있습니다.
 
 ### 🔌 무엇이든 연결하기
 - 서비스마다 여러 계정을 둘 수 있고 Thansa가 **강제로 적용하는** 세 가지 권한 수준을 갖춘 **MCP 연결 스토어**.
@@ -275,7 +275,7 @@ Hostinger의 Traefik이 HTTPS 인증서를 발급하도록 `DOMAIN_NAME` 을 설
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>방법 3: Docker 없이 Linux 또는 macOS</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 스크립트가 Python, Node, CLI 브레인을 설치하고, venv를 만들고, 부팅 시 시작되는 서비스를 등록한 뒤 접속 주소를 출력합니다.
 
-🍎 **macOS에서 앱처럼 열기:** `JAVIS OS.app`(또는 `Start JAVIS OS.command`)을 더블클릭합니다. 로그인 시 자동 시작: `./bin/javis-autostart.sh install`. 자세한 내용: [bin/README.md](../../../bin/README.md).
+🍎 **macOS에서 앱처럼 열기:** `Thansa OS.app`(또는 `Start Thansa OS.command`)을 더블클릭합니다. 로그인 시 자동 시작: `./bin/thansa-autostart.sh install`. 자세한 내용: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -306,7 +306,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>방법 4: Windows (개인 컴퓨터)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **앱처럼 열기:** 처음 실행한 뒤에는 **`JAVIS OS.bat`** 을 더블클릭합니다. 서버가 백그라운드에서 시작되고 대시보드가 작업 표시줄 항목을 가진 **별도 창** 으로 열립니다. 로그인 시 자동 시작: `javis-autostart.bat install`(제거: `uninstall`).
+🪟 **앱처럼 열기:** 처음 실행한 뒤에는 **`Thansa OS.bat`** 을 더블클릭합니다. 서버가 백그라운드에서 시작되고 대시보드가 작업 표시줄 항목을 가진 **별도 창** 으로 열립니다. 로그인 시 자동 시작: `thansa-autostart.bat install`(제거: `uninstall`).
 
 </details>
 
@@ -330,7 +330,7 @@ Brain, 설정, 계정은 인스턴스마다 완전히 분리됩니다. 인스턴
 
 - **Hostinger:** `docker-compose.hostinger.yml` 을 두 번째 스택으로 다시 배포하고 이 세 항목을 채웁니다.
 - **직접 관리하는 VPS:** 공유 프록시 `docker-compose.proxy.yml` 을 컴퓨터 전체에서 한 번만 실행한 뒤, 인스턴스마다 `docker-compose.multi.yml` 로 별도 폴더를 만듭니다. 프록시가 새 인스턴스를 찾아 SSL을 스스로 요청합니다.
-- **네이티브:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **네이티브:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 단계별 안내: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -410,7 +410,7 @@ Thansa를 열면 설정 마법사가 브라우저 언어로 차근차근 안내�
 
 ## 🔄 업데이트
 
-앱에서: **Settings → Updates → Update now**. 진행률 표시줄이 있고, 새 빌드에 문제가 있으면 롤백 버튼으로 되돌릴 수 있습니다. VPS에서: `cd javis && ./update.sh` (새 이미지를 받아 재시작하며, 볼륨에 있는 데이터는 유지됩니다).
+앱에서: **Settings → Updates → Update now**. 진행률 표시줄이 있고, 새 빌드에 문제가 있으면 롤백 버튼으로 되돌릴 수 있습니다. VPS에서: `cd thansa-os && ./update.sh` (새 이미지를 받아 재시작하며, 볼륨에 있는 데이터는 유지됩니다).
 
 ---
 
@@ -419,7 +419,7 @@ Thansa를 열면 설정 마법사가 브라우저 언어로 차근차근 안내�
 | 증상 | 해결 방법 |
 |---|---|
 | CLI를 설치했는데 Models 페이지에 설치되지 않았다고 나옴 | **Thansa를 재시작하세요**: 실행 중인 프로세스는 시작할 때의 PATH를 유지합니다. |
-| 7777 포트가 사용 중이라 새 빌드가 시작되지 않음 | 먼저 이전 프로세스를 멈추고(`stop-javis.bat`, 또는 PID 종료) 다시 시작하세요. |
+| 7777 포트가 사용 중이라 새 빌드가 시작되지 않음 | 먼저 이전 프로세스를 멈추고(`stop-thansa.bat`, 또는 PID 종료) 다시 시작하세요. |
 | Hostinger가 이미지를 가져오지 못함 | GHCR 패키지를 **Public** 으로 설정하고 GitHub Action 빌드가 끝날 때까지 기다리세요. |
 | 브레인이 로그인되지 않았다고 함 | **Models** → 해당 제공자 카드 → 로그인. |
 

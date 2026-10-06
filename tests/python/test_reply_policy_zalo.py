@@ -87,7 +87,7 @@ async def _engine(text, meta, progress, *, channel="", bot=None):
 BRAIN = Path(tempfile.mkdtemp(prefix="brain-rp-zalo-"))
 (BRAIN / "cai-dat.md").write_text(
     "# Hướng dẫn cài đặt Javis\n\n## Lỗi cổng 7777 đang được dùng\n\nNếu Javis báo lỗi cổng 7777 đang được dùng, "
-    "hãy tắt tiến trình Javis cũ rồi khởi động lại bằng file start-javis.bat.\n\n## Đổi bộ não của Javis\n\n"
+    "hãy tắt tiến trình Javis cũ rồi khởi động lại bằng file start-thansa.bat.\n\n## Đổi bộ não của Javis\n\n"
     "Vào trang Models, chọn bộ não mới ở mục Model chính rồi bấm Lưu.\n", encoding="utf-8")
 chatbot_runtime.wire(answer=_engine, brain_root=lambda b: str(BRAIN),
                      read_agent=lambda br, slug: ({"name": "Lan", "role": "Trợ lý cài đặt Javis"}, "Trả lời ngắn gọn."))

@@ -51,8 +51,8 @@ Run it on your laptop or a small VPS. Talk to it by voice. Plug in Claude, ChatG
 
 | Machine | One command installs everything |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 Then open **http://localhost:7777**. The installer sets up Python, the four subscription CLI brains (`claude`, `codex`, `agy`, `grok`) and a `.env`, then starts the server. You sign in to each brain **on the Models page of the dashboard**, no more typing commands.
@@ -112,7 +112,7 @@ What that buys you:
 | **Memory** | Forgets after every session | **A living Second Brain** that remembers you and thickens with every conversation |
 | **Data** | Made up, or absent | **Real numbers** from the connections you wire in (sales, ads, calendar, email, messaging) |
 | **Work** | Answers, then waits | **Background loops, reminders and an AI-run task queue** that report back to you |
-| **Interface** | A chat box | Dashboard + knowledge graph + **hands-free voice** + Telegram + a CLI |
+| **Interface** | A chat box | Dashboard + knowledge graph + **hands-free voice** + Telegram, Slack, WhatsApp, Zalo + a CLI |
 | **Your work** | Stays on the vendor's servers, in the vendor's format | **Plain files on your machine**: history, memory, skills, agents and workflows carry over to any new model |
 | **Deployment** | Someone else's cloud | **Self-hosted**: one-click Hostinger, Docker, or any VPS |
 
@@ -163,7 +163,7 @@ Every brain can call your connected MCP servers, read and write the brain, run s
 ### 🗣️ Talk to it
 - **Hands-free voice**: speak, Thansa listens and answers out loud (Edge TTS free by default, or OpenAI and ElevenLabs).
 - **Chat sessions** you can save, reopen and full-text search. Long sessions are compacted into summaries instead of being cut off.
-- **Telegram, a CLI and a web dashboard**, all talking to the same Thansa.
+- **Telegram, Slack, WhatsApp, Zalo, a CLI and a web dashboard**, all talking to the same Thansa ([setup for Slack and WhatsApp](docs/en/29-slack-whatsapp.md)).
 - **Any language**: Thansa replies in the language you write in. The interface ships in English and Vietnamese.
 
 ### 🧠 Remember everything
@@ -179,7 +179,7 @@ Every brain can call your connected MCP servers, read and write the brain, run s
 - **Tasks (Kanban)**: hand over a goal in plain words. The AI writes the spec, picks a worker, runs it in the background and only calls you on exceptions.
 - **Loops and reminders**: background jobs on an interval, a clock time or a cron expression, each checking its own work.
 - **Agents and workflows**: specialist assistants with their own memory, chained into multi-step workflows with verification.
-- **Chatbots**: put an agent in front of your customers on its own Telegram or Zalo bot, with a shared inbox you can take over.
+- **Chatbots**: put an agent in front of your customers on its own Telegram, Slack, WhatsApp or Zalo bot, with a shared inbox you can take over.
 
 ### 🔌 Connect anything
 - **MCP connection store** with several accounts per service and three permission levels that Thansa **hard-enforces**.
@@ -272,7 +272,7 @@ Details and troubleshooting: [DEPLOY.en.md](DEPLOY.en.md).
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -289,13 +289,13 @@ Remote access without a domain: `docker compose --profile tunnel up -d`, then `d
 <summary><b>Option 3: Linux or macOS, no Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 The script installs Python, Node and the CLI brains, creates a venv, registers a service that starts at boot, and prints the address.
 
-🍎 **macOS, open it like an app:** double-click `JAVIS OS.app` (or `Start JAVIS OS.command`). Start at login: `./bin/javis-autostart.sh install`. Details: [bin/README.md](bin/README.md).
+🍎 **macOS, open it like an app:** double-click `Thansa OS.app` (or `Start Thansa OS.command`). Start at login: `./bin/thansa-autostart.sh install`. Details: [bin/README.md](bin/README.md).
 
 </details>
 
@@ -303,7 +303,7 @@ The script installs Python, Node and the CLI brains, creates a venv, registers a
 <summary><b>Option 4: Windows (personal machine)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -311,12 +311,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Open it like an app:** after the first run, double-click **`JAVIS OS.bat`**. The server starts in the background and the dashboard opens in **its own window** with its own taskbar entry. Start at login: `javis-autostart.bat install` (remove: `uninstall`).
+🪟 **Open it like an app:** after the first run, double-click **`Thansa OS.bat`**. The server starts in the background and the dashboard opens in **its own window** with its own taskbar entry. Start at login: `thansa-autostart.bat install` (remove: `uninstall`).
 
 </details>
 
@@ -327,7 +327,7 @@ Brains, settings and accounts stay fully separate per instance. Only three value
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` again as a second stack and fill in those three fields.
 - **Self-managed VPS:** run the shared proxy `docker-compose.proxy.yml` once for the whole machine, then give each instance its own folder with `docker-compose.multi.yml`. The proxy discovers new instances and requests SSL by itself.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Step by step: [DEPLOY.en.md](DEPLOY.en.md).
 
@@ -407,7 +407,7 @@ Found a vulnerability? Please follow [SECURITY.md](SECURITY.md) instead of openi
 
 ## 🔄 Updating
 
-In the app: **Settings → Updates → Update now**, with a progress bar and a rollback button if the new build breaks. On a VPS: `cd javis && ./update.sh` (pulls the new image and restarts; your data in the volumes is kept).
+In the app: **Settings → Updates → Update now**, with a progress bar and a rollback button if the new build breaks. On a VPS: `cd thansa-os && ./update.sh` (pulls the new image and restarts; your data in the volumes is kept).
 
 ---
 
@@ -416,7 +416,7 @@ In the app: **Settings → Updates → Update now**, with a progress bar and a r
 | Symptom | What to do |
 |---|---|
 | The Models page says a CLI is not installed, but it is | **Restart Thansa**: the running process keeps the PATH from when it started. |
-| Port 7777 is taken and the new build will not start | Stop the old process first (`stop-javis.bat`, or kill the PID), then start again. |
+| Port 7777 is taken and the new build will not start | Stop the old process first (`stop-thansa.bat`, or kill the PID), then start again. |
 | Hostinger cannot pull the image | Set the GHCR package to **Public** and wait for the GitHub Action build to finish. |
 | A brain says it is not signed in | **Models** → that provider's card → sign in. |
 

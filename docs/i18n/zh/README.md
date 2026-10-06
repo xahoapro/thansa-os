@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:a93defe7ef8b -->
+<!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Thansa OS 标志">
@@ -54,8 +54,8 @@
 
 | 机器 | 一条命令装好一切 |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 然后打开 **http://localhost:7777**。安装程序会配置好 Python、四个订阅制 CLI 大脑（`claude`、`codex`、`agy`、`grok`）以及 `.env`，随后启动服务器。每个大脑都在**仪表盘的 Models（模型）页面**上登录，无需再敲命令。
@@ -115,7 +115,7 @@ Thansa OS **不是**聊天机器人。它是一个运行在你自己的机器或
 | **记忆** | 每次会话结束就遗忘 | **一个活的 Second Brain**，记住你，并随着每次对话变得更丰富 |
 | **数据** | 编造的，或者干脆没有 | 来自你接入的连接（销售、广告、日历、邮件、消息）的**真实数据** |
 | **工作** | 回答完就等着 | **后台 Loop、提醒和由 AI 运行的任务队列**，并把结果汇报给你 |
-| **界面** | 一个聊天框 | 仪表盘 + 知识图谱 + **免手动语音** + Telegram + CLI |
+| **界面** | 一个聊天框 | 仪表盘 + 知识图谱 + **免手动语音** + Telegram、Slack、WhatsApp、Zalo + CLI |
 | **你的成果** | 留在厂商的服务器上，用的是厂商的格式 | **你机器上的普通文件**：历史、记忆、Skill、Agent 和 Workflow 都能带到任何新模型 |
 | **部署** | 别人的云 | **自托管**：Hostinger 一键部署、Docker，或任意 VPS |
 
@@ -166,7 +166,7 @@ Thansa OS **不是**聊天机器人。它是一个运行在你自己的机器或
 ### 🗣️ 和它对话
 - **免手动语音**：你说话，Thansa 听完后大声回答（默认使用免费的 Edge TTS，也可选 OpenAI 和 ElevenLabs）。
 - **聊天会话**可以保存、重新打开并全文搜索。长会话会被压缩成摘要，而不是被截断。
-- **Telegram、CLI 和网页仪表盘**，连接的都是同一个 Thansa。
+- **Telegram、Slack、WhatsApp、Zalo、CLI 和网页仪表盘**，连接的都是同一个 Thansa（[Slack 和 WhatsApp 的设置](../../../docs/en/29-slack-whatsapp.md)）。
 - **任意语言**：你用什么语言写，Thansa 就用什么语言回复。界面提供英文和越南语。
 
 ### 🧠 记住一切
@@ -182,7 +182,7 @@ Thansa OS **不是**聊天机器人。它是一个运行在你自己的机器或
 - **任务（Kanban）**：用大白话交代一个目标。AI 会写出规格说明、挑选执行者、在后台运行，只有出现异常时才找你。
 - **Loop 和提醒**：按间隔、固定时刻或 cron 表达式运行的后台任务，每个都会自行检查工作成果。
 - **Agent 和 Workflow**：拥有各自记忆的专业助手，可以串联成带验证步骤的多步 Workflow。
-- **聊天机器人**：把一个 Agent 放到你的客户面前，使用它自己的 Telegram 或 Zalo 机器人，并配有一个你可以随时接管的共享收件箱。
+- **聊天机器人**：把一个 Agent 放到你的客户面前，使用它自己的 Telegram、Slack、WhatsApp 或 Zalo 机器人，并配有一个你可以随时接管的共享收件箱。
 
 ### 🔌 连接一切
 - **MCP 连接商店**：每个服务可接入多个账号，并有三个由 Thansa **强制执行**的权限级别。
@@ -275,7 +275,7 @@ https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hosting
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>方式三：Linux 或 macOS，不使用 Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 该脚本会安装 Python、Node 和各个 CLI 大脑，创建 venv，注册一个开机自启的服务，并打印访问地址。
 
-🍎 **在 macOS 上像应用一样打开：** 双击 `JAVIS OS.app`（或 `Start JAVIS OS.command`）。登录时自动启动：`./bin/javis-autostart.sh install`。详情：[bin/README.md](../../../bin/README.md)。
+🍎 **在 macOS 上像应用一样打开：** 双击 `Thansa OS.app`（或 `Start Thansa OS.command`）。登录时自动启动：`./bin/thansa-autostart.sh install`。详情：[bin/README.md](../../../bin/README.md)。
 
 </details>
 
@@ -306,7 +306,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>方式四：Windows（个人电脑）</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **像应用一样打开：** 首次运行之后，双击 **`JAVIS OS.bat`**。服务器会在后台启动，仪表盘在**独立窗口**中打开，并拥有自己的任务栏图标。登录时自动启动：`javis-autostart.bat install`（移除：`uninstall`）。
+🪟 **像应用一样打开：** 首次运行之后，双击 **`Thansa OS.bat`**。服务器会在后台启动，仪表盘在**独立窗口**中打开，并拥有自己的任务栏图标。登录时自动启动：`thansa-autostart.bat install`（移除：`uninstall`）。
 
 </details>
 
@@ -330,7 +330,7 @@ Dashboard:                             http://localhost:7777
 
 - **Hostinger：** 再次部署 `docker-compose.hostinger.yml` 作为第二个 stack，并填写这三个字段。
 - **自行管理的 VPS：** 为整台机器运行一次共享代理 `docker-compose.proxy.yml`，然后用 `docker-compose.multi.yml` 为每个实例分配独立的文件夹。代理会自动发现新实例并申请 SSL 证书。
-- **原生安装：** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`。
+- **原生安装：** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`。
 
 分步说明：[DEPLOY.en.md](../../../DEPLOY.en.md)。
 
@@ -410,7 +410,7 @@ Dashboard:                             http://localhost:7777
 
 ## 🔄 更新
 
-在应用内：**Settings → Updates → Update now**，带有进度条，如果新版本出现问题还有回滚按钮。在 VPS 上：`cd javis && ./update.sh`（拉取新镜像并重启；你在数据卷中的数据会被保留）。
+在应用内：**Settings → Updates → Update now**，带有进度条，如果新版本出现问题还有回滚按钮。在 VPS 上：`cd thansa-os && ./update.sh`（拉取新镜像并重启；你在数据卷中的数据会被保留）。
 
 ---
 
@@ -419,7 +419,7 @@ Dashboard:                             http://localhost:7777
 | 症状 | 处理方法 |
 |---|---|
 | Models 页面说某个 CLI 没有安装，但实际上已经安装 | **重启 Thansa**：正在运行的进程保留的是它启动时的 PATH。 |
-| 7777 端口被占用，新版本无法启动 | 先停止旧进程（`stop-javis.bat`，或结束对应 PID），然后重新启动。 |
+| 7777 端口被占用，新版本无法启动 | 先停止旧进程（`stop-thansa.bat`，或结束对应 PID），然后重新启动。 |
 | Hostinger 无法拉取镜像 | 把 GHCR 包设为 **Public**，并等待 GitHub Action 构建完成。 |
 | 某个大脑提示尚未登录 | **Models** → 该提供商的卡片 → 登录。 |
 

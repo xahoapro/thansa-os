@@ -35,8 +35,10 @@
   <link rel="stylesheet" href="/static/style.css?v=105">
   <link rel="stylesheet" href="/static/console.css?v=79">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
-       Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại. -->
-  <script>(function(){try{if(localStorage.getItem('javis.theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
+       Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
+       Chế độ "auto" (0.74.0, mặc định khi chưa chọn gì từ 0.75.1) tính theo khung giờ "HH:MM-HH:MM", cùng quy tắc với lightAt() trong
+       theme.js (vắt qua nửa đêm được, hai mốc trùng là tối): sửa một bên thì sửa cả bên kia. -->
+  <script>(function(){try{var m=localStorage.getItem('javis.theme'),L=m==='light';if(m!=='light'&&m!=='dark'&&m!=='dim'){var p=/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(localStorage.getItem('javis.theme.schedule')||'')||[0,6,0,18,0],a=p[1]*60+ +p[2],b=p[3]*60+ +p[4],d=new Date(),n=d.getHours()*60+d.getMinutes();L=a!==b&&(a<b?n>=a&&n<b:n>=a||n<b);}if(L)document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 </head>
 <body>
   <div class="hud">
@@ -701,7 +703,11 @@
       <div class="fm-head"><img src="/brand-logo" alt="" style="width:24px;height:24px;border-radius:6px;vertical-align:middle;margin-right:6px;object-fit:cover"><span id="authTitle" data-i18n="auth.title">Đăng nhập Thansa</span></div>
       <div class="auth-body">
         <input id="authUser" placeholder="Tài khoản" data-i18n-ph="common.account" autocomplete="username">
-        <input id="authPass" type="password" placeholder="Mật khẩu" data-i18n-ph="common.password" autocomplete="current-password">
+        <div class="auth-pw">
+          <input id="authPass" type="password" placeholder="Mật khẩu" data-i18n-ph="common.password" autocomplete="current-password">
+          <button type="button" class="auth-pw-eye" id="authPassEye" aria-pressed="false"
+                  title="Hiện/ẩn mật khẩu" data-i18n-title="auth.show_pw" aria-label="Hiện/ẩn mật khẩu" data-i18n-aria="auth.show_pw"><i data-ic="eye"></i></button>
+        </div>
         <!-- Ô mã 2 lớp: ẩn cho tới khi server trả needs_2fa. Hiện sẵn từ đầu thì người CHƯA bật
              2FA phải nhìn một ô họ không hiểu, mỗi lần đăng nhập. inputmode=numeric để điện
              thoại bật bàn phím số; autocomplete=one-time-code để iOS/Android tự điền từ SMS/app. -->
@@ -716,7 +722,8 @@
         <div class="auth-help"><span id="authForgot" data-i18n="auth.forgot">Quên mật khẩu?</span></div>
         <div class="auth-reset" id="authResetInfo" style="display:none">
           <span data-i18n="auth.reset1">Mở file</span> <code>server/settings.json</code><span data-i18n="auth.reset2">, xóa khối</span> <code>"auth"</code> <span data-i18n="auth.reset3">(hoặc đặt rỗng), rồi chạy</span>
-          <code>stop-javis.bat</code> → <code>start-javis.vbs</code>. <span data-i18n="auth.reset4">Mở lại sẽ về bộ cài đặt để tạo tài khoản mới.</span>
+          <code>stop-thansa.bat</code> → <code>start-thansa.vbs</code>. <span data-i18n="auth.reset4">Mở lại sẽ về bộ cài đặt để tạo tài khoản mới.</span>
+          <div class="auth-reset-srv" data-i18n="auth.reset_server">Chạy trên máy chủ (Docker, Hostinger): đổi JAVIS_ADMIN_PASSWORD trong Environment rồi Redeploy. Thansa đặt lại mật khẩu theo giá trị mới, 2FA giữ nguyên.</div>
         </div>
       </div>
     </div>
@@ -815,7 +822,7 @@
   <!-- theme.js phải nạp TRƯỚC mọi file khác: graph.js / app.js đăng ký
        hàm vẽ lại theo tông ngay lúc parse, nếu window.javisTheme chưa có thì chúng
        đăng ký hụt và các lớp canvas kẹt ở bảng màu tối. -->
-  <script src="/static/theme.js?v=2"></script>
+  <script src="/static/theme.js?v=4"></script>
   <!-- Voice V1: đạo diễn hội thoại (thuần) phải nạp TRƯỚC voice.js và app.js. -->
   <script src="/static/voice-turn.js?v=3"></script>
   <script src="/static/voice-turn-policy.js?v=1"></script>
@@ -875,6 +882,7 @@
   <script src="/static/workspace.js?v=16"></script>
   <script src="/static/packs.js?v=1"></script>
   <script src="/static/chatbots-reply-policy.js?v=1"></script>
+  <script src="/static/chatbots-try.js?v=1"></script>
   <script src="/static/chatbots.js?v=17"></script>
   <!-- Trang Hội thoại (hộp thư khách): nạp TRƯỚC console.js để renderConversations uỷ quyền được. -->
   <script src="/static/conversations-filters.js?v=1"></script>

@@ -103,7 +103,7 @@ BRAIN = Path(tempfile.mkdtemp(prefix="brain-zpnhom-"))
     "# Hướng dẫn cài đặt Javis\n\n"
     "## Lỗi cổng 7777 đang được dùng\n\n"
     "Nếu Javis báo lỗi cổng 7777 đang được dùng, hãy tắt tiến trình Javis cũ rồi khởi động lại "
-    "bằng file start-javis.bat.\n\n"
+    "bằng file start-thansa.bat.\n\n"
     "## Đổi bộ não của Javis\n\n"
     "Vào trang Models, chọn bộ não mới ở mục Model chính rồi bấm Lưu. Đổi bộ não không làm mất "
     "bộ nhớ của Javis.\n",

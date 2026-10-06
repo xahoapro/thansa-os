@@ -243,8 +243,8 @@
     // nguồn nào). Màu vàng chứ không đỏ: bot vẫn trả lời tử tế, chỉ là chạy thiếu quyền. Để im
     // thì chủ tưởng bot đang làm việc thật - đúng kiểu hỏng lặng lẽ mà cả trang này chống.
     var cbao = b.canh_bao_luot
-      ? '<div class="cb-quyen ghi">' + ic("triangle-alert") + ' ' +
-        esc(String(b.canh_bao_luot).slice(0, 300)) + '</div>' : "";
+      ? '<div class="cb-quyen ghi">' + ic("triangle-alert") + '<span class="cb-quyen-t">' +
+        esc(String(b.canh_bao_luot).slice(0, 300)) + '</span></div>' : "";
     // Mức quyền phải nhìn thấy TỪ NGOÀI THẺ, không phải mở form Sửa mới biết. Một con bot toàn
     // quyền lẫn giữa mấy con chỉ đọc mà nhìn giống hệt nhau là đúng kiểu hỏng im lặng: chủ nhớ
     // nhầm con nào là con nào rồi thả nhầm vào chỗ ai cũng nhắn được.
@@ -256,6 +256,7 @@
     var mq = b.muc_quyen || "suggest";
     var mqLoi = {
       suggest: " - " + window.t("cb.mq_suggest"),
+      read_docs: " - " + window.t("cb.mq_read_docs"),
       auto: " - " + window.t("cb.mq_auto"),
       full: " - " + window.t("cb.mq_full"),
     };
@@ -265,7 +266,7 @@
         // "shield-alert" không có trong bộ icon đã vendor nên bản trước vẽ ra một ô trống ở
         // đúng chỗ đáng chú ý nhất. Test icon không bắt được vì nó chỉ dò tên viết thẳng trong
         // lời gọi, không dò lời gọi có biểu thức ở trong.
-        ic(mq === "full" ? "shield" : mq === "auto" ? "pencil" : "eye") +
+        ic(mq === "full" ? "shield" : mq === "auto" ? "pencil" : mq === "read_docs" ? "book-open" : "eye") +
         ' <b>' + esc(mucCua(mq).nhan) + '</b>' +
       '</span>';
     // Nhóm có người gọi bot mà chủ chưa cho phép. Đây là chỗ sửa cho lỗi "thả bot vào nhóm,
@@ -307,7 +308,7 @@
     // người dùng đi mở @BotFather tìm một cài đặt không tồn tại cho con bot đó.
     var coTelegram = (b.accounts || []).some(function (a) { return a.channel === "telegram"; });
     var riengTu = (coTelegram && duNhom && st.da_hoi_telegram && !st.doc_moi_tin_nhom)
-      ? '<div class="cb-quyen ghi">' + ic("triangle-alert") + ' ' + esc(window.t("cb.rt_1")) +
+      ? '<div class="cb-quyen ghi">' + ic("triangle-alert") + '<span class="cb-quyen-t">' + esc(window.t("cb.rt_1")) +
         ' <b>' + esc(window.t("cb.rt_che_do")) + '</b> ' + esc(window.t("cb.rt_2")) +
         ' <b>' + esc(window.t("cb.rt_lenh")) + '</b> ' + esc(window.t("cb.rt_va")) +
         ' <b>' + esc(window.t("cb.rt_tra_thang")) + '</b>' +
@@ -315,7 +316,7 @@
         esc(window.t("cb.rt_fix_1")) + ' <b>@BotFather</b> ' + esc(window.t("cb.rt_go")) +
         ' <b>/setprivacy</b>' + esc(window.t("cb.rt_fix_2")) + ' <b>Disable</b>' +
         esc(window.t("cb.rt_fix_3")) + ' <b>' + esc(window.t("cb.rt_quan_tri")) + '</b>. ' +
-        esc(window.t("cb.rt_fix_4")) + '</div>' : "";
+        esc(window.t("cb.rt_fix_4")) + '</span></div>' : "";
     var c = el(
       '<div class="cb-card">' +
         '<div class="cb-head">' +
@@ -372,6 +373,8 @@
                        : ic("play") + " " + esc(window.t("cb.bat"))) + '</button>' +
           '<button class="s-btn-ghost cb-edit" type="button">' + ic("pencil") + ' ' +
             esc(window.t("common.edit")) + '</button>' +
+          '<button class="s-btn-ghost cb-try" type="button">' + ic("play") + ' ' +
+            esc(window.t("try.btn")) + '</button>' +
           '<span class="cb-mn">' +
             '<button class="s-btn-ghost cb-mn-b" type="button" aria-label="' + esc(window.t("cb2.mn")) +
               '" title="' + esc(window.t("cb2.mn")) + '">&#8943;</button>' +
@@ -402,6 +405,11 @@
       if (window.JavisConversations) window.JavisConversations.mo({ bot_id: b.id });
     };
     c.querySelector(".cb-edit").onclick = function () { moForm(b); };
+    // Thử bot (0.78.0): chạy một tin giả, không gửi gì ra ngoài. Xem chatbots-try.js.
+    c.querySelector(".cb-try").onclick = function () {
+      // Bot chưa gắn kênh nào vẫn thử được "Trong nhóm": chỉnh bot cho ổn rồi mới gắn kênh.
+      if (window.JavisTryBot) window.JavisTryBot.open(b, { groups: coNhom(b) || !(b.accounts || []).length });
+    };
     c.querySelector(".cb-kenh-them").onclick = function () { moForm(b, { buoc: 1 }); };
     c.querySelectorAll(".cb-kenh-sua").forEach(function (n) {
       n.onclick = function () {
@@ -638,7 +646,7 @@
   function veCanhBao(id) {
     var m = mucCua(id);
     if (!(m.canh_bao || []).length) {
-      return '<div class="cb-hint">' + esc(window.t("cb2.mq_doc")) + '</div>';
+      return '<div class="cb-hint">' + esc(window.t(id === "read_docs" ? "cb2.mq_read_docs" : "cb2.mq_doc")) + '</div>';
     }
     var HIEN = 2;
     return '<div class="cb-canhbao ' + (id === "full" ? "full" : "ghi") + '">' +

@@ -8,7 +8,7 @@ It suits anything you answer over and over for other people: questions about a p
 
 It differs from [the Telegram channel](11-telegram.md) in one decisive way: the Telegram bot on the **Channels** page is **your own Thansa** (full power, reading the main brain, able to call every data source, and only you can message it). The bot on the **Chatbot** page is **an Agent on duty** (read-only by default, seeing only its own brain, and strangers can message it). Do not use one in place of the other.
 
-A dedicated bot **can do real work** if you raise its permission level: writing files, calling data sources, even acting outside. But whoever drives it is the person messaging it, not you, so read [The three permission levels](#the-three-permission-levels-what-the-bot-may-do) carefully before raising it.
+A dedicated bot **can do real work** if you raise its permission level: writing files, calling data sources, even acting outside. But whoever drives it is the person messaging it, not you, so read [The four permission levels](#the-four-permission-levels-what-the-bot-may-do) carefully before raising it.
 
 ## What this feature is
 
@@ -17,7 +17,7 @@ A dedicated bot **can do real work** if you raise its permission level: writing 
 - The Chatbot page **belongs to the open brain**: switching brains at the top of the page shows that brain's bots, just like the Agents and Skills pages.
 - People message the bot directly, or you drop the bot into a group.
 - **The bot follows your Agent file exactly.** Thansa inserts no rules of its own.
-- **Three permission levels**, chosen at creation and changeable later: Read only (the default), Can write, Full power. Raising the level requires ticking a consent box after reading the risks.
+- **Four permission levels**, chosen at creation and changeable later: Read only (the default), Reads documents, Can write, Full power. The first two write nothing and call no source; the last two require ticking a consent box after reading the risks.
 - Two rails **do not change with the level**, and they are locked in code rather than in wording: **the bot only sees its own brain**, and **it cannot run machine commands**.
 - Questions beyond its knowledge are handed to the human on duty you nominate.
 - The Chatbot page is built for **many bots** from the start: a card grid, a search field, add/edit/delete, and enable/disable in place. Running one bot or ten uses the same interface.
@@ -103,7 +103,7 @@ Click **New bot** and fill in:
 | Bot name | The name you use to tell your bots apart |
 | The Agent as its brain | Pick an Agent in the open brain, or click **Create Agent** |
 | What the bot answers from | See the two modes below |
-| What the bot may do | The permission level. Leave it at **Read only** the first time; read [The three permission levels](#the-three-permission-levels-what-the-bot-may-do) before raising it |
+| What the bot may do | The permission level. Leave it at **Read only** the first time; read [The four permission levels](#the-four-permission-levels-what-the-bot-may-do) before raising it |
 | The on-duty Chat ID | The Telegram number of the person receiving handovers (see below) |
 | Allowed groups | Shown only when an account is on a channel that supports groups (Telegram). Leaving it empty is fine, drop the bot into a group then allow it with one click later (see Step 4) |
 | When the bot speaks in a group | Same condition. By default only when named or replied to |
@@ -151,6 +151,19 @@ For a group you do not want, click **Skip** and it leaves the waiting list. If s
 In an allowed group, by default the bot only answers when someone **names it** (typing `@bot_name`, or picking its name from the member list) or **replies to one of its messages**. In a group with several bots it can tell them apart: naming another bot or replying to another bot does not make it answer.
 
 To make it answer **every message in the group**, change the "When the bot speaks in a group" field. Weigh it carefully: in a busy group it is very noisy and burns model quota fast. And it only works once privacy mode is off, so read the next section.
+
+### The reply judge reviews and tunes itself (from 0.77.0)
+
+In "Self-assess" mode a **reply judge** decides, message by message, whether a group bot speaks or stays silent, and learns from thumbs up/down and from how people react. From 0.77.0 a **self-review** also looks at the whole picture: once a bot has gathered enough new evidence (about 8 labels, or 40 silences) and a day has passed since the last review, Thansa sends that bot's report to your **main brain** (the model chosen on the **Models** page, usually stronger than the cheap model that judges each message). It looks for repeated patterns and changes at most 3 things, or nothing when there is no clear pattern.
+
+- **What it can change:** lessons (it only ever removes its own, never yours), example messages, each group's threshold, the bot's overall eagerness, and whether messages that start by tagging someone else ("@Quy, when is class?") are considered at all. The bot still only speaks when its documents match and the judge agrees. Rate limits, yielding to you, permissions and what the bot says stay out of reach.
+- **Every change must cite this bot's own messages as evidence**, so text a customer types cannot become an instruction.
+- **It measures itself:** if the bot is marked wrong noticeably more often after a review, that review is undone and you get a message. Issues only a code change can fix are written to `Javis/gop-y-bo-phan-xu.md` in the bot's brain.
+- **You hear about it** in one message to the inbox (the bell) and Telegram per review that changed something.
+
+**To step in, just tell Thansa:** "show me Thansa Vu's reply judge stats this week", "let Thansa Vu answer for me when customers tag me about class times", "undo review a1b2c3 of Thansa Vu". Thansa reads the same report, proposes, and applies when you agree; every change is logged and can be undone. Customer-facing bots never see these tools, even at the "can write" or "full" levels.
+
+If your main brain runs on a Claude Pro/Max plan, note that the review is background work on that plan, which Anthropic does not count as ordinary personal use. It runs at most once a day per bot and only with evidence, but the safest setup is a ChatGPT or Grok plan or an API key for the main brain. Operators can turn the review off with the environment variable `JAVIS_REPLY_POLICY_REVIEW=0`.
 
 ### Telegram's privacy mode (read this if the bot is silent in a group)
 
@@ -246,19 +259,42 @@ The two points below hold even when you give the bot full power. They live in th
 - The bot **cannot see another brain**, your main brain included. Every file read and write is clamped inside the bot's own brain folder; climbing out with `../` or an absolute path is refused outright.
 - The bot **cannot run machine commands**, cannot open an unfamiliar web page to read, cannot spawn child agents. The bot also has **no admin commands**: `/brain`, `/model`, `/status` do nothing.
 
-How Thansa guarantees it: **the bot never touches the engine's native tools.** At the Read only level it has no tools at all; at the two higher levels every tool goes through Thansa's connection hub, where file paths are clamped and the permission level is applied right at the call site. The bot does not open a CLI, so Claude Code's `Bash` and absolute-path `Read` are simply not present here.
+How Thansa guarantees it: **the bot never touches the engine's native tools.** At the Read only level it has no tools at all; at Reads documents it has only the three document-reading tools; at the two higher levels every tool goes through Thansa's connection hub, where file paths are clamped and the permission level is applied right at the call site. The bot does not open a CLI, so Claude Code's `Bash` and absolute-path `Read` are simply not present here.
 
 Documents are still looked up by Python before the model runs and placed into the prompt, at every level. The bot reads its own brain without needing any tool.
 
-## The three permission levels: what the bot may do
+## The four permission levels: what the bot may do
 
 Chosen in the **What the bot may do** field when creating or editing a bot. The default is **Read only**.
 
 | Level | What the bot can do | Suits |
 |---|---|---|
 | **Read only** (default) | Only read documents and answer. No tools. | Duty and Q&A, which is nearly everything |
+| **Reads documents** | Like Read only, plus three read-only tools to **search and open** documents in its own brain. No writing, no data sources | Bots that stay silent because customers use different words than the documents |
 | **Can write** | Adds: writing files in its own brain, calling attached data sources at read/write level | Recording requests, updating notes, looking up real figures |
 | **Full power** | Adds: sending, paying, booking and cancelling, deleting, publishing outward | Places where you control the list of people who can message it |
+
+### The Reads documents level (from 0.80.0)
+
+At Read only, Thansa searches the documents **by keyword** before each turn and hands the bot the few best chunks. That keeps the bot from making things up, but it misses when a customer uses other words than the document: the document says "refund" and the customer types "money back", nothing matches, and the bot stays silent or says it has no information.
+
+The **Reads documents** level keeps that pre-search and gives the bot three tools to read its brain **itself**, the way the main Thansa reads its notebook:
+
+- **Search** the documents, retrying with other words when the first try finds nothing.
+- **List** the documents with their section titles, to pick the right one.
+- **Open** a whole document.
+
+The bot is told: when a question needs specific information the pre-search did not find, search first, and only say there is no information after searching properly.
+
+**The reply judge sees the table of contents too.** At the other levels, a message nobody addressed to the bot that misses the keyword search is silenced straight away. At this level the judge reads the bot's table of contents and decides whether the message fits a topic, so different wording no longer silences the bot for nothing.
+
+**Why this level asks for no consent tick:** it takes nothing the pre-search did not already expose.
+
+- No write tool, no data source, no plugin, even if you connected many sources. Thansa enforces this where tools are called, not with instructions.
+- The bot opens only files the pre-search already reads: not `memory/`, `inbox/` (customer uploads), skills, plugins or Thansa' convention files, and also not `agents/` or `workflows/` (your internal instructions). The path a customer types is only compared against that list, so `../`, absolute paths and links pointing out of the brain open nothing.
+- Only the bot's own brain. Without it the bot gets no tools at all, rather than the brain you have open.
+
+The **Try** button runs this level as is (it only reads), so you can test it right away. It costs a few extra model calls when the bot searches, and depends on the engine like the two levels above (see [Which engines can run the raised levels](#which-engines-can-run-the-raised-levels)).
 
 ### What you lose by raising the level
 
@@ -296,7 +332,7 @@ A bot card with a raised level carries a coloured band naming the level, yellow 
 
 The **Read only** level runs identically on all nine brains, with no exceptions.
 
-The two raised levels need an engine that can call tools. The six API engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama) and the Claude Code plan use a route that has run reliably for a long time. The **ChatGPT plan** alone goes through a Codex backend route the provider has not published as stable, so tool calling may fail.
+The other three levels (Reads documents, Can write, Full power) need an engine that can call tools. The six API engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama) and the Claude Code plan use a route that has run reliably for a long time. The **ChatGPT plan** alone goes through a Codex backend route the provider has not published as stable, so tool calling may fail.
 
 In that case **the bot does not die**: it answers that turn at the Read only level, and the bot card shows a yellow band stating it is running with fewer permissions than you set. Raising permissions must never take away a capability the bot already had.
 
@@ -349,7 +385,7 @@ The log keeps the 2000 most recent turns per bot, trimming older ones. Deleting 
 
 **At every level, a bot CANNOT:** read or write another brain, run machine commands, open an unfamiliar web page, spawn child agents, use admin commands (`/brain`, `/model`, `/status` all do nothing and the bot only answers generically).
 
-**Everything else depends on the permission level** you set: writing files, calling data sources, acting outside. See the table in [The three permission levels](#the-three-permission-levels-what-the-bot-may-do). The default is Read only, meaning none of those.
+**Everything else depends on the permission level** you set: writing files, calling data sources, acting outside. See the table in [The four permission levels](#the-four-permission-levels-what-the-bot-may-do). The default is Read only, meaning none of those.
 
 The bot's Telegram command menu has only three items (`/help`, `/nhanvien`, `/id`), not the main Thansa bot's admin menu. Listing commands the bot refuses to run there would only teach people to go looking for a different command set.
 
@@ -400,7 +436,7 @@ Click **Delete** on the card. The bot stops answering immediately.
 
 **Can two bots share one Agent?** Yes, and sometimes it makes sense: the same role but two different brains for two different audiences. The reverse, two bots sharing one token, is not allowed and Thansa blocks it.
 
-**What happens when people send the bot images?** Uploaded files land in `inbox/khach/` in that bot's brain, kept apart from your files, and do not count as documents for answering.
+**What happens when people send the bot images?** Uploaded files land in `inbox/khach/` in that bot's brain, kept apart from your files, and do not count as documents for answering. Since 0.81.0 the photo is also sent straight into the chat turn, so the bot's own model looks at it (Claude, GPT, Gemini, OpenRouter, Groq, Ollama, the ChatGPT plan, the Claude Code plan); ChatGPT is no longer needed. A brain that cannot see images (Antigravity, Grok Build, text-only models) makes the bot say plainly that it cannot see the photo. In a Telegram group: tag the bot in the caption, reply to the photo while tagging the bot, or send the photo and tag the bot right after (within 3 minutes, same person; needs privacy mode off).
 
 **The bot answered one question wrongly, where do I review it?** Click Log, the Recent conversations tab. The source line under each turn says which file it took the answer from, so you can fix exactly the right place.
 

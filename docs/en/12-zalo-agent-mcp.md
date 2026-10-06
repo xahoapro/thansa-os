@@ -17,23 +17,24 @@
 >
 > Running all three at once is fine, they do not collide.
 
-Thansa connects a personal Zalo account through the standard MCP of the
-[`zalo-agent-cli`](https://github.com/PhucMPham/zalo-agent-cli) project. The new flow has a
-single MCP process: sign in by QR, read or search conversations and send messages through the
-tools the upstream project provides.
+Thansa connects a personal Zalo account through the MCP of
+[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), Thansa's own Zalo CLI. There is a single
+MCP process: sign in by QR, read or search conversations and send messages through its tools.
 
-> `zalo-agent-cli` uses the unofficial Zalo API via `zca-js`. Zalo does not support this way
+> `javis-zalo` uses the unofficial Zalo API via `zca-js`. Zalo does not support this way
 > of connecting and the account may be restricted or locked. Use a secondary account, avoid
 > automated bulk sending, and accept the risk yourself.
 
 ## What you need
 
-- Node.js 20 or newer on the machine or VPS running Thansa.
+- Node.js 20 or newer on the machine or VPS running Thansa, able to download from GitHub (first run).
 - A phone already signed in to the Zalo account you want to connect.
 - Thansa started and you able to sign in to the dashboard.
 
-Thansa pins `zalo-agent-cli` at version `1.6.2`, the version verified against the seven MCP
-tools below.
+Thansa pins `javis-zalo` to a release tag (currently `v1.1.0`) and installs it straight from that
+tag's tarball on GitHub, with no npm account or Git needed. Only the `zca-js` library underneath
+follows its official npm releases. Since 0.83.0 Thansa runs this build instead of the third-party
+`zalo-agent-cli` 1.6.2; connections signed in earlier switch over without a new QR scan.
 
 ## Connecting by QR
 
@@ -53,23 +54,83 @@ The **Guide on GitHub** button in the Zalo card always opens this documentation 
 | Tool | What it does | Action level |
 |---|---|---|
 | `zalo_get_messages` | Read new messages in the buffer, supports a cursor | Read |
-| `zalo_get_history` | Fetch the history of one chat, paginated | Read |
+| `zalo_get_history` | Fetch the history of one chat (groups too), paginated, with `replyTo` and `mentions` | Read |
+| `zalo_search_history` | Search history across every chat by sender or date range | Read |
+| `zalo_get_group_joins` | Who joined a group and when, filtered by group, person or date range | Read |
 | `zalo_list_threads` | List the chats currently in the buffer | Read |
 | `zalo_search_threads` | Find a group or person by name | Read |
-| `zalo_view_media` | Download/open an image, audio or video from a message | Read |
+| `zalo_view_media` | Download/open an image, audio or video on the server (the brain does not see it, see `zalo_read_images` below) | Read |
 | `zalo_mark_read` | Mark as handled up to a cursor | Write |
 | `zalo_send_message` | Send a message to a person or group | Dangerous |
 
-The list follows the `zalo-agent-cli` 1.6.2 source. Upstream MCP documentation:
+The list follows the `javis-zalo` 1.1.0 source. History only covers what arrived since the MCP
+connected, plus what Zalo replays on connect (roughly the last two weeks); nothing older is
+available through any API.
 
-<https://github.com/PhucMPham/zalo-agent-cli/blob/main/skill/references/mcp-guide.md>
+## New members joining a group
+
+Since Thansa 0.84.2 (javis-zalo 1.1.0), Thansa knows who just joined a group and **when**,
+including people your own account added:
+
+- **You can ask.** "Who joined Zoom | Thansa OS this week?" makes the brain call
+  `zalo_get_group_joins` and answer with names and join times. The log lives in
+  `~/.zalo-agent-cli/group-joins.jsonl` inside the connection's session folder, keeps the latest
+  5000 joins, and survives restarts.
+- **A dedicated bot receives the event.** In a group the bot is allowed in, each newcomer is an
+  event sent to the bot's Agent, whatever the "reply when" setting says. The Agent follows its own
+  instructions (for example a welcome and a question), and what it sends tags the newcomer.
+  Thansa has **no greeting of its own**: if the Agent's instructions say nothing about newcomers,
+  the bot stays silent. When many people join at once and the bot has hit its rate limit, it also
+  stays silent instead of saying "you are typing too fast".
+- **Limits.** Zalo only reports this while connected, and the member list carries no join date.
+  People who joined before this feature, or while the machine running Thansa was off, are not in
+  the log.
+
+## The Zalo extras pack (Thansa Store)
+
+The three groups of tools below (reading images, sending images and files, tagging people plus
+notes, reminders and polls) fill exactly what the standard MCP lacks. Since 0.73.0 they live in
+the **`javis.zalo`** pack on Thansa Store instead of shipping inside the app, so people who do not
+use Zalo do not carry them:
+
+- **Right after you scan the Zalo QR, Thansa offers the pack** through the store's own consent
+  screen: it lists every code file, with the "run now" switch on because you just connected
+  Zalo yourself. Press Install and every tool is there.
+- **On a machine that connected Zalo earlier**, the Connections page shows a reminder with an
+  **Install companion pack** button. Thansa never installs a code pack without asking.
+- The Zalo connection, the Inbox and the Zalo chatbot stay in the app and keep working without
+  the pack. Without it you only miss the extra tools.
+
+## Reading images in a group
+
+The Zalo MCP only returns a **link** to an image, keeps messages for 2 hours, and
+`zalo_view_media` opens the image in the server's own image viewer instead of handing it to the
+brain. So the `javis.zalo` pack has the `zalo_read_images` tool:
+
+| Tool | What it does | Action level |
+|---|---|---|
+| `zalo_read_images` | Fetches the images people post in a group into the brain and tells the brain what is in them | Write (saves images to the brain) |
+
+Just ask in chat, for example "look at the receipt Lan just posted in the Sales group".
+
+- **Images come straight from Zalo**, not from the MCP's 2-hour buffer: Thansa asks Zalo for the
+  group's recent messages (30 by default, at most 100) and takes up to the 8 newest images. For a
+  private chat, only images still in the MCP buffer can be fetched.
+- **Images are saved to `attachments/zalo/<group id>/`** in the brain, so they show right in chat.
+- **Every brain can "see" them.** Claude Code and Codex open the image file themselves. The API
+  engines (OpenRouter, Gemini...) cannot view images, so ChatGPT on the plan you are signed in to
+  looks at them and describes them, copying any text and numbers verbatim. Without ChatGPT signed
+  in on the Models page the images are still fetched, just without the description.
+
+The part where ChatGPT looks at images lives in the app (the bundled `image-chatgpt` plugin, tool
+`javis_describe_image`), so it can view any other image in the brain too, with or without the
+Zalo pack.
 
 ## Sending images and files
 
 `zalo_send_message` above **only sends text**. To send an image (say one Thansa just generated)
-or a file (a PDF report, a spreadsheet), use the `zalo_send_image` tool provided by the bundled
-`zalo-image` plugin. The plugin is on by default, needs no extra install, and uses exactly the
-Zalo account you scanned the QR with.
+or a file (a PDF report, a spreadsheet), use the `zalo_send_image` tool from the `javis.zalo`
+pack. It uses exactly the Zalo account you scanned the QR with.
 
 | Tool | What it does | Action level |
 |---|---|---|
@@ -92,8 +153,8 @@ Node.js 20+ is required on the machine running Thansa, same as for the Zalo conn
 
 ## Tagging people, notes, reminders and polls
 
-`zalo_send_message` only sends text, so it cannot tag anyone, and the Zalo MCP has no notes, reminders or polls either. The bundled
-`zalo-group` plugin (on by default, built like `zalo-image`) fills exactly those gaps with five tools that every brain can call:
+`zalo_send_message` only sends text, so it cannot tag anyone, and the Zalo MCP has no notes, reminders or polls either. The
+`javis.zalo` pack fills exactly those gaps with five tools that every brain can call:
 
 | Tool | What it does | Action level |
 |---|---|---|
@@ -155,19 +216,19 @@ want to check messages, ask Thansa; MCP can use `zalo_get_messages` for buffered
 ## Troubleshooting
 
 - **No QR appears**: check that `node --version` is 20 or higher and that the machine can reach
-  npm.
+  npm and GitHub (`codeload.github.com`).
 - **QR expired**: close the connection window and click **Connect** to generate a new code.
 - **A chat is missing**: try `zalo_search_threads`; for older messages use `zalo_get_history`
   rather than only `zalo_get_messages`.
 - **The send tool is blocked**: open the account chip menu and switch the level to **Full
   power**.
-- **It reports the session is in use elsewhere**: close Zalo Web or another `zalo-agent-cli`
-  process using the same account, then try again.
+- **It reports the session is in use elsewhere**: close Zalo Web or another `javis-zalo`
+  (or old `zalo-agent-cli`) process using the same account, then try again.
 - **You want to sign in from scratch**: delete the connection on the dashboard, then connect and
   scan the QR again. Other connections' session folders are unaffected.
 
 ## References
 
-- [The `zalo-agent-cli` repository](https://github.com/PhucMPham/zalo-agent-cli)
-- [Upstream MCP guide](https://github.com/PhucMPham/zalo-agent-cli/blob/main/skill/references/mcp-guide.md)
+- [The `javis-zalo` repository](https://github.com/blogminhquy/javis-zalo)
+- [zca-js](https://github.com/RFS-ADRENO/zca-js), the library that talks to Zalo underneath
 - [Connections and MCP permissions in Thansa](09-connections-and-business-data.md)

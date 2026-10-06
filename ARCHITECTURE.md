@@ -109,7 +109,7 @@ User docs: [docs/en/10-models-and-engines.md](docs/en/10-models-and-engines.md).
   The hub applies the stricter of the two in `mcp_catalog.allowed()`, regardless of what the
   prompt says.
 - **Transports.** `mcp_client.py` keeps a long-lived session pool over HTTP/SSE, stdio (local
-  servers such as `zalo-agent-cli`) and "internal" Python bridges (`botcake_mcp.py`,
+  servers such as `javis-zalo`) and "internal" Python bridges (`botcake_mcp.py`,
   `substack_mcp.py`). `oauth_mcp.py` does MCP OAuth 2.1 so no engine needs a terminal login.
 - **Plugins.** `plugins_host.py` loads Python plugin folders (`plugin.yaml` + `plugin.py`) from,
   in order: `system/plugins/` (bundled), installed packs, `STATE_DIR/plugins/` (global user
@@ -172,7 +172,8 @@ line each, grouped by area.
 - `compaction.py`, `limit_learner.py`, `limit_resume.py`, `model_limits.py`,
   `quota_scheduler.py`: long-history compression, rate-limit learning, shared TPM ledger.
 - `image_gen.py`, `anh_codex.py`: image generation on the ChatGPT plan; moving Codex images into
-  the brain.
+  the brain. `image_vision.py`: ChatGPT looks at brain images and describes them, the eyes of
+  engines that cannot view images.
 
 **Tools and MCP**
 - `mcp_hub.py`, `mcp_client.py`, `mcp_store.py`, `mcp_catalog.py`, `catalog_i18n.py`,
@@ -307,7 +308,7 @@ There are three separate places. Mixing them up is a classic mistake.
 `.secret_key`, `.sessions.json` (login sessions), `.hub_token`, `conversations.db` (chat
 history), `kanban.sqlite3`, `customer_conversations.sqlite3`, `mcp_servers.json`,
 `mcp_audit.jsonl`, `.oauth_mcp.json`, `chatbots.json`, `channel_accounts.json`, `inbox.json`,
-`usage*.json*`, `runtime.db`, `plugins/`, `plugins.json`, `packs/`, `branding/`, `javis.log`.
+`usage*.json*`, `runtime.db`, `plugins/`, `plugins.json`, `packs/`, `branding/`, `thansa.log`.
 Anything Thansa writes at runtime goes here, never into the code tree.
 
 **A brain** (default `BRAINS_DIR/Brain Default`, scaffolded by `_ensure_brain_scaffold()` from

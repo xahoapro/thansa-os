@@ -16,7 +16,7 @@ Javis OS is a personal AI agent plus a Second Brain. Its "brain" is the **Claude
 
 On the Hostinger VPS go to **Docker Manager → Compose → URL**, paste the link and **Deploy**:
 ```
-https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 ```
 Hostinger pulls the image and runs it. Open the app at `http://<vps-ip>:7777` (the IP is in
 hPanel → VPS) and you get the **create admin account** screen.
@@ -49,8 +49,8 @@ hPanel → VPS) and you get the **create admin account** screen.
 
 Docker is required. Do not have it? `curl -fsSL https://get.docker.com | sh`
 ```bash
-mkdir javis && cd javis
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+mkdir thansa && cd thansa
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # SIGN CLAUDE IN ONCE (link + code)
 docker compose up -d                                          # pull the GHCR image and run
@@ -96,7 +96,7 @@ you **must set a `DOMAIN_NAME` variable**:
 1. Find the **VPS hostname** in hPanel → VPS (for example `srv1782015.hstgr.cloud`).
 2. Docker Manager → Compose → URL:
    ```
-   https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.hostinger.yml
+   https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
    ```
 3. The new template's **Environment** box has only 3 meaningful fields:
    - `DOMAIN_NAME`: set `javis.<vps-hostname>.hstgr.cloud`
@@ -173,7 +173,7 @@ Deploy `docker-compose.hostinger.yml` **once more** as a new stack, filling in t
 
 ```
 Stack 1:  DOMAIN_NAME=shop.srv1782015.hstgr.cloud     (JAVIS_NAME, JAVIS_HOST_PORT left empty)
-Stack 2:  DOMAIN_NAME=canhan.srv1782015.hstgr.cloud   JAVIS_NAME=javis-canhan   JAVIS_HOST_PORT=7778
+Stack 2:  DOMAIN_NAME=canhan.srv1782015.hstgr.cloud   JAVIS_NAME=thansa-canhan   JAVIS_HOST_PORT=7778
 ```
 
 The wildcard DNS `*.hstgr.cloud` is already there so any subdomain resolves immediately, and Traefik
@@ -186,18 +186,18 @@ for the whole machine**:
 
 ```bash
 docker network create javis-web
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.proxy.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.proxy.yml
 docker compose -f docker-compose.proxy.yml -p javis-proxy up -d
 ```
 
 Then give each instance **its own folder**:
 
 ```bash
-mkdir -p ~/javis-shop && cd ~/javis-shop
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
-curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.multi.yml
+mkdir -p ~/thansa-shop && cd ~/thansa-shop
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.multi.yml
 cat > .env <<'EOF'
-JAVIS_NAME=javis-shop
+JAVIS_NAME=thansa-shop
 JAVIS_HOST_PORT=7777
 JAVIS_BIND=127.0.0.1
 DOMAIN_NAME=shop.yourname.com
@@ -211,7 +211,7 @@ docker compose $CF run --rm javis claude auth login --claudeai   # sign Claude i
 docker compose $CF up -d
 ```
 
-Do the same for the second instance in `~/javis-canhan`, changing `.env` to `javis-canhan` / `7778` /
+Do the same for the second instance in `~/thansa-canhan`, changing `.env` to `thansa-canhan` / `7778` /
 `canhan.yourname.com`. Point an A record for each subdomain at the VPS IP and you are done: the proxy
 **discovers new instances through Docker labels**, so nothing on the proxy needs editing and it does
 not need restarting.
@@ -233,11 +233,11 @@ one, or two Caddys will fight over port 443.
 Clone into a different folder then set two variables before running:
 
 ```bash
-JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh
+THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh
 ```
 
-The systemd service becomes `javis-shop.service` (`journalctl -u javis-shop -f`) rather than
-overwriting the previous instance's `javis.service`. HTTPS is handled by whichever nginx or Caddy the
+The systemd service becomes `thansa-shop.service` (`journalctl -u thansa-shop -f`) rather than
+overwriting the previous instance's `thansa.service`. HTTPS is handled by whichever nginx or Caddy the
 machine already runs.
 
 ### What is shared and what is private
@@ -274,7 +274,7 @@ Trust (free), take the token, put `TUNNEL_TOKEN=...` into `.env`, change the `tu
 ## Way 2 - Installing directly on Linux/macOS (no Docker)
 
 ```bash
-git clone https://github.com/blogminhquy/javis-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
@@ -293,14 +293,14 @@ in, run once:
 ```bash
 claude auth login --claudeai
 ```
-Managing the service: `journalctl -u javis -f` · `sudo systemctl restart javis`
+Managing the service: `journalctl -u thansa -f` · `sudo systemctl restart thansa` (installed before 1.19: the service is named `javis`)
 
 ---
 
 ## Way 3 - Windows (a personal machine)
 
-Double-click `setup.bat` (which shows a window) or `start-javis.vbs` (which runs in the background).
-Stop it with `stop-javis.bat`. Open http://localhost:7777
+Double-click `setup.bat` (which shows a window) or `start-thansa.vbs` (which runs in the background).
+Stop it with `stop-thansa.bat`. Open http://localhost:7777
 
 ---
 
@@ -328,7 +328,7 @@ Stop it with `stop-javis.bat`. Open http://localhost:7777
 >   older compose file (Watchtower used to sit under `profiles: ["update"]`, which
 >   `docker compose up -d` does not start). Fetch the new file and bring it up again:
 >   ```bash
->   curl -fsSLO https://raw.githubusercontent.com/blogminhquy/javis-os/main/docker-compose.yml
+>   curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 >   docker compose up -d --pull always
 >   ```
 >   Not ready to swap the compose file? Starting it on its own works too:
@@ -353,17 +353,17 @@ The repo and the GHCR image are both **Public**, so `git clone`/`pull` and `dock
 Whenever you push new code, on the VPS all you need is:
 
 ```bash
-cd javis && ./update.sh
+cd thansa-os && ./update.sh
 ```
 
 The script runs `git pull` then:
 - **Docker**: `docker compose build && docker compose up -d`, and data in the volumes is NOT lost.
-- **Native (systemd)**: `pip install -r requirements.txt` plus `systemctl restart javis`.
+- **Native (systemd)**: `pip install -r requirements.txt` plus `systemctl restart thansa`.
 
 To force a mode: `./update.sh docker` or `./update.sh native`. The manual equivalent:
 ```bash
 git pull && docker compose build && docker compose up -d          # Docker
-git pull && ./.venv/bin/pip install -r requirements.txt && sudo systemctl restart javis   # Native
+git pull && ./.venv/bin/pip install -r requirements.txt && sudo systemctl restart thansa   # Native
 ```
 
 On your Windows machine, pushing code to GitHub: `git add -A && git commit -m "..." && git push`

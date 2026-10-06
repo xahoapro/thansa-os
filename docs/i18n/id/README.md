@@ -1,4 +1,4 @@
-<!-- translated-from: README.md sha256:a93defe7ef8b -->
+<!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
 <img src="../../../dashboard/logo.svg" width="88" alt="Logo Thansa OS">
@@ -54,8 +54,8 @@ Jalankan di laptop atau VPS kecil. Ajak bicara dengan suara. Pasang Claude, Chat
 
 | Mesin | Satu perintah menginstal semuanya |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 Lalu buka **http://localhost:7777**. Installer akan menyiapkan Python, empat otak CLI berlangganan (`claude`, `codex`, `agy`, `grok`) dan sebuah `.env`, lalu menjalankan server. Anda login ke setiap otak **di halaman Models pada dashboard**, tanpa perlu mengetik perintah lagi.
@@ -115,7 +115,7 @@ Apa yang Anda dapatkan dari situ:
 | **Memori** | Lupa setiap kali sesi selesai | **Second Brain yang hidup**, yang mengingat Anda dan makin tebal di setiap percakapan |
 | **Data** | Mengarang, atau tidak ada | **Angka nyata** dari koneksi yang Anda pasang (penjualan, iklan, kalender, email, pesan) |
 | **Pekerjaan** | Menjawab, lalu menunggu | **Loop background, pengingat, dan antrean tugas yang dijalankan AI** yang melapor kembali ke Anda |
-| **Antarmuka** | Kotak chat | Dashboard + knowledge graph + **suara hands-free** + Telegram + CLI |
+| **Antarmuka** | Kotak chat | Dashboard + knowledge graph + **suara hands-free** + Telegram, Slack, WhatsApp, Zalo + CLI |
 | **Hasil kerja Anda** | Tertinggal di server vendor, dalam format vendor | **File biasa di mesin Anda**: riwayat, memori, skill, agent, dan workflow ikut pindah ke model baru mana pun |
 | **Deployment** | Cloud milik orang lain | **Self-hosted**: Hostinger sekali klik, Docker, atau VPS apa pun |
 
@@ -166,7 +166,7 @@ Setiap otak bisa memanggil server MCP yang Anda hubungkan, membaca dan menulis B
 ### 🗣️ Ajak bicara
 - **Suara hands-free**: Anda bicara, Thansa mendengarkan dan menjawab dengan suara (Edge TTS gratis secara default, atau OpenAI dan ElevenLabs).
 - **Sesi chat** yang bisa disimpan, dibuka lagi, dan dicari dengan full-text search. Sesi panjang dipadatkan menjadi ringkasan, bukan dipotong.
-- **Telegram, CLI, dan dashboard web**, semuanya terhubung ke Thansa yang sama.
+- **Telegram, Slack, WhatsApp, Zalo, CLI, dan dashboard web**, semuanya terhubung ke Thansa yang sama ([pengaturan Slack dan WhatsApp](../../../docs/en/29-slack-whatsapp.md)).
 - **Bahasa apa pun**: Thansa membalas dalam bahasa yang Anda gunakan. Antarmukanya tersedia dalam bahasa Inggris dan Vietnam.
 
 ### 🧠 Ingat semuanya
@@ -182,7 +182,7 @@ Setiap otak bisa memanggil server MCP yang Anda hubungkan, membaca dan menulis B
 - **Tasks (Kanban)**: serahkan sebuah tujuan dengan kata-kata biasa. AI menulis spesifikasinya, memilih worker, menjalankannya di background, dan hanya menghubungi Anda saat ada pengecualian.
 - **Loop dan pengingat**: job background berdasarkan interval, jam tertentu, atau ekspresi cron, masing-masing memeriksa hasil kerjanya sendiri.
 - **Agent dan workflow**: asisten spesialis dengan memorinya sendiri, dirangkai menjadi workflow multi-langkah dengan verifikasi.
-- **Chatbot**: tempatkan agent di depan pelanggan Anda lewat bot Telegram atau Zalo-nya sendiri, dengan inbox bersama yang bisa Anda ambil alih.
+- **Chatbot**: tempatkan agent di depan pelanggan Anda lewat bot Telegram, Slack, WhatsApp, atau Zalo-nya sendiri, dengan inbox bersama yang bisa Anda ambil alih.
 
 ### 🔌 Hubungkan apa saja
 - **Toko koneksi MCP** dengan beberapa akun per layanan dan tiga level izin yang **ditegakkan secara ketat** oleh Thansa.
@@ -275,7 +275,7 @@ Detail dan pemecahan masalah: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ Akses jarak jauh tanpa domain: `docker compose --profile tunnel up -d`, lalu `do
 <summary><b>Opsi 3: Linux atau macOS, tanpa Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 Script ini menginstal Python, Node, dan otak CLI, membuat venv, mendaftarkan service yang berjalan saat boot, lalu menampilkan alamatnya.
 
-🍎 **macOS, buka seperti aplikasi:** klik dua kali `JAVIS OS.app` (atau `Start JAVIS OS.command`). Jalankan saat login: `./bin/javis-autostart.sh install`. Detail: [bin/README.md](../../../bin/README.md).
+🍎 **macOS, buka seperti aplikasi:** klik dua kali `Thansa OS.app` (atau `Start Thansa OS.command`). Jalankan saat login: `./bin/thansa-autostart.sh install`. Detail: [bin/README.md](../../../bin/README.md).
 
 </details>
 
@@ -306,7 +306,7 @@ Script ini menginstal Python, Node, dan otak CLI, membuat venv, mendaftarkan ser
 <summary><b>Opsi 4: Windows (komputer pribadi)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **Buka seperti aplikasi:** setelah dijalankan pertama kali, klik dua kali **`JAVIS OS.bat`**. Server berjalan di background dan dashboard terbuka di **jendelanya sendiri** dengan entri taskbar sendiri. Jalankan saat login: `javis-autostart.bat install` (hapus: `uninstall`).
+🪟 **Buka seperti aplikasi:** setelah dijalankan pertama kali, klik dua kali **`Thansa OS.bat`**. Server berjalan di background dan dashboard terbuka di **jendelanya sendiri** dengan entri taskbar sendiri. Jalankan saat login: `thansa-autostart.bat install` (hapus: `uninstall`).
 
 </details>
 
@@ -330,7 +330,7 @@ Brain, pengaturan, dan akun tetap terpisah sepenuhnya per instance. Hanya tiga n
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` lagi sebagai stack kedua dan isi ketiga field tersebut.
 - **VPS yang Anda kelola sendiri:** jalankan proxy bersama `docker-compose.proxy.yml` sekali untuk seluruh mesin, lalu beri setiap instance foldernya sendiri dengan `docker-compose.multi.yml`. Proxy akan menemukan instance baru dan meminta SSL dengan sendirinya.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Langkah demi langkah: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -410,7 +410,7 @@ Menemukan celah keamanan? Silakan ikuti [SECURITY.md](../../../SECURITY.md), jan
 
 ## 🔄 Pembaruan
 
-Di aplikasi: **Settings → Updates → Update now**, dengan progress bar dan tombol rollback jika build baru bermasalah. Di VPS: `cd javis && ./update.sh` (menarik image baru dan restart; data Anda di volume tetap aman).
+Di aplikasi: **Settings → Updates → Update now**, dengan progress bar dan tombol rollback jika build baru bermasalah. Di VPS: `cd thansa-os && ./update.sh` (menarik image baru dan restart; data Anda di volume tetap aman).
 
 ---
 
@@ -419,7 +419,7 @@ Di aplikasi: **Settings → Updates → Update now**, dengan progress bar dan to
 | Gejala | Yang harus dilakukan |
 |---|---|
 | Halaman Models bilang sebuah CLI belum terinstal, padahal sudah | **Restart Thansa**: proses yang berjalan tetap memakai PATH saat ia dijalankan. |
-| Port 7777 terpakai dan build baru tidak mau jalan | Hentikan dulu proses lama (`stop-javis.bat`, atau kill PID-nya), lalu jalankan lagi. |
+| Port 7777 terpakai dan build baru tidak mau jalan | Hentikan dulu proses lama (`stop-thansa.bat`, atau kill PID-nya), lalu jalankan lagi. |
 | Hostinger tidak bisa menarik image | Atur package GHCR menjadi **Public** dan tunggu build GitHub Action selesai. |
 | Sebuah otak bilang belum login | **Models** → kartu provider tersebut → login. |
 
