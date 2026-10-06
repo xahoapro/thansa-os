@@ -28,8 +28,8 @@ Thanh điều hướng của dashboard gom **19 trang** thành **7 nhóm**: Tr�
 - [20 - Plugins](20-plugins.md) - thêm tool/hook native cho mọi engine bằng một thư mục Python.
 - [25 - Chatbot (Bot chuyên trách)](25-chatbot.md) - đem Agent ra trả lời khách qua bot Telegram hoặc Zalo riêng, brain riêng, chuyển nhân viên khi bí.
 - [28 - Hội thoại khách (Hộp thư)](28-hoi-thoai-khach.md) - đọc lại mọi cuộc chat khách nhắn cho bot và Zalo cá nhân ở một chỗ, tiếp quản khi cần người thật.
-- [29 - Slack và WhatsApp](29-slack-whatsapp.md) - chat với Javis và đặt bot khách hàng trên Slack (không cần tên miền) và WhatsApp (API chính thức của Meta).
-- [30 - Discord và Lark/Feishu](30-discord-lark.md) - chat với Javis từ Discord và Lark/Feishu ở trang Kênh Admin, không cần tên miền.
+- [29 - Slack và WhatsApp](29-slack-whatsapp.md) - chat với Thansa và đặt bot khách hàng trên Slack (không cần tên miền) và WhatsApp (API chính thức của Meta).
+- [30 - Discord và Lark/Feishu](30-discord-lark.md) - chat với Thansa từ Discord và Lark/Feishu ở trang Kênh Admin, không cần tên miền.
 - [31 - Messenger](31-messenger.md) - đặt bot khách hàng trả lời hộp thư Fanpage Facebook (API chính thức của Meta, cần tên miền HTTPS).
 - [32 - Theo dõi trang web](32-theo-doi-trang.md) - canh giá, cụm chữ hoặc thay đổi trên một trang theo lịch, không tốn token.
 - [33 - Cookies](33-kho-dang-nhap.md) - cất phiên đăng nhập riêng (cookie) để Javis đọc trang cần đăng nhập và canh trang đó.
