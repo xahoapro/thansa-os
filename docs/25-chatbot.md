@@ -180,7 +180,7 @@ Tin bị bỏ qua vì đáng lẽ trả lời được mà tài liệu không c�
 
 Chế độ này cũng chạy với nhóm Telegram nếu bạn đã tắt chế độ riêng tư (mục ngay dưới), nhưng phần chờ nhường và nhận tag theo tên chỉ có ở Zalo cá nhân.
 
-**Tag trong chú thích ảnh cũng được tính** (từ 0.65.13). Gửi ảnh kèm chú thích "@Tên bot ..." thì chú thích được coi như nội dung tin: bot nhận ra tag và trả lời như với tin chữ, và biết tin đó có kèm một ảnh. **Bot xem được ảnh đó bằng chính bộ não của nó** (từ 0.81.0): Javis lưu ảnh vào brain của bot rồi gửi thẳng ảnh vào lượt chat cho model đang chạy bot (Claude, GPT, Gemini, OpenRouter, Groq, Ollama, gói ChatGPT, gói Claude Code). Không cần kết nối ChatGPT nữa. Bộ não không xem được ảnh (Antigravity, Grok Build, model chữ thuần) hoặc ảnh không tải được thì bot đọc mỗi chú thích và nói thật là chưa xem được ảnh. Telegram cũng vậy: ảnh có tag bot, trả lời vào một ảnh rồi tag bot, hoặc gửi ảnh rồi tag bot ngay sau (trong 3 phút, cùng một người; cần tắt chế độ riêng tư) đều được. Ảnh không có chú thích thì vẫn bị bỏ qua.
+**Tag trong chú thích ảnh cũng được tính** (từ 0.65.13). Gửi ảnh kèm chú thích "@Tên bot ..." thì chú thích được coi như nội dung tin: bot nhận ra tag và trả lời như với tin chữ, và biết tin đó có kèm một ảnh. **Bot xem được ảnh đó bằng chính bộ não của nó** (từ 0.81.0): Thansa lưu ảnh vào brain của bot rồi gửi thẳng ảnh vào lượt chat cho model đang chạy bot (Claude, GPT, Gemini, OpenRouter, Groq, Ollama, gói ChatGPT, gói Claude Code). Không cần kết nối ChatGPT nữa. Bộ não không xem được ảnh (Antigravity, Grok Build, model chữ thuần) hoặc ảnh không tải được thì bot đọc mỗi chú thích và nói thật là chưa xem được ảnh. Telegram cũng vậy: ảnh có tag bot, trả lời vào một ảnh rồi tag bot, hoặc gửi ảnh rồi tag bot ngay sau (trong 3 phút, cùng một người; cần tắt chế độ riêng tư) đều được. Ảnh không có chú thích thì vẫn bị bỏ qua.
 
 **Bot ở Zalo cá nhân khác bot ở Telegram** ở một điểm quan trọng: câu nó gửi mang tên nick, và nick có thể còn nhiều người khác nhắn vào. Vì thế bot chỉ xử lý tin dạng chữ và tin **ảnh có chú thích** (ảnh trơn, tiếng, file bỏ qua), bỏ tin cũ quá 3 phút, và nhường 10 phút khi có người vừa nhắn tay ở cuộc chat đó.
 
@@ -223,9 +223,9 @@ Học chỉ đổi việc **nói hay im**, không bao giờ đổi điều bot k
 
 **Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `JAVIS_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
 
-### Bộ phán xử tự soát, và nhờ Javis chỉnh (từ 0.77.0)
+### Bộ phán xử tự soát, và nhờ Thansa chỉnh (từ 0.77.0)
 
-Ca học tức thì ở trên sửa từng tin một. Từ 0.77.0 còn có một **vòng tự soát** nhìn cả bức tranh: khi một bot gom đủ bằng chứng mới (khoảng 8 nhãn Đúng/Sai, hoặc 40 tin bị im) và đã qua 24 giờ từ lần soát trước, Javis gửi báo cáo của bot đó cho **bộ não chính** (model bạn chọn ở trang **Models**, thường mạnh hơn model rẻ chấm từng tin). Model tìm mẫu lặp lại, ví dụ "khách tag anh Quý hỏi lịch học mà bot im cả bảy lần", rồi tự chỉnh tối đa 3 chỗ. Không có mẫu rõ thì không đổi gì.
+Ca học tức thì ở trên sửa từng tin một. Từ 0.77.0 còn có một **vòng tự soát** nhìn cả bức tranh: khi một bot gom đủ bằng chứng mới (khoảng 8 nhãn Đúng/Sai, hoặc 40 tin bị im) và đã qua 24 giờ từ lần soát trước, Thansa gửi báo cáo của bot đó cho **bộ não chính** (model bạn chọn ở trang **Models**, thường mạnh hơn model rẻ chấm từng tin). Model tìm mẫu lặp lại, ví dụ "khách tag anh Quý hỏi lịch học mà bot im cả bảy lần", rồi tự chỉnh tối đa 3 chỗ. Không có mẫu rõ thì không đổi gì.
 
 **Chỉnh được những gì.** Chỉ việc nói hay im, trong một danh sách đóng:
 - thêm hoặc bỏ **bài học** (vòng soát chỉ bỏ được bài nó tự viết, không bao giờ đẩy bài bạn dạy ra ngoài);
@@ -239,12 +239,12 @@ Mỗi thay đổi phải dẫn đúng những tin của chính bot đó làm b�
 
 **Bạn biết bằng cách nào.** Lần soát nào có chỉnh hay có góp ý thì gửi đúng một tin vào **hộp thư** (cái chuông) và Telegram của bạn, liệt kê từng thay đổi và mã lần soát.
 
-**Muốn can thiệp thì nói với Javis**, không cần mở cài đặt nào:
-- "Thống kê bộ phán xử của Javis Vũ tuần này, vì sao bot im nhiều thế?"
-- "Cho Javis Vũ trả lời thay anh khi khách tag anh hỏi về lịch học."
-- "Hoàn lại lần tự soát a1b2c3 của Javis Vũ."
+**Muốn can thiệp thì nói với Thansa**, không cần mở cài đặt nào:
+- "Thống kê bộ phán xử của Thansa Vũ tuần này, vì sao bot im nhiều thế?"
+- "Cho Thansa Vũ trả lời thay anh khi khách tag anh hỏi về lịch học."
+- "Hoàn lại lần tự soát a1b2c3 của Thansa Vũ."
 
-Javis đọc đúng số liệu của bộ phán xử (cùng báo cáo mà vòng soát đọc), đề xuất, và chỉnh khi bạn đồng ý. Mọi thay đổi, của vòng soát hay do bạn nhờ, đều có nhật ký và hoàn lại được. Muốn phân tích kỹ hơn thì chuyển bộ não chính sang model mạnh hơn ở trang **Models** trước khi hỏi.
+Thansa đọc đúng số liệu của bộ phán xử (cùng báo cáo mà vòng soát đọc), đề xuất, và chỉnh khi bạn đồng ý. Mọi thay đổi, của vòng soát hay do bạn nhờ, đều có nhật ký và hoàn lại được. Muốn phân tích kỹ hơn thì chuyển bộ não chính sang model mạnh hơn ở trang **Models** trước khi hỏi.
 
 **Bot chăm khách không bao giờ thấy hai công cụ này.** Kho của bộ phán xử chứa chữ chat của mọi khách, nên chỉ phiên của chính bạn đọc và chỉnh được. Bot ở mức Được ghi hay Toàn quyền cũng không thấy.
 
@@ -374,9 +374,9 @@ Chọn ở ô **Bot được làm gì** khi tạo hoặc sửa bot. Mặc địn
 
 ### Mức Đọc tài liệu (từ 0.80.0)
 
-Ở mức Chỉ đọc, Javis tra tài liệu **theo chữ** trước mỗi lượt rồi đưa vài đoạn khớp nhất cho bot. Cách này giữ bot không bịa, nhưng trượt khi khách dùng chữ khác tài liệu: tài liệu ghi "hoàn trả" mà khách gõ "đổi trả" là không ra, và bot im hoặc nói chưa có thông tin.
+Ở mức Chỉ đọc, Thansa tra tài liệu **theo chữ** trước mỗi lượt rồi đưa vài đoạn khớp nhất cho bot. Cách này giữ bot không bịa, nhưng trượt khi khách dùng chữ khác tài liệu: tài liệu ghi "hoàn trả" mà khách gõ "đổi trả" là không ra, và bot im hoặc nói chưa có thông tin.
 
-Mức **Đọc tài liệu** giữ nguyên phần tra sẵn đó, rồi cho bot thêm ba công cụ để **tự** đọc brain của nó như Javis chính đọc sổ tay:
+Mức **Đọc tài liệu** giữ nguyên phần tra sẵn đó, rồi cho bot thêm ba công cụ để **tự** đọc brain của nó như Thansa chính đọc sổ tay:
 
 - **Tìm** trong tài liệu, thử lại bằng từ khác khi lần đầu không ra.
 - **Xem danh sách** tài liệu kèm tên các mục, để tự chọn tài liệu đúng chủ đề.
@@ -388,8 +388,8 @@ Bot được dặn: câu hỏi cần thông tin cụ thể mà phần tra sẵn 
 
 **Vì sao mức này không bắt tick đồng ý:** nó không lấy đi thứ gì phần tra sẵn chưa lấy.
 
-- Không có công cụ ghi nào, không gọi nguồn dữ liệu nào, không plugin, kể cả khi bạn đã đấu nhiều nguồn. Javis khoá ở tầng gọi công cụ, không phải bằng lời dặn.
-- Bot chỉ mở được đúng những file mà phần tra sẵn vẫn tra: trừ `memory/`, `inbox/` (file khách gửi), skill, plugin, file quy ước của Javis, và thêm cả `agents/`, `workflows/` (hướng dẫn nội bộ của bạn). Đường dẫn khách gõ chỉ được so với danh sách đó, nên `../`, đường dẫn tuyệt đối hay file liên kết trỏ ra ngoài đều không mở được.
+- Không có công cụ ghi nào, không gọi nguồn dữ liệu nào, không plugin, kể cả khi bạn đã đấu nhiều nguồn. Thansa khoá ở tầng gọi công cụ, không phải bằng lời dặn.
+- Bot chỉ mở được đúng những file mà phần tra sẵn vẫn tra: trừ `memory/`, `inbox/` (file khách gửi), skill, plugin, file quy ước của Thansa, và thêm cả `agents/`, `workflows/` (hướng dẫn nội bộ của bạn). Đường dẫn khách gõ chỉ được so với danh sách đó, nên `../`, đường dẫn tuyệt đối hay file liên kết trỏ ra ngoài đều không mở được.
 - Chỉ đúng brain của bot. Thiếu thông tin brain thì bot không có công cụ nào, chứ không lấy brain bạn đang mở.
 
 Nút **Thử** chạy đúng mức này (vì nó chỉ đọc), nên thử trước được ngay. Mức này tốn thêm vài lượt gọi model khi bot tự tìm, và nhạy với engine giống hai mức trên (xem mục [Engine nào chạy được mức nâng quyền](#engine-nào-chạy-được-mức-nâng-quyền)).

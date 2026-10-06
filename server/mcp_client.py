@@ -638,7 +638,7 @@ class SessionPool:
         down = self._down.get(key)
         if down and down[1] == h and time.time() - down[0] < _DOWN_TTL:
             return (f"ERROR: nguồn {spec.get('label') or key} vừa không khởi động được "
-                    f"({down[2]}). Javis tạm ngừng gọi nguồn này {_DOWN_TTL} giây, đừng gọi lại "
+                    f"({down[2]}). Thansa tạm ngừng gọi nguồn này {_DOWN_TTL} giây, đừng gọi lại "
                     "liên tục: báo người dùng bấm Kiểm tra ở trang Kết nối.")
         started = [False]
 

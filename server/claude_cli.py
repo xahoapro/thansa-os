@@ -1422,14 +1422,14 @@ def codex_error_text(returncode, stderr_lines) -> str:
     if any("could not find home directory" in str(l).lower() for l in stderr_lines):
         return localefmt.chu(
             "Codex không tìm thấy thư mục người dùng trên máy này nên không đọc được đăng nhập "
-            "ChatGPT. Hay gặp khi Windows đang dùng hồ sơ tạm hoặc Javis được bật bằng một tài "
+            "ChatGPT. Hay gặp khi Windows đang dùng hồ sơ tạm hoặc Thansa được bật bằng một tài "
             "khoản khác. Đăng xuất Windows rồi đăng nhập lại (hoặc khởi động lại máy), sau đó bật "
-            "lại Javis bằng chính tài khoản đó.\n\nChi tiết từ Codex (exit "
+            "lại Thansa bằng chính tài khoản đó.\n\nChi tiết từ Codex (exit "
             + str(returncode) + "):\n" + raw,
             "Codex could not find the user folder on this computer, so it cannot read the ChatGPT "
-            "sign-in. This usually happens when Windows is on a temporary profile or Javis was "
+            "sign-in. This usually happens when Windows is on a temporary profile or Thansa was "
             "started under another account. Sign out of Windows and back in (or restart), then "
-            "start Javis again from that same account.\n\nDetails from Codex (exit "
+            "start Thansa again from that same account.\n\nDetails from Codex (exit "
             + str(returncode) + "):\n" + raw)
     return "Codex lỗi (exit " + str(returncode) + "):\n" + raw
 
