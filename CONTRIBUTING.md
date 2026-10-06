@@ -18,7 +18,7 @@ For anything bigger than a small fix, open an issue first so the direction can b
 ## Getting set up
 
 ```bash
-git clone https://github.com/<you>/javis-os.git && cd javis-os
+git clone https://github.com/<you>/thansa-os.git && cd thansa-os
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt pytest
 .venv/bin/python -m uvicorn main:app --app-dir server --port 7777   # http://localhost:7777
 ```

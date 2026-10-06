@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ============================================================================
-# Javis OS - container image
+# Thansa OS - container image
 # "Brain" = Claude Code CLI (npm global). FastAPI app served by uvicorn.
 # Code tree is immutable; ALL mutable state lives on the /data volume and the
 # Claude auth volume (~/.claude). Node comes from the official image (Debian's
@@ -50,7 +50,7 @@ RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 # phần duy nhất bắt buộc phải có sẵn.
 #
 # Còn BẢN THÂN trình duyệt thì KHÔNG nằm trong ảnh: nó nặng và phần lớn người dùng không cần.
-# Ai cần thì bấm nút trong trang Công cụ, Javis tải về `<state>/browsers` - thư mục nằm trên
+# Ai cần thì bấm nút trong trang Công cụ, Thansa tải về `<state>/browsers` - thư mục nằm trên
 # ổ gắn ngoài nên sống qua mỗi lần cập nhật, không phải tải lại.
 #
 # Để riêng MỘT lớp để đo được nó tốn bao nhiêu (`docker history`), và để tắt được bằng
@@ -71,7 +71,7 @@ RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CLI_VERSION}" \
 # (token lưu ở volume .codex).
 #
 # HẾT best-effort từ 0.35.7: lối `|| echo` cũ nuốt lỗi cài, và nó đã xảy ra thật - có image phát
-# hành ra ngoài KHÔNG có codex, người mới cài đăng nhập ChatGPT xanh (OAuth do Javis tự lo, không
+# hành ra ngoài KHÔNG có codex, người mới cài đăng nhập ChatGPT xanh (OAuth do Thansa tự lo, không
 # cần binary) rồi vào chat mới vỡ, không có lấy một dòng lỗi chỉ đường (báo cáo 16/08). Thiếu
 # codex thì build phải ĐỎ để CI chặn lại, không được ship image què.
 # CI resolves latest to a concrete version before building: a new CLI version
@@ -83,7 +83,7 @@ RUN npm install -g @openai/codex@${CODEX_CLI_VERSION} && npm cache clean --force
 #
 # 0.28.8 có cài, nhưng lúc đó chưa ai biết Google đã ngừng phục vụ Gemini CLI cho MỌI tài khoản
 # cá nhân từ 18/06/2026 (miễn phí, AI Pro, Ultra - mã UNSUPPORTED_CLIENT). Với gần như mọi
-# người cài Javis, gói đó nay tải về một CLI không dùng được: phình image, chậm build, và tệ
+# người cài Thansa, gói đó nay tải về một CLI không dùng được: phình image, chậm build, và tệ
 # hơn là làm thẻ đã chết trông như đã sẵn sàng.
 #
 # Engine đó đã GỠ HẲN khỏi repo ở 0.50.0. Đường Google cho tài khoản cá nhân hiện nay là
