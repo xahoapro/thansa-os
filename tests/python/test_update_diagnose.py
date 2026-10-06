@@ -18,7 +18,7 @@ def check(name, condition):
 
 message = updater.chan_doan_pull("Already up to date.")
 check("đã mới nhất: nêu đúng nguồn phát hành chính thức",
-      "github.com/blogminhquy/javis-os.git/main" in message)
+      "github.com/xahoapro/thansa-os.git/main" in message)
 check("đã mới nhất: hướng dẫn Docker nếu cần", "Docker" in message)
 check("không khuyên bỏ nhánh riêng", "checkout main" not in message and "reset --hard" not in message)
 
@@ -52,7 +52,13 @@ check("lỗi lạ không bịa nguyên nhân",
 os.environ["JAVIS_UPDATE_REMOTE"] = "some-fork"
 os.environ["JAVIS_UPDATE_BRANCH"] = "stable"
 check("nút cập nhật luôn dùng cùng nguồn với /version",
-      updater.release_source() == ("https://github.com/blogminhquy/javis-os.git", "main"))
+      updater.release_source() == ("https://github.com/xahoapro/thansa-os.git", "main"))
+# Thansa: nguồn phát hành = repo Thansa (THANSA_UPDATE_REPO, giống GITHUB_REPO của /version),
+# KHÔNG BAO GIỜ là repo Javis gốc - kéo Javis về merge là 251 xung đột (lỗi 1.14-1.18).
+check("nguồn phát hành không phải repo Javis gốc", "blogminhquy" not in updater.release_source()[0])
+os.environ["THANSA_UPDATE_REPO"] = "x/y; rm -rf /"
+check("THANSA_UPDATE_REPO bẩn thì rơi về repo Thansa mặc định", updater.release_source()[0] == "https://github.com/xahoapro/thansa-os.git")
+os.environ.pop("THANSA_UPDATE_REPO", None)
 os.environ.pop("JAVIS_UPDATE_REMOTE", None)
 os.environ.pop("JAVIS_UPDATE_BRANCH", None)
 
