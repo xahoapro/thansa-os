@@ -12377,10 +12377,13 @@ async def do_update():
 
 # ============================================================
 # Tự khởi động cùng máy (autostart) - Windows: ghi HKCU Run key trỏ wscript chạy
-# start-javis.vbs (đã tự tắt bản cũ + chạy NỀN ẩn). Per-user, KHÔNG cần quyền admin.
+# start-thansa.vbs (đã tự tắt bản cũ + chạy NỀN ẩn). Per-user, KHÔNG cần quyền admin.
 # Registry là nguồn sự thật duy nhất - không lưu trùng vào settings.json.
 # ============================================================
-_AUTOSTART_NAME = "JavisOS"
+_AUTOSTART_NAME = "ThansaOS"
+# Tên mục của máy bật autostart TRƯỚC 1.19 (Task Manager hiện đúng chữ này). Lệnh của nó trỏ vào
+# start-javis.vbs - nay là file cầu nối. _autostart_chuyen_ten_cu() đổi nó sang tên mới.
+_AUTOSTART_NAME_CU = "JavisOS"
 _AUTOSTART_RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 # Task Manager tab "Startup" KHÔNG xoá mục trong Run key khi người dùng bấm Disable. Nó ghi
 # một cờ 12 byte vào khoá riêng dưới đây, rồi Explorer bỏ qua mục đó lúc đăng nhập.
@@ -12396,9 +12399,40 @@ _AUTOSTART_APPROVED_ON = bytes([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
 def _autostart_command() -> str:
-    """Lệnh chạy khi đăng nhập Windows: wscript chạy start-javis.vbs ẩn (kill cũ + chạy nền)."""
-    vbs = str(PROJECT_ROOT / "start-javis.vbs")
+    """Lệnh chạy khi đăng nhập Windows: wscript chạy start-thansa.vbs ẩn (kill cũ + chạy nền)."""
+    vbs = str(PROJECT_ROOT / "start-thansa.vbs")
     return f'wscript.exe //nologo "{vbs}"'
+
+
+def _autostart_chuyen_ten_cu() -> None:
+    """Máy cũ có mục "JavisOS" -> chuyển sang "ThansaOS" với lệnh mới (start-thansa.vbs).
+
+    Chép luôn cờ StartupApproved: người dùng đã TẮT mục cũ trong Task Manager thì mục mới cũng
+    phải tắt, đổi tên không được tự ý bật lại. Không chuyển thì `_autostart_status` thấy lệnh lệch
+    và báo nhầm "thư mục cài đặt đã đổi chỗ". Lỗi gì cũng nuốt: đây là dọn dẹp, mục cũ vẫn chạy
+    được qua file cầu nối."""
+    if os.name != "nt":
+        return
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_RUN_KEY, 0,
+                            winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
+            try:
+                winreg.QueryValueEx(k, _AUTOSTART_NAME_CU)
+            except FileNotFoundError:
+                return
+            winreg.SetValueEx(k, _AUTOSTART_NAME, 0, winreg.REG_SZ, _autostart_command())
+            winreg.DeleteValue(k, _AUTOSTART_NAME_CU)
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_APPROVED_KEY, 0,
+                                winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
+                raw, kieu = winreg.QueryValueEx(k, _AUTOSTART_NAME_CU)
+                winreg.SetValueEx(k, _AUTOSTART_NAME, 0, kieu, raw)
+                winreg.DeleteValue(k, _AUTOSTART_NAME_CU)
+        except FileNotFoundError:
+            pass
+    except Exception:
+        pass
 
 
 def _autostart_bi_chan(raw) -> bool:
@@ -12413,13 +12447,13 @@ def _autostart_thieu_gi(root=None) -> list:
     """Mảnh nào của dây chuyền khởi động không còn trên đĩa.
 
     Thiếu một trong hai là lúc đăng nhập chắc chắn không có gì chạy, mà cũng chẳng có lỗi nào
-    hiện ra: `wscript` im lặng khi không thấy file .vbs, còn `cmd` thì ghi lỗi vào javis.log,
+    hiện ra: `wscript` im lặng khi không thấy file .vbs, còn `cmd` thì ghi lỗi vào thansa.log,
     một file không ai mở ra xem bao giờ. Kiểm ngay lúc đọc trạng thái thì rẻ hơn nhiều.
     """
     goc = Path(root) if root else PROJECT_ROOT
     thieu = []
-    if not (goc / "start-javis.vbs").is_file():
-        thieu.append("start-javis.vbs")
+    if not (goc / "start-thansa.vbs").is_file():
+        thieu.append("start-thansa.vbs")
     if not (goc / ".venv" / "Scripts" / "python.exe").is_file():
         thieu.append(r".venv\Scripts\python.exe")
     return thieu
@@ -12464,9 +12498,10 @@ def _autostart_status() -> dict:
     """
     if os.name != "nt":
         return {"supported": False, "enabled": False}
+    _autostart_chuyen_ten_cu()
     expected = _autostart_command()
     st = {"supported": True, "enabled": False, "expected": expected,
-          "log": str(PROJECT_ROOT / "server" / "javis.log")}
+          "log": str(PROJECT_ROOT / "server" / "thansa.log")}
     try:
         import winreg
         try:
@@ -12495,6 +12530,7 @@ def _autostart_status() -> dict:
 def _autostart_set(enabled: bool) -> dict:
     if os.name != "nt":
         return {"ok": False, "error": localefmt.chu("Chỉ hỗ trợ trên Windows", "Only supported on Windows")}
+    _autostart_chuyen_ten_cu()
     try:
         import winreg
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_RUN_KEY) as k:

@@ -35,7 +35,7 @@ docker compose -f docker-compose.yml up -d
 
 1. 安装 Python 3.12 + Node 22。
 2. 在项目文件夹中运行一次 `setup.bat`，它会创建 .venv、安装依赖，并为你安装两个 CLI 引擎（Claude Code、Codex）。
-3. 运行 `start-javis.bat` 在后台启动（用 `stop-javis.bat` 停止）。
+3. 运行 `start-thansa.bat` 在后台启动（用 `stop-thansa.bat` 停止）。
 4. 打开 http://localhost:7777。
 
 ## 运行起来之后

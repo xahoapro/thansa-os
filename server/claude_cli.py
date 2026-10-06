@@ -141,7 +141,7 @@ _THU_MUC_BIN_THEM = (
 # WINDOWS: y hệt câu chuyện trên nhưng đau hơn một bậc, vì PATH trên Windows nằm trong
 # REGISTRY và bị ghi bởi mọi installer. Ba đường hỏng thật, chủ dự án gặp đủ cả ba khi cài
 # mới trên Windows (16/09):
-#   1. Server chạy nền (start-javis.vbs / JAVIS OS.bat) giữ PATH của LÚC NÓ BẬT. Cài CLI sau
+#   1. Server chạy nền (start-thansa.vbs / Thansa OS.bat) giữ PATH của LÚC NÓ BẬT. Cài CLI sau
 #      đó thì tiến trình đang chạy không thấy, dù gõ trong terminal mới vẫn chạy ngon.
 #   2. `setx PATH ...` CẮT ở 1024 ký tự. Một installer dùng setx trên máy có PATH dài là
 #      PATH người dùng bị cắt cụt vĩnh viễn - đúng lúc cài Antigravity CLI xong thì

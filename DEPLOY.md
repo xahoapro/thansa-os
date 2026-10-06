@@ -45,7 +45,7 @@ màn **tạo tài khoản admin**.
 
 Cần Docker. Chưa có? `curl -fsSL https://get.docker.com | sh`
 ```bash
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # ĐĂNG NHẬP CLAUDE 1 LẦN (link + code)
@@ -160,7 +160,7 @@ Deploy `docker-compose.hostinger.yml` **thêm một lần nữa** thành stack m
 
 ```
 Stack 1:  DOMAIN_NAME=shop.srv1782015.hstgr.cloud     (JAVIS_NAME, JAVIS_HOST_PORT bỏ trống)
-Stack 2:  DOMAIN_NAME=canhan.srv1782015.hstgr.cloud   JAVIS_NAME=javis-canhan   JAVIS_HOST_PORT=7778
+Stack 2:  DOMAIN_NAME=canhan.srv1782015.hstgr.cloud   JAVIS_NAME=thansa-canhan   JAVIS_HOST_PORT=7778
 ```
 
 Wildcard DNS `*.hstgr.cloud` có sẵn nên tên miền phụ nào cũng trỏ được ngay, Traefik tự cấp SSL.
@@ -179,11 +179,11 @@ docker compose -f docker-compose.proxy.yml -p javis-proxy up -d
 Rồi mỗi bản một **thư mục riêng**:
 
 ```bash
-mkdir -p ~/javis-shop && cd ~/javis-shop
+mkdir -p ~/thansa-shop && cd ~/thansa-shop
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.multi.yml
 cat > .env <<'EOF'
-JAVIS_NAME=javis-shop
+JAVIS_NAME=thansa-shop
 JAVIS_HOST_PORT=7777
 JAVIS_BIND=127.0.0.1
 DOMAIN_NAME=shop.tencuaban.com
@@ -197,7 +197,7 @@ docker compose $CF run --rm javis claude auth login --claudeai   # đăng nhập
 docker compose $CF up -d
 ```
 
-Bản thứ hai làm y hệt ở `~/javis-canhan`, đổi `.env` thành `javis-canhan` / `7778` /
+Bản thứ hai làm y hệt ở `~/thansa-canhan`, đổi `.env` thành `thansa-canhan` / `7778` /
 `canhan.tencuaban.com`. Trỏ DNS bản ghi A cho từng tên miền phụ về IP VPS là xong - proxy **tự
 phát hiện bản mới qua nhãn Docker**, không phải sửa gì ở proxy, cũng không phải restart nó.
 
@@ -218,11 +218,11 @@ Caddy tranh cổng 443.
 Clone vào thư mục khác rồi đặt hai biến trước khi chạy:
 
 ```bash
-JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh
+THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh
 ```
 
-Dịch vụ systemd sẽ là `javis-shop.service` (`journalctl -u javis-shop -f`) thay vì ghi đè
-`javis.service` của bản trước. Phần HTTPS tự lo bằng nginx/Caddy sẵn có trên máy.
+Dịch vụ systemd sẽ là `thansa-shop.service` (`journalctl -u thansa-shop -f`) thay vì ghi đè
+`thansa.service` của bản trước. Phần HTTPS tự lo bằng nginx/Caddy sẵn có trên máy.
 
 ### Cái gì dùng chung, cái gì riêng
 
@@ -249,7 +249,7 @@ Mở giao diện Thansa từ máy khác mà KHÔNG cần mở port / không cầ
 ## Cách 2 - Cài trực tiếp lên Linux/macOS (không Docker)
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
@@ -271,14 +271,14 @@ Nếu nó báo Claude chưa đăng nhập, chạy 1 lần:
 ```bash
 claude auth login --claudeai
 ```
-Quản lý dịch vụ: `journalctl -u javis -f` · `sudo systemctl restart javis`
+Quản lý dịch vụ: `journalctl -u thansa -f` · `sudo systemctl restart thansa` (máy cài trước 1.19: dịch vụ tên `javis`)
 
 ---
 
 ## Cách 3 - Windows (máy cá nhân)
 
-Double-click `setup.bat` (chạy hiện cửa sổ) hoặc `start-javis.vbs` (chạy ngầm).
-Dừng bằng `stop-javis.bat`. Mở http://localhost:7777
+Double-click `setup.bat` (chạy hiện cửa sổ) hoặc `start-thansa.vbs` (chạy ngầm).
+Dừng bằng `stop-thansa.bat`. Mở http://localhost:7777
 
 ---
 
@@ -326,17 +326,17 @@ Repo & image GHCR đều **Public** → `git clone`/`pull` và `docker pull` kh�
 Mỗi khi bạn push code mới, trên VPS chỉ cần:
 
 ```bash
-cd javis && ./update.sh
+cd thansa-os && ./update.sh
 ```
 
 Script tự `git pull` rồi:
 - **Docker**: `docker compose build && docker compose up -d` - dữ liệu trong volume KHÔNG mất.
-- **Native (systemd)**: `pip install -r requirements.txt` + `systemctl restart javis`.
+- **Native (systemd)**: `pip install -r requirements.txt` + `systemctl restart thansa`.
 
 Ép chế độ: `./update.sh docker` hoặc `./update.sh native`. Làm tay tương đương:
 ```bash
 git pull && docker compose build && docker compose up -d          # Docker
-git pull && ./.venv/bin/pip install -r requirements.txt && sudo systemctl restart javis   # Native
+git pull && ./.venv/bin/pip install -r requirements.txt && sudo systemctl restart thansa   # Native
 ```
 
 Trên máy Windows của bạn, đẩy code lên GitHub: `git add -A && git commit -m "..." && git push`

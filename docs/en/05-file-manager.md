@@ -38,7 +38,7 @@ How to set environment variables is in [.env configuration](16-env-configuration
 2. In the left navigation rail, open the **Brain** group and click **Files**.
 3. The page shows a search box on top, a toolbar under it, then the file and folder list. On first entry, Thansa shows the root of the selected brain.
 
-If the list reports something like "The Thansa server does not have the Files feature", restart the server (run `stop-javis.bat` then `start-javis.vbs`) and reload the page. See [Troubleshooting & FAQ](17-troubleshooting.md).
+If the list reports something like "The Thansa server does not have the Files feature", restart the server (run `stop-thansa.bat` then `start-thansa.vbs`) and reload the page. See [Troubleshooting & FAQ](17-troubleshooting.md).
 
 ## Choosing the brain you work in
 
@@ -287,7 +287,7 @@ The practical conclusion: move anything you want to keep long term into the brai
 
 ## Common problems
 
-**The list reports "The Thansa server does not have the Files feature".** The server is running an older build without it. Restart it (`stop-javis.bat` then `start-javis.vbs`) and reload the page.
+**The list reports "The Thansa server does not have the Files feature".** The server is running an older build without it. Restart it (`stop-thansa.bat` then `start-thansa.vbs`) and reload the page.
 
 **"Session expired" or a 401 error.** Reload the page and sign in again. See [Security & accounts](14-security-and-accounts.md).
 

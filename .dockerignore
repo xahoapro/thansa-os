@@ -93,7 +93,7 @@ server/logs/
 server/brain-trash/
 server/tmp/
 server/_selfupdate.bat
-server/javis.log
+server/thansa.log
 *.log
 *.mp3
 .DS_Store

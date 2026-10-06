@@ -1,19 +1,24 @@
 #!/bin/bash
 # ============================================================
-# JAVIS OS - macOS auto-start (LaunchAgent) installer
-#   ./bin/javis-autostart.sh install     # start at login (default)
-#   ./bin/javis-autostart.sh uninstall    # remove
+# Thansa OS - macOS auto-start (LaunchAgent) installer
+#   ./bin/thansa-autostart.sh install     # start at login (default)
+#   ./bin/thansa-autostart.sh uninstall    # remove
 #
-# Generates ~/Library/LaunchAgents/vn.minhquy.javis-os.plist with paths
+# Generates ~/Library/LaunchAgents/<LABEL>.plist (com.thansa.os) with paths
 # computed for THIS machine (nothing hardcoded in the repo).
 # ============================================================
 set -u
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Nhãn PHẢI khớp mặc định của updater.py/watchdog.sh (com.javis.os): update trên Mac nhận
+# Nhãn PHẢI khớp mặc định của updater.py/watchdog.sh (com.thansa.os): update trên Mac nhận
 # diện launchd qua đúng nhãn này để đổi ca bằng kickstart -k; lệch nhãn là updater tưởng
 # không có launchd, kill PID + nohup -> KeepAlive respawn giành cổng 7777.
-LABEL="${JAVIS_LAUNCHD_LABEL:-com.javis.os}"
+LABEL="${THANSA_LAUNCHD_LABEL:-${JAVIS_LAUNCHD_LABEL:-}}"
+if [ -z "$LABEL" ]; then
+  # Máy cài trước 1.19 đã có job com.javis.os: giữ nhãn đó, không thì sinh job THỨ HAI tranh cổng.
+  LABEL="com.thansa.os"
+  [ -f "${HOME}/Library/LaunchAgents/com.thansa.os.plist" ] || { [ -f "${HOME}/Library/LaunchAgents/com.javis.os.plist" ] && LABEL="com.javis.os"; }
+fi
 PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
 PORT="${JAVIS_PORT:-7777}"
 PY="${APP_DIR}/.venv/bin/python"
@@ -22,7 +27,7 @@ ACTION="${1:-install}"
 if [ "${ACTION}" = "uninstall" ]; then
   launchctl unload "${PLIST}" 2>/dev/null || true
   rm -f "${PLIST}"
-  echo "JAVIS OS auto-start removed."
+  echo "Thansa OS auto-start removed."
   exit 0
 fi
 
@@ -58,13 +63,13 @@ cat > "${PLIST}" <<PLISTEOF
     </dict>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>
-    <key>StandardOutPath</key><string>${APP_DIR}/server/javis.log</string>
-    <key>StandardErrorPath</key><string>${APP_DIR}/server/javis.log</string>
+    <key>StandardOutPath</key><string>${APP_DIR}/server/thansa.log</string>
+    <key>StandardErrorPath</key><string>${APP_DIR}/server/thansa.log</string>
 </dict>
 </plist>
 PLISTEOF
 
 launchctl unload "${PLIST}" 2>/dev/null || true
 launchctl load "${PLIST}"
-echo "JAVIS OS auto-start installed -> http://127.0.0.1:${PORT}"
-echo "Remove with: ./bin/javis-autostart.sh uninstall"
+echo "Thansa OS auto-start installed -> http://127.0.0.1:${PORT}"
+echo "Remove with: ./bin/thansa-autostart.sh uninstall"
