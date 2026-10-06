@@ -84,32 +84,32 @@ Từ Javis 0.84.7 (javis-zalo 1.2.0), với nhóm bật "duyệt thành viên":
 
 ## Người mới vào nhóm
 
-Từ Javis 0.84.2 (javis-zalo 1.1.0), Javis biết ai vừa vào nhóm và vào **lúc nào**, kể cả người
+Từ Thansa 0.84.2 (javis-zalo 1.1.0), Thansa biết ai vừa vào nhóm và vào **lúc nào**, kể cả người
 được thêm vào bởi chính tài khoản của bạn:
 
-- **Hỏi lại được.** "Tuần này ai mới vào nhóm Zoom | Javis OS?" thì bộ não gọi
+- **Hỏi lại được.** "Tuần này ai mới vào nhóm Zoom | Thansa OS?" thì bộ não gọi
   `zalo_get_group_joins` và trả tên kèm giờ vào. Nhật ký nằm ở
   `~/.zalo-agent-cli/group-joins.jsonl` trong thư mục phiên của kết nối, giữ 5000 lượt gần nhất,
   còn nguyên sau khi khởi động lại.
 - **Bot chuyên trách nhận được sự kiện.** Ở nhóm đã cho phép bot, mỗi người mới vào là một sự
   kiện gửi tới Agent của bot, bất kể chế độ "trả lời khi nào". Agent làm theo chỉ dẫn của nó (ví dụ
-  chào và hỏi thăm), và câu nó gửi tự tag đúng người mới. Javis **không có lời chào mặc định**:
+  chào và hỏi thăm), và câu nó gửi tự tag đúng người mới. Thansa **không có lời chào mặc định**:
   chỉ dẫn của Agent không nói gì về người mới thì bot im. Nhiều người vào cùng lúc mà bot đã hết
   hạn mức thì bot cũng im chứ không nói "nhắn hơi nhanh".
 - **Giới hạn.** Zalo chỉ báo sự kiện này lúc đang kết nối, và danh sách thành viên không có ngày
-  vào nhóm. Người vào trước khi có tính năng này, hoặc trong lúc máy chạy Javis tắt, thì không có
+  vào nhóm. Người vào trước khi có tính năng này, hoặc trong lúc máy chạy Thansa tắt, thì không có
   trong nhật ký.
 
-## Gói Zalo mở rộng (Javis Store)
+## Gói Zalo mở rộng (Thansa Store)
 
 Ba nhóm tool dưới đây (đọc ảnh, gửi ảnh và file, tag người cùng ghi chú, nhắc hẹn, poll) bù đúng
-chỗ MCP chuẩn còn thiếu. Từ 0.73.0 chúng nằm trong gói **`javis.zalo`** trên Javis Store thay vì
+chỗ MCP chuẩn còn thiếu. Từ 0.73.0 chúng nằm trong gói **`javis.zalo`** trên Thansa Store thay vì
 đi sẵn trong app, để ai không dùng Zalo thì không phải mang theo:
 
-- **Quét QR Zalo xong là Javis mời cài gói**, qua đúng màn hình đồng ý của kho: liệt kê từng tệp
+- **Quét QR Zalo xong là Thansa mời cài gói**, qua đúng màn hình đồng ý của kho: liệt kê từng tệp
   mã, công tắc "chạy ngay" bật sẵn vì bạn vừa tự đấu Zalo. Bấm Cài là có đủ tool.
 - **Máy đã đấu Zalo từ trước** thì trang Kết nối hiện dải nhắc kèm nút **Cài gói đi kèm**.
-  Javis không bao giờ tự cài gói có mã mà không hỏi.
+  Thansa không bao giờ tự cài gói có mã mà không hỏi.
 - Kết nối Zalo, Hộp thư và chatbot Zalo vẫn ở trong app, chạy bình thường dù chưa cài gói. Thiếu
   gói thì chỉ thiếu các tool mở rộng.
 
@@ -125,7 +125,7 @@ bằng trình xem ảnh của máy chủ chứ không đưa cho bộ não. Nên 
 
 Nói trong chat như bình thường, ví dụ “xem ảnh hoá đơn chị Lan vừa gửi trong nhóm Kinh doanh”.
 
-- **Ảnh lấy thẳng từ Zalo**, không phụ thuộc bộ đệm 2 giờ của MCP: Javis hỏi Zalo các tin gần
+- **Ảnh lấy thẳng từ Zalo**, không phụ thuộc bộ đệm 2 giờ của MCP: Thansa hỏi Zalo các tin gần
   nhất của nhóm (mặc định 30, tối đa 100) và lấy tối đa 8 ảnh mới nhất. Chat riêng thì chỉ lấy
   được ảnh còn trong bộ đệm MCP.
 - **Ảnh lưu vào `attachments/zalo/<id nhóm>/`** của brain, nên hiện được ngay trong khung chat.
