@@ -188,7 +188,7 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 
 ```bash
 # Cần Docker (chưa có?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # đăng nhập Claude 1 lần
@@ -199,19 +199,19 @@ Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăn
 ### Cách 3 - Cài trực tiếp lên Linux/macOS (không Docker)
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv, đăng ký dịch vụ systemd tự chạy khi boot, in ra địa chỉ. Báo Claude chưa đăng nhập thì chạy 1 lần: `claude auth login --claudeai`.
 
-> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `JAVIS OS.app` (hoặc `Start JAVIS OS.command`) để chạy server + mở dashboard; tự chạy khi đăng nhập máy: `./bin/javis-autostart.sh install`. Chi tiết: [bin/README.md](../../../bin/README.md).
+> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `Thansa OS.app` (hoặc `Start Thansa OS.command`) để chạy server + mở dashboard; tự chạy khi đăng nhập máy: `./bin/thansa-autostart.sh install`. Chi tiết: [bin/README.md](../../../bin/README.md).
 
 ### Cách 4 - Windows (máy cá nhân)
 
 **Một lệnh, cài hết:**
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -221,14 +221,14 @@ Không có `winget` để tự cài Python/Node thì cài tay trước: Python 3
 
 ```
 Chạy hiện cửa sổ (xem log trực tiếp):  setup.bat
-Chạy ngầm từ lần sau:                  start-javis.vbs   (log ở server\javis.log)
-Dừng:                                  stop-javis.bat
+Chạy ngầm từ lần sau:                  start-thansa.vbs   (log ở server\thansa.log)
+Dừng:                                  stop-thansa.bat
 Mở dashboard:                          http://localhost:7777
 ```
 
-> ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-javis.bat` rồi `start-javis.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
+> ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-thansa.bat` rồi `start-thansa.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
 
-> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`JAVIS OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `javis-autostart.bat install` (gỡ: `uninstall`).
+> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`Thansa OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `thansa-autostart.bat install` (gỡ: `uninstall`).
 
 ### Nhiều bản Thansa trên cùng một VPS (mỗi bản một link riêng)
 
@@ -239,7 +239,7 @@ Chỉ cần ba giá trị khác nhau giữa các bản: `JAVIS_NAME`, `JAVIS_HOS
 - **VPS tự quản:** chạy proxy dùng chung `docker-compose.proxy.yml` **một lần cho cả máy**, rồi
   mỗi bản một thư mục riêng dùng kèm `docker-compose.multi.yml`. Proxy tự phát hiện bản mới,
   tự xin SSL - thêm bản không phải sửa gì ở proxy.
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
 
 Bỏ trống các biến = y hệt cách cài cũ. Từng bước một: **[DEPLOY.md](../../../DEPLOY.md)**.
 
@@ -346,7 +346,7 @@ Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs
 git add -A && git commit -m "..." && git push     # → CI tự build image mới lên GHCR
 
 # Trên VPS: kéo bản mới
-cd javis && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
+cd thansa-os && ./update.sh          # tự pull image + restart (dữ liệu trong volume KHÔNG mất)
 ```
 
 Trong app: mở **Cập nhật** (nhóm Hệ thống) → **⬆ Cập nhật ngay** nếu môi trường hỗ trợ, có thanh tiến trình và nút lùi bản khi bản mới hỏng.
@@ -385,8 +385,8 @@ Zalo Agent MCP ──────────────┤          │       
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-javis.bat` → `start-javis.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
-| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-javis.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
+| Sửa code mà không thấy đổi | Đã đổi `.py`? **Khởi động lại server** (Windows: `stop-thansa.bat` → `start-thansa.vbs`). Đổi giao diện? **Ctrl+Shift+R**. |
+| Port 7777 bị giữ, bản mới không lên | Kill tiến trình cũ TRƯỚC (`stop-thansa.bat`, hoặc `taskkill /F /PID <pid>`), rồi start lại. |
 | Hostinger không pull được image | Để package GHCR = **Public**; đợi GitHub Action build xong (tab Actions). |
 | Bộ não báo chưa đăng nhập | Vào **Models**, thẻ nhà cung cấp tương ứng, bấm đăng nhập. Hoặc chạy 1 lần `claude auth login --claudeai` (Docker: trong App terminal). |
 | Ảnh cũ trong hội thoại hiện ô xám | Đúng thiết kế: `attachments/` là vùng cache, hết hạn 30 ngày hoặc 300MB. Xem [Khắc phục sự cố](../../../docs/17-khac-phuc-su-co.md). |

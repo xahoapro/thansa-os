@@ -11,9 +11,9 @@ Nếu bạn mới cài Thansa lần đầu, xem trước [Bắt đầu & thiết
 Rất nhiều lỗi biến mất sau một trong hai việc này, nên thử trước khi lo lắng:
 
 1. **Khởi động lại server (khi bạn hoặc bản cập nhật vừa đổi code Python `.py`).**
-   - Trên **Windows**: chạy `stop-javis.bat` để tắt, rồi chạy `start-javis.vbs` (chạy ngầm) hoặc `setup.bat` (hiện cửa sổ) để bật lại.
+   - Trên **Windows**: chạy `stop-thansa.bat` để tắt, rồi chạy `start-thansa.vbs` (chạy ngầm) hoặc `setup.bat` (hiện cửa sổ) để bật lại.
    - Trên **Docker / VPS**: `docker compose restart`.
-   - Trên **Linux (systemd)**: `sudo systemctl restart javis`.
+   - Trên **Linux (systemd)**: `sudo systemctl restart thansa`.
 2. **Tải lại giao diện sạch bộ nhớ đệm (khi màn hình hiện sai, thiếu nút, hoặc bạn vừa đổi giao diện).** Nhấn **Ctrl+Shift+R** trên trình duyệt (Mac: Cmd+Shift+R). Đây là "hard refresh", buộc trình duyệt tải lại toàn bộ file giao diện thay vì dùng bản cũ trong cache.
 
 > Quy tắc đơn giản để nhớ: đổi phần lõi (file `.py`) thì **restart server**; giao diện hiển thị sai thì **Ctrl+Shift+R**.
@@ -22,8 +22,8 @@ Rất nhiều lỗi biến mất sau một trong hai việc này, nên thử tr�
 
 | Hiện tượng | Cách xử lý |
 |---|---|
-| Sửa code (hoặc vừa cập nhật) mà **không thấy đổi** | Nếu đổi file `.py`: **khởi động lại server** (Windows: `stop-javis.bat` rồi `start-javis.vbs`; Docker: `docker compose restart`). Nếu chỉ đổi giao diện: nhấn **Ctrl+Shift+R**. |
-| **Cổng 7777 bị giữ**, bản mới không lên được | Tắt tiến trình cũ TRƯỚC rồi mới bật lại. Windows: chạy `stop-javis.bat`, hoặc `taskkill /F /PID <pid>` với PID đang giữ cổng. Docker: `docker compose down` rồi `docker compose up -d`. |
+| Sửa code (hoặc vừa cập nhật) mà **không thấy đổi** | Nếu đổi file `.py`: **khởi động lại server** (Windows: `stop-thansa.bat` rồi `start-thansa.vbs`; Docker: `docker compose restart`). Nếu chỉ đổi giao diện: nhấn **Ctrl+Shift+R**. |
+| **Cổng 7777 bị giữ**, bản mới không lên được | Tắt tiến trình cũ TRƯỚC rồi mới bật lại. Windows: chạy `stop-thansa.bat`, hoặc `taskkill /F /PID <pid>` với PID đang giữ cổng. Docker: `docker compose down` rồi `docker compose up -d`. |
 | **Hostinger không pull được image** | Đặt package GHCR ở chế độ **Public** (GitHub, repo, mục Packages, chọn `javis-os`, Package settings, Visibility = Public). Sau đó đợi GitHub Action build xong (xem tab Actions của repo) rồi Deploy lại. |
 | Mở app ra **màn tạo tài khoản admin** trên server public | Chưa có admin nên ai mở link trước sẽ tạo được admin. Tạo tài khoản ngay (mật khẩu tối thiểu 8 ký tự), hoặc lần sau đặt sẵn env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` lúc deploy để đăng nhập luôn. Vào được rồi thì bật 2FA. |
 | **Claude báo chưa đăng nhập** (Thansa không trả lời được) | Đăng nhập lại "bộ não" Claude 1 lần. Cách trong app: mở **Models**, ở thẻ Claude Code bấm **Đăng nhập Claude**, mở link, dán code nếu được yêu cầu. Cách bằng lệnh: `claude auth login --claudeai` (Docker: chạy trong App terminal). |
@@ -42,9 +42,9 @@ Các mục dưới đây giải thích chi tiết hơn từng dòng trong bảng
 Thansa gồm hai phần chạy khác nhau, nên cách làm mới cũng khác:
 
 1. **Đổi phần lõi (file Python `.py` trong `server/`)**: server đang chạy vẫn giữ bản cũ trong bộ nhớ. Bạn phải **tắt và bật lại server**:
-   - Windows: chạy `stop-javis.bat`, đợi vài giây, rồi chạy `start-javis.vbs`.
+   - Windows: chạy `stop-thansa.bat`, đợi vài giây, rồi chạy `start-thansa.vbs`.
    - Docker / VPS: `docker compose restart`.
-   - Linux systemd: `sudo systemctl restart javis`.
+   - Linux systemd: `sudo systemctl restart thansa`.
 2. **Đổi phần giao diện (HTML/CSS/JS trong `dashboard/`)**: server không cần restart, nhưng trình duyệt hay giữ bản cũ trong cache. Nhấn **Ctrl+Shift+R** để tải lại sạch.
 
 Nếu làm cả hai vẫn không đổi, kiểm tra bạn có đang mở đúng cổng và đúng brain hay không.
@@ -53,8 +53,8 @@ Nếu làm cả hai vẫn không đổi, kiểm tra bạn có đang mở đúng 
 
 Cổng mặc định của Thansa là **7777**. Khi một tiến trình cũ chưa tắt hẳn mà bạn bật bản mới, bản mới sẽ báo lỗi vì cổng đang bận. Xử lý theo thứ tự:
 
-1. Tắt tiến trình cũ trước. Windows: chạy `stop-javis.bat`. Nếu vẫn còn, tìm PID đang giữ cổng rồi `taskkill /F /PID <pid>`. Docker: `docker compose down`.
-2. Bật lại. Windows: `start-javis.vbs`. Docker: `docker compose up -d`.
+1. Tắt tiến trình cũ trước. Windows: chạy `stop-thansa.bat`. Nếu vẫn còn, tìm PID đang giữ cổng rồi `taskkill /F /PID <pid>`. Docker: `docker compose down`.
+2. Bật lại. Windows: `start-thansa.vbs`. Docker: `docker compose up -d`.
 
 Muốn đổi sang cổng khác (khi 7777 đụng phần mềm khác), đặt biến `JAVIS_PORT` trong file `.env`; xem [Cấu hình .env](16-cau-hinh-env.md).
 
@@ -86,7 +86,7 @@ Token đăng nhập nằm trong `~/.claude` (Docker: volume `claude-auth`) nên 
 
 ## Trang Tệp tin báo lỗi ở "Đang tải..."
 
-Nếu vào **Tệp tin** (nhóm **Bộ não**) mà chỗ danh sách file báo lỗi thay vì lên danh sách, thường do máy chủ đang chạy bản cũ chưa có endpoint Tệp tin (lỗi 404). Bản thân giao diện sẽ nhắc: hãy **khởi động lại server** (Windows: `stop-javis.bat` rồi `start-javis.vbs`) rồi **tải lại trang** bằng Ctrl+Shift+R.
+Nếu vào **Tệp tin** (nhóm **Bộ não**) mà chỗ danh sách file báo lỗi thay vì lên danh sách, thường do máy chủ đang chạy bản cũ chưa có endpoint Tệp tin (lỗi 404). Bản thân giao diện sẽ nhắc: hãy **khởi động lại server** (Windows: `stop-thansa.bat` rồi `start-thansa.vbs`) rồi **tải lại trang** bằng Ctrl+Shift+R.
 
 Nếu hiện dòng báo phiên đăng nhập hết hạn (lỗi 401), chỉ cần tải lại trang và đăng nhập lại. Hướng dẫn dùng Tệp tin đầy đủ ở [Quản lý tệp tin](05-quan-ly-tep-tin.md).
 
@@ -148,9 +148,9 @@ Có vài nơi xem "nhật ký" tùy loại thông tin:
 2. **Nhật ký tự học**: trang **Tự học** (nhóm **Bộ não**) có hai khung riêng là **Thansa đã tự học gì (commit gần nhất)** và **Nhật ký học**. Xem [Tự học](22-tu-hoc.md).
 3. **Trang Cập nhật** (nhóm **Hệ thống**, tiêu đề trang là **Nhật ký cập nhật**): đây là nơi xem phiên bản đang chạy và lịch sử tính năng mới theo từng bản. Không còn trang "Logs" hay "Nhật ký hoạt động" riêng nào nữa; mục `logs` trên rail chính là trang này.
 4. **Log kỹ thuật của server** (khi cần soi lỗi sâu):
-   - Windows chạy ngầm bằng `start-javis.vbs`: log ghi ở `server\javis.log`.
+   - Windows chạy ngầm bằng `start-thansa.vbs`: log ghi ở `server\thansa.log`.
    - Docker / VPS: `docker compose logs javis` (thêm `-f` để xem trực tiếp: `docker compose logs -f`).
-   - Linux systemd: `journalctl -u javis -f`.
+   - Linux systemd: `journalctl -u thansa -f`.
 5. **Log cập nhật** khi bấm nút cập nhật trong app: file `update.log` nằm trong thư mục state, tức `server/update.log` khi chạy local và `/data/state/update.log` trên Docker (đường dẫn theo biến `JAVIS_STATE_DIR`). Thường bạn không cần mở tệp: khi cập nhật lỗi, giao diện đã hiện sẵn thông báo và app cũng đọc 50 dòng cuối của tệp này để báo trạng thái.
 
 ## Câu hỏi thường gặp (FAQ)

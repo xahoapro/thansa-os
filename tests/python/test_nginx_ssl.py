@@ -56,7 +56,7 @@ check("biến map RIÊNG từng site (hai bản Thansa một máy không trùng 
       and "$connection_upgrade" not in src)
 check("PATH đầy đủ có /usr/sbin, không thừa kế PATH thiếu sbin của dịch vụ (certbot tìm nginx theo PATH)",
       'export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' in src)
-for _unit in ("install.sh", "javis.service"):
+for _unit in ("install.sh", "thansa.service"):
     check(f"{_unit}: unit systemd có /usr/sbin trong PATH",
           "/usr/sbin:" in [l for l in (ROOT / _unit).read_text(encoding="utf-8").splitlines() if 'Environment="PATH=' in l][0])
 check("nginx -t đỏ thì trả lại cấu hình cũ (không để file hỏng trong sites-enabled)", "rollback" in src)
@@ -162,7 +162,7 @@ _dc = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
 _cd = _dc["services"].get("caddy") or {}
 check("compose mặc định có sẵn Caddy", _cd.get("image", "").startswith("caddy:"))
 check("Caddy tắt được bằng JAVIS_CADDY", str((_cd.get("deploy") or {}).get("replicas")) == "${JAVIS_CADDY:-1}")
-check("Caddy mang tên theo bản (JAVIS_NAME)", _cd.get("container_name") == "${JAVIS_NAME:-javis}-caddy")
+check("Caddy mang tên theo bản (JAVIS_NAME)", _cd.get("container_name") == "${JAVIS_NAME:-thansa}-caddy")
 _cf = ((_dc.get("configs") or {}).get("javis_caddyfile") or {}).get("content", "")
 check("Caddy chỉ xin chứng chỉ khi /tls-check gật (on-demand có cổng gác)",
       "ask http://javis:7777/tls-check" in _cf and "on_demand" in _cf)

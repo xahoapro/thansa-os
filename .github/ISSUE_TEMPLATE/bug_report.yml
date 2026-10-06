@@ -55,5 +55,5 @@ body:
     id: logs
     attributes:
       label: Logs or screenshots
-      description: Server log lines (server/javis.log, or `docker compose logs`) and screenshots help a lot. Remove any API keys or tokens first.
+      description: Server log lines (server/thansa.log, or `docker compose logs`) and screenshots help a lot. Remove any API keys or tokens first.
       render: text

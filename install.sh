@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Javis OS - Linux/macOS native installer (no Docker)
+# Thansa OS - Linux/macOS native installer (no Docker)
 #   ./install.sh
 # Installs python3 + node + Claude Code CLI, creates a venv, installs deps,
 # seeds .env, and registers a systemd service (or falls back to nohup).
@@ -12,9 +12,9 @@
 # THANSA_NGINX=0 = khong dung nginx (vao bang SSH tunnel / Cloudflare Tunnel nhu truoc).
 #
 # NHIEU BAN TREN CUNG MOT MAY: clone vao THU MUC KHAC roi dat hai bien truoc khi chay.
-#   JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh
-# JAVIS_NAME dat ten dich vu systemd (javis-shop.service); JAVIS_PORT la cong nghe.
-# Bo trong ca hai = javis.service + cong 7777, y het truoc day.
+#   THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh
+# THANSA_NAME dat ten dich vu systemd (thansa-shop.service); THANSA_PORT la cong nghe.
+# Bo trong ca hai = thansa.service + cong 7777. (JAVIS_NAME/JAVIS_PORT cu van duoc nhan.)
 # ============================================================================
 set -euo pipefail
 
@@ -28,14 +28,33 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$APP_DIR"
 
 # Ten dich vu + cong cua BAN NAY. Truoc day ca hai deu dong cung, nen cai ban thu hai la ghi de
-# /etc/systemd/system/javis.service cua ban thu nhat va hai ban tranh nhau cong 7777.
-SVC="${JAVIS_NAME:-javis}"
-PORT="${JAVIS_PORT:-7777}"
+# /etc/systemd/system/thansa.service cua ban thu nhat va hai ban tranh nhau cong 7777.
+SVC="${THANSA_NAME:-${JAVIS_NAME:-}}"
+PORT="${THANSA_PORT:-${JAVIS_PORT:-7777}}"
+if [ -z "$SVC" ]; then
+  # Ban cai moi mang ten "thansa". May cai TRUOC 1.19 co dich vu "javis" chay chinh thu muc nay:
+  # cai lai thi GIU ten do, khong thi sinh dich vu THU HAI tranh cong voi dich vu cu.
+  SVC="thansa"
+  if [ -f /etc/systemd/system/javis.service ] && [ ! -f /etc/systemd/system/thansa.service ] \
+     && grep -q "WorkingDirectory=$APP_DIR/server" /etc/systemd/system/javis.service 2>/dev/null; then
+    SVC="javis"
+  fi
+fi
 case "$SVC" in
-  *[!A-Za-z0-9._-]*) err "JAVIS_NAME may only contain letters, digits, '.', '_' and '-' (got: $SVC)"; exit 1;;
+  *[!A-Za-z0-9._-]*) err "THANSA_NAME may only contain letters, digits, '.', '_' and '-' (got: $SVC)"; exit 1;;
 esac
 
 SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
+
+# --- 0. Giấu file cầu nối của máy cũ ---
+# start-javis.vbs / stop-javis.bat chỉ tồn tại để máy WINDOWS cài trước 1.19 cập nhật qua được (updater
+# cũ gọi đích danh hai tên đó). Máy này không cần chúng: đánh dấu skip-worktree rồi xoá khỏi thư mục,
+# git vẫn coi cây là sạch nên nút Cập nhật không vấp. Không phải git checkout thì bỏ qua êm.
+for _cu in start-javis.vbs stop-javis.bat; do
+  if [ -f "$APP_DIR/$_cu" ] && git -C "$APP_DIR" ls-files --error-unmatch "$_cu" >/dev/null 2>&1; then
+    git -C "$APP_DIR" update-index --skip-worktree "$_cu" 2>/dev/null && rm -f "$APP_DIR/$_cu"
+  fi
+done
 
 # --- 1. python3 >= 3.10 + venv + pip ---
 # HARD FLOOR 3.10: uvicorn pinned in requirements.txt needs >=3.10 (every release from
@@ -105,12 +124,12 @@ if need_node; then
     arch=$(uname -m); case "$arch" in x86_64) na=x64;; aarch64|arm64) na=arm64;; *) err "unsupported arch $arch"; exit 1;; esac
     tb=$(curl -fsSL https://nodejs.org/dist/latest-v22.x/ | grep -oE "node-v22\.[0-9]+\.[0-9]+-linux-${na}\.tar\.xz" | head -1)
     tmp=$(mktemp -d); curl -fsSL "https://nodejs.org/dist/latest-v22.x/${tb}" -o "$tmp/n.tar.xz"
-    mkdir -p "$HOME/.javis"; rm -rf "$HOME/.javis/node"
-    tar xf "$tmp/n.tar.xz" -C "$tmp"; mv "$tmp"/node-v22* "$HOME/.javis/node"; rm -rf "$tmp"
+    mkdir -p "$HOME/.thansa"; rm -rf "$HOME/.thansa/node"
+    tar xf "$tmp/n.tar.xz" -C "$tmp"; mv "$tmp"/node-v22* "$HOME/.thansa/node"; rm -rf "$tmp"
     mkdir -p "$HOME/.local/bin"
-    ln -sf "$HOME/.javis/node/bin/node" "$HOME/.local/bin/node"
-    ln -sf "$HOME/.javis/node/bin/npm"  "$HOME/.local/bin/npm"
-    ln -sf "$HOME/.javis/node/bin/npx"  "$HOME/.local/bin/npx"
+    ln -sf "$HOME/.thansa/node/bin/node" "$HOME/.local/bin/node"
+    ln -sf "$HOME/.thansa/node/bin/npm"  "$HOME/.local/bin/npm"
+    ln -sf "$HOME/.thansa/node/bin/npx"  "$HOME/.local/bin/npx"
     export PATH="$HOME/.local/bin:$PATH"
   fi
 fi
@@ -128,7 +147,7 @@ ok "Claude CLI $(claude --version 2>/dev/null || echo installed)"
 
 # --- 4b. Codex CLI (gói ChatGPT) ---
 #
-# BEST-EFFORT, cố ý khác Claude ở trên: thiếu Claude thì Javis không còn bộ não mặc định nào
+# BEST-EFFORT, cố ý khác Claude ở trên: thiếu Claude thì Thansa không còn bộ não mặc định nào
 # để chạy, còn thiếu cái này chỉ mất đúng một engine. Nên lỗi ở đây chỉ cảnh báo chứ không cho
 # `set -e` giết cả lần cài.
 #
@@ -151,13 +170,13 @@ cai_them_cli @openai/codex@latest codex "Codex CLI"
 # --- 4c. agy (Antigravity CLI, đường Google) + grok (Grok Build, đường xAI) ---
 #
 # Hai engine này KHÔNG cài bằng npm: mỗi nhà một script tải về chạy thẳng. Trước 0.59.13 cài
-# xong Javis là người dùng còn phải tự mở terminal gõ hai dòng của hai nhà khác nhau, và chủ
+# xong Thansa là người dùng còn phải tự mở terminal gõ hai dòng của hai nhà khác nhau, và chủ
 # dự án báo đúng chỗ đó làm người không quen kỹ thuật tắc ở màn Models với hai thẻ "CLI chưa
 # cài" (16/09). Nay cài luôn một lượt.
 #
 # BEST-EFFORT tuyệt đối: chạy script của nhà thứ ba nên hỏng là chuyện bình thường (mạng, máy
 # lạ, nhà cung cấp đổi URL) - hỏng thì nói một dòng rồi đi tiếp, không được giết lần cài.
-# ĐĂNG NHẬP thì vẫn là việc của người dùng, làm ở trang Models sau khi Javis chạy.
+# ĐĂNG NHẬP thì vẫn là việc của người dùng, làm ở trang Models sau khi Thansa chạy.
 cai_cli_script() {   # <tên binary> <tên hiển thị> <URL script cài>
   if command -v "$1" >/dev/null 2>&1; then ok "$2 da co san"; return 0; fi
   log "Installing $2 (best-effort, script cua nha cung cap)..."
@@ -200,7 +219,7 @@ grep -q '^JAVIS_HOST=' .env || echo "JAVIS_HOST=127.0.0.1" >> .env
 
 # --- 7b. Tài khoản quản trị: ĐẶT SẴN ngay lúc cài ---
 #
-# Trước đây bước này không tồn tại, nên ai mở Javis ra công khai đều đụng "MÃ THIẾT LẬP":
+# Trước đây bước này không tồn tại, nên ai mở Thansa ra công khai đều đụng "MÃ THIẾT LẬP":
 # server in một chuỗi ngẫu nhiên vào log lúc khởi động, và người dùng phải SSH vào VPS đọc log
 # rồi dán vào trình duyệt mới tạo được tài khoản. Cái mã đó có lý do tồn tại - nó chặn người
 # lạ chỉ-có-URL chiếm quyền admin lần đầu - nhưng bắt người ta đi đọc log là một trải nghiệm
@@ -249,7 +268,7 @@ else
   ADMIN_PW=""
   if [ -t 0 ]; then
     echo ""
-    log "Javis admin account (required: the AI brain runs with full rights on this machine):"
+    log "Thansa admin account (required: the AI brain runs with full rights on this machine):"
     read -rp "  Username [admin]: " AU || true
     [ -n "${AU:-}" ] && ADMIN_USER="$AU"
     while :; do
@@ -352,7 +371,7 @@ if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   log "Installing systemd service ($SVC.service, port $PORT)..."
   $SUDO tee "/etc/systemd/system/$SVC.service" >/dev/null <<UNIT
 [Unit]
-Description=Javis OS ($SVC)
+Description=Thansa OS ($SVC)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0
@@ -363,6 +382,7 @@ User=$(whoami)
 WorkingDirectory=$APP_DIR/server
 Environment="JAVIS_HOST=127.0.0.1"
 Environment="JAVIS_PORT=$PORT"
+Environment="JAVIS_SERVICE_NAME=$SVC"
 Environment="JAVIS_STATE_DIR=$APP_DIR/server"
 Environment="PATH=$APP_DIR/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=$PY -m uvicorn main:app --host 127.0.0.1 --port $PORT
@@ -380,8 +400,8 @@ UNIT
   ok "Service installed. Logs: journalctl -u $SVC -f"
 else
   warn "systemd not available - starting under nohup..."
-  ( cd "$APP_DIR/server" && JAVIS_STATE_DIR="$APP_DIR/server" JAVIS_PORT="$PORT" nohup "$PY" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" > "$APP_DIR/server/javis.log" 2>&1 & )
-  ok "Started. Logs: $APP_DIR/server/javis.log"
+  ( cd "$APP_DIR/server" && JAVIS_STATE_DIR="$APP_DIR/server" JAVIS_PORT="$PORT" nohup "$PY" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" > "$APP_DIR/server/thansa.log" 2>&1 & )
+  ok "Started. Logs: $APP_DIR/server/thansa.log"
 fi
 
 # --- 9b. nginx: HTTPS cho tên miền, hoặc lối vào tạm bằng IP ---
@@ -418,7 +438,7 @@ if [ "$NGX_RUN" = "1" ]; then
 fi
 
 echo ""
-ok "Javis OS is up at: http://127.0.0.1:$PORT"
+ok "Thansa OS is up at: http://127.0.0.1:$PORT"
 log "Remote access (SSH tunnel): ssh -L $PORT:localhost:$PORT $(whoami)@<vps-ip>"
 
 # Mật khẩu tự sinh chỉ in ra ĐÚNG chỗ này, đúng một lần. Không ghi vào log service, không in

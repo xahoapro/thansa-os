@@ -1,5 +1,5 @@
 # ============================================================
-# JAVIS OS - CAI MOT LAN TREN WINDOWS
+# Thansa OS - CAI MOT LAN TREN WINDOWS
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1
 #
@@ -16,8 +16,8 @@
 #   2. Cai CLI xong ma PATH cua PHIEN HIEN TAI chua co -> buoc tong ket bao "chua cai" cho
 #      mot CLI vua cai xong. Refresh-Path doc lai PATH tu registry sau moi lan cai.
 #
-# QUAN TRONG: Javis doc PATH LUC NO BAT. Cai them CLI sau khi server dang chay thi phai
-# khoi dong lai Javis moi thay (stop-javis.bat roi start-javis.vbs).
+# QUAN TRONG: Thansa doc PATH LUC NO BAT. Cai them CLI sau khi server dang chay thi phai
+# khoi dong lai Thansa moi thay (stop-thansa.bat roi start-thansa.vbs).
 #
 # KHONG dung ky tu co dau trong file .ps1: PowerShell tren Windows doc file khong BOM bang
 # ANSI codepage, chu co dau se thanh rac ngay tren man hinh nguoi dung.
@@ -50,10 +50,31 @@ function Have($cmd) { return [bool](Get-Command $cmd -ErrorAction SilentlyContin
 
 Line ""
 Line " =========================================="
-Line "  JAVIS OS - cai dat tren Windows"
+Line "  Thansa OS - cai dat tren Windows"
 Line " =========================================="
 
 # ---------------------------------------------------------------- [1] Python
+# --- Chuyen may cu sang ten Thansa + giau file cau noi ---
+# start-javis.vbs / stop-javis.bat chi de may cai TRUOC 1.19 cap nhat qua duoc (updater cu goi dich
+# danh). Shortcut Startup cu "JAVIS OS.lnk" tro vao start-javis.vbs, nen PHAI doi sang shortcut moi
+# truoc khi giau file cau noi, khong thi may khong tu chay khi dang nhap.
+$StartupDir = [Environment]::GetFolderPath("Startup")
+if (Test-Path (Join-Path $StartupDir "JAVIS OS.lnk")) {
+  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "thansa-autostart.ps1") install | Out-Null
+}
+if (Get-Command git -ErrorAction SilentlyContinue) {
+  foreach ($cu in @("start-javis.vbs", "stop-javis.bat")) {
+    $f = Join-Path $Root $cu
+    if (Test-Path $f) {
+      git -C $Root ls-files --error-unmatch $cu 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) {
+        git -C $Root update-index --skip-worktree $cu 2>$null
+        if ($LASTEXITCODE -eq 0) { Remove-Item $f -Force }
+      }
+    }
+  }
+}
+
 Step 1 "Kiem tra Python"
 if (-not (Have "python")) {
   if (Have "winget") {
@@ -175,20 +196,20 @@ foreach ($it in @(
 }
 Line ""
 Line "  Dang nhap tung bo nao NGAY TRONG trang Models cua dashboard - khong can go lenh."
-Line "  Cai them CLI sau nay thi phai KHOI DONG LAI Javis (stop-javis.bat roi start-javis.vbs),"
+Line "  Cai them CLI sau nay thi phai KHOI DONG LAI Thansa (stop-thansa.bat roi start-thansa.vbs),"
 Line "  vi tien trinh dang chay giu PATH cua luc no bat."
 Line ""
 
 # ---------------------------------------------------------------- [6] bat server
 if ($NoStart) {
-  Line "  Cai xong. Bat server: start-javis.vbs (chay nen) hoac setup.bat (hien cua so)."
+  Line "  Cai xong. Bat server: start-thansa.vbs (chay nen) hoac setup.bat (hien cua so)."
   exit 0
 }
-Step 6 "Bat Javis"
-$vbs = Join-Path $Root "start-javis.vbs"
+Step 6 "Bat Thansa"
+$vbs = Join-Path $Root "start-thansa.vbs"
 if (Test-Path $vbs) {
   Start-Process "wscript.exe" -ArgumentList "//nologo `"$vbs`"" -WorkingDirectory $Root
-  Ok "Server dang chay nen. Log: server\javis.log"
+  Ok "Server dang chay nen. Log: server\thansa.log"
 } else {
   Start-Process $vpy -ArgumentList "main.py" -WorkingDirectory (Join-Path $Root "server")
   Ok "Server dang chay"

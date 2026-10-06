@@ -32,7 +32,7 @@ Open http://localhost:7777. For HTTPS: go to Settings → Domain & SSL, enter yo
 
 1. Install Python 3.12 + Node 22.
 2. In the project folder run `setup.bat` once - it creates .venv, installs dependencies, and installs the two CLI engines (Claude Code, Codex) for you.
-3. `start-javis.bat` to run in the background (`stop-javis.bat` to stop).
+3. `start-thansa.bat` to run in the background (`stop-thansa.bat` to stop).
 4. Open http://localhost:7777.
 
 ## Once it is running
