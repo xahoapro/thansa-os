@@ -303,9 +303,9 @@ def cau_bao_xin_vao(conn: dict, chat_title: str, names: List[str]) -> str:
     nhom = chat_title or localefmt.chu("một nhóm", "a group")
     tk = conn.get("label") or "Zalo"
     return localefmt.chu(
-        f"Zalo ({tk}): {ai} đang xin vào nhóm \"{nhom}\". Nhắn Javis \"duyệt\" hoặc \"từ chối\" để xử lý "
+        f"Zalo ({tk}): {ai} đang xin vào nhóm \"{nhom}\". Nhắn Thansa \"duyệt\" hoặc \"từ chối\" để xử lý "
         f"(tài khoản này phải là trưởng hoặc phó nhóm).",
-        f"Zalo ({tk}): {ai} asked to join the group \"{nhom}\". Tell Javis \"approve\" or \"reject\" to handle it "
+        f"Zalo ({tk}): {ai} asked to join the group \"{nhom}\". Tell Thansa \"approve\" or \"reject\" to handle it "
         f"(this account must be the group's owner or a deputy).")
 
 

@@ -71,12 +71,12 @@ available through any API.
 
 ## Approving join requests
 
-Since Javis 0.84.7 (javis-zalo 1.2.0), for groups that require approval:
+Since Thansa 0.84.7 (javis-zalo 1.2.0), for groups that require approval:
 
-- **Javis tells you when someone asks to join**, through the inbox bell and your Telegram: one message per group,
+- **Thansa tells you when someone asks to join**, through the inbox bell and your Telegram: one message per group,
   with the applicants' names and the group name.
-- **You decide, Javis acts.** Ask "who is waiting to join Zoom | Javis OS?" and Javis lists them; say "approve
-  everyone" or "approve Lan, reject Minh" and Javis does it and reports the outcome for each person.
+- **You decide, Thansa acts.** Ask "who is waiting to join Zoom | Thansa OS?" and Thansa lists them; say "approve
+  everyone" or "approve Lan, reject Minh" and Thansa does it and reports the outcome for each person.
 - **A dedicated bot never approves on its own.** Join requests do not reach bots.
 - The Zalo account you scanned must be the group's **owner or a deputy**, or Zalo refuses. Approving is a dangerous
   action (it changes who is in the group), so the Zalo connection must be at Full access.
