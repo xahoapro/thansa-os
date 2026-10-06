@@ -35,7 +35,7 @@ http://localhost:7777 を開きます。Caddy 経由で HTTPS を使う場合は
 
 1. Python 3.12 + Node 22 をインストールします。
 2. プロジェクトのフォルダで `setup.bat` を一度実行します。.venv を作成し、依存関係をインストールし、2 つの CLI エンジン（Claude Code、Codex）もインストールしてくれます。
-3. `start-javis.bat` でバックグラウンド実行します（停止は `stop-javis.bat`）。
+3. `start-thansa.bat` でバックグラウンド実行します（停止は `stop-thansa.bat`）。
 4. http://localhost:7777 を開きます。
 
 ## 起動したら

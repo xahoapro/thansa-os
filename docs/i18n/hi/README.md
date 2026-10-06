@@ -54,8 +54,8 @@
 
 | मशीन | एक ही command सब कुछ इंस्टॉल कर देती है |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 फिर **http://localhost:7777** खोलिए। Installer Python, चारों subscription CLI ब्रेन (`claude`, `codex`, `agy`, `grok`) और एक `.env` सेट करता है, फिर server शुरू कर देता है। हर ब्रेन में sign in आप **dashboard के Models page पर** करते हैं, अब commands टाइप करने की ज़रूरत नहीं।
@@ -275,7 +275,7 @@ Certificate के लिए 1-3 मिनट इंतज़ार कीजि
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>विकल्प 3: Linux या macOS, बिना Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 Script Python, Node और CLI ब्रेन इंस्टॉल करती है, एक venv बनाती है, boot पर शुरू होने वाली एक service register करती है, और address दिखाती है।
 
-🍎 **macOS पर इसे app की तरह खोलिए:** `JAVIS OS.app` (या `Start JAVIS OS.command`) पर double-click कीजिए। Login पर शुरू करने के लिए: `./bin/javis-autostart.sh install`। विवरण: [bin/README.md](../../../bin/README.md)।
+🍎 **macOS पर इसे app की तरह खोलिए:** `Thansa OS.app` (या `Start Thansa OS.command`) पर double-click कीजिए। Login पर शुरू करने के लिए: `./bin/thansa-autostart.sh install`। विवरण: [bin/README.md](../../../bin/README.md)।
 
 </details>
 
@@ -306,7 +306,7 @@ Script Python, Node और CLI ब्रेन इंस्टॉल करत�
 <summary><b>विकल्प 4: Windows (निजी मशीन)</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **इसे app की तरह खोलिए:** पहली बार चलाने के बाद **`JAVIS OS.bat`** पर double-click कीजिए। Server background में शुरू होता है और dashboard **अपनी अलग window** में खुलता है, जिसकी taskbar में अपनी entry होती है। Login पर शुरू करने के लिए: `javis-autostart.bat install` (हटाने के लिए: `uninstall`)।
+🪟 **इसे app की तरह खोलिए:** पहली बार चलाने के बाद **`Thansa OS.bat`** पर double-click कीजिए। Server background में शुरू होता है और dashboard **अपनी अलग window** में खुलता है, जिसकी taskbar में अपनी entry होती है। Login पर शुरू करने के लिए: `thansa-autostart.bat install` (हटाने के लिए: `uninstall`)।
 
 </details>
 
@@ -330,7 +330,7 @@ Dashboard:                             http://localhost:7777
 
 - **Hostinger:** `docker-compose.hostinger.yml` को दूसरे stack के रूप में फिर से deploy कीजिए और ये तीन fields भरिए।
 - **खुद manage किया गया VPS:** पूरी मशीन के लिए shared proxy `docker-compose.proxy.yml` एक बार चलाइए, फिर हर instance को `docker-compose.multi.yml` के साथ उसका अपना folder दीजिए। Proxy नए instances खुद ढूँढता है और SSL खुद माँगता है।
-- **Native:** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`।
+- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`।
 
 कदम-दर-कदम: [DEPLOY.en.md](../../../DEPLOY.en.md)।
 
@@ -410,7 +410,7 @@ Thansa खोलिए और setup wizard आपको आपके browser क
 
 ## 🔄 अपडेट करना
 
-App में: **Settings → Updates → Update now**, progress bar के साथ, और अगर नया build टूट जाए तो rollback button भी है। VPS पर: `cd javis && ./update.sh` (नई image pull करके restart करता है; volumes में आपका डेटा सुरक्षित रहता है)।
+App में: **Settings → Updates → Update now**, progress bar के साथ, और अगर नया build टूट जाए तो rollback button भी है। VPS पर: `cd thansa-os && ./update.sh` (नई image pull करके restart करता है; volumes में आपका डेटा सुरक्षित रहता है)।
 
 ---
 
@@ -419,7 +419,7 @@ App में: **Settings → Updates → Update now**, progress bar के स�
 | समस्या | क्या करें |
 |---|---|
 | Models page कहता है कि कोई CLI इंस्टॉल नहीं है, जबकि वह है | **Thansa को restart कीजिए**: चलता हुआ process वही PATH रखता है जो उसके शुरू होने के समय था। |
-| Port 7777 पहले से इस्तेमाल में है और नया build शुरू नहीं होता | पहले पुराना process रोकिए (`stop-javis.bat`, या PID को kill कीजिए), फिर दोबारा शुरू कीजिए। |
+| Port 7777 पहले से इस्तेमाल में है और नया build शुरू नहीं होता | पहले पुराना process रोकिए (`stop-thansa.bat`, या PID को kill कीजिए), फिर दोबारा शुरू कीजिए। |
 | Hostinger image pull नहीं कर पाता | GHCR package को **Public** कीजिए और GitHub Action build पूरा होने का इंतज़ार कीजिए। |
 | कोई ब्रेन कहता है कि वह signed in नहीं है | **Models** → उस provider का card → sign in। |
 

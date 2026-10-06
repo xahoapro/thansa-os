@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Javis OS - cập nhật lên bản mới nhất từ GitHub.
+# Thansa OS - cập nhật lên bản mới nhất từ GitHub.
 #   ./update.sh            (tự nhận Docker hay native)
 #   ./update.sh docker     (ép chế độ Docker)
 #   ./update.sh native     (ép chế độ native/systemd)
@@ -10,12 +10,34 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 MODE="${1:-auto}"
 SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
 
-# Tên bản Javis Ở THƯ MỤC NÀY. Nhiều bản trên cùng VPS thì mỗi bản một .env riêng; không đọc
+# Tên bản Thansa Ở THƯ MỤC NÀY. Nhiều bản trên cùng VPS thì mỗi bản một .env riêng; không đọc
 # .env ở đây thì `./update.sh` của bản này đi restart container/dịch vụ của bản khác.
-if [ -z "${JAVIS_NAME:-}" ] && [ -f .env ]; then
-  JAVIS_NAME="$(sed -n 's/^[[:space:]]*JAVIS_NAME[[:space:]]*=[[:space:]]*//p' .env | tail -1)"
+_env_val() { [ -f .env ] && sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -1 | tr -d '"' || true; }
+NAME="${THANSA_NAME:-${JAVIS_NAME:-}}"
+[ -n "$NAME" ] || NAME="$(_env_val THANSA_NAME)"
+[ -n "$NAME" ] || NAME="$(_env_val JAVIS_NAME)"
+# Không đặt tên: bản cài mới mang tên "thansa", máy cài trước 1.19 mang tên cũ "javis" (container
+# Docker / dịch vụ systemd). Dò cái đang THẬT SỰ tồn tại, thiếu bước này là update.sh đi tìm
+# "thansa" trên máy cũ, không thấy, rồi rẽ nhầm nhánh.
+if [ -z "$NAME" ]; then
+  NAME="thansa"
+  if command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx javis \
+     && ! docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx thansa; then
+    NAME="javis"
+  elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files 2>/dev/null | grep -q '^javis\.service' \
+     && ! systemctl list-unit-files 2>/dev/null | grep -q '^thansa\.service'; then
+    NAME="javis"
+  fi
 fi
-NAME="${JAVIS_NAME:-javis}"
+# Docker: compose đặt tên container theo JAVIS_NAME (mặc định nay là thansa) - máy cũ phải giữ
+# đúng tên container đang chạy, không thì compose dựng container MỚI tranh cổng với container cũ.
+export JAVIS_NAME="$NAME"
+# Nhãn launchd (Mac): bản mới com.thansa.os, máy cũ com.javis.os.
+LABEL="${THANSA_LAUNCHD_LABEL:-${JAVIS_LAUNCHD_LABEL:-}}"
+if [ -z "$LABEL" ]; then
+  LABEL="com.thansa.os"
+  [ -f "$HOME/Library/LaunchAgents/com.thansa.os.plist" ] || { [ -f "$HOME/Library/LaunchAgents/com.javis.os.plist" ] && LABEL="com.javis.os"; }
+fi
 
 echo "==> Pulling the latest code from GitHub..."
 git pull --ff-only
@@ -62,13 +84,13 @@ else
     $SUDO systemctl restart "$NAME"
     echo "==> Restarted. Follow the logs:  journalctl -u $NAME -f"
   elif [ "$(uname)" = "Darwin" ] && \
-       launchctl print "gui/$(id -u)/${JAVIS_LAUNCHD_LABEL:-com.javis.os}" >/dev/null 2>&1; then
+       launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; then
     # Mac chạy dưới launchd (KeepAlive): kill PID rồi tự chạy nohup là đua bind cổng với bản
     # launchd respawn ([Errno 48], vụ 14/08/2026). Để launchd tự đổi ca bằng kickstart -k.
-    TARGET="gui/$(id -u)/${JAVIS_LAUNCHD_LABEL:-com.javis.os}"
+    TARGET="gui/$(id -u)/$LABEL"
     echo "==> launchd ($TARGET) detected → kickstart -k..."
     launchctl kickstart -k "$TARGET"
-    echo "==> Asked launchd to restart Javis. Logs: server/javis.log"
+    echo "==> Asked launchd to restart Thansa. Logs: server/thansa.log"
   else
     # Mac / Linux không systemd: kill tiến trình đang giữ cổng rồi chạy lại nền (như install.sh)
     PORT="${JAVIS_PORT:-7777}"
@@ -79,7 +101,7 @@ else
       sleep 2
     fi
     ( cd server && JAVIS_STATE_DIR="$PWD" nohup ../.venv/bin/python -m uvicorn main:app \
-        --host "${JAVIS_HOST:-127.0.0.1}" --port "$PORT" > javis.log 2>&1 & )
-    echo "==> Restarted (nohup). Logs: server/javis.log"
+        --host "${JAVIS_HOST:-127.0.0.1}" --port "$PORT" > thansa.log 2>&1 & )
+    echo "==> Restarted (nohup). Logs: server/thansa.log"
   fi
 fi

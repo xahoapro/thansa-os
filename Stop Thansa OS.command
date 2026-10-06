@@ -1,6 +1,6 @@
 #!/bin/bash
-# Double-click in Finder to stop JAVIS OS.
+# Double-click in Finder to stop Thansa OS.
 cd "$(dirname "$0")" || exit 1
-bash "bin/javis-stop.sh"
+bash "bin/thansa-stop.sh"
 echo ""
 echo "You can close this window."

@@ -5,7 +5,7 @@
 Chủ repo báo 2026-08-13, kèm mô tả rất đúng triệu chứng: "thi thoảng chuyển tab nó lại nháy đen
 màn hình terminal xong tắt luôn".
 
-Cơ chế: Javis trên Windows khởi động qua `start-javis.vbs`, tức tiến trình server chạy KHÔNG CÓ
+Cơ chế: Javis trên Windows khởi động qua `start-thansa.vbs`, tức tiến trình server chạy KHÔNG CÓ
 console. Trong Windows, một tiến trình không console mà sinh ra chương trình dạng console (git,
 curl, node, python, npx...) thì hệ điều hành TỰ CẤP cho đứa con một cửa sổ console mới. Nó chớp
 lên rồi tắt cùng lúc với lệnh con. Không hỏng gì, nhưng cướp tiêu điểm bàn phím và trông hệt như

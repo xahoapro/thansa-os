@@ -54,8 +54,8 @@
 
 | マシン | コマンドひとつで全部インストール |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 あとは **http://localhost:7777** を開くだけです。インストーラーは Python、サブスクリプションで動く 4 つの CLI 頭脳（`claude`、`codex`、`agy`、`grok`）と `.env` をセットアップし、サーバーを起動します。各頭脳へのサインインは **ダッシュボードの Models ページ** で行えるので、もうコマンドを打つ必要はありません。
@@ -275,7 +275,7 @@ Hostinger の Traefik が HTTPS 証明書を発行できるよう、`DOMAIN_NAME
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>方法 3：Linux または macOS、Docker なし</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 スクリプトが Python、Node、CLI 頭脳をインストールし、venv を作成し、起動時に立ち上がるサービスを登録して、アクセス先のアドレスを表示します。
 
-🍎 **macOS でアプリのように開く：** `JAVIS OS.app`（または `Start JAVIS OS.command`）をダブルクリックします。ログイン時に起動するには：`./bin/javis-autostart.sh install`。詳細：[bin/README.md](../../../bin/README.md)。
+🍎 **macOS でアプリのように開く：** `Thansa OS.app`（または `Start Thansa OS.command`）をダブルクリックします。ログイン時に起動するには：`./bin/thansa-autostart.sh install`。詳細：[bin/README.md](../../../bin/README.md)。
 
 </details>
 
@@ -306,7 +306,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>方法 4：Windows（個人のマシン）</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **アプリのように開く：** 初回の実行後は **`JAVIS OS.bat`** をダブルクリックします。サーバーがバックグラウンドで起動し、ダッシュボードが **専用のウィンドウ** で、タスクバーにも独立して表示されます。ログイン時に起動するには：`javis-autostart.bat install`（解除は `uninstall`）。
+🪟 **アプリのように開く：** 初回の実行後は **`Thansa OS.bat`** をダブルクリックします。サーバーがバックグラウンドで起動し、ダッシュボードが **専用のウィンドウ** で、タスクバーにも独立して表示されます。ログイン時に起動するには：`thansa-autostart.bat install`（解除は `uninstall`）。
 
 </details>
 
@@ -330,7 +330,7 @@ Brain、設定、アカウントはインスタンスごとに完全に分離さ
 
 - **Hostinger：** `docker-compose.hostinger.yml` を 2 つ目のスタックとしてもう一度デプロイし、この 3 項目を入力します。
 - **自前で管理する VPS：** マシン全体で共有するプロキシ `docker-compose.proxy.yml` を一度だけ起動し、各インスタンスには `docker-compose.multi.yml` で専用のフォルダを用意します。プロキシが新しいインスタンスを検出し、SSL 証明書も自動で取得します。
-- **ネイティブ：** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`。
+- **ネイティブ：** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`。
 
 手順の詳細：[DEPLOY.en.md](../../../DEPLOY.en.md)。
 
@@ -410,7 +410,7 @@ Thansa を開くと、セットアップウィザードがブラウザの言語�
 
 ## 🔄 アップデート
 
-アプリ内では **Settings → Updates → Update now** から。進行状況バーが表示され、新しいビルドが壊れていたときのためのロールバックボタンもあります。VPS では `cd javis && ./update.sh` を実行します（新しいイメージを取得して再起動します。ボリューム内のデータは保持されます）。
+アプリ内では **Settings → Updates → Update now** から。進行状況バーが表示され、新しいビルドが壊れていたときのためのロールバックボタンもあります。VPS では `cd thansa-os && ./update.sh` を実行します（新しいイメージを取得して再起動します。ボリューム内のデータは保持されます）。
 
 ---
 
@@ -419,7 +419,7 @@ Thansa を開くと、セットアップウィザードがブラウザの言語�
 | 症状 | 対処 |
 |---|---|
 | CLI はインストール済みなのに、Models ページに未インストールと表示される | **Thansa を再起動してください**：実行中のプロセスは起動時の PATH を保持しています。 |
-| ポート 7777 が使用中で、新しいビルドが起動しない | 先に古いプロセスを停止し（`stop-javis.bat`、または PID を kill）、もう一度起動します。 |
+| ポート 7777 が使用中で、新しいビルドが起動しない | 先に古いプロセスを停止し（`stop-thansa.bat`、または PID を kill）、もう一度起動します。 |
 | Hostinger がイメージを取得できない | GHCR パッケージを **Public** にし、GitHub Action のビルド完了を待ちます。 |
 | 頭脳がサインインしていないと言う | **Models** → そのプロバイダーのカード → サインイン。 |
 
