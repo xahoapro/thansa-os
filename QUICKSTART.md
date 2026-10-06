@@ -32,7 +32,7 @@ Mở http://localhost:7777. Muốn HTTPS: vào Cài đặt → Tên miền & SSL
 
 1. Cài Python 3.12 + Node 22.
 2. Trong thư mục dự án: `setup.bat` một lần - tạo .venv, cài deps, và cài sẵn hai engine CLI (Claude Code, Codex).
-3. `start-javis.bat` để chạy nền (tắt: `stop-javis.bat`).
+3. `start-thansa.bat` để chạy nền (tắt: `stop-thansa.bat`).
 4. Mở http://localhost:7777.
 
 ## Sau khi chạy

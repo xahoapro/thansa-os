@@ -35,7 +35,7 @@ http://localhost:7777 खोलिए। Caddy के ज़रिए HTTPS क�
 
 1. Python 3.12 + Node 22 इंस्टॉल कीजिए।
 2. Project folder में एक बार `setup.bat` चलाइए: यह .venv बनाता है, dependencies इंस्टॉल करता है, और आपके लिए दोनों CLI engines (Claude Code, Codex) भी इंस्टॉल कर देता है।
-3. Background में चलाने के लिए `start-javis.bat` (रोकने के लिए `stop-javis.bat`)।
+3. Background में चलाने के लिए `start-thansa.bat` (रोकने के लिए `stop-thansa.bat`)।
 4. http://localhost:7777 खोलिए।
 
 ## चालू होने के बाद

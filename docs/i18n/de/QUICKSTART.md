@@ -35,7 +35,7 @@ docker compose -f docker-compose.yml up -d
 
 1. Installiere Python 3.12 + Node 22.
 2. Führe im Projektordner einmal `setup.bat` aus: Es legt .venv an, installiert die Abhängigkeiten und installiert für dich die beiden CLI-Engines (Claude Code, Codex).
-3. `start-javis.bat` startet Thansa im Hintergrund (`stop-javis.bat` beendet es).
+3. `start-thansa.bat` startet Thansa im Hintergrund (`stop-thansa.bat` beendet es).
 4. Öffne http://localhost:7777.
 
 ## Sobald es läuft

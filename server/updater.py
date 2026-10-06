@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Updater tách rời của Javis cho bản GIT checkout (Windows + systemd + launchd + nohup).
+"""Updater tách rời của Thansa cho bản GIT checkout (Windows + systemd + launchd + nohup).
 Server spawn DETACHED:
 
     python updater.py --old-sha <sha> --old-version <v> --target <v> --port <p> --server-pid <pid>
@@ -73,16 +73,44 @@ def venv_python():
     return str(p) if p.exists() else sys.executable
 
 
-def has_systemd():
+def systemd_unit():
+    """Tên dịch vụ systemd của bản này, "" nếu không có.
+
+    install.sh từ 1.19 ghi JAVIS_SERVICE_NAME vào unit (bản cài mới mặc định "thansa", nhiều bản
+    trên một máy thì mỗi bản một tên). Máy cài TRƯỚC đó không có biến này và dịch vụ tên "javis" -
+    dò theo thứ tự thansa rồi javis."""
+    ten = (os.getenv("JAVIS_SERVICE_NAME") or "").strip()
     try:
         r = subprocess.run(["systemctl", "list-unit-files"], capture_output=True, text=True,
                            creationflags=_CAM)
-        return r.returncode == 0 and "javis.service" in (r.stdout or "")
+        if r.returncode != 0:
+            return ""
+        co = set(re.findall(r"^(\S+)\.service\s", r.stdout or "", re.M))
     except Exception:
-        return False
+        return ""
+    for t in ([ten] if ten else []) + ["thansa", "javis"]:
+        if t in co:
+            return t
+    return ""
 
 
-LAUNCHD_LABEL = os.getenv("JAVIS_LAUNCHD_LABEL", "com.javis.os")
+def has_systemd():
+    return bool(systemd_unit())
+
+
+def _launchd_label():
+    """Nhãn job launchd: đặt tường minh qua env, không thì bản mới com.thansa.os, máy cài trước
+    1.19 com.javis.os (nhận ra qua file plist đang có trong LaunchAgents)."""
+    for k in ("THANSA_LAUNCHD_LABEL", "JAVIS_LAUNCHD_LABEL"):
+        if os.getenv(k):
+            return os.getenv(k)
+    agents = Path.home() / "Library" / "LaunchAgents"
+    if not (agents / "com.thansa.os.plist").exists() and (agents / "com.javis.os.plist").exists():
+        return "com.javis.os"
+    return "com.thansa.os"
+
+
+LAUNCHD_LABEL = _launchd_label()
 
 
 def _launchd_target():
@@ -94,8 +122,7 @@ def has_launchd_job():
 
     Bài học 14/08/2026: updater kill PID server -> launchd KeepAlive respawn ngay tức thì,
     trong khi updater cũng Popen một bản uvicorn của riêng nó -> hai tiến trình giành cổng
-    7777, javis.log đầy "[Errno 48] address already in use". Nhãn job đổi được qua env
-    JAVIS_LAUNCHD_LABEL (mặc định com.javis.os)."""
+    7777, thansa.log đầy "[Errno 48] address already in use". Nhãn job: xem _launchd_label."""
     if sys.platform != "darwin":
         return False
     try:
@@ -158,9 +185,9 @@ def _pids_on_port(port):
 
 def stop_server(mode, server_pid=0, port=""):
     if mode == "windows":
-        run(["cmd", "/c", str(ROOT / "stop-javis.bat")])
+        run(["cmd", "/c", str(ROOT / "stop-thansa.bat")])
     elif mode == "systemd":
-        subprocess.run(["systemctl", "stop", "javis"], capture_output=True, text=True,
+        subprocess.run(["systemctl", "stop", systemd_unit() or "thansa"], capture_output=True, text=True,
                        creationflags=_CAM)
     elif mode == "launchd":
         # CỐ Ý không dừng gì: kill lúc này thì KeepAlive respawn ngay và bản respawn đó sẽ
@@ -180,10 +207,10 @@ def stop_server(mode, server_pid=0, port=""):
 
 def start_server(mode, port=""):
     if mode == "windows":
-        subprocess.Popen(["wscript.exe", "//nologo", str(ROOT / "start-javis.vbs")],
+        subprocess.Popen(["wscript.exe", "//nologo", str(ROOT / "start-thansa.vbs")],
                          cwd=str(ROOT), creationflags=0x00000008)  # DETACHED_PROCESS
     elif mode == "systemd":
-        subprocess.run(["systemctl", "start", "javis"], capture_output=True, text=True,
+        subprocess.run(["systemctl", "start", systemd_unit() or "thansa"], capture_output=True, text=True,
                        creationflags=_CAM)
     elif mode == "launchd":
         # kickstart -k: launchd tự hạ bản đang chạy rồi bật bản mới - MỘT người điều phối,
@@ -191,7 +218,7 @@ def start_server(mode, port=""):
         run(["launchctl", "kickstart", "-k", _launchd_target()])
     else:  # nohup: chạy lại uvicorn nền y như install.sh (fallback không systemd)
         host = os.getenv("JAVIS_HOST", "127.0.0.1")
-        logf = open(us.STATE_DIR / "javis.log", "a", encoding="utf-8")
+        logf = open(us.STATE_DIR / "thansa.log", "a", encoding="utf-8")
         subprocess.Popen(   # noqa: JAVIS_CONSOLE - server mới phải sống lâu hơn updater
             [venv_python(), "-m", "uvicorn", "main:app", "--host", host, "--port", str(port or "7777")],
             cwd=str(ROOT / "server"), stdout=logf, stderr=subprocess.STDOUT,

@@ -54,8 +54,8 @@
 
 | 机器 | 一条命令装好一切 |
 |---|---|
-| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git javis && cd javis && chmod +x install.sh && ./install.sh` |
-| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git javis; cd javis; powershell -ExecutionPolicy Bypass -File install.ps1` |
+| **Linux / macOS** | `git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os && chmod +x install.sh && ./install.sh` |
+| **Windows** | `git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os; powershell -ExecutionPolicy Bypass -File install.ps1` |
 | **Docker** | `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml && docker compose up -d` |
 
 然后打开 **http://localhost:7777**。安装程序会配置好 Python、四个订阅制 CLI 大脑（`claude`、`codex`、`agy`、`grok`）以及 `.env`，随后启动服务器。每个大脑都在**仪表盘的 Models（模型）页面**上登录，无需再敲命令。
@@ -275,7 +275,7 @@ https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hosting
 
 ```bash
 # Docker required (don't have it?  curl -fsSL https://get.docker.com | sh)
-mkdir javis && cd javis
+mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
 docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
@@ -292,13 +292,13 @@ docker compose up -d                                          # pull the image a
 <summary><b>方式三：Linux 或 macOS，不使用 Docker</b></summary>
 
 ```bash
-git clone https://github.com/xahoapro/thansa-os.git javis && cd javis
+git clone https://github.com/xahoapro/thansa-os.git && cd thansa-os
 chmod +x install.sh && ./install.sh
 ```
 
 该脚本会安装 Python、Node 和各个 CLI 大脑，创建 venv，注册一个开机自启的服务，并打印访问地址。
 
-🍎 **在 macOS 上像应用一样打开：** 双击 `JAVIS OS.app`（或 `Start JAVIS OS.command`）。登录时自动启动：`./bin/javis-autostart.sh install`。详情：[bin/README.md](../../../bin/README.md)。
+🍎 **在 macOS 上像应用一样打开：** 双击 `Thansa OS.app`（或 `Start Thansa OS.command`）。登录时自动启动：`./bin/thansa-autostart.sh install`。详情：[bin/README.md](../../../bin/README.md)。
 
 </details>
 
@@ -306,7 +306,7 @@ chmod +x install.sh && ./install.sh
 <summary><b>方式四：Windows（个人电脑）</b></summary>
 
 ```powershell
-git clone https://github.com/xahoapro/thansa-os.git javis; cd javis
+git clone https://github.com/xahoapro/thansa-os.git; cd thansa-os
 powershell -ExecutionPolicy Bypass -File install.ps1
 ```
 
@@ -314,12 +314,12 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 ```
 Run with a visible window (live log):  setup.bat
-Run silently from then on:             start-javis.vbs   (log at server\javis.log)
-Stop:                                  stop-javis.bat
+Run silently from then on:             start-thansa.vbs   (log at server\thansa.log)
+Stop:                                  stop-thansa.bat
 Dashboard:                             http://localhost:7777
 ```
 
-🪟 **像应用一样打开：** 首次运行之后，双击 **`JAVIS OS.bat`**。服务器会在后台启动，仪表盘在**独立窗口**中打开，并拥有自己的任务栏图标。登录时自动启动：`javis-autostart.bat install`（移除：`uninstall`）。
+🪟 **像应用一样打开：** 首次运行之后，双击 **`Thansa OS.bat`**。服务器会在后台启动，仪表盘在**独立窗口**中打开，并拥有自己的任务栏图标。登录时自动启动：`thansa-autostart.bat install`（移除：`uninstall`）。
 
 </details>
 
@@ -330,7 +330,7 @@ Dashboard:                             http://localhost:7777
 
 - **Hostinger：** 再次部署 `docker-compose.hostinger.yml` 作为第二个 stack，并填写这三个字段。
 - **自行管理的 VPS：** 为整台机器运行一次共享代理 `docker-compose.proxy.yml`，然后用 `docker-compose.multi.yml` 为每个实例分配独立的文件夹。代理会自动发现新实例并申请 SSL 证书。
-- **原生安装：** `JAVIS_NAME=javis-shop JAVIS_PORT=7778 ./install.sh`。
+- **原生安装：** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`。
 
 分步说明：[DEPLOY.en.md](../../../DEPLOY.en.md)。
 
@@ -410,7 +410,7 @@ Dashboard:                             http://localhost:7777
 
 ## 🔄 更新
 
-在应用内：**Settings → Updates → Update now**，带有进度条，如果新版本出现问题还有回滚按钮。在 VPS 上：`cd javis && ./update.sh`（拉取新镜像并重启；你在数据卷中的数据会被保留）。
+在应用内：**Settings → Updates → Update now**，带有进度条，如果新版本出现问题还有回滚按钮。在 VPS 上：`cd thansa-os && ./update.sh`（拉取新镜像并重启；你在数据卷中的数据会被保留）。
 
 ---
 
@@ -419,7 +419,7 @@ Dashboard:                             http://localhost:7777
 | 症状 | 处理方法 |
 |---|---|
 | Models 页面说某个 CLI 没有安装，但实际上已经安装 | **重启 Thansa**：正在运行的进程保留的是它启动时的 PATH。 |
-| 7777 端口被占用，新版本无法启动 | 先停止旧进程（`stop-javis.bat`，或结束对应 PID），然后重新启动。 |
+| 7777 端口被占用，新版本无法启动 | 先停止旧进程（`stop-thansa.bat`，或结束对应 PID），然后重新启动。 |
 | Hostinger 无法拉取镜像 | 把 GHCR 包设为 **Public**，并等待 GitHub Action 构建完成。 |
 | 某个大脑提示尚未登录 | **Models** → 该提供商的卡片 → 登录。 |
 

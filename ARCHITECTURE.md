@@ -308,7 +308,7 @@ There are three separate places. Mixing them up is a classic mistake.
 `.secret_key`, `.sessions.json` (login sessions), `.hub_token`, `conversations.db` (chat
 history), `kanban.sqlite3`, `customer_conversations.sqlite3`, `mcp_servers.json`,
 `mcp_audit.jsonl`, `.oauth_mcp.json`, `chatbots.json`, `channel_accounts.json`, `inbox.json`,
-`usage*.json*`, `runtime.db`, `plugins/`, `plugins.json`, `packs/`, `branding/`, `javis.log`.
+`usage*.json*`, `runtime.db`, `plugins/`, `plugins.json`, `packs/`, `branding/`, `thansa.log`.
 Anything Thansa writes at runtime goes here, never into the code tree.
 
 **A brain** (default `BRAINS_DIR/Brain Default`, scaffolded by `_ensure_brain_scaffold()` from

@@ -38,7 +38,7 @@ Cách chỉnh biến môi trường xem [Cấu hình .env](16-cau-hinh-env.md).
 2. Trên rail điều hướng bên trái, mở nhóm **Bộ não** rồi bấm mục **Tệp tin**.
 3. Trang hiện ô tìm kiếm ở trên cùng, dưới đó là thanh công cụ, dưới nữa là danh sách file/thư mục. Lần đầu vào, Thansa hiển thị thư mục gốc của brain đang chọn.
 
-Nếu danh sách báo lỗi kiểu "Máy chủ Thansa chưa có chức năng Tệp tin", hãy khởi động lại server (chạy `stop-javis.bat` rồi `start-javis.vbs`) và tải lại trang. Xem thêm [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md).
+Nếu danh sách báo lỗi kiểu "Máy chủ Thansa chưa có chức năng Tệp tin", hãy khởi động lại server (chạy `stop-thansa.bat` rồi `start-thansa.vbs`) và tải lại trang. Xem thêm [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md).
 
 ## Chọn brain đang làm việc
 
@@ -302,7 +302,7 @@ Kết luận thực dụng: tài liệu bạn muốn giữ lâu dài thì chuy�
 
 ## Sự cố thường gặp
 
-**Danh sách báo "Máy chủ Thansa chưa có chức năng Tệp tin".** Server đang chạy bản cũ chưa có tính năng này. Khởi động lại server (`stop-javis.bat` rồi `start-javis.vbs`) và tải lại trang.
+**Danh sách báo "Máy chủ Thansa chưa có chức năng Tệp tin".** Server đang chạy bản cũ chưa có tính năng này. Khởi động lại server (`stop-thansa.bat` rồi `start-thansa.vbs`) và tải lại trang.
 
 **Báo "Phiên đăng nhập hết hạn" hoặc lỗi 401.** Tải lại trang và đăng nhập lại. Xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 

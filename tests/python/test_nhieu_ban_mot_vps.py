@@ -71,7 +71,9 @@ BAN2 = {"JAVIS_NAME": "javis-shop", "JAVIS_HOST_PORT": "7778",
 # ============================================================
 for f in ("docker-compose.yml", "docker-compose.build.yml", "docker-compose.hostinger.yml"):
     j = load(f)["services"]["javis"]
-    check(f"{f}: mặc định vẫn là container 'javis'", j["container_name"] == "javis")
+    # 1.19: bản cài MỚI mang tên thansa. Máy cũ giữ "javis" nhờ update.sh đặt JAVIS_NAME theo
+    # container đang có - kiểm ở mục update.sh bên dưới.
+    check(f"{f}: mặc định là container 'thansa'", j["container_name"] == "thansa")
     check(f"{f}: mặc định vẫn nghe cổng 7777 công khai",
           any(str(p).endswith("7777:7777") and not str(p).startswith("127.")
               for p in j["ports"]))
@@ -153,19 +155,23 @@ check("bản Caddy cũ nói rõ nó chỉ dành cho máy chạy MỘT bản",
 # 4. Native: tên dịch vụ systemd + cổng đều theo bản
 # ============================================================
 ins = src("install.sh")
-check("install.sh: tên dịch vụ lấy từ JAVIS_NAME", 'SVC="${JAVIS_NAME:-javis}"' in ins)
-check("install.sh: cổng lấy từ JAVIS_PORT", 'PORT="${JAVIS_PORT:-7777}"' in ins)
+check("install.sh: tên dịch vụ lấy từ THANSA_NAME (JAVIS_NAME cũ vẫn nhận)", 'SVC="${THANSA_NAME:-${JAVIS_NAME:-}}"' in ins)
+check("install.sh: cổng lấy từ THANSA_PORT (JAVIS_PORT cũ vẫn nhận)", 'PORT="${THANSA_PORT:-${JAVIS_PORT:-7777}}"' in ins)
+check("install.sh: bỏ trống tên = thansa, máy có javis.service của chính thư mục này thì giữ javis",
+      'SVC="thansa"' in ins and 'SVC="javis"' in ins and 'WorkingDirectory=$APP_DIR/server' in ins)
 check("install.sh: ghi unit theo tên bản, không đè javis.service",
       '/etc/systemd/system/$SVC.service' in ins)
 check("install.sh: không còn --port 7777 đóng cứng", "--port 7777" not in ins)
 check("install.sh: chặn tên có ký tự lạ trước khi ghi vào /etc/systemd",
-      "JAVIS_NAME may only contain" in ins)
+      "THANSA_NAME may only contain" in ins)
 
 upd = src("update.sh")
 check("update.sh: đọc JAVIS_NAME từ .env của thư mục đang đứng", "JAVIS_NAME" in upd)
 check("update.sh: restart ĐÚNG dịch vụ của bản mình, không phải 'javis' cứng",
       'systemctl restart "$NAME"' in upd)
 check("update.sh: dò container theo tên bản", 'grep -qx "$NAME"' in upd)
+check("update.sh: máy cũ (container/dịch vụ 'javis') giữ tên cũ, không dựng container thứ hai",
+      'NAME="javis"' in upd and 'export JAVIS_NAME="$NAME"' in upd)
 
 # ============================================================
 # 5. Profile Codex: hai bản chung $HOME không được ghi đè nhau
