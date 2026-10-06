@@ -282,7 +282,7 @@ def build_channel_block(source: str, meta: dict = None, telegram_running: bool =
             *dong_rieng,
             "",
             f"## Gửi file qua {ten}",
-            "- Javis tự đính kèm ảnh và tài liệu khi bạn nhúng `![](attachments/...)` hoặc link "
+            "- Thansa tự đính kèm ảnh và tài liệu khi bạn nhúng `![](attachments/...)` hoặc link "
             "file trong brain như thường lệ. Không nói \"đã gửi\" khi chưa nhúng gì.",
             "- File user gửi lên đã được gateway tải về máy sẵn - đường dẫn nằm ngay trong tin nhắn.",
             "",

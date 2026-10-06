@@ -179,38 +179,38 @@ def _init_timeout_text(n, cd):
     cham = max([x for x in (hub.get("init_s"), hub.get("list_s")) if x is not None] or [0.0])
     list_s = hub.get("list_s")
     if not cd.get("hub_attached", True):
-        vi = ("lượt này không đấu cổng công cụ của Javis nên hub không phải thủ phạm. Nếu máy có đấu "
+        vi = ("lượt này không đấu cổng công cụ của Thansa nên hub không phải thủ phạm. Nếu máy có đấu "
               "connector của chính Claude Code (claude.ai, cài đặt người dùng) thì kiểm tra chúng; "
               "không thì " + login_vi[0].lower() + login_vi[1:])
-        en = ("this run did not attach the Javis tool hub, so the hub is not the culprit. If the machine "
+        en = ("this run did not attach the Thansa tool hub, so the hub is not the culprit. If the machine "
               "attaches Claude Code's own connectors (claude.ai, user settings) check those; otherwise "
               + login_en[0].lower() + login_en[1:])
     elif not hub.get("called"):
-        vi = ("nó chưa hề gọi tới cổng công cụ của Javis, nên KHÔNG phải do nguồn MCP. Nó kẹt từ trước "
+        vi = ("nó chưa hề gọi tới cổng công cụ của Thansa, nên KHÔNG phải do nguồn MCP. Nó kẹt từ trước "
               "đó, thường vì đăng nhập Claude hết hạn, máy không ra được mạng hoặc đang tự cập nhật. "
               + login_vi)
-        en = ("it never reached the Javis tool hub, so it is NOT a data source (MCP). It got stuck "
+        en = ("it never reached the Thansa tool hub, so it is NOT a data source (MCP). It got stuck "
               "before that, usually an expired Claude sign-in, no network or a self-update. " + login_en)
     elif hub.get("pending") and hub.get("pending_s", 0.0) >= _HUB_SLOW_S:
-        vi = (f"cổng công cụ của Javis nhận yêu cầu {_giay(hub['pending_s'])} trước mà chưa trả lời. "
+        vi = (f"cổng công cụ của Thansa nhận yêu cầu {_giay(hub['pending_s'])} trước mà chưa trả lời. "
               + mcp_vi)
-        en = (f"the Javis tool hub got a request {_giay(hub['pending_s'])} ago and has not answered. "
+        en = (f"the Thansa tool hub got a request {_giay(hub['pending_s'])} ago and has not answered. "
               + mcp_en)
     elif cham >= _HUB_SLOW_S:
-        vi = f"cổng công cụ của Javis trả quá chậm (mất {_giay(cham)} mới trả lời). " + mcp_vi
-        en = f"the Javis tool hub answered far too slowly ({_giay(cham)} to reply). " + mcp_en
+        vi = f"cổng công cụ của Thansa trả quá chậm (mất {_giay(cham)} mới trả lời). " + mcp_vi
+        en = f"the Thansa tool hub answered far too slowly ({_giay(cham)} to reply). " + mcp_en
     elif list_s is not None:
-        vi = (f"cổng công cụ của Javis trả lời bình thường (liệt kê công cụ mất {_giay(list_s)}), nên "
+        vi = (f"cổng công cụ của Thansa trả lời bình thường (liệt kê công cụ mất {_giay(list_s)}), nên "
               "không phải do nguồn MCP. Claude Code kẹt ở bước khác, thường là đăng nhập hết hạn hoặc "
               "mạng. " + login_vi)
-        en = (f"the Javis tool hub answered normally (listing tools took {_giay(list_s)}), so it is not "
+        en = (f"the Thansa tool hub answered normally (listing tools took {_giay(list_s)}), so it is not "
               "a data source (MCP). Claude Code is stuck on something else, usually an expired sign-in "
               "or the network. " + login_en)
     else:
-        vi = ("cổng công cụ của Javis đã nhận kết nối nhưng Claude Code chưa hỏi tới danh sách công cụ, "
+        vi = ("cổng công cụ của Thansa đã nhận kết nối nhưng Claude Code chưa hỏi tới danh sách công cụ, "
               "nên chưa tới bước dò nguồn MCP. Nó kẹt ở bước khác, thường là đăng nhập hết hạn hoặc "
               "mạng. " + login_vi)
-        en = ("the Javis tool hub accepted the connection but Claude Code never asked for the tool "
+        en = ("the Thansa tool hub accepted the connection but Claude Code never asked for the tool "
               "list, so the data sources (MCP) were not even reached. It is stuck on something else, "
               "usually an expired sign-in or the network. " + login_en)
     tail = [str(x).strip()[:120] for x in (cd.get("stderr") or []) if str(x).strip()][-2:]
