@@ -1,9 +1,9 @@
-# /etc/systemd/system/javis.service - native (non-Docker) systemd unit.
+# /etc/systemd/system/thansa.service - native (non-Docker) systemd unit.
 # Install:
-#   sudo cp javis.service /etc/systemd/system/javis.service
-#   sudo sed -i "s|__APP_DIR__|$(pwd)|g; s|__USER__|$(whoami)|g" /etc/systemd/system/javis.service
-#   sudo systemctl daemon-reload && sudo systemctl enable --now javis
-#   journalctl -u javis -f
+#   sudo cp thansa.service /etc/systemd/system/thansa.service
+#   sudo sed -i "s|__APP_DIR__|$(pwd)|g; s|__USER__|$(whoami)|g" /etc/systemd/system/thansa.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now thansa
+#   journalctl -u thansa -f
 [Unit]
 Description=Thansa OS
 After=network-online.target

@@ -93,7 +93,7 @@ Khi đã có mật khẩu, khối **Tài khoản đăng nhập** hiện dòng "�
 
 **Quên mật khẩu hiện tại** thì không có đường vòng nào trong dashboard, phải sửa từ máy chủ.
 
-Chạy bằng Docker/Hostinger (từ 0.77.1): đổi `JAVIS_ADMIN_PASSWORD` (và `JAVIS_ADMIN_USER` nếu muốn) trong ô Environment rồi Redeploy. Lúc khởi động, Javis thấy giá trị env khác lần trước nên đặt lại tài khoản admin theo nó: 2FA giữ nguyên, mọi phiên đăng nhập cũ bị huỷ. Env để nguyên thì không có gì thay đổi, nên mật khẩu bạn đổi trong dashboard không bị env ghi đè mỗi lần khởi động lại.
+Chạy bằng Docker/Hostinger (từ 0.77.1): đổi `JAVIS_ADMIN_PASSWORD` (và `JAVIS_ADMIN_USER` nếu muốn) trong ô Environment rồi Redeploy. Lúc khởi động, Thansa thấy giá trị env khác lần trước nên đặt lại tài khoản admin theo nó: 2FA giữ nguyên, mọi phiên đăng nhập cũ bị huỷ. Env để nguyên thì không có gì thay đổi, nên mật khẩu bạn đổi trong dashboard không bị env ghi đè mỗi lần khởi động lại.
 
 Cách thủ công (máy không dùng env):
 
