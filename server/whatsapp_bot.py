@@ -385,7 +385,7 @@ class WhatsAppBot(HangLuot):
         }
         if self.chat_ids and chat not in self.chat_ids:
             await self._send(client, chat, localefmt.chu(
-                "Bạn không có quyền dùng bot Javis này.", "You are not allowed to use this Javis bot."))
+                "Bạn không có quyền dùng bot Thansa này.", "You are not allowed to use this Thansa bot."))
             return
         text = await self._message_text(client, msg, chat)
         if not text:
