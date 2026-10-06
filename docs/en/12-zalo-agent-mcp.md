@@ -83,35 +83,35 @@ Since Javis 0.84.7 (javis-zalo 1.2.0), for groups that require approval:
 
 ## New members joining a group
 
-Since Javis 0.84.2 (javis-zalo 1.1.0), Javis knows who just joined a group and **when**,
+Since Thansa 0.84.2 (javis-zalo 1.1.0), Thansa knows who just joined a group and **when**,
 including people your own account added:
 
-- **You can ask.** "Who joined Zoom | Javis OS this week?" makes the brain call
+- **You can ask.** "Who joined Zoom | Thansa OS this week?" makes the brain call
   `zalo_get_group_joins` and answer with names and join times. The log lives in
   `~/.zalo-agent-cli/group-joins.jsonl` inside the connection's session folder, keeps the latest
   5000 joins, and survives restarts.
 - **A dedicated bot receives the event.** In a group the bot is allowed in, each newcomer is an
   event sent to the bot's Agent, whatever the "reply when" setting says. The Agent follows its own
   instructions (for example a welcome and a question), and what it sends tags the newcomer.
-  Javis has **no greeting of its own**: if the Agent's instructions say nothing about newcomers,
+  Thansa has **no greeting of its own**: if the Agent's instructions say nothing about newcomers,
   the bot stays silent. When many people join at once and the bot has hit its rate limit, it also
   stays silent instead of saying "you are typing too fast".
 - **Limits.** Zalo only reports this while connected, and the member list carries no join date.
-  People who joined before this feature, or while the machine running Javis was off, are not in
+  People who joined before this feature, or while the machine running Thansa was off, are not in
   the log.
 
-## The Zalo extras pack (Javis Store)
+## The Zalo extras pack (Thansa Store)
 
 The three groups of tools below (reading images, sending images and files, tagging people plus
 notes, reminders and polls) fill exactly what the standard MCP lacks. Since 0.73.0 they live in
-the **`javis.zalo`** pack on Javis Store instead of shipping inside the app, so people who do not
+the **`javis.zalo`** pack on Thansa Store instead of shipping inside the app, so people who do not
 use Zalo do not carry them:
 
-- **Right after you scan the Zalo QR, Javis offers the pack** through the store's own consent
+- **Right after you scan the Zalo QR, Thansa offers the pack** through the store's own consent
   screen: it lists every code file, with the "run now" switch on because you just connected
   Zalo yourself. Press Install and every tool is there.
 - **On a machine that connected Zalo earlier**, the Connections page shows a reminder with an
-  **Install companion pack** button. Javis never installs a code pack without asking.
+  **Install companion pack** button. Thansa never installs a code pack without asking.
 - The Zalo connection, the Inbox and the Zalo chatbot stay in the app and keep working without
   the pack. Without it you only miss the extra tools.
 
@@ -127,7 +127,7 @@ brain. So the `javis.zalo` pack has the `zalo_read_images` tool:
 
 Just ask in chat, for example "look at the receipt Lan just posted in the Sales group".
 
-- **Images come straight from Zalo**, not from the MCP's 2-hour buffer: Javis asks Zalo for the
+- **Images come straight from Zalo**, not from the MCP's 2-hour buffer: Thansa asks Zalo for the
   group's recent messages (30 by default, at most 100) and takes up to the 8 newest images. For a
   private chat, only images still in the MCP buffer can be fetched.
 - **Images are saved to `attachments/zalo/<group id>/`** in the brain, so they show right in chat.

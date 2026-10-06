@@ -154,14 +154,14 @@ To make it answer **every message in the group**, change the "When the bot speak
 
 ### The reply judge reviews and tunes itself (from 0.77.0)
 
-In "Self-assess" mode a **reply judge** decides, message by message, whether a group bot speaks or stays silent, and learns from thumbs up/down and from how people react. From 0.77.0 a **self-review** also looks at the whole picture: once a bot has gathered enough new evidence (about 8 labels, or 40 silences) and a day has passed since the last review, Javis sends that bot's report to your **main brain** (the model chosen on the **Models** page, usually stronger than the cheap model that judges each message). It looks for repeated patterns and changes at most 3 things, or nothing when there is no clear pattern.
+In "Self-assess" mode a **reply judge** decides, message by message, whether a group bot speaks or stays silent, and learns from thumbs up/down and from how people react. From 0.77.0 a **self-review** also looks at the whole picture: once a bot has gathered enough new evidence (about 8 labels, or 40 silences) and a day has passed since the last review, Thansa sends that bot's report to your **main brain** (the model chosen on the **Models** page, usually stronger than the cheap model that judges each message). It looks for repeated patterns and changes at most 3 things, or nothing when there is no clear pattern.
 
 - **What it can change:** lessons (it only ever removes its own, never yours), example messages, each group's threshold, the bot's overall eagerness, and whether messages that start by tagging someone else ("@Quy, when is class?") are considered at all. The bot still only speaks when its documents match and the judge agrees. Rate limits, yielding to you, permissions and what the bot says stay out of reach.
 - **Every change must cite this bot's own messages as evidence**, so text a customer types cannot become an instruction.
 - **It measures itself:** if the bot is marked wrong noticeably more often after a review, that review is undone and you get a message. Issues only a code change can fix are written to `Javis/gop-y-bo-phan-xu.md` in the bot's brain.
 - **You hear about it** in one message to the inbox (the bell) and Telegram per review that changed something.
 
-**To step in, just tell Javis:** "show me Javis Vu's reply judge stats this week", "let Javis Vu answer for me when customers tag me about class times", "undo review a1b2c3 of Javis Vu". Javis reads the same report, proposes, and applies when you agree; every change is logged and can be undone. Customer-facing bots never see these tools, even at the "can write" or "full" levels.
+**To step in, just tell Thansa:** "show me Thansa Vu's reply judge stats this week", "let Thansa Vu answer for me when customers tag me about class times", "undo review a1b2c3 of Thansa Vu". Thansa reads the same report, proposes, and applies when you agree; every change is logged and can be undone. Customer-facing bots never see these tools, even at the "can write" or "full" levels.
 
 If your main brain runs on a Claude Pro/Max plan, note that the review is background work on that plan, which Anthropic does not count as ordinary personal use. It runs at most once a day per bot and only with evidence, but the safest setup is a ChatGPT or Grok plan or an API key for the main brain. Operators can turn the review off with the environment variable `JAVIS_REPLY_POLICY_REVIEW=0`.
 
@@ -287,9 +287,9 @@ Chosen in the **What the bot may do** field when creating or editing a bot. The 
 
 ### The Reads documents level (from 0.80.0)
 
-At Read only, Javis searches the documents **by keyword** before each turn and hands the bot the few best chunks. That keeps the bot from making things up, but it misses when a customer uses other words than the document: the document says "refund" and the customer types "money back", nothing matches, and the bot stays silent or says it has no information.
+At Read only, Thansa searches the documents **by keyword** before each turn and hands the bot the few best chunks. That keeps the bot from making things up, but it misses when a customer uses other words than the document: the document says "refund" and the customer types "money back", nothing matches, and the bot stays silent or says it has no information.
 
-The **Reads documents** level keeps that pre-search and gives the bot three tools to read its brain **itself**, the way the main Javis reads its notebook:
+The **Reads documents** level keeps that pre-search and gives the bot three tools to read its brain **itself**, the way the main Thansa reads its notebook:
 
 - **Search** the documents, retrying with other words when the first try finds nothing.
 - **List** the documents with their section titles, to pick the right one.
@@ -301,8 +301,8 @@ The bot is told: when a question needs specific information the pre-search did n
 
 **Why this level asks for no consent tick:** it takes nothing the pre-search did not already expose.
 
-- No write tool, no data source, no plugin, even if you connected many sources. Javis enforces this where tools are called, not with instructions.
-- The bot opens only files the pre-search already reads: not `memory/`, `inbox/` (customer uploads), skills, plugins or Javis' convention files, and also not `agents/` or `workflows/` (your internal instructions). The path a customer types is only compared against that list, so `../`, absolute paths and links pointing out of the brain open nothing.
+- No write tool, no data source, no plugin, even if you connected many sources. Thansa enforces this where tools are called, not with instructions.
+- The bot opens only files the pre-search already reads: not `memory/`, `inbox/` (customer uploads), skills, plugins or Thansa' convention files, and also not `agents/` or `workflows/` (your internal instructions). The path a customer types is only compared against that list, so `../`, absolute paths and links pointing out of the brain open nothing.
 - Only the bot's own brain. Without it the bot gets no tools at all, rather than the brain you have open.
 
 The **Try** button runs this level as is (it only reads), so you can test it right away. It costs a few extra model calls when the bot searches, and depends on the engine like the two levels above (see [Which engines can run the raised levels](#which-engines-can-run-the-raised-levels)).
