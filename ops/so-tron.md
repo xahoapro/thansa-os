@@ -752,3 +752,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   chối), ff main tới goc_commit, me = san-sang-X, tu-kiem, quét bí mật → đẩy (backup, me, snapshot main, tag +
   Release) → đánh dấu sổ → GitHub giữ 3 backup → nhắn 🎉. Hỏng trước bước đẩy: trả me/main về như cũ, nhắn lý do.
 - Cron "đo hằng ngày" cũ TẮT theo lệnh chủ (dòng crontab chuyển thành chú thích).
+
+## Vòng TỰ ĐỘNG 2026-10-07 (goc be2bf9d → 59a6c94, nền 0.84.10 → 0.85.0, thansa 1.21.0→1.22.0)
+- 1 commit upstream: 0.85.0: Admin channels page in tabs + Lark/Feishu and Discord (#577)
+- Rebase tự động trong worktree riêng. Tự gỡ: 3da420ad:docs/11-telegram.md, 3da420ad:docs/25-chatbot.md, 3da420ad:docs/en/11-telegram.md, 3da420ad:docs/en/16-env-configuration.md, 3da420ad:docs/en/25-chatbots.md, a9ad9759:dashboard/i18n/en.json, a9ad9759:dashboard/i18n/vi.json, d8e083f1:dashboard/console.js, d8e083f1:dashboard/i18n/en.json, d8e083f1:dashboard/i18n/vi.json, d8e083f1:docs/29-slack-whatsapp.md, d8e083f1:docs/README.md, d8e083f1:docs/en/29-slack-whatsapp.md, d8e083f1:docs/en/README.md, d8e083f1:server/channel_context.py, d8e083f1:server/owner_channels.py. Upstream xoá: không.
+- Rebrand: P056 (73 chỗ / 8 file). moc-goc 59a6c94/0.85.0/so_patch 52.
