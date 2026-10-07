@@ -6,6 +6,13 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.85.0] - 2026-10-07
+### Thêm mới
+- **Chat với Javis từ Lark/Feishu và Discord.** Hai kênh mới tự nối ra ngoài nên chạy được cả trên laptop, không cần tên miền. Người lạ nhắn bot nhận mã ghép nối, bạn bấm Cho phép là xong.
+### Cải thiện
+- **Trang "Kênh" đổi tên thành "Kênh Admin"** cho khỏi lẫn với bot trả lời khách ở trang Chatbot, và chia mỗi kênh một tab, chấm màu trên tab cho biết kênh nào đang chạy.
+- **Bỏ ô tích "Bật bot" khó hiểu.** Giờ đầu mỗi tab có công tắc Bật/Tắt có tác dụng ngay, nút cuối tab ghi đúng việc nó làm ("Lưu và bật kênh" hay "Lưu thay đổi"), và thiếu thông tin gì thì trang nói tên ô đó.
+
 ## [0.84.10] - 2026-10-07
 ### Sửa lỗi
 - **Bot chuyên trách đọc được link Google Docs và Google Sheets gắn vào Agent.** Trước đây bot chỉ tra file trong brain, nên Agent dặn "chỉ trả lời theo tài liệu" mà bảng giá nằm trên Google Sheets thì bot báo "chưa có thông tin" với mọi sản phẩm.

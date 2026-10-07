@@ -1659,3 +1659,29 @@
     dem.py so 1.20: 5 chỗ / 2 file → đổi phần hiển thị (còn lại docstring). grep link repo gốc = 0.
   dieu_kien_bo: >
     Như P048.
+
+- id: P056
+  ten: "Rebrand nền 0.85.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-07 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.85.0 sang Thansa
+    theo luật P007/P026/P027/P048 (73 chỗ / 8 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P056: rebrand nen 0.85.0 (tu dong)"
+  diem_neo:
+    - file: dashboard/i18n/en.json
+      ky_hieu: 'nels.sub": "Talk to Thansa from your chat apps",'
+  vung_theo_doi:
+    - "dashboard/console.js"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "docs/30-discord-lark.md"
+    - "docs/en/30-discord-lark.md"
+    - "server/channel_context.py"
+    - "server/discord_bot.py"
+    - "server/lark_bot.py"
+  anh_goc:
+    - file: dashboard/i18n/en.json
+      doan: 'nels.sub": "Talk to Javis from your chat apps",'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
