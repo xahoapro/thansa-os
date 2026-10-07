@@ -709,3 +709,17 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - NGHIỆM THU (env -u JAVIS_*, chạy tuần tự): fork 577/582, upstream sạch 575/580. Đỏ chung = {form_chuoi_rong,
   image_vision (mới, môi trường), route_table, run_command_quyen, terminal_cmd_goc} → **0 hồi quy fork**.
   **ĐÃ PHÁT HÀNH 2026-10-06** (origin/main 0a5035f, snapshot ff từ a1ff8a7; backup me-backup-1.19.0).
+
+## Vòng 2026-10-07 (goc bacb1cf → 3e3d7d4, upstream +4 commit, VERSION nền 0.84.2 → 0.84.8, thansa 1.19→1.20)
+- 4 commit: bot Zalo gửi ảnh, duyệt yêu cầu vào nhóm Zalo, giới hạn tốc độ bot theo từng người trong nhóm,
+  hướng dẫn Chatbots nêu đúng giới hạn.
+- Rebase 164 commit bằng vong.sh: tự gỡ P012/P027/P052 (catalog + docs Zalo), VERSION 1.20.0-javis-0.84.8.
+  backup me-backup-1.19.0-pre (= me trước rebase).
+- **P054 mới:** rebrand 21 chỗ / 6 file (câu duyệt/từ chối Zalo + docs 12/25 vi+en). guide_url Zalo LẠI bị
+  rebase quay về repo gốc (vòng thứ hai) → sửa + thêm canh vào test_ten_thansa_cai_dat.
+- Trước vòng: dọn GitHub theo lệnh chủ - About repo (mô tả, homepage tradingauto.org, 5 topic), tag + Release
+  thansa-v1.19.0, xoá 8 nhánh me-backup-* cũ trên GitHub (bản sao giữ trên máy; 3 nhánh khác bản → lưu
+  thêm *-github).
+- moc-goc 3e3d7d4/0.84.8/so_patch 50. tu-kiem-chung 5/5.
+- NGHIỆM THU (env -u JAVIS_*, tuần tự): fork 579/584, upstream sạch 577/582, đỏ chung đúng 5 (form_chuoi_rong,
+  image_vision, route_table, run_command_quyen, terminal_cmd_goc) → **0 hồi quy fork**.
