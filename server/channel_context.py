@@ -34,7 +34,7 @@ _CHAT_APPS = {
         "cho lệnh của chính nó.")),
     "whatsapp": ("WhatsApp", "nhóm WhatsApp", (
         "- TRẦN khoảng 4000 ký tự một tin. Viết gọn ngay từ đầu, đừng để gateway cắt hộ.",
-        "- WhatsApp chỉ cho Javis nhắn trước trong vòng 24 GIỜ kể từ tin cuối người này "
+        "- WhatsApp chỉ cho Thansa nhắn trước trong vòng 24 GIỜ kể từ tin cuối người này "
         "gửi. Việc nền chạy lâu hơn thế thì kết quả có thể không tới được: nói rõ điều này "
         "khi giao việc dài hạn qua WhatsApp.")),
     "discord": ("Discord", "kênh Discord", (
