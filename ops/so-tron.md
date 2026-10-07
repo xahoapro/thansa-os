@@ -723,3 +723,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - moc-goc 3e3d7d4/0.84.8/so_patch 50. tu-kiem-chung 5/5.
 - NGHIỆM THU (env -u JAVIS_*, tuần tự): fork 579/584, upstream sạch 577/582, đỏ chung đúng 5 (form_chuoi_rong,
   image_vision, route_table, run_command_quyen, terminal_cmd_goc) → **0 hồi quy fork**.
+  **ĐÃ PHÁT HÀNH 2026-10-07** (origin/main 2e7ea0f, snapshot ff từ 0a5035f; tag + Release thansa-v1.20.0; backup me-backup-1.20.0).
