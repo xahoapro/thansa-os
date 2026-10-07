@@ -737,3 +737,10 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Đạt → nhánh `san-sang-<bản>` trên máy + nhắn Telegram "chờ duyệt". KHÔNG đẩy gì lên GitHub. Chủ nói "phát hành X"
   → phiên Claude: me = san-sang-X, main ff tới goc_commit, phát hành như tay, nhắn Telegram (`--nhan`).
 - Mỗi bản Javis chỉ nhắn một lần (ops/ban-tin/tu-dong.state); sửa tay xong chạy `ops/tu-dong-tron.sh --ep`.
+
+## Vòng 2026-10-07b (goc 3e3d7d4 → be2bf9d, upstream +1 commit, nền 0.84.8 → 0.84.10, thansa 1.20→1.21)
+- 1 commit: bot chuyên dụng đọc link Google Docs/Sheets trong tài liệu của Agent (server/bot_linked_docs.py).
+- Rebase 168 commit sạch (chỉ VERSION 1.21.0-javis-0.84.10). backup me-backup-1.20.0-pre. P055 rebrand 5 chỗ/2 file.
+- moc-goc be2bf9d/0.84.10/so_patch 51. tu-kiem-chung 5/5.
+- NGHIỆM THU: fork 579/585 lần đầu, đỏ riêng test_ignore_files do 2 script tự động chưa commit → commit xong XANH;
+  upstream sạch 578/583; đỏ chung đúng 5 (môi trường) → **0 hồi quy fork**.
