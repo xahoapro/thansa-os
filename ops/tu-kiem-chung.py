@@ -12,6 +12,7 @@ Luật 3: goc_commit trong mốc gốc = merge-base(me, main) — đúng nền m
 Luật 4: so_patch trong mốc gốc = số mục mapping.
 """
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,10 @@ import yaml
 OPS = Path(__file__).resolve().parent
 REPO = OPS.parent
 XANH, DO = "XANH", "ĐỎ"
+# Mặc định kiểm nhánh me trên main. Vòng trộn tự động chạy trong worktree riêng (ops/tu_dong_tron.py)
+# nên chỉ định khác qua env: TU_KIEM_ME=HEAD, TU_KIEM_MAIN=<sha upstream>.
+ME_REF = os.environ.get("TU_KIEM_ME", "me")
+MAIN_REF = os.environ.get("TU_KIEM_MAIN", "main")
 
 
 def git(*args: str) -> str:
@@ -32,7 +37,7 @@ def git(*args: str) -> str:
 
 def kiem_tra_commit(mapping) -> list[str]:
     loi = []
-    subjects = [s for s in git("log", "--format=%s", "main..me").splitlines() if s.startswith("[me]")]
+    subjects = [s for s in git("log", "--format=%s", f"{MAIN_REF}..{ME_REF}").splitlines() if s.startswith("[me]")]
     khai_bao = [p.get("commit", "").strip() for p in mapping]
     if len(subjects) != len(khai_bao):
         loi.append(f"luật 1: {len(subjects)} commit [me] trên main..me nhưng mapping khai {len(khai_bao)} mục — có patch 'chui' hoặc mapping thừa")
@@ -60,7 +65,7 @@ def kiem_tra_diem_neo(mapping) -> list[str]:
 def kiem_tra_moc_goc(mapping) -> list[str]:
     loi = []
     moc = json.loads((OPS / "moc-goc.json").read_text(encoding="utf-8"))
-    nen = git("merge-base", "me", "main")
+    nen = git("merge-base", ME_REF, MAIN_REF)
     if moc["goc_commit"] != nen:
         loi.append(f"luật 3: mốc gốc ghi {moc['goc_commit'][:12]} nhưng me đứng trên {nen[:12]}")
     return loi

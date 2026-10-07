@@ -724,3 +724,16 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - NGHIỆM THU (env -u JAVIS_*, tuần tự): fork 579/584, upstream sạch 577/582, đỏ chung đúng 5 (form_chuoi_rong,
   image_vision, route_table, run_command_quyen, terminal_cmd_goc) → **0 hồi quy fork**.
   **ĐÃ PHÁT HÀNH 2026-10-07** (origin/main 2e7ea0f, snapshot ff từ 0a5035f; tag + Release thansa-v1.20.0; backup me-backup-1.20.0).
+
+## Tự động hoá 2026-10-07 (chủ chọn "cách 2": tự trộn + nghiệm thu, KHÔNG tự phát hành)
+- Bản đầu (tự phát hành lên GitHub) bị Claude Code chặn (tác tử tự đẩy/phát hành công khai không người duyệt) →
+  chủ chọn cách 2. Cron `ops/tu-dong-tron.sh` (flock, gỡ JAVIS_*) → `ops/tu_dong_tron.py`, chạy trong WORKTREE RIÊNG
+  `~/thansa/.tu-dong` (nhánh tu-dong từ origin/me) + `~/thansa/.tu-dong-goc` (upstream sạch) → không đụng me/main.
+- Không có Javis mới → thoát im. Có → rebase, tự gỡ CHỈ khi chắc (VERSION; patch rebrand: lấy upstream + rebrand;
+  patch khác: mọi từ phía patch, đổi ngược thương hiệu, đều có ở phía upstream; DU ở patch rebrand → theo upstream
+  xoá). Còn lại = XUNG ĐỘT THẬT → huỷ, nhắn Telegram. Rebrand chữ Javis mới (như P052/P054/P055) + kéo link repo
+  gốc → patch [me] tự sinh + mapping. Chốt an toàn P038, tu-kiem (TU_KIEM_ME/TU_KIEM_MAIN), nghiệm thu fork vs
+  upstream sạch (test chỉ đỏ ở fork chạy lại riêng 1 lần), quét bí mật.
+- Đạt → nhánh `san-sang-<bản>` trên máy + nhắn Telegram "chờ duyệt". KHÔNG đẩy gì lên GitHub. Chủ nói "phát hành X"
+  → phiên Claude: me = san-sang-X, main ff tới goc_commit, phát hành như tay, nhắn Telegram (`--nhan`).
+- Mỗi bản Javis chỉ nhắn một lần (ops/ban-tin/tu-dong.state); sửa tay xong chạy `ops/tu-dong-tron.sh --ep`.
