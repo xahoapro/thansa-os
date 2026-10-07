@@ -325,7 +325,7 @@ Bảng giá hay hướng dẫn đang nằm trên Google thì không cần chép 
 - Google Sheets đọc **mọi tab**, mỗi dòng kèm tên cột, nên khách hỏi "kìm cắt Stanley giá bao nhiêu" là ra đúng dòng đó. Link trỏ vào một tab cụ thể (có `#gid=` ở cuối) thì chỉ đọc tab đó.
 - File phải được chia sẻ ở chế độ **Bất kỳ ai có đường liên kết, quyền Người xem**, và không tắt quyền tải xuống. File chưa chia sẻ thì bot vẫn trả lời bình thường nhưng không có phần đó, và thẻ bot hiện cảnh báo nói rõ link nào cần chia sẻ.
 - Sửa file trên Google thì vài phút sau bot dùng bản mới. Google tạm trục trặc thì bot dùng bản đọc được lần trước.
-- Chỉ link **bạn** gắn trong Agent mới được đọc. Khách dán link vào tin nhắn thì Javis không mở. Hai bot cùng brain nhưng khác Agent thì không thấy link của nhau.
+- Chỉ link **bạn** gắn trong Agent mới được đọc. Khách dán link vào tin nhắn thì Thansa không mở. Hai bot cùng brain nhưng khác Agent thì không thấy link của nhau.
 
 Ở mức **Đọc tài liệu**, ba công cụ tự tìm của bot vẫn chỉ mở file trong brain. Nội dung link Google đến với bot qua phần tra sẵn trước mỗi lượt.
 
