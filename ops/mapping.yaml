@@ -1705,3 +1705,22 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P058
+  ten: "Rebrand nền 0.85.5 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-07 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.85.5 sang Thansa
+    theo luật P007/P026/P027/P048 (2 chỗ / 1 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P058: rebrand nen 0.85.5 (tu dong)"
+  diem_neo:
+    - file: server/main.py
+      ky_hieu: 'chat trực tiếp với Thansa. Người đang "'
+  vung_theo_doi:
+    - "server/main.py"
+  anh_goc:
+    - file: server/main.py
+      doan: 'chat trực tiếp với Javis. Người đang "'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
