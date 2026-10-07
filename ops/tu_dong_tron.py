@@ -133,6 +133,22 @@ def ghi_state(**kw) -> None:
     STATE.write_text(json.dumps(s, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def tom_tat_viet(cac_commit: list[str], base: str) -> str:
+    """Một-hai câu tiếng Việt cho người dùng, viết bằng `claude -p` trên máy. Hỏng/chậm/lạc đề → tiêu đề gốc."""
+    goc = "; ".join(c.split(" ", 1)[1] if " " in c else c for c in cac_commit)
+    prompt = ("Viết 1 đến 2 câu tiếng Việt (tối đa 60 từ), không gạch đầu dòng, không dùng dấu gạch dài, "
+              "nói các thay đổi sau giúp người dùng phổ thông được gì. Gọi sản phẩm là Thansa, KHÔNG nhắc tên Javis, "
+              f"không bịa thêm tính năng: {goc}")
+    try:
+        r = subprocess.run(["claude", "-p", prompt], capture_output=True, text=True, timeout=180)
+        t = re.sub(r"\s+", " ", (r.stdout or "")).strip().replace("\u2014", "-")
+        if r.returncode == 0 and 20 < len(t) < 600 and "javis" not in t.lower():
+            return t
+    except Exception:
+        pass
+    return f"Theo Javis {base}: {goc}"
+
+
 def tang_minor(v: str) -> str:
     a, b, _c = (int(x) for x in re.findall(r"\d+", v.split("-javis-")[0])[:3])
     return f"{a}.{b + 1}.0"
@@ -397,10 +413,11 @@ def ghi_ho_so(moc: dict, up: str, ver_moi: str, base_moi: str, cac_commit: list,
     (WT / "ops/mapping.yaml").write_text(mp, encoding="utf-8")
     (WT / "ops/moc-goc.json").write_text(json.dumps(m, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     goc_tom = "; ".join(c.split(" ", 1)[1] for c in cac_commit)
+    tom = tom_tat_viet(cac_commit, base_moi)
     rel = (WT / "RELEASES.md").read_text(encoding="utf-8")
     i = rel.index("\n| ", rel.index("|--------"))
     rel = rel[:i + 1] + (f"| {ver_moi} | {base_moi:<9} | `{up[:7]}`  | {hom_nay} (chờ duyệt) | Trộn Javis "
-                         f"{moc['goc_version']}→{base_moi} ({len(cac_commit)} commit, tự động): {goc_tom[:500]}. "
+                         f"{moc['goc_version']}→{base_moi} ({len(cac_commit)} commit, tự động): {tom[:500]} "
                          "Giữ mọi tuỳ biến Thansa. |\n") + rel[i + 1:]
     (WT / "RELEASES.md").write_text(rel, encoding="utf-8")
     with open(WT / "ops/so-tron.md", "a", encoding="utf-8") as f:
@@ -464,9 +481,19 @@ LOCK = BT / ".tu-dong.lock"
 def nghe_nut() -> int:
     """Cron mỗi phút: đọc lượt bấm nút. Chỉ nhận từ ĐÚNG tài khoản chủ (TELEGRAM_CHAT_ID) và đúng mã của bản đang chờ."""
     chu = str(_cfg_tele().get("TELEGRAM_CHAT_ID", ""))
-    st = doc_state()
-    r = tg_api("getUpdates", offset=int(st.get("tg_offset", 0)), timeout=0, allowed_updates=["callback_query"])
-    for u in r.get("result", []):
+    het = time.time() + 50          # chờ sẵn ~50 giây/phút: Telegram chỉ cho trả lời lượt bấm trong vài giây
+    while time.time() < het:
+        r = tg_api("getUpdates", offset=int(doc_state().get("tg_offset", 0)), timeout=min(25, max(1, int(het - time.time()))),
+                   allowed_updates=["callback_query"])
+        if not r.get("ok"):
+            time.sleep(5)
+            continue
+        _xu_ly_cap_nhat(r.get("result", []), chu)
+    return 0
+
+
+def _xu_ly_cap_nhat(cap_nhat: list, chu: str) -> None:
+    for u in cap_nhat:
         ghi_state(tg_offset=u["update_id"] + 1)          # tiêu thụ trước: lỗi ở dưới cũng không xử lý lặp
         cb = u.get("callback_query")
         if not cb:
@@ -498,7 +525,6 @@ def nghe_nut() -> int:
             tg_api("editMessageReplyMarkup", chat_id=chu, message_id=msg.get("message_id"), reply_markup={"inline_keyboard": []})
             tele("THANSA", f"⏳ Đang phát hành {ver} (khoảng 1-2 phút)…")
             phat_hanh_san_sang(ver)
-    return 0
 
 
 def _khoa():
