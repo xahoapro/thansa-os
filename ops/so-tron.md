@@ -745,3 +745,10 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - NGHIỆM THU: fork 579/585 lần đầu, đỏ riêng test_ignore_files do 2 script tự động chưa commit → commit xong XANH;
   upstream sạch 578/583; đỏ chung đúng 5 (môi trường) → **0 hồi quy fork**.
   **ĐÃ PHÁT HÀNH 2026-10-07** (origin/main 4510c71, snapshot ff từ 2e7ea0f; tag + Release thansa-v1.21.0; backup me-backup-1.21.0).
+- 07/10 (chủ yêu cầu): tin "chờ duyệt" có NÚT Telegram 🚀 Phát hành / Bỏ qua. Cron mỗi phút `tu-dong-tron.sh --nghe`
+  (khoá riêng) đọc getUpdates của bot cảnh báo (không có webhook, app không dùng bot này); chỉ nhận lượt bấm từ đúng
+  TELEGRAM_CHAT_ID + mã dùng một lần của bản đang chờ (bấm 2 lần không phát hành 2 lần, tin cũ vô hiệu). Bấm Phát
+  hành → `phat_hanh_san_sang`: lấy khoá trộn, kiểm me/goc sạch + origin/me chưa đổi từ lúc trộn (đổi = bản cũ, từ
+  chối), ff main tới goc_commit, me = san-sang-X, tu-kiem, quét bí mật → đẩy (backup, me, snapshot main, tag +
+  Release) → đánh dấu sổ → GitHub giữ 3 backup → nhắn 🎉. Hỏng trước bước đẩy: trả me/main về như cũ, nhắn lý do.
+- Cron "đo hằng ngày" cũ TẮT theo lệnh chủ (dòng crontab chuyển thành chú thích).
