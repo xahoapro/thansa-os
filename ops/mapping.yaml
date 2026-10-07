@@ -1639,3 +1639,23 @@
     test_ten_thansa_cai_dat xanh kể cả mục link repo gốc.
   dieu_kien_bo: >
     Như P048/P052.
+
+- id: P055
+  ten: "Rebrand nền 0.84.10 - bot đọc link Google Docs/Sheets"
+  y_dinh: >
+    Nền 0.84.8→0.84.10 (1 commit): bot chuyên dụng đọc link Google Docs/Sheets trong tài liệu của Agent
+    (server/bot_linked_docs.py mới). Rebrand hiển thị: câu báo "chưa đọc được" (string literal vi+en), docs
+    25-chatbot. Docstring giữ nguyên.
+  commit: "[me] P055: rebrand nen 0.84.10 - bot doc link Google Docs/Sheets"
+  diem_neo:
+    - file: server/bot_linked_docs.py
+      ky_hieu: "chưa đọc được: Thansa mới đọc link Google Docs"
+  vung_theo_doi:
+    - "server/bot_linked_docs.py: chuỗi báo lỗi link"
+  anh_goc:
+    - file: server/bot_linked_docs.py
+      doan: "chưa đọc được: Javis mới đọc link Google Docs"
+  kiem_chung: >
+    dem.py so 1.20: 5 chỗ / 2 file → đổi phần hiển thị (còn lại docstring). grep link repo gốc = 0.
+  dieu_kien_bo: >
+    Như P048.
