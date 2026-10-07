@@ -744,3 +744,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - moc-goc be2bf9d/0.84.10/so_patch 51. tu-kiem-chung 5/5.
 - NGHIỆM THU: fork 579/585 lần đầu, đỏ riêng test_ignore_files do 2 script tự động chưa commit → commit xong XANH;
   upstream sạch 578/583; đỏ chung đúng 5 (môi trường) → **0 hồi quy fork**.
+  **ĐÃ PHÁT HÀNH 2026-10-07** (origin/main 4510c71, snapshot ff từ 2e7ea0f; tag + Release thansa-v1.21.0; backup me-backup-1.21.0).
