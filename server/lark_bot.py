@@ -488,7 +488,7 @@ class LarkBot(HangLuot):
             return            # a group: only when @mentioned
         if self.chat_ids and meta["user_id"] not in self.chat_ids and chat not in self.chat_ids:
             await self._send(client, chat, localefmt.chu(
-                "Bạn không có quyền dùng bot Javis này.", "You are not allowed to use this Javis bot."))
+                "Bạn không có quyền dùng bot Thansa này.", "You are not allowed to use this Thansa bot."))
             return
         if self.giau_trang_thai:
             await self._fill_names(client, meta)

@@ -137,7 +137,7 @@ class DiscordBot(HangLuot):
     # ---- HTTP -------------------------------------------------------------------------
     def _headers(self) -> dict:
         return {"Authorization": f"Bot {self.token}",
-                "User-Agent": "DiscordBot (https://github.com/blogminhquy/javis-os, 1.0)"}
+                "User-Agent": "DiscordBot (https://github.com/xahoapro/thansa-os, 1.0)"}
 
     async def _api(self, client, method, path, **kw):
         """One REST call. Returns (status, json-or-{}). A 429 waits the time Discord asks for
@@ -349,7 +349,7 @@ class DiscordBot(HangLuot):
                 return       # people talking to each other in a server channel
         if self.chat_ids and meta["user_id"] not in self.chat_ids and chat not in self.chat_ids:
             await self._send(client, chat, localefmt.chu(
-                "Bạn không có quyền dùng bot Javis này.", "You are not allowed to use this Javis bot."))
+                "Bạn không có quyền dùng bot Thansa này.", "You are not allowed to use this Thansa bot."))
             return
         text = self._strip_mention(m.get("content"))
         # Discord owns "/" for registered slash commands, so "!stop", "!new"... stand in for the
