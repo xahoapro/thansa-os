@@ -291,8 +291,8 @@ def fetch(url: str) -> dict:
     p = parse(url)
     if not p:
         raise LinkError(chu(
-            "chưa đọc được: Javis mới đọc link Google Docs và Google Sheets dạng docs.google.com/.../d/...",
-            "cannot be read: Javis reads Google Docs and Google Sheets links of the form "
+            "chưa đọc được: Thansa mới đọc link Google Docs và Google Sheets dạng docs.google.com/.../d/...",
+            "cannot be read: Thansa reads Google Docs and Google Sheets links of the form "
             "docs.google.com/.../d/..."))
     if p["kind"] == "doc":
         data, _ = _get(_export_url(p, "md"))
