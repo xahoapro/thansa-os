@@ -131,7 +131,7 @@ This is the **xAI** route on the plan you already pay for, rather than buying a 
 1. Install the CLI once on the machine running Thansa:
    - Linux/macOS: `curl -fsSL https://x.ai/cli/install.sh | bash`
    - Windows PowerShell: `irm https://x.ai/cli/install.ps1 | iex`
-   - Docker edition (from 0.85.1): **skip this step**, Javis installs it by itself at startup. While it does, the card says "Javis is installing"; click **Check again** about a minute later.
+   - Docker edition (from 0.85.1): **skip this step**, Thansa installs it by itself at startup. While it does, the card says "Thansa is installing"; click **Check again** about a minute later.
 2. Open **Models**, press **＋ Connect another provider** at the bottom of the page, find the **xAI Grok Build CLI** card and click **Sign in**. It shows a link and a code. Open that link on your machine (a phone works too), enter the code and confirm. The card switches to **● Signed in** with nothing else to click.
 3. The newly signed-in card joins the end of the **Usage order**. Drag it to the top (or press **⇅ Swap**) so it becomes MAIN, then pick a model with the model chip on the card.
 
