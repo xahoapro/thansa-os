@@ -6022,7 +6022,7 @@
   // Hướng dẫn mở đúng bản theo ngôn ngữ giao diện: tiếng Việt ở docs/, mọi thứ tiếng khác ở docs/en/.
   const DOC_GUIDE = { slack: "29-slack-whatsapp.md", whatsapp: "29-slack-whatsapp.md",
                       discord: "30-discord-lark.md", lark: "30-discord-lark.md" };
-  const docGuideUrl = (k) => "https://github.com/blogminhquy/javis-os/blob/main/docs/"
+  const docGuideUrl = (k) => "https://github.com/xahoapro/thansa-os/blob/main/docs/"
     + ((window.JavisI18n && window.JavisI18n.lang() === "vi") ? "" : "en/") + DOC_GUIDE[k];
   const ACH_TAB_KEY = "javis.adminChannelTab";
   // Khoá viết rõ từng cái (không ghép chuỗi) để bộ soát i18n thấy được khoá nào đang dùng.
