@@ -8,6 +8,22 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.85.5] - 2026-10-07
+### Improved
+- **No more caps on the bot speaking up on its own in groups.** In auto mode the bot used to auto-reply at most 8 times per group and 3 times per person per hour, with a pause between turns. Speaking or staying quiet is now decided by the reply judge and the model, following the Agent's role and the documents; tune it with Right/Wrong in the reply judge.
+- The bot still waits a beat and yields when you are typing by hand from that same account. A busy group will use more model usage; to cut it, switch that group back to answering only when called by name.
+
+## [0.85.4] - 2026-10-07
+### Improved
+- **Bots no longer cap answers at 20 per person per hour.** Anyone who messages the bot directly or calls it by name gets an answer; the "you are typing too fast" reply is gone.
+- The limit on the bot speaking up on its own in a group nobody called it in (auto mode) stays, so it does not flood groups. With no cap, one person messaging non-stop keeps spending model usage; if something looks off, take over that chat.
+
+## [0.85.3] - 2026-10-07
+### Fixed
+- **Bots at Full power now run exactly like the admin channel.** This level used to take the bot's narrow route: with Grok Build and Antigravity the bot could use no tool at all, and with Claude Code it could not see the Gmail, Drive and calendar connections of the Claude account. A Full power bot now has the same brain, tools, MCP and skills as when you chat directly, keeping only the Agent's role.
+- So Full power now also grants running commands on the server and reading every file. The warning before turning it on says so: only use it for a bot that only you or people you fully trust can message.
+- Replies through Telegram, Zalo, Slack... from Grok Build or Antigravity are now saved properly to history and memory instead of being recorded as an error.
+
 ## [0.85.1] - 2026-10-07
 ### Improved
 - **The Docker edition installs Antigravity CLI and Grok Build by itself.** These two cards on the Models page used to say "CLI not installed" with a command to type, and a Hostinger install has nowhere to type it. Javis now installs them at startup, once, and keeps them across updates.

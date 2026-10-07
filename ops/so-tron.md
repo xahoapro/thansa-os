@@ -763,3 +763,9 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 1 commit upstream: 0.85.1: Docker installs Antigravity CLI and Grok Build by itself (#578)
 - Rebase tự động trong worktree riêng. Tự gỡ: aecd090f:docs/10-models-va-engine.md, aecd090f:docs/16-cau-hinh-env.md, aecd090f:docs/en/10-models-and-engines.md, aecd090f:docs/en/16-env-configuration.md, f29a1a46:dashboard/i18n/en.json, f29a1a46:dashboard/i18n/vi.json. Upstream xoá: không.
 - Rebrand: P057 (4 chỗ / 2 file). moc-goc f44bb7e/0.85.1/so_patch 53.
+- **ĐÃ PHÁT HÀNH 2026-10-07** khi chủ bấm duyệt trên Telegram (origin/main 331e118, tag + Release thansa-v1.23.0; backup me-backup-1.23.0).
+
+## Vòng TỰ ĐỘNG 2026-10-07 (goc f44bb7e → b60da5e, nền 0.85.1 → 0.85.5, thansa 1.23.0→1.24.0)
+- 3 commit upstream: 0.85.5: remove auto-speak caps in groups, the reply judge decides (#582); 0.85.4: remove the bot's 20 answers per person per hour limit (#581); 0.85.3: Full power bots run like the admin channel (MCP works) (#580)
+- Rebase tự động trong worktree riêng. Tự gỡ: 5b906c47:docs/25-chatbot.md, 5b906c47:docs/en/25-chatbots.md, 8d51c97e:server/chatbot_store.py, 02d64ac4:server/chatbot_store.py. Upstream xoá: không.
+- Rebrand: P058 (2 chỗ / 1 file). moc-goc b60da5e/0.85.5/so_patch 54.
