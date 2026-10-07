@@ -1685,3 +1685,23 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P057
+  ten: "Rebrand nền 0.85.1 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-07 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.85.1 sang Thansa
+    theo luật P007/P026/P027/P048 (4 chỗ / 2 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P057: rebrand nen 0.85.1 (tu dong)"
+  diem_neo:
+    - file: docs/10-models-va-engine.md
+      ky_hieu: 'cần làm bước này**, Thansa tự cài lúc khởi động. T'
+  vung_theo_doi:
+    - "docs/10-models-va-engine.md"
+    - "docs/en/10-models-and-engines.md"
+  anh_goc:
+    - file: docs/10-models-va-engine.md
+      doan: 'cần làm bước này**, Javis tự cài lúc khởi động. T'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
