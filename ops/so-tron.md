@@ -763,3 +763,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 1 commit upstream: 0.85.1: Docker installs Antigravity CLI and Grok Build by itself (#578)
 - Rebase tự động trong worktree riêng. Tự gỡ: aecd090f:docs/10-models-va-engine.md, aecd090f:docs/16-cau-hinh-env.md, aecd090f:docs/en/10-models-and-engines.md, aecd090f:docs/en/16-env-configuration.md, f29a1a46:dashboard/i18n/en.json, f29a1a46:dashboard/i18n/vi.json. Upstream xoá: không.
 - Rebrand: P057 (4 chỗ / 2 file). moc-goc f44bb7e/0.85.1/so_patch 53.
+- **ĐÃ PHÁT HÀNH 2026-10-07** khi chủ bấm duyệt trên Telegram (origin/main 331e118, tag + Release thansa-v1.23.0; backup me-backup-1.23.0).
