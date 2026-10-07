@@ -125,7 +125,7 @@ Lưu ý: đây là kênh thử nghiệm (chạy nền Codex). Nếu cần ổn �
 1. Cài CLI một lần trên máy chạy Thansa:
    - Linux/macOS: `curl -fsSL https://x.ai/cli/install.sh | bash`
    - Windows PowerShell: `irm https://x.ai/cli/install.ps1 | iex`
-   - Bản Docker (từ 0.85.1): **không cần làm bước này**, Javis tự cài lúc khởi động. Trong lúc đang cài, thẻ hiện "Javis đang tự cài"; khoảng một phút sau bấm **Kiểm tra lại**.
+   - Bản Docker (từ 0.85.1): **không cần làm bước này**, Thansa tự cài lúc khởi động. Trong lúc đang cài, thẻ hiện "Thansa đang tự cài"; khoảng một phút sau bấm **Kiểm tra lại**.
 2. Vào **Models**, thẻ **xAI Grok Build CLI**, bấm **Đăng nhập**. Nó hiện ra một đường link và một mã. Mở link đó trên máy bạn (điện thoại cũng được), nhập mã, xác nhận. Thẻ tự chuyển sang **● Đã đăng nhập**, không phải bấm gì thêm.
 3. Bấm **Đổi model ▾** ở khối Main Model, chọn nhà cung cấp này rồi chọn model.
 
