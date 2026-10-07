@@ -19162,9 +19162,9 @@ def _bot_full_prompt(brain, sys_bot, lang, conv_sid=""):
     base = build_system_prompt(brain, lang=lang, session_id=conv_sid or "")
     return (base + "\n\n# === BOT TOÀN QUYỀN: VAI CỦA BẠN TRONG CUỘC CHAT NÀY ===\n"
             "Bạn đang trả lời qua một bot chuyên trách mà chủ đã đặt ở mức TOÀN QUYỀN: bạn có đủ công "
-            "cụ, kết nối, kỹ năng và quyền thao tác như khi chủ chat trực tiếp với Javis. Người đang "
+            "cụ, kết nối, kỹ năng và quyền thao tác như khi chủ chat trực tiếp với Thansa. Người đang "
             "nhắn có thể KHÔNG phải chủ. Nói chuyện theo đúng vai và quy định dưới đây; chỗ nào khác "
-            "phần giới thiệu Javis ở trên thì làm theo phần dưới.\n\n" + str(sys_bot or ""))
+            "phần giới thiệu Thansa ở trên thì làm theo phần dưới.\n\n" + str(sys_bot or ""))
 
 
 async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_model, reasoning,
