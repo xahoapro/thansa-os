@@ -73,28 +73,51 @@ class Loi(Exception):
     """Cần người xem - dừng lượt chạy, nhắn Telegram."""
 
 
-def tele(tieu_de: str, noi_dung: str) -> None:
-    msg = f"{tieu_de}\n{noi_dung}".strip()
-    if len(msg) > 3900:
-        msg = msg[:3900] + "\n…(cắt bớt, xem ops/ban-tin/tu-dong.log)"
+def _cfg_tele() -> dict:
     cfg = {}
     if ENV_TELE.exists():
         for line in ENV_TELE.read_text(encoding="utf-8").splitlines():
             if "=" in line and not line.strip().startswith("#"):
                 k, v = line.split("=", 1)
                 cfg[k.strip()] = v.strip().strip('"').strip("'")
+    return cfg
+
+
+def tg_api(method: str, **params) -> dict:
+    """Gọi Bot API của bot cảnh báo. Lỗi mạng → {} (không bao giờ làm hỏng lượt chạy)."""
+    tok = _cfg_tele().get("TELEGRAM_BOT_TOKEN")
+    if not tok:
+        return {}
+    data = urllib.parse.urlencode({k: (json.dumps(v) if isinstance(v, (dict, list)) else v)
+                                   for k, v in params.items()}).encode()
+    try:
+        with urllib.request.urlopen(f"https://api.telegram.org/bot{tok}/{method}", data=data, timeout=30) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        log(f"Telegram {method} lỗi: {e}")
+        return {}
+
+
+def tele(tieu_de: str, noi_dung: str, nut: list | None = None) -> int:
+    """Nhắn chủ. `nut` = hàng nút inline [[{text, callback_data}...]]. Trả message_id (0 nếu không gửi được)."""
+    msg = f"{tieu_de}\n{noi_dung}".strip()
+    if len(msg) > 3900:
+        msg = msg[:3900] + "\n…(cắt bớt, xem ops/ban-tin/tu-dong.log)"
+    cfg = _cfg_tele()
     tok, chat = cfg.get("TELEGRAM_BOT_TOKEN"), cfg.get("TELEGRAM_CHAT_ID")
     if not tok or not chat:
         with open(BT / "khan-chua-gui.log", "a", encoding="utf-8") as f:
             f.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S')} CHUA GUI (thieu {ENV_TELE}):\n{msg}\n")
         log("CHƯA GỬI Telegram: thiếu cấu hình")
-        return
-    data = urllib.parse.urlencode({"chat_id": chat, "text": msg}).encode()
-    try:
-        urllib.request.urlopen(f"https://api.telegram.org/bot{tok}/sendMessage", data=data, timeout=20).read()
+        return 0
+    params = {"chat_id": chat, "text": msg}
+    if nut:
+        params["reply_markup"] = {"inline_keyboard": nut}
+    r = tg_api("sendMessage", **params)
+    if r.get("ok"):
         log(f"đã nhắn Telegram: {tieu_de}")
-    except Exception as e:
-        log(f"gửi Telegram lỗi: {e}")
+        return int(r["result"]["message_id"])
+    return 0
 
 
 def doc_state() -> dict:
@@ -433,9 +456,162 @@ def quet_bi_mat() -> str:
             return f"file bí mật bị track: {f}"
     return ""
 
+# ---------------------------------------------------------------- nút Telegram + phát hành khi chủ bấm
+
+LOCK = BT / ".tu-dong.lock"
+
+
+def nghe_nut() -> int:
+    """Cron mỗi phút: đọc lượt bấm nút. Chỉ nhận từ ĐÚNG tài khoản chủ (TELEGRAM_CHAT_ID) và đúng mã của bản đang chờ."""
+    chu = str(_cfg_tele().get("TELEGRAM_CHAT_ID", ""))
+    st = doc_state()
+    r = tg_api("getUpdates", offset=int(st.get("tg_offset", 0)), timeout=0, allowed_updates=["callback_query"])
+    for u in r.get("result", []):
+        ghi_state(tg_offset=u["update_id"] + 1)          # tiêu thụ trước: lỗi ở dưới cũng không xử lý lặp
+        cb = u.get("callback_query")
+        if not cb:
+            continue
+        ai = str((cb.get("from") or {}).get("id", ""))
+        data = str(cb.get("data", ""))
+        st = doc_state()
+        if ai != chu:
+            tg_api("answerCallbackQuery", callback_query_id=cb["id"], text="Bạn không có quyền.")
+            log(f"bỏ qua lượt bấm của người lạ {ai}")
+            continue
+        try:
+            hanh_dong, ver, ma = data.split("|")
+        except ValueError:
+            continue
+        if ver != st.get("san_sang_ver") or ma != st.get("san_sang_ma"):
+            tg_api("answerCallbackQuery", callback_query_id=cb["id"], text="Nút này đã hết hạn (bản cũ hoặc đã xử lý).")
+            continue
+        msg = cb.get("message") or {}
+        if hanh_dong == "bo":
+            ghi_state(san_sang_ma="")
+            tg_api("answerCallbackQuery", callback_query_id=cb["id"], text=f"Đã bỏ qua {ver}.")
+            tg_api("editMessageReplyMarkup", chat_id=chu, message_id=msg.get("message_id"), reply_markup={"inline_keyboard": []})
+            tele("THANSA", f"Đã bỏ qua bản {ver}. Lượt tự động sau sẽ trộn lại khi Javis có bản mới hơn.")
+            continue
+        if hanh_dong == "ph":
+            ghi_state(san_sang_ma="")                     # vô hiệu nút ngay: bấm 2 lần không phát hành 2 lần
+            tg_api("answerCallbackQuery", callback_query_id=cb["id"], text=f"Đang phát hành {ver}…")
+            tg_api("editMessageReplyMarkup", chat_id=chu, message_id=msg.get("message_id"), reply_markup={"inline_keyboard": []})
+            tele("THANSA", f"⏳ Đang phát hành {ver} (khoảng 1-2 phút)…")
+            phat_hanh_san_sang(ver)
+    return 0
+
+
+def _khoa():
+    import fcntl
+    f = open(LOCK, "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        return None
+    return f
+
+
+def phat_hanh_san_sang(ver: str) -> None:
+    """Phát hành nhánh san-sang-<ver> đúng như quy trình tay. Mọi thao tác trên máy làm TRƯỚC khi đẩy;
+    hỏng trước bước đẩy thì trả nhánh về như cũ và nhắn lý do."""
+    khoa = _khoa()
+    if khoa is None:
+        ma = os.urandom(4).hex()
+        ghi_state(san_sang_ma=ma)
+        tele("⚠️ THANSA", f"Chưa phát hành được {ver}: đang có một lượt trộn khác chạy. Đợi vài phút rồi bấm lại.",
+             nut=[[{"text": f"🚀 Phát hành {ver}", "callback_data": f"ph|{ver}|{ma}"},
+                   {"text": "Bỏ qua", "callback_data": f"bo|{ver}|{ma}"}]])
+        return
+    st = doc_state()
+    nhanh = f"san-sang-{ver}"
+    old_me = old_main = ""
+    try:
+        if st.get("san_sang") != nhanh:
+            raise Loi(f"không có bản {ver} đang chờ duyệt")
+        def g(*a, cwd=ME, check=True):
+            return git(*a, cwd=cwd, check=check)
+        if g("rev-parse", "--abbrev-ref", "HEAD") != "me" or g("status", "--porcelain", "--untracked-files=no"):
+            raise Loi("worktree nhánh me không sạch hoặc không ở nhánh me (có phiên đang làm tay?)")
+        if g("status", "--porcelain", "--untracked-files=no", cwd=GOC) or g("rev-parse", "--abbrev-ref", "HEAD", cwd=GOC) != "main":
+            raise Loi("worktree goc không sạch hoặc không ở nhánh main")
+        g("fetch", "-q", "origin", "--tags")
+        g("fetch", "-q", "upstream", cwd=GOC)
+        if g("rev-parse", "origin/me") != st.get("san_sang_base"):
+            raise Loi("nhánh me trên GitHub đã thay đổi sau lúc trộn - bản chờ duyệt đã cũ, lượt tự động sau sẽ trộn lại")
+        old_me, old_main = g("rev-parse", "me"), g("rev-parse", "main", cwd=GOC)
+        moc = json.loads(sh(["git", "show", f"{nhanh}:ops/moc-goc.json"], cwd=ME).stdout)
+        g("merge", "-q", "--ff-only", moc["goc_commit"], cwd=GOC)
+        g("reset", "-q", "--hard", nhanh)
+        r = sh([str(PY), "ops/tu-kiem-chung.py"], cwd=ME, check=False)
+        if "XANH — hồ sơ khớp thực tế" not in r.stdout:
+            raise Loi("tu-kiem-chung ĐỎ trước khi đẩy:\n" + (r.stdout + r.stderr)[-800:])
+        d = sh(["git", "diff", "origin/main", "me"], cwd=ME).stdout
+        if re.search(r"^\+.*(ghp_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10}|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})", d, re.M):
+            raise Loi("quét bí mật thấy nghi vấn - không đẩy")
+        rel = (ME / "RELEASES.md").read_text(encoding="utf-8")
+        dong = next((l for l in rel.splitlines() if l.startswith(f"| {ver} |")), "")
+        mo_ta = dong.split("|")[5].strip() if dong.count("|") >= 6 else f"Trộn Javis {moc['goc_version']}."
+    except Loi as e:
+        if old_me:
+            sh(["git", "reset", "-q", "--hard", old_me], cwd=ME, check=False)
+        if old_main:
+            sh(["git", "reset", "-q", "--hard", old_main], cwd=GOC, check=False)
+        log(f"phát hành {ver} DỪNG: {e}")
+        tele("🚨 THANSA - chưa phát hành", f"Bản {ver}: {e}\nKhông có gì bị đẩy lên GitHub.")
+        khoa.close()
+        return
+    # ---- từ đây là đẩy lên GitHub (chủ đã bấm duyệt)
+    try:
+        g("branch", "-f", f"me-backup-{ver}", "me")
+        g("push", "-q", "origin", f"me-backup-{ver}")
+        g("push", "-q", f"--force-with-lease=me:{st['san_sang_base']}", "origin", "me")
+        c = g("commit-tree", "me^{tree}", "-p", "origin/main", "-m",
+              f"release: Thansa OS {ver} (nen Javis {moc['goc_version']})\n\n{mo_ta[:600]}\n\n"
+              "Phat hanh khi chu bam duyet tren Telegram.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+        g("push", "-q", "origin", f"{c}:refs/heads/main")
+        nf = BT / "tu-dong-release.md"
+        nf.write_text(f"## Thansa OS {ver} (nền Javis {moc['goc_version']})\n\n{mo_ta}\n\n"
+                      "**Cập nhật:** bấm nút **Cập nhật** trong app.\n", encoding="utf-8")
+        sh(["gh", "release", "create", f"thansa-v{ver}", "--repo", "xahoapro/thansa-os", "--target", "main",
+            "--title", f"Thansa OS {ver}", "--notes-file", str(nf)], cwd=ME)
+        short = c[:7]
+        rel = (ME / "RELEASES.md").read_text(encoding="utf-8")
+        rel = re.sub(rf"^(\| {re.escape(ver)} \|[^\n]*?)\(chờ duyệt\)", rf"\1(đã phát hành, origin/main {short})", rel, count=1, flags=re.M)
+        (ME / "RELEASES.md").write_text(rel, encoding="utf-8")
+        with open(ME / "ops/so-tron.md", "a", encoding="utf-8") as f:
+            f.write(f"- **ĐÃ PHÁT HÀNH {time.strftime('%Y-%m-%d')}** khi chủ bấm duyệt trên Telegram (origin/main {short}, "
+                    f"tag + Release thansa-v{ver}; backup me-backup-{ver}).\n")
+        g("add", "RELEASES.md", "ops/so-tron.md")
+        g("commit", "-q", "-m", f"ops: danh dau {ver} da phat hanh (origin/main {short}, chu duyet qua Telegram)"
+          "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+        g("push", "-q", "origin", "me")
+        xa = [l.split("refs/heads/")[1] for l in g("ls-remote", "--heads", "origin", "me-backup-*").splitlines()]
+        g("fetch", "-q", "origin")
+        xa.sort(key=lambda b: int(g("log", "-1", "--format=%ct", f"origin/{b}", check=False) or 0), reverse=True)
+        for b in xa[3:]:                                   # GitHub giữ 3 nhánh backup mới nhất
+            if not g("rev-parse", "-q", "--verify", f"refs/heads/{b}", check=False):
+                g("branch", f"{b}-github", f"origin/{b}")
+            g("push", "-q", "origin", "--delete", b, check=False)
+        ghi_state(san_sang="", san_sang_ver="", ban_cuoi=ver, phat_hanh_luc=time.strftime("%Y-%m-%d %H:%M"))
+        log(f"ĐÃ PHÁT HÀNH {ver} (main {short})")
+        tele(f"🎉 ĐÃ PHÁT HÀNH Thansa {ver}",
+             f"{mo_ta[:700]}\n\nmain {short} · https://github.com/xahoapro/thansa-os/releases/tag/thansa-v{ver}\n"
+             "Máy đang chạy: bấm Cập nhật trong app để lên bản mới.")
+    except Loi as e:
+        log(f"phát hành {ver} LỖI giữa chừng: {e}")
+        tele("🚨 THANSA - phát hành lỗi giữa chừng", f"Bản {ver}: {e}\nCần người xem (mở Claude Code ở /home/thansa/thansa).")
+    finally:
+        khoa.close()
+
 # ---------------------------------------------------------------- chạy
 
 def main() -> int:
+    if "--nghe" in sys.argv:
+        return nghe_nut()
+    if "--phat-hanh" in sys.argv:
+        phat_hanh_san_sang(sys.argv[sys.argv.index("--phat-hanh") + 1])
+        return 0
     if "--nhan" in sys.argv:
         i = sys.argv.index("--nhan")
         tele("THANSA", " ".join(sys.argv[i + 1:]))
@@ -491,13 +667,18 @@ def main() -> int:
              f"Cần người xử lý: mở Claude Code ở /home/thansa/thansa và nhờ trộn Javis {base_moi}.")
         return 2
     don_dep()
-    ghi_state(san_sang_up=up, san_sang=nhanh, san_sang_luc=time.strftime("%Y-%m-%d %H:%M"), loi_up="")
-    tele(f"✅ THANSA {ver_moi} đã trộn xong - CHỜ BẠN DUYỆT",
+    ma = os.urandom(4).hex()      # mã dùng một lần: nút chỉ phát hành ĐÚNG bản này, bấm lại/tin cũ vô hiệu
+    ghi_state(san_sang_up=up, san_sang=nhanh, san_sang_ver=ver_moi, san_sang_ma=ma,
+              san_sang_base=sh(["git", "rev-parse", "origin/me"], cwd=ME).stdout.strip(),
+              san_sang_luc=time.strftime("%Y-%m-%d %H:%M"), loi_up="")
+    mid = tele(f"✅ THANSA {ver_moi} đã trộn xong - CHỜ BẠN DUYỆT",
          f"Theo Javis {moc['goc_version']} → {base_moi} ({len(cac_commit)} commit):\n"
          + "\n".join("• " + c.split(" ", 1)[1] for c in cac_commit[:10]) +
          f"\n\nNghiệm thu: {nghiem}.\nRebrand tự động: {pid or 'không cần'}.\n"
-         f"Bản trộn nằm ở nhánh {nhanh} trên máy, CHƯA đẩy lên GitHub.\n"
-         f"Muốn phát hành: mở Claude Code ở /home/thansa/thansa và nói «phát hành {ver_moi}».")
+         f"Bản trộn nằm ở nhánh {nhanh} trên máy, CHƯA đẩy lên GitHub. Bấm nút để phát hành.",
+         nut=[[{"text": f"🚀 Phát hành {ver_moi}", "callback_data": f"ph|{ver_moi}|{ma}"},
+               {"text": "Bỏ qua", "callback_data": f"bo|{ver_moi}|{ma}"}]])
+    ghi_state(san_sang_msg=mid)
     log("=== xong (chờ duyệt)")
     return 0
 
