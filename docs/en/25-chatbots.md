@@ -393,6 +393,18 @@ And **how it speaks, what scope it accepts, what it refuses** are decided by you
 
 The right way to understand the limits above: they live in the **permission level in the source code**, not in wording inside the prompt. Wording can be talked around by clever phrasing; a permission level cannot, because the tool is simply not granted for that run. The flip side of the same truth: when you **do** grant tools for that run, the wording in the Agent cannot hold it back either.
 
+## The bot sends images (since 0.84.3)
+
+A bot can send images on Telegram, personal Zalo, Slack and WhatsApp, at **every permission level**. To use it, tell the Agent file when to send which image, for example "when a customer asks about shirts, send `![Shirt](attachments/shirt.jpg)`". The Agent puts that image syntax in its reply; Thansa removes it from the text and sends the real image right after the text message. In a Zalo group the text still tags the person who asked.
+
+Thansa only sends an image when all of these hold:
+
+- It is **inside the bot's own brain** (paths count from that brain's root). Images in another brain or elsewhere on the machine are refused.
+- It really is an image (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`), exists, and is at most 10 MB. Documents such as PDFs or `.md` notes are not sent.
+- At most 4 images per reply.
+
+An image that fails these checks stays in the text as written, so you can see in the inbox what the bot tried to send. Thansa does **not** attach files the bot just created on its own: a stranger is steering the bot, so only images the Agent names on purpose go out.
+
 ## The bot speaks like a person, exposing no machine state
 
 A dedicated bot **shows no Thansa status lines** to the person messaging it. This is the sharp difference from your own main Thansa bot (which does show everything, see [Telegram](11-telegram.md), because the owner needs to see how far Thansa has got).
@@ -412,7 +424,9 @@ One place still deliberately speaks plainly: when someone calls the bot in **a g
 
 ## Rate limiting
 
-Each person is limited to a number of questions per hour (20 by default, editable when editing the bot). Over that, the bot politely asks to answer later.
+The bot answers each person at most **20 times per hour**. In a group the limit counts per person (since 0.84.6), so someone asking for the first time is not blocked because others in the group asked a lot. Over the limit the bot politely asks to answer later; for turns the bot starts on its own (auto mode) and for new-member events it stays silent instead.
+
+The number is fixed for now; the Chatbots page has no field to change it.
 
 This is necessary because one bored person in a group can burn your whole model quota in an afternoon, and you only find out from the bill.
 

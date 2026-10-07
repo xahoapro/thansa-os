@@ -482,6 +482,18 @@ Còn **cách nó nói năng, phạm vi nó nhận trả lời, thứ nó từ ch
 
 Lưu ý cách hiểu đúng: những giới hạn trên nằm ở **mức quyền trong mã nguồn**, không phải ở câu dặn trong prompt. Câu dặn có thể bị lời lẽ khôn khéo lách qua; mức quyền thì không, vì công cụ đơn giản là không được cấp cho lượt chạy đó. Mặt trái của cùng một sự thật: khi bạn **cấp** công cụ cho lượt đó, câu dặn trong Agent cũng không giữ nổi nó nữa.
 
+## Bot gửi ảnh cho khách (từ 0.84.3)
+
+Bot gửi được ảnh trên Telegram, Zalo cá nhân, Slack và WhatsApp, ở **mọi mức quyền**. Cách dùng: dặn trong file Agent khi nào gửi ảnh nào, ví dụ "khách hỏi mẫu áo thì gửi `![Mẫu áo](attachments/mau-ao.jpg)`". Agent chèn cú pháp ảnh đó vào câu trả lời, Thansa gỡ nó khỏi câu chữ rồi gửi ảnh thật ngay sau tin chữ. Trong nhóm Zalo, tin chữ vẫn tag người đang hỏi.
+
+Thansa chỉ gửi khi đủ các điều kiện:
+
+- Ảnh **nằm trong brain của chính bot** (đường dẫn tính từ gốc brain đó). Ảnh ở brain khác hay chỗ khác trên máy thì không.
+- Đúng là ảnh (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`), có thật, không quá 10 MB. File tài liệu như PDF hay ghi chú `.md` thì không gửi.
+- Tối đa 4 ảnh mỗi câu trả lời.
+
+Ảnh không qua được điều kiện thì cú pháp ảnh ở lại nguyên trong câu chữ, để bạn thấy trong Hộp thư bot đã định gửi gì. Thansa **không** tự đính kèm file nào bot vừa tạo ra: người đang lái bot là khách lạ, nên chỉ ảnh mà Agent chủ động gọi tên mới đi.
+
 ## Bot nói như người, không lộ trạng thái máy
 
 Bot chuyên trách **không hiện một dòng trạng thái nào của Thansa** cho người đang nhắn với nó. Đây là điểm khác hẳn bot Thansa chính của bạn (bot đó vẫn hiện đầy đủ, xem [Telegram](11-telegram.md) - chủ máy thì cần nhìn thấy Thansa đang chạy tới đâu).
@@ -501,7 +513,9 @@ Một chỗ vẫn cố ý nói thẳng: khi có người gọi bot trong **nhóm
 
 ## Giới hạn tần suất
 
-Mỗi người bị giới hạn số lượt hỏi trong một giờ (mặc định 20, sửa được khi Sửa bot). Vượt thì bot lịch sự xin trả lời lại sau.
+Mỗi người được bot trả lời tối đa **20 câu trong một giờ**. Trong nhóm, hạn mức này tính riêng từng người (từ 0.84.6), nên người mới hỏi không bị vạ lây vì người khác trong nhóm đã hỏi nhiều. Vượt thì bot lịch sự xin trả lời lại sau; lượt bot tự nói (chế độ Tự đánh giá) và sự kiện người mới vào nhóm thì bot im thay vì nói câu đó.
+
+Con số này hiện cố định, trang Chatbot không có ô chỉnh.
 
 Cần thiết vì một người rảnh trong nhóm đủ đốt hết quota model của bạn trong một buổi chiều, và bạn chỉ biết khi nhìn hoá đơn.
 

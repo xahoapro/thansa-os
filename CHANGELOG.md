@@ -6,6 +6,24 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.84.8] - 2026-10-07
+### Cải thiện
+- Tài liệu Chatbot nói đúng giới hạn hiện tại: bot trả lời mỗi người tối đa 20 câu một giờ, trong nhóm tính riêng từng người, và con số này chưa chỉnh được trên trang Chatbot.
+
+## [0.84.7] - 2026-10-06
+### Thêm mới
+- **Duyệt người xin vào nhóm Zalo ngay trong Javis.** Có người xin vào nhóm phải duyệt là Javis báo bạn qua chuông và Telegram. Hỏi "ai đang xin vào nhóm X" để xem danh sách, bảo "duyệt hết" hay "duyệt Lan, từ chối Minh" là Javis làm và báo lại từng người.
+- Bot chuyên trách không bao giờ tự duyệt. Tài khoản Zalo phải là trưởng hoặc phó nhóm, và kết nối Zalo ở mức Toàn quyền.
+
+## [0.84.6] - 2026-10-06
+### Sửa lỗi
+- **Bot trong nhóm không còn báo "Anh chị nhắn hơi nhanh" với người mới hỏi lần đầu.** Giới hạn số câu trả lời mỗi giờ trước đây tính chung cho cả nhóm, nên nhóm đông gọi bot đủ 20 lần là ai tag bot sau đó cũng bị từ chối kèm tag tên mình. Giờ hạn mức tính riêng từng người, đúng như ô cài đặt ghi.
+
+## [0.84.3] - 2026-10-06
+### Thêm mới
+- **Bot chuyên trách gửi được ảnh cho khách.** Dặn trong Agent khi nào gửi ảnh nào (vd "khách hỏi mẫu áo thì gửi `![Mẫu áo](attachments/mau-ao.jpg)`"), bot gửi ảnh thật ngay sau câu trả lời. Chạy trên Zalo cá nhân, Telegram, Slack và WhatsApp, ở mọi mức quyền.
+- Chỉ ảnh có thật trong brain của chính bot mới được gửi, tối đa 4 ảnh mỗi lần, không quá 10 MB. File tài liệu như PDF không gửi, và bot không tự đính kèm file nào ngoài ảnh Agent đã chỉ đích danh.
+
 ## [0.84.2] - 2026-10-06
 ### Thêm mới
 - **Biết ai vừa vào nhóm Zalo và vào lúc nào.** Hỏi "tuần này ai mới vào nhóm X" là Javis trả tên kèm giờ vào, kể cả người do chính tài khoản của bạn thêm vào. Nhật ký giữ lại sau khi khởi động lại.
