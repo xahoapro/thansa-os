@@ -769,3 +769,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 3 commit upstream: 0.85.5: remove auto-speak caps in groups, the reply judge decides (#582); 0.85.4: remove the bot's 20 answers per person per hour limit (#581); 0.85.3: Full power bots run like the admin channel (MCP works) (#580)
 - Rebase tự động trong worktree riêng. Tự gỡ: 5b906c47:docs/25-chatbot.md, 5b906c47:docs/en/25-chatbots.md, 8d51c97e:server/chatbot_store.py, 02d64ac4:server/chatbot_store.py. Upstream xoá: không.
 - Rebrand: P058 (2 chỗ / 1 file). moc-goc b60da5e/0.85.5/so_patch 54.
+- **ĐÃ PHÁT HÀNH 2026-10-07** khi chủ bấm duyệt trên Telegram (origin/main a16ba03, tag + Release thansa-v1.24.0; backup me-backup-1.24.0).
