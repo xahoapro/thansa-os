@@ -786,4 +786,5 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   sửa test coupled test_resonance_mvp_run. so_patch 54→55.
 - VERSION 1.25.0-javis-0.86.1. moc-goc 09f254d/0.86.1/so_patch 55. tu-kiem-chung 5/5. backup me-backup-1.24.0-pre.
 - NGHIỆM THU (env -u JAVIS_*): fork 608/613; 5 đỏ {form_chuoi_rong, image_vision, route_table, run_command_quyen,
-  terminal_cmd_goc} đều ĐỎ y hệt trên upstream sạch → **0 hồi quy**. CHƯA đẩy remote - chờ chủ bấm.
+  terminal_cmd_goc} đều ĐỎ y hệt trên upstream sạch → **0 hồi quy**.
+- **ĐÃ PHÁT HÀNH 2026-10-08** khi chủ duyệt trong Claude Code (origin/main 439297d, tag + Release thansa-v1.25.0; backup me-backup-1.25.0).
