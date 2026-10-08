@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-_NOTE = ("Lưu ý: mục tiêu sẽ được Javis làm tiếp ở NỀN từng bước, trong hạn mức {budget} lượt gọi model; "
+_NOTE = ("Lưu ý: mục tiêu sẽ được Thansa làm tiếp ở NỀN từng bước, trong hạn mức {budget} lượt gọi model; "
          "kết quả, việc cần người dùng xác nhận hay lý do phải dừng tự hiện trong khung chat này. Nói đúng như vậy, "
          "đừng hứa thời điểm cụ thể. Bộ thực thi nền chỉ có lời người dùng và khung mục tiêu, KHÔNG đọc được file "
          "hay dữ liệu khác: phần cần dữ liệu thì làm ngay trong lượt này.")
