@@ -2279,9 +2279,9 @@ async def _resonance_push_card(conv_sid, brain_root, decision) -> bool:
     key = f"turn:{decision.message_ref}"
     if _resonance_reported(g, key):
         return False
-    text = (localefmt.chu("Javis đã lập mục tiêu từ việc này.", "Javis set a goal from this request.")
+    text = (localefmt.chu("Thansa đã lập mục tiêu từ việc này.", "Thansa set a goal from this request.")
             if decision.kind == "create_goal" else
-            localefmt.chu("Javis đã cập nhật cách hiểu mục tiêu.", "Javis updated its understanding of the goal."))
+            localefmt.chu("Thansa đã cập nhật cách hiểu mục tiêu.", "Thansa updated its understanding of the goal."))
     return await push_to_chat(conv_sid, text, card=resonance.goal_block(g.id, g.revision, report=key))
 
 
