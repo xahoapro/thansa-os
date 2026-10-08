@@ -6,6 +6,38 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.86.1] - 2026-10-08
+### Cải thiện
+- **Dùng ChatGPT làm bộ não, khung chat hiện ngay bước Javis đang làm, không im hẳn tới lúc xong.** Trước đây khi Codex chạy một lệnh dài (cài thư viện, quét file, chạy script), khung chat chỉ có chữ "Javis đang suy nghĩ..." đếm giờ cho tới khi lệnh chạy xong, trông như bị treo. Giờ bước hiện ra ngay lúc bắt đầu, kiểu "Chạy lệnh: npm install", rồi được đánh dấu xong khi chạy xong, giống như khi dùng Claude.
+
+## [0.86.0] - 2026-10-08
+### Thêm mới
+- **Hệ thống cộng hưởng: Javis theo đuổi việc anh giao tới khi đạt.** Khi anh giao một việc cần làm tiếp sau lượt chat, Javis tự lập mục tiêu có cách nhận biết xong, làm ở nền trong hạn mức, chỉ báo xong khi có bằng chứng và giữ việc qua cả lúc khởi động lại. Tính năng tắt sẵn, bật riêng cho từng brain.
+- **Thẻ "Em đang hướng tới" trong khung chat.** Anh bấm Đúng ý hay Chưa đúng ý cho cách hiểu, Đạt yêu cầu cho sản phẩm, hoặc tạm dừng. Góp ý thêm trong chat được nối vào đúng mục tiêu, và Javis sửa từ đúng bản anh đã xem; bản Javis viết ngay trong lượt chat được giữ làm bản đầu, không tốn lượt viết lại.
+- **Thử cách làm mới trước khi đổi.** Javis so cách làm hiện tại với một cách khác trên cùng bộ tình huống, chỉ đổi khi cách mới thắng rõ, chưa đủ căn cứ thì giữ cách cũ.
+### Sửa lỗi
+- **Lượt chat trùng lúc Claude Code đang làm mới đăng nhập nói rõ là gửi lại được.** Claude Code bản mới báo lỗi này bằng một câu khác mà Javis từng hiện nguyên tiếng Anh; câu trả lời bình thường có chữ "already used" cũng không còn bị thay nhầm bằng câu báo lỗi.
+
+## [0.85.11] - 2026-10-08
+### Sửa lỗi
+- **Khung chat không còn đứng im ở "Javis đang suy nghĩ..." khi kết nối bị đứt ngầm.** Máy ngủ, đổi Wi-Fi hay mạng chập chờn có thể làm kết nối giữa trang và Javis chết mà trình duyệt không hay biết. Javis vẫn làm xong việc, nhưng câu trả lời không về được trang, nên chữ "đang suy nghĩ" đếm mãi và bạn phải gửi lại câu lệnh. Giờ trang tự hỏi thăm Javis sau mỗi quãng im lặng. Không thấy trả lời thì trang tự nối lại và kéo về câu trả lời đã xong. Nút Dừng cũng luôn tới được Javis, kể cả khi kết nối đã chết.
+
+## [0.85.10] - 2026-10-08
+### Sửa lỗi
+- **Gọi ChatGPT Live bằng tiếng Việt thì câu trả lời cũng là tiếng Việt, không còn tự nhảy sang tiếng Anh.** Khi cần tra dữ liệu, ChatGPT Live tự viết lại yêu cầu rồi giao cho bộ não chính, và có lúc viết bằng tiếng Anh. Bộ não chính trả lời theo câu đó nên ra tiếng Anh, rồi Live đọc to câu tiếng Anh, nghe như đổi giọng giữa cuộc gọi. Giờ bộ não chính trả lời theo thứ tiếng bạn thật sự nói. Bạn nói tiếng Anh thì vẫn trả lời tiếng Anh, và ngôn ngữ đã ghim ở Cài đặt vẫn được ưu tiên. Sửa luôn cho chế độ nói chuyện thường khi việc được giao chạy nền.
+
+## [0.85.9] - 2026-10-08
+### Sửa lỗi
+- **Bấm Cập nhật ngay trên bản Docker thì trang xoay chờ đến khi bản mới lên rồi tự tải lại, không còn báo lỗi oan.** Trước đây trang chỉ chờ khoảng 36 giây rồi báo "Bản mới chưa lên sau một lúc - có thể lỗi", trong khi Watchtower vẫn đang kéo bản mới về và một lúc sau trang tự lên bản mới. Giờ trang chờ tới 10 phút. Quá 45 giây thì nói rõ là vẫn đang kéo bản mới, máy chậm có thể mất vài phút. Lỗi thật (Watchtower báo lỗi, chưa có image mới) vẫn hiện ngay như cũ. Thanh "Tải lại / Để sau" cũng không hiện thừa giữa lúc đang cập nhật nữa.
+
+## [0.85.8] - 2026-10-08
+### Thêm mới
+- **Plugin biết ai đang nói trong lượt gọi công cụ.** Hook `pre_tool_call` và `post_tool_call` nhận thêm khoá `turn` (kênh, người gửi, nhóm hay chat riêng, có phải chủ không), nên một plugin bọc ứng dụng có phân quyền theo từng nhân viên có thể chạy công cụ đúng quyền của người đang nhắn cho bot. Danh tính lấy từ tin nhắn thật chứ không từ chữ model viết, và bot không bao giờ được coi là chủ. (Đóng góp của @nnbaonam96.)
+
+## [0.85.7] - 2026-10-08
+### Sửa lỗi
+- **Đồng bộ brain với GitHub không còn hỏng ở lần đẩy đầu tiên trên máy đặt tiếng Việt.** Khi repo trên GitHub còn trống, Javis đọc thông báo của git theo ngôn ngữ hệ điều hành nên không nhận ra trường hợp này và báo lỗi. Giờ Javis hỏi git bằng ngôn ngữ trung lập, máy đặt ngôn ngữ nào cũng khởi tạo được ngay. (Đóng góp của @dev23072005.)
+
 ## [0.85.5] - 2026-10-07
 ### Cải thiện
 - **Bỏ hạn mức lúc bot tự lên tiếng trong nhóm.** Trước đây ở chế độ Tự đánh giá, bot chỉ tự trả lời tối đa 8 lần mỗi nhóm, 3 lần mỗi người mỗi giờ, và nghỉ giữa hai lần. Giờ nói hay im do bộ phán xử và mô hình tự quyết theo vai của Agent và tài liệu; bạn chỉnh bằng nút Đúng/Sai ở Bộ phán xử.

@@ -769,3 +769,21 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 3 commit upstream: 0.85.5: remove auto-speak caps in groups, the reply judge decides (#582); 0.85.4: remove the bot's 20 answers per person per hour limit (#581); 0.85.3: Full power bots run like the admin channel (MCP works) (#580)
 - Rebase tự động trong worktree riêng. Tự gỡ: 5b906c47:docs/25-chatbot.md, 5b906c47:docs/en/25-chatbots.md, 8d51c97e:server/chatbot_store.py, 02d64ac4:server/chatbot_store.py. Upstream xoá: không.
 - Rebrand: P058 (2 chỗ / 1 file). moc-goc b60da5e/0.85.5/so_patch 54.
+- **ĐÃ PHÁT HÀNH 2026-10-07** khi chủ bấm duyệt trên Telegram (origin/main a16ba03, tag + Release thansa-v1.24.0; backup me-backup-1.24.0).
+
+## Vòng TAY 2026-10-08 (goc b60da5e → 09f254d, nền 0.85.5 → 0.86.1, thansa 1.24.0→1.25.0)
+- Tự trộn 06:17 DỪNG ở P011 (dashboard/console.js) → trộn tay. 7 commit upstream: **Resonance MVP** 0.86.0 (mục tiêu
+  chạy nền có bằng chứng, thẻ "đang hướng tới", plugin javis-goal; TẮT sẵn, bật theo brain), khung chat tự nối lại khi
+  socket chết 0.85.11, cuộc gọi trả lời đúng ngôn ngữ người nói 0.85.10, Docker cập nhật chờ bản mới lên 0.85.9, hook tool
+  biết `turn` 0.85.8, Codex hiện bước đang chạy 0.86.1, Git Brain Sync repo rỗng 0.84.5.
+- Rebase 184 commit (54 patch). Xung đột: P011 (upstream bỏ khối "12 lượt" Docker, thay khối hết giờ UPD_WAIT_MS → lấy
+  HEAD + đổi image gợi ý ghcr.io/blogminhquy/javis-os → xahoapro/thansa-os), P025 (VERSION 1.25.0-javis-0.86.1), P027
+  (docs/20-plugins vi+en: HEAD + regex), **P038 (i18n vi/en: giải UNION** - 59 khoá resonance.* của upstream + 16 khoá
+  cảnh báo P038; đã so khoá với bản 1.24.0: không rơi khoá nào).
+- **Soát an toàn Resonance:** engine chạy sandbox chỉ-chữ (không tool, không MCP), chỉ ghi vào thư mục đã cấp của mục tiêu,
+  không tự đổi provider, hạn mức lượt gọi; tắt sẵn → không lách chốt P038.
+- **P059 mới:** rebrand Resonance (resonance.py 29 chuỗi, main.py 4, plugin javis-goal, resonance.* vi/en, ô bật index.html),
+  sửa test coupled test_resonance_mvp_run. so_patch 54→55.
+- VERSION 1.25.0-javis-0.86.1. moc-goc 09f254d/0.86.1/so_patch 55. tu-kiem-chung 5/5. backup me-backup-1.24.0-pre.
+- NGHIỆM THU (env -u JAVIS_*): fork 608/613; 5 đỏ {form_chuoi_rong, image_vision, route_table, run_command_quyen,
+  terminal_cmd_goc} đều ĐỎ y hệt trên upstream sạch → **0 hồi quy**. CHƯA đẩy remote - chờ chủ bấm.
