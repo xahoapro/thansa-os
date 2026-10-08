@@ -297,10 +297,10 @@ _conf = [r for r in store.outbox_pending(200) if r["goal_id"] == g_pub2.id and r
 _t_new = R.notice_text(g_pub2, "goal.publish_conflict", _conf[0]["payload"]) if _conf else ""
 check("xung đột với file có sẵn (chưa từng ghi): báo file có sẵn, chưa tiếp nhận, bản mới chưa đăng",
       bool(_conf) and _conf[0]["payload"].get("had_baseline") is False
-      and ("đã có sẵn" in _t_new or "already existed" in _t_new) and "lần Javis ghi trước" not in _t_new)
+      and ("đã có sẵn" in _t_new or "already existed" in _t_new) and "lần Thansa ghi trước" not in _t_new)
 _t_old = R.notice_text(g_pub2, "goal.publish_conflict", {"path": "Inbox/viec-dang-do.md", "had_baseline": True})
-check("xung đột sau lần đã ghi: mới nói file đã đổi sau lần Javis ghi trước",
-      "lần Javis ghi trước" in _t_old or "last wrote" in _t_old)
+check("xung đột sau lần đã ghi: mới nói file đã đổi sau lần Thansa ghi trước",
+      "lần Thansa ghi trước" in _t_old or "last wrote" in _t_old)
 target(g_pub).unlink(missing_ok=True)
 
 # Sản phẩm không được tạo file ở chỗ Javis tự chạy hay tự nạp (loop, agent, skill, plugin, bộ nhớ, CLAUDE.md...).

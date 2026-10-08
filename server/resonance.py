@@ -42,7 +42,7 @@ _PROVIDER_OF_KIND = {"CodexCLI": "openai-oauth", "GrokCLI": "grok-cli"}
 OUTPUT_MAX_CHARS = 200_000
 ERROR_DETAIL_MAX = 300
 
-SYSTEM_PROMPT = ("Bạn là bộ thực thi một bước của Javis. Chỉ trả về nội dung được yêu cầu, viết bằng chữ. "
+SYSTEM_PROMPT = ("Bạn là bộ thực thi một bước của Thansa. Chỉ trả về nội dung được yêu cầu, viết bằng chữ. "
                  "Không gọi công cụ, không đọc hay ghi file, không chạy lệnh: host sẽ tự lưu câu trả lời.")
 
 
@@ -450,7 +450,7 @@ QUESTIONS_MAX = 3
 GOAL_DEFAULT_CALLS = 6
 GUARDS_MAX = 5
 
-FRAMER_SYSTEM = ("Bạn là bộ lập mục tiêu của Javis. Đọc yêu cầu của người dùng, điền khung SMART thành JSON. "
+FRAMER_SYSTEM = ("Bạn là bộ lập mục tiêu của Thansa. Đọc yêu cầu của người dùng, điền khung SMART thành JSON. "
                  "Chỉ trả JSON, không lời dẫn. Không bịa thứ người dùng không nói.")
 
 
@@ -2600,64 +2600,64 @@ def notice_text(goal: GoalRecord, kind: str, payload: dict) -> str:
     link_en = f" Output: [{rel}]({rel})." if rel else ""
     if kind == "goal.succeeded":
         n = len(goal.criteria)
-        return _t(f"Mục tiêu đã đạt: {u}. Javis đã kiểm bằng chứng theo {n} tiêu chí.{link_vi}",
-                  f"Goal achieved: {u}. Javis checked the evidence against {n} criteria.{link_en}")
+        return _t(f"Mục tiêu đã đạt: {u}. Thansa đã kiểm bằng chứng theo {n} tiêu chí.{link_vi}",
+                  f"Goal achieved: {u}. Thansa checked the evidence against {n} criteria.{link_en}")
     if kind == "goal.maintained":
-        return _t(f"Đã cập nhật theo mục tiêu duy trì: {u}. Javis đã kiểm bằng chứng theo tiêu chí.{link_vi} "
-                  "Javis sẽ xem lại định kỳ có giới hạn, chỉ báo khi có thay đổi đáng kể.",
-                  f"Updated for the ongoing goal: {u}. Javis checked the evidence against its criteria.{link_en} "
-                  "Javis will review it on a bounded schedule and only report meaningful changes.")
+        return _t(f"Đã cập nhật theo mục tiêu duy trì: {u}. Thansa đã kiểm bằng chứng theo tiêu chí.{link_vi} "
+                  "Thansa sẽ xem lại định kỳ có giới hạn, chỉ báo khi có thay đổi đáng kể.",
+                  f"Updated for the ongoing goal: {u}. Thansa checked the evidence against its criteria.{link_en} "
+                  "Thansa will review it on a bounded schedule and only report meaningful changes.")
     if kind == "goal.discovery_done":
         return _t(f"Bước khám phá đã xong: {u}.{link_vi} Đây mới là bước tìm hiểu, nhu cầu gốc CHƯA đóng; "
-                  "Javis chờ người dùng xem và nói hướng tiếp theo.",
+                  "Thansa chờ người dùng xem và nói hướng tiếp theo.",
                   f"The exploration step is done: {u}.{link_en} This was only the discovery step; the original need "
-                  "is NOT closed yet. Javis is waiting for your direction.")
+                  "is NOT closed yet. Thansa is waiting for your direction.")
     if kind == "goal.waiting_human":
         crit = "; ".join((payload or {}).get("criteria") or [])
         return _t(f"Đã xong phần kiểm được của mục tiêu: {u}.{link_vi} Còn chờ người dùng xác nhận: {crit}.",
                   f"The checkable part of this goal is done: {u}.{link_en} Still waiting for your confirmation: {crit}.")
     if kind == "goal.guard":
         hit = "; ".join((payload or {}).get("guards") or [])
-        return _t(f"Đã dừng mục tiêu {u} vì điều kiện bảo vệ không còn đúng: {hit}. Javis không tự chạy lại.",
+        return _t(f"Đã dừng mục tiêu {u} vì điều kiện bảo vệ không còn đúng: {hit}. Thansa không tự chạy lại.",
                   f"Stopped the goal {u} because a protective condition no longer holds: {hit}. "
-                  "Javis will not restart it by itself.")
+                  "Thansa will not restart it by itself.")
     if kind == "goal.stalled":
-        return _t(f"Javis tạm ngừng tự làm lại mục tiêu: {u}. Hai lượt gần nhất không tiến thêm theo tiêu chí, nên "
-                  f"Javis chờ góp ý thay vì tiêu thêm lượt.{link_vi} Mục tiêu vẫn mở; góp ý hay nói rõ hơn là Javis "
+        return _t(f"Thansa tạm ngừng tự làm lại mục tiêu: {u}. Hai lượt gần nhất không tiến thêm theo tiêu chí, nên "
+                  f"Thansa chờ góp ý thay vì tiêu thêm lượt.{link_vi} Mục tiêu vẫn mở; góp ý hay nói rõ hơn là Thansa "
                   "làm tiếp.",
-                  f"Javis paused automatic retries for: {u}. The last two attempts made no progress against the "
-                  f"criteria, so Javis is waiting for your feedback instead of spending more calls.{link_en} The goal "
-                  "stays open; give feedback or clarify and Javis continues.")
+                  f"Thansa paused automatic retries for: {u}. The last two attempts made no progress against the "
+                  f"criteria, so Thansa is waiting for your feedback instead of spending more calls.{link_en} The goal "
+                  "stays open; give feedback or clarify and Thansa continues.")
     if kind == "goal.deadline_passed":
-        return _t(f"Đã qua hạn chót của mục tiêu mà chưa đạt: {u}.{link_vi} Javis không tự gia hạn và không tự kết luận; "
+        return _t(f"Đã qua hạn chót của mục tiêu mà chưa đạt: {u}.{link_vi} Thansa không tự gia hạn và không tự kết luận; "
                   "người dùng quyết định giữ, đổi hạn hay huỷ.",
-                  f"The deadline for this goal passed before it was met: {u}.{link_en} Javis does not extend it or "
+                  f"The deadline for this goal passed before it was met: {u}.{link_en} Thansa does not extend it or "
                   "decide the outcome by itself; you choose to keep it, change the deadline or cancel.")
     if kind == "goal.monitoring_lost":
         hit = "; ".join((payload or {}).get("guards") or [])
-        return _t(f"Javis đã ngừng theo dõi điều kiện bảo vệ của mục tiêu {u} vì trợ lý không còn được phép chạy "
-                  f"({(payload or {}).get('reason') or ''}). Không còn theo dõi: {hit}. Bật lại trợ lý thì Javis kiểm "
+        return _t(f"Thansa đã ngừng theo dõi điều kiện bảo vệ của mục tiêu {u} vì trợ lý không còn được phép chạy "
+                  f"({(payload or {}).get('reason') or ''}). Không còn theo dõi: {hit}. Bật lại trợ lý thì Thansa kiểm "
                   "lại ngay trước mọi tác động.",
-                  f"Javis stopped watching the protective conditions of {u} because the assistant is no longer "
+                  f"Thansa stopped watching the protective conditions of {u} because the assistant is no longer "
                   f"allowed to run ({(payload or {}).get('reason') or ''}). No longer watched: {hit}. Turn the "
-                  "assistant back on and Javis checks them again before any action.")
+                  "assistant back on and Thansa checks them again before any action.")
     if kind == "goal.publish_conflict" and (payload or {}).get("drift"):
         path = str((payload or {}).get("path") or "")
-        return _t(f"File {path} đã được sửa ngoài Javis sau lần Javis ghi, nên Javis không ghi đè và không làm lại. "
-                  "Javis tự kiểm lại file định kỳ; có góp ý thì Javis kiểm ngay.",
-                  f"{path} was edited outside Javis after Javis last wrote it, so Javis will not overwrite it or redo "
-                  "the work. Javis re-checks the file periodically; give feedback and it checks right away.")
+        return _t(f"File {path} đã được sửa ngoài Thansa sau lần Thansa ghi, nên Thansa không ghi đè và không làm lại. "
+                  "Thansa tự kiểm lại file định kỳ; có góp ý thì Thansa kiểm ngay.",
+                  f"{path} was edited outside Thansa after Thansa last wrote it, so Thansa will not overwrite it or redo "
+                  "the work. Thansa re-checks the file periodically; give feedback and it checks right away.")
     if kind == "goal.publish_conflict":
         path = str((payload or {}).get("path") or "")
         if not (payload or {}).get("had_baseline"):
-            return _t(f"File {path} đã có sẵn và chưa được mục tiêu này tiếp nhận, nên Javis giữ nguyên file đó. "
-                      "Bản Javis vừa làm chưa được đăng, vẫn nằm trong vùng làm việc của mục tiêu.",
-                      f"{path} already existed and this goal has not taken it over, so Javis left it as is. "
-                      "The version Javis just made was not published; it stays in the goal's work area.")
-        return _t(f"Javis không ghi đè {path} vì file đã được sửa sau lần Javis ghi trước, nên giữ nguyên file đó. "
-                  "Bản Javis vừa làm chưa được đăng, vẫn nằm trong vùng làm việc của mục tiêu.",
-                  f"Javis did not overwrite {path} because the file changed after Javis last wrote it, so it was "
-                  "left as is. The version Javis just made was not published; it stays in the goal's work area.")
+            return _t(f"File {path} đã có sẵn và chưa được mục tiêu này tiếp nhận, nên Thansa giữ nguyên file đó. "
+                      "Bản Thansa vừa làm chưa được đăng, vẫn nằm trong vùng làm việc của mục tiêu.",
+                      f"{path} already existed and this goal has not taken it over, so Thansa left it as is. "
+                      "The version Thansa just made was not published; it stays in the goal's work area.")
+        return _t(f"Thansa không ghi đè {path} vì file đã được sửa sau lần Thansa ghi trước, nên giữ nguyên file đó. "
+                  "Bản Thansa vừa làm chưa được đăng, vẫn nằm trong vùng làm việc của mục tiêu.",
+                  f"Thansa did not overwrite {path} because the file changed after Thansa last wrote it, so it was "
+                  "left as is. The version Thansa just made was not published; it stays in the goal's work area.")
     if kind == "goal.blocked":
         code = str((payload or {}).get("code") or (payload or {}).get("reason") or "")
         detail = _short((payload or {}).get("detail") or "")
@@ -2665,20 +2665,20 @@ def notice_text(goal: GoalRecord, kind: str, payload: dict) -> str:
             why_vi = f"đã dùng hết {goal.budget_calls} lượt gọi model dành cho mục tiêu này"
             why_en = f"it used all {goal.budget_calls} model calls set aside for it"
         elif code == "guard_unknown":
-            why_vi = (f"có điều kiện bảo vệ chưa kiểm được ({detail}); Javis không đăng sản phẩm hay báo xong khi "
+            why_vi = (f"có điều kiện bảo vệ chưa kiểm được ({detail}); Thansa không đăng sản phẩm hay báo xong khi "
                       "chưa biết điều kiện đó còn đúng")
-            why_en = (f"a protective condition cannot be checked yet ({detail}); Javis will not publish or report done "
+            why_en = (f"a protective condition cannot be checked yet ({detail}); Thansa will not publish or report done "
                       "while it is unknown")
         elif code in ("engine_blocked", "engine_build"):
-            why_vi = f"engine việc nền đang chọn không chạy được ở chế độ chỉ chữ, Javis không tự đổi provider ({detail})"
-            why_en = f"the selected background engine cannot run text-only, and Javis does not switch providers ({detail})"
+            why_vi = f"engine việc nền đang chọn không chạy được ở chế độ chỉ chữ, Thansa không tự đổi provider ({detail})"
+            why_en = f"the selected background engine cannot run text-only, and Thansa does not switch providers ({detail})"
         elif (payload or {}).get("final"):
-            why_vi = f"engine báo lỗi {code}: {detail}. Javis ngừng tự thử lại; góp ý hay sửa cách hiểu thì Javis thử lại"
-            why_en = (f"the engine reported {code}: {detail}. Javis stopped retrying by itself; give feedback or "
+            why_vi = f"engine báo lỗi {code}: {detail}. Thansa ngừng tự thử lại; góp ý hay sửa cách hiểu thì Thansa thử lại"
+            why_en = (f"the engine reported {code}: {detail}. Thansa stopped retrying by itself; give feedback or "
                       "clarify and it tries again")
         else:
-            why_vi = f"engine báo lỗi {code}: {detail}. Javis sẽ thử lại sau, không lặp liên tục"
-            why_en = f"the engine reported {code}: {detail}. Javis will retry later, not in a loop"
+            why_vi = f"engine báo lỗi {code}: {detail}. Thansa sẽ thử lại sau, không lặp liên tục"
+            why_en = f"the engine reported {code}: {detail}. Thansa will retry later, not in a loop"
         return _t(f"Mục tiêu tạm dừng: {u}. Lý do: {why_vi}.", f"Goal paused: {u}. Reason: {why_en}.")
     return _t(f"Cập nhật mục tiêu: {u}.", f"Goal update: {u}.")
 
@@ -2856,7 +2856,7 @@ def apply_command(store, owner, goal_id: str, command: str, payload: dict, brain
         store.clear_block(owner, goal_id, "guard")
     elif reason == "fit_rejected":
         return {"ok": False, "status": "waiting",
-                "reason": "cách hiểu đang bị đánh dấu chưa đúng; nói rõ hơn trong khung chat để Javis sửa cách hiểu"}
+                "reason": "cách hiểu đang bị đánh dấu chưa đúng; nói rõ hơn trong khung chat để Thansa sửa cách hiểu"}
     elif reason in ("budget",):
         return {"ok": False, "status": "blocked", "reason": "đã hết hạn mức lượt gọi của mục tiêu"}
     return {"ok": True, "status": "resumed"}
