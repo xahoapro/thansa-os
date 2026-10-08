@@ -1724,3 +1724,27 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P059
+  ten: "Rebrand nền 0.86.1 - Resonance (mục tiêu chạy nền), thẻ \"đang hướng tới\""
+  y_dinh: >
+    Nền 0.85.5→0.86.1 (7 commit) thêm Resonance MVP (server/resonance.py, plugin javis-goal, thẻ
+    chat-resonance + khoá i18n resonance.*, ô bật trong Cài đặt). Rebrand chuỗi HIỂN THỊ Javis->Thansa:
+    string literal server (bỏ docstring) ở resonance.py + main.py, system prompt model-facing "bộ thực thi /
+    bộ lập mục tiêu của Thansa", plugin javis-goal, resonance.* vi/en, mô tả ô bật trong index.html. Sửa test
+    coupled test_resonance_mvp_run. GIỮ docs/dev, docs/superpowers, CHANGELOG (đổi lúc hiển thị), comment JS.
+  commit: "[me] P059: rebrand nen 0.86.1 - Resonance (muc tieu chay nen), the \"dang huong toi\""
+  diem_neo:
+    - file: server/resonance.py
+      ky_hieu: "Bạn là bộ lập mục tiêu của Thansa"
+  vung_theo_doi:
+    - "server/resonance.py: câu báo trạng thái mục tiêu (vi+en)"
+    - "dashboard/i18n/*.json: resonance.*"
+  anh_goc:
+    - file: server/resonance.py
+      doan: "Bạn là bộ lập mục tiêu của Javis"
+  kiem_chung: >
+    Liệt kê string literal server chứa Javis (bỏ docstring) ở resonance.py = 0; test_resonance_* xanh;
+    tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ, đặt qua cấu hình.
