@@ -51,7 +51,7 @@ _than = _ws.group(0) if _ws else ""
 
 check("có endpoint WebSocket /ws/terminal", bool(_than))
 check("WS terminal đòi ĐÚNG session đăng nhập như /ws",
-      "cfgmod.gate_active()" in _than and "cfgmod.valid_session" in _than
+      "cfgmod.gate_active(ws)" in _than and "cfgmod.valid_session" in _than
       and "javis_session" in _than)
 check("CANARY: WS terminal KHÔNG nhận token API (_token_ok là đường của script, không phải shell)",
       "_token_ok" not in _than)

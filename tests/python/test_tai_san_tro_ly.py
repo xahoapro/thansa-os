@@ -91,7 +91,7 @@ os.environ["JAVIS_FILES_ROOT"] = BRAIN     # khoá trần duyệt vào đúng br
 (broot / "sources" / "bang-gia.md").write_text("Nước mắm 500ml: 120k", encoding="utf-8")
 (broot / "sources" / "anh.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 16)
 
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 c = TestClient(main.app, base_url="http://127.0.0.1")
 
 r = c.post("/agents", data={"name": "Nguoi viet", "role": "Viết bài", "group": "Marketing",
