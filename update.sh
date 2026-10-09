@@ -9,6 +9,17 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 MODE="${1:-auto}"
 SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
+# KHÔNG viết `lệnh | grep -q` trong file này: dưới pipefail, grep -q khớp xong thoát sớm → lệnh bên
+# trái chết SIGPIPE (141) → cả ống SAI dù đã khớp. Vụ máy khách 09/10: `systemctl list-unit-files |
+# grep -q` ra 141 → tưởng không có systemd → rơi nhánh nohup tranh cổng với dịch vụ.
+_co_unit() { command -v systemctl >/dev/null 2>&1 && systemctl cat "$1.service" >/dev/null 2>&1; }
+_ds_container() { command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' 2>/dev/null || true; }
+_co_container() { local ds; ds="$(_ds_container)"; [ -n "$ds" ] && grep -qx "$1" <<<"$ds"; }
+# install.sh cài Node riêng vào ~/.thansa/node (máy cũ: ~/.javis/node) + symlink ~/.local/bin; phiên
+# SSH thường thiếu cả hai trong PATH → "npm not found" và Codex không bao giờ được cập nhật.
+for _d in "$HOME/.thansa/node/bin" "$HOME/.javis/node/bin" "$HOME/.local/bin"; do
+  [ -d "$_d" ] && PATH="$_d:$PATH"
+done
 
 # Tên bản Thansa Ở THƯ MỤC NÀY. Nhiều bản trên cùng VPS thì mỗi bản một .env riêng; không đọc
 # .env ở đây thì `./update.sh` của bản này đi restart container/dịch vụ của bản khác.
@@ -21,11 +32,9 @@ NAME="${THANSA_NAME:-${JAVIS_NAME:-}}"
 # "thansa" trên máy cũ, không thấy, rồi rẽ nhầm nhánh.
 if [ -z "$NAME" ]; then
   NAME="thansa"
-  if command -v docker >/dev/null 2>&1 && docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx javis \
-     && ! docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx thansa; then
+  if _co_container javis && ! _co_container thansa; then
     NAME="javis"
-  elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files 2>/dev/null | grep -q '^javis\.service' \
-     && ! systemctl list-unit-files 2>/dev/null | grep -q '^thansa\.service'; then
+  elif _co_unit javis && ! _co_unit thansa; then
     NAME="javis"
   fi
 fi
@@ -43,18 +52,17 @@ echo "==> Pulling the latest code from GitHub..."
 git pull --ff-only
 
 is_docker() {
-  command -v docker >/dev/null 2>&1 && [ -f docker-compose.yml ] && \
-  docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$NAME"
+  [ -f docker-compose.yml ] && _co_container "$NAME"
 }
 
 if [ "$MODE" = "docker" ] || { [ "$MODE" = "auto" ] && is_docker; }; then
   echo "==> Docker → pulling the new image from GHCR and restarting..."
   # Đang bật HTTPS (Caddy)? Giữ nguyên override để cập nhật KHÔNG gỡ mất Caddy.
   HTTPS_ARGS=""
-  if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$NAME-caddy"; then
+  if _co_container "$NAME-caddy"; then
     HTTPS_ARGS="-f docker-compose.yml -f docker-compose.https.yml"
     echo "==> Caddy (HTTPS) detected → keeping the HTTPS setup."
-  elif command -v ss >/dev/null 2>&1 && ss -tlnH '( sport = :80 or sport = :443 )' 2>/dev/null | grep -q .; then
+  elif command -v ss >/dev/null 2>&1 && [ -n "$(ss -tlnH '( sport = :80 or sport = :443 )' 2>/dev/null)" ]; then
     # docker-compose.yml nay dựng sẵn Caddy. Máy chưa có Caddy mà 80/443 đã có web server khác
     # (nginx/Apache tự dựng) thì Caddy mới sẽ giành cổng và hỏng `up` - tắt nó cho lượt này.
     export JAVIS_CADDY=0
@@ -80,7 +88,7 @@ else
   else
     echo "[!] npm not found; update Codex by hand to get the newest ChatGPT models."
   fi
-  if command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files 2>/dev/null | grep -q "^$NAME\.service"; then
+  if _co_unit "$NAME"; then
     $SUDO systemctl restart "$NAME"
     echo "==> Restarted. Follow the logs:  journalctl -u $NAME -f"
   elif [ "$(uname)" = "Darwin" ] && \
@@ -100,8 +108,9 @@ else
       kill $PIDS 2>/dev/null || true
       sleep 2
     fi
+    # </dev/null: không thì tiến trình nền giữ pty và phiên SSH chạy update.sh treo không thoát.
     ( cd server && JAVIS_STATE_DIR="$PWD" nohup ../.venv/bin/python -m uvicorn main:app \
-        --host "${JAVIS_HOST:-127.0.0.1}" --port "$PORT" > thansa.log 2>&1 & )
+        --host "${JAVIS_HOST:-127.0.0.1}" --port "$PORT" > thansa.log 2>&1 < /dev/null & )
     echo "==> Restarted (nohup). Logs: server/thansa.log"
   fi
 fi

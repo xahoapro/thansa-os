@@ -12379,7 +12379,10 @@ async def do_update():
         if mode == "windows":
             subprocess.Popen(args, cwd=root, creationflags=0x00000008 | 0x00000200)  # DETACHED|NEW_GROUP
         else:
-            subprocess.Popen(args, cwd=root, start_new_session=True)
+            # Chạy dưới systemd thì phải ra khỏi cgroup của dịch vụ, không thì `systemctl stop`
+            # ở bước dừng server giết luôn updater (xem updater.lenh_tach_cgroup).
+            import updater as _updmod
+            subprocess.Popen(_updmod.lenh_tach_cgroup(args), cwd=root, start_new_session=True)
         return {"ok": True, "mode": mode,
                 "message": localefmt.chu("Đang cập nhật + khởi động lại (theo dõi ở thanh tiến trình).",
                                          "Updating and restarting (follow the progress bar).")}
