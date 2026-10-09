@@ -106,7 +106,7 @@ def _chay_mot_luot(monkeypatch, tmpdir):
 
     monkeypatch.setattr(main, "_CHAT_RUNTIME", runtime)
     monkeypatch.setattr(main, "get_store", lambda: store)
-    monkeypatch.setattr(main.cfgmod, "gate_active", lambda: False)
+    monkeypatch.setattr(main.cfgmod, "gate_active", lambda *a, **k: False)
     monkeypatch.setattr(main.cfgmod, "read_settings", lambda: {"model": {}})
     # Đúng cấu hình người dùng đang gặp lỗi: gói ChatGPT, chạy qua Codex.
     monkeypatch.setattr(main, "_chat_provider",
