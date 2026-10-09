@@ -86,7 +86,7 @@ check("bản vá là script nội tuyến, không tải gì từ ngoài",
 # ============================================================
 # 2. Chạy thật qua route /s/<token>/
 # ============================================================
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 c = TestClient(main.app, base_url="http://127.0.0.1")
 
 rs = c.post("/share/create", json={"brain": BRAIN, "path": "apps/bang.html"})
