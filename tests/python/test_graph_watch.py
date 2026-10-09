@@ -28,7 +28,7 @@ check("_hidden_in_roots: ngoài root - False (không đoán bừa)",
       graph_routes._hidden_in_roots(os.path.join(tempfile.gettempdir(), "x.md"), [root]) is False)
 
 # --- endpoint /ws/graph với sự kiện file thật ---
-main.cfgmod.gate_active = lambda: False   # test không đụng auth thật
+main.cfgmod.gate_active = lambda *a, **k: False   # test không đụng auth thật
 client = TestClient(main.app)
 
 def _write(relpath, content):

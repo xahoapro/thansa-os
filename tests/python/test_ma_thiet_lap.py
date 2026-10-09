@@ -1,4 +1,5 @@
-"""Thiết lập lần đầu chỉ cần TÊN + MẬT KHẨU, không còn MÃ THIẾT LẬP (0.64.47).
+"""Thiết lập lần đầu TRÊN CHÍNH MÁY chỉ cần TÊN + MẬT KHẨU (0.64.47); mở từ NGOÀI máy thì
+đòi thêm mã cài đặt (Thansa, sau sự cố 08/10 - xem test_cong_ngoai_bat_dang_nhap.py).
 
     python tests/python/test_ma_thiet_lap.py
 
@@ -10,7 +11,7 @@ File này GỌI THẬT endpoint ở chế độ public và khoá lại:
   1. Tạo được admin chỉ với tên + mật khẩu, không gửi mã nào.
   2. Rào còn lại vẫn đứng: mật khẩu tối thiểu 8 ký tự; đã có admin thì không tạo đè được.
   3. Client cũ còn gửi `setup_token` thì vẫn chạy, không lỗi.
-  4. Giao diện và máy chủ không còn dấu vết mã: không ô nhập, không in ra log, file mã cũ bị dọn.
+  4. Mã cài đặt chỉ là nhánh HẸP: ô nhập ẩn mặc định, lúc khởi động có admin thì dọn file mã.
 """
 from _paths import ROOT, SERVER  # noqa: E402,F401
 import json
@@ -61,34 +62,27 @@ check("CANARY: đã có admin thì /auth/setup từ chối, không tạo đè",
       r.status_code == 400 and cfgmod.read_settings()["auth"]["username"] == "quy", r.text)
 
 # ---- 3. Client cũ còn gửi setup_token ----
-s = cfgmod.read_settings(); s.pop("auth", None); cfgmod.write_settings(s)
+s = cfgmod.read_settings(); s.pop("auth", None); cfgmod.write_settings(s, cho_xoa_mat_khau=True)
 r = client.post("/auth/setup", data={"username": "cu", "password": "matkhau-client-cu", "setup_token": "gi-cung-duoc"})
 check("client cũ gửi kèm setup_token vẫn tạo được, không lỗi", r.status_code == 200 and r.json().get("ok"), r.text)
 
-# ---- 4. Không còn dấu vết mã ----
+# ---- 4. Mã cài đặt chỉ là nhánh hẹp ----
 cu = Path(state) / ".setup_token"
 cu.write_text("ma-cu-con-sot\n", encoding="utf-8")
 cfgmod.clear_setup_token()
-check("file .setup_token cũ bị dọn", not cu.exists())
+check("clear_setup_token dọn được file mã", not cu.exists())
 
-_cfg = (SERVER / "config.py").read_text(encoding="utf-8")
 _main = (SERVER / "main.py").read_text(encoding="utf-8")
-check("máy chủ không còn hàm kiểm/sinh mã",
-      "def check_setup_token" not in _cfg and "def get_or_create_setup_token" not in _cfg)
-check("lúc khởi động không còn in SETUP TOKEN ra log", "SETUP TOKEN:" not in _main)
-check("lúc khởi động dọn file mã cũ", "cfgmod.clear_setup_token()" in _main)
+check("lúc khởi động: có admin thì dọn file mã", "cfgmod.clear_setup_token()" in _main)
+check("chỉ đòi mã khi request đến từ ngoài máy",
+      "cfgmod.den_tu_ngoai(request) and not cfgmod.ma_cai_dat_dung(setup_token)" in _main)
 
 _html = (ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")
-_app = (ROOT / "dashboard" / "app.js").read_text(encoding="utf-8")
-check("màn chào mừng không còn ô nhập mã", 'id="wzToken"' not in _html and "wzTokenWrap" not in _html)
+check("ô nhập mã ẩn mặc định", '<div id="wzCodeWrap" style="display:none">' in _html)
 check("màn chào mừng vẫn có ô tên và mật khẩu", 'id="wzUser"' in _html and 'id="wzPass"' in _html)
-check("app.js không còn gửi hay kiểm mã", "setup_token" not in _app and "wzToken" not in _app)
 for lang in ("vi", "en"):
     d = json.loads((ROOT / "dashboard" / "i18n" / f"{lang}.json").read_text(encoding="utf-8"))
-    thua = [k for k in d if k.startswith("wz.tok") or k == "app.wz_token_missing"]
-    check(f"i18n {lang}: không còn khoá dịch của mã thiết lập", not thua, thua)
-    check(f"i18n {lang}: câu nhắc ở màn chào mừng không còn nhắc tới mã",
-          "MÃ THIẾT LẬP" not in d.get("app.wz_mandatory", "") and "SETUP" not in d.get("app.wz_mandatory", ""))
+    check(f"i18n {lang}: có câu hướng dẫn lấy mã", "{cmd}" in d.get("app.wz_code_hint", ""))
 
 print()
 if fails:

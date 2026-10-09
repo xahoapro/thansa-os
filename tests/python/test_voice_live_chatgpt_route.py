@@ -97,7 +97,7 @@ class ChatGPTLiveRouteTests(unittest.IsolatedAsyncioTestCase):
 
             namespace = dict(
                 asyncio=asyncio, json=json, sys=sys, WebSocket=Socket, Query=lambda x: x, lang_mod=lang, localefmt=localefmt,
-                cfgmod=types.SimpleNamespace(gate_active=lambda: False,
+                cfgmod=types.SimpleNamespace(gate_active=lambda *a, **k: False,
                                              read_settings=lambda: {"voice": {"live_provider": "chatgpt"}}),
                 voice_live=types.SimpleNamespace(
                     make_provider=make_provider, MEMORY_CHARS=4000,
