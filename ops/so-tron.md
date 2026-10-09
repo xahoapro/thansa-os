@@ -799,3 +799,11 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   cài đặt chỉ khi chưa admin + từ ngoài, ghi settings nguyên tử + không lùi về mặc định + chặn ghi auth rỗng.
 - so_patch 55→57. VERSION 1.26.0-javis-0.86.1. Bản tự trộn san-sang-1.26.0 (Javis 0.86.2) thành cũ → --ep trộn lại (1.27.0).
 - **ĐÃ PHÁT HÀNH 2026-10-09** khi chủ duyệt trong Claude Code (origin/main c8c809c, tag + Release thansa-v1.26.0; backup me-backup-1.26.0).
+
+## Vòng VÁ 2026-10-09 (không trộn upstream, nền giữ 0.86.1, thansa 1.26.0→1.26.1)
+- Nhiệm vụ nhiem-vu/BUG-update-systemd.md (máy khách 180.93.126.6, native/systemd): **P062** - updater ra khỏi cgroup
+  dịch vụ (systemd-run --scope), update.sh hết `| grep -q` dưới pipefail (+ bin/thansa-nginx-ssl.sh ufw), nohup thả
+  stdin, update.sh/install.sh 100755, PATH ~/.thansa/node/bin, install.sh kiểm ensurepip. Báo cáo bao-cao/BUG-update-systemd.md.
+- Kiểm thật trên systemd VPS này: con setsid bị giết khi stop dịch vụ cha, con systemd-run --scope sống.
+- so_patch 57→58. VERSION 1.26.1-javis-0.86.1. Suite (venv CI) 613/616: đỏ = run_command_quyen, terminal_cmd_goc (sandbox)
+  + ignore_files (file chưa commit lúc chạy, xanh sau commit).
