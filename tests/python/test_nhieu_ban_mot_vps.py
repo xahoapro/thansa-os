@@ -169,7 +169,7 @@ upd = src("update.sh")
 check("update.sh: đọc JAVIS_NAME từ .env của thư mục đang đứng", "JAVIS_NAME" in upd)
 check("update.sh: restart ĐÚNG dịch vụ của bản mình, không phải 'javis' cứng",
       'systemctl restart "$NAME"' in upd)
-check("update.sh: dò container theo tên bản", 'grep -qx "$NAME"' in upd)
+check("update.sh: dò container theo tên bản", '_co_container "$NAME"' in upd)
 check("update.sh: máy cũ (container/dịch vụ 'javis') giữ tên cũ, không dựng container thứ hai",
       'NAME="javis"' in upd and 'export JAVIS_NAME="$NAME"' in upd)
 
