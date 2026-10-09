@@ -905,7 +905,7 @@ def update_settings(patch: dict) -> dict:
         return cfg
 
 
-def write_settings(cfg):
+def write_settings(cfg, cho_xoa_mat_khau=False):
     """THAY TOÀN BỘ settings.json bằng `cfg` - một cấu hình ĐẦY ĐỦ lấy từ read_settings() rồi sửa.
 
     Lưới an toàn (0.86.2): `cfg` thiếu khoá gốc mà mọi cấu hình đầy đủ đều có (read_settings luôn
@@ -928,10 +928,10 @@ def write_settings(cfg):
             day_du = read_settings()
             _deep_merge(day_du, json.loads(json.dumps(cfg)))
             cfg = day_du
-        _write_settings_full(cfg)
+        _write_settings_full(cfg, cho_xoa_mat_khau)
 
 
-def _write_settings_full(cfg):
+def _write_settings_full(cfg, cho_xoa_mat_khau=False):
     # Deep-copy rồi mã hoá BẢN SAO: caller vẫn giữ cfg plaintext để dùng tiếp (không bị hỏng).
     out = json.loads(json.dumps(cfg))
     try:
@@ -957,6 +957,14 @@ def _write_settings_full(cfg):
         _giu_secret_khong_giai_duoc(out)
     except Exception as e:      # noqa: BLE001 - tấm che hỏng thì vẫn ghi như cũ, không chặn việc lưu
         print(f"[config] giữ secret khi khoá lệch lỗi: {e}", file=__import__('sys').stderr)
+    # Thansa (P061) - chốt cuối cho mật khẩu admin: cfg CÓ mục `auth` mà mật khẩu rỗng (bộ mặc
+    # định đọc hỏng / cũ) không được đè lên file đang có mật khẩu, trừ khi caller nói rõ (tắt đăng
+    # nhập ở /auth/disable). Bỏ hẳn mục `auth` (pop rồi ghi, đặt lại tài khoản) vẫn xoá được.
+    if not cho_xoa_mat_khau and "auth" in out and not str(((out.get("auth") or {}).get("password_hash")) or ""):
+        cu = _doc_file_settings()
+        if isinstance(cu, dict) and str(((cu.get("auth") or {}).get("password_hash")) or ""):
+            print("[config] chặn ghi auth rỗng đè lên mật khẩu đang có - giữ auth cũ", file=__import__('sys').stderr)
+            out["auth"] = cu["auth"]
     _ghi_nguyen_tu(json.dumps(out, ensure_ascii=False, indent=2))
 
 
@@ -1036,11 +1044,34 @@ def auth_enabled(cfg=None):
     return bool(cfg.get("auth", {}).get("password_hash"))
 
 
-def require_login():
+def den_tu_ngoai(conn) -> bool:
+    """Request/WebSocket này đến từ NGOÀI máy không (qua reverse proxy hoặc từ IP khác loopback).
+
+    Vì sao cần: bản nghe 127.0.0.1 đứng sau nginx dựng TAY (không qua nút Kích hoạt nên thiếu
+    domain.proxy=nginx) thì require_login() tưởng là chạy cá nhân. Mật khẩu mà mất (sự cố
+    08/10: auth trong settings.json bị xoá trắng) là cả dashboard full quyền mở toang ra
+    Internet, kể cả gõ thẳng https://<ip>/. nginx luôn gắn X-Forwarded-For/X-Real-IP, còn
+    trình duyệt trên chính máy (hoặc qua SSH tunnel) và curl/CLI cục bộ thì không. Kẻ tấn công
+    TỰ thêm header chỉ làm mình bị siết thêm, không gỡ được header nginx gắn."""
+    if conn is None:
+        return False
+    h = conn.headers
+    if h.get("x-forwarded-for") or h.get("x-real-ip") or h.get("forwarded"):
+        return True
+    client = conn.client.host if conn.client else ""
+    return bool(client) and client not in ("127.0.0.1", "::1", "localhost", "testclient")
+
+
+def require_login(conn=None):
     """Có BẮT BUỘC đăng nhập để dùng Javis không (kể cả khi CHƯA đặt mật khẩu → ép setup).
-    - JAVIS_REQUIRE_LOGIN=1/0 ép bật/tắt tường minh.
+    - Truyền `conn` (Request/WebSocket) đến từ ngoài máy → LUÔN bắt buộc, kể cả env tắt
+      (xem den_tu_ngoai): lần cài đầu qua http://<ip> vẫn vào được, nhưng là vào màn TẠO
+      tài khoản chứ không phải dashboard.
+    - JAVIS_REQUIRE_LOGIN=1/0 ép bật/tắt tường minh (cho request cục bộ).
     - Mặc định: BẬT khi server nghe public (JAVIS_HOST=0.0.0.0, vd Docker/Hostinger/VPS) -
       vì Claude chạy full quyền, không được để hở ai cũng vào được."""
+    if den_tu_ngoai(conn):
+        return True
     v = os.getenv("JAVIS_REQUIRE_LOGIN", "").strip().lower()
     if v in ("1", "true", "yes", "on"):
         return True
@@ -1056,9 +1087,11 @@ def require_login():
     return host not in ("127.0.0.1", "localhost", "::1")
 
 
-def gate_active():
-    """Có cần kiểm tra session trước khi cho truy cập không (đã đặt mật khẩu HOẶC bắt buộc login)."""
-    return auth_enabled() or require_login()
+def gate_active(conn=None):
+    """Có cần kiểm tra session trước khi cho truy cập không (đã đặt mật khẩu HOẶC bắt buộc login).
+    Hàng rào nào có request/ws trong tay thì PHẢI truyền vào `conn` - thiếu nó là bỏ qua
+    nhánh den_tu_ngoai."""
+    return auth_enabled() or require_login(conn)
 
 
 def verify_password(password, cfg=None):
@@ -1400,11 +1433,42 @@ def note_token_failure(ip: str, thu: str = ""):
     except Exception:
         pass
 
-# ---- Mã thiết lập (ĐÃ BỎ từ 0.64.47) ----
-# Trước đây chạy public mà chưa có admin thì /auth/setup đòi một mã chỉ in ra log server. Chủ
-# dự án chốt 24/09 bỏ đi: lần đầu chỉ cần tên + mật khẩu, bảo vệ tài khoản giao cho 2FA, và máy
-# cài bằng install.sh đã có admin sẵn từ .env. Chỉ còn lại hàm dọn file mã cũ lúc khởi động.
+# ---- Mã cài đặt: CHỈ cho lần tạo admin TỪ NGOÀI máy ----
+# 0.64.47 bỏ mã cho mọi trường hợp (bắt người mới cài SSH vào đọc log là trải nghiệm tệ). Thansa
+# đặt lại một nhánh HẸP sau sự cố 08/10 (auth bị xoá trắng, ai gõ https://<ip>/ cũng vào được
+# màn tạo admin): chưa có admin mà request đến từ ngoài (den_tu_ngoai) thì /auth/setup đòi mã
+# nằm trong file trên máy chủ. Máy cài bằng install.sh có admin sẵn từ .env nên không gặp; mở
+# trên chính máy / qua SSH tunnel cũng không bị hỏi.
 _SETUP_TOKEN_PATH = STATE_DIR / ".setup_token"
+_MA_KY_TU = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"   # bỏ 0/O, 1/I/L: đọc từ terminal khỏi nhầm
+
+
+def ma_cai_dat_path() -> str:
+    return str(_SETUP_TOKEN_PATH)
+
+
+def ma_cai_dat() -> str:
+    """Mã cài đặt hiện tại, chưa có thì sinh mới (8 ký tự, file chmod 600)."""
+    try:
+        v = _SETUP_TOKEN_PATH.read_text(encoding="utf-8").strip()
+        if v:
+            return v
+    except Exception:
+        pass
+    v = "".join(secrets.choice(_MA_KY_TU) for _ in range(8))
+    _SETUP_TOKEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _SETUP_TOKEN_PATH.write_text(v + "\n", encoding="utf-8")
+    try:
+        os.chmod(_SETUP_TOKEN_PATH, 0o600)
+    except Exception:
+        pass
+    return v
+
+
+def ma_cai_dat_dung(v) -> bool:
+    """So mã người dùng gõ (bỏ qua hoa/thường, dấu cách, gạch nối)."""
+    v = str(v or "").strip().upper().replace(" ", "").replace("-", "")
+    return bool(v) and secrets.compare_digest(v, ma_cai_dat())
 
 
 def clear_setup_token():

@@ -263,7 +263,7 @@ async def _csrf_guard(request: Request, call_next):
             and plugins_host.http_khong_cookie(_dr, request.method)):
         return await call_next(request)
     d = web_security.csrf_decision(request.method, request.headers.get("host", ""),
-                                   request.headers.get("origin"), cfgmod.gate_active())
+                                   request.headers.get("origin"), cfgmod.gate_active(request))
     if d:
         return JSONResponse({"error": d[1], "blocked": "web_security"}, status_code=d[0])
     # GET có tác dụng phụ (chạy workflow, duyệt node ghi): Origin không đủ, xem SIDE_EFFECT_GET.
@@ -279,7 +279,7 @@ async def _auth_guard(request: Request, call_next):
     """Chặn endpoint khi CẦN đăng nhập (đã đặt mật khẩu HOẶC chạy public) mà chưa có session.
     Khi chạy public (0.0.0.0) lần đầu chưa có mật khẩu → vẫn chặn để ÉP tạo tài khoản trước
     (setup_required), tránh hở dashboard điều khiển Claude full quyền ra Internet."""
-    if cfgmod.gate_active():
+    if cfgmod.gate_active(request):
         path = duong_dan_router(request)   # KHÔNG phải request.url.path - xem duong_dan_router
         client_host = request.client.host if request.client else ""
         public = (path in _AUTH_PUBLIC_EXACT
@@ -1387,12 +1387,16 @@ def _env_bat(ten: str) -> bool:
 async def auth_status(request: Request):
     cfg = cfgmod.read_settings()
     enabled = cfgmod.auth_enabled(cfg)
-    require = cfgmod.require_login()
+    require = cfgmod.require_login(request)
     has_session = cfgmod.valid_session(request.cookies.get("javis_session", ""))
     # authed: có session thật; HOẶC bản local không bắt buộc login + chưa đặt mật khẩu (giữ UX cũ).
     authed = has_session or (not enabled and not require)
     return {"needs_setup": not enabled, "auth_required": enabled or require,
             "require_login": require, "authed": authed,
+            # Màn tạo admin mở TỪ NGOÀI máy phải hỏi thêm mã cài đặt (xem auth_setup). Chỉ lộ
+            # đường dẫn file, không lộ mã.
+            "setup_code_required": (not enabled) and cfgmod.den_tu_ngoai(request),
+            "setup_code_path": (cfgmod.ma_cai_dat_path() if not enabled and cfgmod.den_tu_ngoai(request) else ""),
             # 2FA lộ ra ở đây là CỐ Ý và không phải rò rỉ: màn đăng nhập cần biết có hỏi ô mã
             # hay không, mà việc "tài khoản này có 2FA" thì kẻ tấn công cũng biết ngay sau lần
             # nhập mật khẩu đầu tiên. Số mã khôi phục còn lại thì chỉ trả khi ĐÃ đăng nhập.
@@ -1414,14 +1418,19 @@ async def auth_setup(request: Request, username: str = Form(...), password: str 
     cfg = cfgmod.read_settings()
     if cfgmod.auth_enabled(cfg):
         return JSONResponse({"ok": False, "error": localefmt.chu("Đã có tài khoản - hãy đăng nhập.", "An account already exists - please sign in.")}, status_code=400)
-    # MÃ THIẾT LẬP đã bỏ (0.64.47, chủ dự án chốt 24/09): lần đầu chỉ cần tên + mật khẩu, bảo
-    # vệ tiếp theo là 2FA. `setup_token` vẫn nhận nhưng bỏ qua, để client cũ còn gửi không lỗi.
-    # Máy cài bằng install.sh có admin sẵn từ .env nên màn này không bao giờ hiện ra ở đó.
+    # Mã cài đặt chỉ đòi khi request đến TỪ NGOÀI máy (xem config.ma_cai_dat). Trên chính máy
+    # hay qua SSH tunnel thì vẫn chỉ cần tên + mật khẩu như 0.64.47.
+    if cfgmod.den_tu_ngoai(request) and not cfgmod.ma_cai_dat_dung(setup_token):
+        return JSONResponse({"ok": False, "need_setup_code": True, "error": localefmt.chu(
+            f"Sai hoặc thiếu mã cài đặt. Trên máy chủ chạy: cat {cfgmod.ma_cai_dat_path()}",
+            f"Missing or wrong setup code. On the server run: cat {cfgmod.ma_cai_dat_path()}")},
+            status_code=403)
     if len(password) < 8:
         return JSONResponse({"ok": False, "error": localefmt.chu("Mật khẩu tối thiểu 8 ký tự", "Password must be at least 8 characters")}, status_code=400)
     h, salt = cfgmod.hash_password(password)
     cfg["auth"] = {"username": username.strip() or "admin", "password_hash": h, "salt": salt}
     cfgmod.write_settings(cfg)
+    cfgmod.clear_setup_token()   # mã chỉ dùng một lần
     return _session_cookie(JSONResponse({"ok": True}), cfgmod.new_session(), request)
 
 
@@ -1515,7 +1524,7 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
 # /auth/tokens: cho token đổi được cách đăng nhập thì một token rò ra là kẻ cầm nó tự gắn 2FA
 # của mình vào rồi khoá chính chủ ra ngoài.
 def _doi_phien_that(request: Request):
-    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
+    if cfgmod.gate_active(request) and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
         return JSONResponse({"ok": False, "error": localefmt.chu("Thao tác này phải đăng nhập bằng trình duyệt.", "This action requires signing in from a browser.")},
                             status_code=403)
     return None
@@ -1683,7 +1692,7 @@ async def auth_tokens_create(request: Request, name: str = Form(""), scope: str 
     Thiếu rào này thì một token rò ra là kẻ cầm nó tự cấp thêm token vĩnh viễn cho mình, và
     thu hồi cái đã rò cũng vô nghĩa.
     """
-    if cfgmod.gate_active() and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
+    if cfgmod.gate_active(request) and not cfgmod.valid_session(request.cookies.get("javis_session", "")):
         return JSONResponse({"ok": False, "error": localefmt.chu(
             "Tạo token phải đăng nhập bằng trình duyệt "
             "(không dùng token để tạo token).",
@@ -1713,7 +1722,7 @@ async def auth_disable():
     """Tắt yêu cầu đăng nhập (xóa mật khẩu) - chỉ gọi được khi ĐANG đăng nhập (middleware chặn)."""
     cfg = cfgmod.read_settings()
     cfg["auth"] = {"username": "", "password_hash": "", "salt": ""}
-    cfgmod.write_settings(cfg)
+    cfgmod.write_settings(cfg, cho_xoa_mat_khau=True)   # cố ý xoá - xem chốt trong write_settings
     cfgmod.clear_sessions()
     return {"ok": True}
 
@@ -4530,7 +4539,7 @@ async def plugin_http(request: Request, slug: str, rest: str = ""):
     lp, r = tr
     # Đường không công khai: đòi PHIÊN TRÌNH DUYỆT thật. Hàng rào phía trước đã cho token API
     # qua, nhưng một token rò ra không được mở trang cài đặt của plugin.
-    if (not r["public"] and cfgmod.gate_active()
+    if (not r["public"] and cfgmod.gate_active(request)
             and not cfgmod.valid_session(request.cookies.get("javis_session", ""))):
         return JSONResponse({"error": localefmt.chu("Trang này phải đăng nhập bằng trình duyệt.", "This page requires signing in from a browser.")}, status_code=401)
     return await _goi_plugin_http(request, lp, r["handler"], r["no_cookie"])
@@ -11585,9 +11594,13 @@ async def _start_scheduler():
         elif _env_admin == "reset":
             print("[auth] JAVIS_ADMIN_PASSWORD/JAVIS_ADMIN_USER đổi so với lần trước: đã đặt lại "
                   "tài khoản admin theo env (giữ 2FA, huỷ các phiên cũ).", file=_sys.stderr)
-        # Mã thiết lập đã bỏ (0.64.47): dọn file .setup_token còn sót từ bản cũ, để không còn
-        # một "chìa khoá" nằm trong thư mục state mà không ai dùng tới.
-        cfgmod.clear_setup_token()
+        # Đã có admin thì mã cài đặt vô dụng: dọn đi. Chưa có thì in ra log để chủ máy (đang
+        # SSH) đọc được - chỉ cần khi mở màn tạo admin từ ngoài máy (qua IP / tên miền).
+        if cfgmod.auth_enabled():
+            cfgmod.clear_setup_token()
+        else:
+            print(f"[auth] Chưa có admin. Mã cài đặt (chỉ cần khi mở từ ngoài máy): "
+                  f"{cfgmod.ma_cai_dat()} - file {cfgmod.ma_cai_dat_path()}", file=_sys.stderr)
     except Exception as e:
         print(f"[auth bootstrap] {e}", file=_sys.stderr)
     async def _scheduler_loop():
@@ -13571,7 +13584,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     Khung JSON về trình duyệt: ready | interrupted | transcript | tool | turn_done | error.
     Khung JSON từ trình duyệt: {"type":"text","text":...} | {"type":"stop"}. Byte = audio.
     """
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active(ws) and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -14112,7 +14125,7 @@ def _bao_lan_nhanh_bo_qua(vconf) -> bool:
 # ============================================
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active(ws) and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -16214,7 +16227,7 @@ async def terminal_close(session: str = Form(...)):
 @app.websocket("/ws/terminal")
 async def terminal_ws(ws: WebSocket, session: str = Query(""), brain: str = Query("brain"),
                       cols: int = Query(80), rows: int = Query(24)):
-    if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
+    if cfgmod.gate_active(ws) and not cfgmod.valid_session(ws.cookies.get("javis_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
