@@ -798,3 +798,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - **P061:** gate_active(conn) + den_tu_ngoai (request qua proxy/IP lạ luôn đòi đăng nhập, mọi cổng HTTP + 4 WS), mã
   cài đặt chỉ khi chưa admin + từ ngoài, ghi settings nguyên tử + không lùi về mặc định + chặn ghi auth rỗng.
 - so_patch 55→57. VERSION 1.26.0-javis-0.86.1. Bản tự trộn san-sang-1.26.0 (Javis 0.86.2) thành cũ → --ep trộn lại (1.27.0).
+- **ĐÃ PHÁT HÀNH 2026-10-09** khi chủ duyệt trong Claude Code (origin/main c8c809c, tag + Release thansa-v1.26.0; backup me-backup-1.26.0).
