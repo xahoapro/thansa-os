@@ -788,3 +788,13 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - NGHIỆM THU (env -u JAVIS_*): fork 608/613; 5 đỏ {form_chuoi_rong, image_vision, route_table, run_command_quyen,
   terminal_cmd_goc} đều ĐỎ y hệt trên upstream sạch → **0 hồi quy**.
 - **ĐÃ PHÁT HÀNH 2026-10-08** khi chủ duyệt trong Claude Code (origin/main 439297d, tag + Release thansa-v1.25.0; backup me-backup-1.25.0).
+
+## Vòng VÁ 2026-10-09 (không trộn upstream, nền giữ 0.86.1, thansa 1.25.0→1.26.0)
+- Sự cố 08/10 trên thansa-chay: settings.json reset về mặc định 16:09 UTC (mật khẩu + kênh), bản nghe 127.0.0.1 sau
+  nginx dựng tay nên app mở cho mọi người qua https://<ip>/; máy quét 194.110.87.242 đọc /settings (key đã che),
+  /conversations, /files/list; không ghi được gì, không chạy lượt chat, không SSH lạ.
+- **P060:** chụp lại route_table.json cho /domain/nginx (P049) - CI main đỏ từ 1.17 vì đúng test này; máy phát hành
+  tưởng đỏ môi trường vì goc/.venv còn fastapi 0.115. Từ nay chụp/kiểm route_table bằng venv cài đúng requirements.txt.
+- **P061:** gate_active(conn) + den_tu_ngoai (request qua proxy/IP lạ luôn đòi đăng nhập, mọi cổng HTTP + 4 WS), mã
+  cài đặt chỉ khi chưa admin + từ ngoài, ghi settings nguyên tử + không lùi về mặc định + chặn ghi auth rỗng.
+- so_patch 55→57. VERSION 1.26.0-javis-0.86.1. Bản tự trộn san-sang-1.26.0 (Javis 0.86.2) thành cũ → --ep trộn lại (1.27.0).
