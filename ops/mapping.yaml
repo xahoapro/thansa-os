@@ -1781,12 +1781,15 @@
     chmod 600, in ra log lúc khởi động) CHỈ đòi khi chưa có admin VÀ request đến từ ngoài - máy cài bằng
     install.sh (admin sẵn) và SSH tunnel không gặp; (3) _ghi_nguyen_tu (tmp + os.replace), đọc lỗi lùi về bản
     tốt gần nhất, write_settings không ghi auth rỗng đè mật khẩu trừ cho_xoa_mat_khau=True (/auth/disable).
+    TỪ VÒNG 0.88.4: Javis 0.86.2 tự vá phần ghi (nguyên tử, .bak/.bad, gộp MẢNH - gốc thật của sự cố là GET
+    /whatsapp/status ghi một mảnh settings) → bỏ phần (3) trùng của P061, GIỮ chốt auth rỗng (cfg CÓ mục auth
+    mà mật khẩu trống; pop("auth") vẫn xoá được theo upstream) trên nền _write_settings_full của upstream.
   commit: "[me] P061: bao mat dang nhap sau su co 08/10 - cong ngoai doi dang nhap, ma cai dat, ghi settings an toan"
   diem_neo:
     - file: server/config.py
       ky_hieu: "def den_tu_ngoai(conn)"
     - file: server/config.py
-      ky_hieu: "def _ghi_nguyen_tu(path, text)"
+      ky_hieu: "chặn ghi auth rỗng đè lên mật khẩu đang có"
     - file: server/main.py
       ky_hieu: "cfgmod.den_tu_ngoai(request) and not cfgmod.ma_cai_dat_dung(setup_token)"
   vung_theo_doi:
@@ -1830,3 +1833,24 @@
     in 200k dòng); git ls-files -s update.sh install.sh → 100755.
   dieu_kien_bo: >
     Bỏ phần tương ứng khi upstream tự sửa (updater ngoài cgroup / update.sh không còn `| grep -q`).
+
+- id: P063
+  ten: "Rebrand nền 0.88.4 - Resonance theo trợ lý (chuỗi hiển thị còn sót)"
+  y_dinh: >
+    Nền 0.86.1→0.88.4 (7 commit): settings ghi an toàn 0.86.2, Resonance theo từng trợ lý + nhịp thức thích nghi
+    0.87/0.88, trợ lý tên có dấu, Codex cũ dựng lại ngữ cảnh, bot nhóm Zalo thấy ảnh gửi trước, trang Cộng sự bỏ lần
+    tải cũ. Rebrand chuỗi HIỂN THỊ Javis->Thansa mới: main.py (lời nhắc javis_goal), resonance.py +
+    resonance_store.py ("file bị sửa ngoài Thansa"), plugin javis-goal. GIỮ đường dẫn Javis/loops, Javis/agents.
+  commit: "[me] P063: rebrand nen 0.88.4 - Resonance theo tro ly (chuoi hien thi con sot)"
+  diem_neo:
+    - file: server/resonance_store.py
+      ky_hieu: "kiểm lại file bị sửa ngoài Thansa"
+  vung_theo_doi:
+    - "server/resonance*.py: chuỗi trạng thái mục tiêu"
+  anh_goc:
+    - file: server/resonance_store.py
+      doan: "kiểm lại file bị sửa ngoài Javis"
+  kiem_chung: >
+    String literal server chứa Javis (bỏ docstring/đường dẫn) ở resonance*.py = 0; test_resonance_* xanh; tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ.
