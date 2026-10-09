@@ -807,3 +807,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Kiểm thật trên systemd VPS này: con setsid bị giết khi stop dịch vụ cha, con systemd-run --scope sống.
 - so_patch 57→58. VERSION 1.26.1-javis-0.86.1. Suite (venv CI) 613/616: đỏ = run_command_quyen, terminal_cmd_goc (sandbox)
   + ignore_files (file chưa commit lúc chạy, xanh sau commit).
+- **ĐÃ PHÁT HÀNH 2026-10-09** khi chủ duyệt trong Claude Code (origin/main a74916f, tag + Release thansa-v1.26.1; backup me-backup-1.26.1).
