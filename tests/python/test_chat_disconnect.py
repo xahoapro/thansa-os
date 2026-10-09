@@ -46,7 +46,7 @@ def test_websocket_disconnect_does_not_cancel_turn(monkeypatch, tmp_path):
 
         monkeypatch.setattr(main, "_CHAT_RUNTIME", runtime)
         monkeypatch.setattr(main, "get_store", lambda: store)
-        monkeypatch.setattr(main.cfgmod, "gate_active", lambda: False)
+        monkeypatch.setattr(main.cfgmod, "gate_active", lambda *a, **k: False)
         monkeypatch.setattr(main.cfgmod, "read_settings", lambda: {"model": {}})
         monkeypatch.setattr(
             main, "_chat_provider",
