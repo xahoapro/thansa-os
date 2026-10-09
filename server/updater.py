@@ -98,6 +98,47 @@ def has_systemd():
     return bool(systemd_unit())
 
 
+def _cgroup_dich_vu(cgroup_text=None):
+    """Tên unit `.service` đang chứa tiến trình này, "" nếu không nằm trong dịch vụ hệ thống nào.
+
+    Bỏ qua `user@<uid>.service` (trình quản lý phiên của người dùng): tiến trình mở từ SSH/tmux
+    nằm dưới đó nhưng không bị `systemctl stop <unit app>` giết."""
+    if cgroup_text is None:
+        try:
+            cgroup_text = Path("/proc/self/cgroup").read_text(encoding="utf-8")
+        except OSError:
+            return ""
+    for dong in (cgroup_text or "").splitlines():
+        for phan in reversed(dong.split(":", 2)[-1].split("/")):
+            if phan.endswith(".service") and not phan.startswith("user@"):
+                return phan
+    return ""
+
+
+def lenh_tach_cgroup(args, cgroup_text=None, euid=None, systemd_run=None, now=None):
+    """Lệnh chạy updater sao cho nó SỐNG SÓT qua `systemctl stop` dịch vụ app.
+
+    Vì sao: server chạy trong dịch vụ systemd thì mọi tiến trình con nằm chung cgroup, và
+    `start_new_session=True` chỉ tách session/process group chứ KHÔNG tách cgroup. KillMode mặc
+    định (control-group) làm `systemctl stop` ở bước dừng server giết luôn updater → không bao giờ
+    tới bước khởi động lại, app chết hẳn (nginx 502) và code vẫn bản cũ (sự cố máy khách 07/10 và
+    09/10). Bọc bằng `systemd-run --scope` đưa updater sang một scope tạm riêng, giữ nguyên env và
+    thư mục làm việc. Không có systemd-run / không phải root / không nằm trong dịch vụ nào thì trả
+    nguyên lệnh cũ."""
+    args = list(args)
+    if os.name == "nt" or not _cgroup_dich_vu(cgroup_text):
+        return args
+    if euid is None:
+        euid = os.geteuid() if hasattr(os, "geteuid") else -1
+    if systemd_run is None:
+        import shutil
+        systemd_run = shutil.which("systemd-run") or ""
+    if euid != 0 or not systemd_run:
+        return args
+    return [systemd_run, "--scope", "--quiet", "--collect",
+            f"--unit=thansa-update-{int(now if now is not None else time.time())}"] + args
+
+
 def _launchd_label():
     """Nhãn job launchd: đặt tường minh qua env, không thì bản mới com.thansa.os, máy cài trước
     1.19 com.javis.os (nhận ra qua file plist đang có trong LaunchAgents)."""
