@@ -139,7 +139,7 @@ def chay(cau_hoi, sid, store):
 
     patch(main, "_CHAT_RUNTIME", rt)
     patch(main, "get_store", lambda: store)
-    patch(main.cfgmod, "gate_active", lambda: False)
+    patch(main.cfgmod, "gate_active", lambda *a, **k: False)
     patch(main, "_chat_provider", lambda _c: ("openai-oauth", "oauth", "", "gpt-5.6-luna"))
     patch(main, "_brain_root", lambda b: BRAIN)
     patch(main, "_reasoning_level", lambda _c: "off")

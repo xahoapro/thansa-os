@@ -43,7 +43,7 @@ for ngay in range(1, 31):
         f"## [2026-07-{ngay:02d} 20:00] học buổi tối\nnội dung\n",
         encoding="utf-8")
 
-main.cfgmod.gate_active = lambda: False          # test không đụng auth thật
+main.cfgmod.gate_active = lambda *a, **k: False          # test không đụng auth thật
 # Endpoint đọc vault qua deps.brain_root chứ không gọi main._brain_root trực tiếp (deps được
 # gắn một lần lúc register). Vá đúng chỗ nó thật sự hỏi, không vá chỗ trông giống.
 main.learn_feature.deps.brain_root = lambda brain="brain": str(VAULT)
