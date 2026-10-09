@@ -138,7 +138,7 @@ class _Ws:
 
 RUNTIME = ChatRuntime()
 main._CHAT_RUNTIME = RUNTIME
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 main._chat_provider = lambda _cfg: ("openrouter", "api", "test-key", "test-model")
 main._reasoning_level = lambda _cfg: "off"
 main.log_conversation = lambda *a, **k: None
