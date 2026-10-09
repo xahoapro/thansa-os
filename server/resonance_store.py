@@ -225,7 +225,7 @@ _WAKE_TEXT = {
     "handoff_wait": "chờ bàn giao lượt chat", "handoff_done": "bàn giao lượt chat", "resumed": "người dùng cho tiếp tục",
     "agent_enabled": "trợ lý được bật", "agent_recheck": "kiểm lại công tắc trợ lý",
     "agent_changed": "xét lại đầu ra theo quyền hiện tại", "guard_recheck": "kiểm lại guard chưa xác định",
-    "review": "xem lại định kỳ", "deadline": "kiểm hạn chót", "drift_recheck": "kiểm lại file bị sửa ngoài Javis",
+    "review": "xem lại định kỳ", "deadline": "kiểm hạn chót", "drift_recheck": "kiểm lại file bị sửa ngoài Thansa",
     "guard_observe": "quan sát guard", "action_recovery": "đối soát hành động dở",
 }
 

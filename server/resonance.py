@@ -2428,7 +2428,7 @@ def _wake_work(g: GoalRecord, deps: GoalDeps, now: float, owner: str):
             step = HB.next_interval(prev, changed=False, lo=pol["DRIFT_RECHECK_MIN_S"],
                                     hi=pol["DRIFT_RECHECK_MAX_S"])
             store.add_timer(p, g.id, "drift_recheck", now + step, now)
-        return done(a, "evaluate", "file sản phẩm bị sửa ngoài Javis", served, signature=sig)
+        return done(a, "evaluate", "file sản phẩm bị sửa ngoài Thansa", served, signature=sig)
     human = a.verdict == "unknown" and _human_only(a, bool(refs))
     outcome = "met" if a.verdict == "met" else ("human_only" if human else a.verdict)
     if outcome == "not_met" and any(r["code"] == "handoff_done" for r in snap) and _chat_only_attempt(g, deps):

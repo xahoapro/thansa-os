@@ -9345,7 +9345,7 @@ _AGENT_HAI_LOI = ("Chỉ hai lối đúng: làm xong ngay trong lượt và tr�
                   "nói rõ đã giao gì, kết quả về đâu. Không làm được cả hai thì nói thẳng là chưa làm.")
 _AGENT_BA_LOI = ("Ba lối đúng: làm xong ngay trong lượt và trả kết quả thật; giao việc nền / nhắc hẹn rồi nói rõ đã "
                  "giao gì, kết quả về đâu; hoặc, khi chủ giao trách nhiệm theo đuổi tới khi đạt, lập mục tiêu bằng "
-                 "javis_goal rồi nói rõ Javis làm tiếp ở nền trong hạn mức và kết quả tự về khung chat này. Không "
+                 "javis_goal rồi nói rõ Thansa làm tiếp ở nền trong hạn mức và kết quả tự về khung chat này. Không "
                  "làm được lối nào thì nói thẳng là chưa làm.")
 
 
