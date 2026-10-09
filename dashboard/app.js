@@ -4069,6 +4069,7 @@ async function _fetchAuthStatus(retries = 3, delayMs = 500) {
 // - public/đã đặt mật khẩu mà CHƯA có tài khoản → ÉP wizard tạo tài khoản (mật khẩu bắt buộc).
 // - đã có tài khoản mà chưa đăng nhập → màn đăng nhập.
 let _wizardMandatory = false;
+let _wizardCode = false;
 async function initAuthGate() {
   const s = await _fetchAuthStatus();
   // null = hỏi server thất bại hẳn (mất mạng thật) - ĐỪNG ép màn đăng nhập lên trong lúc
@@ -4083,6 +4084,14 @@ async function initAuthGate() {
     if (_wizardMandatory) {
       const pass = document.getElementById("wzPass"); if (pass) pass.required = true;
       const note = document.getElementById("wzErr"); if (note) note.textContent = window.t("app.wz_mandatory");
+    }
+    // Mở màn tạo admin TỪ NGOÀI máy (qua IP / tên miền): server đòi thêm mã cài đặt nằm trong
+    // file trên máy chủ, để người lạ quét trúng IP không chiếm được admin trước chủ máy.
+    _wizardCode = !!s.setup_code_required;
+    if (_wizardCode) {
+      const w = document.getElementById("wzCodeWrap"); if (w) w.style.display = "";
+      const h = document.getElementById("wzCodeHint");
+      if (h) h.textContent = window.t("app.wz_code_hint", { cmd: "cat " + (s.setup_code_path || ".setup_token") });
     }
     wz.classList.add("open");
   } else {
@@ -4383,12 +4392,21 @@ if (document.getElementById("wzFinish")) {
       return _soiOTrong(document.getElementById("wzPass"),
                         window.t("app.wz_pw_required"));
     }
+    const codeEl = document.getElementById("wzCode");
+    const code = codeEl ? codeEl.value.trim() : "";
+    if (_wizardCode && !code) {
+      return _soiOTrong(codeEl, window.t("app.wz_code_missing"));
+    }
     try {
       if (pass) {
-        const d = await (await fetch("/auth/setup", { method: "POST", body: _fd({ username: user || "admin", password: pass }) })).json();
-        // Mã thiết lập đã bỏ (0.64.47): lần đầu chỉ cần tên + mật khẩu. Lỗi còn lại là mật
-        // khẩu (quá ngắn...) nên kéo về đúng ô mật khẩu.
-        if (!d.ok) { return _soiOTrong(document.getElementById("wzPass"), d.error || window.t("app.wz_pw_err")); }
+        const body = { username: user || "admin", password: pass };
+        if (_wizardCode) body.setup_token = code;
+        const d = await (await fetch("/auth/setup", { method: "POST", body: _fd(body) })).json();
+        // Lỗi mã cài đặt thì kéo về ô mã, còn lại là mật khẩu (quá ngắn...) nên về ô mật khẩu.
+        if (!d.ok) {
+          return _soiOTrong(document.getElementById(d.need_setup_code ? "wzCode" : "wzPass"),
+                            d.error || window.t("app.wz_pw_err"));
+        }
       }
       await fetch("/settings", { method: "POST", body: _fd({ section: "general", data: JSON.stringify({ workspace_name: ws, setup_done: true }) }) });
       const _PM = { "anthropic-cli": "sonnet", "openai-oauth": "gpt-5.5", "openrouter": "openai/gpt-4o-mini" };
