@@ -128,7 +128,7 @@ def _turn(vault_root):
     t = turn_context.current()
     if t is None:
         return ("ERROR: Không xác định được lượt chat đang gọi tool (engine này chưa mang được ngữ cảnh lượt tới "
-                "Javis)." + _PLAIN)
+                "Thansa)." + _PLAIN)
     ag = t.get("agent") or {}
     if not ag.get("key"):
         return ("ERROR: Cộng hưởng chỉ dùng trong cuộc trò chuyện với một trợ lý đã bật Cộng hưởng (trang Cộng sự)."
