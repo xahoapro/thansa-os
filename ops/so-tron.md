@@ -808,3 +808,18 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - so_patch 57→58. VERSION 1.26.1-javis-0.86.1. Suite (venv CI) 613/616: đỏ = run_command_quyen, terminal_cmd_goc (sandbox)
   + ignore_files (file chưa commit lúc chạy, xanh sau commit).
 - **ĐÃ PHÁT HÀNH 2026-10-09** khi chủ duyệt trong Claude Code (origin/main a74916f, tag + Release thansa-v1.26.1; backup me-backup-1.26.1).
+
+## Vòng TAY 2026-10-09 (goc 09f254d → 2851a2d, nền 0.86.1 → 0.88.4, thansa 1.26.1→1.27.0)
+- Tự trộn 12:17 DỪNG ở P038 (i18n) → trộn tay trong worktree .tron-tay. 7 commit upstream: **0.86.2 settings ghi an toàn**
+  (gốc thật sự cố 08/10: GET /whatsapp/status + cho phép Zalo/Slack ghi MẢNH settings → write_settings ghi đè cả file),
+  Resonance theo trợ lý 0.87.0 + nhịp thức thích nghi 0.88.0, trợ lý tên có dấu 0.88.1, Codex cũ dựng lại ngữ cảnh 0.88.2,
+  bot nhóm Zalo thấy ảnh gửi trước 0.88.3, trang Cộng sự bỏ lần tải cũ 0.88.4.
+- Xung đột: P038 (i18n vi/en: **UNION** - resonance.* mới + 16 khoá cảnh báo; đếm khoá mqwarn/fullwarn/full_confirm/
+  toggle_confirm = bản 1.26.1), **P061 server/config.py**: lấy cơ chế ghi của upstream 0.86.2 (_doc_file_settings .bak/.bad,
+  _ghi_nguyen_tu, update_settings, gộp MẢNH, RLock), BỎ phần trùng của P061, GIỮ chốt auth rỗng (chỉ khi cfg CÓ mục auth;
+  pop("auth") vẫn xoá) + cho_xoa_mat_khau. test_ghi_settings_an_toan chỉnh theo .bak/.bad. Tự gỡ: P059 (4 file), P0xx main.py.
+- **P063 mới:** rebrand 4 chuỗi hiển thị (main.py, resonance.py, resonance_store.py, javis-goal). route_table chụp lại (4
+  route resonance dời thứ tự vì /domain/nginx). Sửa stub gate_active trong test mới test_resonance_a1_transport (P061).
+- VERSION 1.27.0-javis-0.88.4. moc-goc 2851a2d/0.88.4/so_patch 59. tu-kiem-chung 5/5. Chốt an toàn P038 OK.
+- NGHIỆM THU (venv CI, env -u JAVIS_*): fork 629/630 sau sửa; đỏ còn lại {run_command_quyen, terminal_cmd_goc} ĐỎ y hệt trên
+  upstream sạch → **0 hồi quy**.
