@@ -50,7 +50,7 @@ class LiveFocusTests(unittest.IsolatedAsyncioTestCase):
                 async def close(self): pass
             provider = Provider()
             namespace = dict(asyncio=asyncio, json=json, WebSocket=Socket, Query=lambda x: x,
-                             cfgmod=types.SimpleNamespace(gate_active=lambda: False, read_settings=lambda: {}),
+                             cfgmod=types.SimpleNamespace(gate_active=lambda *a, **k: False, read_settings=lambda: {}),
                              voice_live=types.SimpleNamespace(make_provider=lambda *a, **k: provider),
                              voice_call=types.SimpleNamespace(live_settings=lambda c: c),
                              get_store=lambda: store, _brain_key=lambda b: b)

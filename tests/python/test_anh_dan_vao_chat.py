@@ -34,7 +34,7 @@ def check(ten, dieu_kien, them=""):
         _fails.append(ten)
 
 
-main.cfgmod.gate_active = lambda: False   # test không đụng auth thật
+main.cfgmod.gate_active = lambda *a, **k: False   # test không đụng auth thật
 # base_url phải là IP: chưa bật cổng đăng nhập thì web_security siết Host để chống
 # DNS-rebinding, mà "testserver" mặc định của TestClient không nằm trong allowlist.
 client = TestClient(main.app, base_url="http://127.0.0.1")
