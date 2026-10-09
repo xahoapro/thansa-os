@@ -167,7 +167,8 @@ rm -f "$BAK"
 systemctl enable nginx >/dev/null 2>&1 || true
 if systemctl is-active --quiet nginx; then systemctl reload nginx; else systemctl start nginx; fi || fail "nginx-start"
 # Mở tường lửa nếu ufw đang bật (bỏ qua êm nếu không có ufw).
-if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
+# Không `ufw status | grep -q`: dưới pipefail grep -q thoát sớm → SIGPIPE → điều kiện sai dù khớp.
+if command -v ufw >/dev/null 2>&1 && grep -q "Status: active" <<<"$(ufw status 2>/dev/null || true)"; then
   ufw allow 80/tcp >/dev/null || true
   ufw allow 443/tcp >/dev/null || true
 fi
