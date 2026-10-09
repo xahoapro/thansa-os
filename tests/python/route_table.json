@@ -4040,7 +4040,7 @@
   "trong": null
  },
  {
-  "order": 405,
+  "order": 406,
   "type": "APIRoute",
   "path": "/resonance/agents",
   "name": "resonance_agents",
@@ -4050,7 +4050,7 @@
   "trong": null
  },
  {
-  "order": 406,
+  "order": 407,
   "type": "APIRoute",
   "path": "/resonance/agents/toggle",
   "name": "resonance_agent_toggle",
@@ -4060,7 +4060,7 @@
   "trong": null
  },
  {
-  "order": 407,
+  "order": 408,
   "type": "APIRoute",
   "path": "/resonance/agents/confirm",
   "name": "resonance_agent_confirm",
@@ -4070,7 +4070,7 @@
   "trong": null
  },
  {
-  "order": 408,
+  "order": 409,
   "type": "APIRoute",
   "path": "/goals/{goal_id}/assign",
   "name": "goal_assign",
