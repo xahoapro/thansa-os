@@ -1802,3 +1802,31 @@
   dieu_kien_bo: >
     Nếu upstream tự nhận request qua proxy là public và ghi settings nguyên tử thì bỏ phần tương ứng.
     Mã cài đặt: upstream đã bỏ có chủ ý ở 0.64.47 - giữ nhánh hẹp này ở Thansa trừ khi chủ đổi ý.
+
+- id: P062
+  ten: "Cập nhật an toàn trên systemd: updater ra khỏi cgroup dịch vụ, update.sh hết lỗi pipefail, bit thực thi, PATH node, venv"
+  y_dinh: >
+    Máy khách native/systemd (07/10, 09/10): nút Cập nhật làm app chết hẳn vì updater (start_new_session) vẫn trong
+    cgroup dịch vụ, `systemctl stop` giết luôn nó → main.py bọc updater bằng updater.lenh_tach_cgroup (systemd-run
+    --scope khi là root trong một dịch vụ). update.sh: `lệnh | grep -q` dưới pipefail ra 141 → nhận nhầm không có
+    systemd, chạy nohup tranh cổng → helper _co_unit/_co_container không dùng ống, nohup thả stdin. Cùng lỗi ở
+    bin/thansa-nginx-ssl.sh (ufw). update.sh/install.sh 100755. update.sh thêm ~/.thansa/node/bin vào PATH.
+    install.sh kiểm ensurepip + cài python3.X-venv, dựng lại .venv thiếu pip.
+  commit: "[me] P062: update an toan tren systemd (cgroup + pipefail) + bit thuc thi, PATH node, venv"
+  diem_neo:
+    - file: server/updater.py
+      ky_hieu: "def lenh_tach_cgroup(args"
+    - file: update.sh
+      ky_hieu: "_co_unit() { command -v systemctl"
+  vung_theo_doi:
+    - "update.sh: upstream javis-os còn `| grep -q` dưới pipefail (goc/update.sh) - mỗi vòng trộn giữ helper _co_*"
+    - "server/main.py: chỗ Popen updater trong POST /update"
+    - "install.sh: kiểm venv/ensurepip"
+  anh_goc:
+    - file: update.sh
+      doan: "systemctl list-unit-files 2>/dev/null | grep -q \"^$NAME\\.service\""
+  kiem_chung: >
+    test_update_systemd xanh (gồm quét mọi *.sh có pipefail không chứa `| grep -q`, chạy thật helper với lệnh giả
+    in 200k dòng); git ls-files -s update.sh install.sh → 100755.
+  dieu_kien_bo: >
+    Bỏ phần tương ứng khi upstream tự sửa (updater ngoài cgroup / update.sh không còn `| grep -q`).

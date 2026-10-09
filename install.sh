@@ -100,7 +100,13 @@ if ! find_python; then
     exit 1
   }
 fi
-"$PYTHON_BIN" -m venv --help >/dev/null 2>&1 || { command -v apt-get >/dev/null 2>&1 && $SUDO apt-get install -y python3-venv; }
+# `-m venv --help` chạy được cả khi thiếu gói python3.X-venv (Ubuntu 22.04), nhưng venv tạo ra
+# KHÔNG có pip → chết ở ./.venv/bin/pip. Kiểm đúng thứ venv cần: ensurepip. Debian/Ubuntu tách
+# nó theo từng bản Python, nên cài python3.X-venv khớp đúng PYTHON_BIN (kèm python3-venv dự phòng).
+if ! "$PYTHON_BIN" -c "import ensurepip" >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+  PY_XY="$("$PYTHON_BIN" -c 'import sys;print(f"{sys.version_info[0]}.{sys.version_info[1]}")')"
+  $SUDO apt-get install -y "python${PY_XY}-venv" || $SUDO apt-get install -y python3-venv || true
+fi
 ok "$("$PYTHON_BIN" --version) ($PYTHON_BIN)"
 
 # --- 2. system deps: git, ripgrep, ffmpeg (best-effort) ---
@@ -198,6 +204,11 @@ log "Creating virtualenv (.venv)..."
 # exact uvicorn resolve error the probe above exists to prevent. Rebuild instead.
 if [ -d .venv ] && ! py_ok ./.venv/bin/python; then
   warn ".venv runs $(./.venv/bin/python --version 2>&1 || echo 'an unusable Python') - rebuilding with $PYTHON_BIN"
+  rm -rf .venv
+fi
+# A .venv made while python3.X-venv was missing has no pip: rebuild it too.
+if [ -d .venv ] && [ ! -x ./.venv/bin/pip ]; then
+  warn ".venv has no pip (built without python3-venv) - rebuilding with $PYTHON_BIN"
   rm -rf .venv
 fi
 [ -d .venv ] || "$PYTHON_BIN" -m venv .venv
