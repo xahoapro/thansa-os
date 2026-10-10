@@ -829,3 +829,9 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 2 commit upstream: 0.88.6: Zalo bot card shows why the Zalo process died (#603); 0.88.5: Resonance cards load once per goal, goal API off the event loop, Server-Timing header (#602)
 - Rebase tự động trong worktree riêng. Tự gỡ: không. Upstream xoá: không.
 - Rebrand: P064 (6 chỗ / 1 file). moc-goc 35878a7/0.88.6/so_patch 60.
+- **ĐÃ PHÁT HÀNH 2026-10-10** khi chủ bấm duyệt trên Telegram (origin/main 7d6ea57, tag + Release thansa-v1.28.0; backup me-backup-1.28.0).
+
+## Vòng TỰ ĐỘNG 2026-10-10 (goc 35878a7 → 33a3c1a, nền 0.88.6 → 0.89.0, thansa 1.28.0→1.29.0)
+- 1 commit upstream: 0.89.0: Resonance A3 - học từ phản hồi có kiểm chứng (#598)
+- Rebase tự động trong worktree riêng. Tự gỡ: 51f16e59:dashboard/i18n/en.json, 51f16e59:dashboard/i18n/vi.json. Upstream xoá: không.
+- Rebrand: P065 (15 chỗ / 3 file). moc-goc 33a3c1a/0.89.0/so_patch 61.
