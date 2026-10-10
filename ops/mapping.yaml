@@ -1854,3 +1854,22 @@
     String literal server chứa Javis (bỏ docstring/đường dẫn) ở resonance*.py = 0; test_resonance_* xanh; tu-kiem-chung 5/5.
   dieu_kien_bo: >
     Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ.
+
+- id: P064
+  ten: "Rebrand nền 0.88.6 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-10 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.88.6 sang Thansa
+    theo luật P007/P026/P027/P048 (6 chỗ / 1 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P064: rebrand nen 0.88.6 (tu dong)"
+  diem_neo:
+    - file: server/zalo_personal_channel.py
+      ky_hieu: 'o đã ngắt phiên của Thansa vì tài khoản này vừa đư'
+  vung_theo_doi:
+    - "server/zalo_personal_channel.py"
+  anh_goc:
+    - file: server/zalo_personal_channel.py
+      doan: 'o đã ngắt phiên của Javis vì tài khoản này vừa đư'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
