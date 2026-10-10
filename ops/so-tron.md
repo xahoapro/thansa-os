@@ -823,3 +823,9 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - VERSION 1.27.0-javis-0.88.4. moc-goc 2851a2d/0.88.4/so_patch 59. tu-kiem-chung 5/5. Chốt an toàn P038 OK.
 - NGHIỆM THU (venv CI, env -u JAVIS_*): fork 629/630 sau sửa; đỏ còn lại {run_command_quyen, terminal_cmd_goc} ĐỎ y hệt trên
   upstream sạch → **0 hồi quy**.
+- **ĐÃ PHÁT HÀNH 2026-10-10** khi chủ duyệt trong Claude Code (origin/main c8beeb2, tag + Release thansa-v1.27.0; backup me-backup-1.27.0).
+
+## Vòng TỰ ĐỘNG 2026-10-10 (goc 2851a2d → 35878a7, nền 0.88.4 → 0.88.6, thansa 1.27.0→1.28.0)
+- 2 commit upstream: 0.88.6: Zalo bot card shows why the Zalo process died (#603); 0.88.5: Resonance cards load once per goal, goal API off the event loop, Server-Timing header (#602)
+- Rebase tự động trong worktree riêng. Tự gỡ: không. Upstream xoá: không.
+- Rebrand: P064 (6 chỗ / 1 file). moc-goc 35878a7/0.88.6/so_patch 60.

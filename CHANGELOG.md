@@ -6,6 +6,16 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.88.6] - 2026-10-10
+### Sửa lỗi
+- **Thẻ bot Zalo nói đúng lý do khi kết nối Zalo bị ngắt.** Trước đây thẻ chỉ hiện một dòng cấu hình kỹ thuật kiểu `process đóng stdout ([mcp] Config loaded: ...)`, còn lý do thật bị cắt mất. Giờ thẻ nói bằng lời thường. Nếu Zalo ngắt phiên vì tài khoản vừa được mở ở nơi khác (Zalo Web trên trình duyệt, hoặc một máy Javis khác cùng đăng nhập tài khoản này), thẻ bảo đóng nơi kia, Javis tự nối lại sau khoảng 2 phút. Nếu phiên đăng nhập Zalo đã hết hạn, thẻ bảo vào trang Kết nối đăng nhập lại bằng mã QR. Lỗi khác thì hiện phần cuối của thông báo, nơi có lý do thật.
+
+## [0.88.5] - 2026-10-10
+### Cải thiện
+- **Hội thoại có nhiều thẻ mục tiêu mở nhanh hơn.** Các thẻ của cùng một mục tiêu dùng chung một lần tải thay vì mỗi thẻ một lần, và chỉ vẽ lại một lượt.
+- **Mở thẻ mục tiêu không còn làm các trang khác chờ.** Javis đọc trạng thái mục tiêu ở luồng riêng và chỉ đọc phần thẻ cần hiện, nên mục tiêu có lịch sử dài vẫn mở nhanh.
+- **Đo được Javis xử lý mỗi yêu cầu mất bao lâu.** Mỗi phản hồi có thêm header `Server-Timing`, giúp tách chậm do Javis với chậm do đường mạng hay proxy (Cloudflare).
+
 ## [0.88.4] - 2026-10-09
 ### Sửa lỗi
 - **Trang Cộng sự không còn thỉnh thoảng trống trơn dù brain có trợ lý.** Mở app thẳng vào trang này thì lúc đầu Javis chưa biết đang ở brain nào, nên tải danh sách của brain mặc định (rỗng), rồi tải lại khi biết brain thật. Nếu lượt tải đầu về muộn hơn, nó ghi đè danh sách đúng và trang báo "Chưa có cộng sự nào". Giờ kết quả của lượt cũ bị bỏ. Server báo lỗi khi tải danh sách thì trang hiện lỗi kèm nút Thử lại, không giả làm danh sách rỗng nữa.
