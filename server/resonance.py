@@ -3619,15 +3619,15 @@ def _method_changed_text(goal: GoalRecord, payload: dict, u: str) -> str:
         n, tot = int(payload.get("met") or 0), int(payload.get("total") or 0)
         res_vi = f"Đã làm lại sản phẩm bằng cách mới: {'đạt' if payload.get('verdict') == 'met' else 'chưa đạt'} " \
                  f"({n}/{tot} tiêu chí)."
-        res_en = f"Javis redid the deliverable with the new method: {'met' if payload.get('verdict') == 'met' else 'not met'} " \
+        res_en = f"Thansa redid the deliverable with the new method: {'met' if payload.get('verdict') == 'met' else 'not met'} " \
                  f"({n}/{tot} criteria)."
         calls += 1
     else:
         res_vi = f"Chưa làm lại sản phẩm ({payload.get('reason') or 'không còn cần'})."
         res_en = f"The deliverable was not redone ({payload.get('reason') or 'no longer needed'})."
-    return _t(f"Javis đã thử cách làm \"{to_vi}\" cho {u} khi bế tắc. Kết quả thử: {cases_vi}. Cách này chỉ áp dụng cho "
+    return _t(f"Thansa đã thử cách làm \"{to_vi}\" cho {u} khi bế tắc. Kết quả thử: {cases_vi}. Cách này chỉ áp dụng cho "
               f"cách hiểu hiện tại. {res_vi} Tổng {calls} lượt gọi model. Muốn bỏ thì bấm Quay lại cách cũ trên thẻ.",
-              f"Javis tried the method \"{to_en}\" for {u} after it got stuck. Trial: {cases_en}. It applies only to the "
+              f"Thansa tried the method \"{to_en}\" for {u} after it got stuck. Trial: {cases_en}. It applies only to the "
               f"current understanding. {res_en} {calls} model calls in total. Use Revert method on the card to undo.")
 
 
