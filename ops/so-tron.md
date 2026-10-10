@@ -835,3 +835,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 1 commit upstream: 0.89.0: Resonance A3 - học từ phản hồi có kiểm chứng (#598)
 - Rebase tự động trong worktree riêng. Tự gỡ: 51f16e59:dashboard/i18n/en.json, 51f16e59:dashboard/i18n/vi.json. Upstream xoá: không.
 - Rebrand: P065 (15 chỗ / 3 file). moc-goc 33a3c1a/0.89.0/so_patch 61.
+- **ĐÃ PHÁT HÀNH 2026-10-10** khi chủ bấm duyệt trên Telegram (origin/main 62bdaf9, tag + Release thansa-v1.29.0; backup me-backup-1.29.0).
