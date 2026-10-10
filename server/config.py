@@ -5,10 +5,10 @@ Auth CHỈ bật khi đã đặt mật khẩu → bản local chưa đặt vẫn
 """
 import json
 import os
+import threading
+import time
 import hashlib
 import secrets
-import threading
-import time as _time
 from pathlib import Path
 
 # Mọi state Javis tự ghi (settings, auth sessions, loop config) nằm ở JAVIS_STATE_DIR.
@@ -555,42 +555,90 @@ def _transform_secret_fields(cfg, fn):
 # (x2 middleware = 10-16ms/request chỉ để check đăng nhập). File đổi (kể cả write_settings
 # ghi đè) thì mtime/size đổi -> tự đọc lại. Trả deep copy để caller sửa thoải mái không bẩn cache.
 _SETTINGS_CACHE = {"sig": None, "cfg": None}
-_SETTINGS_HONG = {"hong": False}
-_GHI_LOCK = threading.Lock()
+
+# Một khoá cho mọi lần đọc-sửa-ghi settings.json (update_settings, write_settings). RLock vì
+# update_settings gọi write_settings bên trong. Chặn hai luồng (endpoint chạy trong threadpool,
+# asyncio.to_thread) cùng đọc bản cũ rồi ghi đè lên thay đổi của nhau.
+_SETTINGS_LOCK = threading.RLock()
 
 
-def _doc_file_settings():
-    """dict trong settings.json; {} nếu chưa có file; None nếu có mà đọc không ra.
+def _bak_path() -> Path:
+    """Bản tốt gần nhất trước lần ghi cuối. Tính lại mỗi lần gọi vì test đổi SETTINGS_PATH."""
+    return SETTINGS_PATH.with_name(SETTINGS_PATH.name + ".bak")
 
-    Đọc lỗi thì thử lại vài lần: ghi đã nguyên tử (_ghi_nguyen_tu) nhưng file có thể bị công cụ
-    ngoài (script, sửa tay) ghi dở đúng lúc này."""
-    for lan in range(4):
+
+def _doc_file_settings() -> dict:
+    """Nội dung settings.json trên đĩa (CHƯA trộn mặc định, chưa giải mã). {} khi chưa có file.
+
+    File có mà đọc hỏng (JSON cụt, byte rác) thì KHÔNG coi như rỗng. Trước 0.86.2 nhánh này nuốt
+    lỗi rồi trả mặc định, và lần ghi kế tiếp lấy chính bản mặc định đó đè lên file: mất sạch tên
+    miền, mật khẩu, khoá API (báo lỗi của khách 08/10). Giờ: giữ lại bản hỏng để cứu tay, đọc bản
+    dự phòng `.bak` (bản tốt trước lần ghi cuối), và báo to trong log."""
+    if not SETTINGS_PATH.exists():
+        return {}
+    try:
+        data = json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+        raise ValueError(f"settings.json không phải object JSON ({type(data).__name__})")
+    except Exception as e:
+        hong = SETTINGS_PATH.with_name(SETTINGS_PATH.name + ".bad")
         try:
-            if not SETTINGS_PATH.exists():
-                return {}
-            v = json.loads(SETTINGS_PATH.read_text(encoding="utf-8")) or {}
-            return v if isinstance(v, dict) else None
-        except (OSError, ValueError):
-            if lan < 3:
-                _time.sleep(0.05)
-    return None
+            raw = SETTINGS_PATH.read_bytes()
+            hong = SETTINGS_PATH.with_name(f"{SETTINGS_PATH.name}.bad-{hashlib.sha1(raw).hexdigest()[:8]}")
+            if not hong.exists():   # cùng một bản hỏng thì chỉ giữ một lần
+                hong.write_bytes(raw)
+        except Exception:
+            pass
+        print(f"[config] settings.json ĐỌC HỎNG ({type(e).__name__}: {e}). Đã giữ bản hỏng ở {hong.name}; "
+              f"đang dùng bản dự phòng {_bak_path().name} nếu có.", file=__import__("sys").stderr)
+        try:
+            data = json.loads(_bak_path().read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data
+        except Exception:
+            pass
+        return {}
 
 
-def _ghi_nguyen_tu(path, text):
-    """Ghi qua file tạm rồi os.replace: người đọc chỉ thấy bản cũ ĐỦ hoặc bản mới ĐỦ, không
-    bao giờ thấy file rỗng/ghi dở (write_text cũ cắt file về 0 byte trước khi ghi)."""
-    path = Path(path)
-    with _GHI_LOCK:
-        tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
-        with open(tmp, "w", encoding="utf-8") as f:
+def _ghi_nguyen_tu(text: str) -> None:
+    """Ghi settings.json NGUYÊN TỬ: ghi file tạm cạnh nó, fsync, rồi os.replace.
+
+    Ghi thẳng (write_text) mà tiến trình chết giữa chừng (container bị dừng lúc cập nhật, máy mất
+    điện) là để lại file JSON cụt, và đọc cụt thì trước đây ra cấu hình mặc định. Trước khi thay,
+    chép bản đang tốt sang `.bak` để còn đường lùi nếu bản mới có vấn đề."""
+    tmp = SETTINGS_PATH.with_name(f".{SETTINGS_PATH.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
             f.flush()
-            os.fsync(f.fileno())
+            try:
+                os.fsync(f.fileno())
+            except OSError:
+                pass
+        if SETTINGS_PATH.exists():
+            try:
+                cu = SETTINGS_PATH.read_bytes()
+                if isinstance(json.loads(cu.decode("utf-8")), dict):   # chỉ lưu bản TỐT làm dự phòng
+                    _bak_path().write_bytes(cu)
+                os.chmod(tmp, SETTINGS_PATH.stat().st_mode & 0o777)
+            except Exception:
+                pass
+        # Windows: file đang bị một tiến trình khác mở đọc thì replace có thể bị từ chối thoáng qua.
+        for lan in range(5):
+            try:
+                os.replace(tmp, SETTINGS_PATH)
+                break
+            except PermissionError:
+                if lan == 4:
+                    raise
+                time.sleep(0.05 * (lan + 1))
+    finally:
         try:
-            os.chmod(tmp, path.stat().st_mode & 0o777)
-        except OSError:
+            if tmp.exists():
+                tmp.unlink()
+        except Exception:
             pass
-        os.replace(tmp, path)
 
 
 def _deep_merge(base: dict, patch: dict) -> dict:
@@ -828,20 +876,7 @@ def read_settings():
         return json.loads(_SETTINGS_CACHE["cfg"])
     cfg = json.loads(json.dumps(_DEFAULT))   # deep copy
     data = _doc_file_settings()
-    if data is None:
-        # File CÓ mà đọc không ra (đang bị ghi dở, hỏng): TUYỆT ĐỐI không trả bộ mặc định. Trả
-        # mặc định là caller sửa một mục rồi write_settings ghi cả bộ xuống - mật khẩu admin và
-        # mọi kênh bay sạch (sự cố Thansa 08/10). Lùi về bản đọc tốt gần nhất.
-        if _SETTINGS_CACHE["cfg"] is not None:
-            print("[config] settings.json đọc lỗi - dùng bản đọc tốt gần nhất", file=__import__('sys').stderr)
-            return json.loads(_SETTINGS_CACHE["cfg"])
-        print("[config] settings.json đọc lỗi và chưa có bản tốt nào - tạm dùng mặc định, KHÔNG ghi đè file",
-              file=__import__('sys').stderr)
-        _SETTINGS_HONG["hong"] = True
-        data = {}
-    else:
-        _SETTINGS_HONG["hong"] = False
-        _deep_merge(cfg, data)
+    _deep_merge(cfg, data)
     _ui_lang_ban_cu(cfg, data)
     _nan_provider_da_go(cfg)
     _no_rong_pham_vi_bo_nao(cfg)
@@ -857,7 +892,46 @@ def read_settings():
     return cfg
 
 
+def update_settings(patch: dict) -> dict:
+    """Cập nhật TỪNG PHẦN: gộp `patch` (đệ quy) lên cấu hình hiện tại rồi ghi, trong một khoá.
+
+    Dùng cho mọi chỗ chỉ muốn đổi vài trường (`{"whatsapp": {"verify_token": ...}}`). Đừng đưa
+    mảnh như thế vào `write_settings`: hàm đó THAY TOÀN BỘ file bằng thứ được đưa vào. Trả về cấu
+    hình đầy đủ sau khi ghi."""
+    with _SETTINGS_LOCK:
+        cfg = read_settings()
+        _deep_merge(cfg, json.loads(json.dumps(patch)))
+        write_settings(cfg)
+        return cfg
+
+
 def write_settings(cfg, cho_xoa_mat_khau=False):
+    """THAY TOÀN BỘ settings.json bằng `cfg` - một cấu hình ĐẦY ĐỦ lấy từ read_settings() rồi sửa.
+
+    Lưới an toàn (0.86.2): `cfg` thiếu khoá gốc mà mọi cấu hình đầy đủ đều có (read_settings luôn
+    trộn đủ mặc định) thì chắc chắn là một MẢNH truyền nhầm. Ba chỗ từng làm vậy từ 0.71.0
+    (`{"whatsapp": {"verify_token": ...}}` ngay trong GET /whatsapp/status, cho phép chat Zalo,
+    cho phép người dùng Slack/WhatsApp) và mỗi lần chạy là xoá sạch tên miền, mật khẩu, khoá API
+    (khách báo 08/10). Mảnh như thế giờ được gộp như update_settings, kèm một dòng log chỉ chỗ gọi."""
+    if not isinstance(cfg, dict):
+        raise TypeError("write_settings cần một dict cấu hình đầy đủ")
+    with _SETTINGS_LOCK:
+        # MẢNH = thiếu quá nửa khoá gốc. Mảnh thật chỉ có một, hai khoá; còn cấu hình đầy đủ mà bỏ
+        # hẳn một mục có chủ đích (đặt lại tài khoản: `pop("auth")` rồi ghi) vẫn phải xoá được.
+        thieu = [k for k in _DEFAULT if k not in cfg]
+        if len(thieu) * 2 > len(_DEFAULT):
+            import traceback
+            noi = "".join(traceback.format_stack(limit=3)[:-1]).strip().replace("\n", " | ")
+            print(f"[config] write_settings nhận một MẢNH (thiếu {', '.join(thieu[:4])}...) - gộp thay vì "
+                  f"ghi đè cả file. Hãy dùng update_settings. Gọi từ: {noi[-300:]}",
+                  file=__import__("sys").stderr)
+            day_du = read_settings()
+            _deep_merge(day_du, json.loads(json.dumps(cfg)))
+            cfg = day_du
+        _write_settings_full(cfg, cho_xoa_mat_khau)
+
+
+def _write_settings_full(cfg, cho_xoa_mat_khau=False):
     # Deep-copy rồi mã hoá BẢN SAO: caller vẫn giữ cfg plaintext để dùng tiếp (không bị hỏng).
     out = json.loads(json.dumps(cfg))
     try:
@@ -873,7 +947,7 @@ def write_settings(cfg, cho_xoa_mat_khau=False):
     try:
         t = (out.get("auth") or {}).get("totp")
         if isinstance(t, dict) and t.get("enabled") and not str(t.get("secret") or ""):
-            raw_cu = json.loads(SETTINGS_PATH.read_text(encoding="utf-8")) if SETTINGS_PATH.exists() else {}
+            raw_cu = _doc_file_settings()
             cu = str((((raw_cu.get("auth") or {}).get("totp") or {}).get("secret")) or "")
             if cu:
                 t["secret"] = cu
@@ -883,28 +957,15 @@ def write_settings(cfg, cho_xoa_mat_khau=False):
         _giu_secret_khong_giai_duoc(out)
     except Exception as e:      # noqa: BLE001 - tấm che hỏng thì vẫn ghi như cũ, không chặn việc lưu
         print(f"[config] giữ secret khi khoá lệch lỗi: {e}", file=__import__('sys').stderr)
-    # Chốt cuối cho mật khẩu admin: ghi `auth` rỗng đè lên file đang có mật khẩu chỉ được khi
-    # caller nói rõ (tắt đăng nhập ở /auth/disable). Mọi đường khác mà ra auth rỗng đều là
-    # cfg đọc hỏng / cũ - giữ nguyên auth trên đĩa.
-    if not cho_xoa_mat_khau and not str(((out.get("auth") or {}).get("password_hash")) or ""):
+    # Thansa (P061) - chốt cuối cho mật khẩu admin: cfg CÓ mục `auth` mà mật khẩu rỗng (bộ mặc
+    # định đọc hỏng / cũ) không được đè lên file đang có mật khẩu, trừ khi caller nói rõ (tắt đăng
+    # nhập ở /auth/disable). Bỏ hẳn mục `auth` (pop rồi ghi, đặt lại tài khoản) vẫn xoá được.
+    if not cho_xoa_mat_khau and "auth" in out and not str(((out.get("auth") or {}).get("password_hash")) or ""):
         cu = _doc_file_settings()
         if isinstance(cu, dict) and str(((cu.get("auth") or {}).get("password_hash")) or ""):
             print("[config] chặn ghi auth rỗng đè lên mật khẩu đang có - giữ auth cũ", file=__import__('sys').stderr)
             out["auth"] = cu["auth"]
-    if _SETTINGS_HONG["hong"] and _doc_file_settings() is None and SETTINGS_PATH.exists():
-        # File trên đĩa vẫn hỏng và cfg này là bộ mặc định: giữ lại bản hỏng để còn cứu tay.
-        try:
-            SETTINGS_PATH.replace(SETTINGS_PATH.with_name(f"settings.json.hong-{int(_time.time())}"))
-        except OSError:
-            pass
-    _ghi_nguyen_tu(SETTINGS_PATH, json.dumps(out, ensure_ascii=False, indent=2))
-    # Nạp lại ngay để "bản đọc tốt gần nhất" (read_settings lùi về khi file hỏng) luôn là bản
-    # vừa ghi, không phải một bản cũ hơn.
-    _SETTINGS_CACHE["sig"] = None
-    try:
-        read_settings()
-    except Exception:
-        pass
+    _ghi_nguyen_tu(json.dumps(out, ensure_ascii=False, indent=2))
 
 
 def _giu_secret_khong_giai_duoc(out):
@@ -920,7 +981,7 @@ def _giu_secret_khong_giai_duoc(out):
     if not SETTINGS_PATH.exists():
         return
     import secrets_store
-    raw_cu = json.loads(SETTINGS_PATH.read_text(encoding="utf-8")) or {}
+    raw_cu = _doc_file_settings()
     for path in _SECRET_PATHS:
         if path == "auth.totp.secret":
             # 2FA có tấm che RIÊNG ngay trên (giữ khi còn bật): tắt 2FA lúc khoá lệch (đăng nhập bằng mã khôi phục rồi

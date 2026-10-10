@@ -6,6 +6,46 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.88.4] - 2026-10-09
+### Sửa lỗi
+- **Trang Cộng sự không còn thỉnh thoảng trống trơn dù brain có trợ lý.** Mở app thẳng vào trang này thì lúc đầu Javis chưa biết đang ở brain nào, nên tải danh sách của brain mặc định (rỗng), rồi tải lại khi biết brain thật. Nếu lượt tải đầu về muộn hơn, nó ghi đè danh sách đúng và trang báo "Chưa có cộng sự nào". Giờ kết quả của lượt cũ bị bỏ. Server báo lỗi khi tải danh sách thì trang hiện lỗi kèm nút Thử lại, không giả làm danh sách rỗng nữa.
+
+## [0.88.3] - 2026-10-09
+### Sửa lỗi
+- **Bot trong nhóm Zalo thấy ảnh khi khách gửi ảnh trơn rồi mới gọi bot.** Trước đây ảnh không kèm chú thích bị bỏ ngay khi tới, nên cách gửi hay gặp nhất là gửi ảnh rồi nhắn "@bot xem giúp" thì bot nói chưa thấy ảnh. Còn ảnh có ghi vài chữ chú thích thì bot lại thấy, nên trông như lúc thấy lúc không. Giờ bot nhớ ảnh trơn trong 3 phút, và lần người đó gọi bot thì bot xem được ảnh.
+  - Ở chế độ Tự đánh giá, câu như "xem giúp ảnh trên" không tag bot mà bot quyết định trả lời thì cũng kèm theo ảnh.
+  - Tải ảnh từ Zalo lỗi thoáng qua (mạng chập, ảnh vừa gửi chưa sẵn) thì bot thử lại một lần thay vì báo không thấy ngay.
+
+## [0.88.2] - 2026-10-09
+### Sửa lỗi
+- **Chat cũ dùng ChatGPT tự khôi phục sau khi chuyển máy hay VPS.** Phiên làm việc của Codex nằm trên máy cũ không đi theo, nên chat cũ báo lỗi "no rollout found" mãi trong khi chat mới chạy bình thường. Javis đã có sẵn bước dựng lại ngữ cảnh từ lịch sử chat, nhưng không nhận ra câu lỗi này, nhất là khi Codex chỉ báo lỗi rồi thoát ngay. Giờ Javis nhận ra và tự dựng lại đúng một lần. Lỗi đăng nhập, hết hạn mức hay mất mạng vẫn báo như cũ. (Báo lỗi của @dev23072005, issue #595.)
+
+## [0.88.1] - 2026-10-09
+### Sửa lỗi
+- **Trợ lý đặt tên tiếng Việt có dấu mở được tab Cài đặt ở trang Cộng sự.** Trước đây trợ lý tên như "Bống Work" luôn báo "Không tải được trợ lý này", và cũng không xoá hay xuất được, vì tên file lưu có dấu mà bước đọc lại chỉ nhận chữ không dấu. Trợ lý cũ giờ dùng bình thường, còn trợ lý tạo mới được đặt tên file không dấu. Bộ mẫu Studio cũng hết lỗi bước kiểm chứng không tìm thấy trợ lý "Kiểm chứng viên".
+
+## [0.88.0] - 2026-10-09
+### Cải thiện
+- **Trợ lý Cộng hưởng chỉ gọi model khi có lý do.** Việc mới, góp ý mới của bạn, hay một lần thử lại còn trong giới hạn. Đang chờ bạn thì ngủ; lần xem lại định kỳ chỉ kiểm bằng code và giãn dần tới 7 ngày.
+- **Không thử lại vô ích.** Hai lượt liên tiếp không tiến thêm thì dừng và chờ góp ý; lỗi chỉ thử tối đa 3 lượt; thử lại tự động luôn chừa một lượt cho góp ý của bạn.
+- **File bạn sửa tay không bị ghi đè hay làm lại.** Javis báo một lần rồi tự kiểm lại; tạm dừng mục tiêu vẫn theo dõi điều kiện bảo vệ, tắt trợ lý thì báo rõ đã ngừng theo dõi.
+- **Thẻ mục tiêu hiện vì sao trợ lý thức** và các lần thức gần đây, có gọi model hay không.
+
+## [0.87.0] - 2026-10-08
+### Thêm mới
+- **Cộng hưởng theo từng trợ lý.** Mỗi trợ lý có công tắc riêng ở trang Cộng sự. Chỉ trợ lý đã bật mới tự lập và theo đuổi mục tiêu; trò chuyện thường không tự sinh mục tiêu. Cột phải của trợ lý hiện các mục tiêu nó đang theo đuổi.
+### Thay đổi
+- **Công tắc Cộng hưởng theo brain không còn dùng.** Mục tiêu lập trước bản này nằm ở mục "Chờ gán" trong Cài đặt và không tự chạy cho tới khi anh gán cho một trợ lý.
+- **Xoá rồi tạo lại trợ lý cùng tên là trợ lý mới.** Trợ lý mới phải bật lại; mục tiêu và cuộc trò chuyện cũ ở lại với trợ lý cũ. Bật trong cuộc trò chuyện mở trước đó thì Javis nhắc mở cuộc trò chuyện mới.
+
+## [0.86.2] - 2026-10-08
+### Sửa lỗi
+- **Cài đặt không còn bị xoá sạch khi mở tab WhatsApp hay cho phép một người nhắn bot.** Từ 0.71.0 có ba chỗ chỉ định lưu một mảnh nhỏ nhưng lại ghi đè cả file cài đặt: mở tab WhatsApp ở trang Kênh Admin lần đầu, cho phép một chat Zalo, cho phép một người dùng Slack, WhatsApp, Discord hay Lark. Mỗi lần như vậy là mất tên miền HTTPS, khoá API, kết nối Telegram cùng mọi thiết lập khác. Bản Docker dùng tên miền riêng còn có thể mất HTTPS sau lần khởi động lại reverse proxy kế tiếp. Giờ cả ba chỉ cập nhật đúng phần của mình. Cảm ơn đội DaoVix đã rà mã và gửi báo lỗi chi tiết.
+- **File cài đặt được ghi an toàn hơn.**
+  - Ghi nguyên tử: máy tắt giữa lúc lưu không còn để lại file hỏng.
+  - Giữ bản dự phòng `settings.json.bak` của lần lưu tốt gần nhất. File hỏng thì Javis đọc bản dự phòng thay vì lặng lẽ quay về mặc định rồi ghi đè lên, và giữ lại bản hỏng để cứu tay.
+  - Nhiều thao tác lưu cùng lúc không còn đè mất thay đổi của nhau.
+
 ## [0.86.1] - 2026-10-08
 ### Cải thiện
 - **Dùng ChatGPT làm bộ não, khung chat hiện ngay bước Javis đang làm, không im hẳn tới lúc xong.** Trước đây khi Codex chạy một lệnh dài (cài thư viện, quét file, chạy script), khung chat chỉ có chữ "Javis đang suy nghĩ..." đếm giờ cho tới khi lệnh chạy xong, trông như bị treo. Giờ bước hiện ra ngay lúc bắt đầu, kiểu "Chạy lệnh: npm install", rồi được đánh dấu xong khi chạy xong, giống như khi dùng Claude.

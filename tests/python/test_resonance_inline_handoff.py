@@ -28,6 +28,7 @@ import claude_sdk_engine  # noqa: E402
 import luot_dang_chay  # noqa: E402
 import resonance as R  # noqa: E402
 import resonance_store as RS  # noqa: E402
+import _resonance_agent as RA  # noqa: E402  - A1: Cộng hưởng bật theo trợ lý
 from claude_agent_sdk import AssistantMessage, ToolResultBlock, ToolUseBlock, UserMessage  # noqa: E402
 
 _fails = []
@@ -97,8 +98,8 @@ _n = {"mid": 0, "call": 0}
 def world(name):
     brain = Path(tempfile.mkdtemp(prefix=f"brain-{name}-")).resolve()
     (brain / "Javis").mkdir(parents=True)
-    (brain / "Javis" / "resonance.json").write_text('{"enabled": true}', encoding="utf-8")
     store = RS.GoalStore(_STATE / f"{name}.sqlite3")
+    RA.enable(store, brain)       # A1: mục tiêu thuộc một trợ lý đang bật trong kho của thế giới này
     return str(brain), store, RS.Principal("agent", "javis", str(brain))
 
 
@@ -132,14 +133,15 @@ def create(brain, store, p, clock, mid, ref):
     return asyncio.run(R.form_goal(ref, {
         "principal": p, "brain_root": brain, "session_id": "s-hand", "message_id": mid, "user_text": USER,
         "constraints": [], "budget_calls": 4, "proposal": proposal(),
-        "hold_until": clock() + R.HANDOFF_HOLD_S}, deps0))
+        "hold_until": clock() + R.HANDOFF_HOLD_S, **RA.ctx(store.agent(brain, RA.SLUG))}, deps0))
 
 
 def revise(store, p, gid, rev, clock, mid, ref, text=FEEDBACK):
     return R.revise_goal(store, p, gid, rev, {"constraints": ["Có ví dụ"], "relevant_quote": "em thêm một ví dụ"},
                          {"message_ref": ref, "session_id": "s-hand", "message_id": mid, "user_text": text,
                           "constraints": [], "user_unsure": False, "reason": "góp ý",
-                          "hold_until": clock() + R.HANDOFF_HOLD_S})[0]
+                          "hold_until": clock() + R.HANDOFF_HOLD_S,
+                          **RA.ctx(store.agent(p.brain_id, RA.SLUG))})[0]
 
 
 def sdk_events(blocks_msgs):
@@ -376,7 +378,8 @@ mid, ref = mref()
 put_file(b, DELIV, A)
 deps0 = R.GoalDeps(engine_factory=lambda s, t: (None, {}), budget=R.CallBudget(0), store=st)
 g = asyncio.run(R.form_goal(ref, {"principal": P, "brain_root": b, "session_id": "s-hand", "message_id": mid,
-                                  "user_text": USER, "constraints": [], "budget_calls": 4, "proposal": proposal()}, deps0))
+                                  "user_text": USER, "constraints": [], "budget_calls": 4, "proposal": proposal(),
+                                  **RA.ctx(st.agent(b, RA.SLUG))}, deps0))
 eng = FakeEngine()
 deps = deps_for(b, st, eng, clk)
 adv(g.id, deps)          # việc nền chạy, xung đột với file có sẵn: đầu ra nằm ở vùng làm việc
@@ -418,6 +421,12 @@ check("3e không lưu được bằng chứng: không tiếp nhận, không mố
 r = scenario("c4", lambda b: write_msgs(b, DELIV, BAD), BAD)
 check("4 tiếp nhận bản chat chưa đạt", r[0] == "adopted")
 adv(r[5].id, r[7])
+# A2 (thiết kế mục 3): bản chat là lượt đầu của revision. Lần thức sau bàn giao chỉ kết sổ lượt đó và hẹn thử lại theo
+# trần chung, không gọi model ngay; tới mốc thử lại thì việc nền sửa TỪ bản chat.
+check("4 A2: lần thức sau bàn giao không gọi model, hẹn thử lại",
+      r[6].queries == 0 and any(x["code"] == "retry_not_met" for x in r[2].reasons(r[3], r[5].id)))
+r[7].clock.t += R.HB.POLICY["RETRY_BASE_S"]
+adv(r[5].id, r[7])
 check("4 chưa đạt: việc nền chạy một lượt, prompt có bản chat, thay được file, chờ người dùng",
       r[6].queries == 1 and BAD in r[6].prompts[0] and (Path(r[1]) / DELIV).read_text(encoding="utf-8") == WORKER
       and rs(r[2], r[3], r[5].id).get("block_reason") == "human_confirmation")
@@ -440,8 +449,8 @@ mid, ref = mref()
 feed(ref, b, sdk_events(write_msgs(b, DELIV, A)))
 put_file(b, DELIV, A)
 g = create(b, st, P, clk, mid, ref)
-(Path(b) / "Javis" / "resonance.json").write_text('{"enabled": false}', encoding="utf-8")
-check("4 tắt tính năng: không tiếp nhận",
+RA.disable(st, b)
+check("4 tắt Cộng hưởng của trợ lý: không tiếp nhận",
       R.handoff_after_turn(g.id, ref, deps_for(b, st, FakeEngine(), clk)) == "gate_closed")
 
 # ═══════════ 5. Góp ý: việc nền sửa từ bản anh đã xem; chat tự sửa thì tiếp nhận ═══════════
