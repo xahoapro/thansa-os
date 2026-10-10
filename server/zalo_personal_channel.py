@@ -560,12 +560,12 @@ async def doc_mot_lan(conn: dict) -> dict:
 # Lỗi chết của tiến trình javis-zalo (src/commands/mcp.js) mà người dùng tự xử được, dịch ra lời thường.
 _LOI_ZALO = (
     (re.compile(r"duplicate zalo web session", re.I),
-     "Zalo đã ngắt phiên của Javis vì tài khoản này vừa được mở ở nơi khác: Zalo Web trên trình duyệt "
-     "(chat.zalo.me) hoặc một máy Javis khác cũng đăng nhập tài khoản này. Mỗi tài khoản chỉ giữ được một "
-     "phiên như vậy. Đóng nơi kia đi; Javis tự nối lại sau khoảng 2 phút.",
-     "Zalo closed Javis's session because this account was just opened somewhere else: Zalo Web in a "
-     "browser (chat.zalo.me) or another Javis machine signed in to the same account. An account keeps only "
-     "one such session. Close the other one; Javis reconnects by itself in about 2 minutes."),
+     "Zalo đã ngắt phiên của Thansa vì tài khoản này vừa được mở ở nơi khác: Zalo Web trên trình duyệt "
+     "(chat.zalo.me) hoặc một máy Thansa khác cũng đăng nhập tài khoản này. Mỗi tài khoản chỉ giữ được một "
+     "phiên như vậy. Đóng nơi kia đi; Thansa tự nối lại sau khoảng 2 phút.",
+     "Zalo closed Thansa's session because this account was just opened somewhere else: Zalo Web in a "
+     "browser (chat.zalo.me) or another Thansa machine signed in to the same account. An account keeps only "
+     "one such session. Close the other one; Thansa reconnects by itself in about 2 minutes."),
     (re.compile(r"auto-login failed|re-login retry failed|re-login failed", re.I),
      "Phiên đăng nhập Zalo của tài khoản này đã hết hạn hoặc bị đăng xuất. Vào trang Kết nối, đăng nhập "
      "lại Zalo bằng mã QR.",
