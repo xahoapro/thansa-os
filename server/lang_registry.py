@@ -231,6 +231,12 @@ _DICT_NAME = re.compile(r"^[a-z]{2,3}(-[a-z0-9]{2,8})?$")
 _DICT_CACHE: dict = {}
 
 
+# Bản Thansa: `en-goi.json` là từ điển của lớp phủ dịch EN (dich-en.js, P041), KHÔNG phải một ngôn
+# ngữ giao diện - tên nó lại khớp dạng mã vùng (như pt-br) nên phải loại riêng, không thì ô chọn
+# ngôn ngữ hiện thêm mục "en-goi".
+_KHONG_PHAI_NGON_NGU = frozenset({"en-goi"})
+
+
 def dashboard_only_languages(i18n_dir) -> list:
     """Dashboard dictionaries for languages this registry does NOT know (0.99.0).
 
@@ -249,6 +255,8 @@ def dashboard_only_languages(i18n_dir) -> list:
     for f in files:
         code = f.stem.lower()
         if code in LANGS or not _DICT_NAME.match(code):
+            continue
+        if code in _KHONG_PHAI_NGON_NGU:
             continue
         try:
             mtime = f.stat().st_mtime_ns
