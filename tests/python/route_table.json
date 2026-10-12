@@ -3068,6 +3068,16 @@
  {
   "order": 308,
   "type": "APIRoute",
+  "path": "/domain/nginx",
+  "name": "domain_nginx",
+  "methods": [
+   "GET"
+  ],
+  "trong": 295
+ },
+ {
+  "order": 301,
+  "type": "APIRoute",
   "path": "/tts",
   "name": "tts",
   "methods": [
@@ -4058,84 +4068,84 @@
   "trong": null
  },
  {
-  "order": 408,
+  "order": 409,
   "type": "APIRoute",
   "path": "/channels",
   "name": "channels_list",
   "methods": [
    "GET"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 409,
+  "order": 410,
   "type": "APIRoute",
   "path": "/channels/accounts",
   "name": "channels_accounts",
   "methods": [
    "GET"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 410,
+  "order": 411,
   "type": "APIRoute",
   "path": "/channels/verify-token",
   "name": "channels_verify_token",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 411,
+  "order": 412,
   "type": "APIRoute",
   "path": "/channels/accounts",
   "name": "channels_account_create",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 412,
+  "order": 413,
   "type": "APIRoute",
   "path": "/channels/accounts/{account_id}/update",
   "name": "channels_account_update",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 413,
+  "order": 414,
   "type": "APIRoute",
   "path": "/channels/accounts/{account_id}/watch",
   "name": "channels_account_watch",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 414,
+  "order": 415,
   "type": "APIRoute",
   "path": "/channels/accounts/{account_id}/import-history",
   "name": "channels_account_import_history",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
-  "order": 415,
+  "order": 416,
   "type": "APIRoute",
   "path": "/channels/accounts/{account_id}/delete",
   "name": "channels_account_delete",
   "methods": [
    "POST"
   ],
-  "trong": 407
+  "trong": 408
  },
  {
   "order": 416,
