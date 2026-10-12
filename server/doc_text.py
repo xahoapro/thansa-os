@@ -56,8 +56,8 @@ def _pdf(p: Path) -> str:
     try:
         import pypdf
     except ImportError:
-        return ("ERROR: máy chủ Javis thiếu thư viện pypdf nên chưa đọc được PDF. Cập nhật Javis (bản mới cài sẵn), hoặc chạy "
-                "`pip install pypdf` trong môi trường của Javis.")
+        return ("ERROR: máy chủ Thansa thiếu thư viện pypdf nên chưa đọc được PDF. Cập nhật Thansa (bản mới cài sẵn), hoặc chạy "
+                "`pip install pypdf` trong môi trường của Thansa.")
     r = pypdf.PdfReader(str(p))
     tong = len(r.pages)
     parts, image_only = [], []
