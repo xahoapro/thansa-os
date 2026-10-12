@@ -70,7 +70,7 @@ Bảng dưới là các nhà cung cấp có sẵn. Nhà **đã kết nối** n�
 | **OpenAI (ChatGPT API)** | Dán API key | MCP + tool file + skill qua hub |
 | **Google Gemini (API)** | Dán API key | MCP + tool file + skill qua hub |
 | **Groq (API)** | Dán API key | MCP + tool file + skill qua hub. Suy luận rất nhanh, hợp làm model việc nền. Key này còn là thứ cho phép **ra lệnh bằng ghi âm trên Telegram và Zalo** (Whisper nghe giọng thành chữ) - xem [Telegram](11-telegram.md) và [Kênh Zalo Bot](26-kenh-zalo-bot.md); đấu key là đủ, không bắt buộc đổi model chính sang Groq |
-| **DeepSeek (API)** | Dán API key lấy ở platform.deepseek.com | MCP + tool file + skill qua hub. Model `deepseek-flash` (rẻ, nhận ảnh) và `deepseek-v4-pro`. Độ sâu suy nghĩ để **Tắt** thì DeepSeek trả lời thẳng; bật lên thì nó suy nghĩ trước, và nếu cuộc trò chuyện cũ không hợp chế độ đó Javis tự trả lời ở chế độ thường kèm một dòng báo |
+| **DeepSeek (API)** | Dán API key lấy ở platform.deepseek.com | MCP + tool file + skill qua hub. Model `deepseek-flash` (rẻ, nhận ảnh) và `deepseek-v4-pro`. Độ sâu suy nghĩ để **Tắt** thì DeepSeek trả lời thẳng; bật lên thì nó suy nghĩ trước, và nếu cuộc trò chuyện cũ không hợp chế độ đó Thansa tự trả lời ở chế độ thường kèm một dòng báo |
 | **Ollama Cloud** | Dán API key lấy ở ollama.com | MCP + tool file + skill qua hub. Model mã nguồn mở cỡ lớn (gpt-oss, qwen3-coder, deepseek) chạy trên máy chủ của Ollama |
 
 Mỗi card provider hiển thị trạng thái **● Đã kết nối** hoặc **○ Chưa kết nối**, kèm số model khả dụng, và một nhãn kiểu bên cạnh tên: **MCP/skill** (Claude Code), **Device code** (ChatGPT), **MCP Thansa** (các provider API). Trong Thứ tự dùng, card trên cùng có nhãn **MAIN**, các card sau ghi **Dự phòng 1**, **Dự phòng 2**... (xem mục D).

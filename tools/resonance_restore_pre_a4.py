@@ -54,16 +54,16 @@ def restore(state_dir: str) -> dict:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Khôi phục kho Resonance về snapshot trước 0.96.0 (chạy khi Javis đã tắt).")
+    ap = argparse.ArgumentParser(description="Khôi phục kho Resonance về snapshot trước 0.96.0 (chạy khi Thansa đã tắt).")
     ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của Javis (mặc định JAVIS_STATE_DIR)")
-    ap.add_argument("--yes", action="store_true", help="xác nhận Javis đã tắt và chấp nhận mất thay đổi sau lúc nâng")
+                    help="thư mục state của Thansa (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--yes", action="store_true", help="xác nhận Thansa đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
         print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
         return 2
     if not a.yes:
-        print("Tắt Javis trước, rồi chạy lại với --yes. Mọi thay đổi của mục tiêu sau lúc nâng lên 0.96.0 sẽ không còn "
+        print("Tắt Thansa trước, rồi chạy lại với --yes. Mọi thay đổi của mục tiêu sau lúc nâng lên 0.96.0 sẽ không còn "
               "trong kho chạy; bản sao kho hiện tại được giữ cạnh file kho.", file=sys.stderr)
         return 2
     res = restore(a.state_dir)

@@ -135,7 +135,7 @@ def _scope_note(store, p, g, mref: str) -> str:
     elif st == "pending":
         lines.append(f"Phạm vi ghi: CHƯA được cho phép. Thẻ mục tiêu sẽ hỏi chủ dự án có cho ghi vào {path} không. "
                      "Nói đúng như vậy; đừng nói đã ghi hay sẽ tự ghi. Bản bạn nộp bây giờ chỉ được giữ làm nháp; "
-                     "chủ dự án bấm Cho phép thì Javis đăng đúng bản đó.")
+                     "chủ dự án bấm Cho phép thì Thansa đăng đúng bản đó.")
     elif st in ("revoked", "denied", "missing"):
         lines.append("Phạm vi ghi: không có quyền ghi lúc này (chủ dự án đã thu hồi hay chưa cho phép).")
     if b is not None and b.get("status") == "live" and path:
@@ -311,7 +311,7 @@ _SCHEMA = {
 
 
 _SUBMIT_MSG = {
-    "no_turn": "Không xác định được lượt chat đang gọi (engine này chưa mang được ngữ cảnh lượt tới Javis).",
+    "no_turn": "Không xác định được lượt chat đang gọi (engine này chưa mang được ngữ cảnh lượt tới Thansa).",
     "not_agent_turn": "Chỉ nộp được trong cuộc trò chuyện với một trợ lý đã bật Cộng hưởng.",
     "invalid_content": "content phải là toàn văn sản phẩm, không rỗng.",
     "path_rejected": "Đường đích không nhận (ngoài brain, có . hay .., đuôi không phải .md/.txt, hay thư mục cấm).",
@@ -325,7 +325,7 @@ _SUBMIT_MSG = {
     "scope_decided": "Chủ dự án đã quyết phạm vi; lượt này không nộp thêm được.",
     "revision_changed": "Mục tiêu đã sang revision khác; nộp theo handoff mới.",
     "agent_changed": "Công tắc trợ lý vừa đổi; không nhận lời nộp.",
-    "storage_error": "Javis chưa lưu được bản nộp; thử lại sau.",
+    "storage_error": "Thansa chưa lưu được bản nộp; thử lại sau.",
 }
 
 
@@ -355,7 +355,7 @@ async def javis_submit_deliverable(args, ctx):
         return f"ERROR {code}: {_SUBMIT_MSG.get(code, code)}{extra}"
     st = res["status"]
     what = {"candidate": "chờ host đăng vào file đích cuối lượt",
-            "awaiting_scope": "giữ làm NHÁP; file đích chưa được cho phép, chủ dự án bấm Cho phép thì Javis đăng đúng "
+            "awaiting_scope": "giữ làm NHÁP; file đích chưa được cho phép, chủ dự án bấm Cho phép thì Thansa đăng đúng "
                               "bản này",
             "published": "đã đăng"}.get(st, st)
     return (f"Đã nhận bản nộp {res['submission_id']} (sha256 {res['sha256'][:12]}, {res['size']} byte): {what}."
