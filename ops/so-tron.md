@@ -859,3 +859,9 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Môi trường test: cài pypdf vào goc/.venv (requirements mới). **Máy chạy cần `pip install -r requirements.txt`** khi cập nhật
   (thiếu pypdf app vẫn chạy, chỉ đọc PDF báo thiếu thư viện).
 - VERSION 1.30.0-javis-0.99.0. moc-goc 9e22a88/0.99.0/so_patch 63. backup me-backup-1.29.0-pre.
+- **Nối tiếp cùng ngày → nền 0.100.0 (goc a02663c):** 1 commit upstream - trợ lý mang NHIỀU tag thay vì một nhóm
+  (server/agent_tags.py, lọc/đổi tên/xoá tag ở trang Cộng sự; workflow giữ nhóm). Rebase 213 commit: P025 (VERSION
+  1.30.0-javis-0.100.0), P027 (docs 07-agents vi/en: lấy HEAD + regex rebrand, giữ đường `Javis/`), route_table lấy HEAD
+  rồi chụp lại một lần ở cuối (P060, 417 mục, chỉ thêm /domain/nginx; 2 commit fix route_table cũ thành rỗng, bỏ).
+  Không có chuỗi Javis hiển thị mới ngoài docs. Gộp vào bản 1.30.0 (chưa phát hành). moc-goc a02663c/0.100.0.
+  backup me-backup-1.30.0-0.99.0.
