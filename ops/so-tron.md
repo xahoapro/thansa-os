@@ -865,3 +865,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   rồi chụp lại một lần ở cuối (P060, 417 mục, chỉ thêm /domain/nginx; 2 commit fix route_table cũ thành rỗng, bỏ).
   Không có chuỗi Javis hiển thị mới ngoài docs. Gộp vào bản 1.30.0 (chưa phát hành). moc-goc a02663c/0.100.0.
   backup me-backup-1.30.0-0.99.0.
+- **Nối tiếp 13/10 → nền 0.105.0 (goc 1dd593b):** 4 commit upstream - chatbot Lark/Feishu 0.102.0, lỗi chatbot không lọt chat
+  khách + phân biệt Zalo Bot/Zalo cá nhân 0.102.1, tool nhiều hành động xếp quyền theo lệnh con 0.103.0, tự học giữ luật agent
+  của chủ 0.105.0. Rebase sạch (tự gỡ 3 khối docs). **P068 mới:** rebrand docs/30-discord-lark vi+en + lời nhắc JAVIS_RULE
+  (main.py). rebrand_moi tự đổi nhầm RELEASES.md ("Nền Javis") → hoàn tác. route_table khớp (417 mục), không chụp lại.
+  Chốt an toàn P038 OK. moc-goc 1dd593b/0.105.0/so_patch 64. VERSION 1.30.0-javis-0.105.0. backup me-backup-1.30.0-0.100.0.
