@@ -73,9 +73,9 @@ In a group, add the bot to the group and type `@Thansa your question`. Thansa an
 
 Since 0.102.0 a bot on the **Chatbot** page can answer customers on Lark or Feishu, with every chat in the shared **Inbox** and takeover when a human is needed.
 
-1. Create a **separate** app for the bot (repeat step 1 with another name). Do not reuse the admin channel's app: Lark splits messages at random between connections of one app, and Javis refuses it anyway.
+1. Create a **separate** app for the bot (repeat step 1 with another name). Do not reuse the admin channel's app: Lark splits messages at random between connections of one app, and Thansa refuses it anyway.
 2. On top of the permissions in step 1, consider granting: read **all group messages** (not only those that @mention the bot) if the bot should follow groups on its own, and read **user info** (contact) and **chat info** (`im:chat`) so the Inbox shows customer and group names instead of `ou_...` ids. Without those two the bot still works and shows the ids.
-3. **Chatbot** page → **Accounts** → add an account, channel **Lark**, paste the **App ID** and **App Secret** separated by a space: `cli_... SECRET`. Javis finds out whether the app is on Lark or Feishu; to pin it, add the word `feishu` (or `lark`) at the end.
+3. **Chatbot** page → **Accounts** → add an account, channel **Lark**, paste the **App ID** and **App Secret** separated by a space: `cli_... SECRET`. Thansa finds out whether the app is on Lark or Feishu; to pin it, add the word `feishu` (or `lark`) at the end.
 4. Create the bot on the same page, attach the account and turn the bot on. Then do step 2 above in the console (persistent connection, the `im.message.receive_v1` event, publish a version).
 
 ### Common problems
