@@ -870,3 +870,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
   của chủ 0.105.0. Rebase sạch (tự gỡ 3 khối docs). **P068 mới:** rebrand docs/30-discord-lark vi+en + lời nhắc JAVIS_RULE
   (main.py). rebrand_moi tự đổi nhầm RELEASES.md ("Nền Javis") → hoàn tác. route_table khớp (417 mục), không chụp lại.
   Chốt an toàn P038 OK. moc-goc 1dd593b/0.105.0/so_patch 64. VERSION 1.30.0-javis-0.105.0. backup me-backup-1.30.0-0.100.0.
+- **ĐÃ PHÁT HÀNH 2026-10-13** khi chủ duyệt trong Claude Code (origin/main 59379c2, tag + Release thansa-v1.30.0; backup me-backup-1.30.0).
