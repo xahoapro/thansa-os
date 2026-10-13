@@ -73,9 +73,9 @@ Trong nhóm, thêm bot vào nhóm rồi gõ `@Thansa câu hỏi`. Thansa trả l
 
 Từ 0.102.0 một bot ở trang **Chatbot** trả lời được khách trên Lark hoặc Feishu, mọi cuộc chat vào **Hộp thư** chung, tiếp quản được khi cần người thật.
 
-1. Tạo một app **riêng** cho bot (làm lại bước 1 với tên khác). Không dùng chung app với kênh admin: Lark chia tin ngẫu nhiên giữa các kết nối cùng một app, Javis cũng từ chối app đó.
+1. Tạo một app **riêng** cho bot (làm lại bước 1 với tên khác). Không dùng chung app với kênh admin: Lark chia tin ngẫu nhiên giữa các kết nối cùng một app, Thansa cũng từ chối app đó.
 2. Ngoài các quyền ở bước 1, nên cấp thêm: đọc **mọi tin trong nhóm** (không chỉ tin gọi tên bot) nếu muốn bot tự theo dõi nhóm, đọc **thông tin người dùng** (contact) và **thông tin nhóm** (`im:chat`) để Hộp thư hiện tên khách và tên nhóm thay vì mã `ou_...`. Thiếu hai quyền sau thì bot vẫn chạy, chỉ hiện mã.
-3. Trang **Chatbot** → **Tài khoản** → thêm tài khoản, kênh **Lark**, dán **App ID** và **App Secret** cách nhau một dấu cách: `cli_... SECRET`. Javis tự dò app thuộc Lark hay Feishu; muốn chỉ định thì thêm chữ `feishu` (hoặc `lark`) ở cuối.
+3. Trang **Chatbot** → **Tài khoản** → thêm tài khoản, kênh **Lark**, dán **App ID** và **App Secret** cách nhau một dấu cách: `cli_... SECRET`. Thansa tự dò app thuộc Lark hay Feishu; muốn chỉ định thì thêm chữ `feishu` (hoặc `lark`) ở cuối.
 4. Tạo bot ở cùng trang và gắn tài khoản vừa thêm, rồi bật bot. Sau đó làm bước 2 ở trên trong console (chọn kết nối dài, thêm sự kiện `im.message.receive_v1`, phát hành phiên bản).
 
 ### Sự cố thường gặp
