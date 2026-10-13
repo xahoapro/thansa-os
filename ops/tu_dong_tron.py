@@ -168,7 +168,8 @@ PATCH_REBRAND = re.compile(r"rebrand|ten san pham|danh tinh|mo ta hien thi|chuoi
 MARKER = re.compile(r"^(<<<<<<< |>>>>>>> |=======$)", re.M)
 KHOI = re.compile(r"^<<<<<<< [^\n]*\n(.*?)^=======\n(.*?)^>>>>>>> [^\n]*\n", re.S | re.M)
 SKIP_DEM = re.compile(r'^(CHANGELOG|ops/|bao-cao/|nhiem-vu/|docs/superpowers/|docs/dev/|tests/|ANNOUNCEMENTS)')
-FILE_BAO_VE = {"server/codex_realtime.py"}          # clientInfo "Javis OS" (P048 GIỮ)
+FILE_BAO_VE = {"server/codex_realtime.py",          # clientInfo "Javis OS" (P048 GIỮ)
+               "RELEASES.md"}                       # sổ Thansa: "Nền Javis" là thật, bảng mỗi vòng thêm dòng (13/10)
 CHUOI_BAO_VE = ("adaptive source contract",)          # header test canh (P048 GIỮ)
 
 
@@ -340,6 +341,30 @@ def rebrand_moi() -> dict:
         elif f.endswith(".json"):
             json.loads((WT / f).read_text(encoding="utf-8"))
     return doi
+
+
+STUB_GATE = re.compile(r'(gate_active(=|", | = ))lambda: False')
+
+
+def va_stub_gate_active() -> int:
+    """P061 cho gate_active nhận request/ws; test MỚI của upstream hay giả lập `gate_active = lambda: False`
+    (không nhận tham số) → TypeError, CI đỏ (0.87 test_resonance_a1_transport, 0.100 test_agent_tags). Vá
+    thành `lambda *a, **k: False` rồi commit riêng (không phải patch [me])."""
+    sua = []
+    for f in git("ls-files", "tests/python").splitlines():
+        if not f.endswith(".py"):
+            continue
+        p = WT / f
+        s = p.read_text(encoding="utf-8")
+        t = STUB_GATE.sub(r"\1lambda *a, **k: False", s)
+        if t != s:
+            p.write_text(t, encoding="utf-8")
+            sua.append(f)
+    if sua:
+        git("add", "--", *sua)
+        git("commit", "-q", "-m", "fix: stub gate_active nhan conn trong test moi cua upstream (P061, tu dong)\n\n"
+            + "\n".join(f"- {f}" for f in sua) + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+    return len(sua)
 
 
 def chot_an_toan() -> str:
@@ -668,6 +693,9 @@ def main() -> int:
         log(f"rebase xong; tự gỡ {len(ttin['tu_go'])} khối, theo upstream xoá {len(ttin['xoa'])} file")
         doi = rebrand_moi()
         log(f"rebrand {sum(doi.values())} chỗ / {len(doi)} file")
+        n_stub = va_stub_gate_active()
+        if n_stub:
+            log(f"vá stub gate_active ở {n_stub} test mới")
         an_toan = chot_an_toan()
         if an_toan:
             raise Loi("CHỐT AN TOÀN P038 hỏng: " + an_toan)
