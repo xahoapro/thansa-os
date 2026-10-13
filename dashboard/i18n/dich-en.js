@@ -26,15 +26,20 @@
       var ds = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
       for (var i = 0; i < ds.length; i++) {
         var ma = String(ds[i] || "").toLowerCase().split(/[-_]/)[0];
-        if (ma === "vi" || ma === "en") { lang = ma; break; }
+        if (ma === "vi") { lang = "vi"; break; }
+        if (ma === "en" || ma === "de") { lang = ma; break; }   // ngôn ngữ có từ điển gốc
       }
     } catch (e) {}
   }
   try {
     window.addEventListener("javis:i18n", function (ev) {
-      var moi = (ev && ev.detail && ev.detail.lang) === "en" ? "en" : "vi";
-      if (moi === (lang === "en" ? "en" : "vi")) return;
+      // Lớp phủ chỉ có hai trạng thái: tiếng Việt (tắt) hoặc tiếng Anh (bật). Mọi ngôn ngữ khác
+      // tiếng Việt (en, de...) đều bật, đúng luật suy biến của i18n gốc: chỗ chưa dịch thì tiếng Anh.
+      var moi = (ev && ev.detail && ev.detail.lang) === "vi" ? "vi" : "en";
+      if (moi === (lang === "vi" ? "vi" : "en")) return;
       try { document.cookie = "thansa_lang=" + moi + ";path=/;max-age=31536000;samesite=lax"; } catch (e) {}
+      // Chặn vòng tải lại: lệch lần nữa trong cùng phiên thì thôi, không nạp lại mãi.
+      try { if (sessionStorage.getItem("thansa_lang_doi") === moi) return; sessionStorage.setItem("thansa_lang_doi", moi); } catch (e) {}
       location.reload();   // lớp phủ dịch lúc nạp trang: đổi ngôn ngữ thì nạp lại một lần
     });
   } catch (e) {}
@@ -43,7 +48,7 @@
   // dashboard/en/ (P017). Người dùng đã chọn EN từ trước (chỉ có localStorage, chưa có
   // cookie) sẽ được nâng cấp: đặt cookie rồi tải lại MỘT lần để nạp bộ file đã dịch.
   try {
-    var muon = (lang === "en") ? "en" : "vi";
+    var muon = (lang === "vi") ? "vi" : "en";
     var dangCo = (document.cookie.match(/(?:^|;\s*)thansa_lang=([^;]+)/) || [])[1] || "";
     if (dangCo !== muon) {
       document.cookie = "thansa_lang=" + muon + ";path=/;max-age=31536000;samesite=lax";
@@ -55,7 +60,7 @@
     }
   } catch (e) {}
 
-  if (lang !== "en") return;
+  if (lang === "vi") return;
 
   var TU = null;                 // Map chuỗi việt (nguyên) -> english
   var TU_CHUAN = null;           // Map chuỗi việt (gộp khoảng trắng) -> english, bắt chuỗi nhiều dòng

@@ -6,6 +6,111 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.105.0] - 2026-10-13
+### Sửa lỗi
+- **Tự học không còn làm agent quên luật bạn đã dặn.** Trước đây mỗi lần tự học sửa một agent là viết lại cả lời dặn của nó, nên luật như "nhắn Zalo thì không dùng markdown" có thể biến mất sau vài vòng. Giờ tự học chỉ được thêm luật mới vào cuối, phần bạn viết giữ nguyên.
+- **Luật dặn trong chat được giữ vĩnh viễn.** Khi bạn dặn agent một luật lâu dài, nó vào mục **Luật chủ dặn** trong bộ nhớ của agent. Mục này không bị đẩy ra như các bài học tự rút (chỉ giữ 15 bài mới nhất).
+- **Chốt chặn cuối.** Lần ghi nào làm mất dù một dòng bạn đã viết trong agent hay bộ nhớ của nó thì Javis không ghi.
+
+## [0.103.0] - 2026-10-13
+### Cải thiện
+- **Quyền theo từng lệnh cho công cụ gộp.** Một công cụ MCP gộp nhiều lệnh, như công cụ nhãn của GitHub vừa tạo, vừa sửa, vừa xoá nhãn, giờ được xét quyền theo đúng lệnh đang gọi. Tạo và sửa chạy ở mức Ghi nháp, còn xoá vẫn cần Toàn quyền.
+- **Công cụ chỉ có lệnh ghi không còn hiện ở mức Chỉ đọc.** Trước đây chúng vẫn hiện ra rồi lần nào gọi cũng bị chặn. Giờ chúng chỉ hiện từ mức quyền chạy được, và câu báo chặn nêu đúng lệnh bị chặn.
+
+## [0.102.1] - 2026-10-12
+### Sửa lỗi
+- **Bot không còn xin lỗi người không hỏi nó.** Ở chế độ Tự đánh giá, bot tự xem cả những tin không gọi tên nó. Trước đây lượt đó mà hỏng thì bot tag người nhắn và đăng "Em đang gặp trục trặc kỹ thuật..." vào cả nhóm. Giờ bot im, lỗi vẫn ghi vào nhật ký bot và người trực vẫn được báo. Ai gọi bot mà gặp lỗi thì vẫn nhận câu xin lỗi như cũ.
+- **Bot Toàn quyền không còn để lộ chữ kỹ thuật cho khách.** Các dòng như "Có lỗi giữa lượt" hay cảnh báo model giờ chỉ hiện ở nhật ký bot, không dính vào câu trả lời.
+- **Bot Toàn quyền không còn tự đổi model chính của bạn.** Model của Agent không chạy được qua gói ChatGPT thì bot vẫn chạy bằng model thay thế, nhưng không ghi đè model bạn đã chọn ở trang Models.
+
+### Cải thiện
+- **Form bot ghi rõ "Zalo Bot" hay "Zalo cá nhân".** Hai kênh dùng chung một logo nhưng chỉ Zalo cá nhân vào được nhóm. Khi bot chỉ có kênh nhắn riêng, form nói thẳng vì sao không có tùy chọn nhóm (Được gọi tên, Tự đánh giá, Mọi tin) và cần gắn kênh nào để có.
+
+## [0.102.0] - 2026-10-12
+### Thêm mới
+- **Chatbot có kênh Lark (và Feishu).** Ở trang Chatbot, thêm tài khoản kênh Lark bằng App ID và App Secret của một app Lark riêng, gắn vào bot là bot trả lời khách trên Lark, mọi cuộc chat vào Hộp thư và tiếp quản được như các kênh khác. Không cần tên miền: Javis tự mở kết nối ra Lark.
+- **Bot Lark vào được nhóm, gửi được ảnh và tài liệu**, nhìn được ảnh khách gửi, và chủ trả lời khách được ngay từ Hộp thư.
+- **Javis tự dò app thuộc Lark hay Feishu**, khỏi phải chọn. Dán nhầm app đang chạy kênh admin thì Javis báo ngay, vì hai bên dùng chung một app sẽ bị chia tin ngẫu nhiên.
+- **Hộp thư hiện tên khách và tên nhóm Lark** khi app được cấp quyền đọc danh bạ và thông tin nhóm. Thiếu quyền thì bot vẫn chạy, chỉ hiện mã.
+
+## [0.100.0] - 2026-10-12
+### Cải thiện
+- **Trợ lý gắn được nhiều tag.** Thay cho một nhóm, mỗi trợ lý giờ mang nhiều tag (Marketing, Viết nội dung, Kỹ thuật...). Nhóm cũ tự thành một tag, không mất gì.
+- **Gắn và bỏ tag ngay ở trang Cộng sự:** nút **...** trên trợ lý, mục **Gắn tag**. Bấm tag để gắn hay bỏ đúng tag đó, gõ tên để tạo tag mới. Thanh phía trên lọc theo **Tất cả agent**, **Chưa gắn tag** hay một tag; trợ lý nhiều tag chỉ hiện một lần.
+- **Đổi tên hay xoá một tag** áp cho mọi trợ lý mang nó; đổi sang tên đã có thì gộp làm một. Xoá tag chỉ gỡ nhãn, không xoá trợ lý hay cuộc trò chuyện.
+- Tag chỉ để phân loại: không thêm trợ lý vào nhóm chat, không cấp quyền. Quy trình vẫn xếp theo nhóm như cũ.
+- Quay về bản cũ hơn: trợ lý hiện dưới nhóm bằng tag đầu tiên của nó.
+
+## [0.99.0] - 2026-10-12
+### Thêm mới
+- **Giao diện tiếng Đức (bước đầu).** Trình duyệt để tiếng Đức thì dashboard tự hiện tiếng Đức ở thanh điều hướng, tab Cài đặt và các thông báo thường gặp. Chỗ chưa dịch hiện tiếng Anh. Bản dịch do @sirschnake đóng góp.
+- **Ô chọn ngôn ngữ có thêm "Deutsch"**, cả ở dưới thanh bên lẫn trong Cài đặt, nên chọn lại được tiếng Đức sau khi đã đổi sang thứ tiếng khác.
+
+### Sửa lỗi
+- **Người đọc giao diện tiếng Đức không bị Javis trả lời bằng tiếng Việt.** Server chỉ nói tiếng Việt và tiếng Anh, nên với thứ tiếng chỉ có ở dashboard, tin Telegram, việc nền, giọng đọc và brain mặc định sẽ dùng tiếng Anh. Trước đây những chỗ đó có thể rơi về tiếng Việt.
+
+Cảm ơn @sirschnake đã đóng góp bản dịch tiếng Đức (#618).
+
+## [0.96.1] - 2026-10-11
+### Sửa lỗi
+- **Cập nhật xong không còn bị khoá ngoài.** Máy chủ đặt tài khoản qua biến môi trường (Docker, Hostinger) mà giá trị `JAVIS_ADMIN_PASSWORD` dính dấu cách thừa thì từ bản 0.92.1, lần khởi động đầu sau khi cập nhật Javis tưởng mật khẩu môi trường đã đổi và đặt lại tài khoản. Mật khẩu bạn tự đổi trên dashboard bị ghi đè, tên đăng nhập thành `admin`. Giờ cập nhật không đụng vào tài khoản nữa, chỉ đổi giá trị trong biến môi trường mới đặt lại.
+- **Máy đã bị đặt lại:** đăng nhập bằng tên `admin` (hoặc giá trị `JAVIS_ADMIN_USER` nếu bạn có đặt) và mật khẩu đang ghi trong `JAVIS_ADMIN_PASSWORD` ở Hostinger, không cần gõ dấu cách thừa. Vào được rồi thì đổi lại tên và mật khẩu trong Cài đặt.
+
+## [0.96.0] - 2026-10-11
+### Thêm mới
+- **Trợ lý Cộng hưởng chỉ ghi vào file bạn đã cho phép.** Mục tiêu mới hay đổi sang file khác thì thẻ hỏi "Trợ lý muốn ghi vào ... Cho phép?" kèm đúng đường file. Đã cho phép thì trợ lý làm tiếp, không hỏi lại từng lần sửa.
+- **Bản trợ lý soạn trước khi bạn cho phép được giữ làm nháp.** Bấm Xem trước để đọc, bấm Cho phép là Javis đăng đúng bản đó, không gọi model viết lại.
+- **Codex và các bộ não dùng API key cũng giao được sản phẩm ngay trong cuộc trò chuyện**, qua cùng một cửa kiểm như Claude: Javis tự đọc, kiểm và đăng bản nộp, không ghi đè file bạn đã sửa.
+- **Nút Thu hồi quyền trên thẻ mục tiêu** dừng mục tiêu ngay; bấm Tiếp tục để cấp lại. Muốn quay về 0.95.1 thì tắt Javis và chạy `tools/resonance_restore_pre_a4.py`.
+
+## [0.95.1] - 2026-10-11
+### Sửa lỗi
+- **Ollama (Local) hết báo "trả về rỗng" vì mải suy nghĩ.** Model như qwen3 tự bật chế độ suy nghĩ, gặp việc như đếm dòng file có thể nghĩ hết cả lượt mà không viết ra chữ nào. Giờ Javis tắt hẳn chế độ suy nghĩ cho model local, có dùng công cụ hay không cũng vậy, nên model trả lời thẳng.
+- **Nút Effort không còn kéo theo model local.** Để Effort ở mức Vừa hay Rất cao cho Claude thì model local vẫn trả lời thẳng, đổi qua lại giữa hai model không phải bật tắt lại nữa.
+- **Model chỉ suy nghĩ mà chưa trả lời thì Javis nói đúng như vậy**, kèm việc nên làm (hạ mức suy nghĩ hoặc chia việc nhỏ hơn), thay vì câu "trả về rỗng" dễ tưởng mất kết nối.
+
+Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên Mac.
+
+## [0.94.0] - 2026-10-11
+### Cải thiện
+- **Bot xem được ảnh khách gửi dù chạy bằng model nào.** Model của bot nhìn được ảnh thì vẫn tự nhìn như cũ. Model không nhìn được ảnh (Antigravity, Grok Build, model chỉ đọc chữ) hoặc trả về rỗng khi có ảnh thì một bộ não khác bạn đã kết nối xem hộ và tả lại, chép đúng giá, mã đơn, số điện thoại trong ảnh. Thứ tự mượn: bộ não chính, rồi gói ChatGPT, rồi Claude Code.
+- **Bot nhớ ảnh lúc nãy có gì.** Khách hỏi tiếp "cái trong ảnh vừa rồi" thì bot vẫn biết, vì phần mô tả được giữ lại trong cuộc chat.
+
+### Sửa lỗi
+- **Ảnh Zalo không còn bị bỏ oan.** Máy chủ ảnh của Zalo gửi một số ảnh với nhãn "file nhị phân" thay vì nhãn ảnh, và Javis bỏ qua ảnh đó trước khi bot kịp thấy. Giờ Javis nhìn chính nội dung file để nhận ra ảnh.
+- **Thẻ bot ghi lỗi thật khi model không nhận ảnh**, thay vì câu chung chung "từ chối ảnh". Không bộ não nào xem hộ được thì thẻ nói rõ vì sao từng bộ não không xem được.
+
+## [0.92.2] - 2026-10-11
+### Sửa lỗi
+- **Ollama (Local) dùng được công cụ.** Chọn model Ollama chạy trên máy mình thì model không đọc được file, không gọi được kết nối nào và tự báo "không có quyền tool", vì Javis quên nạp công cụ cho đúng loại model này. Giờ model local nhận đủ công cụ như các model API khác, và trang Kết nối hết báo nhầm là nó không gọi được công cụ.
+- **Trang Local Model trên Mac chip Apple ghi đúng là chạy bằng GPU.** Trước đây trang ghi "Chạy bằng CPU và RAM" trong khi Ollama chạy trọn trên GPU của chip. Javis giờ nhận ra chip Apple kể cả khi Python chạy qua Rosetta, tính RAM dùng chung là bộ nhớ của GPU, và không làm mất GPU khi bạn khai tay dung lượng RAM.
+
+### Cải thiện
+- **Model API và model local đọc được file PDF và Word (.docx).** Trước đây các file này đọc ra toàn mã nhị phân. PDF scan (chỉ có ảnh) được báo thẳng là không có chữ để đọc.
+
+Cảm ơn người dùng đã gửi báo lỗi kèm bản vá chạy thử trên Mac.
+
+## [0.92.1] - 2026-10-11
+### Sửa lỗi
+- **Đăng nhập không còn hỏng vì chữ hoa và dấu cách vô hình.** Tên đăng nhập không phân biệt hoa thường nữa, "Phong" hay "phong" đều vào. Dấu cách thừa ở đầu hoặc cuối mật khẩu, thứ bàn phím điện thoại hay tự chèn, không còn làm báo sai mật khẩu.
+- **Mật khẩu đúng mà trình duyệt không giữ được phiên thì Javis nói thẳng**, kèm các nguyên nhân thường gặp, thay vì cứ quay lại màn đăng nhập trống không một lời.
+- **Máy chủ đặt tài khoản qua biến môi trường thì câu báo sai nhắc rằng tên đăng nhập là `JAVIS_ADMIN_USER`** (mặc định admin). Đặt lại mật khẩu qua Hostinger cũng đổi luôn tên đăng nhập, rất dễ bỏ sót.
+### Cải thiện
+- **Màn cài đặt đầu đọc rõ ở giao diện sáng.** Tên các bộ não, viền thẻ và lệnh đăng nhập Claude trước đây gần như tàng hình trên nền sáng. Trên máy chủ công khai, mục tài khoản admin ghi rõ là bắt buộc ngay từ đầu thay vì báo đỏ dưới đáy.
+
+## [0.91.0] - 2026-10-10
+### Thêm mới
+- **DeepSeek thành một bộ não mới.** Dán API key DeepSeek ở trang Models là chọn được `deepseek-flash` hoặc `deepseek-v4-pro` làm não chính, cho trợ lý hay việc nền, đủ công cụ như các engine API khác.
+- **Độ sâu suy nghĩ dùng được với DeepSeek.** Để Tắt thì DeepSeek trả lời thẳng, rẻ và nhanh hơn; bật lên thì nó suy nghĩ trước. Cuộc trò chuyện cũ không hợp chế độ suy nghĩ thì Javis tự trả lời ở chế độ thường, kèm một dòng báo.
+
+## [0.89.2] - 2026-10-10
+### Cải thiện
+- **Bot nói không xem được ảnh thì thẻ bot ghi rõ vì sao.** Trước đây lý do chỉ nằm trong log của server, nên bot chạy trên VPS báo "không xem được ảnh kèm tin này" mà chủ không biết sửa ở đâu. Giờ dòng cảnh báo trên thẻ bot nói đúng một trong bốn lý do: tin ảnh không kèm link, tải ảnh từ Zalo hỏng (kèm lỗi cụ thể), bộ não của bot không nhận ảnh (Antigravity, Grok Build: đổi model của bot sang loại nhìn được ảnh), hoặc model từ chối ảnh.
+
+## [0.89.1] - 2026-10-10
+### Sửa lỗi
+- **Bot chăm khách không còn lặng lẽ bỏ nhóm thứ 51 trở đi.** Trước đây một bot chỉ nhớ 50 nhóm đầu tiên, nhóm khách mới được duyệt thêm vào vẫn báo thành công nhưng không vào danh sách, nên bot không trả lời nhóm đó. Giờ danh sách nhóm không bị cắt. (Đóng góp của @nhuy288-8.)
+
 ## [0.89.0] - 2026-10-10
 ### Thêm mới
 - **Trợ lý Cộng hưởng học từ phản hồi có kiểm chứng.** Bấm phản hồi trên tin báo của trợ lý để gợi ý cách báo gọn hơn hay ít làm phiền hơn; bạn xem trước và tự quyết có áp dụng.

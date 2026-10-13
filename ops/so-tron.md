@@ -835,3 +835,38 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 1 commit upstream: 0.89.0: Resonance A3 - học từ phản hồi có kiểm chứng (#598)
 - Rebase tự động trong worktree riêng. Tự gỡ: 51f16e59:dashboard/i18n/en.json, 51f16e59:dashboard/i18n/vi.json. Upstream xoá: không.
 - Rebrand: P065 (15 chỗ / 3 file). moc-goc 33a3c1a/0.89.0/so_patch 61.
+- **ĐÃ PHÁT HÀNH 2026-10-10** khi chủ bấm duyệt trên Telegram (origin/main 62bdaf9, tag + Release thansa-v1.29.0; backup me-backup-1.29.0).
+
+## Vòng TAY 2026-10-12 (goc 0.89.0 → 9e22a88, nền 0.89.0 → 0.99.0, thansa 1.29.0→1.30.0)
+- Tự trộn 11/10 dừng 3 lần ở P061 (dashboard/i18n/en.json) → trộn tay. 12 commit upstream: DeepSeek (0.91.0), đăng nhập
+  bỏ qua hoa/thường + dấu cách, màn lần đầu dễ đọc (0.92.1), Ollama Local có tool + đọc PDF/DOCX (0.92.2, thêm pypdf),
+  bot thấy ảnh khách mọi model (0.94.0, 0.89.2), nhóm chatbot không giới hạn 50 (0.89.1), Ollama tắt thinking (0.95.1),
+  **Resonance A4** (0.96.0: chỉ ghi file chủ Cho phép, nút Thu hồi), **cập nhật không đặt lại mật khẩu máy cài bằng env**
+  (0.96.1), **dashboard tiếng Đức** (0.99.0, de.json + lang_registry tự quét từ điển).
+- Rebase 211 commit. Xung đột: P012 (CLAUDE.md, rerere tự giải), P025 (VERSION 1.30.0-javis-0.99.0), **P061 (GỘP):**
+  auth_setup giữ kiểm mã cài đặt khi đến từ ngoài RỒI mới clean_password của upstream; i18n vi/en giữ cả wz.s2_req/
+  pass_ph_req/login_cookie_lost (rebrand) + wz.code*/wz_code_*. So khoá i18n với 1.29.0: không rơi khoá nào.
+- **P047 vá (fixup, autosquash):** ngôn ngữ thứ ba (de) làm lớp phủ lệch → trình duyệt tiếng Đức chưa chọn ngôn ngữ bị
+  TẢI LẠI VÔ HẠN (lớp phủ đoán en, upstream chọn de, sự kiện javis:i18n báo lệch mãi). Sửa: lớp phủ chỉ phân biệt vi /
+  khác vi, chặn nạp lại 1 lần/phiên; _lang_en() = khác "vi". Đã giả lập bằng node: de không lặp, en→vi nạp 1 lần.
+- P017 neo lại: upstream viết lại ô chọn ngôn ngữ (uiLangForServer), dòng đặt cookie thansa_lang trong console.js mất -
+  cookie nay do dich-en.js (P047) đặt khi nghe javis:i18n.
+- **P066 mới:** rebrand de.json ("Thansa-Maskottchen"), khoá i18n mới, doc_text.py, plugin javis-goal, tools/resonance_restore
+  _pre_a4.py, docs 10-models; sửa lại anchor README (#-why-thansa) bị trả về khi lấy HEAD.
+- **P067 mới:** lang_registry quét dashboard/i18n/*.json nên en-goi.json lọt thành ngôn ngữ "en-goi" trong ô chọn → loại riêng.
+- fix: chụp lại route_table (P049 /domain/nginx đẩy thứ tự 5 route Resonance A4).
+- **Soát an toàn:** Resonance A4 chỉ ghi file chủ đã Cho phép, có Thu hồi, vẫn tắt sẵn theo brain → không lách P038.
+- Môi trường test: cài pypdf vào goc/.venv (requirements mới). **Máy chạy cần `pip install -r requirements.txt`** khi cập nhật
+  (thiếu pypdf app vẫn chạy, chỉ đọc PDF báo thiếu thư viện).
+- VERSION 1.30.0-javis-0.99.0. moc-goc 9e22a88/0.99.0/so_patch 63. backup me-backup-1.29.0-pre.
+- **Nối tiếp cùng ngày → nền 0.100.0 (goc a02663c):** 1 commit upstream - trợ lý mang NHIỀU tag thay vì một nhóm
+  (server/agent_tags.py, lọc/đổi tên/xoá tag ở trang Cộng sự; workflow giữ nhóm). Rebase 213 commit: P025 (VERSION
+  1.30.0-javis-0.100.0), P027 (docs 07-agents vi/en: lấy HEAD + regex rebrand, giữ đường `Javis/`), route_table lấy HEAD
+  rồi chụp lại một lần ở cuối (P060, 417 mục, chỉ thêm /domain/nginx; 2 commit fix route_table cũ thành rỗng, bỏ).
+  Không có chuỗi Javis hiển thị mới ngoài docs. Gộp vào bản 1.30.0 (chưa phát hành). moc-goc a02663c/0.100.0.
+  backup me-backup-1.30.0-0.99.0.
+- **Nối tiếp 13/10 → nền 0.105.0 (goc 1dd593b):** 4 commit upstream - chatbot Lark/Feishu 0.102.0, lỗi chatbot không lọt chat
+  khách + phân biệt Zalo Bot/Zalo cá nhân 0.102.1, tool nhiều hành động xếp quyền theo lệnh con 0.103.0, tự học giữ luật agent
+  của chủ 0.105.0. Rebase sạch (tự gỡ 3 khối docs). **P068 mới:** rebrand docs/30-discord-lark vi+en + lời nhắc JAVIS_RULE
+  (main.py). rebrand_moi tự đổi nhầm RELEASES.md ("Nền Javis") → hoàn tác. route_table khớp (417 mục), không chụp lại.
+  Chốt an toàn P038 OK. moc-goc 1dd593b/0.105.0/so_patch 64. VERSION 1.30.0-javis-0.105.0. backup me-backup-1.30.0-0.100.0.

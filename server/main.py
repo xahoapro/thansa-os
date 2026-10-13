@@ -56,6 +56,8 @@ _update_outcome = update_state.update_outcome
 import git_brain
 import engine
 import vision_input
+import borrowed_eyes   # mắt mượn: bộ não khác xem hộ ảnh khi model của bot không xem được (0.94.0)
+import image_vision
 import openai_oauth
 import claude_update   # tự chạy `claude update` hằng ngày để model mới hiện ra
 import claude_models   # model Claude LIVE cho provider anthropic-cli (hỏi bằng API key, nếu có)
@@ -93,6 +95,7 @@ voice_privacy.install()
 import zalo_login
 import oauth_mcp
 import system_sync   # tầng năng lực HỆ THỐNG (skill/loop mặc định) - update theo phiên bản app
+import agent_rules   # mục Luật chủ dặn / Bổ sung (tự học) + chốt chặn giữ dòng của chủ
 import skill_router   # nguồn chân lý khám phá skill (canonical <brain>/skills) dùng chung mọi engine
 import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua javis_use_skill (tín hiệu DƯƠNG một chiều)
 import share_bundle   # xuất/nhập gói agent/skill/workflow (.zip) để chia sẻ giữa brain/người dùng
@@ -137,6 +140,7 @@ import tien_trinh_nen     # lệnh chạy ngầm engine bỏ lại: nhận theo 
 import chatbot_log       # nhật ký hội thoại khách + thống kê câu bot trả lời không nổi
 import chatbot_runtime   # bộ giám sát Bot chuyên trách (mỗi bot một poller Telegram)
 import agent_avatar
+import agent_tags   # tag của agent (0.100.0): nhiều tag, nhóm cũ thành một tag
 import cli_autoinstall   # trạng thái agy/grok do container Docker tự cài (0.85.1)
 import agent_assets      # tài liệu & link gắn vào MỘT trợ lý (lưu trong frontmatter agent)
 import workflow_chat     # persona_cua_phien: kênh agent:/workflow: đổi cách _do_turn chạy lượt
@@ -1276,9 +1280,11 @@ def _lang_en(request: Request) -> bool:
     """Thiết bị này đang xem giao diện English? Từ 0.67 nguồn chuẩn là cookie `javis_lang` theo
     thiết bị (i18n gốc đặt sau khi chọn/đoán); `thansa_lang` của lớp phủ chỉ còn là dự phòng."""
     ma = request.cookies.get("javis_lang") or request.cookies.get("thansa_lang") or ""
+    # Mọi ngôn ngữ khác tiếng Việt (en, de từ 0.99...) nhận bản tiếng Anh: phía server của upstream
+    # cũng chỉ có vi/en, thứ tiếng thứ ba rơi về tiếng Anh.
     if ma:
-        return ma == "en"
-    return localefmt.ngon_ngu_giao_dien() == "en"
+        return ma != "vi"
+    return localefmt.ngon_ngu_giao_dien() != "vi"
 
 
 def _dashboard_file(rel: str, en: bool) -> Path:
@@ -1425,6 +1431,7 @@ async def auth_setup(request: Request, username: str = Form(...), password: str 
             f"Sai hoặc thiếu mã cài đặt. Trên máy chủ chạy: cat {cfgmod.ma_cai_dat_path()}",
             f"Missing or wrong setup code. On the server run: cat {cfgmod.ma_cai_dat_path()}")},
             status_code=403)
+    password = cfgmod.clean_password(password)
     if len(password) < 8:
         return JSONResponse({"ok": False, "error": localefmt.chu("Mật khẩu tối thiểu 8 ký tự", "Password must be at least 8 characters")}, status_code=400)
     h, salt = cfgmod.hash_password(password)
@@ -1468,10 +1475,21 @@ async def auth_login(request: Request, username: str = Form(...), password: str 
     cfg = cfgmod.read_settings()
     if not cfgmod.auth_enabled(cfg):
         return {"ok": True, "note": localefmt.chu("auth chưa bật", "auth is not enabled")}
-    if username.strip() != cfg["auth"].get("username") or not cfgmod.verify_password(password, cfg):
+    if not cfgmod.username_matches(username, cfg) or not cfgmod.verify_password(password, cfg):
         _login_fail(ip)
         await asyncio.sleep(0.5)   # làm chậm brute-force online
-        return JSONResponse({"ok": False, "error": localefmt.chu("Sai tài khoản hoặc mật khẩu", "Wrong username or password")}, status_code=401)
+        loi = localefmt.chu("Sai tài khoản hoặc mật khẩu.", "Wrong username or password.")
+        # Account set from the server environment (Docker, Hostinger): a reset there also sets
+        # the USERNAME to JAVIS_ADMIN_USER (default "admin"), which is easy to miss when the
+        # account was first created under another name. Say so. The default name is public in
+        # the docs, so this tells an attacker nothing new.
+        if isinstance((cfg.get("auth") or {}).get("env_applied"), dict):
+            loi += " " + localefmt.chu(
+                "Máy chủ này đặt tài khoản qua biến môi trường: tên đăng nhập là JAVIS_ADMIN_USER "
+                "(mặc định admin), mật khẩu là JAVIS_ADMIN_PASSWORD của lần Redeploy gần nhất.",
+                "This server sets the account from its environment: the username is JAVIS_ADMIN_USER "
+                "(default admin) and the password is JAVIS_ADMIN_PASSWORD from the last redeploy.")
+        return JSONResponse({"ok": False, "error": loi}, status_code=401)
     # totp_hong: 2FA bật trong file nhưng secret không giải mã được (mất .secret_key).
     # Vẫn PHẢI hỏi mã (fail-closed) - chỉ mã khôi phục qua được vì nó băm, không mã hoá.
     # Trước 0.35.6 nhánh này fail-open: totp_enabled trả False nên cổng thôi hỏi mã luôn,
@@ -1655,6 +1673,7 @@ async def auth_password(request: Request, current_password: str = Form(""),
         await asyncio.sleep(0.5)   # cùng nhịp làm chậm với /auth/login
         return JSONResponse({"ok": False, "error": localefmt.chu("Sai mật khẩu hiện tại.", "Wrong current password.")}, status_code=401)
     ten = (username or "").strip()
+    password = cfgmod.clean_password(password)
     if password and len(password) < 8:
         return JSONResponse({"ok": False, "error": localefmt.chu("Mật khẩu tối thiểu 8 ký tự", "Password must be at least 8 characters")}, status_code=400)
     if not password and not ten:
@@ -1779,6 +1798,10 @@ PROVIDER_DEFS = [   # thứ tự = thứ tự hiển thị card ở trang Models
      "default_models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"]},
     {"id": "groq",          "label": "Groq (API)",              "kind": "api", "key_field": "groq_api_key",      "catalog_key": "groq",
      "default_models": ["llama-3.3-70b-versatile", "qwen3-32b", "openai/gpt-oss-120b"]},
+    # DeepSeek: endpoint OpenAI-compatible. The list here is only the offline fallback,
+    # /provider/models asks DeepSeek's /models live.
+    {"id": "deepseek",      "label": "DeepSeek (API)",          "kind": "api", "key_field": "deepseek_api_key",  "catalog_key": "deepseek",
+     "default_models": ["deepseek-flash", "deepseek-v4-pro"]},
     # Ollama Cloud. CỐ Ý không đấu bản chạy trên máy nhà: bản đó đòi một ô địa chỉ riêng, tức
     # một ca đặc biệt duy nhất xuyên suốt lớp này, trong khi phần đông người dùng Javis chạy
     # nó trên VPS - nơi "localhost" là chính cái container chứ không phải máy họ.
@@ -1960,6 +1983,8 @@ def _set_main_model(cfg, provider, model):
         m["engine"] = "grok-cli"
     elif provider == "groq":
         m["engine"] = "groq"
+    elif provider == "deepseek":
+        m["engine"] = "deepseek"
     elif provider == "ollama":
         m["engine"] = "ollama"
     elif provider == "openai-compat":
@@ -2098,6 +2123,14 @@ def _resonance_store():
     return _RESONANCE_STORE
 
 
+def _resonance_turn_provider(brain) -> str:
+    """Provider của bộ não chính cho lượt này (chỉ để ghi hồ sơ bản nộp A4). Lỗi thì rỗng."""
+    try:
+        return str(_effective_main(cfgmod.read_settings() or {}).get("provider") or "")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _resonance_turn_agent(conv_sid, brain, get_session):
     """A1: agent của phiên `conv_sid` (dòng phiên đọc bằng `get_session`), để gắn vào ngữ cảnh lượt
     (`turn_context`, khoá `agent`).
@@ -2128,7 +2161,10 @@ def _resonance_turn_agent(conv_sid, brain, get_session):
         reg = _resonance_store().session_agent(bkey, conv_sid, slug, session_row.get("created_at") or 0)
         if reg is None:
             return None
-        return {"key": reg["agent_key"], "slug": slug, "config_version": reg["config_version"]}
+        # A4: ảnh chụp thứ tự quyền của kho, đọc TRƯỚC khi engine chạy (lỗi thì -1, đóng khi lỗi), và provider của bộ
+        # não chính để hồ sơ bản nộp ghi đúng khả năng engine.
+        return {"key": reg["agent_key"], "slug": slug, "config_version": reg["config_version"],
+                "authority_seq": _resonance_store().authority_seq(), "provider": _resonance_turn_provider(brain)}
     except Exception as e:  # noqa: BLE001
         print(f"[resonance agent] {type(e).__name__}: {e}", file=sys.stderr)
         return None
@@ -2143,7 +2179,8 @@ _RESONANCE_GOAL_HINT = (
     "trách nhiệm theo đuổi kết quả SAU lượt chat (làm, tự kiểm, sửa theo phản hồi, duy trì, chờ sự kiện, "
     "giữ việc mở tới khi đạt) thì gọi tool javis_goal op=create; bổ sung ý cho mục tiêu đang mở thì "
     "op=update. Tool chưa nạp thì tìm: Claude Code dùng ToolSearch (mcp__javis-plugins__javis_goal), "
-    "engine khác dùng javis_search_tools. Câu hỏi, tư vấn: KHÔNG lập mục tiêu."
+    "engine khác dùng javis_search_tools. Câu hỏi, tư vấn: KHÔNG lập mục tiêu. Sản phẩm: nộp toàn văn qua "
+    "javis_submit_deliverable."
 )
 
 
@@ -2191,9 +2228,15 @@ def _resonance_after_turn(conv_sid, brain, user_mid, t0, runtime_trace):
         if d.kind in ("create_goal", "continue_goal") and d.goal_id:
             _deps = _resonance_deps(_brain_key(brain))
             if _deps is not None:
-                _ho = resonance.handoff_after_turn(d.goal_id, mref, _deps)
-                _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "resonance.handoff", {
-                    "goal_id": d.goal_id, "status": _ho, "message_ref": mref})
+                # A4: mọi mục tiêu tin này lập hay sửa đều được bàn giao (niêm liên kết, đăng bản nộp), không chỉ mục
+                # tiêu đầu tiên; biên nhận Write của lượt lấy MỘT lần cho tất cả.
+                _rec = resonance.take_turn_receipts(mref)
+                _gids = list(dict.fromkeys([d.goal_id] + [e["goal_id"] for e in
+                                                          _resonance_store().events_for_message(p, mref)]))
+                for _gid in _gids:
+                    _ho = resonance.handoff_after_turn(_gid, mref, _deps, receipts=_rec)
+                    _CONTEXT_RUNTIME.record_runtime_event(runtime_trace, "resonance.handoff", {
+                        "goal_id": _gid, "status": _ho, "message_ref": mref})
         else:
             resonance.drop_turn_writes(mref)
         if d.kind in ("create_goal", "continue_goal") and d.goal_id:
@@ -2385,6 +2428,10 @@ def _resonance_deps(brain_id):
                               brain_root=root, evidence=_RESONANCE_EVIDENCE, notify=_resonance_notify)
 
 
+# A4: công cụ hub `javis_submit_deliverable` (plugin trong tiến trình) dùng đúng phụ thuộc của server.
+resonance.set_deps_provider(_resonance_deps)
+
+
 async def _resonance_tick():
     """Một nhịp Resonance trong scheduler (M3). Chưa từng có kho thì thoát ngay, không tạo file nào. Chạy NỀN
     (create_task) vì một bước có thể gọi model tới max_wall_s; cờ bận giữ cho hai nhịp không chồng nhau."""
@@ -2483,7 +2530,7 @@ def _chat_provider(mcfg):
 # chạy bằng Claude mà không ai biết. Trang Studio đọc chính danh sách này để vẽ ô chọn, nên
 # thêm provider mới ở aux_engine thì thêm tên vào đây là giao diện có ngay.
 AGENT_PROVIDERS = ("anthropic-cli", "openai-oauth", "grok-cli", "antigravity-cli",
-                   "openrouter", "anthropic-api", "openai", "gemini", "groq", "ollama",
+                   "openrouter", "anthropic-api", "openai", "gemini", "groq", "deepseek", "ollama",
                    # Model chạy máy nhà cũng giao được việc nền cho agent. Bỏ nó ra khỏi đây
                    # là tính năng nửa vời: cài model về rồi mà chỉ chat tay được, không giao
                    # cho agent hay workflow nào chạy.
@@ -2844,6 +2891,8 @@ def _api_stream_goc(prov, key, model, messages, reasoning="off"):
         return engine.gemini_stream(key, model, messages, reasoning)
     if prov == "groq":
         return engine.groq_stream(key, model, messages, reasoning)
+    if prov == "deepseek":
+        return engine.deepseek_stream(key, model, messages, reasoning)
     if prov == "ollama":
         return engine.ollama_stream(key, model, messages, reasoning)
     if prov == "ollama-local":
@@ -2877,6 +2926,14 @@ def _hub_enabled():
     return bool(cfgmod.read_settings().get("mcp", {}).get("hub", True))
 
 
+# Provider engine API được nạp công cụ của hub ở `_api_stream_mcp`. Mọi provider có nhánh `*_chat_with_mcp` trong `_vong_tool`
+# PHẢI có tên ở đây: thiếu là danh sách tool rỗng, nhánh có tool không bao giờ chạy và model chỉ chat chay. Ollama máy nhà
+# (`ollama-local`) từng bị sót đúng như vậy từ lúc có nhánh của nó tới 0.92.2 (người dùng Mac báo 11/10: "model báo không có
+# quyền tool", không đọc được file, không gọi được MCP).
+_API_TOOL_PROVIDERS = ("openrouter", "openai", "anthropic-api", "gemini", "groq", "deepseek", "ollama",
+                       "ollama-local", "openai-compat")
+
+
 async def _api_stream_mcp(prov, key, model, messages, reasoning="off", brain=None,
                           force_lazy=False, mode="full"):
     """Model API/OAuth dùng MCP của Javis qua HUB: đa tài khoản + quyền + audit + builtin tools
@@ -2884,7 +2941,7 @@ async def _api_stream_mcp(prov, key, model, messages, reasoning="off", brain=Non
     ChatGPT OAuth ở các kênh tương tác đi qua Codex CLI native MCP, không dùng fallback này."""
     tools, route = [], {}
     inventory_tools, inventory_route = [], {}
-    if prov in ("openrouter", "openai", "anthropic-api", "gemini", "groq", "ollama", "openai-compat"):
+    if prov in _API_TOOL_PROVIDERS:
         try:
             if _hub_enabled():
                 vault_root = _brain_root(brain) if brain else None
@@ -2932,13 +2989,15 @@ async def _api_stream_mcp(prov, key, model, messages, reasoning="off", brain=Non
                 return engine.gemini_chat_with_mcp(key, model, messages, reasoning, tools, route)
             if prov == "groq":
                 return engine.groq_chat_with_mcp(key, model, messages, reasoning, tools, route)
+            if prov == "deepseek":
+                return engine.deepseek_chat_with_mcp(key, model, messages, reasoning, tools, route)
             if prov == "openai-compat":
                 return engine.openai_compat_chat_with_mcp(key, model, messages, reasoning, tools, route)
             return engine.ollama_chat_with_mcp(key, model, messages, reasoning, tools, route)
         if prov == "ollama-local":
             return engine.ollama_local_chat_with_mcp(key, model, messages, reasoning, tools, route)
 
-        if prov in ("openrouter", "openai", "anthropic-api", "gemini", "groq", "ollama", "openai-compat"):
+        if prov in ("openrouter", "openai", "anthropic-api", "gemini", "groq", "deepseek", "ollama", "openai-compat"):
             return engine.thu_lai_khi_tam_thoi(_vong_tool, nhan=f"{prov}/{model or 'mặc định'}+tool")
     return _api_stream(prov, key, model, messages, reasoning)
 
@@ -3754,7 +3813,8 @@ def _schedule_cancel_reply(action: dict) -> str:
 def _api_label(prov):
     return {"openrouter": "OpenRouter", "openai": "OpenAI", "anthropic-api": "Anthropic API",
             "openai-oauth": "ChatGPT (OAuth)", "gemini": "Google Gemini",
-            "groq": "Groq", "ollama": "Ollama", "openai-compat": "OpenAI Compatible"}.get(prov, prov)
+            "groq": "Groq", "deepseek": "DeepSeek", "ollama": "Ollama",
+            "openai-compat": "OpenAI Compatible"}.get(prov, prov)
 
 def _reasoning_level(mcfg):
     r = (mcfg or {}).get("reasoning", "off")
@@ -4943,6 +5003,9 @@ def settings_get():
     # Nguồn duy nhất là sổ đăng ký phía server: dashboard KHÔNG khai lại danh sách, nếu không
     # thì thêm ngôn ngữ mới phải nhớ sửa hai chỗ và chỗ bị quên hỏng trong im lặng.
     safe["lang_list"] = lang_registry.cho_giao_dien()
+    # Interface pickers also offer dashboard-only dictionaries (a community xx.json, 0.99.0); `lang_list` stays the
+    # languages the server itself speaks, which is what reply language and voice may choose from.
+    safe["ui_lang_list"] = safe["lang_list"] + lang_registry.dashboard_only_languages(DASHBOARD_PATH / "i18n")
     # Gói locale (múi giờ, tiền tệ, locale định dạng số). Dashboard KHÔNG tự suy nó từ ngôn
     # ngữ: hai thứ đó tách rời, người dùng đọc tiếng Anh mà vẫn ngồi ở UTC+7 là bình thường.
     safe["locale_fmt"] = localefmt.cho_giao_dien()
@@ -5491,6 +5554,15 @@ async def _fetch_provider_models(provider, m):
         ids = [x.get("id") for x in data if x.get("id")
                and not any(s in x["id"].lower() for s in ("whisper", "tts", "guard", "embed"))]
         return sorted(ids) or None
+    if provider == "deepseek":
+        key = m.get("deepseek_api_key")
+        if not key:
+            return None
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.get(engine.DEEPSEEK_MODELS_URL, headers={"Authorization": f"Bearer {key}"})
+            r.raise_for_status()
+            data = r.json().get("data") or []
+        return sorted(x.get("id") for x in data if isinstance(x, dict) and x.get("id")) or None
     if provider == "openai-compat":
         base = engine.openai_compat_base()
         if not base:
@@ -6506,6 +6578,72 @@ def _nhom_cua(meta) -> str:
     return (str(g).strip() or NHOM_MAC_DINH) if g is not None else NHOM_MAC_DINH
 
 
+# TAG CỦA AGENT (0.100.0): agent không còn dùng `group` làm phân loại mà dùng `tags` (nhiều tag), xem
+# docs/dev/agent-tags.md. Workflow và skill vẫn dùng `group` ở trên. `group` trả về trong API chỉ để trang
+# cũ còn trong cache trình duyệt vẫn vẽ được (tag đầu tiên, hoặc "Chung" khi chưa gắn tag).
+def _agent_tag_fields(meta) -> dict:
+    # `tag_keys` (song song với `tags`): khoá định danh do HOST cấp (agent_tags.tag_key, Unicode casefold),
+    # để giao diện đếm, lọc, đánh dấu tick đúng như server so trùng, không tự tính bằng toLowerCase
+    # ("Straße" và "STRASSE" là một tag; review PR #617 vòng 1, R3).
+    tags = agent_tags.tags_of(meta)
+    return {"tags": tags, "tag_keys": [agent_tags.tag_key(t) for t in tags],
+            "group": tags[0] if tags else NHOM_MAC_DINH}
+
+
+# Khoá chung cho MỌI thao tác đọc-sửa-ghi hay xoá file agent: tag (/capability/meta, đổi tên, xoá tag),
+# form lưu agent, tài liệu/link của agent, và xoá agent. Chỉ được giữ ở worker (asyncio.to_thread), không
+# bao giờ trên event loop. Xoá agent mà không vào khoá này thì một worker đã đọc file sẽ ghi lại đúng file
+# vừa xoá, agent sống lại sau khi xoá đã trả 200 (review PR #617 vòng 2, R5).
+_AGENT_META_LOCK = __import__("threading").Lock()
+
+
+class AgentGoneError(Exception):
+    """File agent không còn khi thao tác ghi đã vào khoá (bị xoá giữa lúc tìm thấy và lúc ghi). Không
+    ghi gì: ghi lúc này là tạo lại agent vừa xoá."""
+
+
+def _sua_meta_file(path, sua, chi_ghi_khi=None) -> dict:
+    """Đọc frontmatter một file agent hay workflow, `sua(meta)` sửa tại chỗ, rồi ghi lại nguyên tử; thân
+    prompt và mọi khoá khác giữ nguyên. Không tự giữ khoá: agent đi qua `_sua_meta_agent`. `chi_ghi_khi()`
+    trả False thì không ghi (không đổi gì thì không chạm file). Trả meta sau khi sửa."""
+    # Kiểm tồn tại ở ĐÂY, sau khi nơi gọi đã giữ khoá: kiểm trước khoá thì xoá vẫn chen vào được.
+    if not Path(path).is_file():
+        raise AgentGoneError(str(path))
+    meta, body = _read_md(path)
+    if not meta:
+        # Frontmatter có mà không đọc được (YAML sửa tay sai): ghi lại lúc này là xoá sạch mọi khoá
+        # của nó. Từ chối, để người dùng sửa file trước.
+        raw = Path(path).read_text(encoding="utf-8")
+        if raw.startswith("---") and len(raw.split("---", 2)) >= 3 and raw.split("---", 2)[1].strip():
+            raise ValueError("frontmatter_unreadable")
+    meta = dict(meta or {})
+    sua(meta)
+    if chi_ghi_khi is None or chi_ghi_khi():
+        _write_md(path, meta, body)
+    return meta
+
+
+def _sua_meta_agent(path, sua, chi_ghi_khi=None) -> dict:
+    """`_sua_meta_file` cho file agent, trong `_AGENT_META_LOCK`: hai thao tác thêm/bỏ tag đến cùng lúc
+    (hai tab) không ghi đè nhau, và xoá agent không chen được giữa đọc và ghi. File đã bị xoá thì
+    `AgentGoneError`, không tạo lại. Chỉ gọi ở worker."""
+    with _AGENT_META_LOCK:
+        return _sua_meta_file(path, sua, chi_ghi_khi)
+
+
+def _loi_tag(code: str, status: int = 400):
+    chu = {
+        "tag_too_long": ("Tag dài quá 40 ký tự.", "A tag can be at most 40 characters."),
+        "too_many_tags": ("Một agent gắn tối đa 20 tag.", "An agent can carry at most 20 tags."),
+        "bad_tags": ("Danh sách tag không hợp lệ.", "The tag list is not valid."),
+        "stale_client": ("Trang đã cũ so với dữ liệu (agent này có nhiều tag). Tải lại trang (F5) rồi thử lại.",
+                         "This page is out of date (the agent has several tags). Reload the page (F5) and try again."),
+        "group_and_tags": ("Không gửi cùng lúc nhóm và tag cho agent.", "Do not send a group and tags together for an agent."),
+        "tags_not_for_kind": ("Chỉ agent mới có tag.", "Only agents have tags."),
+    }.get(code, ("Không lưu được tag.", "The tags could not be saved."))
+    return JSONResponse({"ok": False, "code": code, "error": localefmt.chu(*chu)}, status_code=status)
+
+
 def _agents_dir(brain):
     return _brain_sub(_brain_root(brain), "agents", "Javis/agents")
 def _workflows_dir(brain):
@@ -6537,44 +6675,41 @@ def _boc_bai_hoc(out):
     sach = re.sub(r"\n{3,}", "\n\n", _BAI_HOC_RE.sub("", out)).strip()
     return [l for l in lessons if l], sach
 
-def _ghi_bai_hoc(brain, slug, lessons):
-    """Ghi bài học vào mục tự học của MEMORY.md. Vùng NGOÀI mục là của chủ - giữ nguyên
-    từng ký tự. Trong mục: loại trùng (chuẩn hoá bỏ dấu câu/hoa thường) rồi cắt về
-    _BAI_HOC_TRAN dòng mới nhất."""
-    if not lessons:
+def _ghi_muc_bo_nho_agent(brain, slug, header, items, cap):
+    """Ghi bullet vào MỘT mục của memory/agents/<slug>/MEMORY.md (agent_rules.merge_bullets).
+
+    Chốt chặn chung cho mọi lần ghi (sự cố 13/10, luật Zalo không markdown biến mất): mọi dòng
+    nằm ngoài mục Bài học phải còn nguyên sau khi ghi, gồm phần chủ viết tay và mục Luật chủ
+    dặn. Thiếu dù một dòng là KHÔNG ghi, thà mất một bài học còn hơn mất một luật của chủ."""
+    if not items:
         return
     try:
         f = _brain_memory_dir(brain) / "agents" / slug / "MEMORY.md"
         f.parent.mkdir(parents=True, exist_ok=True)
         text = f.read_text(encoding="utf-8") if f.exists() else ""
-        lines = text.splitlines()
-        i0 = next((i for i, l in enumerate(lines) if l.strip() == _BAI_HOC_HEADER), None)
-        if i0 is None:
-            truoc, bullets, sau = lines, [], []
-        else:
-            i1 = next((i for i in range(i0 + 1, len(lines)) if lines[i].startswith("## ")),
-                      len(lines))
-            truoc = lines[:i0]
-            bullets = [l.rstrip() for l in lines[i0 + 1:i1] if l.strip().startswith("- ")]
-            sau = lines[i1:]
-        def _chuan(s):
-            return re.sub(r"\W+", "", s).casefold()
-        seen = {_chuan(b) for b in bullets}
-        for l in lessons:
-            b = "- " + l
-            if _chuan(b) in seen:
-                continue
-            bullets.append(b)
-            seen.add(_chuan(b))
-        bullets = bullets[-_BAI_HOC_TRAN:]
-        while truoc and not truoc[-1].strip():
-            truoc.pop()
-        moi = truoc + ([""] if truoc else []) + [_BAI_HOC_HEADER] + bullets
-        if sau:
-            moi += [""] + sau
-        _atomic_write_text(f, "\n".join(moi).rstrip() + "\n")
+        moi = agent_rules.merge_bullets(text, header, items, cap=cap)
+        mat = agent_rules.missing_owner_lines(text, moi, [_BAI_HOC_HEADER])
+        if mat:
+            print(f"[agent-memory] chặn ghi {header} ({slug}): làm rơi {len(mat)} dòng của chủ",
+                  file=sys.stderr)
+            return
+        _atomic_write_text(f, moi.rstrip() + "\n")
     except Exception as e:
-        print(f"[agent-memory] ghi bài học lỗi ({slug}): {e}", file=sys.stderr)
+        print(f"[agent-memory] ghi bộ nhớ lỗi ({slug}): {e}", file=sys.stderr)
+
+
+def _ghi_bai_hoc(brain, slug, lessons):
+    """Ghi bài học vào mục tự học của MEMORY.md. Vùng NGOÀI mục là của chủ - giữ nguyên
+    từng ký tự. Trong mục: loại trùng (chuẩn hoá bỏ dấu câu/hoa thường) rồi cắt về
+    _BAI_HOC_TRAN dòng mới nhất."""
+    _ghi_muc_bo_nho_agent(brain, slug, _BAI_HOC_HEADER, lessons, _BAI_HOC_TRAN)
+
+
+def _ghi_luat_chu(brain, slug, rules):
+    """Ghi luật CHỦ dặn vào mục "## Luật chủ dặn": chống trùng, KHÔNG có trần, không bao giờ
+    bị đẩy ra. Trước 0.105.0 luật của chủ chỉ có đường JAVIS_LESSON, nên trôi khỏi cửa sổ 15
+    dòng sau 15 bài học khác."""
+    _ghi_muc_bo_nho_agent(brain, slug, agent_rules.OWNER_RULES_HEADER, rules, None)
 
 def _log_agent_run(brain, slug, task, out):
     try:
@@ -6612,7 +6747,7 @@ def agents_index(brain: str, *, kem_prompt: bool = True) -> list:
         meta, body = _read_md(f)
         out.append({"slug": f.stem, "name": meta.get("name", f.stem),
                     "role": meta.get("role", ""), "skills": meta.get("skills", []) or [],
-                    "model": meta.get("model", ""), "group": _nhom_cua(meta),
+                    "model": meta.get("model", ""), **_agent_tag_fields(meta),
                     "model_provider": meta.get("model_provider", ""),
                     "pinned": bool(meta.get("pinned")),
                     "avatar": agent_avatar.for_agent(meta, f.stem)})
@@ -6657,7 +6792,7 @@ def agent_get(slug: str = Query(...), brain: str = Query("brain")):
     meta, body = _read_md(path)
     return {"slug": slug, "name": meta.get("name", slug), "role": meta.get("role", ""),
             "skills": meta.get("skills", []) or [], "model": meta.get("model", ""),
-            "group": _nhom_cua(meta), "model_provider": meta.get("model_provider", ""),
+            **_agent_tag_fields(meta), "model_provider": meta.get("model_provider", ""),
             "prompt": body, "pinned": bool(meta.get("pinned")),
             "avatar": agent_avatar.for_agent(meta, slug)}
 
@@ -6668,7 +6803,7 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
                      group: str = Form(None), avatar_shape: str = Form(None),
                      avatar_palette: str = Form(None), avatar_color: str = Form(None),
                      avatar_eye: str = Form(None), avatar_eye_color: str = Form(None),
-                     avatar_eye_size: str = Form(None)):
+                     avatar_eye_size: str = Form(None), tags: str = Form(None)):
     # Trợ lý MỚI đặt tên file không dấu ("Bống Work" -> bong-work.md), đúng quy ước slug của Javis. Trước
     # 0.88.1 tên giữ nguyên dấu; các file đó vẫn đọc, sửa, xoá được nhờ skill_router.valid_file_slug.
     slug = slug or _ascii_slug(name)
@@ -6679,37 +6814,64 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
     # chứ không ghi vào file một nhà mà server không chạy được.
     mp = (model_provider or "").strip()
     path = _agents_dir(brain) / f"{slug}.md"
-    previous = _read_md(path)[0] if path.is_file() else None
-    try:
-        avatar = agent_avatar.for_save(previous, slug, avatar_shape, avatar_palette,
-                                       avatar_color, avatar_eye, avatar_eye_color,
-                                       avatar_eye_size)
-    except ValueError as exc:
-        return JSONResponse({"error": str(exc)}, status_code=400)
-    # GIỮ mọi khoá frontmatter KHÔNG nằm trong form. Trước đây meta được dựng lại từ đầu, nên
-    # mỗi lần bấm Lưu trong trình sửa là xoá sạch những khoá do chỗ khác ghi - `pinned` (ghim ở
-    # trang Cộng sự) mất ngay lần sửa kế tiếp, và mọi khoá tương lai cũng vậy.
-    # NHÓM: form sửa trợ lý KHÔNG còn ô nhóm (0.62.0 - gom nhóm nay nằm ở thanh nhóm cột
-    # trái và menu "Chuyển sang nhóm"), nên `group` không gửi lên nghĩa là GIỮ NGUYÊN nhóm
-    # đang có. Mặc định cũ là "Chung", tức mỗi lần bấm Lưu là ném trợ lý về Chung, lặng lẽ.
-    # Client cũ vẫn gửi group thì vẫn theo nó.
-    meta = dict(previous or {})
-    meta.update({"type": "agent", "name": name, "slug": slug, "role": role,
-                 "group": (group or "").strip() or _nhom_cua(previous),
-                 "skills": skills_list, "model": model, "avatar": avatar,
-                 "model_provider": mp if mp in AGENT_PROVIDERS else "",
-                 "updated": _today()})  # "" = mặc định theo CLI
-    _write_md(_agents_dir(brain) / f"{slug}.md", meta, (prompt.strip() or role))
-    return {"ok": True, "slug": slug}
+    tags = tags if isinstance(tags, str) else None
+    group = group if isinstance(group, str) else None
+
+    def _luu():
+        # ĐỌC `previous` rồi GHI trong CÙNG một khoá với các đường tag (/capability/meta, đổi tên, xoá tag),
+        # và chạy ở worker. Đọc ngoài khoá rồi mới khoá lúc ghi thì một thao tác thêm/bỏ tag chen giữa sẽ
+        # bị snapshot cũ của form ghi đè (review PR #617 vòng 1, R4).
+        with _AGENT_META_LOCK:
+            previous = _read_md(path)[0] if path.is_file() else None
+            try:
+                avatar = agent_avatar.for_save(previous, slug, avatar_shape, avatar_palette,
+                                               avatar_color, avatar_eye, avatar_eye_color,
+                                               avatar_eye_size)
+            except ValueError as exc:
+                return JSONResponse({"error": str(exc)}, status_code=400)
+            # GIỮ mọi khoá frontmatter KHÔNG nằm trong form. Trước đây meta được dựng lại từ đầu, nên
+            # mỗi lần bấm Lưu trong trình sửa là xoá sạch những khoá do chỗ khác ghi - `pinned` (ghim ở
+            # trang Cộng sự) mất ngay lần sửa kế tiếp, và mọi khoá tương lai cũng vậy.
+            # TAG (0.100.0, docs/dev/agent-tags.md): form sửa trợ lý KHÔNG có ô tag (gắn tag ở cột trái
+            # trang Cộng sự), nên không gửi `tags` nghĩa là GIỮ NGUYÊN tag đang có (kể cả tag cũ vượt giới
+            # hạn, không cắt); gửi `tags` (JSON) là thay cả tập. Client cũ còn gửi `group` thì theo luật
+            # tương thích: không bao giờ thay nhiều tag bằng một.
+            try:
+                moi_tags = agent_tags.parse_list(tags)
+                if moi_tags is not None and group is not None:
+                    raise agent_tags.TagError("group_and_tags")
+                hien = agent_tags.tags_of(previous)
+                if moi_tags is not None:
+                    hien = agent_tags.normalize_tags(moi_tags)
+                elif group is not None:
+                    hien = agent_tags.from_old_group(hien, group)
+            except agent_tags.TagError as e:
+                return _loi_tag(str(e), 409 if str(e) == "stale_client" else 400)
+            meta = dict(previous or {})
+            meta.update({"type": "agent", "name": name, "slug": slug, "role": role,
+                         "skills": skills_list, "model": model, "avatar": avatar,
+                         "model_provider": mp if mp in AGENT_PROVIDERS else "",
+                         "updated": _today()})  # "" = mặc định theo CLI
+            agent_tags.write_tags(meta, hien)
+            _write_md(path, meta, (prompt.strip() or role))
+            return {"ok": True, "slug": slug, "tags": hien}
+
+    return await asyncio.to_thread(_luu)
 
 @app.post("/agents/delete")
 async def delete_agent(slug: str = Form(...), brain: str = Form("brain")):
     # slug ghép thẳng vào tên file: phải hợp lệ, không thì `../x` xoá được file ngoài thư mục agents.
     if not skill_router.valid_file_slug(slug):
         return JSONResponse({"ok": False, "error": "slug không hợp lệ"}, status_code=400)
-    f = _agent_file(brain, slug)
-    if f:
-        f.unlink()
+    def _xoa():
+        # Tìm và xoá file TRONG khoá ghi agent, ở worker (R5): thao tác tag hay form đang giữ khoá thì xoá
+        # đợi nó ghi xong rồi mới xoá; thao tác tới sau thấy file đã mất và không tạo lại. Đợi khoá ở
+        # worker nên event loop không bị chặn (R4).
+        with _AGENT_META_LOCK:
+            f = _agent_file(brain, slug)
+            if f:
+                f.unlink()
+    await asyncio.to_thread(_xoa)
     # A1: xoá qua host thì mã Cộng hưởng của agent này nghỉ hẳn. Tạo lại cùng tên là agent MỚI, phải bật lại; mục
     # tiêu và phiên cũ giữ mã cũ. Chưa có kho thì không tạo kho chỉ để ghi việc này.
     try:
@@ -6760,16 +6922,19 @@ def _agent_assets_sua(brain: str, slug: str, doi):
     Gom một chỗ vì cả sáu route thêm/gỡ/ghim đều làm đúng ba bước này; chép sáu lần thì lần
     thứ bảy sẽ quên bước ghi hoặc quên giữ phần thân file.
     """
-    f = _agent_md_path(brain, slug)
-    if not f:
-        return None, JSONResponse({"error": "not found"}, status_code=404)
-    meta, body = _read_md(f)
-    try:
-        meta_moi, ket_qua = doi(meta)
-    except ValueError as e:
-        return None, JSONResponse({"error": str(e)}, status_code=400)
-    _write_md(f, meta_moi, body)
-    return ket_qua, None
+    # Tìm, đọc, ghi trong khoá ghi agent và ở worker (nơi gọi dùng asyncio.to_thread): xoá agent đang
+    # đợi khoá thì không bị lần ghi này tạo lại file, và thêm/bỏ tag cùng lúc không bị ghi đè (R5).
+    with _AGENT_META_LOCK:
+        f = _agent_md_path(brain, slug)
+        if not f:
+            return None, JSONResponse({"error": "not found"}, status_code=404)
+        meta, body = _read_md(f)
+        try:
+            meta_moi, ket_qua = doi(meta)
+        except ValueError as e:
+            return None, JSONResponse({"error": str(e)}, status_code=400)
+        _write_md(f, meta_moi, body)
+        return ket_qua, None
 
 
 @app.get("/agents/{slug}/assets")
@@ -6796,15 +6961,15 @@ async def agent_assets_add_file(slug: str, path: str = Form(...), name: str = Fo
     # thư mục thì "có tồn tại" - gắn được một hàng trỏ vào thư mục, ghim vào là đọc lỗi.
     if not alo.is_file():
         return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này", "File not found in this brain")}, status_code=404)
-    fid, loi = _agent_assets_sua(
-        brain, slug, lambda m: agent_assets.them_file(m, path, name or alo.name))
+    fid, loi = await asyncio.to_thread(
+        _agent_assets_sua, brain, slug, lambda m: agent_assets.them_file(m, path, name or alo.name))
     return loi or {"ok": True, "id": fid}
 
 
 @app.post("/agents/{slug}/assets/files/{file_id}/delete")
 async def agent_assets_del_file(slug: str, file_id: str, brain: str = Form("brain")):
     """GỠ KHỎI TRỢ LÝ, KHÔNG xoá file trên đĩa (xem agent_assets.go_file)."""
-    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.go_file(m, file_id))
+    ok, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.go_file(m, file_id))
     return loi or {"ok": bool(ok)}
 
 
@@ -6812,7 +6977,7 @@ async def agent_assets_del_file(slug: str, file_id: str, brain: str = Form("brai
 async def agent_assets_pin_file(slug: str, file_id: str, pinned: str = Form("1"),
                                 brain: str = Form("brain")):
     on = str(pinned).strip() in ("1", "true", "True", "on")
-    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.ghim_file(m, file_id, on))
+    ok, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.ghim_file(m, file_id, on))
     return loi or {"ok": bool(ok), "pinned": on}
 
 
@@ -6825,13 +6990,13 @@ async def agent_assets_add_link(slug: str, url: str = Form(...), label: str = Fo
     if not re.match(r"^https?://", u, re.I):
         return JSONResponse({"error": localefmt.chu("URL phải bắt đầu bằng http:// hoặc https://", "The URL must start with http:// or https://")},
                             status_code=400)
-    lid, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.them_link(m, u, label))
+    lid, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.them_link(m, u, label))
     return loi or {"ok": True, "id": lid}
 
 
 @app.post("/agents/{slug}/assets/links/{link_id}/delete")
 async def agent_assets_del_link(slug: str, link_id: str, brain: str = Form("brain")):
-    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.go_link(m, link_id))
+    ok, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.go_link(m, link_id))
     return loi or {"ok": bool(ok)}
 
 
@@ -6839,7 +7004,7 @@ async def agent_assets_del_link(slug: str, link_id: str, brain: str = Form("brai
 async def agent_assets_pin_link(slug: str, link_id: str, pinned: str = Form("1"),
                                 brain: str = Form("brain")):
     on = str(pinned).strip() in ("1", "true", "True", "on")
-    ok, loi = _agent_assets_sua(brain, slug, lambda m: agent_assets.ghim_link(m, link_id, on))
+    ok, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.ghim_link(m, link_id, on))
     return loi or {"ok": bool(ok), "pinned": on}
 
 
@@ -8398,11 +8563,16 @@ _META_KIND = {"agent": _agents_dir, "workflow": _workflows_dir}
 @app.post("/capability/meta")
 async def capability_meta(kind: str = Form(...), slug: str = Form(...),
                           brain: str = Form("brain"),
-                          pinned: str = Form(None), group: str = Form(None)):
-    """Ghim / bỏ ghim và chuyển nhóm cho một agent hoặc workflow.
+                          pinned: str = Form(None), group: str = Form(None),
+                          tags: str = Form(None), add_tags: str = Form(None),
+                          remove_tags: str = Form(None)):
+    """Ghim / bỏ ghim và chuyển nhóm cho một agent hoặc workflow; gắn và bỏ tag cho agent.
 
     `pinned`: "1"/"true" = ghim, "0"/"false" = bỏ ghim, không gửi = không đụng.
-    `group`: tên nhóm mới, rỗng = về nhóm mặc định. Không gửi = không đụng.
+    `group` (workflow): tên nhóm mới, rỗng = về nhóm mặc định. Không gửi = không đụng.
+    Agent (0.100.0, docs/dev/agent-tags.md): `add_tags`/`remove_tags` (JSON danh sách) thêm hay bỏ đúng
+    các tag đó trên tập hiện có; `tags` thay cả tập (`[]` = bỏ hết). `group` của client cũ theo luật
+    tương thích (agent nhiều tag thì 409, không thay nhiều tag bằng một).
     """
     thu_muc = _META_KIND.get((kind or "").strip())
     if not thu_muc:
@@ -8417,20 +8587,142 @@ async def capability_meta(kind: str = Form(...), slug: str = Form(...),
     # sẽ hiểu sai. Quy về None ngay: chỉ CHUỖI mới là giá trị người dùng gửi.
     pinned = pinned if isinstance(pinned, str) else None
     group = group if isinstance(group, str) else None
-    meta, body = _read_md(f)
-    meta = dict(meta or {})
-    if pinned is not None:
-        bat = str(pinned).strip().lower() in ("1", "true", "yes", "on")
-        if bat:
-            meta["pinned"] = True
+    tags, add_tags, remove_tags = (x if isinstance(x, str) else None for x in (tags, add_tags, remove_tags))
+    la_agent = (kind or "").strip() == "agent"
+    try:
+        thay = agent_tags.parse_list(tags)
+        them = agent_tags.parse_list(add_tags)
+        bo = agent_tags.parse_list(remove_tags)
+        co_tag = any(x is not None for x in (thay, them, bo))
+        if co_tag and not la_agent:
+            raise agent_tags.TagError("tags_not_for_kind")
+        if co_tag and group is not None:
+            raise agent_tags.TagError("group_and_tags")
+    except agent_tags.TagError as e:
+        return _loi_tag(str(e))
+
+    def _sua(meta):
+        if pinned is not None:
+            bat = str(pinned).strip().lower() in ("1", "true", "yes", "on")
+            if bat:
+                meta["pinned"] = True
+            else:
+                meta.pop("pinned", None)      # bỏ ghim thì XOÁ khoá, không để lại `pinned: false`
+        if la_agent:
+            # Đọc tag NGAY TRONG khoá ghi: hai tab thêm/bỏ khác tag cùng lúc đều được giữ. Mọi thao
+            # tác chạm agent (kể cả ghim) ghi dạng chuẩn, nên file cũ chỉ có `group` chuyển đúng một lần.
+            hien = agent_tags.tags_of(meta)
+            if co_tag:
+                hien = agent_tags.apply_ops(hien, replace=thay, add=them, remove=bo)
+            elif group is not None:
+                hien = agent_tags.from_old_group(hien, group)
+            agent_tags.write_tags(meta, hien)
+        elif group is not None:
+            meta["group"] = (group or "").strip() or NHOM_MAC_DINH
+        meta["updated"] = _today()
+
+    try:
+        if la_agent:
+            # Đọc, sửa, ghi (và đợi khoá) ở worker: không chặn event loop khi đĩa chậm (R4). File bị xoá
+            # trong lúc đợi khoá thì không ghi (R5).
+            meta = await asyncio.to_thread(_sua_meta_agent, f, _sua)
         else:
-            meta.pop("pinned", None)      # bỏ ghim thì XOÁ khoá, không để lại `pinned: false`
-    if group is not None:
-        meta["group"] = (group or "").strip() or NHOM_MAC_DINH
-    meta["updated"] = _today()
-    _write_md(f, meta, body)
-    return {"ok": True, "slug": slug, "pinned": bool(meta.get("pinned")),
-            "group": _nhom_cua(meta)}
+            # Workflow giữ đúng như trước 0.100.0: sửa ngay trên event loop như mọi route workflow khác
+            # (lưu, bật/tắt, xoá), nên không có worker nào chen được giữa chúng.
+            meta = _sua_meta_file(f, _sua)
+    except AgentGoneError:
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"không thấy {kind} '{slug}'", f"{kind} '{slug}' not found")},
+                            status_code=404)
+    except agent_tags.TagError as e:
+        return _loi_tag(str(e), 409 if str(e) == "stale_client" else 400)
+    except ValueError as e:
+        return JSONResponse({"ok": False, "code": str(e), "error": localefmt.chu(
+            "Phần đầu file (frontmatter) đang hỏng, chưa ghi gì. Sửa file trước rồi thử lại.",
+            "The file header (frontmatter) is broken; nothing was saved. Fix the file and try again.")},
+            status_code=422)
+    out = {"ok": True, "slug": slug, "pinned": bool(meta.get("pinned"))}
+    out.update(_agent_tag_fields(meta) if la_agent else {"group": _nhom_cua(meta)})
+    return out
+
+
+def _doi_tag_hang_loat(brain, sua_tags) -> dict:
+    """Áp `sua_tags(tags) -> (tags mới, có đổi)` lên mọi agent của MỘT brain. Ghi từng file; file nào
+    lỗi thì ghi vào `failed` và làm tiếp file khác. `ok` chỉ đúng khi không file nào lỗi."""
+    changed, failed = [], []
+    for f in sorted(_agents_dir(brain).glob("*.md")):
+        try:
+            done = {}
+
+            def _sua(m):
+                moi, doi = sua_tags(agent_tags.tags_of(m))
+                if doi:
+                    agent_tags.write_tags(m, moi)
+                    m["updated"] = _today()
+                done["doi"] = doi
+            # Đọc và quyết định trong cùng khoá ghi; file không đổi thì không ghi lại (xem _ghi_neu_doi).
+            _sua_meta_agent(f, _sua, chi_ghi_khi=lambda: done.get("doi"))
+            if done.get("doi"):
+                changed.append(f.stem)
+        except AgentGoneError:
+            # Agent bị xoá sau lúc liệt kê: không còn gì để đổi, không phải lỗi, và không tạo lại (R5).
+            continue
+        except Exception as e:  # noqa: BLE001
+            failed.append({"slug": f.stem, "error": f"{type(e).__name__}: {e}"[:200]})
+    return {"ok": not failed, "changed": changed, "failed": failed}
+
+
+@app.post("/agents/tags/rename")
+async def agent_tag_rename(brain: str = Form("brain"), from_tag: str = Form(...), to_tag: str = Form(...)):
+    """Đổi tên một tag trên mọi agent của brain đang có nó; giữ các tag khác. Tên đích đã là tag của
+    agent đó thì gộp, không nhân đôi. `merged`: tên đích đã có trong brain trước khi đổi."""
+    try:
+        # Tên NGUỒN so theo khoá, không áp giới hạn độ dài (đổi được cả tag cũ dài); tên ĐÍCH là tên mới.
+        s, d = agent_tags.clean_tag(from_tag), agent_tags.normalize_tag(to_tag)
+        if not s or not d:
+            raise agent_tags.TagError("bad_tags")
+    except agent_tags.TagError as e:
+        return _loi_tag(str(e))
+
+    def _doi():
+        # Quét, đọc, ghi từng file (và đợi khoá) ở worker: đổi tên trên nhiều agent không chặn event loop (R4).
+        da_co = {}
+        for a in agents_index(brain, kem_prompt=False):
+            for x in a["tags"]:
+                da_co.setdefault(agent_tags.tag_key(x), x)
+        kd, ks = agent_tags.tag_key(d), agent_tags.tag_key(s)
+        merged = kd in da_co and kd != ks
+        # Gộp vào tag đã có thì dùng CÁCH VIẾT của tag đó (gõ "nội dung" gộp vào "Nội dung" là thành
+        # "Nội dung"), để mọi agent cùng một cách viết và thông báo nói đúng tên đang hiện.
+        dich = da_co[kd] if merged else d
+        out = _doi_tag_hang_loat(brain, lambda cur: agent_tags.rename(cur, s, dich))
+        out.update({"tag": dich, "tag_key": agent_tags.tag_key(dich), "merged": merged})
+        return out
+
+    out = await asyncio.to_thread(_doi)
+    if not out["ok"]:
+        out["error"] = localefmt.chu("Đổi tên chưa xong: có agent không ghi được.",
+                                     "Rename incomplete: some agents could not be saved.")
+    return JSONResponse(out, status_code=200 if out["ok"] else 500)
+
+
+@app.post("/agents/tags/delete")
+async def agent_tag_delete(brain: str = Form("brain"), tag: str = Form(...)):
+    """Gỡ một tag khỏi mọi agent của brain. Không xoá agent, phiên chat, mục tiêu hay đội."""
+    try:
+        k = agent_tags.tag_key(tag)
+        if not k:
+            raise agent_tags.TagError("bad_tags")
+    except agent_tags.TagError as e:
+        return _loi_tag(str(e))
+
+    def _bo(cur):
+        moi = [x for x in cur if agent_tags.tag_key(x) != k]
+        return moi, moi != cur
+    out = await asyncio.to_thread(_doi_tag_hang_loat, brain, _bo)   # I/O ở worker (R4)
+    if not out["ok"]:
+        out["error"] = localefmt.chu("Xoá tag chưa xong: có agent không ghi được.",
+                                     "Tag removal incomplete: some agents could not be saved.")
+    return JSONResponse(out, status_code=200 if out["ok"] else 500)
 
 
 @app.post("/workflows/delete")
@@ -9291,6 +9583,12 @@ def _workflow_agent_helpers(brain, tools):
               f"{_BAI_HOC_TRAN} dòng mới nhất). KHÔNG tự sửa file bộ nhớ trực tiếp - phần ngoài mục "
               "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát JAVIS_LESSON, và đừng "
               "lặp lại bài học đã có trong bộ nhớ.\n"
+            + "\n# Luật chủ dặn: khi CHỦ nói rõ một luật lâu dài cho vai này (\"từ giờ\", \"luôn\", "
+              "\"đừng bao giờ\", vd \"nhắn Zalo thì không dùng markdown\"), làm theo ngay VÀ kết thúc "
+              "câu trả lời bằng một dòng riêng `JAVIS_RULE: <luật một câu, giữ nguyên ý chủ>`. Thansa ghi "
+              f"vào mục `{agent_rules.OWNER_RULES_HEADER}` của file bộ nhớ trên, mục này không bao giờ "
+              "bị tự xoá. CHỈ dùng cho lời chủ dặn; bài học bạn tự rút ra thì vẫn là JAVIS_LESSON. "
+              "Luật đã có trong mục đó thì đừng phát lại.\n"
             + _AGENT_TOOLKIT_BLOCK
             + "\nLàm việc trong vault. Tập trung hoàn thành nhiệm vụ, trả kết quả rõ ràng, ngắn gọn."
         )
@@ -9304,7 +9602,12 @@ def _workflow_agent_helpers(brain, tools):
     def _learn(aslug, out):
         """Bóc JAVIS_LESSON khỏi output, ghi vào bộ nhớ agent, trả output ĐÃ SẠCH
         (marker không được chảy vào {{prev}} của bước sau hay lên UI)."""
+        # JAVIS_RULE ở đây (bước workflow, việc nền) KHÔNG có chủ đang nói chuyện trực tiếp nên
+        # không đủ căn cứ là luật chủ dặn: bóc khỏi output và hạ xuống thành bài học. Đường chat
+        # với chủ (_ket_luot_agent) bóc JAVIS_RULE TRƯỚC khi gọi tới đây.
+        rules, out = agent_rules.extract_rules(out or "")
         lessons, sach = _boc_bai_hoc(out or "")
+        lessons = lessons + rules
         if not lessons:
             return out
         _ghi_bai_hoc(brain, aslug, lessons)
@@ -9377,7 +9680,12 @@ def _ket_luot_agent(brain, slug, user_message, final_text) -> str:
     """Cuối một lượt chat với trợ lý: bóc JAVIS_LESSON vào bộ nhớ trợ lý, ghi nhật ký chạy của
     trợ lý (memory/agents/<slug>/runs), trả về text SẠCH để lưu phiên và hiện lên chat."""
     _mk, _agent_sysprompt, _log, _learn = _workflow_agent_helpers(brain, None)
-    sach = _learn(slug, final_text or "")
+    rules, text = agent_rules.extract_rules(final_text or "")
+    if rules and (user_message or "").strip():
+        _ghi_luat_chu(brain, slug, rules)
+        rules = []
+    # Không có câu của chủ trong lượt thì JAVIS_RULE không có căn cứ: hạ xuống bài học.
+    sach = _learn(slug, text + "".join(f"\nJAVIS_LESSON: {r}" for r in rules))
     _log(slug, user_message or "", sach or "")
     return sach
 
@@ -9935,7 +10243,8 @@ async def studio_seed(brain: str = Form("brain")):
     for ex in examples:
         slug = _ascii_slug(ex["name"])
         meta = {"type": "agent", "name": ex["name"], "slug": slug, "role": ex["role"],
-                "group": "Nội dung", "skills": ex["skills"], "model": "sonnet", "updated": _today()}
+                "skills": ex["skills"], "model": "sonnet", "updated": _today()}
+        agent_tags.write_tags(meta, ["Nội dung"])     # agent dùng tag từ 0.100.0 (docs/dev/agent-tags.md)
         _write_md(a / f"{slug}.md", meta, ex["prompt"])
     wf_meta = {"type": "workflow", "name": "Research → Write (có kiểm chứng)", "slug": "research-and-write",
                "status": "active", "group": "Nội dung",
@@ -11191,7 +11500,7 @@ def _gather_capabilities(brain: str, skills=None) -> dict:
         for f in sorted(ad.glob("*.md")):
             m, _ = _read_md(f)
             caps["agents"].append({"slug": f.stem, "name": m.get("name", f.stem), "role": m.get("role", ""),
-                                   "model": m.get("model", ""), "group": _nhom_cua(m),
+                                   "model": m.get("model", ""), "tags": agent_tags.tags_of(m),
                                    "skills": m.get("skills", []) or []})
     wd = _workflows_dir(brain)
     if wd.is_dir():
@@ -11269,11 +11578,13 @@ def _render_javis_index(caps: dict) -> str:
 
     L.append("## Agents")
     if caps["agents"]:
-        def _dong_agent(a):
+        # Agent gắn NHIỀU tag (0.100.0), nên không chia theo tag: chia thì agent hai tag hiện hai lần.
+        # Mỗi agent một dòng, tag ghi ngay trên dòng đó.
+        for a in caps["agents"]:
             mdl = f" · model {a['model']}" if a["model"] else ""
             sk = f" · skills: {', '.join(a['skills'])}" if a["skills"] else ""
-            return f"- **{a['name']}** (`{a['slug']}`) - {a['role']}{mdl}{sk}"
-        _do_nhom(caps["agents"], _dong_agent)
+            tg = f" · tags: {', '.join(a.get('tags') or [])}" if a.get("tags") else ""
+            L.append(f"- **{a['name']}** (`{a['slug']}`) - {a['role']}{mdl}{sk}{tg}")
     else:
         L.append("_(chưa có)_")
     L.append("\n## Skills")
@@ -15319,7 +15630,7 @@ async def websocket_endpoint(ws: WebSocket):
                 # Nén NỀN phần lịch sử cũ sắp rơi khỏi cửa sổ (chỉ engine API - CLI tự quản
                 # context). Lỗi nén không ảnh hưởng lượt chat; lượt sau vẫn còn fallback trim.
                 if (not used_fast_path and kind == "api" and api_key and
-                        prov in ("openrouter", "openai", "anthropic-api", "gemini", "groq")):
+                        prov in ("openrouter", "openai", "anthropic-api", "gemini", "groq", "deepseek")):
                     try:
                         asyncio.create_task(compaction.maybe_compact(
                             store, conv_sid, prov, api_key, api_model, _api_stream))
@@ -15333,9 +15644,13 @@ async def websocket_endpoint(ws: WebSocket):
             _trace_token = context_runtime.bind_trace(runtime_trace)
             # Dashboard = the owner's own surface (signed-in session): no platform sender id.
             # A1: kèm phiên, id tin và agent của phiên (host phân giải) để tool javis_goal biết ĐÚNG lượt nào gọi.
+            # A4: lượt có trợ lý chụp thứ tự quyền của kho TRƯỚC khi engine chạy (gốc cấp lại sau ảnh chụp này
+            # không vào được lượt này, kể cả lần đầu lượt chạm mục tiêu). Đọc lỗi thì -1: đóng khi lỗi.
+            _ag_luot = _resonance_turn_agent(conv_sid, brain, store.get_session)
             _luot_token = turn_context.bind(turn_context.make(
                 "dashboard", chat_id=conv_sid, la_chu=True, session_id=conv_sid, message_id=user_mid,
-                agent=_resonance_turn_agent(conv_sid, brain, store.get_session)))
+                agent=_ag_luot, authority_seq=(_ag_luot or {}).get("authority_seq"),
+                provider=(_ag_luot or {}).get("provider") or ""))
             # Ghi vào sổ lượt đang chạy để tool giao việc biết kết quả phải về khung chat này
             # khi model quên truyền chat_id (luot_dang_chay.py, 0.64.49). Kèm id tin và lời người
             # dùng để tool javis_goal (Resonance) biết đúng tin nhắn nào; 0 thì tool từ chối lập mục tiêu.
@@ -17155,6 +17470,13 @@ async def ollama_local_set_specs(ram_gb: float = Form(0), has_gpu: str = Form("0
     d = {"source": "manual", "ram_gb": max(0.0, float(ram_gb or 0)),
          "has_gpu": str(has_gpu).strip() in ("1", "true", "True", "on"),
          "vram_gb": max(0.0, float(vram_gb or 0))}
+    # Mac chip Apple không có VRAM rời: ô VRAM để 0 nên trang gửi has_gpu=0, khai tay RAM xong là MẤT luôn GPU. Ollama chạy
+    # ngay trên máy này và chip là Apple thì giữ GPU dùng chung.
+    ep, _ = _ol_cfg()
+    if not d["vram_gb"] and ollama_local.same_host(ep):
+        tu_doc = await asyncio.to_thread(ollama_local.detect_specs)
+        if tu_doc.get("gpu_name") == ollama_local.APPLE_GPU:
+            d["has_gpu"], d["gpu_name"] = True, tu_doc["gpu_name"]
     _ol_luu({"ollama_local_specs": d})
     return {"ok": True, "specs": d}
 
@@ -18933,11 +19255,21 @@ def _manual_session_undo(key: str, keep: int) -> None:
     _tg_ngat_mach(s)
 
 
-def _tg_ket(clean_out, files, canh_bao="", loi=()):
+def _tg_ket(clean_out, files, canh_bao="", loi=(), khach=False):
     """Gói câu trả lời Telegram: cảnh báo hệ thống lên đầu, lỗi giữa lượt xuống cuối.
 
     Lỗi giữa lượt KHÔNG huỷ câu trả lời (dashboard vốn coi lỗi là không chí mạng), nhưng cũng
-    không được giấu: giấu đi thì user tưởng lượt chạy sạch trong khi có tool đã hỏng."""
+    không được giấu: giấu đi thì user tưởng lượt chạy sạch trong khi có tool đã hỏng.
+
+    `khach=True` (a full-access dedicated bot, 0.102.1): the person reading is a CUSTOMER, not the owner.
+    The system warning and the mid-turn error then go to `canh_bao`, which the bot log shows the owner,
+    instead of being glued to the reply ("⚠ Có lỗi giữa lượt: ..." in a customer group)."""
+    if khach:
+        ghi_chu = [str(canh_bao or "").strip()] + (["Có lỗi giữa lượt: " + str(loi[0])] if loi else [])
+        ket = {"text": clean_out or "", "files": files or []}
+        if any(ghi_chu):
+            ket["canh_bao"] = " · ".join(x for x in ghi_chu if x)[:500]
+        return ket
     txt = (canh_bao or "") + (clean_out or "")
     if loi:
         txt += "\n\n⚠ Có lỗi giữa lượt: " + str(loi[0])
@@ -19034,10 +19366,17 @@ def _bot_ket(out, lich_su):
 # `claude` ngay từ `_api_stream`, nên một đường lui cũng dẫn tới đúng engine ấy là vô nghĩa.
 
 
+def _anh_khong_gui_duoc(prov) -> str:
+    """Cảnh báo cho nhật ký bot khi bộ não của bot không có đường gửi ảnh (Antigravity, Grok Build)."""
+    return (f"Bot không xem được ảnh khách gửi: bộ não {prov} của bot không nhận ảnh. Đổi model của bot sang "
+            f"Claude, ChatGPT hoặc một model API nhìn được ảnh.")
+
+
 def _bot_gan_anh(messages, prov, text, images):
     """Gắn ẢNH khách gửi vào tin user CUỐI của lượt (0.81.0). Trả (messages để gửi, True nếu đã gắn ảnh thật).
 
-    Chủ dự án chốt 05/10: ảnh đi THẲNG vào lượt chat, chính model đang chạy bot nhìn ảnh; không model thứ hai nào tả hộ.
+    Chủ dự án chốt 05/10: ảnh đi THẲNG vào lượt chat, chính model đang chạy bot nhìn ảnh. Từ 0.94.0 (chủ chốt 11/10) model
+    nào không nhìn được thì một bộ não khác đã kết nối xem hộ, xem `_bot_anh_mat_muon` và borrowed_eyes.py.
     Bộ não không có đường gửi ảnh (Antigravity, Grok Build) hoặc ảnh không đọc được thì nhận dòng nhãn thật thà "kèm một
     ảnh mà bạn không xem được", để model khỏi trả lời như thể đã thấy ảnh. Lịch sử giữ chữ trơn (xem `_bot_tra_loi`)."""
     if not images:
@@ -19052,6 +19391,84 @@ def _bot_bo_anh(messages, text):
     """Bản gửi lại khi model TỪ CHỐI ảnh (model chữ thuần trên Groq, Ollama...): bỏ ảnh, gắn nhãn thật thà."""
     import chatbot_runtime
     return messages[:-1] + [{"role": "user", "content": chatbot_runtime._KEM_ANH + str(text or "")}]
+
+
+async def _mat_muon_stream(prov, model, messages):
+    """Stream for ONE borrowed look at a customer's photo (0.94.0, see borrowed_eyes). No tools, reasoning off.
+
+    The ChatGPT candidate uses `image_vision.VISION_MODEL` as is: `_codex_safe_model` would swap a model missing from the saved
+    catalog for the catalog's first entry, which may be the very model that just refused the photo. Claude Code that is not
+    signed in answers with a short "Not logged in" text instead of an error; that is turned into an error so it is never taken
+    for a description of the photo."""
+    if prov == "openai-oauth" and model == image_vision.VISION_MODEL:
+        creds = openai_oauth.valid_creds() or {}
+        inner = engine.openai_responses_stream(creds.get("access_token", ""), creds.get("account_id", ""), model, messages, "off")
+    else:
+        inner = _api_stream(prov, aux_engine.api_key_for(prov), model, messages, "off")
+    parts, actual = [], model or "?"
+    async for ev in inner:
+        t = ev.get("type")
+        if t == "meta":
+            actual = ev.get("model") or actual
+        elif t == "usage":
+            usage_store.record(prov, actual, ev.get("input", 0), ev.get("output", 0))
+        elif t == "text":
+            parts.append(str(ev.get("content") or ""))
+        elif t == "error":
+            yield ev
+    text = "".join(parts)
+    if aux_engine.final_loi_dang_nhap(text):
+        yield {"type": "error", "content": text.strip()}
+    elif text:
+        yield {"type": "text", "content": text}
+
+
+def _mat_muon_ung_vien(prov, api_model):
+    """Brains the owner already connected that may look at a photo for this bot, in borrowed_eyes order."""
+    s = cfgmod.read_settings()
+    main = _effective_main(s)
+    try:
+        main_ok = bool(aux_engine.availability(main, s)[0])
+        if main["provider"] == "anthropic-cli":
+            main_ok = main_ok and bool(find_claude_cli())
+    except Exception:      # noqa: BLE001 - an unreadable setting only means one fewer pair of eyes
+        main_ok = False
+    try:
+        claude_ok = bool(find_claude_cli())
+    except Exception:      # noqa: BLE001
+        claude_ok = False
+    return borrowed_eyes.candidates(
+        prov, api_model, main_prov=main["provider"], main_model=main.get("model") or "", main_ok=main_ok,
+        chatgpt_ok=image_vision.connected(), chatgpt_model=image_vision.VISION_MODEL, claude_ok=claude_ok)
+
+
+async def _bot_xem_ho(images, text, prov, api_model, chat_id=""):
+    """Another connected brain describes the customer's photos. Returns (description, who, why it failed)."""
+    try:
+        res = await borrowed_eyes.describe(list(images or []), text, _mat_muon_ung_vien(prov, api_model), _mat_muon_stream)
+    except Exception as e:      # noqa: BLE001 - borrowed eyes failing must never cost the customer the reply
+        res = {"ok": False, "errors": [f"{type(e).__name__}: {e}"]}
+    if res.get("ok"):
+        print(f"[bot {prov} chat {chat_id}] ảnh khách gửi do {res.get('who')} xem hộ", file=sys.stderr)
+        return res["text"], res.get("who") or "", ""
+    why = "; ".join(res.get("errors") or [])[:300]
+    print(f"[bot {prov} chat {chat_id}] không bộ não nào xem hộ được ảnh: {why}", file=sys.stderr)
+    return "", "", why
+
+
+async def _bot_anh_mat_muon(messages, lich_su, text, images, prov, api_model, chat_id, ly_do):
+    """The bot's own model cannot see this turn's photos: let another brain describe them (0.94.0).
+
+    Returns (messages to send, warning for the bot card). With a description the last user turn carries it as photo content and
+    the history keeps a short version; without one the turn falls back to the old honest label, and the warning says why the
+    bot could not see the photo AND why no other brain could look for it."""
+    mo_ta, who, why = await _bot_xem_ho(images, text, prov, api_model, chat_id)
+    if not mo_ta:
+        return _bot_bo_anh(messages, text), f"{ly_do} Không bộ não nào khác xem hộ được: {why}"[:400]
+    n = len(images)
+    if lich_su:
+        lich_su[-1] = {"role": "user", "content": borrowed_eyes.history_text(text, mo_ta, n)}
+    return messages[:-1] + [{"role": "user", "content": borrowed_eyes.turn_text(text, mo_ta, n)}], ""
 
 
 def _bot_lich_su_chu(text, images):
@@ -19102,16 +19519,29 @@ async def _bot_tra_loi(text, *, sess, sysprompt, prov, api_key, api_model, reaso
     messages = [{"role": "system", "content": sysprompt}] + lich_su
     _bot_ghim_duong(runtime_trace, prov, api_model, messages)
     gui, co_anh = _bot_gan_anh(messages, prov, text, images)
+    canh_bao_anh = ""
+    if images and not co_anh:
+        # Bộ não này không có đường gửi ảnh: mượn mắt bộ não khác đã kết nối tả ảnh thành chữ (0.94.0).
+        gui, canh_bao_anh = await _bot_anh_mat_muon(messages, lich_su, text, images, prov, api_model, chat_id,
+                                                    _anh_khong_gui_duoc(prov))
 
     out, loi = await _bot_doc_stream(
         _api_stream(prov, api_key, api_model, gui, reasoning),
         progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
     if not out and co_anh:
-        # Model không nhận ảnh (model chữ thuần): trả lời lại bằng chữ, nói thật là không xem được ảnh.
-        print(f"[bot {prov} chat {chat_id}] model từ chối ảnh ({loi[0] if loi else '?'}), gửi lại chỉ chữ",
+        # Model nhận ảnh mà trả rỗng hoặc lỗi: mượn mắt bộ não khác rồi trả lời lại. Lỗi GỐC đi vào cảnh báo, vì trước 0.94.0
+        # mọi lỗi ở đây đều bị ghi chung là "từ chối ảnh" và không ai biết model thật sự nói gì.
+        goc = (loi[0] if loi else "không trả lời gì")[:200]
+        print(f"[bot {prov} chat {chat_id}] model không nhận ảnh ({goc}), mượn mắt bộ não khác",
               file=__import__('sys').stderr)
+        gui, canh_bao_anh = await _bot_anh_mat_muon(
+            messages, lich_su, text, images, prov, api_model, chat_id,
+            f"Bot không xem được ảnh khách gửi: model {api_model or prov} không nhận ảnh (lỗi gốc: {goc}).")
+        if not canh_bao_anh:
+            canh_bao_anh = (f"Model {api_model or prov} của bot không nhận ảnh (lỗi gốc: {goc}), "
+                            f"nên một bộ não khác đã xem hộ ảnh.")
         out, loi = await _bot_doc_stream(
-            _api_stream(prov, api_key, api_model, _bot_bo_anh(messages, text), reasoning),
+            _api_stream(prov, api_key, api_model, gui, reasoning),
             progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
 
     if not out:
@@ -19124,7 +19554,10 @@ async def _bot_tra_loi(text, *, sess, sysprompt, prov, api_key, api_model, reaso
         return "⚠ " + (loi[0] if loi else "Không nhận được nội dung nào.")
     # Không gửi kèm file: bot ở mức này không tạo được file (không có tool), và quét thư mục
     # brain để tìm file "mới" thì lại là một đường rò tài liệu ra ngoài.
-    return _bot_ket(out, lich_su)
+    ket = _bot_ket(out, lich_su)
+    if canh_bao_anh:
+        ket["canh_bao"] = canh_bao_anh
+    return ket
 
 
 # ============================================================
@@ -19157,6 +19590,8 @@ def _bot_stream_co_tool(prov, key, model, messages, reasoning, tools, route,
             return engine.gemini_chat_with_mcp(key, model, messages, reasoning, tools, route)
         if prov == "groq":
             return engine.groq_chat_with_mcp(key, model, messages, reasoning, tools, route)
+        if prov == "deepseek":
+            return engine.deepseek_chat_with_mcp(key, model, messages, reasoning, tools, route)
         if prov == "ollama":
             return engine.ollama_chat_with_mcp(key, model, messages, reasoning, tools, route)
         if prov == "ollama-local":
@@ -19183,6 +19618,11 @@ def _bot_stream_co_tool(prov, key, model, messages, reasoning, tools, route,
 
 class _BoQua(Exception):
     """Nhảy qua một khối try khi bước đó không áp cho lượt này (bot Toàn quyền bỏ nguồn chọn lọc)."""
+
+
+# Engines of the owner's channel that open an image FILE themselves (Claude Code's Read, Codex's image viewer). A full-access
+# bot on any other engine gets the borrowed-eyes description added to the turn as well (0.94.0).
+_MO_ANH_BANG_CONG_CU = ("anthropic-cli", "openai-oauth")
 
 
 def _bot_full_prompt(brain, sys_bot, lang, conv_sid=""):
@@ -19238,6 +19678,11 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
     _bot_cat_lich_su(lich_su)
     messages = [{"role": "system", "content": sysprompt}] + lich_su
     gui, co_anh = _bot_gan_anh(messages, prov, text, images)
+    canh_bao_anh = ""
+    if images and not co_anh:
+        # Bộ não này không có đường gửi ảnh: mượn mắt bộ não khác đã kết nối tả ảnh thành chữ (0.94.0).
+        gui, canh_bao_anh = await _bot_anh_mat_muon(messages, lich_su, text, images, prov, api_model, chat_id,
+                                                    _anh_khong_gui_duoc(prov))
 
     # vault_root = brain CỦA BOT. Đây là một tham số, không phải một quy ước - truyền nhầm brain
     # của chủ vào đây là mở toang đúng thứ cả tính năng này đang giữ.
@@ -19256,20 +19701,6 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
               file=__import__('sys').stderr)
     _bot_ghim_duong(runtime_trace, prov, api_model, messages, tools)
 
-    out, loi = await _bot_doc_stream(
-        _bot_stream_co_tool(prov, api_key, api_model, gui, reasoning, tools, route,
-                            brain=brain, tag_bot=f"bot:{chat_id}", muc_quyen=muc_quyen),
-        progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
-    if not out and co_anh:
-        # Model không nhận ảnh: thử lại CÙNG vòng tool, chỉ chữ + nhãn thật thà (mất ảnh, không mất công cụ).
-        print(f"[bot {prov} chat {chat_id}] model từ chối ảnh ({loi[0] if loi else '?'}), gửi lại chỉ chữ",
-              file=__import__('sys').stderr)
-        gui = _bot_bo_anh(messages, text)
-        out, loi = await _bot_doc_stream(
-            _bot_stream_co_tool(prov, api_key, api_model, gui, reasoning, tools, route,
-                                brain=brain, tag_bot=f"bot:{chat_id}", muc_quyen=muc_quyen),
-            progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
-
     # Engine KHÔNG chạy nổi vòng tool: trả lời lại lượt này mà bỏ tool đi.
     #
     # Không phải phòng xa. Bản 0.24.0 nối mức Được ghi của gói ChatGPT vào
@@ -19282,26 +19713,50 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
     # Nên đường lui: vẫn trả lời, chỉ là không có công cụ. Và tuyệt đối KHÔNG im lặng về việc
     # đó - chủ đặt mức Được ghi mà bot lặng lẽ chạy như mức Chỉ đọc là đúng kiểu hỏng tệ nhất.
     # Cảnh báo đi kèm câu trả lời, lên thẻ bot, và nói luôn việc cần làm.
-    canh_bao = ""
-    if not out and tools:
-        print(f"[bot {prov} chat {chat_id}] vòng tool rỗng ({loi[0] if loi else '?'}), "
-              f"trả lời lại KHÔNG tool", file=__import__('sys').stderr)
-        out, loi2 = await _bot_doc_stream(
-            _api_stream(prov, api_key, api_model, gui, reasoning),
+    async def _mot_lan(gui_):
+        """Một lần thử: vòng tool, rỗng thì chính lượt đó KHÔNG tool. Trả (out, loi, đã rơi về không-tool)."""
+        out_, loi_ = await _bot_doc_stream(
+            _bot_stream_co_tool(prov, api_key, api_model, gui_, reasoning, tools, route,
+                                brain=brain, tag_bot=f"bot:{chat_id}", muc_quyen=muc_quyen),
             progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
-        if out:
-            canh_bao = (f"Engine đang chạy ({_api_label(prov)}) không gọi được công cụ cho bot, "
-                        f"nên lượt vừa rồi trả lời ở mức Chỉ đọc chứ không phải mức "
-                        f"{chatbot_store.MUC_NHAN.get(muc_quyen, muc_quyen)} bạn đã đặt. "
-                        f"Cần bot làm việc thật thì đổi engine ở trang Models, hoặc hạ mức bot "
-                        f"xuống Chỉ đọc cho khỏi hiểu nhầm.")
-            loi = []
-        else:
-            # Gãy CẢ đường không-tool thì lỗi đáng báo là lỗi của đường đó, không phải lỗi vòng
-            # tool. Đường không-tool là lời gọi đơn giản nhất còn lại, nên nó nói đúng bệnh hơn:
-            # hết quota, sai token, mạng chết. Báo lỗi vòng tool trước là đẩy chủ đi tìm xem
-            # engine có hỗ trợ tool không, trong khi thứ hỏng là cái khác hẳn.
-            loi = loi2 + loi
+        if out_ or not tools:
+            return out_, loi_, False
+        print(f"[bot {prov} chat {chat_id}] vòng tool rỗng ({loi_[0] if loi_ else '?'}), "
+              f"trả lời lại KHÔNG tool", file=__import__('sys').stderr)
+        out2, loi2 = await _bot_doc_stream(
+            _api_stream(prov, api_key, api_model, gui_, reasoning),
+            progress=progress, runtime_trace=runtime_trace, prov=prov, api_model=api_model)
+        if out2:
+            return out2, [], True
+        # Gãy CẢ đường không-tool thì lỗi đáng báo là lỗi của đường đó, không phải lỗi vòng
+        # tool. Đường không-tool là lời gọi đơn giản nhất còn lại, nên nó nói đúng bệnh hơn:
+        # hết quota, sai token, mạng chết. Báo lỗi vòng tool trước là đẩy chủ đi tìm xem
+        # engine có hỗ trợ tool không, trong khi thứ hỏng là cái khác hẳn.
+        return "", loi2 + loi_, False
+
+    # Lần đầu GIỮ ẢNH cho cả đường không-tool (0.94.0). Trước đó vòng tool rỗng là ảnh bị đổ lỗi ngay: bot "Javis Vũ" trên gói
+    # ChatGPT bị ghi "từ chối ảnh" ở những lượt mà thứ hỏng thật là vòng tool (cùng ngày nó báo 129 lượt không gọi được công cụ).
+    out, loi, roi_tool = await _mot_lan(gui)
+    if not out and co_anh:
+        # Có ảnh mà vẫn rỗng cả khi bỏ tool: lỗi nằm ở ảnh. Mượn mắt bộ não khác (0.94.0), thử lại với ảnh đã thành chữ (không
+        # ai xem hộ được thì chỉ chữ + nhãn thật thà). Mất ảnh gốc, không mất công cụ. Lỗi GỐC đi vào cảnh báo.
+        goc = (loi[0] if loi else "không trả lời gì")[:200]
+        print(f"[bot {prov} chat {chat_id}] model không nhận ảnh ({goc}), mượn mắt bộ não khác",
+              file=__import__('sys').stderr)
+        gui, canh_bao_anh = await _bot_anh_mat_muon(
+            messages, lich_su, text, images, prov, api_model, chat_id,
+            f"Bot không xem được ảnh khách gửi: model {api_model or prov} không nhận ảnh (lỗi gốc: {goc}).")
+        if not canh_bao_anh:
+            canh_bao_anh = (f"Model {api_model or prov} của bot không nhận ảnh (lỗi gốc: {goc}), "
+                            f"nên một bộ não khác đã xem hộ ảnh.")
+        out, loi, roi_tool = await _mot_lan(gui)
+    canh_bao = ""
+    if roi_tool:
+        canh_bao = (f"Engine đang chạy ({_api_label(prov)}) không gọi được công cụ cho bot, "
+                    f"nên lượt vừa rồi trả lời ở mức Chỉ đọc chứ không phải mức "
+                    f"{chatbot_store.MUC_NHAN.get(muc_quyen, muc_quyen)} bạn đã đặt. "
+                    f"Cần bot làm việc thật thì đổi engine ở trang Models, hoặc hạ mức bot "
+                    f"xuống Chỉ đọc cho khỏi hiểu nhầm.")
 
     if not out:
         lich_su.pop()   # lượt hỏng thì đừng để câu hỏi treo lơ lửng không có câu trả lời
@@ -19329,6 +19784,7 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
         print(f"[bot {prov} chat {chat_id}] mức '{muc_quyen}' nhưng hub không trả tool nào - "
               f"lượt này chỉ chat", file=__import__('sys').stderr)
     ket = _bot_ket(out, lich_su)
+    canh_bao = " · ".join(x for x in (canh_bao, canh_bao_anh) if x)
     if canh_bao:
         ket["canh_bao"] = canh_bao
     return ket
@@ -19411,6 +19867,12 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
                 # Telegram), nên đưa đường dẫn vào câu hỏi thay cho cổng ảnh riêng của bot.
                 text = (str(text or "") + "\n" + "\n".join(
                     f"[Người nhắn gửi kèm ảnh, đã lưu tại: {a}]" for a in _anh)).strip()
+                if prov not in _MO_ANH_BANG_CONG_CU:
+                    # Engine API chỉ nhận chữ từ công cụ đọc file, Antigravity và Grok Build không chắc mở được ảnh:
+                    # đưa luôn mô tả ảnh do bộ não khác xem hộ vào câu hỏi (0.94.0).
+                    _mo_ta, _who, _ly_do = await _bot_xem_ho(_anh, text, prov, api_model, chat_id)
+                    if _mo_ta:
+                        text = borrowed_eyes.turn_text(text, _mo_ta, len(_anh))
         elif _muc in chatbot_store.MUC_CO_TOOL:
             return await _bot_tra_loi_co_tool(
                 text, sess=sess, sysprompt=_sys_bot, prov=prov, api_key=api_key,
@@ -19635,12 +20097,15 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         if api_model and actual_model != api_model:
             # Tự chữa như dashboard: ghi lại model đúng để lượt sau khỏi ép lại nữa, VÀ nói cho
             # user biết. Trước đây Telegram lặng lẽ đổi, user cứ tưởng đang chạy model mình chọn.
-            try:
-                _fix = cfgmod.read_settings()
-                _set_main_model(_fix, "openai-oauth", actual_model)
-                cfgmod.write_settings(_fix)
-            except Exception as _e:
-                print(f"[codex model self-heal] {_e}", file=__import__('sys').stderr)
+            # NOT for a dedicated bot (0.102.1): its model is the Agent's, and writing the owner's MAIN
+            # model because a customer bot's Agent named a stale model changed the owner's own brain.
+            if not _bot_full:
+                try:
+                    _fix = cfgmod.read_settings()
+                    _set_main_model(_fix, "openai-oauth", actual_model)
+                    cfgmod.write_settings(_fix)
+                except Exception as _e:
+                    print(f"[codex model self-heal] {_e}", file=__import__('sys').stderr)
             canh_bao = (f"⚠ Model '{api_model}' không chạy được qua Codex (tài khoản ChatGPT) - "
                         f"đã tự đổi sang '{actual_model}'. Đổi model khác ở trang Models nếu muốn.\n\n")
         openai_oauth.write_codex_auth()
@@ -19747,7 +20212,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         clean_out = channel_context.strip_attached_media(
             channel_context.strip_control_blocks(out), files, _brain_root(brain)
         )
-        return _tg_ket(clean_out, files, canh_bao, loi)
+        return _tg_ket(clean_out, files, canh_bao, loi, khach=_bot_full)
     if (kind == "api" and api_key) or kind == "oauth":
         label = _api_label(prov)
         if sess["or"] is None:
@@ -19810,7 +20275,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         clean_out = channel_context.strip_attached_media(
             channel_context.strip_control_blocks(out), files, _brain_root(brain)
         )
-        return _tg_ket(clean_out, files, "", loi)
+        return _tg_ket(clean_out, files, "", loi, khach=_bot_full)
     else:
         _goc = _brain_root(brain)
         if sess["cli"] is None or getattr(sess["cli"], "cwd", None) != _goc:
@@ -19914,7 +20379,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         clean_out = channel_context.strip_attached_media(
             channel_context.strip_control_blocks(out), files, _brain_root(brain)
         )
-        return _tg_ket(clean_out, files, "", loi)
+        return _tg_ket(clean_out, files, "", loi, khach=_bot_full)
 
 
 async def _tg_help_text(brain):
@@ -19971,6 +20436,7 @@ _TG_NHAN_NGAN = {
     "openai": "OpenAI API",
     "gemini": "Gemini API",
     "groq": "Groq",
+    "deepseek": "DeepSeek",
     "ollama": "Ollama",
     "openai-compat": "OpenAI Compat",
 }
@@ -21679,6 +22145,8 @@ async def _shutdown_mcp_pool():
 resonance_api.register_agents(app, _RESONANCE_API_DEPS)
 # Route học từ phản hồi (A3): reaction trên tin báo, bài học của trợ lý. Đăng ký SAU route cuối như A1.
 resonance_api.register_learning(app, _RESONANCE_API_DEPS)
+# A4: xem trước bản nháp chờ chủ dự án cho phép (đăng ký cuối, bảng route chỉ thêm ở cuối).
+resonance_api.register_a4(app, _RESONANCE_API_DEPS)
 
 
 if __name__ == "__main__":

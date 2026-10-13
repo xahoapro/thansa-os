@@ -26,6 +26,7 @@ from fastapi.responses import JSONResponse, Response
 
 import chatbot_doc_tools
 import config
+import doc_text
 import hub_trace
 import localefmt
 import mcp_catalog
@@ -594,7 +595,11 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
             return (f"'{rel}' là file ẢNH ({p.stat().st_size // 1024} KB), tool này chỉ đọc chữ nên không cho bạn thấy ảnh. "
                     f"Muốn biết trong ảnh có gì, gọi tool javis_describe_image với images=['{rel}'] (ChatGPT nhìn ảnh thật "
                     f"rồi tả lại). Muốn người dùng xem ảnh thì nhúng ![]({rel}) vào câu trả lời.")
-        text = p.read_text(encoding="utf-8", errors="replace")
+        if p.suffix.lower() in doc_text.SUFFIXES:
+            # PDF/Word đọc thô ra toàn mã nhị phân: bóc chữ trước để engine API và Ollama máy nhà đọc được file đính kèm (0.92.2).
+            text = await asyncio.to_thread(doc_text.extract, p)
+        else:
+            text = p.read_text(encoding="utf-8", errors="replace")
         return text[:100_000] + (f"\n… [cắt, file dài {len(text):,} ký tự]" if len(text) > 100_000 else "")
 
     async def _ls(args):
@@ -1096,11 +1101,14 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
         # Tool ĐA HÀNH ĐỘNG (schema có tham số arg_rules.param, vd action của Pancake) → coi là
         # "read" lúc LIST để còn liệt kê được; chặn thật lúc call (đã có args). Tool thường →
         # phân loại tĩnh theo tool_meta/heuristic.
+        # Tool có `call_rules` → classify(args=None) trả mức NHẸ NHẤT luật cho ra (call_rule_floor):
+        # tool gộp chỉ toàn lệnh ghi như GitHub `label_write` thì không hiện ở mức Chỉ đọc.
         rules = (connector or {}).get("arg_rules") or {}
         props = ((t.get("schema") or {}).get("properties") or {})
-        multiplexed = (bool(rules.get("param") and rules["param"] in props)
-                       or mcp_catalog.call_rule(connector, raw["tool"]) is not None)
-        cls = "read" if multiplexed else mcp_catalog.classify(connector, raw["tool"], None)
+        theo_lenh = mcp_catalog.call_rule(connector, raw["tool"]) is not None
+        multiplexed = bool(rules.get("param") and rules["param"] in props) or theo_lenh
+        cls = ("read" if multiplexed and not theo_lenh
+               else mcp_catalog.classify(connector, raw["tool"], None))
         # Lọc lúc LIST: readonly ẩn tool ghi/nguy hiểm tĩnh; safe ẩn tool nguy hiểm tĩnh.
         if (eff == "readonly" and cls in ("write", "danger")) or (eff == "safe" and cls == "danger"):
             h = hidden.setdefault(conn["id"], {"perm": eff, "ns": conn.get("namespace"), "tools": []})

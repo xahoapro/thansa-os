@@ -310,8 +310,9 @@ _ANH_CHO: Dict[tuple, tuple] = {}     # (bot_id, chat_id, user_id) -> (paths, ts
 async def anh_cho_bot(text_engine: str, meta: dict, cfg: dict) -> tuple:
     """The photos of this turn, put INTO the chat for the bot's own model (0.81.0). Returns (text, image paths).
 
-    Owner decision (2026-10-05): no second model describes the photo (0.74.1 used ChatGPT, so no ChatGPT meant no eyes for any
-    brain). The photo is saved in the bot's own brain (swept by media_gc) and sent as image input with this turn; main.py
+    Owner decision (2026-10-05): the bot's own model looks first; since 0.94.0 another connected brain describes the photo only
+    when that model cannot see it (main.py `_bot_anh_mat_muon`). In 0.74.1 ChatGPT always described, so no ChatGPT meant no eyes
+    for any brain. The photo is saved in the bot's own brain (swept by media_gc) and sent as image input with this turn; main.py
     `_bot_gan_anh` turns it into the provider's format, or into the honest "you cannot see this photo" label for a brain that
     cannot take images. Three sources:
       - the download line a gateway writes ("[... đã tải về: <path>]": Telegram, Zalo Bot, Slack, WhatsApp). The line is
@@ -355,11 +356,24 @@ async def anh_cho_bot(text_engine: str, meta: dict, cfg: dict) -> tuple:
                 paths.append(str(Path(saved).resolve()))
             else:
                 print(f"[chatbot] không tải được ảnh khách gửi: {why}", file=sys.stderr)
+                _ghi_ly_do_anh(cfg, f"không tải được ảnh: {why}")
         except Exception as e:      # noqa: BLE001 - a photo we cannot get must never cost the customer the reply
             print(f"[chatbot] tải ảnh lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+            _ghi_ly_do_anh(cfg, f"tải ảnh lỗi: {type(e).__name__}: {e}")
+    elif meta.get("co_anh") and not url and not paths:
+        _ghi_ly_do_anh(cfg, "tin ảnh tới mà không kèm link ảnh nào (bản Zalo đang chạy không gửi link)")
     if not paths:
         return (gan_nhan_anh(text, meta) if meta.get("co_anh") else text), []
     return (text if text.strip() else CHI_CO_ANH), paths[:vision_input.MAX_IMAGES]
+
+
+def _ghi_ly_do_anh(cfg: dict, ly_do: str) -> None:
+    """Vì sao lượt này bot không xem được ảnh khách gửi, để nhật ký bot nói ra (0.89.2). Trước đó lý do chỉ in ra stderr của
+    server: chủ thấy bot trả lời "không xem được ảnh" mà không có cách nào biết tại sao, nhất là khi bot chạy trên VPS."""
+    try:
+        cfg["_anh_loi"] = ("Bot không xem được ảnh khách gửi: " + str(ly_do))[:300]
+    except Exception:      # noqa: BLE001 - ghi lý do hỏng không được làm mất lượt
+        pass
 
 
 def _tai_lai_duoc(why: str) -> bool:
@@ -1172,6 +1186,31 @@ def ghi_tin_khach(cfg: dict, meta: dict, text: str) -> None:
         print(f"[chatbot conversations] {type(e).__name__}: {e}", file=sys.stderr)
 
 
+def _ghi_loi_tu_dong(bot_id: str, cfg: dict, meta: dict, text: str, loi: str) -> None:
+    """A Tự đánh giá turn failed (0.102.1): record it for the owner and alert the on-duty person once, send nothing.
+
+    Before, the failure went out as "Em đang gặp trục trặc kỹ thuật..." tagged to whoever had written in the group,
+    though that person never asked the bot anything."""
+    try:
+        chatbot_log.ghi(bot_id, {
+            "chat_id": str((meta or {}).get("chat_id") or ""), "chat_type": (meta or {}).get("chat_type"),
+            "user_name": (meta or {}).get("user_name"), "hoi": text,
+            "dap": "(lượt Tự đánh giá hỏng, bot không gửi gì)", "loi": str(loi or "")[:1000],
+            "bo_qua": "loi_tu_dong", "chuyen_nguoi": False, "bi": False,
+            "muc_quyen": cfg.get("muc_quyen") or "suggest",
+        })
+    except Exception as e:      # noqa: BLE001 - logging must not cost anything else
+        print(f"[chatbot {bot_id}] ghi lỗi tự đánh giá hỏng: {type(e).__name__}: {e}", file=sys.stderr)
+    if cfg.get("handoff_to") and bot_id not in _DA_BAO_LOI:
+        _DA_BAO_LOI.add(bot_id)
+        try:
+            asyncio.ensure_future(_gui_nhan_vien(
+                cfg, str(cfg["handoff_to"]), str((meta or {}).get("chat_id") or ""),
+                localefmt.chu(f"Bot đang LỖI: {str(loi)[:300]}", f"The bot is FAILING: {str(loi)[:300]}")))
+        except Exception as e:      # noqa: BLE001
+            print(f"[chatbot {bot_id}] báo người trực lỗi: {type(e).__name__}: {e}", file=sys.stderr)
+
+
 def ghi_tin_bot(cfg: dict, meta: dict, text: str, loi: str = "", files=None) -> None:
     """Câu BOT trả lời (hoặc câu xin lỗi khi lượt gãy - vẫn là thứ khách nhìn thấy)."""
     try:
@@ -1343,6 +1382,7 @@ def _make_answer_fn(bot_id: str):
             ten_nguoi = str((meta or {}).get("user_name") or "").strip()
             if ten_nguoi:
                 text_engine = f"[{ten_nguoi}] {text}"
+        cfg.pop("_anh_loi", None)
         text_engine, cfg["_anh"] = await anh_cho_bot(text_engine, gan_anh_cho(bot_id, meta, text), cfg)
 
         # Bản ghi truyền xuống lõi phải có brain và slug - lõi dựa vào đó để đổi brain, đổi
@@ -1353,6 +1393,12 @@ def _make_answer_fn(bot_id: str):
             print(f"[chatbot {bot_id}] {type(e).__name__}: {e}", file=sys.stderr)
             if (meta or {}).get("member_join"):
                 # Nobody asked anything: an apology tagged to a newcomer would only confuse them.
+                return {"text": "", "files": [], "im_lang": True}
+            if tu_dong:
+                # Tự đánh giá: the message did not call the bot. Same rule as a newcomer: an apology tagged to
+                # someone who never asked would only confuse a whole group (2026-10-12, 69-member group).
+                _rp_retract(rp_dec, "turn_failed")
+                _ghi_loi_tu_dong(bot_id, cfg, meta, text, f"{type(e).__name__}: {e}")
                 return {"text": "", "files": [], "im_lang": True}
             xin_loi = "Em đang gặp trục trặc, anh chị nhắn lại giúp em sau ít phút ạ."
             ghi_tin_bot(cfg, meta or {}, xin_loi, loi=f"{type(e).__name__}: {e}")
@@ -1370,6 +1416,12 @@ def _make_answer_fn(bot_id: str):
         if isinstance(out, str):
             loi_ky_thuat = out.strip()
             print(f"[chatbot {bot_id}] lượt hỏng: {loi_ky_thuat[:300]}", file=sys.stderr)
+            if tu_dong:
+                # Tự đánh giá: nobody called the bot, so a failure stays out of the chat. The owner still
+                # sees it in the bot log, and the on-duty person is told on the first failure, as before.
+                _rp_retract(rp_dec, "turn_failed")
+                _ghi_loi_tu_dong(bot_id, cfg, meta, text, loi_ky_thuat)
+                return {"text": "", "files": [], "im_lang": True}
             out = {"text": "Em đang gặp trục trặc kỹ thuật, anh chị nhắn lại giúp em sau ít phút ạ.",
                    "files": []}
 
@@ -1447,7 +1499,7 @@ def _make_answer_fn(bot_id: str):
             # nổi công cụ). Cố ý KHÔNG nhét vào `loi`: `loi` kéo theo `bi`, kéo theo gọi người
             # trực, và làm bẩn tab "Bot bí" - trong khi đây là lượt trả lời bình thường. Chủ
             # cần biết, người đang hỏi thì không cần.
-            "canh_bao": " · ".join(x for x in ((out or {}).get("canh_bao"), tl.get("canh_bao_link")) if x),
+            "canh_bao": " · ".join(x for x in ((out or {}).get("canh_bao"), tl.get("canh_bao_link"), cfg.get("_anh_loi")) if x),
         })
         # Câu bot nói (kể cả câu xin lỗi khi gãy) vào Hộp thư hội thoại, cạnh tin khách.
         ghi_tin_bot(cfg, meta or {}, dap, loi=loi_ky_thuat, files=(out or {}).get("files"))

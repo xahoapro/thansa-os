@@ -558,7 +558,7 @@
       ky_hieu: "_sinh_ban_dich_en"
     - file: server/main.py
       ky_hieu: "thansa_lang"
-    - file: dashboard/console.js
+    - file: dashboard/i18n/dich-en.js
       ky_hieu: 'document.cookie = "thansa_lang='
   vung_theo_doi:
     - "server/main.py: middleware _phuc_vu_en, root(), startup _sinh_ban_dich_en"
@@ -1373,7 +1373,9 @@
     Lớp phủ fork (dich-en.js + cookie thansa_lang) trước chỉ đọc localStorage nên lệch: phần gốc EN
     nhưng overlay tắt và câu tóm usage/Store (P042) vẫn tiếng Việt. Sửa: dich-en.js đoán y như i18n
     gốc + nghe sự kiện `javis:i18n` để nạp lại khi i18n gốc đổi ngôn ngữ; `_lang_en()` đọc
-    javis_lang trước, thansa_lang dự phòng, rồi ui_lang của máy.
+    javis_lang trước, thansa_lang dự phòng, rồi ui_lang của máy. Từ 0.99 (tiếng Đức): lớp phủ chỉ
+    phân biệt vi / KHÁC vi - mọi ngôn ngữ khác tiếng Việt bật overlay EN và server trả bản EN; sự kiện
+    đổi ngôn ngữ nạp lại tối đa 1 lần mỗi phiên (chặn vòng tải lại vô hạn trên trình duyệt tiếng Đức).
   commit: "[me] P047: dong bo lop phu EN theo ngon ngu theo thiet bi (0.66-0.67)"
   diem_neo:
     - file: dashboard/i18n/dich-en.js
@@ -1894,3 +1896,70 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P066
+  ten: "Rebrand nền 0.99.0 - giao diện tiếng Đức, Resonance A4, đọc PDF Ollama"
+  y_dinh: >
+    Nền 0.89.0→0.99.0 (12 commit): từ điển dashboard tiếng Đức (de.json), Resonance A4 (nộp bài qua engine,
+    chỉ ghi file chủ cho phép; plugin javis-goal + resonance-agent), đọc PDF/DOCX cho Ollama (doc_text.py),
+    DeepSeek, công cụ khôi phục Resonance trước A4. Rebrand chuỗi HIỂN THỊ Javis->Thansa: de.json (kể cả
+    "Thansa-Maskottchen"), khoá i18n mới vi/en, string literal doc_text.py, plugin javis-goal,
+    tools/resonance_restore_pre_a4.py, docs 10-models (vi+en). GIỮ comment JS, docs/dev, docs/superpowers, CHANGELOG.
+  commit: "[me] P066: rebrand nen 0.99.0 - giao dien tieng Duc, Resonance A4, doc PDF Ollama"
+  diem_neo:
+    - file: dashboard/i18n/de.json
+      ky_hieu: "Thansa-Maskottchen"
+    - file: server/doc_text.py
+      ky_hieu: "máy chủ Thansa thiếu thư viện pypdf"
+  vung_theo_doi:
+    - "dashboard/i18n/de.json (+ ngôn ngữ mới sau này): chữ Javis hiển thị"
+    - "system/plugins/javis-goal/plugin.py: lời nhắc nộp bài"
+  anh_goc:
+    - file: dashboard/i18n/de.json
+      doan: "Javis-Maskottchen"
+  kiem_chung: >
+    grep chữ Javis hiển thị trong dashboard/i18n/*.json = 0; string literal server mới chứa Javis = 0;
+    tu-kiem-chung 5/5; suite xanh trừ đỏ sandbox nền.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ, đặt qua cấu hình.
+
+- id: P067
+  ten: "Loại en-goi.json (từ điển lớp phủ EN) khỏi danh sách ngôn ngữ giao diện"
+  y_dinh: >
+    Từ 0.99.0 lang_registry.dashboard_only_languages() tự quét dashboard/i18n/*.json để đưa ngôn ngữ cộng đồng
+    (de, pt-br...) vào ô chọn ngôn ngữ. en-goi.json của fork (từ điển overlay dich-en.js, P041) khớp dạng mã vùng
+    nên lọt vào thành mục "en-goi". Loại riêng bằng _KHONG_PHAI_NGON_NGU.
+  commit: "[me] P067: loai en-goi.json (tu dien lop phu EN) khoi danh sach ngon ngu giao dien"
+  diem_neo:
+    - file: server/lang_registry.py
+      ky_hieu: "_KHONG_PHAI_NGON_NGU = frozenset({\"en-goi\"})"
+  vung_theo_doi:
+    - "server/lang_registry.py: dashboard_only_languages, _DICT_NAME"
+  anh_goc:
+    - file: server/lang_registry.py
+      doan: "if code in LANGS or not _DICT_NAME.match(code):"
+  kiem_chung: >
+    test_tu_dien_chi_giao_dien xanh (ui_lang_list = lang_list + German, không có en-goi).
+  dieu_kien_bo: >
+    Bỏ khi overlay en-goi.json bị khai tử (P041 dieu_kien_bo), hoặc upstream lọc file không có _meta.name.
+
+- id: P068
+  ten: "Rebrand nền 0.105.0 - chatbot Lark, tự học giữ luật của chủ"
+  y_dinh: >
+    Nền 0.100.0→0.105.0 (4 commit): Lark/Feishu làm kênh chatbot 0.102.0, lỗi chatbot không lọt vào chat khách +
+    phân biệt Zalo Bot / Zalo cá nhân 0.102.1, phân loại tool nhiều hành động theo lệnh con 0.103.0, tự học giữ luật
+    agent của chủ 0.105.0. Rebrand chuỗi HIỂN THỊ Javis->Thansa: docs/30-discord-lark vi+en (mục chatbot Lark),
+    main.py (lời nhắc JAVIS_RULE, giữ tên thẻ JAVIS_RULE).
+  commit: "[me] P068: rebrand nen 0.105.0 - chatbot Lark, tu hoc giu luat cua chu"
+  diem_neo:
+    - file: docs/30-discord-lark.md
+      ky_hieu: "Thansa tự dò app thuộc Lark hay Feishu"
+  vung_theo_doi:
+    - "server/main.py: lời nhắc tự học (JAVIS_RULE)"
+  anh_goc:
+    - file: docs/30-discord-lark.md
+      doan: "Javis tự dò app thuộc Lark hay Feishu"
+  kiem_chung: >
+    Không còn "Javis" hiển thị trong docs/30-discord-lark vi/en (trừ đường dẫn); tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ.
