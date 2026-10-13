@@ -34,7 +34,7 @@ def check(ten, dk, them=""):
         _fails.append(ten)
 
 
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 
 
