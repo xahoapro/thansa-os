@@ -1942,3 +1942,24 @@
     test_tu_dien_chi_giao_dien xanh (ui_lang_list = lang_list + German, không có en-goi).
   dieu_kien_bo: >
     Bỏ khi overlay en-goi.json bị khai tử (P041 dieu_kien_bo), hoặc upstream lọc file không có _meta.name.
+
+- id: P068
+  ten: "Rebrand nền 0.105.0 - chatbot Lark, tự học giữ luật của chủ"
+  y_dinh: >
+    Nền 0.100.0→0.105.0 (4 commit): Lark/Feishu làm kênh chatbot 0.102.0, lỗi chatbot không lọt vào chat khách +
+    phân biệt Zalo Bot / Zalo cá nhân 0.102.1, phân loại tool nhiều hành động theo lệnh con 0.103.0, tự học giữ luật
+    agent của chủ 0.105.0. Rebrand chuỗi HIỂN THỊ Javis->Thansa: docs/30-discord-lark vi+en (mục chatbot Lark),
+    main.py (lời nhắc JAVIS_RULE, giữ tên thẻ JAVIS_RULE).
+  commit: "[me] P068: rebrand nen 0.105.0 - chatbot Lark, tu hoc giu luat cua chu"
+  diem_neo:
+    - file: docs/30-discord-lark.md
+      ky_hieu: "Thansa tự dò app thuộc Lark hay Feishu"
+  vung_theo_doi:
+    - "server/main.py: lời nhắc tự học (JAVIS_RULE)"
+  anh_goc:
+    - file: docs/30-discord-lark.md
+      doan: "Javis tự dò app thuộc Lark hay Feishu"
+  kiem_chung: >
+    Không còn "Javis" hiển thị trong docs/30-discord-lark vi/en (trừ đường dẫn); tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ.
