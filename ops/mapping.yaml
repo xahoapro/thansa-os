@@ -1296,8 +1296,8 @@
     toàn, giữ định danh JavisSessions. Server còn lại giữ "Javis" nội bộ.
   commit: "[me] P044: rebrand ne 0.63.0 - muc Coding (phien chat trong repo)"
   diem_neo:
-    - file: dashboard/i18n/vi.json
-      ky_hieu: '"coding.forget_folder": "Bỏ thư mục khỏi Thansa"'
+    - file: server/coding_store.py
+      ky_hieu: "Ask Thansa to run `git init` once"
     - file: dashboard/coding.js
       ky_hieu: "JavisSessions"
   vung_theo_doi:
