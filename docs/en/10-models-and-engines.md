@@ -164,7 +164,7 @@ This is the route **Google designated** after cutting Gemini CLI off from person
 3. Return to **Models**, press **＋ Connect another provider** at the bottom of the page, find the **Google Antigravity CLI** card and click **Re-check** (it runs a real chat turn). The card switches to **● Signed in**.
 4. The newly signed-in card joins the end of the **Usage order**. Drag it to the top (or press **⇅ Swap**) so it becomes MAIN, then pick a model with the model chip on the card.
 
-The model list **asks `agy models` directly** rather than using a hand-written table, so you see exactly the models your account is granted, and Google renaming models does not make the picker stale. A new model only appears once `agy` itself is on a build that knows it, so since 0.137.0 Javis runs `agy update` once a day, Docker included (turn it off with the environment variable `JAVIS_AGY_AUTO_UPDATE=0`). If `agy` is up to date and a model is still missing, your Google account has not been granted that model.
+The model list **asks `agy models` directly** rather than using a hand-written table, so you see exactly the models your account is granted, and Google renaming models does not make the picker stale. A new model only appears once `agy` itself is on a build that knows it, so since 0.137.0 Thansa runs `agy update` once a day, Docker included (turn it off with the environment variable `JAVIS_AGY_AUTO_UPDATE=0`). If `agy` is up to date and a model is still missing, your Google account has not been granted that model.
 
 A few things worth knowing up front, to avoid confusion:
 

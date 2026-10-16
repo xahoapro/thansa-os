@@ -205,7 +205,7 @@ In the second example, because `JAVIS_HOST=0.0.0.0` (public) Thansa turns forced
 3. If you are unsure what a variable does, leave the `#` (comment) in place. The defaults already work well.
 4. For on/off variables (`JAVIS_REQUIRE_LOGIN`, `JAVIS_SECURE_COOKIE`, `JAVIS_ENABLE_USER_PLUGINS`), on accepts `1`, `true`, `yes`, `on`. Off accepts `0`, `false`, `no`, `off`.
 5. The `.env` file holds passwords and sensitive configuration. Do not put it anywhere public. On a shared machine, restrict read permissions. The `.secret_key` file in the state folder deserves the same care, and matters even more: losing it loses every stored API key.
-6. Plugins you install run real Python code inside the server process. Javis loads them by default but only runs the ones you enabled; only enable a plugin when you know where it came from, and set `JAVIS_ENABLE_USER_PLUGINS=false` if this machine should run none.
+6. Plugins you install run real Python code inside the server process. Thansa loads them by default but only runs the ones you enabled; only enable a plugin when you know where it came from, and set `JAVIS_ENABLE_USER_PLUGINS=false` if this machine should run none.
 
 ## Common problems
 

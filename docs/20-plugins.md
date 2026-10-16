@@ -226,7 +226,7 @@ Vài điều cần nhớ khi viết:
 
 ### Bước 4: Bật plugin
 
-Từ 0.162.0, Javis **tải plugin do bạn cài theo mặc định**: plugin nào có `enabled: true` (tức bạn đã bấm **Bật** trên thẻ) là chạy, không cần biến môi trường nào.
+Từ 0.162.0, Thansa **tải plugin do bạn cài theo mặc định**: plugin nào có `enabled: true` (tức bạn đã bấm **Bật** trên thẻ) là chạy, không cần biến môi trường nào.
 
 Muốn chặn hẳn plugin người dùng trên một máy (ví dụ máy chủ dùng chung):
 
@@ -285,7 +285,7 @@ Callback nhận các khoá sau (luôn khai `**kwargs`, khoá mới có thể th�
 | `vault_root` | Đường dẫn brain của bot |
 | `trial` | `true` ở lượt **Thử bot** |
 
-Callback trả về **một dòng chữ ngắn** hoặc `None`. Javis đặt dòng đó vào prompt hệ thống của đúng lượt này, trong một khối có nhãn và rào `<operator_context>`, ghi rõ đây là thông tin từ hệ thống của chủ bot chứ không phải lời người nhắn tự khai.
+Callback trả về **một dòng chữ ngắn** hoặc `None`. Thansa đặt dòng đó vào prompt hệ thống của đúng lượt này, trong một khối có nhãn và rào `<operator_context>`, ghi rõ đây là thông tin từ hệ thống của chủ bot chứ không phải lời người nhắn tự khai.
 
 ```python
 def register(ctx):
@@ -296,7 +296,7 @@ def register(ctx):
     ctx.register_hook("chatbot_turn_context", _ngu_canh)
 ```
 
-Rào Javis tự giữ, plugin không nới được:
+Rào Thansa tự giữ, plugin không nới được:
 
 - **Không plugin nào nghe thì prompt giống hệt từng byte** như trước khi có hook này.
 - Lõi **không bao giờ tự ghi mã người gửi vào prompt**. Chỉ dòng plugin trả về mới vào, nên plugin nên trả kết luận ("đã xác nhận") chứ đừng trả lại mã.

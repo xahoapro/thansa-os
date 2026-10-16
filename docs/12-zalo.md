@@ -51,9 +51,9 @@ Nút **Hướng dẫn trên GitHub** trong thẻ Zalo luôn mở trang tài li�
 
 ## Nhập tin cũ vào Hộp thư (từ 0.174.0)
 
-Mới đăng nhập Zalo vào Javis thì Hộp thư chỉ có tin từ lúc bật **Ghi hội thoại** trở đi. Muốn có cả tin cũ, bấm **Nhập tin cũ** trên thẻ tài khoản Zalo ở trang Chatbot, thẻ Bot, mục Kênh chưa có bot. Zalo đã gắn bot thì bấm vào ô Zalo trên thẻ bot đó.
+Mới đăng nhập Zalo vào Thansa thì Hộp thư chỉ có tin từ lúc bật **Ghi hội thoại** trở đi. Muốn có cả tin cũ, bấm **Nhập tin cũ** trên thẻ tài khoản Zalo ở trang Chatbot, thẻ Bot, mục Kênh chưa có bot. Zalo đã gắn bot thì bấm vào ô Zalo trên thẻ bot đó.
 
-- Javis lấy các tin javis-zalo tự kéo về mỗi lần kết nối: khoảng **2 tuần** gần nhất, vì Zalo không cho lấy xa hơn. Tối đa 5.000 tin mỗi lần.
+- Thansa lấy các tin javis-zalo tự kéo về mỗi lần kết nối: khoảng **2 tuần** gần nhất, vì Zalo không cho lấy xa hơn. Tối đa 5.000 tin mỗi lần.
 - Chỉ nhập vào cuộc chat **chưa có tin nào** trong Hộp thư. Cuộc chat đã có tin thì bỏ qua, vì tin cũ chen vào sau sẽ hiện sai thứ tự.
 - Bot **không trả lời** các tin này, chúng **không tính là chưa đọc**, và nhóm vẫn chỉ giữ 100 tin gần nhất như thường lệ.
 - Vừa quét QR xong thì đợi vài phút cho Zalo tải xong tin cũ rồi hãy bấm. Bấm lại nhiều lần không bị nhân đôi.
@@ -192,20 +192,20 @@ Cần Node.js 20+ trên máy chạy Thansa, giống như phần kết nối Zalo
 
 Ảnh tải lên Zalo là có link ngay. File (Excel, PDF, Word, zip, video, cả ảnh `.bmp`) thì khác:
 Zalo nhận xong mới báo "đã tải lên" qua **kết nối thời gian thực** của tài khoản. Trước 0.139.0
-Javis gửi file bằng một lệnh chạy một lần, không mở kết nối đó, nên lệnh chờ mãi rồi bị cắt ở
+Thansa gửi file bằng một lệnh chạy một lần, không mở kết nối đó, nên lệnh chờ mãi rồi bị cắt ở
 120 giây, file không tới (14/10/2026 gửi bảng Excel 11 KB cho nhân sự treo hai lần, phải đổi
 sang ảnh). Mở thêm kết nối riêng cũng không được: Zalo chỉ giữ một kết nối Web mỗi tài khoản và
 sẽ đá kết nối đang trực Hộp thư.
 
 Từ 0.139.0 file đi qua tool `zalo_send_file` của chính tiến trình MCP đang giữ kết nối:
 
-- Javis chép file vào hộp gửi của phiên Zalo (`.zalo-agent-cli/outbox/` trong thư mục phiên), gọi
+- Thansa chép file vào hộp gửi của phiên Zalo (`.zalo-agent-cli/outbox/` trong thư mục phiên), gọi
   tool, xong thì xoá bản chép. Tool chỉ nhận file trong hộp gửi đó, nên model gọi thẳng tool cũng
   không gửi được file nào khác trên máy chủ.
 - **Zalo không xác nhận trong 60 giây thì báo lỗi rõ và KHÔNG gửi gì**, kể cả khi xác nhận tới
   muộn sau đó. Gửi lại là an toàn. Kết nối thời gian thực đang rớt thì báo ngay, không chờ.
 - Ảnh (jpg, png, webp, gif) vẫn đi đường cũ.
-- Kết nối Zalo còn chạy bản `javis-zalo` cũ (chưa có tool này) thì Javis báo cập nhật Javis rồi
+- Kết nối Zalo còn chạy bản `javis-zalo` cũ (chưa có tool này) thì Thansa báo cập nhật Thansa rồi
   tắt-bật lại kết nối Zalo, không phải quét QR lại.
 
 Lệnh dòng lệnh `javis-zalo msg send-file` gửi file khi không có kết nối thời gian thực thì báo lỗi
@@ -284,10 +284,10 @@ hỏi Thansa; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặ
 - **Tool gửi bị chặn**: mở menu chip tài khoản và chuyển quyền sang **Toàn quyền**.
 - **Báo phiên đang được dùng nơi khác**: đóng Zalo Web hoặc tiến trình
   `javis-zalo` (hay `zalo-agent-cli` cũ) khác đang dùng cùng tài khoản, rồi thử lại.
-- **Bot im sau khi Javis khởi động lại**: trước 0.114.0, nếu Javis tắt không êm (crash, bị
+- **Bot im sau khi Thansa khởi động lại**: trước 0.114.0, nếu Thansa tắt không êm (crash, bị
   dừng cứng khi cập nhật) thì tiến trình `javis-zalo` cũ còn sống. Server mới mở thêm một phiên,
   và cùng một tài khoản có hai phiên nghe. Zalo chỉ đẩy tin về một phiên nên bot đọc phiên kia
-  và không thấy gì. Từ 0.114.0 Javis ghi lại mọi tiến trình MCP nó mở và tự dọn tiến trình sót
+  và không thấy gì. Từ 0.114.0 Thansa ghi lại mọi tiến trình MCP nó mở và tự dọn tiến trình sót
   của lần chạy trước. Bản cũ hơn thì khởi động lại cả máy chủ (hoặc container) là sạch.
 - **Muốn đăng nhập lại từ đầu**: xoá connection trên dashboard, sau đó kết nối và quét QR
   lại. Thư mục phiên của connection khác không bị ảnh hưởng.
