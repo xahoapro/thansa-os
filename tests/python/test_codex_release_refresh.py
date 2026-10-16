@@ -28,6 +28,7 @@ set -e
 log() { :; }
 ok() { :; }
 warn() { :; }
+noi_bin_npm() { :; }
 codex() { echo old-cli; }
 npm() { echo "NPM:$*" >&2; }
 SUDO=""
