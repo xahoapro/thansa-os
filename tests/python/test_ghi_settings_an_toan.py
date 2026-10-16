@@ -59,10 +59,24 @@ check("file dở: read_settings vẫn giữ kênh Discord", (c.get("discord") or
 P.write_text(tot, encoding="utf-8")
 
 # ---- 3. chốt cuối: cfg mặc định (auth rỗng) không ghi đè được mật khẩu ----
+# Nguyên bộ mặc định: từ Javis 0.166.4 upstream TỪ CHỐI ghi hẳn (_chan_ghi_trang); nền cũ thì P061
+# ghi nhưng giữ auth. Cách nào thì mật khẩu trên đĩa cũng phải còn.
 mac_dinh = json.loads(json.dumps(cfg._DEFAULT))
 mac_dinh.setdefault("model", {})["ghi_chu"] = "caller sửa một mục trên cfg hỏng"
 assert "auth" in mac_dinh
-cfg.write_settings(mac_dinh)
+try:
+    cfg.write_settings(mac_dinh)
+except getattr(cfg, "SettingsUnreadable", ()):
+    pass
+tren_dia = json.loads(P.read_text(encoding="utf-8"))
+check("ghi cfg mặc định: mật khẩu trên đĩa được GIỮ", co_mat_khau(tren_dia))
+
+# Cấu hình ĐẦY ĐỦ của máy đã cài (setup_done) mà auth bị rỗng: lưới 0.166.4 cho qua, P061 phải giữ auth.
+c = cfg.read_settings()
+c["setup_done"] = True
+c["auth"] = {"username": "", "password_hash": "", "salt": ""}
+c.setdefault("model", {})["ghi_chu"] = "caller sửa một mục, auth rỗng"
+cfg.write_settings(c)
 tren_dia = json.loads(P.read_text(encoding="utf-8"))
 check("ghi cfg auth rỗng: mật khẩu trên đĩa được GIỮ", co_mat_khau(tren_dia))
 check("...và mục caller sửa vẫn được ghi", (tren_dia.get("model") or {}).get("ghi_chu"))
