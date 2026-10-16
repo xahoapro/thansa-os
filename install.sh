@@ -169,15 +169,40 @@ case "$(node_status)" in
   *) warn "Node.js not found; Claude Code and Codex need it.";;
 esac
 
+# Lệnh cài bằng `npm -g` nằm ở <prefix npm>/bin. Node tải tay ở bước 3 thì prefix là
+# ~/.thansa/node, thư mục không có trong PATH: npm báo xong mà gõ lệnh trong terminal không thấy,
+# server cũng không thấy (chủ dự án báo 16/10). Nối lệnh đó vào ~/.local/bin như node/npm/npx.
+noi_bin_npm() {   # <tên binary>
+  command -v "$1" >/dev/null 2>&1 && return 0
+  local src; src="$(npm prefix -g 2>/dev/null)/bin/$1"
+  [ -x "$src" ] || return 0
+  mkdir -p "$HOME/.local/bin"
+  ln -sf "$src" "$HOME/.local/bin/$1"
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
 # --- 4. Claude Code CLI (the brain) ---
+# Trình cài chính thức của Anthropic trước (đặt `claude` vào ~/.local/bin và tự thêm vào PATH),
+# npm chỉ là đường dự phòng khi tải script không được.
+if ! command -v claude >/dev/null 2>&1; then
+  log "Installing Claude Code CLI (official installer)..."
+  if curl -fsSL https://claude.ai/install.sh | bash >/dev/null 2>&1; then
+    export PATH="$HOME/.local/bin:$PATH"
+  fi
+fi
 if ! command -v claude >/dev/null 2>&1; then
   log "Installing Claude Code CLI globally via npm..."
   if ! npm install -g @anthropic-ai/claude-code >/dev/null 2>&1; then
     warn "global npm install needs sudo; retrying..."
     $SUDO npm install -g @anthropic-ai/claude-code
   fi
+  noi_bin_npm claude
 fi
-ok "Claude CLI $(claude --version 2>/dev/null || echo installed)"
+if command -v claude >/dev/null 2>&1; then
+  ok "Claude CLI $(claude --version 2>/dev/null || echo installed)"
+else
+  warn "Claude CLI: 'claude' is not on PATH. Install it by hand: curl -fsSL https://claude.ai/install.sh | bash"
+fi
 
 # --- 4b. Codex CLI (gói ChatGPT) ---
 #
@@ -185,14 +210,13 @@ ok "Claude CLI $(claude --version 2>/dev/null || echo installed)"
 # để chạy, còn thiếu cái này chỉ mất đúng một engine. Nên lỗi ở đây chỉ cảnh báo chứ không cho
 # `set -e` giết cả lần cài.
 #
-# Bộ não Google cho tài khoản cá nhân hiện nay là Antigravity CLI (`agy`), KHÔNG cài ở đây:
-# trình cài của Google là một script tải về chạy thẳng, để chủ máy tự quyết. Trang Models có
-# sẵn lệnh cài trên thẻ.
+# Bộ não Google cho tài khoản cá nhân hiện nay là Antigravity CLI (`agy`): cài ở mục 4c dưới.
 cai_them_cli() {   # <gói npm> <tên binary> <tên hiển thị>
   # Codex supplies the live model catalog; an installed old CLI must be upgraded.
   if [ "$2" != "codex" ] && command -v "$2" >/dev/null 2>&1; then return 0; fi
   log "Installing $3 globally via npm (best-effort)..."
   if npm install -g "$1" >/dev/null 2>&1 || $SUDO npm install -g "$1" >/dev/null 2>&1; then
+    noi_bin_npm "$2"
     ok "$3 $("$2" --version 2>/dev/null || echo installed)"
   else
     warn "Could not install $3 - that engine will not show on the Models page. Install it by hand: npm i -g $1"
