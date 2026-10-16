@@ -1963,3 +1963,30 @@
     Không còn "Javis" hiển thị trong docs/30-discord-lark vi/en (trừ đường dẫn); tu-kiem-chung 5/5.
   dieu_kien_bo: >
     Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ.
+
+- id: P069
+  ten: "CLI cài bằng npm trên Node tải tay vào được PATH (gõ claude thấy, server thấy)"
+  y_dinh: >
+    Chủ dự án báo 16/10: cài Claude bằng npm thì install.sh báo "installed" nhưng terminal gõ claude không thấy,
+    nút Đăng nhập Claude chỉ nhảy một cái. Máy không cài được Node qua apt thì install.sh tải Node về ~/.thansa/node,
+    npm -g đặt lệnh vào ~/.thansa/node/bin (không trong PATH, server cũng không soi). Sửa: install.sh cài Claude
+    bằng trình cài chính thức (curl claude.ai/install.sh) trước, npm là dự phòng; hàm noi_bin_npm nối lệnh npm
+    (claude, codex) vào ~/.local/bin; báo cảnh báo thật khi không gõ được claude. claude_cli._THU_MUC_BIN_THEM
+    thêm ~/.thansa/node/bin cho máy đã cài từ trước.
+  commit: "[me] P069: CLI cai bang npm tren Node tai tay vao duoc PATH (claude, codex)"
+  diem_neo:
+    - file: install.sh
+      ky_hieu: "noi_bin_npm()"
+    - file: server/claude_cli.py
+      ky_hieu: "~/.thansa/node/bin"
+  vung_theo_doi:
+    - "install.sh: mục 3 (Node tải tay) và mục 4/4b (cài Claude, Codex)"
+    - "server/claude_cli.py: _THU_MUC_BIN_THEM"
+  anh_goc:
+    - file: install.sh
+      doan: "log \"Installing Claude Code CLI globally via npm...\""
+  kiem_chung: >
+    tests/python/test_cli_npm_vao_path.py xanh (mô phỏng PATH sạch: sau noi_bin_npm gõ claude chạy được; server
+    find_claude_cli thấy ~/.thansa/node/bin/claude); tu-kiem-chung 5/5.
+  dieu_kien_bo: >
+    Upstream tự nối lệnh npm vào PATH (hoặc cài Claude bằng trình cài chính thức) và soi thư mục Node tải tay.
