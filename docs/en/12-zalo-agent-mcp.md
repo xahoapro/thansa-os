@@ -49,6 +49,15 @@ The **Guide on GitHub** button in the Zalo card always opens this documentation 
 
 <https://github.com/xahoapro/thansa-os/blob/main/docs/en/12-zalo-agent-mcp.md>
 
+## Importing old messages into the Inbox (since 0.174.0)
+
+Right after you sign Zalo in to Thansa, the Inbox only holds messages from the moment **Record conversations** was switched on. To bring in older ones, press **Import old messages** on the Zalo account card on the Chatbot page, Bots tab, under Channels without a bot. If Zalo already has a bot, press the Zalo chip on that bot's card.
+
+- Thansa takes the messages javis-zalo pulls in on every connect: about the last **2 weeks**, since Zalo does not allow going further back. At most 5,000 messages per run.
+- Only chats with **no message yet** in the Inbox are filled. Chats that already have messages are skipped, since old messages added later would show in the wrong order.
+- The bot **does not answer** these messages, they are **not counted as unread**, and groups still keep only their latest 100 messages as usual.
+- Right after scanning the QR code, wait a few minutes for Zalo to finish loading old messages before pressing it. Pressing again never duplicates anything.
+
 ## The MCP tools
 
 | Tool | What it does | Action level |
@@ -64,8 +73,9 @@ The **Guide on GitHub** button in the Zalo card always opens this documentation 
 | `zalo_view_media` | Download/open an image, audio or video on the server (the brain does not see it, see `zalo_read_images` below) | Read |
 | `zalo_mark_read` | Mark as handled up to a cursor | Write |
 | `zalo_send_message` | Send a message to a person or group | Dangerous |
+| `zalo_send_file` | Send files (Excel, PDF, Word...) with a message, only files in the session outbox (see "Sending images and files") | Dangerous |
 
-The list follows the `javis-zalo` 1.1.0 source. History only covers what arrived since the MCP
+The list follows the `javis-zalo` 1.4.0 source. History only covers what arrived since the MCP
 connected, plus what Zalo replays on connect (roughly the last two weeks); nothing older is
 available through any API.
 
@@ -164,6 +174,32 @@ Three things worth knowing:
   wrong account means sending under someone else's identity, so this is not a place to guess.
 
 Node.js 20+ is required on the machine running Thansa, same as for the Zalo connection itself.
+
+### Why files take a different path from images (since 0.139.0)
+
+An image uploaded to Zalo gets its link right away. A file (Excel, PDF, Word, zip, video, even a
+`.bmp` image) does not: Zalo reports "uploaded" only over the account's **live connection**.
+Before 0.139.0 Thansa sent files with a one-shot command that never opens that connection, so the
+command waited until it was cut at 120 seconds and the file never arrived. Opening an extra
+connection does not work either: Zalo keeps one Web connection per account and would evict the
+one serving the inbox.
+
+Since 0.139.0 files go through the `zalo_send_file` tool of the MCP process that holds the
+connection:
+
+- Thansa copies the file into the Zalo session outbox (`.zalo-agent-cli/outbox/` in the session
+  folder), calls the tool, then deletes the copy. The tool accepts only files in that outbox, so
+  a model calling it directly cannot send any other file on the server.
+- **If Zalo does not confirm within 60 seconds, you get a clear error and NOTHING is sent**, even
+  if the confirmation arrives later. Retrying is safe. A dropped live connection is reported at
+  once, without waiting.
+- Images (jpg, png, webp, gif) keep the old path.
+- If the Zalo connection still runs an older `javis-zalo` without this tool, Thansa says to update
+  Thansa and switch the Zalo connection off and on again (no new QR scan).
+
+The command-line `javis-zalo msg send-file` fails at once when no live connection is open.
+`--listen` makes it open one for that send, but only use it on a machine NOT running the Zalo
+MCP, since the new connection evicts it.
 
 ## Tagging people, notes, reminders and polls
 

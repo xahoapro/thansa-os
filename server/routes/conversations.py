@@ -12,12 +12,14 @@ Không nhận `import main` - mọi thứ cần từ main đi qua `deps`.
 """
 from __future__ import annotations
 
+import mimetypes
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable, Optional
 
-from fastapi import APIRouter, Form
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Form, Query
+from fastapi.responses import FileResponse, JSONResponse
 
 import channel_accounts
 import channels
@@ -37,6 +39,16 @@ class ConversationsDeps:
     # ghi và dạy sau khi đã gửi. Không import chatbot_runtime ở đây: route đi qua deps như mọi route khác.
     manual_answer: Callable = None
     manual_done: Callable = None
+    # `brain_root(brain) -> str`: thư mục gốc của một brain. Cần cho `/conversations/{id}/media` (0.171.0), nơi phát ảnh và file khách
+    # gửi mà kênh đã tải về brain của bot. Thiếu thì đường đó trả 404.
+    brain_root: Callable = None
+
+
+# Ảnh và file khách gửi chỉ được phát từ hai thư mục mà các kênh tự tải về: `inbox/` (Telegram, Zalo Bot, Slack, WhatsApp,
+# Messenger, Discord, Lark ghi vào `inbox/khach`) và `attachments/` (ảnh Zalo cá nhân bot đã tải để xem). Không ghi chú nào khác của brain.
+_THU_MUC_MEDIA = ("inbox", "attachments")
+_DUOI_XEM_THANG = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".mp4", ".webm", ".mp3", ".ogg", ".m4a",
+                   ".wav", ".opus", ".pdf")
 
 
 _DEPS: "ConversationsDeps" = None   # type: ignore
@@ -59,9 +71,10 @@ def register(app, deps: ConversationsDeps):
         """Gửi một tin chữ vào cuộc chat qua năng lực `gui` của kênh. Trả (ok, lỗi). Dùng chung cho chủ gõ tay và cho lượt
         nhờ bot trả lời (0.65.5), để hai đường không lệch nhau ở cách dựng tài khoản gửi.
 
-        `tieng_vong=True` (câu của BOT): trên Zalo cá nhân phải nhớ câu vừa gửi TRƯỚC khi gửi, y như `Transport._gui`, không thì vòng
-        đọc thấy nó quay về như tin của chính chủ (bot tưởng chủ vừa nhắn tay nên im cả quãng) hoặc như tin của một khách (bot tự
-        trả lời chính mình trong nhóm).
+        `tieng_vong=True`: trên Zalo cá nhân phải nhớ câu vừa gửi TRƯỚC khi gửi, y như `Transport._gui`, không thì vòng đọc thấy nó
+        quay về như tin của chính chủ (bot tưởng chủ vừa nhắn tay nên im cả quãng) hoặc như tin của một khách (bot tự trả lời chính
+        mình trong nhóm). Câu CHỦ gõ ở Hộp thư cũng bật cờ này (0.108.0): Javis đã tự ghi câu đó, và từ javis-zalo 1.3.0 tin của
+        chính tài khoản quay về vòng đọc kèm `isSelf`, nên không nhớ thì Hộp thư hiện câu chủ gõ HAI lần.
 
         `reply_to` (tin khách bot đang trả lời): trong nhóm Zalo cá nhân, câu của bot tag đúng người gửi tin đó, y như bot tự trả lời."""
         kenh = str(c.get("channel") or "")
@@ -84,7 +97,16 @@ def register(app, deps: ConversationsDeps):
         extra = {}
         if tieng_vong and kenh == "zalo_personal" and reply_to and str(c.get("chat_type") or "") == "group":
             extra["mention"] = {"uid": reply_to.get("sender_id"), "name": reply_to.get("sender_name")}
-        return await channels.gui(kenh, tk, str(c.get("external_chat_id") or ""), txt, str(c.get("chat_type") or "private"), **extra)
+        kq = await channels.gui(kenh, tk, str(c.get("external_chat_id") or ""), txt, str(c.get("chat_type") or "private"), **extra)
+        if tieng_vong and kenh == "zalo_personal" and kq and kq[0]:
+            # Hộp thư vừa trả lời chat này: tiếng vọng của câu này bị lọc ở vòng đọc nên không tính là chủ nhắn tay,
+            # phải tự báo kẻo 10 phút sau bot trả lời lại tin khách đã có người đáp (0.136.0).
+            try:
+                import zalo_personal_channel as zc
+                zc.bo_cho_chu(raw, str(c.get("external_chat_id") or ""))
+            except Exception:      # noqa: BLE001
+                pass
+        return kq
 
     def _hesitant() -> list:
         """Nhóm bot vừa cân nhắc nói rồi im trong 24 giờ qua (kho bộ phán xử). Kho hỏng hay chưa có thì rỗng: bộ lọc
@@ -223,7 +245,7 @@ def register(app, deps: ConversationsDeps):
             return JSONResponse({"ok": False, "error": localefmt.chu(f"tin dài quá {conversations.MAX_CHU} ký tự",
                                                                    f"message longer than {conversations.MAX_CHU} characters")}, status_code=400)
         kenh = str(c.get("channel") or "")
-        ok, loi = await _gui_tin(c, txt)
+        ok, loi = await _gui_tin(c, txt, tieng_vong=True)
         if not ok:
             return JSONResponse({"ok": False, "error": loi or localefmt.chu("không gửi được", "could not send")},
                                 status_code=400)
@@ -304,5 +326,52 @@ def register(app, deps: ConversationsDeps):
             return JSONResponse({"ok": False, "error": err},
                                 status_code=404 if hop_le else 400)
         return {"ok": True, "conversation": conversations.chi_tiet(conv_id)}
+
+    def _goc_media(c: dict) -> list:
+        """Các thư mục được phép phát media của hội thoại này: inbox/ và attachments/ trong brain của bot trực nó, và
+        brain gắn với tài khoản kênh."""
+        if not _DEPS or not _DEPS.brain_root:
+            return []
+        brains = []
+        bot = chatbot_store.get_bot(str(c.get("bot_id") or "")) if c.get("bot_id") else None
+        if bot and bot.get("brain"):
+            brains.append(str(bot["brain"]))
+        for key in (str(c.get("channel_account_id") or ""), _tk_goc(c)):
+            try:
+                a = channel_accounts.get_account(key) if key else None
+            except Exception:      # noqa: BLE001 - a broken account record must not break the inbox
+                a = None
+            if a and a.get("brain"):
+                brains.append(str(a["brain"]))
+        goc = []
+        for b in dict.fromkeys(brains):
+            try:
+                root = Path(_DEPS.brain_root(b)).resolve()
+            except Exception:      # noqa: BLE001
+                continue
+            goc += [root / d for d in _THU_MUC_MEDIA]
+        return goc
+
+    @router.get("/conversations/{conv_id}/media")
+    async def conversations_media(conv_id: int, p: str = Query(...), dl: int = Query(0)):
+        """Ảnh hay file KHÁCH gửi mà kênh đã tải về máy (0.171.0): Hộp thư hiện ảnh ngay trong cuộc chat, file thì tải về.
+
+        Đường dẫn nằm sẵn trong tin ("[... đã tải về: <path>]"). Chỉ phát file nằm thật trong inbox/ hoặc attachments/ của brain
+        của chính hội thoại này (resolve trước khi so, nên `..` hay symlink không leo ra được). Cần đăng nhập như mọi route khác."""
+        c = conversations.chi_tiet(conv_id)
+        if not c:
+            return _404()
+        try:
+            f = Path(str(p or "")).expanduser().resolve()
+        except (OSError, ValueError):
+            return _404(localefmt.chu("không có file đó", "no such file"))
+        if not f.is_file() or not any(g == f.parent or g in f.parents for g in _goc_media(c)):
+            return _404(localefmt.chu("không có file đó", "no such file"))
+        if dl or f.suffix.lower() not in _DUOI_XEM_THANG:
+            return FileResponse(str(f), filename=f.name)
+        resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+        resp.headers["Content-Disposition"] = "inline"
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        return resp
 
     app.include_router(router)

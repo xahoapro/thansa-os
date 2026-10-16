@@ -7,6 +7,7 @@ git-backed) + để scheduler nền (main._scheduler_loop, tick 30s) đánh th�
   - mode "notify" (mặc định): tới giờ bắn thẳng tin nhắc qua Telegram cho ĐÚNG người đã đặt.
   - mode "task"            : tới giờ chạy engine làm việc đã hẹn rồi gửi kết quả về Telegram.
                              Quyền theo `muc_quyen` (suggest | auto | full, mặc định full).
+                             Kết quả MỞ ĐẦU bằng [SILENT] → im lặng, vẫn lưu vào bản ghi.
   - mode "script"          : job KHÔNG cần LLM (rẻ, để giám sát) - chạy script có sẵn trong
                              <brain>/Javis/scripts, đẩy stdout về Telegram; exit≠0 → cảnh báo lỗi,
                              stdout rỗng hoặc có cờ [SILENT] → im lặng (port ý no_agent của Hermes).
@@ -156,6 +157,20 @@ class NotifyNotReady(ValueError):
         ))
 
 
+SILENT_MARK = "[SILENT]"
+
+
+def _is_silent_task_result(body: str) -> bool:
+    """True when a task reminder's answer opens with the [SILENT] flag.
+
+    Script jobs go quiet on [SILENT] anywhere in stdout. A model answer is prose that may
+    mention the flag while explaining something, so a task only counts as silent when the
+    answer STARTS with it (after control blocks, whitespace and markdown emphasis).
+    """
+    text = channel_context.strip_control_blocks(body or "").lstrip(" \t\r\n`*_>")
+    return text.startswith(SILENT_MARK)
+
+
 def _now() -> float:
     return time.time()
 
@@ -267,6 +282,12 @@ class RemindersFeature:
     def __init__(self, deps: RemindersDeps):
         self.deps = deps
         self.lock = asyncio.Lock()   # serialize: 1 nhắc mode 'task' chạy engine/lần
+        # Script jobs get their OWN lock. They call no model and finish within SCRIPT_TIMEOUT_S,
+        # but sharing `self.lock` meant every script was skipped while one task-mode reminder
+        # ran (up to an hour): a "follow up after 10 minutes" script with a 10-25 minute window
+        # could miss customers right in business hours (field report 2026-10-13). Scripts still
+        # run one at a time among themselves, since two of them may share state files.
+        self.script_lock = asyncio.Lock()
         self._io = asyncio.Lock()    # serialize ghi file reminders.json
         # Nhắc mode task/script đang chạy NỀN (id) + các task asyncio đang sống, để tick sau
         # không bắn lại cùng một nhắc và để tắt máy chủ đợi được chúng.
@@ -537,7 +558,7 @@ class RemindersFeature:
             if fired >= MAX_FIRE_PER_TICK:
                 break
             if rem.get("mode") in ("task", "script"):
-                if self.lock.locked() or rem.get("id") in self._dang_chay:
+                if self._khoa(rem.get("mode")).locked() or rem.get("id") in self._dang_chay:
                     continue   # đang có 1 job chạy → để nhịp sau, không xếp hàng chờ trong tick
                 # Chạy NỀN chứ không await ngay trong tick: một nhắc mode task có thể chạy tới
                 # 1 giờ, await ở đây là mọi nhắc "notify" đến hạn sau nó (và cả loop, Kanban
@@ -547,6 +568,10 @@ class RemindersFeature:
             else:
                 await self._fire(brain, rem)
             fired += 1
+
+    def _khoa(self, mode) -> asyncio.Lock:
+        """The lock a background reminder of this mode waits on (see `script_lock`)."""
+        return self.script_lock if mode == "script" else self.lock
 
     def _chay_nen(self, brain: str, rem: dict) -> None:
         rid = rem.get("id")
@@ -578,7 +603,12 @@ class RemindersFeature:
         if mode == "task":
             async with self.lock:
                 body, err = await self._run_task(brain, text, muc_quyen_cua(rem))
-            if body:
+            if body and _is_silent_task_result(body):
+                # Same quiet rule as script jobs: a watcher that found nothing to do answers
+                # "[SILENT] ..." and must not post to the channel. The result is still saved
+                # on the reminder below so the run can be reviewed.
+                deliver = False
+            elif body:
                 # `text`/`head` là prompt nội bộ để agent làm việc, có thể dài và chứa đường dẫn,
                 # vai trò, quy trình. Telegram chỉ cần KẾT QUẢ cuối; ghép prompt vào đây vừa rối
                 # vừa làm lộ chỉ dẫn máy như ca Coach Mục Tiêu & Kỷ Luật.
@@ -588,7 +618,7 @@ class RemindersFeature:
             else:
                 msg = localefmt.chu("⚠ Nhắc hẹn đã chạy nhưng không trả về nội dung.", "⚠ The reminder ran but returned nothing.")
         elif mode == "script":
-            async with self.lock:
+            async with self.script_lock:
                 out, serr, code = await self._run_script(brain, rem.get("script", ""))
             body = out
             if code != 0:

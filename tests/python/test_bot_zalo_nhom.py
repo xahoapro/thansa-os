@@ -89,6 +89,7 @@ async def _goi_gia(conn, tool, args):
 
 zc._ket_noi = lambda: [dict(CONN)]
 zc._goi = _goi_gia
+zc.CHO_KHACH_IM = 0          # giao từng tin ngay: file này canh các rào khác; cửa sổ chờ ở test_zalo_cho_khach_nhan_xong.py
 zc.NHUONG_GIAY = 0.05       # test không chờ 20 giây thật
 zc.THU_LAI_TEN_GIAY = 0        # và làm mới bảng cuộc chat được ngay, không chờ 15 giây
 
@@ -426,8 +427,9 @@ async def chay():
     LOI_ENGINE["v"] = "⚠ Codex không trả về nội dung nào."
     KHO_TIN.append(nhom_msg("Javis Vũ ơi lỗi cổng 7777 làm sao em", "lt-g", uid="7770299", nguoi="Học viên C"))
     await doc(0.4)
-    check("người GỌI bot mà lượt hỏng thì vẫn được báo (câu xin lỗi), không im",
-          len(GUI) == 1 and "trục trặc" in GUI[0].get("message", GUI[0].get("text", str(GUI[0]))), GUI)
+    # Chủ repo 15/10/2026: trục trặc kỹ thuật không gửi gì cho khách, kể cả người đã gọi bot.
+    # Chủ nghe ở chuông thông báo của Javis, lỗi gốc nằm trong nhật ký bot.
+    check("người GỌI bot mà lượt hỏng thì KHÔNG nhận câu xin lỗi nào", not GUI, GUI)
     LOI_ENGINE["v"] = None
     GUI.clear()
 

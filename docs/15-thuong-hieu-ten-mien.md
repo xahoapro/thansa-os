@@ -6,7 +6,7 @@ Trang này hướng dẫn hai việc: đổi logo/avatar của Thansa thành ả
 
 ## Tính năng này là gì
 
-- **Ảnh đại diện (logo/avatar):** thay ảnh JAVIS OS mặc định bằng ảnh của bạn. Ảnh mới hiện ngay ở góc trên bên trái, ở thanh bên, ở màn hình đăng nhập, ở cửa sổ chào mừng, và làm luôn icon tab trình duyệt (favicon).
+- **Ảnh đại diện (logo/avatar):** thay ảnh THANSA OS mặc định bằng ảnh của bạn. Ảnh mới hiện ngay ở góc trên bên trái, ở thanh bên, ở màn hình đăng nhập, ở cửa sổ chào mừng, và làm luôn icon tab trình duyệt (favicon).
 - **Tên miền riêng (HTTPS):** thay vì mở Thansa bằng địa chỉ IP kèm cổng (kiểu `http://12.34.56.78:7777`), bạn dùng một tên miền dễ nhớ và có khóa an toàn HTTPS. Thansa tự cấp chứng chỉ HTTPS (cơ chế On-Demand TLS qua Caddy), và có nút **Bật SSL** để chủ động xin chứng chỉ ngay thay vì ngồi đợi.
 
 Lưu ý quan trọng ngay từ đầu: phần **Tên miền riêng** chỉ hoạt động khi bạn deploy Thansa bằng Docker trên VPS và đã mở cổng 80/443. Nếu bạn chạy Thansa trên máy cá nhân, phần đổi logo vẫn dùng bình thường, còn phần tên miền sẽ không lên HTTPS được. Chi tiết deploy xem [Cấu hình .env](16-cau-hinh-env.md) và file `DEPLOY.md` trong thư mục dự án.
@@ -189,6 +189,21 @@ Hostinger VPS đã cài sẵn reverse proxy Traefik lo SSL, và cổng 80/443 đ
 Nếu bạn cố kích hoạt SSL trên Hostinger (ví dụ qua API), Thansa từ chối và nói rõ: Hostinger quản lý HTTPS bằng Traefik, hãy đặt `DOMAIN_NAME` trong Docker Manager rồi Redeploy.
 
 Sau khi Redeploy, trở lại Cài đặt và bấm **Kiểm tra lại**. Chi tiết và xử lý sự cố xem mục "Tên miền + HTTPS trên Hostinger" trong `DEPLOY.md`; hai link tài liệu cũng nằm ngay dưới card tên miền.
+
+## Theme riêng cho người vận hành (CSS)
+
+Ai triển khai Thansa cho khách (white-label) có thể đặt một file `theme.css` vào thư mục
+`branding/` trong thư mục dữ liệu của Thansa (cạnh logo đã tải lên; Docker là
+`/data/state/branding/theme.css`). Có file này thì mọi trang dashboard tải nó SAU các file CSS
+gốc, nên nó đè được màu, font, bo góc. File nằm ngoài mã nguồn nên sống qua mọi lần cập nhật.
+Xoá file là về giao diện gốc. Trần 512 KB.
+
+- **Màu ở chế độ sáng:** biến màu của chế độ sáng khai trong `:root[data-theme="light"]`, đặc
+  hơn `:root`. Muốn đổi màu cho cả hai chế độ thì khai cả hai khối, ví dụ
+  `:root{--accent:#e4572e}` và `:root[data-theme="light"]{--accent:#e4572e}`.
+- **Chế độ mặc định:** thêm dòng `/* javis-default-mode: light */` (hoặc `dark`, `auto`) trong
+  4 KB đầu file để chọn sáng/tối cho thiết bị chưa từng tự chọn. Người dùng đã tự chọn thì giữ
+  lựa chọn của họ.
 
 ## Mẹo
 

@@ -114,19 +114,26 @@ skill cứ thế hỏng âm thầm lúc chạy. Bạn là lớp phòng thủ duy
 type: workflow
 name: <Tên>
 slug: <ascii>
-status: off               # tạo mới để 'off' cho user xem trước rồi bật
+status: 'off'             # tạo mới để 'off' cho user xem trước rồi bật; GIỮ dấu nháy (off trần = boolean). Quy trình tắt không chạy nền
 group: <Marketing|Bán hàng|Nội dung|Vận hành|Tài chính|AI|Năng suất|Cá nhân>
 description: <mô tả ngắn>
 steps:
   - agent: <agent-slug>
     task: "<việc; {{input}}=đầu vào user, {{prev}}=kết quả bước trước>"
-    verify_agent: <agent-slug>   # tùy chọn: agent soi lỗi
+    verify_agent: <agent-slug>   # tùy chọn: agent soi lỗi, PHẢI trả JSON {"pass":true|false,...}; vẫn trượt sau max_retries thì quy trình DỪNG
     max_retries: 1               # tùy chọn
+    tools: [javis_generate_image] # tùy chọn: tool plugin riêng bước này cần khi chạy nền dưới Toàn quyền (vd tạo/xem ảnh); WebFetch, WebSearch cũng nhận
 updated: <YYYY-MM-DD>
 ---
 <mô tả>
 ```
 Nếu workflow tham chiếu agent chưa tồn tại -> TẠO agent đó trước.
+
+### Nhóm chat -> tool `javis_team` (KHÔNG ghi file tay, KHÔNG điều khiển trình duyệt)
+Người dùng muốn một nhóm chat gồm vài trợ lý: gọi `javis_team` op=create một lần, `members` là slug trợ lý có sẵn, `new_agents`
+là trợ lý cần tạo mới (`name`, `role`, `prompt`, `model`, `model_provider` nếu muốn model riêng), `leader` là slug hay tên trưởng
+nhóm. Sửa: op=update, add_member, remove_member, set_leader, set_agent_model. Xoá: op=archive trước, op=delete kèm confirm=true chỉ
+khi người dùng nói rõ là xoá. Xem trước trợ lý đang có bằng op=list_agents để khỏi tạo trùng.
 
 ### Loop -> `Javis/loops/<slug>.md`
 
@@ -195,6 +202,8 @@ ctx có `ctx.vault_root`, `ctx.data_dir` (state riêng plugin, không đụng va
   phân biệt được với skill khác (mô tả mơ hồ làm Thansa chọn skill sai). Đừng tạo skill trùng
   chức năng skill đã có.
 - Plugin user (toàn cục lẫn vault) chạy CODE PYTHON THẬT trong tiến trình server -> tạo `enabled: false`,
-  `min_mode: readonly`, và NÓI RÕ với user: plugin chỉ chạy khi họ đặt env `JAVIS_ENABLE_USER_PLUGINS=true`
-  rồi khởi động lại (rào chống chạy code lạ). KHÔNG viết plugin làm hành động tiền/đơn/gửi tin; việc đó để MCP + mức quyền lo.
+  `min_mode: readonly`, và NÓI RÕ với user: plugin nằm tắt cho tới khi họ bật nó trong app. Từ 15/10/2026
+  Thansa cho tải plugin người dùng mặc định; máy nào muốn chặn hẳn thì đặt env `JAVIS_ENABLE_USER_PLUGINS=false`
+  rồi khởi động lại.
+  KHÔNG viết plugin làm hành động tiền/đơn/gửi tin; việc đó để MCP + mức quyền lo.
 - Sau khi tạo, KHÔNG tự chạy thứ có side-effect; để user xem trước.

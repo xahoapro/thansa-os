@@ -21,6 +21,14 @@ function check(name, cond, extra) {
   if (!cond) fails++;
 }
 
+// ── quyết định của chủ (0.168.0): tin báo goal chỉ còn sáu cảm xúc chung ──
+{
+  const guarded = "if (A3_REACT_ROW) veReact(msgEl, card);";
+  const bare = SRC.split(guarded).join("").split("\n").some((l) => l.trim() === "veReact(msgEl, card);");
+  check("tin báo goal không vẽ hàng Hữu ích / Chưa ổn nữa (cờ A3_REACT_ROW tắt, ve() chỉ gọi khi cờ bật)",
+    RS.A3_REACT_ROW === false && SRC.includes(guarded) && !bare);
+}
+
 // ── hàng phản hồi ──
 check("chỉ tin báo có khoá outbox:<số> mới có hàng phản hồi",
   RS.isNotice({ report: "outbox:12" }) && !RS.isNotice({ report: "" }) && !RS.isNotice({ report: "outbox:x" })
@@ -84,7 +92,8 @@ check("bài học đang dùng: nút Thu hồi và cảnh báo nguồn đã xoá"
   lh.includes('data-act="revoke"') && lh.includes(vi["resonance.a3_evidence_missing"]));
 check("lịch sử ngắn có bài học làn M đã thử thua", lh.includes(vi["resonance.a3_st_rejected"]));
 check("tin bắt buộc luôn đầy đủ được nói rõ trên đề xuất", lh.includes(vi["resonance.a3_mandatory_note"]));
-check("chưa có bài học: câu giải thích", RA.lessonsHtml({ lessons: [] }).includes(vi["resonance.a3_lessons_empty"]));
+check("chưa có bài học: nói ngắn là chưa có, câu giải thích nằm trong khối i", RA.lessonsHtml({ lessons: [] }).includes(vi["resonance.a3_lessons_none"])
+  && RA.lessonsHtml({ lessons: [] }).includes(vi["resonance.a3_lessons_about"]));
 
 // ── soi giao diện trên sandbox (UI1 tới UI5) ──
 const md = RA.lessonsHtml({ lessons: [{ id: "ls_md", lane: "presentation", key: "notice_detail", to_value: "brief",

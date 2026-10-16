@@ -275,6 +275,14 @@ def dem(rev: str) -> dict:
     return out
 
 
+# Cụm chữ quanh "Javis" mà test hay khẳng định nguyên văn: hai chữ đứng trước ("Cập nhật Javis"), một chữ
+# VIẾT HOA đứng trước ("Tắt Javis"), hoặc Javis + một/hai chữ sau ("Javis còn chạy" - 0.175 test_team_adaptive_restore).
+CUM_RE = re.compile(r"(?:[^\W\d_]+ ){2}Javis(?![/\w])(?!-[A-Z])"
+                    r"|(?<![\w])(?=[^\W\d_])(?:[^\W\d_]+) Javis(?![/\w])(?!-[A-Z])"
+                    r"|(?<![\w-])Javis(?: [^\W\d_]+){1,2}")
+CUM_DOI: dict[str, str] = {}      # cụm chữ hiển thị rebrand_py vừa đổi → test mới khớp theo
+
+
 def rebrand_py(f: str) -> int:
     src = (WT / f).read_text(encoding="utf-8")
     toks = list(tokenize.generate_tokens(io.StringIO(src).readline))
@@ -297,6 +305,10 @@ def rebrand_py(f: str) -> int:
         if la_doc or t.string.strip("'\"rbfu") == "Javis" or any(c in t.string for c in CHUOI_BAO_VE):
             continue   # docstring / tên thư mục vault "Javis" / chuỗi được canh → GIỮ
         sua.append((t.start, t.end, RB.sub("Thansa", t.string)))
+        for m in CUM_RE.finditer(t.string):
+            cum = m.group(0)
+            if cum.startswith("Javis") or cum.count(" ") >= 2 or cum[:1].isupper():
+                CUM_DOI[cum] = RB.sub("Thansa", cum)
     s = src
     for (sr, sc), (er, ec), new in sorted(sua, reverse=True):
         a, b = offs[sr - 1] + sc, offs[er - 1] + ec
@@ -363,6 +375,31 @@ def va_stub_gate_active() -> int:
     if sua:
         git("add", "--", *sua)
         git("commit", "-q", "-m", "fix: stub gate_active nhan conn trong test moi cua upstream (P061, tu dong)\n\n"
+            + "\n".join(f"- {f}" for f in sua) + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+    return len(sua)
+
+
+def va_test_theo_rebrand() -> int:
+    """Test MỚI/đổi của upstream hay khẳng định nguyên văn chuỗi server ("[Ghi chú của Javis", "Cập nhật Javis");
+    rebrand_py đổi chuỗi server mà không đụng tests/ → test đỏ giả (0.165: test_zalo_chu_chua_tra_loi,
+    test_zalo_send_file). Đổi đúng các cụm đó trong test upstream vừa động tới, commit riêng."""
+    if not CUM_DOI:
+        return 0
+    sua = []
+    for f in git("diff", "--name-only", "origin/me", "HEAD", "--", "tests/python").splitlines():
+        p = WT / f
+        if not f.endswith(".py") or not p.exists():
+            continue
+        s = p.read_text(encoding="utf-8")
+        t = s
+        for cu, moi in sorted(CUM_DOI.items(), key=lambda kv: -len(kv[0])):   # cụm dài trước
+            t = t.replace(cu, moi)
+        if t != s:
+            p.write_text(t, encoding="utf-8")
+            sua.append(f)
+    if sua:
+        git("add", "--", *sua)
+        git("commit", "-q", "-m", "fix: test moi cua upstream khop chuoi da rebrand (tu dong)\n\n"
             + "\n".join(f"- {f}" for f in sua) + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
     return len(sua)
 
@@ -693,6 +730,9 @@ def main() -> int:
         log(f"rebase xong; tự gỡ {len(ttin['tu_go'])} khối, theo upstream xoá {len(ttin['xoa'])} file")
         doi = rebrand_moi()
         log(f"rebrand {sum(doi.values())} chỗ / {len(doi)} file")
+        n_test = va_test_theo_rebrand()
+        if n_test:
+            log(f"vá {n_test} test mới theo chuỗi đã rebrand")
         n_stub = va_stub_gate_active()
         if n_stub:
             log(f"vá stub gate_active ở {n_stub} test mới")

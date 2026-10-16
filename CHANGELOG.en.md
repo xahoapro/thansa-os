@@ -8,6 +8,313 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.176.0] - 2026-10-16
+### Improved
+- **Team chat that reads like a real chat app:** bold text, lists and colours look exactly like the main chat. The "Teams" title bar is gone to give the chat more room, and the settings panel uses smaller text.
+- **Reply to any message:** hover a message and press Reply (on a phone, swipe it to the left). Replying to an assistant's message goes straight to that assistant, so feedback is just a chat reply, no reasons to pick.
+- **Zalo-style reactions:** the latest assistant message always shows a Like button, hovering it opens 6 emoji (long press on a phone). The reasons panel and comment box are gone.
+- **Cleaner composer:** a **+** button holds Assign job, Mention an assistant and Search; a new **mic button** turns speech into text. Each team has a ⋯ menu to Pin, Rename or Delete; click the team name to rename it; click an assistant's picture to open its settings.
+
+## [0.175.0] - 2026-10-16
+### Fixed
+- **Connecting Higgsfield (and other MCP servers that sign in through Clerk) no longer fails with invalid_grant:** Javis asks only for the permissions the MCP server needs. If the provider refuses one, Javis drops it and reopens the sign-in page; other sign-in errors now show their real name.
+
+### Improved
+- **Tidier assistant cards:** each card shows name, time and role. A third line appears only when something is going on, "Needs you 1" or "Working 2" in words, instead of a hand icon that looked like a pin. Auto shows as a small label only while it is on (turn it on from the three-dot menu or the Settings tab). Tags are no longer drawn on the card (filter at the top of the column, hover a card to see them).
+- **Assistants waiting on you move to the top,** under "Waiting on you", ahead of pinned and the rest.
+- **The goal card folds itself once you press "That's right":** just the short understanding, status and next run; press Show details for everything. The Jobs tab is tidier: two-line titles, one row of buttons, "Waiting on you" in plain words.
+- **Less to read in the Settings tab:** each section keeps only its title, numbers and pickers. Explanations sit behind a small **i** button next to the title and appear only when pressed.
+
+## [0.174.0] - 2026-10-16
+### Added
+- **Import old personal Zalo messages into the Inbox:** right after signing Zalo in to Javis, press **Import old messages** (on the Zalo account card, or on the Zalo chip of a bot card). Javis takes about the last 2 weeks Zalo lets it reload, up to 5,000 messages.
+- **Safe to run:** only chats with no message in the Inbox yet are filled, the bot does not answer these messages and they are not counted as unread. Pressing again never duplicates anything.
+
+## [0.173.1] - 2026-10-16
+### Improved
+- **Clearer /goal:** every time Javis nudges itself to keep going you see a line you can expand (round n/5) with a Stop goal button, and it survives a page reload.
+- Javis stops at once when it lacks a permission, a tool or data, says why and how to unblock it, instead of nudging itself again and again. At most 5 rounds.
+
+## [0.173.0] - 2026-10-16
+### Added
+- **Javis creates and manages team chats from the chat box.** Ask for "a test team of three assistants" and Javis creates any missing assistant, sets up the team and picks the leader; renaming, adding or removing members, archiving or deleting a team works the same way.
+- Each assistant created this way can run its own model, so a mixed-model test team takes one request.
+- An archived team can now be deleted for good. If the team you have open is deleted, the Teams page closes it and tells you.
+
+## [0.172.0] - 2026-10-16
+### Added
+- **Personal Zalo: set how many minutes the bot steps aside after you type by hand** (0 means never). The clock starts at your last hand-typed message, so in private chats the bot answers for you sooner than before. Once a number is set, a direct tag in a group is still answered right away.
+- **Per-chat exceptions:** one trusted person (a family member, say) gets their own permission level and wait, without raising the bot that answers strangers. Accept Zalo friend requests automatically (off by default) and hand the introduction to the bot. Plugins can add one line of context to each bot turn.
+### Fixes
+- **Personal Zalo understands customers better:** a photo sent without text in a private chat reaches the bot and stays attached for 10 minutes. If the customer keeps typing while the bot composes, the stale reply is dropped and one answer covers everything. The role instructions you write always win over Javis's default. The bot no longer quotes old backups or agent and workflow files as documents.
+- **Small fixes:** a reminder answering `[SILENT]` sends nothing. What you write under the self-learning history heading is no longer wiped. A `---` inside a sentence no longer turns a 16-step workflow into 14.
+
+## [0.171.4] - 2026-10-16
+### Fixed
+- **Calling an assistant by name in a team, without @, is now noticed.** An assistant named Minh never noticed its own name before, because without accents the name matched a common Vietnamese word and was ignored. Javis now compares names with their accents, so an everyday word that only looks like the name is still not a call.
+
+## [0.171.3] - 2026-10-16
+### Fixed
+- **Team chat no longer shows made-up command names.** When an assistant's reply contains a command Javis does not support, the team now notes "the reply had an unsupported Javis command, dropped" instead of printing the raw code in the bubble.
+
+## [0.171.2] - 2026-10-16
+### Fixes
+- **A dropped connection no longer kills the whole turn:** when the connection to the model provider is cut (errors like `ReadError ... WinError 1236` on Windows), Javis resends up to 3 times, even in the middle of a turn that uses tools. If it still fails, the message names the usual causes (network, VPN, antivirus) instead of just pasting the error chain.
+- **Long Zalo replies are split into several messages:** a long reply on personal Zalo is cut at the end of a paragraph or sentence and sent in order, instead of Zalo refusing it and the customer getting nothing. In groups, the person being answered is tagged only in the first message.
+### Improved
+- **Bot alerts go to the notification bell only:** the Telegram message to an "on-duty person" is gone (its field had long been hidden from the form). A customer asking for a human, or the bot getting stuck twice in a row, now lands in the Javis bell with the customer's name. Technical failures still ring the bell as before.
+
+## [0.171.0] - 2026-10-15
+### Added
+- **Quote to ask a follow-up:** every chat message has a Quote button. It puts that passage above the input box so you just type the next question, no retyping. Select part of a message first to quote only that part.
+- **Share a conversation by link:** the Share button next to the paperclip at the top of the chat makes a link anyone can read without signing in, and copies it for you. Readers see only the questions and answers, never attachments, tools or hidden notes.
+- **The bot inbox shows the photos and files customers send:** photos appear right in the chat (click for full size) and files become a card with a Download button, instead of a long link or a server path. Works for personal Zalo and the Telegram, Zalo Bot, Slack, WhatsApp, Messenger, Discord and Lark bot channels.
+- **The link is a snapshot up to when you shared:** later messages do not show up on their own. Press "Update to the latest message" to include them; the link stays the same. Conversation links live on the Share links page next to file links, and can be renamed or revoked the same way.
+
+## [0.170.0] - 2026-10-15
+### Improved
+- **Teams with thousands of messages still remember what matters:** every assistant turn still sees pinned decisions, the original request and status of open jobs, who contributed to the latest result, and your feedback still waiting for review, however far back they are in the history.
+- **Long teams do not slow each turn:** each of those items is read once with a limit, so a 5,000 message team costs as much to read as a team with a few dozen.
+
+## [0.169.0] - 2026-10-15
+### Added
+- **Assistants pace themselves:** an assistant with Auto on reviews its own work on a rhythm from 15 minutes to 1 month. Praise and used results make it faster (up to 1 hour by default, only you can raise it); little demand makes it slower until it sleeps; a direct call wakes it at once. Assigned jobs, deadlines and goals are never slowed down.
+- **Assistants judge when to speak:** when nobody calls them, each assistant weighs speaking, waiting or staying quiet; at most one volunteers per message. @ calls and assigned jobs are always answered. You can correct each decision ("Should have spoken", "Should stay quiet") and the assistant learns for that team only.
+- **Learning from feedback and teammates:** an assistant reviews the reactions you leave and keeps its approach, asks back, sends a revision or records a lesson. Lessons are scoped to a team or a private chat and never leak elsewhere; teammates can give each other feedback. Revoke a lesson right on the assistant card.
+- **Pulse panel on assistant cards and team member rows:** state per place, last and next review, why the pace changed, speak/wait/quiet decisions, lessons, work proposals (accept or reject) and autonomous turns per day.
+
+## [0.168.0] - 2026-10-15
+### Added
+- **React to replies in private chat:** the same six emoji as team chat, on the Chat and Partners pages, available as soon as a reply is saved, kept after a reload and shown in other tabs. Goal reports use the same six emoji instead of the Helpful / Not quite row.
+- **Clearer feedback:** besides reasons, pick "Should have spoken" or "Should stay quiet (interrupted)" and add an optional comment. A status such as Received, Waiting for review or Adjusted shows under the reaction; in teams you also see the coordinator's and members' reactions.
+- **Assistants with Auto on get your feedback for review:** many taps fold into one review; with Auto off it is only stored, and turning it back on does not replay old feedback.
+### Fixed
+- **The server's shared turn ceiling now covers team turns:** when it is reached, a team turn stops before calling a model and says why.
+
+## [0.167.0] - 2026-10-15
+### Fixed
+- **Taking back the right to decide alone covers a turn already running:** if you take it back, give it again or give it for the first time, the admin commands of the coordinator's unfinished turn are dropped with a note; only the next turn uses the new permission.
+- **Long jobs are not cut in on:** an assistant working on a long step keeps its slot until done. A turn that loses its slot midway only shows its result for you to read and changes nothing in the team.
+- When the coordinator turns Auto back on for an assistant the team manages, its goals resume right away; limit fields reject invalid numbers instead of returning a server error.
+### Improved
+- **Limits table under the team's Advanced section:** every limit, grouped by what you can change, what the coordinator can change, what the server fixes and what the provider decides. Replies, steps and nested help can be set to **Unlimited**.
+
+## [0.166.4] - 2026-10-15
+### Fixed
+- **Saving a setting can no longer wipe the admin account, models and admin channels.** If `settings.json` was locked for a split second while Javis read it (common on Windows when antivirus scans a freshly written file), Javis took it for a fresh install, showed the setup wizard again, and the next save (saving the Lark channel, for example) wrote an empty setup over the real one. Javis now retries the read until it works, and never writes an empty setup over a machine that is already set up.
+
+## [0.166.3] - 2026-10-15
+### Fixed
+- **The bot no longer sends customers the "please wait a moment while I check" line when something technical breaks** (out of tokens, plan limit reached, model error). The customer receives nothing at all, on personal Zalo, Zalo OA, Telegram and WhatsApp.
+- **The owner hears about it in the Javis notification bell:** which bot failed, which customer wrote without an answer, and the error. One notice per failure streak; the next one comes only after the bot has worked again. The on-duty person (if set) is still alerted as before.
+
+## [0.166.2] - 2026-10-15
+### Fixed
+- **Creating images on the ChatGPT plan no longer gets stuck on "The 'gpt-5.5' model is not supported".** When your plan lacks that model, Javis switches to another model from your own account's ChatGPT model list and makes the image, with nothing to configure.
+- Next time Javis goes straight to the model that worked, so no extra failed round. Letting ChatGPT look at images for you is fixed the same way.
+
+## [0.165.1] - 2026-10-15
+### Fixed
+- **Files and links in a Project (and in each conversation) stay newest first** even when two were added in the same instant. Before, two items with the same timestamp could swap places at random between visits.
+
+## [0.164.1] - 2026-10-15
+### Fixed
+- **Conversations and projects created in the same instant now keep their order**, newest on top. On a fast machine two of them written in the same tick could swap places at random in the sidebar.
+
+## [0.164.0] - 2026-10-15
+### Added
+- **The Fast mode bolt now really switches each brain:** Claude Code and the Anthropic API (Opus 5.5, Opus 5, Opus 4.8), ChatGPT through Codex, the OpenAI API, OpenRouter and Gemini. Brains without Fast mode (Grok, Antigravity, Groq, DeepSeek, Ollama) keep a dimmed bolt.
+- **Bolt off means normal speed:** for Codex, Javis forces the normal tier even when the model or the Codex config defaults to Fast. Background runs (loops, reminders, Kanban, workflows, teams) and customer chatbots always run at normal speed, even if you once turned on `/fast` in Claude Code.
+- **When a provider refuses Fast mode** (account not eligible, limit reached), Javis resends at normal speed and the turn does not fail; hover the bolt to see why (e.g. usage credits need turning on).
+
+## [0.162.0] - 2026-10-15
+### Security
+- **Plugins you install load by default**, no environment variable needed. Each plugin still runs only after you click **Enable** on its card (a plugin Javis creates from chat always starts disabled), and the permission level still decides every tool call.
+- To block user plugins on a machine altogether (a shared server, bots for strangers), set `JAVIS_ENABLE_USER_PLUGINS=false` and restart.
+
+## [0.160.0] - 2026-10-15
+### Improved
+- **The Effort chip reads the real level of Antigravity models** that carry it in their name (e.g. `-high`), on the chip and in the slider popover.
+- **The slider popover stays on screen** on narrow phones, the orange particle effect is lighter (nothing is re-measured every frame), and an interrupted swipe no longer makes the slider jump.
+- **Ctrl+U opens the file picker only when a usable chat box is there**, not on other pages or while the chat box is locked.
+- **The connections-to-fix count in the + menu** is refreshed each time the menu opens.
+- **Leaving the Partners page mid-turn** no longer re-enables the Send button by mistake.
+
+## [0.159.0] - 2026-10-15
+### Improved
+- **Sturdier folder pinning:** switching brain no longer binds a pending pin in the new brain; a folder inside the brain picked with the browser is no longer labelled "outside the brain"; the folder search returns folders only, so files cannot crowd them out.
+- **The folder chip shows "+N"** when the conversation still has extra folders bound from before, with their names on hover. Unpinning removes a folder nobody else uses from the registry (nothing on disk is touched).
+- **The pin panel shows the pinned folder and the Unpin button as separate rows.**
+- **The Coding page shows errors in their own slot**, so a chip redraw no longer wipes them; leftovers of the old folder picker are cleaned up.
+- **If the connection drops while the first message waits for the folder pin**, the text goes back to the input with a notice instead of being lost.
+
+## [0.158.0] - 2026-10-15
+### Improved
+- **Pin a working folder straight from the chat box.** The **+** menu has **Pin working folder**: pick a folder in the brain (with search) or browse to another one. Once pinned, a 📁 chip with the folder name sits next to the bolt and that conversation works right inside the folder, handy for code projects. The pin is per conversation.
+- **Adding a folder no longer uploads its files** as attachments: a folder is a place to work in.
+- **The Coding page uses the same folder chip** instead of its own folder button; the branch, worktree, restore point and permission chips stay.
+- **A tidier assistant Work tab:** the two sideways-scrolling chip rows are now two dropdowns, **Source** and **Status** (with counts and an amber dot when something needs you), and the text is smaller to fit the narrow column.
+
+## [0.153.0] - 2026-10-15
+### Improved
+- **The chat composer is redesigned in the style of Claude:** one rounded card holding attachments, the text box and a single button row underneath (the **+** button, model chip, Effort chip, Fast mode bolt, a small mic and a round send button).
+- **The + button opens a menu:** attach a file or photo (Ctrl+U), attach a whole folder (skips hidden files, .git and node_modules, up to 50 files), pick a file already in the brain, commands and skills "/", **Connections** with the health of each, and **Assistants and workflows** for a quick call.
+- **Effort is now its own chip** next to the model chip, opening a six-stop slider Off, Light, Medium, High, Extra, Ultra with an orange particle effect.
+- **Fast mode bolt:** click to turn it on (an animated orange wave), click again to turn it off; hover for a cost note for the selected brain. This release stores the choice; wiring it into each engine comes next.
+
+## [0.151.0] - 2026-10-15
+### Improved
+- **Resizable panels:** on the graph page (folder column and chat panel) and the Chat page (conversation list), hover the edge and drag; double-click to reset. The width is remembered.
+- **The Chatbot inbox shows each conversation's message count** (grey pill, e.g. "12 msgs"), next to the red unread count.
+
+## [0.147.0] - 2026-10-14
+### Improved
+- **Background jobs now take one tidy line above the chat box.** The old "running in the background" block took three lines with a button and a row of chips, and cut job names off mid-word. Now it is one small pill: a green dot, the most relevant job (the one you just assigned in this chat first) and "+2" when more are running.
+- **Click the pill for the details:** each job with its status, how long it has been running, which ones came from this chat, and a button to open the Tasks page. Click outside or press Esc to close it.
+- Jobs that were assigned but will not run on their own (orchestration off) still show in amber and say so on the pill, with how to turn it on in the details.
+
+## [0.146.0] - 2026-10-14
+### Fixed
+- **Team chat is no longer silent.** Assistants answer with their own model, or the main model when they have none, ChatGPT (Codex) included. Each message shows who is waiting, answering or could not answer, with the reason and a fix (**Try again**, change the model, pick a coordinator); it survives a dropped connection or a reload.
+### Added
+- **Create a team and add members like on a messaging app:** accent-free search, tag filters, a ready-made team picture, members already in the team marked "Already in the team", the coordinator picked right on the chosen people; the team reads "You + N assistants". Typing @ works with the keyboard, each person called shows as its own chip, and two assistants with the same name still get the right one.
+- **Jobs tab on the Partners page** (replacing the Folder tab): every job of one assistant from teams, private chat and Auto, filtered by source, with the next step. **Assign a job** takes done criteria, lets you choose where the result goes and shows a review before creating; you can also assign a **verification** job to another assistant.
+### Improved
+- **Tidier Partners page:** Resonance is now called **Auto**, with its switch on the tag row and in the three-dot menu; cards show the time of the last message; the right panel starts hidden so text gets wider, and both columns can be resized by dragging their edge. Fixed reviewers are gone: old goals waiting for review are paused for you to check, never counted as passed.
+
+## [0.145.0] - 2026-10-14
+### Fixed
+- **A finished background job is no longer blocked just for mentioning [[NEEDS_INPUT]].** Any mention anywhere in the result used to count, even in a sentence like "no need to write [[NEEDS_INPUT]]", so a job that met its completion criteria still waited for you. Now a job only waits when the worker starts a line with the marker, as it is told to. The block reason on the bell is taken from such a line too.
+
+## [0.141.0] - 2026-10-14
+### Improved
+- **Zalo bots can see the photo in a quoted message.** Quote (reply to) a photo and tag the bot with "look at this" and the bot sees that photo. Before, the bot got only the text and said it could not see the photo, so you had to send the photo again and tag within 3 minutes.
+- Works in groups and private chats, and when you press "Reply for me" in the inbox. The photo must be one Javis read when it was sent, that is, sent after the Zalo account was connected.
+
+## [0.140.0] - 2026-10-14
+### Added
+- **Teams page: several assistants in one chat**, like a group on a messaging app. Write to the team and the lead answers; type @ to ask one person. Turn on **Assign job** and the lead splits the work across the team, with progress and results right in the chat.
+- **Team jobs have a queue** with Prioritize, Edit request and Cancel. A blocked job comes with one button that resolves it, such as **Allow more turns** or **Try again**. You choose how much the lead decides alone: Ask me first, Act then tell me, or Run the whole team.
+- **React and leave feedback** on answers so assistants adjust on the next turn. **Search old messages** in a team without typing accents. A team's picture is built from its assistants' real avatars, and you can **pin a team** to the top of the list (press and hold on a phone).
+### Improved
+- **Turn Resonance on or off right from the assistant list** on the Partners page. The switch only changes once the server confirms.
+
+## [0.139.0] - 2026-10-14
+### Fixed
+- **Sending Excel, PDF and Word files on Zalo no longer hangs.** Javis used to wait up to 2 minutes on such a file, then fail without delivering it (images went fine). Files now go through the Zalo connection that serves the inbox, so they reach the recipient.
+- **If Zalo does not confirm within a minute, Javis says so clearly and sends nothing**, so retrying is safe. No more waiting without knowing whether the file went.
+- After updating, **update the "Zalo extras" pack to 1.2.0** from the Store. Javis moves the Zalo connection to javis-zalo 1.4.0 on its own (no new QR scan).
+- Thanks to @thanhtmfyu-lang for the contribution.
+
+## [0.137.0] - 2026-10-14
+### Fixed
+- **Antigravity CLI updates itself every day, so new models (such as Gemini 4 Argon) show up in Javis on their own.** The Antigravity model list comes straight from `agy`, and `agy` was never updated: the Docker build installed it once and left it there. Javis now runs `agy update` daily, Docker included. If `agy` is up to date and a model is still missing, your Google account has not been granted that model.
+- **The bot no longer says it is having technical trouble and asks the customer to write again later** when a reply fails. That line told customers they were talking to a machine and made them do the work. The bot now asks them to wait a moment while it checks. The person on duty is still told about the real error, as before.
+
+## [0.136.0] - 2026-10-14
+### Improved
+- **The personal Zalo bot answers when you have not replied within 10 minutes.** Before, once you typed into a chat yourself, customer messages that came after were dropped and nobody answered. Javis now holds them; if you do not answer within 10 minutes the bot answers them all once, in private chats only.
+- **A customer who sends only a file or a photo without text also gets a fitting reply**: the bot is told what arrived (file name, photo), and a bot with Can write opens the file too. If you answer on the phone or from the Inbox, the bot stays out.
+- Thanks to @thanhtmfyu-lang for the contribution.
+
+## [0.135.0] - 2026-10-14
+### Fixed
+- **The Tools page now shows the Browser (Chromium) as Ready when it was installed by a recent Playwright.** Since Playwright 1.57 the headless browser's executable is called `chrome-headless-shell`. Javis did not know that name, so it kept saying "There is a browser folder but no executable, the download broke midway" on a complete, working install, however many times it was removed and downloaded again. Javis now recognises both the new and the old names. No new download is needed: after updating, the Tools page shows Ready.
+
+## [0.134.0] - 2026-10-14
+### Added
+- **Bots answer your Facebook Page inbox (Messenger).** Add a Messenger channel on the Chatbot page; attach it to an existing bot and that bot answers on Zalo and Messenger with the same Agent. Customer messages land in the inbox like on every other channel.
+- **The add-channel form shows the webhook address and verify token** to paste into the Meta app. When the bot is switched on, Javis subscribes the Page to the webhook by itself. If the token lacks the permission for that, the bot still runs and reminds you to subscribe the Page once by hand.
+- **A wrong App secret is refused when you save**, instead of a bot that looks healthy but never hears a message.
+- **Meta errors read as words:** more than 24 hours since the customer last wrote, app not yet approved to message the public, expired token. Step-by-step guide in docs/en/31-messenger.md.
+- Thanks to @thanhtmfyu-lang for the contribution.
+
+## [0.133.0] - 2026-10-14
+### Added
+- **The personal Zalo bot reads files customers send.** When a customer sends a file (Excel, PDF, CSV...) in a private chat, or sends a file and then asks "can you check this", the bot saves it to `inbox/khach` in its brain and answers with the file in hand. Text files (txt, md, csv, json...) are read directly; other formats are reported as not read, never guessed.
+- Only bots with **Can write** or higher download files. A read-only bot still answers the text and knows a file was sent.
+- No download for strangers, chats under human takeover, or files dropped into a group without anyone calling the bot. Files over 20 MB or with an expired link are reported as unreadable.
+- Thanks to @tuanlong1989florist for the contribution.
+
+## [0.131.0] - 2026-10-14
+### Added
+- **An operator theme.** Put a `theme.css` file in the `branding` folder of Javis's data (next to the logo) and the dashboard takes your brand colours and fonts, kept across every update. Delete the file to get the original look back. See the Branding and domain guide.
+- Thanks to @hodaclong for the contribution.
+
+## [0.130.0] - 2026-10-14
+### Added
+- **Chatbots have active hours.** In the Edit bot form on the Chatbot page, fill in **Active hours** From and Until, e.g. 08:00 to 02:00 (past midnight is fine). Leave both empty and the bot answers all day as before.
+- **Outside active hours the bot stays fully silent** and sends nothing. Messages for the bot still land in the **inbox** so whoever is on duty reads them in the morning. Times follow the timezone in Settings.
+- The bot card shows its active hours, and **Try bot** outside them says so plainly. Replying by hand from the inbox works at any hour.
+- Thanks to @thanhtmfyu-lang for the contribution.
+
+## [0.128.0] - 2026-10-14
+### Improved
+- **The personal Zalo bot waits until the customer has finished typing.** When a customer splits one thought over several messages, the bot waits for 5 seconds of quiet and answers once, covering everything, instead of replying piece by piece like a machine.
+- **Sending a photo and then "can you check this"** in a private chat now reaches the bot as one question with the photo.
+- If you type into the chat yourself while it waits, or turn the bot off, nothing is sent. Zalo groups work as before.
+- To keep the wait short, an account that just had a private customer message is read every 2 seconds (instead of 20) for one minute. This only touches the buffer on the machine, with no extra calls to Zalo.
+- Thanks to @thanhtmfyu-lang for the contribution.
+
+## [0.127.0] - 2026-10-14
+### Fixed
+- **Bots on the ChatGPT plan no longer drop tool calls.** ChatGPT sometimes streams a tool call piece by piece and leaves the final summary empty, so the bot skipped the call and answered with half the work. The bot now collects them all, never runs one twice, and retries a stream that was cut off instead of acting on half of it.
+- Thanks to @tuanlong1989florist for the contribution.
+
+## [0.125.0] - 2026-10-14
+### Fixed
+- **Background jobs on ChatGPT (Codex) no longer report a fake success when tools are missing.** Reminders, loops and Kanban jobs on Codex now wait for Javis's MCP Hub to come up. If it does not, the job fails with a clear reason instead of running without tools and still being recorded as done.
+- Thanks to @dev23072005 for the contribution.
+
+## [0.123.0] - 2026-10-14
+### Fixed
+- **The bot really tags everyone it names in a Zalo group.** Before, only the person the bot was answering got a tag; an extra "@Anna" or "@Ben" in its message was plain text and Zalo notified no one. Now each "@Name" that matches someone who has written in the group becomes a real tag, ignoring case and accents.
+- **A line you type in the inbox with "@Name" tags for real too.** People who have never written in the group cannot be tagged yet; their name shows as plain text.
+
+## [0.122.0] - 2026-10-14
+### Security
+- **The open-file tool no longer runs programs.** Opening a file on the machine running Javis now refuses runnable files (scripts, programs, shortcuts). Opening an app by name works as before.
+- **The login session file is readable by the owner only**, like the secret key and the hub token.
+
+## [0.119.0] - 2026-10-14
+### Fixed
+- **Tools no longer land on the wrong brain when a session stores a short brain name.** Some chat sessions stored the brain as "brain" (the default brain) instead of a full path, so tools through the MCP Hub could not tell which brain to use, or could end up in a folder that is not a brain. They now resolve to the right brain. Thanks to @dev23072005 for the report.
+
+## [0.118.0] - 2026-10-14
+### Security
+- **Tighter checks on live connections to Javis.** Every real-time connection (chat, terminal, voice, graph) now passes the same origin checks as write actions, including on machines with no password set. Your dashboard, Telegram and command-line tools are not affected. Updating soon is recommended.
+
+## [0.117.0] - 2026-10-14
+### Security
+- **Background jobs on ChatGPT (Codex) keep their permission level.** A reminder, loop or Kanban job set to Read-only or Draft that ran on Codex could still call tools at Full access. It now runs at the level it was given, like the other engines.
+
+## [0.114.0] - 2026-10-14
+### Fixed
+- **The Zalo bot no longer goes silent after Javis restarts.** A Javis that stopped uncleanly (a crash, a hard stop during an update) used to leave the old Zalo process running, so the account had two listening sessions. Zalo delivers to only one of them, the bot read the other and stayed quiet. Javis now records every connector process it starts and clears what an earlier run left behind.
+- **Safe cleanup.** It only clears a process when the old server is really gone and the process still runs the command Javis started, so nothing else is touched.
+
+## [0.109.0] - 2026-10-13
+### Added
+- **An assistant can have a reviewer (Resonance A5).** On the page of an assistant with Resonance on, pick another assistant in the **Reviewer** box. From then on, new goals of this assistant count as done only after the reviewer checks the exact published version and passes it. Existing goals do not change.
+- **When the review asks for changes, the assistant applies the feedback by itself**, at most twice. A goal with a team uses at most 8 calls, 4 per role; when the rounds or calls run out it stops and tells you, without extending them.
+- **The goal card shows who makes and who reviews**, which version was reviewed, who is being waited on and the calls left per role. **Turn the reviewer back on** and **Drop the review requirement** buttons appear when the goal is stuck.
+- Ongoing goals and discovery steps also wait for the reviewer to pass the version before reporting an update or a finished step; the same version is not reviewed again on schedule.
+- A call that fails before the model is reached is given back, not counted.
+- If a published file is edited by hand, a goal with a team waits instead of counting as done. To go back to 0.108.0: stop Javis and run `tools/resonance_restore_pre_a5.py`.
+
+## [0.108.0] - 2026-10-13
+### Fixed
+- **The bot no longer sends plan-limit notices to customers.** Lines like "You've hit your session limit" or "API Error" used to be posted straight into a Zalo group, tagging the person who asked. That turn now counts as failed: whoever asked gets the usual apology, and the real reason is in the bot log.
+- **Messages you type by hand on personal Zalo reach the inbox.** Replies the owner or staff send from the phone now show as "You", and the bot steps back in that chat. The cause was in the Zalo CLI, which dropped every message from the account itself; Javis now runs javis-zalo 1.3.0.
+- **No duplicates, no wrongful silence.** Images the bot just sent and lines you type in the inbox are recognised when they come back, so they are not recorded twice and the bot does not think you just stepped in.
+
+## [0.107.0] - 2026-10-13
+### Fixed
+- **Background jobs only reach Done when they really pass.** After the worker finishes, a separate AI pass checks the result against the acceptance criteria and opens the files and images they name. A job that falls short waits for you with the real reason (no longer the last line of the report), and the alert names the jobs waiting on it.
+- **Workflows no longer "accept for now".** A verify step that errors or answers vaguely now counts as a fail; a step still failing after its retries stops the workflow there instead of running on. A switched-off workflow no longer runs in the background.
+- **Chat can queue a job that runs a real workflow** with `route: wf:<name>`; a wrong name is refused, and only naming the workflow in the description gets a warning. A job that needs images gets the image tools alone, without opening Full access, and each workflow step can declare its own tools.
+- **Usage, learning, reminders and Docker are more accurate.** A long chat moved onto a new thread still counts as chat instead of swelling "background"; the learning token cap counts real tokens. Script reminders are no longer skipped while a long reminder runs, and Docker keeps the Claude Code config and the Google Workspace sign-in across rebuilds.
+
 ## [0.105.0] - 2026-10-13
 ### Fixed
 - **Self-learning no longer makes an agent forget rules you gave it.** Before, each time self-learning improved an agent it rewrote the agent's whole instructions, so a rule like "no markdown in Zalo messages" could vanish after a few rounds. Now self-learning can only add new rules at the end, and what you wrote stays as it is.

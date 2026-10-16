@@ -297,7 +297,16 @@ def map_message(msg):
                                   TextBlock, ToolUseBlock, ToolResultBlock)
     events = []
     if isinstance(msg, SystemMessage):
-        return events, (msg.data or {}).get("session_id")
+        data = msg.data or {}
+        # Claude Code reports the real Fast mode state (off, cooldown, on): keep it for the bolt tooltip.
+        if data.get("fast_mode_state"):
+            try:
+                import fast_mode
+                fast_mode.remember("anthropic-cli", str(data.get("fast_mode_state")),
+                                   str(data.get("fast_mode_disabled_reason") or ""))
+            except Exception:  # noqa: BLE001
+                pass
+        return events, data.get("session_id")
     if isinstance(msg, AssistantMessage):
         for b in msg.content:
             if isinstance(b, TextBlock):
@@ -584,10 +593,12 @@ class ClaudeSDK:
             message=f"Tool '{tool_name}' bị chặn bởi rào quyền phiên nền an toàn: phiên này chỉ "
                     f"được dùng {', '.join(allowed)}.{extra}")
 
-    def _plugins_server(self):
+    def _plugins_server(self, only=None):
         """Phase 3: dựng MCP server IN-PROCESS từ tool plugin (plugins_host) - engine SDK gọi
         thẳng handler Python, không qua hub HTTP. Trả McpSdkServerConfig hoặc None (không plugin).
-        min_mode enforce sẵn trong route của plugin_tools(mode); hook pre/post bọc như hub."""
+        min_mode enforce sẵn trong route của plugin_tools(mode); hook pre/post bọc như hub.
+        `only`: set of tool names a gated session was granted (plugins_host.grant_patterns);
+        every other plugin tool stays out of the server."""
         import plugins_host
         from claude_agent_sdk import tool as sdk_tool, create_sdk_mcp_server
         mode = (self.javis_mode or "full").strip().lower()
@@ -598,6 +609,8 @@ class ClaudeSDK:
         # đúng ở MỌI chỗ dựng engine, không phụ thuộc ai nhớ đặt cwd.
         # Vẫn KHÔNG nạp plugin riêng-của-vault (giữ nguyên hành vi cũ): scope_vault=False.
         p_tools, p_route = plugins_host.plugin_tools(mode, self.javis_vault, scope_vault=False)
+        if only is not None:
+            p_tools = [t for t in p_tools if t["fn"] in only]
         if not p_tools:
             return None
         # has_tool_hooks/wrap_with_hooks chưa biết scope_vault (ngoài phạm vi task này) - giữ
@@ -653,10 +666,17 @@ class ClaudeSDK:
                 print(f"[sdk engine] đọc mcp_config lỗi ({e}) - truyền path thô", file=sys.stderr)
                 return str(self.mcp_config), self.mcp_strict
             servers = self._gan_khoa_luot(servers)
+        only = None
         if self.allowed_tools:
-            return servers, self.mcp_strict
+            # Gated fork: no plugin server, EXCEPT the tools the allowlist names one by one
+            # (a Kanban "image" job, a workflow step with `tools:`). The allowlist and the
+            # permission gate still stop everything else.
+            import plugins_host
+            only = plugins_host.granted_plugin_tools(self.allowed_tools)
+            if not only:
+                return servers, self.mcp_strict
         try:
-            plug = self._plugins_server()
+            plug = self._plugins_server(only)
         except Exception as e:
             print(f"[sdk engine] plugin in-process lỗi: {type(e).__name__}: {e}", file=sys.stderr)
             plug = None
@@ -803,6 +823,11 @@ class ClaudeSDK:
         # là nó thoát ngay với "unknown option", tức hỏng trọn lượt chat.
         if self.effort and "effort" in fields:
             kw["effort"] = self.effort
+        # Fast mode (0.164.0): main._cli_fast sets this for a chat turn. Every other run (loops,
+        # reminders, bots) says fastMode false explicitly, so a /fast persisted in the user's
+        # ~/.claude/settings.json cannot make background work run (and bill) fast.
+        if "settings" in fields:
+            kw["settings"] = getattr(self, "fast_settings", None) or '{"fastMode": false}'
         if self.session_id:
             kw["resume"] = self.session_id
         servers, strict = self._mcp_servers()

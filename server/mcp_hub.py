@@ -99,7 +99,8 @@ def allow_patterns():
 # judge logged and retune the bot itself, so a customer must never reach them, not even through the lazy
 # `javis_run_tool`. `discover_all(for_bot=True)` drops them before the lazy tier; bot paths pass that flag (API
 # engines directly, Claude Code through the X-Javis-Bot header written by `claude_config_path(bot=True)`).
-OWNER_ONLY_TOOLS = frozenset({"javis_reply_policy", "javis_reply_policy_tune"})
+# `javis_team` (0.173.0) creates, edits and deletes team chats and writes assistant files: owner-only for the same reason.
+OWNER_ONLY_TOOLS = frozenset({"javis_reply_policy", "javis_reply_policy_tune", "javis_team"})
 
 
 # ============================================================
@@ -1250,6 +1251,32 @@ def _brain_duy_nhat() -> str:
         return str(ds[0])
 
 
+def _brain_tu_phien(ung) -> str:
+    """Đường dẫn tuyệt đối của brain ghi trong cột `sessions.brain`, hoặc "" nếu không dám tin.
+
+    Cột đó KHÔNG luôn là đường dẫn: phiên tạo trước 0.43.1, hay phiên mà dashboard tạo sớm qua
+    /sessions/{id}/model|project, giữ nguyên tên gọi tắt "brain" của brain mặc định (app.js::
+    currentBrainPath). Kiểm nó như đường dẫn thô thì "brain" không resolve được (#610), còn một
+    giá trị TƯƠNG ĐỐI như "." resolve theo cwd của tiến trình thành /app hay gốc repo - một thư
+    mục có thật nhưng không phải brain nào cả, tức đúng kiểu chạy nhầm brain mà luật fail-closed
+    sinh ra để chặn. Nên: "brain" -> Brain Default (cùng quy ước `main._brain_root`), đường dẫn
+    TUYỆT ĐỐI có thật -> chính nó, mọi thứ khác -> "" để rơi về các nấc suy luận sau.
+    """
+    raw = str(ung or "").strip()
+    if not raw:
+        return ""
+    if raw == "brain":
+        p = _brains_dir() / "Brain Default"
+    else:
+        p = Path(raw).expanduser()
+        if not p.is_absolute():
+            return ""
+    try:
+        return str(p.resolve()) if p.is_dir() else ""
+    except OSError:
+        return ""
+
+
 def quen_brain_dang_mo() -> None:
     """Xoá cache brain đang mở. Gọi sau khi đổi brain nếu cần hiệu lực ngay (test dùng)."""
     _BRAIN_CACHE.update({"ts": 0.0, "root": "", "nguon": ""})
@@ -1263,11 +1290,9 @@ def _brain_dang_mo() -> tuple:
     root, nguon = "", ""
     try:
         import sessions
-        ung = sessions.get_store().brain_gan_nhat()
+        ung = _brain_tu_phien(sessions.get_store().brain_gan_nhat())
         if ung:
-            p = Path(ung).expanduser()
-            if p.is_dir():
-                root, nguon = str(p.resolve()), "phien"
+            root, nguon = ung, "phien"
     except Exception as e:
         print(f"[hub brain] {type(e).__name__}: {e}", file=sys.stderr)
     if not root:
@@ -1654,6 +1679,25 @@ def codex_vault_override(vault_root):
     return f"{CODEX_VAULT_KEY}={_toml_str(ma_hoa_vault(vault))}"
 
 
+CODEX_MODE_KEY = "mcp_servers.javis.http_headers.X-Javis-Mode"
+_CODEX_MODES = ("suggest", "auto", "full")
+
+
+def dat_codex_mode(extra_config, mode):
+    """Pin the hub permission level of ONE Codex process with a `-c` override, replacing any earlier one.
+
+    The shared Codex profile is written with `X-Javis-Mode: full` (the chat path). Before 0.117.0 a
+    background job at suggest or auto (reminder, loop, Kanban) reached hub tools at FULL through that
+    profile, while Grok and Antigravity already got the job's own level. An unknown level falls back to
+    the strictest one, as every other mode mapping here does."""
+    m = str(mode or "full").strip().lower()
+    if m not in _CODEX_MODES:
+        m = "suggest"
+    extra_config[:] = [x for x in extra_config if not str(x).startswith(CODEX_MODE_KEY + "=")]
+    extra_config.append(f"{CODEX_MODE_KEY}={_toml_str(m)}")
+    return extra_config
+
+
 def dat_codex_vault(extra_config, vault_root):
     """Gắn override brain vào danh sách `-c` của MỘT CodexCLI, THAY override brain cũ nếu có.
 
@@ -1665,6 +1709,39 @@ def dat_codex_vault(extra_config, vault_root):
     override = codex_vault_override(vault_root)
     if override:
         extra_config.append(override)
+    return extra_config
+
+
+# Việc nền theo lịch chạy trên Codex: hub là server BẮT BUỘC.
+#
+# Codex 0.161.0 chụp danh sách tool của lượt và chỉ chờ một server MCP không `required` tới
+# `mcp_optional_startup_grace_ms`, mặc định 1 giây; quá hạn là cả server bị bỏ khỏi lượt đó
+# (codex-mcp/src/connection_manager/tool_catalog.rs). Hub trả `tools/list` qua `discover_all`,
+# cache 60 giây hết hạn là dò lại mọi connector, mất khoảng 2 giây. Hai con số đua nhau nên việc
+# nền lúc có tool hub lúc không (canary 08-09/10/2026: 4 trên 12 lượt nhắc hẹn không thấy
+# `mcp__javis__*`), model đi vòng qua app ChatGPT hoặc báo không làm được mà nhắc hẹn vẫn ghi xong.
+# `required = true` bắt Codex chờ hub tới `startup_timeout_sec` của profile; hub không lên thì
+# phiên không mở và `codex exec` thoát lỗi TRƯỚC khi gọi model (core/src/session/session.rs); câu
+# lỗi đó do claude_cli.codex_error_text đọc. Chỉ gắn khi profile hub có mặt: override vào
+# `mcp_servers.javis` mà thiếu entry đó thì Codex từ chối khởi động ("invalid transport").
+CODEX_REQUIRED_KEY = "mcp_servers.javis.required"
+# `features.apps = false` gỡ hẳn server `codex_apps` (app ChatGPT gắn với tài khoản,
+# codex-mcp/src/mcp/mod.rs). Tool của nó không đi qua hub nên không chịu mức quyền của việc, và
+# là đường vòng model từng chọn cả khi hub có mặt (canary 08/10/2026).
+CODEX_APPS_KEY = "features.apps"
+
+
+def dat_codex_hub_bat_buoc(extra_config):
+    """Gắn `required = true` cho entry hub vào `-c` của MỘT CodexCLI, THAY bản cũ nếu có."""
+    extra_config[:] = [x for x in extra_config if not str(x).startswith(CODEX_REQUIRED_KEY + "=")]
+    extra_config.append(f"{CODEX_REQUIRED_KEY}=true")
+    return extra_config
+
+
+def dat_codex_tat_app(extra_config):
+    """Tắt app ChatGPT (`codex_apps`) cho MỘT CodexCLI, THAY bản cũ nếu có."""
+    extra_config[:] = [x for x in extra_config if not str(x).startswith(CODEX_APPS_KEY + "=")]
+    extra_config.append(f"{CODEX_APPS_KEY}=false")
     return extra_config
 
 
