@@ -451,7 +451,7 @@ def json_an_toan(o) -> str:
 # đính kèm còn chứa đường dẫn trên máy chủ.
 
 # Khớp `_KHOI_NGU_CANH` của dashboard/app.js (chuNguoiGo): khối đầu tin do giao diện tự chèn.
-KHOI_NGU_CANH = ("[FILE ĐANG MỞ trong trình sửa của Javis:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:",
+KHOI_NGU_CANH = ("[FILE ĐANG MỞ trong trình sửa của Thansa:", "[File đính kèm", "[NGỮ CẢNH GIAO DIỆN:",
                  "[SKILL: ", "[CHẾ ĐỘ KẾ HOẠCH:", "[MỤC TIÊU:")
 _COMMENT_RE = re.compile(r"<!--[\s\S]*?-->")
 

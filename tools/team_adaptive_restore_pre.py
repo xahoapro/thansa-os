@@ -281,7 +281,7 @@ def _rename_back(src: Path, aside: Path) -> str:
 def _hint(ex: Exception) -> str:
     """File bị tiến trình khác giữ (thường là Javis chưa tắt hẳn): nói thẳng cách sửa."""
     if isinstance(ex, PermissionError) or getattr(ex, "winerror", None) == 32 or "locked" in str(ex).lower():
-        return " (file đang bị tiến trình khác giữ: Javis còn chạy? Tắt hẳn Javis rồi chạy lại)"
+        return " (file đang bị tiến trình khác giữ: Thansa còn chạy? Tắt hẳn Thansa rồi chạy lại)"
     return ""
 
 
@@ -383,12 +383,12 @@ def describe(p: dict, to: str) -> str:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Khôi phục các kho team-adaptive về trước một mốc (chạy khi Javis đã tắt).")
+    ap = argparse.ArgumentParser(description="Khôi phục các kho team-adaptive về trước một mốc (chạy khi Thansa đã tắt).")
     ap.add_argument("--to", required=True, choices=sorted(MILESTONES, key=_ver),
                     help="mốc cần về trước (vd 0.154.0)")
     ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của Javis (mặc định JAVIS_STATE_DIR)")
-    ap.add_argument("--yes", action="store_true", help="xác nhận Javis đã tắt và chấp nhận mất thay đổi sau lúc nâng")
+                    help="thư mục state của Thansa (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--yes", action="store_true", help="xác nhận Thansa đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
         print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
@@ -399,7 +399,7 @@ def main(argv=None) -> int:
         return 1
     if not a.yes:
         print(describe(p, a.to))
-        print("Chưa ghi gì. Tắt Javis trước, rồi chạy lại với --yes.", file=sys.stderr)
+        print("Chưa ghi gì. Tắt Thansa trước, rồi chạy lại với --yes.", file=sys.stderr)
         return 2
     res = restore(a.state_dir, a.to)
     if not res["ok"]:

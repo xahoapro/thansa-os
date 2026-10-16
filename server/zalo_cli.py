@@ -451,7 +451,7 @@ async def send_files(conn_id: str, home: str, thread_id: str, files: List[Path],
         except Exception as e:      # noqa: BLE001 - lỗi nào cũng phải thành câu người đọc hiểu
             why = re.sub(r"^\s*Error:\s*", "", str(e)).strip() or type(e).__name__
             if _old_mcp(why):
-                return False, None, ("kết nối Zalo đang chạy bản javis-zalo cũ chưa có tool gửi file. Cập nhật Javis rồi "
+                return False, None, ("kết nối Zalo đang chạy bản javis-zalo cũ chưa có tool gửi file. Cập nhật Thansa rồi "
                                      "tắt-bật lại kết nối Zalo ở trang Kết nối (không phải quét QR lại).")
             return False, None, why
         if not isinstance(data, dict) or not data.get("success"):

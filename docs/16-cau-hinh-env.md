@@ -214,7 +214,7 @@ JAVIS_ALLOWED_HOSTS=javis.tencuaban.com
 3. Không chắc một biến làm gì thì cứ để nguyên dấu `#` (chú thích) cho an toàn. Mặc định đã chạy tốt.
 4. Với các biến bật/tắt (`JAVIS_REQUIRE_LOGIN`, `JAVIS_SECURE_COOKIE`, `JAVIS_ENABLE_USER_PLUGINS`), giá trị bật chấp nhận `1`, `true`, `yes`, `on`. Giá trị tắt chấp nhận `0`, `false`, `no`, `off`.
 5. File `.env` chứa mật khẩu và cấu hình nhạy cảm. Không đưa lên nơi công khai. Trên máy chung, đặt quyền đọc hạn chế. Tệp `.secret_key` trong thư mục state cũng vậy, và nó còn quan trọng hơn: mất là mất luôn mọi API key đã lưu.
-6. Plugin do bạn cài chạy code Python thật trong tiến trình server. Javis tải chúng mặc định nhưng chỉ chạy plugin bạn đã bật; chỉ bật plugin khi biết rõ nó đến từ đâu, và đặt `JAVIS_ENABLE_USER_PLUGINS=false` nếu máy này không nên chạy plugin nào.
+6. Plugin do bạn cài chạy code Python thật trong tiến trình server. Thansa tải chúng mặc định nhưng chỉ chạy plugin bạn đã bật; chỉ bật plugin khi biết rõ nó đến từ đâu, và đặt `JAVIS_ENABLE_USER_PLUGINS=false` nếu máy này không nên chạy plugin nào.
 
 ## Sự cố thường gặp
 

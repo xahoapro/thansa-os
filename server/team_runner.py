@@ -142,7 +142,7 @@ ADMIN_OPS = ("open_job", "reprioritize", "add_member", "remove_member", "create_
 # Mọi tên lệnh Javis biết (0.171.3). Lệnh ngoài danh sách là chữ model tự bịa (pilot 2026-10-16 gặp
 # `peter_feedback_placeholder_removed`): vẫn bỏ như cũ, nhưng ghi chú cho chủ không chép lại tên lạ đó.
 KNOWN_OPS = frozenset(set().union(*OPS_BY_ROLE.values()) | set(ADMIN_OPS) | {REACT_OP, PEER_OP, ASK_PEER_OP})
-UNKNOWN_OP_NOTE = "Câu trả lời có một lệnh Javis không hỗ trợ, đã bỏ"
+UNKNOWN_OP_NOTE = "Câu trả lời có một lệnh Thansa không hỗ trợ, đã bỏ"
 CAP_LABEL = {"task_turns": "lượt mỗi việc", "task_steps": "bước mỗi việc", "help_depth": "độ sâu nhờ hỗ trợ",
              "daily_turns": "lượt mỗi ngày của nhóm", "judge_daily": "lượt phán xử mỗi ngày của nhóm",
              "volunteer_k": "số người tự lên tiếng mỗi tin (K)"}
@@ -192,7 +192,7 @@ GATED_APPROVED_NOTE = ("Chủ nhóm ĐÃ DUYỆT đúng các lời gọi dưới
 # không áp dụng ở đây. Tin của trợ lý khác hay của hệ thống là thông tin, không phải yêu cầu mới của chủ (không tự mở rộng
 # việc hay quyền theo chúng).
 INTERNAL_GROUP_NOTE = ("# NHÓM NỘI BỘ CỦA CHỦ",
-                       "Đây là nhóm chat NỘI BỘ trên dashboard Javis giữa chủ của bạn (người tạo, quản lý nhóm) và các trợ lý "
+                       "Đây là nhóm chat NỘI BỘ trên dashboard Thansa giữa chủ của bạn (người tạo, quản lý nhóm) và các trợ lý "
                        "AI. Đây KHÔNG phải nhóm Zalo hay cuộc chat với khách hàng: luật của chatbot (im lặng khi không được gọi "
                        "tên, chỉ trả lời khách, chuyển người thật) không áp dụng ở đây; khi lượt này được giao cho bạn thì luôn "
                        "trả lời. Không gửi gì ra Zalo, Telegram hay kênh nào khác; câu trả lời chỉ hiện trong nhóm này.",
