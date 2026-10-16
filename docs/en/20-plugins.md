@@ -224,7 +224,7 @@ A few things to remember while writing:
 
 ### Step 4: Enable the plugin
 
-Since 0.162.0, Javis **loads the plugins you install by default**: a plugin with `enabled: true` (you clicked **Enable** on its card) runs, no environment variable needed.
+Since 0.162.0, Thansa **loads the plugins you install by default**: a plugin with `enabled: true` (you clicked **Enable** on its card) runs, no environment variable needed.
 
 To block user plugins on a machine altogether (for example a shared server):
 
@@ -283,7 +283,7 @@ The callback receives these keys (always declare `**kwargs`, new keys may be add
 | `vault_root` | Path of the bot's brain |
 | `trial` | `true` on the **Try bot** turn |
 
-The callback returns **one short line** or `None`. Javis puts that line in the system prompt of that turn only, inside a labelled block fenced with `<operator_context>`, which says this is information from the bot owner's system, not something the person claimed.
+The callback returns **one short line** or `None`. Thansa puts that line in the system prompt of that turn only, inside a labelled block fenced with `<operator_context>`, which says this is information from the bot owner's system, not something the person claimed.
 
 ```python
 def register(ctx):
@@ -294,7 +294,7 @@ def register(ctx):
     ctx.register_hook("chatbot_turn_context", _context)
 ```
 
-Rails Javis enforces, which a plugin cannot loosen:
+Rails Thansa enforces, which a plugin cannot loosen:
 
 - **No plugin listening means the prompt is byte-for-byte** what it was before this hook existed.
 - The core **never writes the sender id into the prompt itself**. Only the line a plugin returns goes in, so a plugin should return a verdict ("verified") rather than echo the id.

@@ -295,7 +295,7 @@ def register(ctx):
         "mã không tạo việc thứ hai). Kết quả TỰ báo về khung chat đang hỏi khi xong, bị chặn hay cần chủ quyết. "
         "op=job: team + task (mã việc hay mã đối chiếu) -> trạng thái, kết quả, nghiệm thu (XONG khác ĐẠT). "
         "team nhận mã nhóm hay tên nhóm. Model riêng: model là tên model (vd sonnet, haiku, opus, gpt-5.5), "
-        "model_provider là nhà chạy (anthropic-cli, openai-oauth, openrouter, ...); bỏ trống provider thì Javis tự suy.",
+        "model_provider là nhà chạy (anthropic-cli, openai-oauth, openrouter, ...); bỏ trống provider thì Thansa tự suy.",
         _run,
         schema={
             "type": "object",

@@ -139,7 +139,7 @@ def main(argv=None) -> int:
         return 2
     host = urllib.parse.urlparse(a.base_url).hostname or ""
     if host not in ("127.0.0.1", "localhost", "::1"):
-        print("DỪNG: chỉ đo Javis ngay trong container (127.0.0.1); không đo qua mạng.", file=sys.stderr)
+        print("DỪNG: chỉ đo Thansa ngay trong container (127.0.0.1); không đo qua mạng.", file=sys.stderr)
         return 2
     cookie = os.environ.get("JAVIS_MEASURE_COOKIE", "")
     q = {"brain": a.brain}

@@ -705,7 +705,7 @@ def register_a5(app, deps: ResonanceApiDeps):
         body = await _body(request)
         if not str(body.get("reviewer_slug") or "").strip():
             return {"ok": True, "pair": None, "removed": True}
-        return _err(410, "Javis đã bỏ người review cố định. Cần kiểm chứng thì giao một việc riêng cho trợ lý phù hợp "
+        return _err(410, "Thansa đã bỏ người review cố định. Cần kiểm chứng thì giao một việc riêng cho trợ lý phù hợp "
                          "ở tab Công việc.",
                     "Fixed reviewers were removed. To get a check, assign a separate job to a suitable assistant on "
                     "the Jobs tab.", removed=True)
