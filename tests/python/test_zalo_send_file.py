@@ -119,7 +119,7 @@ check("CANARY: outbox cleaned up after a failure too", list(outbox.iterdir()) ==
 reply["raise"] = RuntimeError("MCP error -32602: Tool zalo_send_file not found")
 ok, data, err = send([SRC / "Danh sach.xlsx"])
 check("older javis-zalo without the tool: says to update Javis and restart the connection, no QR",
-      ok is False and "bản javis-zalo cũ" in err and "Cập nhật Javis" in err, err)
+      ok is False and "bản javis-zalo cũ" in err and "Cập nhật Thansa" in err, err)
 
 reply["raise"] = TimeoutError("tool không phản hồi sau 120s")
 ok, data, err = send([SRC / "Danh sach.xlsx"])
