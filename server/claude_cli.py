@@ -1436,9 +1436,9 @@ def codex_error_text(returncode, stderr_lines) -> str:
     hub = next((str(l).strip() for l in stderr_lines if CODEX_REQUIRED_FAIL in str(l)), "")
     if hub:
         return localefmt.chu(
-            "Cổng công cụ của Javis (hub) không lên kịp nên Codex không mở phiên, việc chưa chạy. "
+            "Cổng công cụ của Thansa (hub) không lên kịp nên Codex không mở phiên, việc chưa chạy. "
             "Chi tiết từ Codex (exit {code}): {ly_do}",
-            "The Javis tool hub did not come up in time, so Codex did not open a session and the job "
+            "The Thansa tool hub did not come up in time, so Codex did not open a session and the job "
             "did not run. Details from Codex (exit {code}): {ly_do}",
             code=returncode, ly_do=hub[hub.find(CODEX_REQUIRED_FAIL):][:240])
     if any("could not find home directory" in str(l).lower() for l in stderr_lines):

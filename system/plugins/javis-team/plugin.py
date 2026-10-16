@@ -240,7 +240,7 @@ def register(ctx):
         "op=delete: chỉ nhóm ĐÃ lưu trữ, và chỉ kèm confirm=true khi chủ nói rõ là xoá (không hoàn tác). "
         "op=add_member: team + slug. op=remove_member / set_leader: team + member (slug). "
         "team nhận mã nhóm hay tên nhóm. Model riêng: model là tên model (vd sonnet, haiku, opus, gpt-5.5), "
-        "model_provider là nhà chạy (anthropic-cli, openai-oauth, openrouter, ...); bỏ trống provider thì Javis tự suy.",
+        "model_provider là nhà chạy (anthropic-cli, openai-oauth, openrouter, ...); bỏ trống provider thì Thansa tự suy.",
         _run,
         schema={
             "type": "object",

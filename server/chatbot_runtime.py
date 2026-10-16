@@ -234,7 +234,7 @@ def engine_notice(text: str) -> str:
 # thẳng file Agent thắng; bot không có Agent, hoặc Agent không nói gì về loại tin đó, vẫn im an toàn.
 IM_LANG = "[IM_LANG]"
 _CAU_ZALO_CA_NHAN = f"""
-## Kênh này là Zalo CÁ NHÂN của chủ (mặc định của Javis)
+## Kênh này là Zalo CÁ NHÂN của chủ (mặc định của Thansa)
 
 Bạn đang trả lời tin nhắn ở tài khoản Zalo cá nhân của chủ, và câu bạn gửi đi mang TÊN CHỦ.
 Người nhắn tới có thể là khách, nhưng cũng có thể là bạn bè, người nhà, đồng nghiệp của chủ.

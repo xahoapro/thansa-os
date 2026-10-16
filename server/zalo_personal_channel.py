@@ -1371,7 +1371,7 @@ def gop_cho_chu(evs: List[dict], cho: int = 0, tay: float = 0) -> dict:
         cho_chu = f"chủ nick nhắn tay lần cuối lúc {gio_tay} rồi {phut} phút không nhắn thêm gì nên tới lượt bạn"
     else:
         cho_chu = f"chủ nick chưa trả lời sau {phut} phút nên tới lượt bạn"
-    ghi = (f"[Ghi chú của Javis, không phải lời khách: khách nhắn lúc {gio}, " + cho_chu
+    ghi = (f"[Ghi chú của Thansa, không phải lời khách: khách nhắn lúc {gio}, " + cho_chu
            + (f"; khách gửi kèm {', '.join(kem)}" if kem else "") + ".]")
     md = dict(ev.get("metadata") or {})
     md["sau_chu_im"] = True

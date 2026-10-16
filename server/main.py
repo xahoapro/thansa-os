@@ -7972,7 +7972,7 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
 def _share_chan(ban) -> str:
     """Dòng chân trang: nói rõ đây là file được chia sẻ, để người xem biết mình đang xem gì."""
     if share_store.la_hoi_thoai(ban):
-        return localefmt.chu("Đoạn hội thoại được chia sẻ từ Javis OS", "A conversation shared from Javis OS")
+        return localefmt.chu("Đoạn hội thoại được chia sẻ từ Thansa OS", "A conversation shared from Thansa OS")
     ten = os.path.basename(str(ban.get("path") or "")) or "file"
     return share_render.esc(ten) + localefmt.chu(" · được chia sẻ từ Thansa OS", " · shared from Thansa OS")
 

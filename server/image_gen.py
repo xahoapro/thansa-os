@@ -424,9 +424,9 @@ async def generate_chatgpt(prompt: str, aspect_ratio: str = "square", quality: s
         ds = ", ".join(da_thu)
         err = err + localefmt.chu(
             f" (đã thử model: {ds}). Gói ChatGPT này không cho dùng các model đó để tạo ảnh. Mở trang "
-            "Models để Javis tải lại danh sách model của ChatGPT rồi thử lại.",
+            "Models để Thansa tải lại danh sách model của ChatGPT rồi thử lại.",
             f" (models tried: {ds}). This ChatGPT plan does not allow those models for image generation. "
-            "Open the Models page so Javis reloads the ChatGPT model list, then try again.")
+            "Open the Models page so Thansa reloads the ChatGPT model list, then try again.")
 
     if err or not b64:
         return {"ok": False, "error": err or localefmt.chu(

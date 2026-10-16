@@ -189,7 +189,7 @@ Gõ `/goal mọi đơn hôm nay đã được đối soát xong`. Thansa làm m�
 Thansa đề xuất "xong hay chưa", còn **việc có chạy tiếp hay không do mã quyết định**, để một mục tiêu không bao giờ đạt được không thành vòng lặp đốt token vô hạn. Vòng tự động dừng khi:
 
 - mục tiêu đã đạt;
-- Javis báo **không làm tiếp được** vì thiếu quyền, thiếu công cụ, thiếu kết nối hay thiếu dữ liệu: dừng ngay ở vòng đó, nói rõ lý do và gợi ý cách gỡ, thay vì nhắc đi nhắc lại;
+- Thansa báo **không làm tiếp được** vì thiếu quyền, thiếu công cụ, thiếu kết nối hay thiếu dữ liệu: dừng ngay ở vòng đó, nói rõ lý do và gợi ý cách gỡ, thay vì nhắc đi nhắc lại;
 - đã chạy **5 vòng** mà chưa đạt;
 - hai vòng liền báo còn thiếu y hệt nhau (không có tiến triển);
 - Thansa hỏi ngược bạn một câu cần bạn quyết;
