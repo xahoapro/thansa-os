@@ -39,7 +39,7 @@ check("plan: kết thúc bằng ]\\n\\n (dashboard cắt ở chỗ này)", kp.en
 check("plan: KHÔNG có ] nào giữa khối (cắt sớm là lộ nửa khối ra bong bóng)", kp[:-3].count("]") == 0)
 check("plan: nói rõ chỉ đọc, chưa làm gì ra ngoài", "chỉ đọc" in kp and "CHƯA" in kp)
 check("plan: nhận ra lượt /plan", L.la_luot_ke_hoach(kp + "dọn kho"))
-check("plan: nhận ra dù đứng sau khối ghim/ngữ cảnh khác", L.la_luot_ke_hoach("[FILE ĐANG MỞ trong trình sửa của Javis: /a.md\nx]\n\n" + kp + "dọn kho"))
+check("plan: nhận ra dù đứng sau khối ghim/ngữ cảnh khác", L.la_luot_ke_hoach("[FILE ĐANG MỞ trong trình sửa của Thansa: /a.md\nx]\n\n" + kp + "dọn kho"))
 check("plan: tin thường không bị coi là /plan", not L.la_luot_ke_hoach("dọn kho giúp tôi"))
 check("plan: nhắc dấu nhận diện GIỮA câu không phải lệnh", not L.la_luot_ke_hoach("tôi thấy dòng [CHẾ ĐỘ KẾ HOẠCH: trong file"))
 check("plan: rỗng/None an toàn", not L.la_luot_ke_hoach("") and not L.la_luot_ke_hoach(None))
@@ -76,7 +76,7 @@ check("doc: dòng cuối thắng", D('<!-- JAVIS_GOAL: {"done":false} --> <!-- J
 # ---- 4. Tên hội thoại: bóc khối /plan, /goal ----
 check("tên: /plan dọn kho -> 'dọn kho'", title_from_message(kp + "dọn kho") == "dọn kho", title_from_message(kp + "dọn kho"))
 check("tên: /goal -> điều kiện", title_from_message(L.khoi_muc_tieu("đối soát đơn", 1, 8) + "đối soát đơn") == "đối soát đơn")
-check("tên: khối ghim đứng trước khối /plan vẫn bóc được", title_from_message("[FILE ĐANG MỞ trong trình sửa của Javis: /a.md\nx]\n\n" + kp + "lập kế hoạch tháng") == "lập kế hoạch tháng")
+check("tên: khối ghim đứng trước khối /plan vẫn bóc được", title_from_message("[FILE ĐANG MỞ trong trình sửa của Thansa: /a.md\nx]\n\n" + kp + "lập kế hoạch tháng") == "lập kế hoạch tháng")
 check("tên: câu mở bằng ngoặc vuông của người dùng KHÔNG bị bóc", title_from_message("[gấp] xem giúp đơn hàng") .startswith("[gấp]"))
 
 # ---- 5. main: hạ mức quyền lượt /plan ----
