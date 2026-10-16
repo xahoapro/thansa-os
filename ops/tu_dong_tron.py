@@ -275,7 +275,11 @@ def dem(rev: str) -> dict:
     return out
 
 
-CUM_RE = re.compile(r"(?:[^\W\d_]+ ){2}Javis(?![/\w])(?!-[A-Z])")
+# Cụm chữ quanh "Javis" mà test hay khẳng định nguyên văn: hai chữ đứng trước ("Cập nhật Javis"), một chữ
+# VIẾT HOA đứng trước ("Tắt Javis"), hoặc Javis + một/hai chữ sau ("Javis còn chạy" - 0.175 test_team_adaptive_restore).
+CUM_RE = re.compile(r"(?:[^\W\d_]+ ){2}Javis(?![/\w])(?!-[A-Z])"
+                    r"|(?<![\w])(?=[^\W\d_])(?:[^\W\d_]+) Javis(?![/\w])(?!-[A-Z])"
+                    r"|(?<![\w-])Javis(?: [^\W\d_]+){1,2}")
 CUM_DOI: dict[str, str] = {}      # cụm chữ hiển thị rebrand_py vừa đổi → test mới khớp theo
 
 
@@ -302,7 +306,9 @@ def rebrand_py(f: str) -> int:
             continue   # docstring / tên thư mục vault "Javis" / chuỗi được canh → GIỮ
         sua.append((t.start, t.end, RB.sub("Thansa", t.string)))
         for m in CUM_RE.finditer(t.string):
-            CUM_DOI[m.group(0)] = RB.sub("Thansa", m.group(0))
+            cum = m.group(0)
+            if cum.startswith("Javis") or cum.count(" ") >= 2 or cum[:1].isupper():
+                CUM_DOI[cum] = RB.sub("Thansa", cum)
     s = src
     for (sr, sc), (er, ec), new in sorted(sua, reverse=True):
         a, b = offs[sr - 1] + sc, offs[er - 1] + ec
@@ -386,7 +392,7 @@ def va_test_theo_rebrand() -> int:
             continue
         s = p.read_text(encoding="utf-8")
         t = s
-        for cu, moi in CUM_DOI.items():
+        for cu, moi in sorted(CUM_DOI.items(), key=lambda kv: -len(kv[0])):   # cụm dài trước
             t = t.replace(cu, moi)
         if t != s:
             p.write_text(t, encoding="utf-8")
