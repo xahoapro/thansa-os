@@ -55,7 +55,7 @@ async def echo(websocket):
     await websocket.close()
 
 inner = Starlette(routes=[WebSocketRoute("/ws/terminal", echo)])
-app = ws.WebSocketGuard(inner, gate_active=lambda: False)
+app = ws.WebSocketGuard(inner, gate_active=lambda *a, **k: False)
 client = TestClient(app, base_url="http://127.0.0.1:7777")
 
 with client.websocket_connect("/ws/terminal", headers={"host": "127.0.0.1:7777", "origin": "http://127.0.0.1:7777"}) as s:
