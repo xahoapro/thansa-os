@@ -390,7 +390,7 @@ class MessengerBot(HangLuot):
         }
         if self.chat_ids and chat not in self.chat_ids:
             await self._send(client, chat, localefmt.chu(
-                "Bạn không có quyền dùng bot Javis này.", "You are not allowed to use this Javis bot."))
+                "Bạn không có quyền dùng bot Thansa này.", "You are not allowed to use this Thansa bot."))
             return
         text = await self._event_text(client, ev, chat)
         if not text:
@@ -473,9 +473,9 @@ class MessengerBot(HangLuot):
         # Subscribing needs pages_manage_metadata, which many Page tokens lack. A Page subscribed by
         # hand in the Meta app still delivers, so a failed subscribe is a warning, not a dead bot.
         self.loi_danh_tinh = "" if sub.get("ok") else localefmt.chu(
-            "Javis chưa tự gắn được Page vào webhook (" + sub.get("error", "") + "). Nếu Page đã được gắn tay "
+            "Thansa chưa tự gắn được Page vào webhook (" + sub.get("error", "") + "). Nếu Page đã được gắn tay "
             "trong app Meta (Messenger, Webhooks, Add Subscriptions) thì bot vẫn nghe; chưa thì gắn tay ở đó.",
-            "Javis could not subscribe the Page to the webhook (" + sub.get("error", "") + "). If the Page was "
+            "Thansa could not subscribe the Page to the webhook (" + sub.get("error", "") + "). If the Page was "
             "subscribed by hand in the Meta app (Messenger, Webhooks, Add Subscriptions) the bot still hears; "
             "otherwise subscribe it there.")
         self.bot_username = info.get("username", "")
