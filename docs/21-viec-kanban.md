@@ -204,7 +204,7 @@ Ngoài ra worker cũng không thấy repo mã nguồn nằm ngoài brain, và kh
 
 ## Chạy một quy trình qua hàng đợi
 
-Giao việc với `route` là `wf:<slug>` thì việc chạy ĐÚNG quy trình đó, từng bước do agent của quy trình làm. Từ khung chat, Javis đặt route này bằng tool `javis_task` (có từ 0.107.0); slug không có thật thì tool từ chối và liệt kê các quy trình đang có. Chỉ chép tên quy trình vào mô tả việc thì KHÔNG chạy quy trình: một worker chung sẽ làm hết, và tool cảnh báo ngay khi thấy chuyện đó.
+Giao việc với `route` là `wf:<slug>` thì việc chạy ĐÚNG quy trình đó, từng bước do agent của quy trình làm. Từ khung chat, Thansa đặt route này bằng tool `javis_task` (có từ 0.107.0); slug không có thật thì tool từ chối và liệt kê các quy trình đang có. Chỉ chép tên quy trình vào mô tả việc thì KHÔNG chạy quy trình: một worker chung sẽ làm hết, và tool cảnh báo ngay khi thấy chuyện đó.
 
 Quy trình đang tắt (`status: off`) không chạy nền: việc dừng chờ bạn với lý do quy trình đang tắt. Bước nào vẫn trượt kiểm chứng sau số lần sửa cho phép thì quy trình dừng ở bước đó và việc chờ bạn, không chạy tiếp các bước sau.
 

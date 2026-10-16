@@ -651,7 +651,7 @@ def _doc_file_settings() -> dict:
             # Không mở được file (khoá, quyền), chứ không phải nội dung hỏng: file thật vẫn còn nguyên
             # đó. Coi là máy mới thì lần ghi kế tiếp xoá nó.
             raise SettingsUnreadable(f"settings.json không đọc được ({type(e).__name__}: {e}) và không có bản "
-                                     f"dự phòng dùng được. Javis KHÔNG coi đây là máy mới để khỏi ghi đè cấu hình thật.")
+                                     f"dự phòng dùng được. Thansa KHÔNG coi đây là máy mới để khỏi ghi đè cấu hình thật.")
         # Nội dung hỏng THẬT (JSON vỡ qua mọi lần đọc lại) và không có .bak: bản hỏng đã được giữ ở
         # `.bad-*` bên trên, nên vẫn như trước: chạy bằng mặc định để chủ cài lại được.
     return {}

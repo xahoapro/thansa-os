@@ -751,7 +751,7 @@ class Transport:
                     cu = zc.lay_bo_do(self.conn_id, thread)
                     meta["bo_do_n"] = int(cu.get("n") or 0)
                     if cu:
-                        meta["ghi_chu_dau"] = ("[Ghi chú của Javis, không phải lời khách: câu trả lời trước của bạn CHƯA được gửi "
+                        meta["ghi_chu_dau"] = ("[Ghi chú của Thansa, không phải lời khách: câu trả lời trước của bạn CHƯA được gửi "
                                                "vì khách nhắn thêm trong lúc bạn soạn. Các tin khách chưa được đáp, theo thứ tự: "
                                                + " / ".join(cu["texts"]) + ". Hãy trả lời MỘT lần cho các tin này cùng tin mới "
                                                "bên dưới, đừng hỏi lại điều khách đã nói. Việc lượt trước đã làm bằng công cụ (ghi file, gửi tin, "
