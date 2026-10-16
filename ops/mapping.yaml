@@ -1990,3 +1990,61 @@
     find_claude_cli thấy ~/.thansa/node/bin/claude); tu-kiem-chung 5/5.
   dieu_kien_bo: >
     Upstream tự nối lệnh npm vào PATH (hoặc cài Claude bằng trình cài chính thức) và soi thư mục Node tải tay.
+
+- id: P070
+  ten: "Rebrand nền 0.176.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-16 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.176.0 sang Thansa
+    theo luật P007/P026/P027/P048 (131 chỗ / 40 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P070: rebrand nen 0.176.0 (tu dong)"
+  diem_neo:
+    - file: .claude/skills/javis-builder/SKILL.md
+      ky_hieu: 'Thansa cho tải plugin người dù'
+  vung_theo_doi:
+    - ".claude/skills/javis-builder/SKILL.md"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/index.html"
+    - "docs/02-tro-chuyen-va-giong-noi.md"
+    - "docs/07-agents-va-workflows.md"
+    - "docs/12-zalo.md"
+    - "docs/15-thuong-hieu-ten-mien.md"
+    - "docs/16-cau-hinh-env.md"
+    - "docs/20-plugins.md"
+    - "docs/21-viec-kanban.md"
+    - "docs/25-chatbot.md"
+    - "docs/31-messenger.md"
+    - "docs/en/10-models-and-engines.md"
+    - "docs/en/12-zalo-agent-mcp.md"
+    - "docs/en/16-env-configuration.md"
+    - "docs/en/20-plugins.md"
+    - "docs/en/25-chatbots.md"
+    - "docs/en/31-messenger.md"
+    - "server/channels/messenger.py"
+    - "server/channels/zalo_personal.py"
+    - "server/chatbot_runtime.py"
+    - "server/claude_cli.py"
+    - "server/config.py"
+    - "server/image_gen.py"
+    - "server/main.py"
+    - "server/messenger_bot.py"
+    - "server/resonance.py"
+    - "server/resonance_api.py"
+    - "server/share_render.py"
+    - "server/team_runner.py"
+    - "server/zalo_cli.py"
+    - "server/zalo_personal_channel.py"
+    - "system/mcp-catalog.json"
+    - "system/plugins/javis-team/plugin.py"
+    - "system/plugins/javis-team/plugin.yaml"
+    - "tools/resonance_restore_pre_a5.py"
+    - "tools/team_adaptive_restore_pre.py"
+    - "tools/team_adaptive_vps_measure.py"
+    - "tools/team_chat_restore_pre.py"
+  anh_goc:
+    - file: .claude/skills/javis-builder/SKILL.md
+      doan: 'Javis cho tải plugin người dù'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
