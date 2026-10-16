@@ -132,6 +132,7 @@ _THU_MUC_BIN_THEM = (
     "/opt/homebrew/opt/node/bin",
     "~/.local/bin",
     "~/.npm-global/bin",
+    "~/.thansa/node/bin",         # npm global của Node mà install.sh tải tay (máy không có apt/sudo)
     "~/.bun/bin",
     "~/.volta/bin",
     "~/Library/pnpm",             # pnpm global trên macOS
