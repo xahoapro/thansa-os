@@ -278,7 +278,7 @@ def section_failures():
         res = RT.restore(str(d), "0.154.0")
     ok, info = intact(d, "locked")
     check("kho nhóm bị tiến trình khác giữ: ok=false, kho chưa bị ghi không tính là mất, lỗi gợi ý tắt Javis",
-          res["ok"] is False and ok and not res.get("unrecoverable") and "Javis còn chạy" in res["error"], (res, info))
+          res["ok"] is False and ok and not res.get("unrecoverable") and "Thansa còn chạy" in res["error"], (res, info))
 
     d = fixture("fail-rename", judge=True, pre156=True)
     res = RT.restore(str(d), "0.154.0", _fail_on="resonance.sqlite3.pre-0.156.0")
@@ -395,7 +395,7 @@ def section_rerun_cli():
     code, out, err = run(["--to", "0.154.0", "--state-dir", str(d)])
     check("CLI không --yes: mã 2, in kế hoạch, nhắc tắt Javis, không ghi gì",
           code == 2 and "agent_judge.sqlite3" in out and "conversations.db.pre-0.154.0" in out
-          and "Tắt Javis" in err and listing(d) == before, (code, out, err))
+          and "Tắt Thansa" in err and listing(d) == before, (code, out, err))
     check("CLI kế hoạch nhắc reaction của agent và kho Kanban không đổi",
           "agent:" in out and "kanban.sqlite3" in out, out)
     code, out, err = run(["--to", "0.154.0", "--state-dir", str(d), "--yes"])
