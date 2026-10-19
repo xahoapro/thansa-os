@@ -525,11 +525,25 @@ def nghiem_thu() -> str:
     return f"Thansa {tong_fork}, Javis gốc {tong_goc}, đỏ chung {len(do_fork & do_goc)} (môi trường), 0 hồi quy"
 
 
+BI_MAT = re.compile(r"^\+.*(ghp_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10}|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})", re.M)
+
+
+def dong_bi_mat(d: str, rev: str, cwd: Path) -> str:
+    """Dòng thêm mới trong diff `d` trông như bí mật. Bỏ qua dòng có Y NGUYÊN trong cây `rev` (upstream sạch):
+    đó là dữ liệu giả của test upstream (vd token giả 0.200 test_team_bundle_0200 kiểm việc che bí mật),
+    không phải Thansa làm lộ. Dòng nào Thansa tự thêm vẫn bị chặn như cũ (chủ duyệt 19/10)."""
+    for m in BI_MAT.finditer(d):
+        dong = m.group(0)[1:]
+        if not dong.strip() or sh(["git", "grep", "-qF", "-e", dong, rev], cwd=cwd, check=False).returncode != 0:
+            return m.group(0)
+    return ""
+
+
 def quet_bi_mat() -> str:
     d = sh(["git", "diff", "origin/main", "HEAD"]).stdout
-    m = re.search(r"^\+.*(ghp_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10}|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})", d, re.M)
-    if m:
-        return "nghi lộ bí mật: " + m.group(0)[:80]
+    hit = dong_bi_mat(d, json.loads((WT / "ops" / "moc-goc.json").read_text(encoding="utf-8"))["goc_commit"], WT)
+    if hit:
+        return "nghi lộ bí mật: " + hit[:80]
     for f in git("ls-tree", "-r", "--name-only", "HEAD").splitlines():
         if re.search(r"(^|/)(\.env|\.secret_key|settings\.json)$", f):
             return f"file bí mật bị track: {f}"
@@ -635,7 +649,7 @@ def phat_hanh_san_sang(ver: str) -> None:
         if "XANH — hồ sơ khớp thực tế" not in r.stdout:
             raise Loi("tu-kiem-chung ĐỎ trước khi đẩy:\n" + (r.stdout + r.stderr)[-800:])
         d = sh(["git", "diff", "origin/main", "me"], cwd=ME).stdout
-        if re.search(r"^\+.*(ghp_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10}|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})", d, re.M):
+        if dong_bi_mat(d, moc["goc_commit"], ME):
             raise Loi("quét bí mật thấy nghi vấn - không đẩy")
         rel = (ME / "RELEASES.md").read_text(encoding="utf-8")
         dong = next((l for l in rel.splitlines() if l.startswith(f"| {ver} |")), "")
