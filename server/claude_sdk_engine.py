@@ -901,7 +901,7 @@ class ClaudeSDK:
             ok, msg = await asyncio.to_thread(team_gate.native_check, self.team_gate, name,
                                               (input_data or {}).get("tool_input") or {})
         except Exception as e:  # noqa: BLE001
-            ok, msg = False, f"Javis không kiểm được quyền của lời gọi này ({type(e).__name__}), đã chặn."
+            ok, msg = False, f"Thansa không kiểm được quyền của lời gọi này ({type(e).__name__}), đã chặn."
         if ok:
             return {}
         _audit(self.tag, name, False, "chờ chủ nhóm duyệt")
@@ -959,7 +959,7 @@ class ClaudeSDK:
             return {"ok": False, "reason": f"{type(e).__name__}: {e}"}
 
         async def _deny(tool_name, input_data, context):
-            return PermissionResultDeny(message="Javis keep-warm ping: no tools")
+            return PermissionResultDeny(message="Thansa keep-warm ping: no tools")
 
         client = None
         try:

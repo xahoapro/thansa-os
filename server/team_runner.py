@@ -158,7 +158,7 @@ APPROVAL_HINT = ('Cần chủ nhóm quyết trước khi làm tiếp (phương �
 GATED_NOTE = ("# QUYỀN CỦA NHÓM: CẦN DUYỆT\nNhóm này đang ở quyền 'cần duyệt'. Trong phạm vi bước bạn làm tự do: đọc, tìm, ghi "
               "file trong bộ não và thư mục của nhóm, đọc kết nối, chạy lệnh chỉ đọc (ls, cat, grep, git status...). Hành động "
               "ra ngoài (gửi tin, đăng bài, thanh toán, đặt hàng, xoá dữ liệu, lệnh máy khác) sẽ bị chặn TRƯỚC khi chạy và "
-              "Javis ghi đúng lời gọi đó thành yêu cầu duyệt cho chủ nhóm. Gặp chặn thì đừng tìm đường khác để làm cùng "
+              "Thansa ghi đúng lời gọi đó thành yêu cầu duyệt cho chủ nhóm. Gặp chặn thì đừng tìm đường khác để làm cùng "
               "việc: làm xong phần trong phạm vi rồi kết thúc bước. Muốn xin trước thì dùng khối ask_approval.")
 GATED_APPROVED_NOTE = ("Chủ nhóm ĐÃ DUYỆT đúng các lời gọi dưới đây cho bước này. Gọi lại ĐÚNG công cụ và ĐÚNG tham số (khác một "
                        "chữ là hành động khác, sẽ bị chặn lại). Mỗi lời gọi chỉ chạy được một lần:")
@@ -3389,7 +3389,7 @@ class TeamRunner:
             labels = "; ".join(f["label"] for f in fps)
             return {"kind": "action", "title": f"{self._name(team, step['agent_key'])} cần làm {len(fps)} hành động ra "
                                                f"ngoài phạm vi",
-                    "action": f"Javis đã chặn trước khi chạy: {labels}", "scope": task.get("title") or "",
+                    "action": f"Thansa đã chặn trước khi chạy: {labels}", "scope": task.get("title") or "",
                     "impact": "", "evidence": [team_approval.excerpt(text, 600)] if text.strip() else [],
                     "deadline_at": None, "fingerprints": fps}
         # The prose net: only in a gated team, and never on the step the owner just approved (its rerun may repeat the

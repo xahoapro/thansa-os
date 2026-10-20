@@ -1339,12 +1339,12 @@ Trả DUY NHẤT một dòng JSON, không markdown:
         if len(treo) > 5:
             dong += localefmt.chu(f"\n- ...và {len(treo) - 5} thao tác nữa", f"\n- ...and {len(treo) - 5} more")
         return localefmt.chu(
-            f"Lần chạy trước có {len(treo)} thao tác ra ngoài mà Javis không chắc đã tới nơi (máy chủ dừng hoặc mất "
-            f"kết nối đúng lúc đang gọi):\n{dong}\nBạn kiểm tra giúp rồi trả lời \"đã gửi\" (Javis bỏ qua, không làm "
-            "lại) hoặc \"chưa gửi\" (Javis làm lại).",
-            f"The previous run made {len(treo)} outside action(s) that Javis cannot confirm went through (the server "
-            f"stopped or the connection dropped mid-call):\n{dong}\nPlease check, then answer \"sent\" (Javis skips "
-            "them) or \"not sent\" (Javis does them again).")
+            f"Lần chạy trước có {len(treo)} thao tác ra ngoài mà Thansa không chắc đã tới nơi (máy chủ dừng hoặc mất "
+            f"kết nối đúng lúc đang gọi):\n{dong}\nBạn kiểm tra giúp rồi trả lời \"đã gửi\" (Thansa bỏ qua, không làm "
+            "lại) hoặc \"chưa gửi\" (Thansa làm lại).",
+            f"The previous run made {len(treo)} outside action(s) that Thansa cannot confirm went through (the server "
+            f"stopped or the connection dropped mid-call):\n{dong}\nPlease check, then answer \"sent\" (Thansa skips "
+            "them) or \"not sent\" (Thansa does them again).")
 
     @staticmethod
     def _cau_hoi_dang_cho(task: dict) -> str:

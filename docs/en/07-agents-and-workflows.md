@@ -218,7 +218,7 @@ Note: an exported package only contains definition files. **An agent's memory an
 
 On the Teams page, a team's **⋯** menu has **Share team**: it downloads one `.team.javis.zip` file with the team's partners, their skills, the leader and the pinned messages (as shared instructions). The file holds **no** chat history, keys, passwords, models or Auto switches; text that looks like an API key, a bot token or a `password: ...` line is replaced with `[REDACTED]` before writing.
 
-The person who receives it presses **Import team** at the top of the team list, picks the file, sees which partners and how many skills come in, and confirms. A partner already in the brain under the same name keeps the receiver's version; models and Auto are the receiver's choice afterwards. An older Javis can still open the file with the Import button on the Partners page (it then adds the partners without building the team).
+The person who receives it presses **Import team** at the top of the team list, picks the file, sees which partners and how many skills come in, and confirms. A partner already in the brain under the same name keeps the receiver's version; models and Auto are the receiver's choice afterwards. An older Thansa can still open the file with the Import button on the Partners page (it then adds the partners without building the team).
 
 Every chat turn that creates, edits or removes a schedule, loop, partner, workflow or skill also leaves a small line under the answer ("Created schedule: ..."). New items get an **Undo** button: it cancels the schedule or deletes the loop, partner, workflow or skill just created.
 
@@ -248,7 +248,7 @@ The Team tab has a **Department mandate** section. Older teams have none, so not
 - **Scope**, **observe every**, **observations per day**, **jobs it may open per day**, and **stop opening jobs at N open jobs**.
 - For each kind of opportunity (documents changed, Kanban job failed, check command failing, connection down) pick: **Only record it**, **Propose it to me**, **Open a job, wait for my approval** or **Open the job itself**.
 
-Javis reads the sources with code, no model. A source it cannot read shows as **missing** with the reason; no problem is made up. A change becomes an **opportunity** with its source, data version, a reason tied to the outcome and the benefit. The same data never opens twice, an opportunity you **Skip** only returns when the data changes, each source has a cooldown, and a proposal left for 48 hours expires. Past the day's job budget or the open-job limit it only proposes.
+Thansa reads the sources with code, no model. A source it cannot read shows as **missing** with the reason; no problem is made up. A change becomes an **opportunity** with its source, data version, a reason tied to the outcome and the benefit. The same data never opens twice, an opportunity you **Skip** only returns when the data changes, each source has a cooldown, and a proposal left for 48 hours expires. Past the day's job budget or the open-job limit it only proposes.
 
 A job the mandate opens carries the trace (mandate, version, observation, opportunity) in its request, and its outside actions still go through the approval gate. **Pause** stops observing; **Revoke** cancels the mandate's jobs that have not started and closes open proposals. Every edit is a new version with history.
 
@@ -262,7 +262,7 @@ On the Jobs tab, a waiting or running job has an **Acceptance** button to set cr
 - `cmd: pytest -q`: a check command must exit 0 (runs at the Coding page's auto level).
 - `confirm: reports/week.md`: you confirm it yourself.
 
-When a member hands in the result, Javis checks the product itself (the files) against each criterion: **pass**, **fail** or **unclear**, with evidence (path, sha256 hash, size, modified time). A model's opinion is never the verdict.
+When a member hands in the result, Thansa checks the product itself (the files) against each criterion: **pass**, **fail** or **unclear**, with evidence (path, sha256 hash, size, modified time). A model's opinion is never the verdict.
 
 - All pass: only then is the job **done**.
 - A criterion fails: that member gets a fix step saying what failed. Past the fix rounds (2 by default) the job stops at **did not meet the criteria**; edit the job to try again.

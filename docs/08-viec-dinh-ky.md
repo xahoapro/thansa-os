@@ -277,9 +277,9 @@ Hai rào an toàn cứng của đường này, không tham số nào đổi đư
 - Việc lặp tạo qua chat **luôn** ở `enabled: false` và `mode: suggest`. Bạn phải vào trang Việc định kỳ bấm **Bật** thì nó mới chạy thật.
 - Không rõ chu kỳ (ví dụ bạn chỉ nói "mỗi sáng" mà không kèm giờ) thì công cụ báo lỗi và hỏi lại, tuyệt đối không tự đoán.
 
-## Webhook: hệ thống bên ngoài gọi Javis làm việc
+## Webhook: hệ thống bên ngoài gọi Thansa làm việc
 
-Nhắc hẹn chạy theo giờ. Webhook chạy theo **sự kiện**: khách vừa điền form trên landing page, vừa thanh toán, hay một app khác vừa có dữ liệu mới thì Javis vào việc ngay, không phải chờ tới lượt lịch kế tiếp.
+Nhắc hẹn chạy theo giờ. Webhook chạy theo **sự kiện**: khách vừa điền form trên landing page, vừa thanh toán, hay một app khác vừa có dữ liệu mới thì Thansa vào việc ngay, không phải chờ tới lượt lịch kế tiếp.
 
 **Tạo một webhook:** từ 0.204.0 webhook có trang riêng: mở nhóm **Việc** trên thanh bên, chọn **Webhook**, bấm **+ Thêm webhook**. Đặt tên, chọn brain, rồi chọn chạy gì:
 
@@ -288,38 +288,38 @@ Nhắc hẹn chạy theo giờ. Webhook chạy theo **sự kiện**: khách vừ
 
 Chọn mức quyền như nhắc hẹn (Chỉ đọc, Được ghi file, Toàn quyền), rồi **Lưu**.
 
-**Mã bí mật chỉ hiện một lần**, ngay sau khi lưu, kèm một lệnh `curl` để thử. Hệ thống gọi tới gửi mã trong header `Authorization: Bearer <mã>` (hoặc header `X-Javis-Token`, hoặc `?token=` cuối link nếu nó không đặt được header). Javis chỉ giữ bản băm của mã, nên quên mã thì bấm **Tạo mã mới**; mã cũ ngừng chạy ngay.
+**Mã bí mật chỉ hiện một lần**, ngay sau khi lưu, kèm một lệnh `curl` để thử. Hệ thống gọi tới gửi mã trong header `Authorization: Bearer <mã>` (hoặc header `X-Javis-Token`, hoặc `?token=` cuối link nếu nó không đặt được header). Thansa chỉ giữ bản băm của mã, nên quên mã thì bấm **Tạo mã mới**; mã cũ ngừng chạy ngay.
 
-**Kết quả về đâu:** như nhắc hẹn, vào khung Javis Core của brain, hòm thư (chuông) và Telegram của bạn. Kết quả mở đầu bằng `[SILENT]` thì không báo.
+**Kết quả về đâu:** như nhắc hẹn, vào khung Thansa Core của brain, hòm thư (chuông) và Telegram của bạn. Kết quả mở đầu bằng `[SILENT]` thì không báo.
 
 **Rào an toàn:**
 
 - Link sai mã, webhook đã tắt hay không tồn tại đều nhận cùng một câu từ chối, nên không ai dò được.
 - Dữ liệu sự kiện được đưa cho bộ não như **dữ liệu**, không phải lệnh. Giới hạn 32 KB mỗi lần gọi.
 - Mỗi webhook chạy từng việc một, chờ tối đa 5 việc, tối đa 30 lần mỗi giờ.
-- Hệ thống gọi lại vì mạng chập (gửi kèm header `Idempotency-Key` hoặc `X-Request-Id`) thì Javis nhận nhưng không chạy lần hai.
+- Hệ thống gọi lại vì mạng chập (gửi kèm header `Idempotency-Key` hoặc `X-Request-Id`) thì Thansa nhận nhưng không chạy lần hai.
 
-**Link phải ra được Internet.** Javis chạy trên VPS có tên miền thì dùng luôn. Chạy trên máy nhà thì cần một đường hầm (Cloudflare Tunnel, Tailscale Funnel) trỏ vào Javis.
+**Link phải ra được Internet.** Thansa chạy trên VPS có tên miền thì dùng luôn. Chạy trên máy nhà thì cần một đường hầm (Cloudflare Tunnel, Tailscale Funnel) trỏ vào Thansa.
 
-## Sức khoẻ việc nền: Javis Core lo sự cố
+## Sức khoẻ việc nền: Thansa Core lo sự cố
 
-Việc nền nào hỏng (việc Kanban, việc lặp tự tạm dừng, nhắc hẹn kiểu Tự làm rồi báo, webhook) thì **Javis Core** của brain đó được báo trước tiên, rồi quyết một trong ba:
+Việc nền nào hỏng (việc Kanban, việc lặp tự tạm dừng, nhắc hẹn kiểu Tự làm rồi báo, webhook) thì **Thansa Core** của brain đó được báo trước tiên, rồi quyết một trong ba:
 
 - **Chạy lại một lần** nếu lỗi thoáng qua (mạng chập, hết giờ, máy bận). Chỉ áp cho việc Kanban và nhắc hẹn; việc lặp và webhook không tự chạy lại.
 - **Báo bạn** một hai câu nếu chỉ bạn gỡ được: đăng nhập lại, khoá API, quyền, gói hết lượt, kết nối chưa đấu, việc đang tắt.
 - **Im** nếu việc đã tự ổn.
 
-Quyết định do model việc nền đưa ra ở chế độ chỉ chữ (không công cụ nào), nhưng luật cứng do Javis giữ: lỗi về đăng nhập hay khoá không bao giờ được chạy lại, mỗi sự cố chạy lại tối đa một lần, và chạy lại vẫn hỏng thì chỉ báo đúng một tin. Không có model sẵn sàng thì Javis tự phân loại theo chữ lỗi.
+Quyết định do model việc nền đưa ra ở chế độ chỉ chữ (không công cụ nào), nhưng luật cứng do Thansa giữ: lỗi về đăng nhập hay khoá không bao giờ được chạy lại, mỗi sự cố chạy lại tối đa một lần, và chạy lại vẫn hỏng thì chỉ báo đúng một tin. Không có model sẵn sàng thì Thansa tự phân loại theo chữ lỗi.
 
-Tab **Sự cố** của trang Việc định kỳ hiện các sự cố đang mở (bấm **Đã xử lý** để đóng) và các lỗi 24 giờ qua gom theo nguyên nhân. Muốn tắt hẳn việc báo cho Javis Core thì đặt `incidents.enabled` thành `false` trong cài đặt.
+Tab **Sự cố** của trang Việc định kỳ hiện các sự cố đang mở (bấm **Đã xử lý** để đóng) và các lỗi 24 giờ qua gom theo nguyên nhân. Muốn tắt hẳn việc báo cho Thansa Core thì đặt `incidents.enabled` thành `false` trong cài đặt.
 
-**Khi Javis không mở được:** chạy `python tools/sentinel.py` trên máy chủ. Lệnh này chỉ đọc dữ liệu, không gọi model, in danh sách lỗi gom theo nguyên nhân; thêm `--json` để lấy bản máy đọc, `--out <thư mục>` để lưu báo cáo (thư mục phải nằm ngoài thư mục dữ liệu của Javis).
+**Khi Thansa không mở được:** chạy `python tools/sentinel.py` trên máy chủ. Lệnh này chỉ đọc dữ liệu, không gọi model, in danh sách lỗi gom theo nguyên nhân; thêm `--json` để lấy bản máy đọc, `--out <thư mục>` để lưu báo cáo (thư mục phải nằm ngoài thư mục dữ liệu của Thansa).
 
 ## Nhắc hẹn nhớ kết quả lần trước
 
-Nhắc hẹn kiểu **Tự làm rồi báo** có thêm ô **Nhớ kết quả lần trước**. Bật lên thì mỗi lần chạy Javis nhận lại báo cáo lần trước (tối đa 2.000 ký tự), nên chỉ báo cái mới hay cái thay đổi. Hợp với việc theo dõi giá đối thủ, theo dõi chỉ số, rà hộp thư.
+Nhắc hẹn kiểu **Tự làm rồi báo** có thêm ô **Nhớ kết quả lần trước**. Bật lên thì mỗi lần chạy Thansa nhận lại báo cáo lần trước (tối đa 2.000 ký tự), nên chỉ báo cái mới hay cái thay đổi. Hợp với việc theo dõi giá đối thủ, theo dõi chỉ số, rà hộp thư.
 
-Lịch lặp theo cron còn hiện **ba lần chạy tới** ngay trên thẻ. Lần chạy bị trễ vì máy tắt thì vẫn chạy bù một lần khi máy mở lại, và Javis được báo là đang chạy trễ để tính theo giờ hiện tại.
+Lịch lặp theo cron còn hiện **ba lần chạy tới** ngay trên thẻ. Lần chạy bị trễ vì máy tắt thì vẫn chạy bù một lần khi máy mở lại, và Thansa được báo là đang chạy trễ để tính theo giờ hiện tại.
 
 ## Trường nâng cao (chỉ sửa được trong file .md)
 

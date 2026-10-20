@@ -94,17 +94,17 @@ While Thansa is thinking or speaking, the send button turns into a **stop button
 
 The stop button only stops **the session you are looking at**; other sessions running in the background continue. See [Sessions](04-sessions.md).
 
-### Sending more while Javis is working
+### Sending more while Thansa is working
 
-From 0.206.0 you can keep typing and sending while Javis works, like in Claude Code or Codex. As soon as there is text in the box, the send button comes back next to the stop button (tooltip "Send to the work in progress"); Enter works too on a computer. The running work is **not stopped**:
+From 0.206.0 you can keep typing and sending while Thansa works, like in Claude Code or Codex. As soon as there is text in the box, the send button comes back next to the stop button (tooltip "Send to the work in progress"); Enter works too on a computer. The running work is **not stopped**:
 
-- With Claude Code and the API-key brains, Javis reads the new message at its **next step** (after the tool call in progress) and acts on it. A correction is applied at once; a new task is taken on as well, in parallel where possible, and both are answered.
-- From 0.213.0 Codex (ChatGPT plan) also reads the new message within the turn, like Enter in the Codex app itself: a message sent while Codex runs a command joins the next step, and one sent while Codex writes its final answer makes Codex do one more round in the same turn to cover it. To go back to the old way (the message waits for the next turn), set the environment variable `JAVIS_CODEX_STEER=0` and restart Javis.
-- With Grok Build and Antigravity CLI (which run in one go and take no input mid-way), or when Javis is already writing its final answer, your message **runs as the next turn** as soon as the current work ends. Nothing is lost.
+- With Claude Code and the API-key brains, Thansa reads the new message at its **next step** (after the tool call in progress) and acts on it. A correction is applied at once; a new task is taken on as well, in parallel where possible, and both are answered.
+- From 0.213.0 Codex (ChatGPT plan) also reads the new message within the turn, like Enter in the Codex app itself: a message sent while Codex runs a command joins the next step, and one sent while Codex writes its final answer makes Codex do one more round in the same turn to cover it. To go back to the old way (the message waits for the next turn), set the environment variable `JAVIS_CODEX_STEER=0` and restart Thansa.
+- With Grok Build and Antigravity CLI (which run in one go and take no input mid-way), or when Thansa is already writing its final answer, your message **runs as the next turn** as soon as the current work ends. Nothing is lost.
 
-A small line under the message you sent says where it is: "Javis will read this at its next step", "Javis has read this", "Javis will do this right after the current task" or "Javis is working on this now". You can send several in a row; Javis reads them in order. To drop the current work altogether, press stop as before.
+A small line under the message you sent says where it is: "Thansa will read this at its next step", "Thansa has read this", "Thansa will do this right after the current task" or "Thansa is working on this now". You can send several in a row; Thansa reads them in order. To drop the current work altogether, press stop as before.
 
-From 0.213.0 the same goes for Telegram, Discord, Slack, Lark, Messenger and Zalo. Before, the bot replied "Still on the previous message, send /stop" and dropped yours. Now it answers with one short line, "↪ Got it, Javis reads this at the next step of the current work" or "📥 Got it, Javis handles this right after the current answer", and then works in the two ways above. /stop ends the current work and drops what was waiting. Customer-facing bots (human mode) keep their old way: no reply line, and follow-up messages are merged into the next turn.
+From 0.213.0 the same goes for Telegram, Discord, Slack, Lark, Messenger and Zalo. Before, the bot replied "Still on the previous message, send /stop" and dropped yours. Now it answers with one short line, "↪ Got it, Thansa reads this at the next step of the current work" or "📥 Got it, Thansa handles this right after the current answer", and then works in the two ways above. /stop ends the current work and drops what was waiting. Customer-facing bots (human mode) keep their old way: no reply line, and follow-up messages are merged into the next turn.
 
 ## Slash "/" commands in the chat box
 
@@ -477,7 +477,7 @@ Now, when you want numbers, just ask in chat ("how is revenue today", "compare w
 
 ## Charts, number tiles and buttons in an answer
 
-When an answer is built on real numbers (revenue, orders, ad spend), Javis can draw them right in the chat:
+When an answer is built on real numbers (revenue, orders, ad spend), Thansa can draw them right in the chat:
 
 - **Charts**, bars or a line, for a trend over days or weeks (up to 24 points and 3 series).
 - **Number tiles**: a few key figures with their change, drawn red when they fall.
@@ -485,21 +485,21 @@ When an answer is built on real numbers (revenue, orders, ad spend), Javis can d
 
 Cards are drawn from data inside the answer, so reopening the chat shows them again. Telegram, Zalo and the terminal get a text version: a chart becomes one line of numbers per label, buttons become a numbered list you answer with a number. Text in a card that looks like an API key is masked before drawing.
 
-## Javis recalls earlier conversations
+## Thansa recalls earlier conversations
 
-Start a new chat that refers to an old one ("carry on with the fish sauce landing page from last time") and Javis searches your other chats in this brain and adds up to 3 short excerpts to the question for context. Only the owner's chats are searched (the main chat, chats with partners, Javis Core); team chats, chatbots and customer conversations never feed it. The excerpts are not saved in the chat history. To turn it off, set `recall.enabled` to `false` in the settings.
+Start a new chat that refers to an old one ("carry on with the fish sauce landing page from last time") and Thansa searches your other chats in this brain and adds up to 3 short excerpts to the question for context. Only the owner's chats are searched (the main chat, chats with partners, Thansa Core); team chats, chatbots and customer conversations never feed it. The excerpts are not saved in the chat history. To turn it off, set `recall.enabled` to `false` in the settings.
 
 ## Voice notes
 
-Ask Javis to "read it to me", "send a voice note", or say you would rather hear a report than read it, and Javis calls the `javis_voice_note` tool: a short spoken message (up to 1000 characters) is saved as an mp3 in the brain's `attachments/voice/`. The chat shows a player next to the link, Telegram receives it as audio, and Javis still writes the words as text below. The voice is a free Edge voice picked by the language of the text.
+Ask Thansa to "read it to me", "send a voice note", or say you would rather hear a report than read it, and Thansa calls the `javis_voice_note` tool: a short spoken message (up to 1000 characters) is saved as an mp3 in the brain's `attachments/voice/`. The chat shows a player next to the link, Telegram receives it as audio, and Thansa still writes the words as text below. The voice is a free Edge voice picked by the language of the text.
 
-Reminders also have a **Read it aloud** box: at the set time, the reminder or the report arrives with a voice note. If Javis is open on a computer or phone, the voice note plays at once like a call (press play when the browser blocks autoplay).
+Reminders also have a **Read it aloud** box: at the set time, the reminder or the report arrives with a voice note. If Thansa is open on a computer or phone, the voice note plays at once like a call (press play when the browser blocks autoplay).
 
-To have Javis **call you at a set time**, tick **Call me** (or say in chat "call me at 7am and read the sales report"). At that time an open Javis tab rings and shows an incoming-call card with **Answer** and **Decline**. Answer starts the voice call just like the mic button (ChatGPT Live when it is set up, the basic voice otherwise): Javis reads the reminder or report briefly, asks if you need anything else, and the call goes on as usual. Unanswered for 45 seconds, it counts as missed and the content stays in the chat. With no Javis tab open nothing rings: Telegram gets the message like any other reminder. This is a call inside the Javis app, not a call to a phone number.
+To have Thansa **call you at a set time**, tick **Call me** (or say in chat "call me at 7am and read the sales report"). At that time an open Thansa tab rings and shows an incoming-call card with **Answer** and **Decline**. Answer starts the voice call just like the mic button (ChatGPT Live when it is set up, the basic voice otherwise): Thansa reads the reminder or report briefly, asks if you need anything else, and the call goes on as usual. Unanswered for 45 seconds, it counts as missed and the content stays in the chat. With no Thansa tab open nothing rings: Telegram gets the message like any other reminder. This is a call inside the Thansa app, not a call to a phone number.
 
 ## Keep the prompt cache warm (Claude Code, Pro/Max plan)
 
-A Pro/Max plan keeps Claude Code's prompt cache for one hour. After a longer break, the next message reloads the whole conversation, which costs a lot of allowance on a long chat. On the **Token usage** page, the budget section has a **Keep the prompt cache warm** box: with it on, about 50 minutes after the last message Javis sends one tiny request (no tools, nothing written to the conversation) that keeps the cache for another hour. It only runs within 2 hours of the last message, never while the chat is answering, and stops at once when the plan reports a usage limit or the cache has gone cold. It is still background use of the plan, so it is off by default.
+A Pro/Max plan keeps Claude Code's prompt cache for one hour. After a longer break, the next message reloads the whole conversation, which costs a lot of allowance on a long chat. On the **Token usage** page, the budget section has a **Keep the prompt cache warm** box: with it on, about 50 minutes after the last message Thansa sends one tiny request (no tools, nothing written to the conversation) that keeps the cache for another hour. It only runs within 2 hours of the last message, never while the chat is answering, and stops at once when the plan reports a usage limit or the cache has gone cold. It is still background use of the plan, so it is off by default.
 
 ## Using it on a phone
 

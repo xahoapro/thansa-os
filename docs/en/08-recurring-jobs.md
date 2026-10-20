@@ -277,9 +277,9 @@ Two hard safety rails on this path, which no parameter can change:
 - A loop created through chat is **always** `enabled: false` and `mode: suggest`. You must open the Recurring jobs page and click **Enable** for it to run for real.
 - If the cycle is unclear (you said "every morning" without a time), the tool reports an error and asks back, never guessing.
 
-## Webhooks: outside systems start work in Javis
+## Webhooks: outside systems start work in Thansa
 
-Reminders run on the clock. A webhook runs on an **event**: a customer just filled the form on a landing page, just paid, or another app just has new data, and Javis starts at once instead of waiting for the next scheduled run.
+Reminders run on the clock. A webhook runs on an **event**: a customer just filled the form on a landing page, just paid, or another app just has new data, and Thansa starts at once instead of waiting for the next scheduled run.
 
 **Create a webhook:** from 0.204.0 webhooks have their own page: open the **Work** group in the sidebar, choose **Webhooks**, click **+ Add webhook**. Name it, pick a brain, then choose what runs:
 
@@ -288,38 +288,38 @@ Reminders run on the clock. A webhook runs on an **event**: a customer just fill
 
 Pick the permission level as for a reminder (Read only, Can write files, Full access), then **Save**.
 
-**The secret is shown only once**, right after saving, together with a `curl` command to test it. The calling system sends it in the `Authorization: Bearer <token>` header (or the `X-Javis-Token` header, or `?token=` at the end of the link when it cannot set headers). Javis keeps only a hash, so if you lose it press **New token**; the old one stops working at once.
+**The secret is shown only once**, right after saving, together with a `curl` command to test it. The calling system sends it in the `Authorization: Bearer <token>` header (or the `X-Javis-Token` header, or `?token=` at the end of the link when it cannot set headers). Thansa keeps only a hash, so if you lose it press **New token**; the old one stops working at once.
 
-**Where results go:** like a reminder, to the brain's Javis Core chat, the inbox (bell) and your Telegram. A result starting with `[SILENT]` is not reported.
+**Where results go:** like a reminder, to the brain's Thansa Core chat, the inbox (bell) and your Telegram. A result starting with `[SILENT]` is not reported.
 
 **Safety rails:**
 
 - A wrong token, a switched-off webhook and an unknown one all get the same refusal, so nobody can probe.
 - The event data reaches the brain as **data**, not instructions. 32 KB per call at most.
 - Each webhook runs one job at a time, queues at most 5, and runs at most 30 times an hour.
-- When the sender retries after a network glitch (sending an `Idempotency-Key` or `X-Request-Id` header), Javis acknowledges it without running twice.
+- When the sender retries after a network glitch (sending an `Idempotency-Key` or `X-Request-Id` header), Thansa acknowledges it without running twice.
 
-**The link must be reachable from the Internet.** On a VPS with a domain it works as is. On a home machine you need a tunnel (Cloudflare Tunnel, Tailscale Funnel) pointing at Javis.
+**The link must be reachable from the Internet.** On a VPS with a domain it works as is. On a home machine you need a tunnel (Cloudflare Tunnel, Tailscale Funnel) pointing at Thansa.
 
-## Background health: Javis Core handles incidents
+## Background health: Thansa Core handles incidents
 
-When a background run breaks (a Kanban job, a loop that paused itself, a Do it and report reminder, a webhook), the brain's **Javis Core** hears first and decides one of three things:
+When a background run breaks (a Kanban job, a loop that paused itself, a Do it and report reminder, a webhook), the brain's **Thansa Core** hears first and decides one of three things:
 
 - **Run it again once** for a passing failure (a network glitch, a timeout, a busy machine). Only for Kanban jobs and reminders; loops and webhooks are not re-run on their own.
 - **Tell you** in one or two sentences when only you can fix it: a sign-in, an API key, a permission, a plan out of quota, a connection not made, a job switched off.
 - **Stay quiet** when it already recovered.
 
-The background model decides in text-only mode (no tools), but Javis keeps the hard rules: a sign-in or key error is never re-run, each incident is re-run at most once, and a retry that fails again sends exactly one message. With no model ready, Javis classifies by the error text.
+The background model decides in text-only mode (no tools), but Thansa keeps the hard rules: a sign-in or key error is never re-run, each incident is re-run at most once, and a retry that fails again sends exactly one message. With no model ready, Thansa classifies by the error text.
 
-The **Incidents** tab of the Recurring jobs page lists open incidents (press **Done** to close one) and the last 24 hours of failures grouped by cause. To stop reporting to Javis Core, set `incidents.enabled` to `false` in the settings.
+The **Incidents** tab of the Recurring jobs page lists open incidents (press **Done** to close one) and the last 24 hours of failures grouped by cause. To stop reporting to Thansa Core, set `incidents.enabled` to `false` in the settings.
 
-**When Javis will not open:** run `python tools/sentinel.py` on the server. It only reads data, calls no model, and prints the failures grouped by cause; add `--json` for a machine-readable copy and `--out <folder>` to save a report (the folder must be outside Javis's data folder).
+**When Thansa will not open:** run `python tools/sentinel.py` on the server. It only reads data, calls no model, and prints the failures grouped by cause; add `--json` for a machine-readable copy and `--out <folder>` to save a report (the folder must be outside Thansa's data folder).
 
 ## Reminders that remember the last result
 
 A **Do it and report** reminder has a **Remember the last result** box. With it on, each run receives the previous report (up to 2,000 characters), so it reports only what is new or changed. Good for watching competitor prices, a metric or an inbox.
 
-A cron schedule also shows its **next three runs** on the card. A run missed because the machine was off still runs once when it comes back, and Javis is told it is running late so it works from the current time.
+A cron schedule also shows its **next three runs** on the card. A run missed because the machine was off still runs once when it comes back, and Thansa is told it is running late so it works from the current time.
 
 ## Advanced fields (editable only in the .md file)
 

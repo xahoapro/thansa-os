@@ -338,7 +338,7 @@ Từ 0.42.1 trở về trước có lỗi ở đúng chỗ này: chỉ mạch c�
 | **MAIN** | Góc card provider | Provider này đang là Main Model |
 | **● Đã kết nối** / **○ Chưa kết nối** | Card provider | Trạng thái, kèm số model khả dụng |
 | **○ Chưa đăng nhập** | Card Claude Code | Chưa đăng nhập Claude Code trên máy |
-| **○ Chưa cài Claude Code** | Card Claude Code | Máy chạy Javis chưa có lệnh `claude`, làm theo khung hướng dẫn cài trên card |
+| **○ Chưa cài Claude Code** | Card Claude Code | Máy chạy Thansa chưa có lệnh `claude`, làm theo khung hướng dẫn cài trên card |
 | **Đăng nhập Claude** | Card Claude Code | Bắt đầu luồng đăng nhập bằng link |
 | **↻ Kiểm tra lại** | Card Claude Code (chỉ khi chưa đăng nhập) | Hỏi lại trạng thái đăng nhập |
 | **Đăng nhập ChatGPT** | Card OpenAI OAuth | Đăng nhập bằng mã device code |

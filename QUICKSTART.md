@@ -6,7 +6,7 @@ Chạy Thansa OS trong vài phút. Chi tiết từng phần: [docs/](docs/README
 
 ## Cách 1 - Hostinger VPS (Docker Manager, 1-click)
 
-> 🛒 **Chưa có VPS?** [Đăng ký VPS Hostinger tại đây](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). VPS có sẵn Docker Manager nên cài Javis đúng một cú bấm. Thuê xong quay lại làm các bước dưới.
+> 🛒 **Chưa có VPS?** [Đăng ký VPS Hostinger tại đây](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). VPS có sẵn Docker Manager nên cài Thansa đúng một cú bấm. Thuê xong quay lại làm các bước dưới.
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**.
 2. Dán URL:
