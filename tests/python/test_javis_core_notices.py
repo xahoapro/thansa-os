@@ -38,7 +38,7 @@ def run(coro):
     return asyncio.new_event_loop().run_until_complete(coro)
 
 
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 store = main.get_store()
 A = Path(tempfile.mkdtemp(prefix="javis-notice-a-"))

@@ -37,7 +37,7 @@ def check(name, cond, extra=""):
         fails.append(name)
 
 
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 B = Path(tempfile.mkdtemp(prefix="javis-mem-b-"))
 B2 = Path(tempfile.mkdtemp(prefix="javis-mem-b2-"))
