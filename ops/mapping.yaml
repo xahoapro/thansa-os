@@ -2048,3 +2048,87 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P071
+  ten: "Rebrand nền 0.238.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-20 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.238.0 sang Thansa
+    theo luật P007/P026/P027/P048 (274 chỗ / 66 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P071: rebrand nen 0.238.0 (tu dong)"
+  diem_neo:
+    - file: ARCHITECTURE.md
+      ky_hieu: 'kground run reaches Thansa Core: retried once or t'
+  vung_theo_doi:
+    - "ARCHITECTURE.md"
+    - "CLAUDE.md"
+    - "DEPLOY.en.md"
+    - "DEPLOY.md"
+    - "QUICKSTART.en.md"
+    - "QUICKSTART.md"
+    - "README.md"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/index.html"
+    - "docs/02-tro-chuyen-va-giong-noi.md"
+    - "docs/04-phien-hoi-thoai.md"
+    - "docs/07-agents-va-workflows.md"
+    - "docs/08-viec-dinh-ky.md"
+    - "docs/10-models-va-engine.md"
+    - "docs/12-zalo.md"
+    - "docs/21-viec-kanban.md"
+    - "docs/en/02-chat-and-voice.md"
+    - "docs/en/07-agents-and-workflows.md"
+    - "docs/en/08-recurring-jobs.md"
+    - "docs/en/10-models-and-engines.md"
+    - "docs/en/12-zalo-agent-mcp.md"
+    - "docs/en/21-kanban-work.md"
+    - "docs/i18n/de/QUICKSTART.md"
+    - "docs/i18n/de/README.md"
+    - "docs/i18n/es/QUICKSTART.md"
+    - "docs/i18n/es/README.md"
+    - "docs/i18n/fr/QUICKSTART.md"
+    - "docs/i18n/fr/README.md"
+    - "docs/i18n/hi/QUICKSTART.md"
+    - "docs/i18n/hi/README.md"
+    - "docs/i18n/id/QUICKSTART.md"
+    - "docs/i18n/id/README.md"
+    - "docs/i18n/ja/QUICKSTART.md"
+    - "docs/i18n/ja/README.md"
+    - "docs/i18n/pt-BR/QUICKSTART.md"
+    - "docs/i18n/pt-BR/README.md"
+    - "docs/i18n/ru/QUICKSTART.md"
+    - "docs/i18n/ru/README.md"
+    - "docs/i18n/vi/README.md"
+    - "docs/i18n/zh/QUICKSTART.md"
+    - "docs/i18n/zh/README.md"
+    - "server/antigravity_cli.py"
+    - "server/bot_gateway.py"
+    - "server/channel_context.py"
+    - "server/claude_sdk_engine.py"
+    - "server/codex_steer.py"
+    - "server/javis_core.py"
+    - "server/main.py"
+    - "server/mcp_hub.py"
+    - "server/memory_chat.py"
+    - "server/memory_control.py"
+    - "server/once_ledger.py"
+    - "server/resonance_api.py"
+    - "server/sentinel.py"
+    - "server/steer_inbox.py"
+    - "server/tasks.py"
+    - "server/team_gate.py"
+    - "server/team_runner.py"
+    - "server/webhook_triggers.py"
+    - "system/agents/javis-core.md"
+    - "system/plugins/javis-memory/plugin.py"
+    - "system/plugins/javis-memory/plugin.yaml"
+    - "system/plugins/javis-schedule/plugin.py"
+    - "system/plugins/voice-note/plugin.yaml"
+    - "tools/sentinel.py"
+  anh_goc:
+    - file: ARCHITECTURE.md
+      doan: 'kground run reaches Javis Core: retried once or t'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
