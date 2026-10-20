@@ -189,7 +189,7 @@ ws = (ROOT / "dashboard" / "workspace.js").read_text(encoding="utf-8")
 html = (ROOT / "dashboard" / "index.html").read_text(encoding="utf-8")
 ra = (ROOT / "dashboard" / "resonance-agent.js").read_text(encoding="utf-8")
 lui = (ROOT / "dashboard" / "agent-lessons-ui.js").read_text(encoding="utf-8")
-check("the Javis Core card has no memory list", "JavisCoreMemory" not in ws and "core-memory.js" not in html
+check("the Thansa Core card has no memory list", "JavisCoreMemory" not in ws and "core-memory.js" not in html
       and not (ROOT / "dashboard" / "core-memory.js").exists())
 check("the Auto panel has no lessons list", "/resonance/lessons?" not in ra and "lessonsHtml" not in ra)
 check("the pulse part keeps only the daily limit", "/revoke" not in lui and "/promote" not in lui and "legacy" not in lui
