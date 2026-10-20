@@ -83,14 +83,14 @@ available through any API.
 
 The three read tools only read what javis-zalo captured itself: messages that arrive while it is
 connected, plus Zalo's replay each time it connects. There is no way to ask Zalo for a DM's history
-later. So a message that arrives during an outage (a Javis restart or update, a dropped network,
+later. So a message that arrives during an outage (a Thansa restart or update, a dropped network,
 another Zalo Web session holding the connection) is only seen if the replay brings it back.
 
 - History is now **kept on disk** (30 days) in the account's session folder, so a restart no longer
   wipes it.
 - Every read result carries `sync`. `sync.complete: false` means the connection was down during
   part of that period and the replay did not cover it (`sync.gaps` says when): a message may be
-  missing, which is **not** the same as the contact not replying. Javis then keeps the waiting step
+  missing, which is **not** the same as the contact not replying. Thansa then keeps the waiting step
   (approval, publishing) on hold and tells the owner.
 - Messages from an outage that the replay brings back go to the live feed, flagged
   `recovered: true`, so the Inbox has them too.

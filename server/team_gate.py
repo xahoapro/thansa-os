@@ -77,10 +77,10 @@ _READ_VERBS = ("get", "list", "search", "read", "fetch", "query", "find", "descr
                "download", "export", "suggest")
 
 BLOCK_NOTE = ("ERROR: Hành động này ra ngoài phạm vi nên cần chủ nhóm duyệt trước (nhóm đang ở quyền 'cần duyệt'). "
-              "Javis đã ghi lại ĐÚNG lời gọi này thành yêu cầu duyệt, chưa có gì được thực hiện. Đừng tìm cách khác để làm "
+              "Thansa đã ghi lại ĐÚNG lời gọi này thành yêu cầu duyệt, chưa có gì được thực hiện. Đừng tìm cách khác để làm "
               "cùng việc. Làm xong phần trong phạm vi rồi kết thúc bước, nêu ngắn gọn vì sao cần hành động này.")
 NO_GATE_NOTE = ("ERROR: Hành động ra ngoài của nhóm cần chủ nhóm duyệt, mà lời gọi này không gắn với bước nào đang mở nên "
-                "Javis không ghi được yêu cầu. Chưa có gì được thực hiện.")
+                "Thansa không ghi được yêu cầu. Chưa có gì được thực hiện.")
 
 
 class Gate:
@@ -397,7 +397,7 @@ def provider_support(provider: str, *, codex_sandbox: Optional[str] = "workspace
     if p == CODEX:
         if codex_sandbox != "workspace-write":
             return {"ok": False, "approved_actions": False,
-                    "reason": ("Codex đang chạy không có sandbox riêng (JAVIS_CODEX_SANDBOX=off) nên Javis không chặn "
+                    "reason": ("Codex đang chạy không có sandbox riêng (JAVIS_CODEX_SANDBOX=off) nên Thansa không chặn "
                                "được lệnh máy của nó trước khi chạy")}
         return {"ok": True, "approved_actions": True, "reason": ""}
     if p in api_providers:
@@ -407,7 +407,7 @@ def provider_support(provider: str, *, codex_sandbox: Optional[str] = "workspace
         # turn can rewrite to full while this step runs, and its own Write is not limited to the step folders.
         return {"ok": False, "approved_actions": False,
                 "reason": ("Grok Build đọc mức quyền từ một file cấu hình dùng chung cho cả bộ não và ghi file không giới "
-                           "hạn thư mục, nên Javis không bảo đảm chặn được trước khi chạy")}
+                           "hạn thư mục, nên Thansa không bảo đảm chặn được trước khi chạy")}
     if p == ANTIGRAVITY:
         return {"ok": False, "approved_actions": False,
                 "reason": "Antigravity CLI không có cách chặn công cụ của chính nó trước khi chạy ở mức này"}

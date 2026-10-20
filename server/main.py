@@ -1817,9 +1817,9 @@ async def auth_disable(request: Request, password: str = Form(""), code: str = F
     if cfgmod.require_login() or not _direct_local_request(request):
         return JSONResponse({"ok": False, "error": localefmt.chu(
             "Không tắt được đăng nhập trên máy mở ra ngoài (VPS, Docker, tunnel). Chỉ tắt được khi "
-            "mở dashboard ngay trên máy cá nhân chạy Javis.",
+            "mở dashboard ngay trên máy cá nhân chạy Thansa.",
             "Login cannot be turned off on a server reachable from outside (VPS, Docker, tunnel). "
-            "It can only be turned off from the personal machine running Javis.")}, status_code=403)
+            "It can only be turned off from the personal machine running Thansa.")}, status_code=403)
     ip = request.client.host if request.client else "?"
     if _login_locked(ip):
         return JSONResponse({"ok": False, "error": localefmt.chu("Quá nhiều lần sai - thử lại sau ít phút.", "Too many failed attempts - try again in a few minutes.")}, status_code=429)
@@ -7261,8 +7261,8 @@ def _javis_core_entry(brain: str) -> dict:
 def _core_refusal() -> JSONResponse:
     """The one answer to every attempt to delete, rename, unpin, edit or reuse Javis Core."""
     return JSONResponse({"ok": False, "code": "system_assistant", "error": localefmt.chu(
-        "Javis Core là trợ lý hệ thống: không xoá, đổi tên, bỏ ghim hay sửa được. Chọn model vẫn được.",
-        "Javis Core is the system assistant: it cannot be deleted, renamed, unpinned or edited. "
+        "Thansa Core là trợ lý hệ thống: không xoá, đổi tên, bỏ ghim hay sửa được. Chọn model vẫn được.",
+        "Thansa Core is the system assistant: it cannot be deleted, renamed, unpinned or edited. "
         "Choosing its model still works.")}, status_code=403)
 
 
@@ -11447,7 +11447,7 @@ async def _bo_vao_hom_thu(owner_chat, text, *, kind="answer", label="", source="
         # opening Javis, where login is checked again.
         title, body = item["title"], item["body"][:200]
         if (cfgmod.read_settings().get("push") or {}).get("preview") == "hidden":
-            title, body = "Javis", localefmt.chu("Bạn có tin mới trong Javis.", "You have a new message in Javis.")
+            title, body = "Javis", localefmt.chu("Bạn có tin mới trong Thansa.", "You have a new message in Thansa.")
         # KHÔNG await: mỗi đăng ký chết là một request chờ tới 15 giây, mà việc rung chuông
         # không được phép giữ chân cái đã xong. Hòm thư đã ghi rồi - push chỉ là chuông cửa.
         # Giữ tham chiếu tới task, không thì bộ dọn rác có thể nuốt nó giữa chừng.
@@ -12023,7 +12023,7 @@ async def _incident_post(brain: str, text: str) -> None:
 
 
 async def _incident_retry_kanban(inc: dict) -> tuple:
-    ok = tasks_feature.store.move(str(inc.get("ref") or ""), "ready", "incident retry by Javis Core")
+    ok = tasks_feature.store.move(str(inc.get("ref") or ""), "ready", "incident retry by Thansa Core")
     return bool(ok), "moved back to ready" if ok else "could not move the job"
 
 
@@ -24196,15 +24196,15 @@ def _team_gate_support(provider):
         from claude_sdk_engine import ClaudeSDK
         if not ClaudeSDK.pre_tool_hooks_supported():
             return {"ok": False, "approved_actions": False,
-                    "reason": "bản claude-agent-sdk đang cài chưa có móc PreToolUse nên Javis không chặn được công cụ trước khi chạy"}
+                    "reason": "bản claude-agent-sdk đang cài chưa có móc PreToolUse nên Thansa không chặn được công cụ trước khi chạy"}
     if prov == aux_engine.CODEX:
         if not _hub_enabled():
             return {"ok": False, "approved_actions": False,
-                    "reason": "MCP Hub đang tắt nên Codex gọi thẳng các kết nối, không qua cổng duyệt của Javis"}
+                    "reason": "MCP Hub đang tắt nên Codex gọi thẳng các kết nối, không qua cổng duyệt của Thansa"}
         extra = _codex_user_mcp_servers()
         if extra:
             return {"ok": False, "approved_actions": False,
-                    "reason": ("Codex trên máy này có MCP riêng ngoài Javis (" + ", ".join(extra[:5]) + ") mà Javis không "
+                    "reason": ("Codex trên máy này có MCP riêng ngoài Thansa (" + ", ".join(extra[:5]) + ") mà Thansa không "
                                "chặn được trước khi chạy")}
     deny = True
     if prov == aux_engine.GROK_CLI:
@@ -24950,8 +24950,8 @@ async def teams_import(file: UploadFile = File(...), brain: str = Form("brain"),
                             status_code=400)
     pv = team_bundle.preview(data)
     if not pv.get("ok"):
-        return JSONResponse({"ok": False, "error": localefmt.chu("Đây không phải file team của Javis",
-                                                                 "This is not a Javis team file")}, status_code=400)
+        return JSONResponse({"ok": False, "error": localefmt.chu("Đây không phải file team của Thansa",
+                                                                 "This is not a Thansa team file")}, status_code=400)
     if preview in ("1", "true"):
         return pv
     ops = team_api.current()

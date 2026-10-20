@@ -138,15 +138,15 @@ Once answered, the job goes back to the queue and carries on. The next run reads
 
 A background job can run more than once: a temporary error is retried, a server restart mid-run puts the job back in the queue, or you press Retry. Each run used to start from scratch, so a Zalo message, a post or an order could go out twice.
 
-Javis now records every outside action of a job (sending, posting, creating an order through a connection or a plugin), keyed by the job, the tool and the exact content:
+Thansa now records every outside action of a job (sending, posting, creating an order through a connection or a plugin), keyed by the job, the tool and the exact content:
 
 - **Already done in an earlier run:** the rerun skips it, the worker gets the earlier result back and carries on with the rest.
-- **Not sure it went through** (the server stopped or the connection dropped right while sending): Javis does not send again on its own. The job stops and asks you, naming the action. Answer **"sent"** and Javis skips it; answer **"not sent"** and Javis does it again exactly once. Any answer that does not start with "not" or "resend" counts as sent, so a customer never gets a duplicate.
+- **Not sure it went through** (the server stopped or the connection dropped right while sending): Thansa does not send again on its own. The job stops and asks you, naming the action. Answer **"sent"** and Thansa skips it; answer **"not sent"** and Thansa does it again exactly once. Any answer that does not start with "not" or "resend" counts as sent, so a customer never gets a duplicate.
 - **The service returned a clear error** (wrong recipient, missing permission): treated as not sent, so the next run may try again.
 
 Ordinary chat is unchanged: the record only applies to background jobs on the Work board.
 
-Limits: the record lives in the Javis hub, so it only sees actions that go through the hub. Connectors tied to your Claude account (Gmail, Drive on claude.ai) and an engine's own shell commands bypass the hub and are not recorded. Grok Build and Antigravity CLI cannot yet carry the job id to the hub, so jobs running on those two engines do not have this protection yet.
+Limits: the record lives in the Thansa hub, so it only sees actions that go through the hub. Connectors tied to your Claude account (Gmail, Drive on claude.ai) and an engine's own shell commands bypass the hub and are not recorded. Grok Build and Antigravity CLI cannot yet carry the job id to the hub, so jobs running on those two engines do not have this protection yet.
 
 ## A job's states
 

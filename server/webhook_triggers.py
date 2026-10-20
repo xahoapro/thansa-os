@@ -471,7 +471,7 @@ class WebhookFeature:
             if h is None:
                 return JSONResponse({"ok": False, "error": localefmt.chu("Không thấy webhook này.",
                                                                          "Webhook not found.")}, status_code=404)
-            sample = json.dumps({"test": True, "note": "sample event sent from the Javis dashboard"}).encode()
+            sample = json.dumps({"test": True, "note": "sample event sent from the Thansa dashboard"}).encode()
             code, resp = self._enqueue(hid, payload_text(sample, "application/json"), time.time())
             return JSONResponse(resp, status_code=200 if code == 202 else code)
 

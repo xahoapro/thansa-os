@@ -235,7 +235,7 @@ Lưu ý: gói xuất chỉ chứa file định nghĩa. **Bộ nhớ riêng và n
 
 Ở trang Team, menu **⋯** của một team có **Chia sẻ team**: tải về một file `.team.javis.zip` gồm các cộng sự của team, kỹ năng của họ, trưởng nhóm và các tin đã ghim (thành hướng dẫn chung). File **không** có lịch sử chat, khoá, mật khẩu, model hay công tắc Auto; chữ trông giống khoá API, mã bot hay dòng `password: ...` bị thay bằng `[REDACTED]` trước khi ghi.
 
-Người nhận bấm **Nhập team** ở đầu danh sách team, chọn file, xem trước có những cộng sự nào và bao nhiêu kỹ năng rồi xác nhận. Cộng sự trùng tên đã có trong brain thì giữ nguyên bản của người nhận; model và Auto người nhận tự chọn sau. File này vẫn mở được bằng nút Nhập ở trang Cộng sự của bản Javis cũ (khi đó chỉ nhập cộng sự, không dựng team).
+Người nhận bấm **Nhập team** ở đầu danh sách team, chọn file, xem trước có những cộng sự nào và bao nhiêu kỹ năng rồi xác nhận. Cộng sự trùng tên đã có trong brain thì giữ nguyên bản của người nhận; model và Auto người nhận tự chọn sau. File này vẫn mở được bằng nút Nhập ở trang Cộng sự của bản Thansa cũ (khi đó chỉ nhập cộng sự, không dựng team).
 
 Mỗi lượt chat tạo, sửa hay gỡ lịch, việc lặp, cộng sự, quy trình hay kỹ năng còn để lại một dòng nhỏ dưới câu trả lời ("Đã tạo lịch: ..."). Cái mới tạo có nút **Hoàn tác**: huỷ lịch, xoá việc lặp, cộng sự, quy trình hay kỹ năng vừa tạo.
 
@@ -265,7 +265,7 @@ Sửa yêu cầu của việc hay huỷ việc làm thẻ cũ hết hiệu lực
 - **Phạm vi**, **chu kỳ quan sát**, **số lần quan sát mỗi ngày**, **số việc tự mở mỗi ngày**, và **dừng mở việc khi đang có N việc**.
 - Với mỗi loại cơ hội (tài liệu thay đổi, việc Kanban lỗi, lệnh kiểm tra báo lỗi, kết nối lỗi) chọn: **Chỉ ghi nhận**, **Đề xuất cho tôi**, **Mở việc, chờ tôi duyệt** hay **Tự mở việc**.
 
-Javis đọc các nguồn bằng mã, không gọi model. Nguồn đọc không được thì hiện **thiếu nguồn** kèm lý do, không bịa ra vấn đề. Một thay đổi thành **cơ hội** có nguồn, phiên bản dữ liệu, lý do gắn mục tiêu và lợi ích. Cùng dữ liệu không mở lại lần hai, cơ hội bạn **Bỏ qua** chỉ quay lại khi dữ liệu đổi, mỗi nguồn có thời gian nghỉ, đề xuất để quá 48 giờ thì hết hạn. Hết số việc trong ngày hay chạm giới hạn việc đang mở thì chỉ đề xuất.
+Thansa đọc các nguồn bằng mã, không gọi model. Nguồn đọc không được thì hiện **thiếu nguồn** kèm lý do, không bịa ra vấn đề. Một thay đổi thành **cơ hội** có nguồn, phiên bản dữ liệu, lý do gắn mục tiêu và lợi ích. Cùng dữ liệu không mở lại lần hai, cơ hội bạn **Bỏ qua** chỉ quay lại khi dữ liệu đổi, mỗi nguồn có thời gian nghỉ, đề xuất để quá 48 giờ thì hết hạn. Hết số việc trong ngày hay chạm giới hạn việc đang mở thì chỉ đề xuất.
 
 Việc do mục tiêu mở ghi dấu vết mục tiêu, bản, quan sát, cơ hội ngay trong yêu cầu, và mọi hành động ra ngoài của nó vẫn qua cổng duyệt. **Tạm dừng** ngừng quan sát; **Thu hồi** huỷ việc mục tiêu đã mở mà chưa chạy và đóng đề xuất đang mở. Mỗi lần sửa là một bản mới, có lịch sử.
 
@@ -279,7 +279,7 @@ Việc do mục tiêu mở ghi dấu vết mục tiêu, bản, quan sát, cơ h�
 - `cmd: pytest -q`: lệnh kiểm tra phải trả mã 0 (chạy ở mức Ghi nháp của trang Coding).
 - `confirm: bao-cao/tuan.md`: bạn tự xác nhận.
 
-Khi cộng sự nộp kết quả, Javis kiểm chính sản phẩm (file) theo từng tiêu chí: **đạt**, **chưa đạt** hay **chưa rõ**, kèm bằng chứng (đường dẫn, mã băm sha256, kích thước, giờ sửa). Ý kiến của model không bao giờ là kết luận.
+Khi cộng sự nộp kết quả, Thansa kiểm chính sản phẩm (file) theo từng tiêu chí: **đạt**, **chưa đạt** hay **chưa rõ**, kèm bằng chứng (đường dẫn, mã băm sha256, kích thước, giờ sửa). Ý kiến của model không bao giờ là kết luận.
 
 - Đạt hết: việc mới chốt **xong**.
 - Có tiêu chí chưa đạt: cộng sự đó nhận một bước sửa ghi rõ chỗ chưa đạt. Quá số vòng sửa (mặc định 2) thì việc dừng ở **Chưa đạt tiêu chí**; bạn sửa yêu cầu để thử lại.

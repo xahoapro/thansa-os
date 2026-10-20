@@ -157,7 +157,7 @@ Nhờ vậy:
 
 ### Cách 1 - Hostinger Docker Manager (tên miền + HTTPS) ⚡
 
-> 🛒 **Chưa có VPS?** [Đăng ký VPS Hostinger tại đây](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). VPS có sẵn Docker Manager nên cài Javis đúng một cú bấm. Thuê xong quay lại làm các bước dưới.
+> 🛒 **Chưa có VPS?** [Đăng ký VPS Hostinger tại đây](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). VPS có sẵn Docker Manager nên cài Thansa đúng một cú bấm. Thuê xong quay lại làm các bước dưới.
 
 VPS Hostinger → **Docker Manager → Compose → URL** → dán **file Hostinger** rồi **Deploy**:
 ```

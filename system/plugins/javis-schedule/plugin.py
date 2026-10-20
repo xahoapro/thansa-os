@@ -378,8 +378,8 @@ async def _post_reminder(payload: dict, brain_name: str = "") -> str:
     if data.get("speak"):
         ra += " Kết quả sẽ kèm tin thoại đọc thành tiếng."
     if data.get("call"):
-        ra += (" Tới giờ Javis sẽ GỌI ĐẾN trên trang Javis đang mở: bấm Nghe là vào cuộc gọi và Javis đọc"
-               " kết quả; không mở Javis thì kết quả vẫn tới như tin nhắn thường.")
+        ra += (" Tới giờ Thansa sẽ GỌI ĐẾN trên trang Thansa đang mở: bấm Nghe là vào cuộc gọi và Thansa đọc"
+               " kết quả; không mở Thansa thì kết quả vẫn tới như tin nhắn thường.")
     # Việc tới giờ tự chạy MỘT MÌNH với đầy đủ quyền. Máy chủ gửi kèm câu cảnh báo; đọc lại
     # NGUYÊN VĂN cho user chứ đừng tóm tắt hay bỏ qua - đây là lúc duy nhất họ chắc chắn đang
     # nhìn, và sau đó thì không ai duyệt gì nữa.
@@ -662,8 +662,8 @@ def register(ctx) -> None:
                 "speak": {"type": "boolean",
                           "description": "true = tới giờ gửi kèm TIN THOẠI đọc kết quả thành tiếng (user muốn nghe)."},
                 "call": {"type": "boolean",
-                         "description": ("true = tới giờ Javis GỌI ĐẾN như cuộc gọi trên trang Javis đang mở, user bấm "
-                                         "Nghe thì Javis đọc kết quả và nói chuyện tiếp (\"7h gọi đọc báo cáo cho anh\").")},
+                         "description": ("true = tới giờ Thansa GỌI ĐẾN như cuộc gọi trên trang Thansa đang mở, user bấm "
+                                         "Nghe thì Thansa đọc kết quả và nói chuyện tiếp (\"7h gọi đọc báo cáo cho anh\").")},
                 "remember_last": {"type": "boolean",
                                   "description": ("true = mỗi lần chạy nhận lại kết quả lần trước (theo dõi, "
                                                   "báo cái mới). Chỉ cho nhắc hẹn tự làm, không cho loop.")},

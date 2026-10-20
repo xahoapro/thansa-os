@@ -557,7 +557,7 @@ def _connections_json(include_ambient=False, hidden=None, bo_qua=None, owner_cha
                         "dung_duoc_o_luot_nay": False,
                         "ly_do": ("Kết nối này gắn với TÀI KHOẢN Claude của chủ, chỉ có khi model chat là Claude "
                                   "Code. Model đang chạy bằng API key nên không gọi được. Nói đúng lý do đó, rồi "
-                                  "chỉ hai cách: nối nguồn này ở trang Kết nối của Javis (mọi model đều dùng "
+                                  "chỉ hai cách: nối nguồn này ở trang Kết nối của Thansa (mọi model đều dùng "
                                   "được), hoặc đổi model chat sang Claude Code.")})
     return json.dumps(out, ensure_ascii=False, indent=1)
 
@@ -754,7 +754,7 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
                 return None, "ERROR: công tắc ghi nhớ và danh sách đã quên do người dùng quản lý, tool không ghi được."
             if (rp == mem or mem in rp.parents) and not memory_control.learning_enabled(mem):
                 return None, ("ERROR: người dùng đã TẮT việc lưu ghi nhớ mới cho brain này nên không ghi vào memory/. "
-                        "Nói với người dùng rằng ghi nhớ đang tắt (bật lại ở Javis Core > Trí nhớ).")
+                        "Nói với người dùng rằng ghi nhớ đang tắt (bật lại ở Thansa Core > Trí nhớ).")
         except Exception:
             pass
         if mode == team_gate.HUB_MODE:

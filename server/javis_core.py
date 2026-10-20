@@ -29,7 +29,7 @@ import fastyaml
 
 SLUG = "javis-core"
 CHANNEL = "agent:" + SLUG
-NAME = "Javis Core"
+NAME = "Thansa Core"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFINITION_PATH = PROJECT_ROOT / "system" / "agents" / f"{SLUG}.md"
 BLOCK_TITLE = "JAVIS CORE"

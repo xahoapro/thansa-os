@@ -217,7 +217,7 @@ async def _call(rpc: _Rpc, method: str, params: dict, deadline: float, seen: lis
                 raise Fallback(f"{method}: {(m.get('error') or {}).get('message')}")
             return m.get("result") or {}
         if "method" in m and "id" in m:
-            rpc.reply(m["id"], "Javis does not grant requests from a chat turn")
+            rpc.reply(m["id"], "Thansa does not grant requests from a chat turn")
             continue
         seen.append(line)
 
@@ -366,7 +366,7 @@ async def run(cli, prompt: str) -> AsyncIterator[dict]:
                     steer_inbox.INBOX.requeue(sid, items)   # the turn ended first: they run as the next turn
                 continue
             if method and "id" in m:
-                rpc.reply(m["id"], "Javis does not grant requests from a chat turn")
+                rpc.reply(m["id"], "Thansa does not grant requests from a chat turn")
                 continue
             p = m.get("params") or {}
             if p.get("threadId") not in (None, thread_id):
