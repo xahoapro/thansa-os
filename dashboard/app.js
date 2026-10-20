@@ -1851,7 +1851,7 @@ function boiNguCanh(outMsg, voice) {
   } catch (e) {}
   _ngatLoiTai = "";
   if (pinnedNote) {
-    outMsg = `[FILE ĐANG MỞ trong trình sửa của Javis: ${pinnedNote.abs}\n`
+    outMsg = `[FILE ĐANG MỞ trong trình sửa của Thansa: ${pinnedNote.abs}\n`
       + `Đây là file người dùng ĐANG LÀM VIỆC TRÊN ĐÓ - coi như đầu vào của cuộc trò chuyện này. `
       + `Đọc nó trước khi trả lời. Khi được yêu cầu sửa/viết thêm/dọn lại mà không nói rõ file nào `
       + `thì ghi thẳng vào chính file này.]\n\n${outMsg}`;
