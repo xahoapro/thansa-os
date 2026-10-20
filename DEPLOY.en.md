@@ -1,18 +1,20 @@
-# Installing Javis OS on a server / VPS
+# Installing Thansa OS on a server / VPS
 
 *[Tiếng Việt](DEPLOY.md) · **English***
 
-Javis OS is a personal AI agent plus a Second Brain. Its "brain" is the **Claude Code CLI**
+Thansa OS is a personal AI agent plus a Second Brain. Its "brain" is the **Claude Code CLI**
 (sign in once, no API key needed). There are 3 ways to run it, pick one.
 
-> ⚠️ **Safety:** Javis runs Claude with full power on the machine. When running public
-> (Docker/VPS/Hostinger), Javis **turns forced login on by itself**, so opening the app gives the
+> ⚠️ **Safety:** Thansa runs Claude with full power on the machine. When running public
+> (Docker/VPS/Hostinger), Thansa **turns forced login on by itself**, so opening the app gives the
 > **create admin / sign in** screen and nobody can drive it before a password exists. (To turn that
 > off for internal use: `JAVIS_REQUIRE_LOGIN=0`.)
 
 ---
 
 ## Way 1 - Hostinger Docker Manager (1-click, the fastest) ⚡
+
+> 🛒 **No VPS yet?** [Get a Hostinger VPS here](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager comes built in, so Thansa installs in one click. Once it is ready, come back to the steps below.
 
 On the Hostinger VPS go to **Docker Manager → Compose → URL**, paste the link and **Deploy**:
 ```
@@ -47,6 +49,8 @@ hPanel → VPS) and you get the **create admin account** screen.
 
 ## Way 2 - Docker on any VPS (pull the image, no source clone needed)
 
+> 🛒 **Need a VPS?** A [Hostinger VPS](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN) runs this option too.
+
 Docker is required. Do not have it? `curl -fsSL https://get.docker.com | sh`
 ```bash
 mkdir thansa && cd thansa
@@ -61,7 +65,7 @@ To build from source instead of pulling: `curl -O .../docker-compose.build.yml` 
 
 Everyday commands:
 ```bash
-docker compose logs -f     # see what Javis is doing
+docker compose logs -f     # see what Thansa is doing
 docker compose restart     # restart
 docker compose down        # stop
 docker compose build --pull && docker compose up -d   # update
@@ -151,9 +155,9 @@ ships Caddy (On-Demand TLS), which stays idle until you declare the domain in th
 
 ---
 
-## 🏢 Running SEVERAL Javis instances on one VPS (each with its own link)
+## 🏢 Running SEVERAL Thansa instances on one VPS (each with its own link)
 
-One VPS can run any number of Javis instances, each on its own subdomain with its own data store,
+One VPS can run any number of Thansa instances, each on its own subdomain with its own data store,
 and no instance sees another's brain or accounts.
 
 **Three things must DIFFER between instances.** Whichever one collides is what breaks:
@@ -253,16 +257,16 @@ connections, the background work, and **the Claude/ChatGPT login token** (each i
 
 ### 🌐 Remote access (Hostinger / any VPS) with a Cloudflare Tunnel
 
-Open the Javis interface from another machine with NO open ports and NO domain:
+Open the Thansa interface from another machine with NO open ports and NO domain:
 
-1. **Set a password FIRST (mandatory):** open Javis (through the SSH tunnel in step 5) → Dashboard →
-   **Account** → set the admin password. Javis runs Claude with full power on the machine, so it must
+1. **Set a password FIRST (mandatory):** open Thansa (through the SSH tunnel in step 5) → Dashboard →
+   **Account** → set the admin password. Thansa runs Claude with full power on the machine, so it must
    NEVER be exposed to the Internet without a password. (The server also prints a warning when running
    public without one.)
 2. Start the tunnel: `docker compose --profile tunnel up -d`
 3. Get the URL: `docker compose logs tunnel | grep trycloudflare`, then open
    `https://<random>.trycloudflare.com` in any browser and sign in with the password. Now you can view
-   and drive Javis remotely.
+   and drive Thansa remotely.
 
 **A stable URL (your own domain, `*.hstgr.cloud` style):** create a *named tunnel* in Cloudflare Zero
 Trust (free), take the token, put `TUNNEL_TOKEN=...` into `.env`, change the `tunnel` service's
@@ -310,7 +314,7 @@ Stop it with `stop-thansa.bat`. Open http://localhost:7777
 |---|---|---|
 | `JAVIS_HOST` | The listening address. `127.0.0.1` = this machine only; `0.0.0.0` = everywhere (Docker sets this itself) | `127.0.0.1` |
 | `JAVIS_PORT` | The port | `7777` |
-| `JAVIS_STATE_DIR` | Where Javis writes state (settings, sessions, loop configuration) | `server/` (Docker: `/data/state`) |
+| `JAVIS_STATE_DIR` | Where Thansa writes state (settings, sessions, loop configuration) | `server/` (Docker: `/data/state`) |
 | `OBSIDIAN_VAULT_PATH` | The main Second Brain vault | `vault/` in the repo (Docker: `/data/vault`) |
 | `BRAIN_PATH` | The brain folder | `brain/` in the repo (Docker: `/data/brain`) |
 | `CLAUDE_CWD` | Fallback folder for the Claude CLI (chat runs inside the brain folder) | the repo root |
@@ -319,7 +323,7 @@ Stop it with `stop-thansa.bat`. Open http://localhost:7777
 
 ## 🔄 Updating when new code lands
 
-> **The fastest, right in the app:** open **Updates** (the left rail) and the **Javis OS** panel shows
+> **The fastest, right in the app:** open **Updates** (the left rail) and the **Thansa OS** panel shows
 > the running version and checks GitHub for a newer one. When there is one, click **⬆ Update now** and
 > the app pulls the new version and restarts (~20-40s), with no terminal needed.
 > - **Docker/VPS:** the button runs through the **watchtower** service, and since 0.55.56 it
@@ -333,7 +337,7 @@ Stop it with `stop-thansa.bat`. Open http://localhost:7777
 >   ```
 >   Not ready to swap the compose file? Starting it on its own works too:
 >   `docker compose --profile update up -d`.
->   Only Watchtower is granted Docker access (the socket); the Javis app is NOT, which is what makes it
+>   Only Watchtower is granted Docker access (the socket); the Thansa app is NOT, which is what makes it
 >   safe. Going without it is fine too, and the panel then only *reports a new version* and explains how
 >   to update by hand.
 > - **The button is there but does nothing, and `javis-watchtower` keeps Restarting:** a stack
@@ -375,7 +379,7 @@ nothing to edit.
 
 ## Signing Claude in is the only mandatory step
 
-Javis's "brain" is the Claude Code CLI. The login token lives in `~/.claude`
+Thansa's "brain" is the Claude Code CLI. The login token lives in `~/.claude`
 (Docker: the `claude-auth` volume). Sign in once and it survives every restart and update.
 If you already signed in on another machine, you can copy the `~/.claude` folder across.
 

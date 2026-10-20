@@ -205,13 +205,19 @@ check("phan tram", W.phanTram(W.tienDoMoi(4)) === 0 && W.phanTram(st) === 100);
     nhomCua: (x) => (String((x && x.group) || "").trim()) || "Chung", NHOM_MD: "Chung", brain: () => "brain",
     // Tag của agent (0.100.0) cũng khai ở đầu module: mượn bản thật qua W.
     tagsCua: W.tagsCua, tagCap: W.tagCap, laKhoa: W.laKhoa, demTag: W.demTag, coTag: W.coTag,
-    khoaTag: W.khoaTag, dongChonTag: W.dongChonTag, TAG_NONE: W.TAG_NONE,
+    khoaTag: W.khoaTag, dongChonTag: W.dongChonTag, TAG_NONE: W.TAG_NONE, TAG_AUTO: W.TAG_AUTO, laLocGia: W.laLocGia, autoBat: W.autoBat,
     TAB_PHAI: ["cai", "lichsu", "viec"],
     luuChon() {}, moPhien() {}, heptLai: () => false, chatReady() {}, active: true, opening: 0,
+    // The avatar strip's name card (0.191.0) lives in the edge-drag block, outside the cut: same as above.
+    anTheMini() {}, hienTheMini() {},
+    // 0.205.0: the unread pill and the muted mark are drawn by helpers outside the cut too.
+    chuaDoc: () => 0, tinHtml: () => "",
     esc: (s) => String(s == null ? "" : s), t: (k) => k, ic: () => "<svg></svg>", avatar: () => "<i></i>",
     localStorage: { getItem: (k) => (k in kho ? kho[k] : null), setItem(k, v) { kho[k] = String(v); } },
     document: { getElementById: () => null },
-    window: { JavisVaultPanel: { borrow(h) { goi.push("borrow"); ctx._into = h; return true; },
+    // 0.195.0: the tag bar and picker markup are shared with the Teams page (tag-picker.js).
+    window: { JavisTagPicker: require(path.join(root, "dashboard", "tag-picker.js")),
+              JavisVaultPanel: { borrow(h) { goi.push("borrow"); ctx._into = h; return true; },
                                  giveBack() { goi.push("giveBack"); } },
               // Tab Công việc (0.142.0): ghi lại lần gắn để đo đúng trợ lý.
               JavisAgentJobs: { mount(h, o) { goi.push("jobs:" + o.slug); ctx._jobsInto = h; return { destroy() {} }; } },
@@ -459,6 +465,8 @@ check("phan tram", W.phanTram(W.tienDoMoi(4)) === 0 && W.phanTram(st) === 100);
     taoMoi: (loai) => tao.push(loai), dangChon: () => null, taiDanhSach: async () => {},
     veTrai() {}, chonMacDinh() {}, cacBuoc: () => [], avatar: () => "<i></i>",
     esc: (s) => String(s == null ? "" : s), t: (k) => k, ic: (n) => '<svg data-ic="' + n + '"></svg>',
+    // (i) helpers live outside the sliced block (0.214.0).
+    infoBtn: () => "", infoBody: (h) => '<div class="info-body">' + h + "</div>",
     document: { getElementById: () => null },
     // Bộ giả phải có đủ cả hai hàm listener - trình duyệt thật luôn có.
     window: { addEventListener() {}, removeEventListener() {} },

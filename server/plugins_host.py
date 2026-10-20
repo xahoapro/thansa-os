@@ -839,7 +839,16 @@ def _make_call(tool: dict, ctx: PluginContext, mode: str):
     name = tool["name"]
 
     async def _call(args):
-        if not _min_mode_ok(min_mode, mode):
+        if str(mode or "").strip().lower() == "gated" and min_mode != "readonly":
+            # 0.207.0: a gated Team step. A plugin that writes or acts (review: `javis_task` and `javis_schedule` are
+            # `safe` yet queue work that runs at full later) needs the owner's approval of this exact call
+            # (team_gate.py). Read-only plugin tools run.
+            import asyncio
+            import team_gate
+            ok, why = await asyncio.to_thread(team_gate.hub_check, name, args or {}, f"plugin: {name}")
+            if not ok:
+                return why
+        elif not _min_mode_ok(min_mode, mode):
             loai = "ghi/hành động" if min_mode == "safe" else "nguy hiểm (chỉ chế độ full)"
             return (f"ERROR: tool '{name}' cần mức quyền cao hơn ({min_mode}) - thao tác {loai} "
                     f"bị chặn ở chế độ hiện tại. Nâng chế độ chạy nếu thật sự cần.")
@@ -851,12 +860,19 @@ def _make_call(tool: dict, ctx: PluginContext, mode: str):
                 return f"ERROR: kiểm tra điều kiện tool '{name}' lỗi: {type(e).__name__}: {e}"
             if why:
                 return f"ERROR: {why}"
-        try:
-            res = handler(args or {}, ctx)
-            res = await _maybe_await(res)
-            return res if isinstance(res, str) else json.dumps(res, ensure_ascii=False, default=str)
-        except Exception as e:
-            return f"ERROR: tool plugin '{name}' lỗi: {type(e).__name__}: {e}"
+        async def _run(a):
+            try:
+                res = handler(a or {}, ctx)
+                res = await _maybe_await(res)
+                return res if isinstance(res, str) else json.dumps(res, ensure_ascii=False, default=str)
+            except Exception as e:
+                return f"ERROR: tool plugin '{name}' lỗi: {type(e).__name__}: {e}"
+
+        if min_mode == "full":
+            # 0.238.0: an outside action (send, post, order) runs once per Kanban job, even when the job runs again.
+            import once_ledger
+            return await once_ledger.run(name, args or {}, _run)
+        return await _run(args)
 
     return _call
 

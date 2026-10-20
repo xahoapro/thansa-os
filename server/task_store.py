@@ -23,6 +23,12 @@ VALID_STATUS = {
     "triage", "todo", "ready", "running", "review", "blocked", "done",
     "cancelled", "archived",
 }
+# Sổ hỏi đáp của một việc (`metadata.qa`, 0.235.0): giữ ngần này lượt gần nhất, mỗi câu tối đa
+# QA_TEXT_MAX ký tự, phần "đã làm tới đâu" tối đa QA_PROGRESS_MAX. Đủ cho lần chạy sau hiểu
+# chuyện, không đủ để phình kho hay prompt.
+QA_KEEP = 8
+QA_TEXT_MAX = 1000
+QA_PROGRESS_MAX = 1500
 TERMINAL_STATUS = {"done", "cancelled", "archived"}
 ACTIVE_STATUS = {"triage", "todo", "ready", "running", "review", "blocked"}
 # Trạng thái của làn `team` (nhóm chat). Cố ý KHÔNG nằm trong VALID_STATUS: lệnh kéo thả
@@ -1029,6 +1035,81 @@ class TaskStore:
             keep_attempt=bool(keep_attempt and retry),
         )
 
+    def ask(
+        self, task_id: str, worker_id: str, question: str, result: str = "",
+        extra_meta: Optional[dict] = None,
+    ) -> Optional[dict]:
+        """Chặn việc ở `needs_input` VÀ ghi câu hỏi vào `metadata.qa` (0.235.0).
+
+        Trước đây câu hỏi chỉ nằm lẫn trong `block_reason`, và đường duy nhất để gỡ là Thử lại:
+        việc chạy lại từ đầu mà không ai nói cho nó câu trả lời, nên nó hỏi lại y hệt. Giờ mỗi
+        lần hỏi là một mục `{q, asked_at, progress}`; `answer` điền `a` vào mục đó, và lần chạy
+        sau đọc cả sổ (ý tưởng `ask_user` của OpenMuse). `progress` là đầu bản tường thuật của
+        lần chạy vừa dừng, để lần sau biết phần nào đã làm xong."""
+        task = self.get_task(task_id)
+        if not task:
+            return None
+        meta = dict(task.get("metadata") or {})
+        qa = [x for x in (meta.get("qa") or []) if isinstance(x, dict)]
+        qa.append({
+            "q": (question or "").strip()[:QA_TEXT_MAX],
+            "asked_at": now(),
+            "progress": (result or "").strip()[:QA_PROGRESS_MAX],
+        })
+        meta["qa"] = qa[-QA_KEEP:]
+        meta.update(extra_meta or {})
+        return self._finish(
+            task_id, worker_id, "blocked",
+            result=result, error=question, block_kind="needs_input",
+            block_reason=question, event_type="blocked",
+            metadata=meta, artifacts=task.get("artifacts") or [],
+        )
+
+    def answer(self, task_id: str, text: str, by: str = "owner") -> tuple[Optional[dict], str]:
+        """Chủ trả lời việc đang chờ ở `needs_input`: điền câu trả lời rồi đưa việc về `ready`.
+
+        Trả (task, "") khi xong, (None, mã lỗi) khi không: "not_found", "empty", "not_waiting".
+        TRẢ LẠI lượt thử mà lần chạy vừa hỏi đã tiêu: hỏi người không phải là việc hỏng, tính
+        nó thì việc hỏi ba câu là chết vì hết lượt dù chưa hỏng lần nào."""
+        text = (text or "").strip()
+        if not text:
+            return None, "empty"
+        with self._lock:
+            self._tx()
+            try:
+                row = self._db.execute(
+                    "SELECT * FROM tasks WHERE id=? AND lane<>'team'", (task_id,)
+                ).fetchone()
+                if not row:
+                    self._db.rollback()
+                    return None, "not_found"
+                if row["status"] != "blocked" or row["block_kind"] != "needs_input":
+                    self._db.rollback()
+                    return None, "not_waiting"
+                meta = _loads(row["metadata_json"], {})
+                qa = [x for x in (meta.get("qa") or []) if isinstance(x, dict)]
+                if not qa or qa[-1].get("a"):
+                    # Việc kẹt từ trước bản này: câu hỏi chỉ còn trong block_reason.
+                    qa.append({"q": str(row["block_reason"] or "")[:QA_TEXT_MAX],
+                               "asked_at": float(row["updated_at"] or now())})
+                qa[-1].update({"a": text[:QA_TEXT_MAX], "answered_at": now(), "by": by})
+                meta["qa"] = qa[-QA_KEEP:]
+                meta.pop("once_pending", None)     # câu hỏi "đã gửi chưa" (0.238.0) đã có lời đáp
+                self._db.execute(
+                    """UPDATE tasks SET status='ready', block_kind='', block_reason='',
+                       attempts=CASE WHEN attempts > 0 THEN attempts - 1 ELSE 0 END,
+                       metadata_json=?, claimed_by='', claim_expires_at=0, not_before=0,
+                       current_run_id='', updated_at=?
+                       WHERE id=?""",
+                    (_json(meta), now(), task_id),
+                )
+                self._event(task_id, "answered", text[:500], metadata={"by": by})
+                self._db.commit()
+            except Exception:
+                self._db.rollback()
+                raise
+        return self.get_task(task_id), ""
+
     def move(self, task_id: str, status: str, reason: str = "operator") -> bool:
         if status not in VALID_STATUS:
             return False
@@ -1177,8 +1258,13 @@ class TaskStore:
         coordinator_key: str = "",
         chat_id: str = "",
         created_by: str = "owner",
+        blocked_kind: str = "",
+        blocked_reason: str = "",
     ) -> tuple[str, bool]:
         """Thêm một việc nhóm vào cuối hàng. Trả (task_id, created).
+
+        `blocked_kind` (0.208.0): the job is created already stopped (e.g. `waiting_user` for a job the department
+        mandate opens at the approve level), in the same transaction, so no crash or error can leave it runnable.
 
         Khoá idempotency là `source_ref` (tin giao việc): gửi lại cùng tin trả việc cũ. KHÔNG gộp
         theo tiêu đề như Kanban: hai việc khác nhau cùng tên vẫn là hai việc."""
@@ -1211,13 +1297,14 @@ class TaskStore:
                         id, brain_root, title, normalized_title, intent, route, capability,
                         execution_mode, priority, status, created_by, chat_id, idempotency_key,
                         max_attempts, created_at, updated_at, lane, team_id, team_seq, team_prio,
-                        team_rev, assignee_key, coordinator_key, source_ref
-                    ) VALUES (?, ?, ?, ?, ?, 'team', 'auto', 'auto', 2, 'team_queued', ?, ?, ?, 1,
-                              ?, ?, 'team', ?, ?, NULL, 1, ?, ?, ?)""",
+                        team_rev, assignee_key, coordinator_key, source_ref, block_kind, block_reason
+                    ) VALUES (?, ?, ?, ?, ?, 'team', 'auto', 'auto', 2, ?, ?, ?, ?, 1,
+                              ?, ?, 'team', ?, ?, NULL, 1, ?, ?, ?, ?, ?)""",
                     (
-                        tid, root, title, norm_title(title), intent or title, created_by or "owner",
+                        tid, root, title, norm_title(title), intent or title,
+                        "team_blocked" if blocked_kind else "team_queued", created_by or "owner",
                         str(chat_id or ""), key, ts, ts, team_id, seq, assignee_key or "",
-                        coordinator_key or "", source_ref,
+                        coordinator_key or "", source_ref, str(blocked_kind or ""), str(blocked_reason or "")[:2000],
                     ),
                 )
                 self._event(tid, "team_queued", f"team {team_id} #{seq}", metadata={"source_ref": source_ref})
@@ -1400,6 +1487,12 @@ class TaskStore:
         return self._team_move(task_id, ("team_running", "team_queued"), "team_blocked", "team_blocked",
                                block_kind=str(kind or "failed"), block_reason=reason, run_status="blocked")
 
+    def team_reblock(self, task_id: str, kind: str, reason: str = "") -> Optional[str]:
+        """A blocked job stays blocked for another reason (0.207.0: the owner rejected or revoked an approval, the request
+        expired). Same place in the queue; the new kind decides which buttons the owner gets."""
+        return self._team_move(task_id, ("team_blocked",), "team_blocked", "team_reblocked",
+                               block_kind=str(kind or "failed"), block_reason=reason)
+
     def team_unblock(self, task_id: str) -> Optional[str]:
         return self._team_move(task_id, ("team_blocked",), "team_queued", "team_unblocked")
 
@@ -1412,6 +1505,11 @@ class TaskStore:
         """Chốt việc xong. Có `expected_rev` thì chỉ chốt khi yêu cầu chưa bị sửa sang bản khác: kết quả của bản cũ
         không bao giờ thành kết quả của bản mới (review T1 R7)."""
         return self._team_move(task_id, ("team_running",), "done", "team_done", "done",
+                               result=result, run_status="completed", expected_rev=expected_rev)
+
+    def team_finish_reviewed(self, task_id: str, result: str = "", expected_rev: Optional[int] = None) -> Optional[str]:
+        """0.209.0: the owner confirmed the product of a job that waited for acceptance (blocked) -> done, same CAS."""
+        return self._team_move(task_id, ("team_blocked",), "done", "team_done", "done (owner accepted)",
                                result=result, run_status="completed", expected_rev=expected_rev)
 
     def team_cancel(self, task_id: str, reason: str = "owner cancel") -> Optional[str]:

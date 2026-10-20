@@ -8,6 +8,420 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.238.0] - 2026-10-20
+### Fixed
+- **A background job that runs again no longer sends, posts or orders twice.** Jobs run again after a temporary error, a server restart or when you press Retry, and each run used to start from scratch, including messages already sent to customers. Javis now records every outside action of a job, so whatever is already done is skipped next time.
+- **If the server stops right while sending, Javis asks you instead of sending again.** The job waits under "Needs you" and names the action that may not have gone through. Answer "sent" to skip it, "not sent" to send it again exactly once.
+- Ordinary chat is unchanged. Limits: Claude account connectors and shell commands do not go through the hub and are not recorded yet; Grok Build and Antigravity CLI cannot carry the job id to the hub yet.
+- Technical details: new module `once_ledger.py` (record `once_ledger.sqlite3` next to `kanban.sqlite3`), hooked into the hub's `_guard` for non-read MCP calls and into `full`-level plugin tools. A Kanban job binds `job` into `turn_context` while it runs. The idea comes from OpenMuse's `outcome_unknown` handling and operation cache (CopilotKit, MIT license), rewritten for Javis.
+
+## [0.236.0] - 2026-10-19
+### Fixed
+- **Pasting an image during a Live call no longer gets two overlapping spoken answers.** The image used to be read twice: once by the chat (in Vietnamese) and once more by the Live voice handing it over again (often in English). Now it is read once and only the Live voice speaks the result. The image still shows in the chat and stays after a reload.
+- **The Live voice answers in the chosen language.** With the mic on auto-detect and nothing heard yet, Javis uses the reply language from Settings instead of guessing from the model.
+
+## [0.235.0] - 2026-10-19
+### Added
+- **Background jobs can ask you a question and carry on with your answer.** A job missing some information used to stop under "Needs you" with nowhere to reply. Pressing Retry ran it again from scratch, and it asked the very same thing. Now the question comes back to the chat where you gave the job, Telegram and Zalo included. Answer it and the job carries on.
+- **Answer wherever is handy:** the box right under the question in the web chat, the answer box on the job's card on the Work page, or just reply in chat and Javis routes it to the right job.
+- **The job continues instead of starting over.** The next run reads the question, your answer and what the previous run already finished. Asking and answering does not use up an attempt. A job that asks several times keeps every round in its detail drawer.
+- Technical details: questions live in the job's `metadata.qa`, a new `POST /kanban/task/answer` endpoint, and `javis_task` gains `op=answer` so every engine can pass an answer on. The idea comes from OpenMuse's `ask_user` mechanism (CopilotKit, MIT license), rewritten for Javis.
+
+## [0.234.0] - 2026-10-19
+### Fixed
+- **A bot tagging someone in a Zalo group no longer shows raw code.** Now and then a group reply showed a `<a_mention href="zm://Profile/...">` snippet instead of a clean tag. That snippet is now removed before sending, and the person being answered still gets a real tag.
+- **The bot no longer copies Zalo's tag code.** Messages whose tags arrive from Zalo as code are cleaned to "@Name" before the bot reads them, so it does not imitate that code.
+
+## [0.231.0] - 2026-10-19
+### Improved
+- **The chat box is down to two buttons: the mic and one all-purpose button.** With an empty box it is voice chat (the sound wave); type or attach a file and it turns into send, clear the text and it turns back.
+- **During a call the mic steps aside**, leaving only the red hang-up button, so nothing gets pressed by mistake.
+- **A customer's photo on the Conversations page opens inside Javis** with a close button (Back works too) instead of a new tab, so you land right back on the message you were reading.
+
+### Fixed
+- **Dictating a sentence that mixes English and Vietnamese comes out right more often.** Browser speech hears one language only, so "Claude Code" became "lót code". A machine with an OpenAI API key (no Groq needed) now has the audio heard again by gpt-4o-transcribe on stop, keeping both languages.
+- **The listening hint now names AI products** (ChatGPT, Claude, Gemini, OpenAI...) so they are spelled right. With no key at all, Javis tells you once how to turn this on.
+
+## [0.230.0] - 2026-10-19
+### Added
+- **Dictate button in the chat box.** Press the mic, speak, and the words appear in the text box as you talk. Press the square to stop and edit before sending, the arrow to send right away, or X to cancel. Nothing is sent by itself.
+- **The voice chat button now shows a sound wave.** It is still the live conversation with Javis, now sitting next to the mic so the two are easy to tell apart.
+- **A level meter and a timer run while recording**, so you can see the mic is listening. Long notes no longer get cut off midway, up to 5 minutes per recording. With the Groq ear on, the text is checked again when you stop for better accuracy.
+
+## [0.228.0] - 2026-10-19
+### Fixed
+- **Assistants running on an API key (Anthropic API, OpenAI API...) can create agents and workflows and set a model.** Chatting with an assistant on an API model used to end in "I can't", because it was never told where those files go or how to set a model. Every assistant now knows, on every model.
+- **Assistants give the real reason when browser control is missing.** Connections tied to your Claude account (such as Composio connected on claude.ai) only work when the chat model is Claude Code. On an API key the assistant now says so and offers the two fixes: connect that source on the Javis Connections page, or switch to Claude Code.
+
+## [0.227.0] - 2026-10-19
+### Fixed
+- **The bot reads long Zalo group messages in full.** It used to see only the first 300 characters of each earlier message, so the end of a long one was lost and the bot asked again for what the customer had already said (real case: the surcharge was at the end of the message). Each message now keeps up to 2000 characters and the latest ones always stay whole. A message longer than that is shortened with a marker, and the bot is told not to tell the customer their message was cut.
+- **The bot no longer stays quiet when the question sits at the end of a long message.** The step that decides whether the bot should answer in a group now reads up to 1500 characters of the message instead of 400.
+
+## [0.226.0] - 2026-10-19
+### Security
+- **Turning off login no longer deletes 2FA.** The "Turn off login" button used to wipe the two-factor setup too. 2FA is now kept and comes back on its own when you set a password again.
+- **Turning off login needs your current password and a 2FA code** (or a recovery code). A borrowed session or a leaked API token can no longer do it.
+- **A server reachable from outside (VPS, Docker, tunnel) cannot turn off login**, and the button is hidden there. Only a personal machine, with the dashboard opened on that machine, can.
+
+## [0.225.0] - 2026-10-19
+### Improved
+- **Switching brains loads notes much faster.** Measured on a 2000-note brain over a VPS-like connection: first open went from 1.6 s to 0.24 s, and going back to a brain you just viewed takes 0.12 s. Javis no longer re-reads notes that did not change, remembers that across restarts, and does not download the graph again when you go back.
+- **The whole app is lighter on a VPS:** lists and the main page are compressed before sending, the note graph data is about 16 times smaller and the main page 3 times smaller. Chat replies still stream word by word.
+
+## [0.223.0] - 2026-10-19
+### Added
+- **Pin straight from conversation search results.** Searching in the History column (Chat page, an assistant's or Javis Core's history, the Coding page) now shows a pin button on each result, with pinned chats first. No need to clear the search and dig through the list.
+- **Pin chats in the bot Inbox.** Hover a chat (on a phone the button is always shown) and press the pin to keep it at the top of the inbox, marked with a colored bar. Press again to unpin.
+### Fixed
+- **Push notifications stay off once you turn them off.** Before, pressing Off worked until the next time Javis opened, when it quietly turned them back on because the browser still held the notification permission. Javis now remembers you turned them off on that device and only turns them on again when you press On.
+
+## [0.222.0] - 2026-10-19
+### Added
+- **Test mic and Test speaker buttons** in Settings → Voice: speak for 5 seconds and the meter shows whether the mic hears you, with a hint when it is muted or the wrong one. The speaker test plays two chimes.
+- **A Morning brief template** on the recurring-work page: one click fills in a 7 a.m. reminder (greeting, today's calendar, yesterday's talk, notable news). It is only created when you press Save.
+### Improved
+- **Background jobs stop wasting time on a broken model.** A model that just failed rests for a while (5 minutes after a quota error, 30 after an outage, 6 hours after an access error) and the next jobs go straight to one that works.
+- **Javis still finds old memories when the list is too long:** memories that no longer fit are named so Javis knows to open them.
+
+## [0.221.0] - 2026-10-19
+### Improved
+- **Javis only says "opened" when the app really came up.** After opening an app it checks the app is running; if not, it says plainly that it is not sure, instead of reporting success.
+- **An app that is already running is brought to the front** instead of being started twice. If Zalo sits behind other windows, "open Zalo" shows it.
+- **No more opening the wrong app with a similar name.** Very short names like "wp" must match exactly, and an unclear name gets a question instead of a guess.
+- Closing an app, forced or not, is also checked to make sure it really closed.
+
+## [0.220.0] - 2026-10-19
+### Improved
+- **Gemini Live calls no longer go silent while Javis looks something up.** Javis answers with a short sentence at once and keeps listening; the result is read out when nobody is talking. Long jobs get an occasional progress update.
+- **No more answering the TV or the person next to you** (Gemini Live). Settings → Voice → Advanced has a new **Background speech filter** (on by default) and a **Reply pace**: Fast, Medium, Relaxed.
+- **The voice follows the language being read:** pick "Auto by language" and Vietnamese is read by Hoai My, English by Emma, Japanese, Chinese and Korean by a native voice. A short "OK" does not flip the voice.
+- **Smoother microphone on Live calls over an API key**, even while the page is busy. Japanese and Chinese replies are read sentence by sentence so speech starts sooner, and version numbers like "0.220.0" are no longer read in pieces.
+
+## [0.219.0] - 2026-10-19
+### Added
+- **Brains can be renamed now, Brain Default included, without breaking a single link.** Click the pencil next to the brain picker and type the new name. Javis changes only the display name and leaves the folder alone, so wiki links, links to files in notes and chats, bots, reminders, loops, background jobs and the GitHub backup all keep pointing to the right place.
+- **The name travels with the brain:** it is stored inside the brain (`Javis/brain.json`), so the GitHub backup carries it to other machines. Leave it empty to go back to the folder name.
+- **The new name shows everywhere:** the brain picker, the Work page, Settings, webhooks, Telegram (`/brain`, `/status`) and the `/brain` chat command. Typing the old folder name still selects it.
+
+## [0.217.0] - 2026-10-18
+### Fixed
+- **Wiki pages no longer vanish after a learning run.** On a brain whose wiki folder is a lowercase `wiki` (every new brain), the learning run treated the whole wiki folder as "out of scope" and cleaned up what it had just touched. A page the chat had just created, to which the run only added a Contradiction section, was wiped, while the "contradiction" line stayed in the open questions. Pages the run created itself were lost too. The run now uses each brain's real wiki folder, including names like `07 - Wiki`.
+- **The learning run's cleanup never deletes a file that is not in the history yet.** Such a file may be yours or the chat's, so it is left in place.
+- **The contradiction line in the open questions names the real page**, not the near match the model gave.
+
+## [0.216.0] - 2026-10-18
+### Added
+- **The bot inbox can search by phone number.** 0912 345 678, 84912345678 and +84 912 345 678 all find the same person.
+- **A number the inbox does not know yet is looked up on Zalo:** type a full number and Javis asks the connected personal Zalo accounts whose number it is, then shows the chat with that person. The number is kept on the customer, so the next search finds it at once.
+- **Someone who never wrote is reported plainly:** "This number is Lan's Zalo, no conversation yet". A number with no Zalo account, or whose owner turned off search by phone, is reported too.
+- **Zalo is not asked twice:** answers are remembered (30 days when found, 1 day when not). At most 20 numbers are looked up per hour, because Zalo caps lookups per day.
+- **Swipe a message to the left to quote it (phone):** like Zalo, pull a bubble to the left until the orange quote mark shows, then lift your finger, and the message lands in the "Quoting" box above the input. Works on Javis's messages and your own, in the main chat and in chats with Javis Core or a partner. A short swipe or scrolling up and down does nothing.
+
+### Fixed
+- **The phone menu no longer closes by itself and leaves the screen dim:** on iPhone the menu slid in, then vanished, leaving only the dark backdrop. The menu now has a solid background instead of a blur (Safari can stop drawing a box that is blurred and sliding at once). The dim layer always goes with the menu, so closing the menu clears it. A single tap counted as two clicks no longer closes the menu it just opened.
+
+## [0.214.0] - 2026-10-18
+### Fixed
+- **Antigravity no longer blames Google when a turn runs too long:** a turn over 15 minutes is stopped by Antigravity CLI itself, and Javis used to report "Google is having a temporary problem, retried 2 times" without retrying at all. The message now says the turn ran too long, finished steps keep their results, and you can send "continue" or give the job to the background queue.
+- **"Retried N times" only shows when Javis really retried.** A turn that already did part of the work is not run again (that would repeat it), and the message says so.
+
+### Improved
+- **Pages are much cleaner: explanations fold into an (i) button.** The page keeps titles, states, inputs and buttons; the why, the caveats and the step-by-step help sit behind the (i) next to the title and open on a tap. Applied across Javis: Models, Settings, Channels, Chatbots, Plugins, Learning, Work, Teams, Assistants, Usage.
+- **Long descriptions on cards (plugins, workflows) show two lines**, the full text is in the (i).
+- **Text in the explanation box is 16px**, easy to read on a phone.
+
+## [0.213.0] - 2026-10-18
+### Added
+- **Send more while Javis is working, now on Telegram, Discord, Slack, Lark, Messenger and Zalo too:** before, the bot replied "still on the previous message, send /stop" and dropped yours. Now it is kept, nothing is lost.
+- **Codex (ChatGPT plan) now reads the new message within the turn**, on the web and the channels, like Enter in the Codex app: no more waiting for the current work to finish. Turn it off with `JAVIS_CODEX_STEER=0` if needed.
+- **On chat channels the bot answers with one short line** saying whether Javis reads it at the next step (Claude Code, Codex, the API-key brains) or right after the current answer (Grok, Antigravity).
+- **/stop ends the current work and drops what was waiting.** Customer-facing bots keep their old way: silent, follow-up messages merged into the next turn.
+
+## [0.211.0] - 2026-10-17
+### Improved
+- **The Claude Code card says one thing when the CLI is missing:** a single install box (Docker: update Javis; manual install: one command to copy) and only a Check again button. The Sign in button that could only fail is gone, and so are the version line and Update button for a program that is not there.
+- **Messages are no longer squeezed into a narrow column:** errors and hints sit under the buttons at full width, and buttons keep their height. The PATH and Windows details fold under "Installed but still missing?".
+- **Provider cards use 16px text**, easier to read on a phone. The card is now named "Claude Code" (Javis never uses its OAuth token), and the green shield lights only when the CLI is there.
+
+## [0.210.0] - 2026-10-17
+### Improved
+- **Team cards read well on a phone:** buttons and helper text in the Department mandate and Acceptance sections are now 16px, and long lines wrap instead of being cut. Checked at 390px wide in Vietnamese and English.
+- **The mandate trace now ends with the acceptance:** it goes all the way from the mandate, observation, opportunity, decision and approval to the job and its acceptance result.
+
+### Added
+- **Preparation pack for a multi-day Team pilot** (`pilot/team-multiday`, not run yet): a 7-day scenario for 3 teams, limits and stop conditions, emergency stop and rollback, metrics, a read-only trace export, an empty report template.
+
+## [0.209.0] - 2026-10-17
+### Added
+- **Product acceptance for Team jobs:** set criteria right on the job (file exists, enough content, JSON keys, a passing check command, your confirmation). A job is done only when the product really passes.
+- **Bounded fix rounds when it fails:** the member gets a fix step saying what failed; past the rounds the job stops for you. Every check keeps evidence (hash, size, modified time) and its history.
+- **Product acceptance card** for criteria you review: Passes or Send back with a note. A file changed after the check cannot be accepted; editing a product after acceptance shows a warning.
+
+## [0.208.0] - 2026-10-17
+### Added
+- **Department mandate for a Team:** set the outcome, how it is measured, granted sources (folders, failed Kanban jobs, connections, check commands), scope, daily budget and how much it may decide. Older teams stay off.
+- **The team finds opportunities within its scope:** a change in a source becomes a proposal with its source, reason and benefit; it opens the job, opens it waiting for your approval or only proposes, as you choose. A missing source is reported, never made up.
+- **No repeats, with limits:** the same data never opens twice, a skipped opportunity returns only when the data changes, proposals expire after 48 hours. Pause or revoke at any time.
+
+## [0.207.0] - 2026-10-17
+### Fixed
+- **A Team that asks for your approval really stops:** "@Owner please approve?" is no longer taken as the result that closes the job. The job waits for your approval, frees its slot for other jobs, and nothing is done before you decide.
+
+### Added
+- **Approval request card in the Team chat:** what will be done, scope, impact, evidence and the exact calls that will run, with Approve, Ask for changes, Reject and Revoke. Editing or cancelling the job voids old cards; a retry or a second tab never acts twice.
+- **Outside actions are stopped before they run:** with the default "Needs your approval", a Team's sends, posts, payments or machine commands are blocked and become an approval card; once approved only that exact call runs, once, even after a restart.
+- **"The team acts without asking" switch** on the Team tab for a team you trust, which runs as before this release.
+
+## [0.206.0] - 2026-10-17
+### Added
+- **Send more while Javis is working, like Claude Code and Codex:** type and send while a turn runs; the work in progress is not stopped. Before, a message typed at this point was silently ignored.
+- **Claude Code and the API-key brains read the new message at their next step:** a correction applies at once, a new task is taken on too, in parallel where possible.
+- **Codex, Grok and Antigravity run your message right after the current work**, since those engines run in one go. Nothing is lost.
+- **A status line under the message you sent:** will read it at the next step, read, or working on it.
+
+## [0.205.0] - 2026-10-17
+### Improved
+- **A partner with a new message moves to the top of the list:** you writing, the partner replying, or a background job reporting into its chat all push that card up (after Javis Core and the pinned ones).
+- **An unread count on each partner card**, next to the time. Opening the chat clears it, in every open tab.
+- **Mute notifications per partner:** the ⋮ button has **Mute notifications** for 1 hour, 4 hours, until 8:00 AM or until turned back on. Messages still reach the chat and the bell, just without a sound or a push.
+
+## [0.204.0] - 2026-10-17
+### Improved
+- **A tidier Scheduled page:** a brain picker instead of every brain stacked up, a **Repeating job / Reminder** filter and paging at 10 jobs a page. Incidents and Log are their own tabs; Webhooks have their own page in the Work group.
+
+### Fixed
+- **Scheduled calls really ring now:** the call used to ring only when the chat receiving the reminder was the open one, so usually nothing showed. The call card now shows on whichever Javis page is open.
+- **A bigger Read all button in Notifications:** lit while something is unread, dimmed once all is read, and it now reads both tabs instead of only the open one.
+- **@mentions in Team messages look normal again**, no longer squeezed into a small circle with one letter per line.
+
+## [0.203.0] - 2026-10-17
+### Added
+- **Javis calls you at a set time:** reminders get a **Call me** box (or say "call me at 7am and read the report"). At that time an open Javis tab rings and shows an incoming-call card with **Answer** and **Decline**.
+- **Answer starts a voice call:** Javis reads the reminder or report briefly, asks if you need anything else, and you keep talking as with the mic button (ChatGPT Live when it is set up).
+- **Missing it costs nothing:** after 45 seconds it is a missed call and the content stays in the chat; with no Javis tab open, Telegram gets the message like any other reminder.
+
+## [0.202.1] - 2026-10-17
+### Improved
+- **Reminders that read aloud now really "call":** at the set time, if Javis is open, the voice note plays at once like a call, no press needed. When the browser blocks autoplay the player stays there to press; Telegram still receives the audio file as before.
+
+## [0.202.0] - 2026-10-17
+### Added
+- **Voice notes:** ask Javis to "read it to me" and it records a short spoken message as an mp3; the chat shows a player under the answer and Telegram receives it as audio. The words are still there as text below.
+- **Reminders that read aloud:** tick **Read it aloud** and the reminder or report arrives with a voice note, easy to hear while driving or cooking.
+- **Keep the cache warm (optional, off by default):** on the Token usage page, switch it on and Javis keeps a Claude Code chat's one-hour prompt cache alive across a short break, so the next message does not reload the whole conversation. It stops at a usage limit or a cold cache.
+
+## [0.201.0] - 2026-10-17
+### Added
+- **Charts and number tiles in the chat:** a revenue, order or ads report can carry a bar or line chart and a few key figures with their change, drawn right under the answer.
+- **Quick-choice buttons:** Javis can offer up to 4 buttons such as "Approve draft A"; a press sends that text as if you typed it. Telegram and Zalo get a readable text version.
+- **Javis recalls earlier chats:** start a new chat that mentions something from before and Javis looks through your other chats for a few relevant lines as context. Team chats and customer chats are never used.
+
+## [0.200.0] - 2026-10-17
+### Added
+- **Share a whole team as one file:** a team's ⋯ menu has **Share team**, which downloads its partners, skills and shared instructions. No chat history, keys, models or Auto switches; text that looks like a password or API key is removed before writing.
+- **Import a team:** the **Import team** button on the Teams page reads the file and shows who comes in before adding it. Partners you already have under the same name keep your version.
+- **See at once what Javis just created:** a chat turn that creates, edits or removes a schedule, loop, partner, workflow or skill shows a small "Created schedule: ..." line under the answer. New items get an **Undo** button.
+
+## [0.199.0] - 2026-10-17
+### Added
+- **Javis Core handles broken background runs:** when a Kanban job, loop, reminder or webhook fails, Javis Core hears first. A passing failure (a network glitch, a timeout) is run again once; something only you can fix (a sign-in, a key, a setting) gets one or two plain sentences on what to do.
+- **No storm of messages:** a job that keeps failing is one incident, and a retry that fails again sends exactly one "needs you" message.
+- **Background health on the Work page:** see open incidents, close them with Done, and the last 24 hours of failures grouped by cause (14 runs of the same token error show as one line).
+- **Health scan from outside:** `python tools/sentinel.py` reads the data (read only) and works even while Javis is down.
+
+## [0.198.0] - 2026-10-17
+### Added
+- **Webhooks: outside systems start work in Javis.** On the Work page, the **Webhooks** section creates a secret link. When a landing page form, a payment or another app calls it, Javis runs the workflow or job you chose with the event data, then reports like a reminder.
+- **Safe by default:** the secret is shown once, with buttons to send a test, switch off and make a new token. A repeated delivery does not run twice, and each webhook runs at most 30 times an hour.
+- **A task reminder can remember its last run:** tick **Remember the last result** and each run knows what it already reported, so it reports only what is new. Good for watching competitor prices or a metric.
+
+### Improved
+- **Repeating schedules show their next three runs** on the job card, and a schedule made from chat is read back as those three dates for you to confirm. A run that fires late because the machine was off knows it is late.
+
+## [0.197.1] - 2026-10-17
+### Fixed
+- **Safari no longer loses the connection for minutes.** Safari has its own bug with the compression used on the live connection: a large message makes it cut the line, and every reconnect is cut again, while Chrome keeps working. Javis now turns that compression off, so every browser stays as stable as Chrome.
+- **If it still drops, there is a trace:** each disconnect records the browser, the close code and how long it was down, and sends it to the server once back online, shown at `/health/loop`.
+
+## [0.197.0] - 2026-10-17
+### Added
+- **Unread count on each team:** the Teams list shows a red count like Zalo, with the team name in bold while messages wait. Opening the team reads it, on every device.
+- **@ mark when a message calls you:** a team with a message calling "@Owner" gets an @ mark next to the count, visible even when the list is folded to logos.
+- **Only the leader calls you:** a member who needs your decision asks the leader, who gathers it into one question, so you are not called over and over.
+- **Team notifications only when you are called:** ordinary team messages never notify; only the leader calling "@Owner" rings your bell. Press "..." on a team and pick **Mute notifications** to silence it completely, even when you are called.
+
+## [0.196.0] - 2026-10-17
+### Improved
+- **Drag narrow and it tucks away:** on Graph, Chat, Partners and Teams, dragging a column divider past a set width hides that column, just like on the Partners page. The column fades first so you know it is about to hide.
+- **Team list shrinks to logos:** drag the Teams list in far and only each team's logo stays; hover a logo for a detail card (name, time, last message, status), the same card as on the Partners page.
+- **Resize both sides of Teams:** the team list and the right info panel can both be dragged, and the width is remembered for next time.
+
+## [0.195.0] - 2026-10-17
+### Added
+- **Teams opens where you left off:** the Teams page opens the team you worked in most recently (the one you last messaged or opened, on any device), no searching.
+- **Tag teams:** press "..." on a team and pick **Tag**, the same way you tag a partner. Teams on one project share the same tag.
+- **Filter teams by tag:** the filter on top of the team list is the same as on the Partners page: All teams, No tag yet, then each tag with its team count.
+
+## [0.194.1] - 2026-10-17
+### Improved
+- **Team message buttons sit under the bubble:** send time, Reply (quote), Copy and Pin now form one row right under the message, like the main chat, instead of a cluttered strip beside the bubble.
+
+## [0.194.0] - 2026-10-17
+### Added
+- **Teams do real work:** when you assign a job in a Team, a member's **Work** and **Help** turns get the same tools as a private chat: read and write files in the brain and the team's working folder, call connections (MCP), run skills. Members do the job and return real results (files, links) instead of sending you to a private chat. Work turns on the same brain run one at a time, so nobody overwrites another member's file.
+
+### Fixed
+- **Fewer long "Lost connection to the server" stalls:** one dead tab (a phone asleep, dropped Wi-Fi) no longer freezes the running chat for every other tab; the page retries a reconnect that gets stuck, and waits longer for a busy server before calling the connection lost.
+- **The culprit gets caught next time:** the server records the code that froze it and any unexpected restarts, readable at `/health/loop`.
+
+### Improved
+- **Chat stays fast and cheap:** ordinary chat replies in a Team are still text only. When a reply needs files or connections, the member suggests turning it into a job.
+
+## [0.193.0] - 2026-10-16
+### Added
+- **Finished jobs stay until you clear them:** in a partner's Jobs tab and a team's Jobs tab, finished jobs have their own section; **Open** shows a short report (who did what, the result). **Done** moves a job to the **Archive**, nothing is deleted; only the Archive has **Delete** and **Delete all**.
+- **Each partner's own reasoning level:** Medium by default, set in the agent editor or with the reasoning button on that partner's chat. It applies to private chat and team replies.
+- **Message privately from a team:** a **Message privately** button in the agent editor, the member list and the Info tab opens the private chat with that partner.
+
+### Improved
+- **Job cards coloured by state:** red needs you, blue working, orange waiting, green finished, with a label on each card.
+
+## [0.192.0] - 2026-10-16
+### Added
+- **Paste and drop in a team:** paste a picture (Ctrl+V) or drop a file into a team chat and it is attached, with a preview. A very long pasted text becomes a .txt file.
+- **Team members read pictures:** a picture sent in a team is described in words by a connected brain before the team answers.
+- **See who is replying:** a small strip above the input shows "Lan is replying...", "Minh is working..." with their pictures. New answers appear block by block, one member after another.
+- **Clear mentions:** type **@all** to call the whole team. A member's reply quotes the message it answers; a message that needs you is labelled "Needs your answer".
+- **Pins you can see:** pinned messages show in a strip on top of the chat; tap one to go to it. The whole team always follows them.
+
+### Fixed
+- **Easier to read team chat:** a member's picture sits next to their name, quotes carry the same quote mark as the main chat, and job titles in the Jobs tab are no longer squeezed into a narrow column.
+
+## [0.191.1] - 2026-10-16
+### Improved
+- **Four-colour status dot on avatars:** when the partner list shrinks to avatars, a small dot shows each partner's work: red needs you (or just failed), blue working, orange waiting, green finished in the last 24 hours. Hover to read it in words.
+
+### Fixed
+- **The hover card is readable:** it has a solid background, so the chat behind no longer shows through the words.
+- **Source and Status dropdowns are no longer white:** the list that opens uses the theme's colours, readable in both light and dark.
+
+## [0.191.0] - 2026-10-16
+### Added
+- **Teams can share files and pin a working folder:** the **+** button of a team chat now has **Attach a file or picture** and **Pin working folder**. The whole team reads text files (.md, .txt, PDF, Word...); a pinned folder shows up as a folder tree so everyone knows what the project holds.
+- **Team info panel:** tap the team picture at the top left to see the members, the working folder, and the pictures, files and links shared in the team. Add a file, paste a link or remove one right there.
+
+### Improved
+- **Shrink the partner list to avatars:** drag the list edge in far enough and it turns into a strip of avatars; hover one to see its name and role. Drag the edge back out for the full list, or double-click the edge for the default size.
+
+### Fixed
+- **Pinning a subfolder:** in the folder picker, a folder with folders inside has a **>**. Tap it to go inside, tap the name to pin that folder.
+- **Tapping a notice goes to the right place:** the "Ask Javis Core" button is gone. A notice that answers a chat reopens that chat; a system notice opens in Javis Core.
+- **Jobs tab:** with no jobs it says "No jobs yet" instead of "Could not load jobs". The selected tab has room around its label.
+
+## [0.190.0] - 2026-10-16
+### Improved
+- **Settings like the apps you know:** a colleague's settings column keeps only picture, name, description, instructions, documents, skills and model. Lessons, Revoke, Use everywhere and the Javis Core Memory section are gone: to change or forget something, just say so in chat, for example "forget the sales channel note".
+- **See what Javis just remembered:** a chat turn that saves, changes or forgets a memory shows a small "Remembered: ..." line under the answer, with **Undo**. If Javis says it remembered or forgot something while nothing changed, a correction line says so.
+- **Tidier colleague cards:** the chat time is small and sits on the same row as the Auto switch in the bottom corner; the switch is back on every colleague. The Auto block in Settings is down to "Work on its own up to ... times a day" plus anything waiting on you.
+- **Release news stays out of Javis Core:** cards in the bell's News tab no longer have "Ask Javis Core".
+
+## [0.189.1] - 2026-10-16
+### Fixed
+- **The create-team picker no longer breaks when you pick several members:** picking a third one used to push the whole box up, hiding the title, leaving the Create button floating mid-screen and a blank area below. The box now stays put however many people you pick.
+
+### Improved
+- **The Vietnamese interface now uses the word "Team"** for teams, in the sidebar and across this feature, and calls team members colleagues rather than assistants.
+- **The colleagues page uses one name throughout** in Vietnamese: its tab, create button and filters now match the page title instead of saying "assistant" or "agent".
+
+## [0.188.0] - 2026-10-16
+### Fixed
+- **A chat always runs on its own brain:** open a chat of another brain (from the bell or history) and keep writing, and Javis now answers with that brain's memory and files; the chat says which brain it belongs to, with a switch button. Clicking a notice of another brain switches the dashboard to it first.
+- **A quieter Javis Core:** runs that went fine stay in the notification bell; only reports that need you land in the chat. Reports sent to the Telegram of someone else sharing the bot are no longer copied into your Javis Core.
+- **Turning learning off really blocks Claude Code:** when off, Claude Code cannot write anything into that brain's memory folder.
+- **New memories always carry a source:** Javis records the chat and date that produced them. The "Your Telegram" field is now a picker of the allowed IDs.
+
+## [0.187.0] - 2026-10-16
+### Added
+- **Ask Javis Core about a notice:** cards in the bell have an **Ask Javis Core** button. The notice goes into your own Javis Core chat with its source and time so you can follow up; the shared notice itself does not change.
+- **See, edit and forget memories:** the Javis Core card has a **This brain's memory** section listing what Javis remembers and where it came from. Once forgotten, Javis does not learn it again from old chats; a switch turns off saving new memories.
+- **Your profile, shared by every brain:** write once how to address you, language and level of detail; each brain's own memory still wins where they differ.
+### Improved
+- **News read on one device is read on every device**, and push notifications are tied to the login: logging out stops that device receiving them. There is an option to **hide the text** in push notifications.
+
+## [0.186.0] - 2026-10-16
+### Fixed
+- **Reports without a chat of their own now go to the right brain's Javis Core:** background jobs, loops and reminders created on the Work page or without a chat report into the Javis Core of the brain that produced them, whatever brain you have open.
+- **No more guessing on Telegram:** a report with no known recipient used to go to the FIRST Telegram ID on the list (possibly someone else sharing the bot), and a loop pausing itself went to EVERY ID. Now only your own Telegram gets them.
+- **New field "Your Telegram (receives reports)"** in the Telegram settings. With a single ID Javis uses it; with several you choose, Javis does not guess.
+- **No duplicates on retry:** a report sent again after a failure appears once. If the original chat was deleted the report goes to Javis Core; with neither a chat nor a brain it stays in the notification bell only.
+
+## [0.185.0] - 2026-10-16
+### Added
+- **Javis Core, a system assistant built into every brain:** it is always first on the Assistants page with a **System** badge, in old and new brains alike. It is the place to receive reports, ask follow-up questions and hand out work, with everything Javis can do.
+- **It cannot be deleted, renamed, unpinned or edited:** the server refuses it, not just the buttons. Choosing its model works like any chat.
+- **Each brain has one default Javis Core chat:** delete or archive it and Javis makes a new empty one next time, without bringing back what you deleted.
+- **One update for every brain:** the Javis Core definition ships with the app instead of being copied into each brain, so your memory and personal settings stay as they are across updates.
+
+## [0.184.0] - 2026-10-16
+### Fixed
+- **Long press on a phone no longer triggers the phone's own text selection (iPhone and Android):** holding a message a little longer used to highlight the text and show the phone's Copy bar on top of the Javis menu. Now only the Javis menu appears (reactions, Reply, Copy...).
+- **Copying still works:** Copy in the menu copies the whole message. Text fields can still be selected and pasted into.
+
+## [0.183.0] - 2026-10-16
+### Fixed
+- **Zalo no longer silently misses a contact's reply:** every Javis restart or update used to wipe the Zalo message store, so a message that came in right then could vanish from all three ways of reading. The store is now kept (30 days) and survives restarts.
+- **Javis knows when messages may be missing:** each Zalo read now says whether the connection was down during that period. If it was, Javis says it is not certain, keeps the waiting step (approval, publishing) on hold and tells you, instead of concluding the contact has not replied.
+- **Messages from an outage reach the Inbox:** messages Zalo replays after a reconnect now show up in the conversation Inbox too, not only in history.
+
+## [0.182.0] - 2026-10-16
+### Fixed
+- **The chat no longer slides left and right:** on a phone the reaction button at the bubble's corner stuck out past the edge, so the whole chat could be dragged sideways. It now sits inside the bubble and the chat only scrolls up and down.
+- **Tapping Like works every time:** an invisible area from the previous version covered the top half of the button, so a tap on a phone, or a click near its top on a computer, did nothing.
+- **Holding the reaction button at the bottom-right corner also opens the emoji row**, the same as holding the message; slide your finger to pick.
+
+### Improved
+- **Phone: the model button is back in the top bar** as before, still showing just the model name and the pin icon. Pressing it opens the provider picker as usual.
+
+## [0.181.1] - 2026-10-16
+### Improved
+- **VPS install docs that are easier to follow:** the README, the quick start and the server install guide were tidied, and the translations follow.
+
+## [0.181.0] - 2026-10-16
+### Improved
+- **Filter assistants with Auto on:** the tag menu on the Assistants page has a new **Auto on** entry with a count. Pick it to see only assistants running Auto; switch one off and it leaves the list, so reviewing and turning them off is quick.
+- **Smaller text in assistant and team settings:** the Auto, goals and proactive pulse blocks now match the rest of the panel. The chat and other pages keep 16px text.
+
+### Fixed
+- **Answers on the Assistants page no longer hug the right edge:** answers keep the same comfortable width as the main chat instead of running up to the outline bar. The sideways scrollbar that shifted the chat is gone too.
+
+## [0.180.0] - 2026-10-16
+### Improved
+- **A tidy model button, like the Claude app:** it shows the model name only (for example "Opus 4.8", "GPT-5 mini"), without the provider. Pressing it still opens the provider and model picker as before; hover it to see the provider. A session with its own pinned model shows a small pin icon on the button; pinning works as before.
+- **Phone: the model button sits right under the message box**, next to the thinking-level button, instead of in the top bar. Pick a model where you type.
+- **Copy no longer slides away (computer):** while Javis is answering, the chat stops following the answer while your mouse is on a message's buttons or moving over a message. Move the mouse away and it catches up to the bottom.
+
+## [0.179.0] - 2026-10-16
+### Improved
+- **Long press on a phone now works (Zalo style):** hold a message about half a second, the screen dims, that message stays bright, 6 emoji pop up above your finger and a card with Reply, Copy, Edit, Send again sits at the bottom. Main chat and the Team page alike.
+- **Slide your finger to pick an emoji (Facebook style):** without lifting, slide across the row; the one under your finger grows and shows its name, lift to pick it. Lift elsewhere and the card stays open.
+- **Copy in the card shows "Copied"** and copies the whole message, no text selection needed.
+- **On a computer the emoji row no longer vanishes too fast:** a wider hover area and a half-second wait before it hides, so moving the mouse sideways across the emoji is easy.
+
+## [0.178.0] - 2026-10-16
+### Added
+- **Use your own picture for an assistant:** when editing an assistant, an **Upload a picture** button sits under the preview. The picture is cropped square and shrunk before upload, then shows everywhere the assistant appears: the list, the chat and teams. Press **Use the Javis character** to go back.
+- **A picture of your own for a team:** the Team picture field in team settings has the same Upload button. By default a team still shows the collage of its members' faces.
+- PNG, JPG, WEBP and GIF pictures up to 2MB are accepted.
+
+### Fixed
+- **Selecting your own message is no longer blocked by the outline:** the outline bar on the right of the chat used to cover the end of your messages, so reaching the end of a line popped its list open. The bar now sits in the margin, clear of the text, and opens only when you rest the mouse on it for a moment.
+
+## [0.177.0] - 2026-10-16
+### Improved
+- **Zalo-style reactions in the main chat:** a 👍 button sits on the bottom-right corner of each answer bubble; one press likes, a second press removes it. Hovering it shows 6 emoji; on a phone, long press the answer.
+- **The reasons and feedback panel is gone** (On point, Wrong facts, Speak or stay silent, the comment box, the "Received" label) in the main chat and on the Assistants page. To correct an answer, just reply or quote it.
+
 ## [0.176.0] - 2026-10-16
 ### Improved
 - **Team chat that reads like a real chat app:** bold text, lists and colours look exactly like the main chat. The "Teams" title bar is gone to give the chat more room, and the settings panel uses smaller text.

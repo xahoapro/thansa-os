@@ -110,6 +110,18 @@ Khi Thansa đang suy nghĩ hoặc đang đọc, nút gửi ở thanh nhập bi�
 
 Nút dừng chỉ dừng **phiên bạn đang xem**; phiên khác đang chạy nền vẫn tiếp tục. Xem [Phiên hội thoại](04-phien-hoi-thoai.md).
 
+### Gửi thêm việc khi Thansa đang làm
+
+Từ 0.206.0, trong lúc Thansa đang làm bạn vẫn gõ và gửi tiếp được, giống Claude Code hay Codex. Gõ chữ vào ô nhập thì nút gửi hiện lại ngay cạnh nút dừng (chú thích "Gửi thêm vào việc đang làm"), trên máy tính nhấn Enter cũng được. Việc đang làm **không bị dừng**:
+
+- Với Claude Code và các bộ não dùng API key, Thansa đọc tin mới ở **bước kế tiếp** (sau lần dùng công cụ đang chạy) rồi làm luôn. Tin là lời sửa hướng thì Thansa áp dụng ngay, là việc mới thì Thansa nhận thêm, làm song song nếu được, và trả lời cả hai.
+- Từ 0.213.0, Codex (gói ChatGPT) cũng đọc tin mới ngay trong lượt, giống nút Enter của chính ứng dụng Codex: tin gửi lúc Codex đang chạy lệnh được chèn vào bước kế tiếp, tin gửi lúc Codex đang viết câu cuối thì Codex làm thêm một vòng trong cùng lượt để trả lời nốt. Muốn quay về cách cũ (để tin chờ tới lượt sau) thì đặt biến môi trường `JAVIS_CODEX_STEER=0` rồi khởi động lại Thansa.
+- Với Grok Build và Antigravity CLI (chạy một mạch, không nhận tin giữa chừng), hoặc khi Thansa đang viết câu trả lời cuối, tin của bạn **tự chạy thành lượt kế tiếp** ngay khi việc hiện tại xong. Không tin nào bị mất.
+
+Dưới tin bạn vừa gửi có một dòng nhỏ cho biết nó đang ở đâu: "Thansa sẽ đọc tin này ở bước kế tiếp", "Thansa đã đọc tin này", "Thansa làm tin này ngay sau khi xong việc hiện tại" hoặc "Thansa đang làm tin này". Gửi được nhiều tin liên tiếp, Thansa đọc theo đúng thứ tự. Muốn bỏ hẳn việc đang làm thì vẫn bấm nút dừng như cũ.
+
+Từ 0.213.0, Telegram, Discord, Slack, Lark, Messenger và Zalo cũng vậy. Trước đây bot trả lời "Đang xử lý câu trước, gửi /stop" rồi bỏ tin đó. Giờ bot đáp một dòng ngắn: "↪ Đã nhận, Thansa đọc tin này ngay ở bước kế tiếp" hoặc "📥 Đã nhận, Thansa làm tin này ngay sau câu đang trả lời", rồi làm theo đúng hai cách ở trên. Gửi /stop thì dừng việc đang làm và bỏ luôn các tin đang chờ. Bot chăm sóc khách (chế độ người thật) giữ cách cũ: không đáp gì, gộp các tin khách nhắn thêm vào lượt sau.
+
 ## Lệnh gạch chéo "/" trong ô chat
 
 Gõ dấu **`/`** là một menu lệnh hiện lên ngay phía trên ô gõ - **ở đầu ô nhập hay giữa câu đều được**.
@@ -479,6 +491,32 @@ Về lại màn Thansa: bấm nút **‹ Thu nhỏ** trên thanh tiêu đề c�
 Bảng thẻ số liệu cố định ở cột trái đã được gỡ (từ bản 0.9.166). Trước đây mỗi lần mở dashboard là Thansa lại tự chạy một lượt quét các nguồn đã kết nối để đắp bảng đó, tốn hạn mức mà phần lớn thời gian không ai nhìn tới.
 
 Giờ muốn xem số thì cứ hỏi thẳng trong chat ("doanh thu hôm nay thế nào", "so với tuần trước"). Thansa gọi đúng nguồn đang đấu (POS, kênh, quảng cáo...) và trả lời bằng lời, nên chỉ chạy khi bạn thật sự cần. Chi tiết về nguồn số liệu xem [Kết nối & số liệu kinh doanh](09-mcp-va-so-lieu.md).
+
+## Thẻ biểu đồ, ô số liệu và nút bấm trong câu trả lời
+
+Khi trả lời bằng số thật (doanh thu, đơn, chi phí quảng cáo), Thansa có thể vẽ thẳng trong khung chat:
+
+- **Biểu đồ** cột hoặc đường cho xu hướng theo ngày, tuần (tối đa 24 mốc, 3 chuỗi số).
+- **Ô số liệu**: vài con số chính kèm mức tăng giảm, giảm thì hiện màu đỏ.
+- **Nút bấm** (tối đa 4) khi cần bạn chọn nhanh, ví dụ "Duyệt bản A" hay "Sửa lại". Bấm là gửi câu đó như bạn tự gõ; nút không cấp quyền gì thêm.
+
+Thẻ vẽ từ dữ liệu trong câu trả lời nên mở lại hội thoại vẫn thấy. Telegram, Zalo và terminal nhận bản chữ: biểu đồ thành từng dòng số, nút thành danh sách đánh số để trả lời bằng số. Chữ trông giống khoá API trong thẻ được che trước khi vẽ.
+
+## Thansa nhớ lại các cuộc trò chuyện trước
+
+Mở chat mới mà nhắc chuyện cũ ("làm tiếp landing page nước mắm hôm trước"), Thansa tự tìm trong các chat khác của chính bạn ở brain này và đưa tối đa 3 đoạn trích ngắn vào kèm câu hỏi để hiểu ngữ cảnh. Chỉ chat của chủ (khung chính, chat với cộng sự, Thansa Core) được tìm; chat Team, chatbot và hội thoại với khách không bao giờ được đưa vào. Đoạn trích không lưu vào lịch sử chat. Muốn tắt thì đặt `recall.enabled` thành `false` trong cài đặt.
+
+## Tin thoại
+
+Bảo Thansa "đọc cho tôi nghe", "gửi tin thoại" hay muốn nghe báo cáo thay vì đọc, Thansa gọi công cụ `javis_voice_note`: một đoạn nói ngắn (tối đa 1000 ký tự) được ghi thành file mp3 trong `attachments/voice/` của brain. Khung chat hiện trình phát ngay cạnh link, Telegram nhận dạng âm thanh. Thansa vẫn viết nội dung đó bằng chữ bên dưới. Giọng là Edge miễn phí, tự chọn theo ngôn ngữ của câu.
+
+Nhắc hẹn còn có ô **Đọc thành tiếng**: tới giờ, câu nhắc hay kết quả báo cáo được gửi kèm tin thoại. Nếu Thansa đang mở trên máy hay điện thoại, tin thoại tự phát ngay như một cuộc gọi (trình duyệt chặn tự phát thì bấm nút phát).
+
+Muốn Thansa **gọi điện đúng giờ** thì tick ô **Gọi điện cho tôi** (hoặc nói trong chat "7h sáng gọi đọc báo cáo doanh thu cho anh"). Tới giờ, trang Thansa đang mở đổ chuông và hiện thẻ cuộc gọi đến với hai nút **Nghe** và **Từ chối**. Bấm Nghe là vào cuộc gọi giọng nói như khi bấm mic (ChatGPT Live nếu đã bật, giọng cơ bản nếu chưa): Thansa đọc ngắn gọn nội dung nhắc hay báo cáo rồi hỏi bạn cần gì thêm, bạn nói tiếp như cuộc gọi thường. Không nghe trong 45 giây thì coi là cuộc gọi nhỡ, nội dung vẫn nằm trong khung chat. Không mở Thansa thì không có chuông: Telegram vẫn nhận tin như mọi nhắc hẹn khác. Đây là cuộc gọi trong app Thansa, không phải cuộc gọi tới số điện thoại.
+
+## Giữ ấm bộ nhớ đệm (Claude Code, gói Pro/Max)
+
+Gói Pro/Max giữ bộ nhớ đệm của Claude Code 1 giờ. Nghỉ quá 1 giờ thì tin tiếp theo phải nạp lại cả cuộc trò chuyện, tốn nhiều hạn mức với chat dài. Ở trang **Mức dùng token**, mục ngân sách có ô **Giữ ấm bộ nhớ đệm**: bật lên thì khoảng 50 phút sau tin cuối, Thansa gửi một yêu cầu rất nhỏ (không công cụ, không ghi vào cuộc trò chuyện) để giữ bộ nhớ đệm thêm 1 giờ. Chỉ chạy trong 2 giờ sau tin cuối, không bao giờ khi chat đang trả lời, và dừng ngay khi gói báo hết lượt hay bộ nhớ đệm đã nguội. Đây vẫn là việc chạy nền trên gói, nên mặc định tắt.
 
 ## Dùng trên điện thoại
 

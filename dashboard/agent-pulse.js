@@ -194,14 +194,16 @@
     }).join("");
   }
 
+  function noteLines(xs) {
+    return xs.filter(Boolean).map(function (x) { return '<div class="pulse-line pulse-note">' + esc(x) + "</div>"; }).join("");
+  }
+
   /* Cả bảng. `view`: kết quả GET /agents/{slug}/pulse. `o`: {only, teamNames, busy, msg, err, registry}. */
   function panelHtml(view, opts) {
     var o = opts || {}, v = view || {};
     var html = '<div class="pulse-head"><span class="pulse-title">' + esc(tw("pulse.title")) + infoBtn() + "</span></div>";
     // 0.175.0 (chủ repo 16/10/2026: tab Cài đặt "nhiều thông tin quá"): mọi câu giải thích nằm sau nút i cạnh tiêu đề.
     // Ngoài mặt chỉ còn các dòng nhịp và ô chọn.
-    var how = [tw(v.resonance ? "pulse.resonance_on" : "pulse.resonance_off")];
-    if (!o.only) how.push(tw("pulse.intro"));
     var hi = html.length;
     var ctxs = (v.contexts || []).filter(function (c) { return !o.only || c.context_ref === o.only; });
     if (!v.agent_key || !ctxs.length) {
@@ -216,10 +218,13 @@
         [0, 1, 2, 3, 4, 5, 6, 7].map(function (n) {
           return '<option value="' + n + '"' + (n === mt ? " selected" : "") + ">" + esc(tierLabel(n)) + "</option>";
         }).join("") + "</select></label>";
-      how.push(tw("pulse.max_tier_note"));
     }
-    html = html.slice(0, hi) + infoBody(how.map(function (x) { return '<div class="pulse-line pulse-note">' + esc(x) + "</div>"; })
-      .join("")) + html.slice(hi);
+    // The (i) block goes right after the title; empty lines are dropped.
+    html = html.slice(0, hi) + infoBody(noteLines([
+      tw(v.resonance ? "pulse.resonance_on" : "pulse.resonance_off"),
+      o.only ? "" : tw("pulse.intro"),
+      !o.only && v.agent_key ? tw("pulse.max_tier_note") : ""
+    ])) + html.slice(hi);
     var changes = (v.changes || []).filter(function (e) { return !o.only || e.context_ref === o.only || e.context_ref === "*"; });
     if (changes.length) {
       html += '<div class="pulse-sub">' + esc(tw("pulse.changes_title")) + '</div><ul class="pulse-list">' +
@@ -239,6 +244,21 @@
     html += proposalsHtml(v.proposals, o);
     // Hàng thành viên của MỘT nhóm (`only`): các mục chỉ vẽ phần của ngữ cảnh đó; tên nhóm thay cho mã.
     html += partsHtml(v, o.registry, { slug: o.slug || v.slug || "", only: o.only || "", teamNames: o.teamNames || {} });
+    if (o.err) html += '<div class="pulse-line pulse-err" role="alert">' + esc(tw("pulse.error", { e: o.err })) + "</div>";
+    else if (o.msg) html += '<div class="pulse-line pulse-ok" role="status">' + esc(o.msg) + "</div>";
+    return html;
+  }
+
+  /* 0.190.0 (chủ repo 16/10/2026: "tối giản nhất"): bản GỌN cho cột Cài đặt của một trợ lý. Không nhịp, không ngưỡng,
+     không lịch sử thay đổi: chỉ dòng hạn mức bằng lời thường (mục nào trong sổ đăng ký có `compact(view)`) và đề xuất
+     đang chờ chủ quyết, nếu có. Bảng đầy đủ vẫn ở hàng thành viên của ngăn Nhóm. */
+  function compactHtml(view, opts) {
+    var o = opts || {}, v = view || {};
+    var list = o.registry || (typeof window !== "undefined" ? window.JavisPulseParts : null) || [];
+    var html = list.map(function (p) {
+      try { return p && typeof p.compact === "function" ? p.compact(v) : ""; } catch (e) { return ""; }
+    }).join("");
+    html += proposalsHtml((v.proposals || []).filter(function (p) { return p.status === "pending"; }), o);
     if (o.err) html += '<div class="pulse-line pulse-err" role="alert">' + esc(tw("pulse.error", { e: o.err })) + "</div>";
     else if (o.msg) html += '<div class="pulse-line pulse-ok" role="status">' + esc(o.msg) + "</div>";
     return html;
@@ -267,7 +287,7 @@
     if (!host || !opts || !opts.slug) return null;
     var o = Object.assign({ busy: {} }, opts), view = null;
     var base = "/agents/" + encodeURIComponent(o.slug) + "/pulse";
-    function draw() { host.classList.add("pulse-panel"); host.innerHTML = panelHtml(view, o); }
+    function draw() { host.classList.add("pulse-panel"); host.innerHTML = o.compact ? compactHtml(view, o) : panelHtml(view, o); }
     function load() {
       return call(base + "?brain=" + encodeURIComponent(brainOf(o))).then(function (res) {
         if (res.code !== 200 || !res.j || res.j.ok !== true) throw res.j;
@@ -317,7 +337,7 @@
 
   if (typeof window !== "undefined" && !window.JavisPulseParts) window.JavisPulseParts = [];
   var apiOut = { panelHtml: panelHtml, contextLabel: contextLabel, changeLine: changeLine, feedbackLine: feedbackLine,
-    partsHtml: partsHtml, proposalsHtml: proposalsHtml, policyHtml: policyHtml, tierLabel: tierLabel, stateLabel: stateLabel, mount: mount };
+    partsHtml: partsHtml, compactHtml: compactHtml, proposalsHtml: proposalsHtml, policyHtml: policyHtml, tierLabel: tierLabel, stateLabel: stateLabel, mount: mount };
   if (typeof window !== "undefined") window.JavisPulse = apiOut;
   if (typeof module !== "undefined" && module.exports) module.exports = apiOut;
 })();
