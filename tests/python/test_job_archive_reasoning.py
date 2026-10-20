@@ -91,20 +91,20 @@ meta = main._read_md(BR / "agents" / "lan.md")[0]
 check("setting the level writes only that key", r.status_code == 200 and meta.get("reasoning") == "high"
       and meta.get("name") == "Lan", meta)
 check("a bad level is refused", client.post("/agents/lan/reasoning", data={"level": "max!", "brain": B}).status_code == 400)
-# 0.284.0 (owner 22/10/2026): Javis Core has its own level. Before, it was refused here and its chat ran at, and its level
+# 0.284.0 (owner 22/10/2026): Thansa Core has its own level. Before, it was refused here and its chat ran at, and its level
 # chip changed, the MAIN chat's level.
 import config as cfgmod  # noqa: E402
 main_before = cfgmod.read_settings().get("model", {}).get("reasoning")
 r = client.post("/agents/javis-core/reasoning", data={"level": "low", "brain": B})
 mcfg = cfgmod.read_settings().get("model", {})
-check("Javis Core keeps its own level", r.status_code == 200 and mcfg.get("core_reasoning") == "low", (r.status_code, mcfg))
+check("Thansa Core keeps its own level", r.status_code == 200 and mcfg.get("core_reasoning") == "low", (r.status_code, mcfg))
 check("...and the main chat's level is untouched", mcfg.get("reasoning") == main_before, mcfg)
-check("Javis Core follows the main chat's level until it has its own (owner 22/10/2026)",
+check("Thansa Core follows the main chat's level until it has its own (owner 22/10/2026)",
       main._core_reasoning({"reasoning": "high"}) == "high" and main._core_reasoning({"reasoning": "high", "core_reasoning": "x"}) == "high"
       and main._core_reasoning({"reasoning": "high", "core_reasoning": "low"}) == "low")
 sc = main.get_store().create_session(brain=main._brain_key(B), engine="cli", channel="agent:javis-core")
 mc = client.get(f"/sessions/{sc}/meta").json()
-check("the model bar of a Javis Core chat reads Javis Core's level", mc.get("agent_slug") == "javis-core"
+check("the model bar of a Thansa Core chat reads Thansa Core's level", mc.get("agent_slug") == "javis-core"
       and mc.get("agent_reasoning") == "low", mc)
 sm = main.get_store().create_session(brain=main._brain_key(B), engine="cli")
 check("a main chat is not an assistant's chat", "agent_slug" not in client.get(f"/sessions/{sm}/meta").json())

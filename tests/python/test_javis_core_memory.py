@@ -2,7 +2,7 @@
 
     python tests/python/test_javis_core_memory.py
 
-Spec: owner, 16/10/2026 (Javis Core goal, sections 10, 12, 13 and 14; acceptance groups "Cá nhân hoá" and "Tự học").
+Spec: owner, 16/10/2026 (Thansa Core goal, sections 10, 12, 13 and 14; acceptance groups "Cá nhân hoá" and "Tự học").
 
 - see what is remembered, with type, origin, source and dates; edit one; forget one;
 - a forgotten memory is not learnt again from old chats (same slug or same text), and keeps no content;
