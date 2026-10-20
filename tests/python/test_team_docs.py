@@ -38,7 +38,7 @@ async def _quiet(ev):
 
 main._CHAT_RUNTIME.publish = _quiet
 main._TEAM_API.deps.spawn = lambda job: job.close() if hasattr(job, "close") else None
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 H = {"origin": "http://127.0.0.1"}
 b = str(BR)
