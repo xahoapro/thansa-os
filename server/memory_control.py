@@ -137,7 +137,7 @@ def set_learning(mem_dir: Path, on: bool) -> bool:
 LEARNING_OFF_NOTE = ("\n\n# === GHI NHỚ MỚI ĐANG TẮT ===\n"
                      "Người dùng đã tắt việc lưu ghi nhớ mới cho brain này. Vẫn dùng bộ nhớ đã có, nhưng KHÔNG tạo hay "
                      "sửa file trong memory/ và không thêm dòng vào MEMORY.md. Nếu người dùng nhờ nhớ điều gì, nói rõ "
-                     "việc ghi nhớ đang tắt và chỉ chỗ bật lại (Javis Core > Trí nhớ).")
+                     "việc ghi nhớ đang tắt và chỉ chỗ bật lại (Thansa Core > Trí nhớ).")
 
 
 # ── list / edit / forget ──────────────────────────────────────────────────────

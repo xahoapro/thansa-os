@@ -6,7 +6,7 @@ Get Thansa OS running in a few minutes. Full guides: [docs/en/](docs/en/README.m
 
 ## Option 1 - Hostinger VPS (Docker Manager, one click)
 
-> 🛒 **No VPS yet?** [Get a Hostinger VPS here](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager comes built in, so Javis installs in one click. Once it is ready, come back to the steps below.
+> 🛒 **No VPS yet?** [Get a Hostinger VPS here](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager comes built in, so Thansa installs in one click. Once it is ready, come back to the steps below.
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**.
 2. Paste this URL:

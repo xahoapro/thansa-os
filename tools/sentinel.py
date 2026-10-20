@@ -31,7 +31,7 @@ def _brains(brains_dir: Path) -> list:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Read-only Javis health scan")
+    ap = argparse.ArgumentParser(description="Read-only Thansa health scan")
     ap.add_argument("--state-dir", default=os.getenv("JAVIS_STATE_DIR", str(ROOT / "server")))
     ap.add_argument("--brains-dir", default=os.getenv("BRAINS_DIR", str(ROOT / "brains")))
     ap.add_argument("--hours", type=float, default=24.0)

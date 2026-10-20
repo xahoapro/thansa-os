@@ -234,10 +234,10 @@ class HangLuot:
             self._xep_hang(chat, text, meta)   # the turn has not opened its inbox yet, or too many are waiting
             live = False
         await self._send(client, chat, localefmt.chu(
-            "↪ Đã nhận, Javis đọc tin này ngay ở bước kế tiếp của việc đang làm.",
-            "↪ Got it, Javis reads this at the next step of the current work.") if live else localefmt.chu(
-            "📥 Đã nhận, Javis làm tin này ngay sau câu đang trả lời.",
-            "📥 Got it, Javis handles this right after the current answer."))
+            "↪ Đã nhận, Thansa đọc tin này ngay ở bước kế tiếp của việc đang làm.",
+            "↪ Got it, Thansa reads this at the next step of the current work.") if live else localefmt.chu(
+            "📥 Đã nhận, Thansa làm tin này ngay sau câu đang trả lời.",
+            "📥 Got it, Thansa handles this right after the current answer."))
 
     async def _turn(self, client, chat, text, meta=None):
         if self.giau_trang_thai:

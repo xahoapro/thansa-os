@@ -226,7 +226,7 @@ Danh sách chỉ nạp 20 cuộc một lần. Cuộn xuống cuối và bấm **
 Kiểm tra bạn có đang ở đúng bộ não chứa cuộc đó không. Nếu vẫn không ra, thử từ khoá ngắn hơn hoặc một từ đơn giản hơn thay vì cả câu dài.
 
 **Gửi câu mới thì báo "Phiên này đang trả lời - đợi lượt hiện tại xong đã."**
-Từ 0.206.0 tin gõ trong lúc đang chạy đi vào việc đang làm (xem [Gửi thêm việc khi Javis đang làm](02-tro-chuyen-va-giong-noi.md)), nên câu này chỉ còn gặp ở các đường khác như nút Chạy lại. Đợi lượt đó xong, hoặc bấm **＋ Hội thoại mới** để hỏi việc khác song song.
+Từ 0.206.0 tin gõ trong lúc đang chạy đi vào việc đang làm (xem [Gửi thêm việc khi Thansa đang làm](02-tro-chuyen-va-giong-noi.md)), nên câu này chỉ còn gặp ở các đường khác như nút Chạy lại. Đợi lượt đó xong, hoặc bấm **＋ Hội thoại mới** để hỏi việc khác song song.
 
 **Mở lại cuộc cũ nhưng Thansa không nhớ ngữ cảnh trước.**
 Với engine Claude, khả năng nhớ đầy đủ phụ thuộc vào phiên gốc còn được lưu hay không. Với engine Codex, thread native có thể đã bị dọn khỏi máy - Thansa sẽ tự khôi phục từ lịch sử đã lưu và báo một dòng trong khung chat. Với engine API, phần rất cũ có thể đã ở dạng tóm tắt nén thay vì nguyên văn, nên chi tiết vụn có thể mờ đi; khi đó nhắc lại ngắn gọn thông tin quan trọng trong câu hỏi mới là đủ.

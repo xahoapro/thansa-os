@@ -489,7 +489,7 @@ Up to and including 0.42.1 there was a bug in exactly this place: only ChatGPT/C
 | **Accounts** list | Plan provider card with 2 or more accounts | Used top to bottom; states **Signed in** / **Not signed in** / **Off** / **Out of quota, back at HH:MM**; **⋯** for Turn off / Turn on, Sign in again, Remove |
 | **＋ Connect another provider (N)** | Bottom of the page | Show the N providers not yet connected, to sign in / paste a key |
 | **○ Not signed in** | Claude Code card | Claude Code is not signed in on this machine |
-| **○ Claude Code not installed** | Claude Code card | The machine running Javis has no `claude` command; follow the install box on the card |
+| **○ Claude Code not installed** | Claude Code card | The machine running Thansa has no `claude` command; follow the install box on the card |
 | **Sign into Claude** | Claude Code card | Start the link-based sign-in flow |
 | **↻ Re-check** | Claude Code card (only while signed out) | Re-query the sign-in state |
 | **Sign into ChatGPT** | OpenAI OAuth card | Sign in with a device code |

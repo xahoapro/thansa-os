@@ -9,7 +9,7 @@
 
 ## विकल्प 1 - Hostinger VPS (Docker Manager, एक click में)
 
-> 🛒 **अभी VPS नहीं है?** [Hostinger VPS यहाँ से लीजिए](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)। इसमें Docker Manager पहले से है, इसलिए Javis एक click में install होता है। तैयार होने पर नीचे के steps पर लौट आइए।
+> 🛒 **अभी VPS नहीं है?** [Hostinger VPS यहाँ से लीजिए](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)। इसमें Docker Manager पहले से है, इसलिए Thansa एक click में install होता है। तैयार होने पर नीचे के steps पर लौट आइए।
 
 1. hPanel → VPS → **Docker Manager** → **Compose** → **Compose from URL**।
 2. यह URL paste कीजिए:

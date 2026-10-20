@@ -118,7 +118,7 @@ def _op_forget(d: Deps, root: str, args: dict) -> str:
         return f"ERROR: không có ghi nhớ '{slug}'. Gọi op=list để xem slug đúng."
     except ValueError:
         return "ERROR: slug không hợp lệ."
-    return (f"Đã quên '{r['title']}'. Javis không tự học lại điều này từ chat cũ; lịch sử chat không bị xoá. "
+    return (f"Đã quên '{r['title']}'. Thansa không tự học lại điều này từ chat cũ; lịch sử chat không bị xoá. "
             "Brain có git hoặc bản sao lưu thì nội dung cũ vẫn còn trong đó.")
 
 

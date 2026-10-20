@@ -247,7 +247,7 @@ flowchart LR
 <details open>
 <summary><b>方法 1：Hostinger Docker Manager（ドメイン + HTTPS、ワンクリック）</b></summary>
 
-> 🛒 **VPS をまだお持ちでない方へ：** [Hostinger VPS はこちら](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)。Docker Manager が標準搭載なので、Javis はワンクリックで入ります。準備ができたら下の手順に戻ってください。
+> 🛒 **VPS をまだお持ちでない方へ：** [Hostinger VPS はこちら](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)。Docker Manager が標準搭載なので、Thansa はワンクリックで入ります。準備ができたら下の手順に戻ってください。
 
 Hostinger VPS → **Docker Manager → Compose → URL** → Hostinger 用のファイルを貼り付けて **Deploy** を押します。
 

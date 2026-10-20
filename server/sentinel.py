@@ -143,7 +143,7 @@ def scan(state_dir: Path, brains: Iterable[Path], now: Optional[float] = None,
 
 
 def to_markdown(report: dict) -> str:
-    lines = [f"# Javis health scan ({time.strftime('%Y-%m-%d %H:%M', time.localtime(report['scanned_at']))})", ""]
+    lines = [f"# Thansa health scan ({time.strftime('%Y-%m-%d %H:%M', time.localtime(report['scanned_at']))})", ""]
     if not report["issues"]:
         lines.append(f"No failures in the last {report['window_h']} hours.")
     for g in report["issues"]:

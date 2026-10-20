@@ -31,7 +31,7 @@ def note_for(texts: List[str]) -> str:
     if not texts:
         return ""
     body = "\n\n".join(f"<<<\n{t}\n>>>" for t in texts)
-    return ("\n\n[Javis] Người dùng vừa gửi thêm "
+    return ("\n\n[Thansa] Người dùng vừa gửi thêm "
             + ("một tin" if len(texts) == 1 else f"{len(texts)} tin")
             + " trong lúc bạn đang làm. Đây là lời của chính họ:\n" + body + "\n"
             "Nếu đó là sửa hướng hay bổ sung cho việc đang làm, áp dụng ngay từ bước kế tiếp. Nếu là một việc mới, "
@@ -43,9 +43,9 @@ def followup_prompt(texts: List[str]) -> str:
     """The message of the turn that runs the leftovers after a turn ended. Model prompt: Vietnamese."""
     body = "\n\n".join(texts)
     if len(texts) == 1:
-        return ("[Javis] Tin dưới đây người dùng gửi trong lúc lượt trước còn đang chạy; lượt trước đã xong. "
+        return ("[Thansa] Tin dưới đây người dùng gửi trong lúc lượt trước còn đang chạy; lượt trước đã xong. "
                 "Giờ làm theo tin này:\n\n" + body)
-    return (f"[Javis] {len(texts)} tin dưới đây người dùng gửi trong lúc lượt trước còn đang chạy; lượt trước đã xong. "
+    return (f"[Thansa] {len(texts)} tin dưới đây người dùng gửi trong lúc lượt trước còn đang chạy; lượt trước đã xong. "
             "Giờ làm theo các tin này, theo đúng thứ tự:\n\n" + body)
 
 

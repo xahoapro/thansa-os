@@ -247,7 +247,7 @@ flowchart LR
 <details open>
 <summary><b>विकल्प 1: Hostinger Docker Manager (domain + HTTPS, एक click में)</b></summary>
 
-> 🛒 **अभी VPS नहीं है?** [Hostinger VPS यहाँ से लीजिए](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)। इसमें Docker Manager पहले से है, इसलिए Javis एक click में install होता है। तैयार होने पर नीचे के steps पर लौट आइए।
+> 🛒 **अभी VPS नहीं है?** [Hostinger VPS यहाँ से लीजिए](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)। इसमें Docker Manager पहले से है, इसलिए Thansa एक click में install होता है। तैयार होने पर नीचे के steps पर लौट आइए।
 
 Hostinger VPS → **Docker Manager → Compose → URL** → Hostinger वाली file paste कीजिए और **Deploy** दबाइए:
 
