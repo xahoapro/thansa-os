@@ -247,7 +247,7 @@ flowchart LR
 <details open>
 <summary><b>Opsi 1: Hostinger Docker Manager (domain + HTTPS, sekali klik)</b></summary>
 
-> 🛒 **Belum punya VPS?** [Sewa VPS Hostinger di sini](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager sudah tersedia, jadi Javis terpasang sekali klik. Setelah siap, kembali ke langkah di bawah.
+> 🛒 **Belum punya VPS?** [Sewa VPS Hostinger di sini](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager sudah tersedia, jadi Thansa terpasang sekali klik. Setelah siap, kembali ke langkah di bawah.
 
 VPS Hostinger → **Docker Manager → Compose → URL** → tempel file Hostinger lalu tekan **Deploy**:
 

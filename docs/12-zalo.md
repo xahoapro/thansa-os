@@ -85,14 +85,14 @@ nối (khoảng hai tuần gần nhất); tin cũ hơn thì không API nào lấ
 
 Ba tool đọc tin chỉ đọc kho do chính javis-zalo gom: tin tới lúc đang kết nối, cộng phần Zalo gửi
 lại mỗi lần vừa kết nối. Không có cách hỏi lại Zalo lịch sử chat riêng sau đó. Nên tin tới đúng lúc
-mất kết nối (Javis khởi động lại hay cập nhật, mạng rớt, một phiên Zalo Web khác đang giữ kết nối)
+mất kết nối (Thansa khởi động lại hay cập nhật, mạng rớt, một phiên Zalo Web khác đang giữ kết nối)
 chỉ thấy được nếu phần gửi lại mang nó về.
 
 - Kho lịch sử giờ **lưu ra đĩa** (30 ngày) trong thư mục phiên của tài khoản, nên khởi động lại
   không còn xoá sạch.
 - Mỗi kết quả đọc có thêm `sync`. `sync.complete: false` nghĩa là trong khoảng đó có lúc mất kết
   nối mà phần gửi lại chưa phủ hết (`sync.gaps` ghi từ lúc nào đến lúc nào): có thể đang thiếu tin,
-  **không phải** là khách chưa trả lời. Javis khi đó giữ bước đang chờ (duyệt, phát hành) và báo chủ.
+  **không phải** là khách chưa trả lời. Thansa khi đó giữ bước đang chờ (duyệt, phát hành) và báo chủ.
 - Tin tới lúc mất kết nối mà phần gửi lại mang về được đưa vào luồng tin mới, đánh dấu
   `recovered: true`, nên Hộp thư cũng có.
 

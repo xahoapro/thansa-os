@@ -489,7 +489,7 @@ Từ 0.42.1 trở về trước có lỗi ở đúng chỗ này: chỉ mạch c�
 | Danh sách **Tài khoản** | Thẻ nhà chạy bằng gói có từ 2 tài khoản | Dùng lần lượt từ trên xuống; trạng thái **Đã đăng nhập** / **Chưa đăng nhập** / **Đã tắt** / **Hết lượt, mở lại HH:MM**; **⋯** để Tắt / Bật, Đăng nhập lại, Gỡ |
 | **＋ Kết nối thêm nhà cung cấp (N)** | Cuối trang | Hiện N nhà chưa kết nối để đăng nhập / dán key |
 | **○ Chưa đăng nhập** | Card Claude Code | Chưa đăng nhập Claude Code trên máy |
-| **○ Chưa cài Claude Code** | Card Claude Code | Máy chạy Javis chưa có lệnh `claude`, làm theo khung hướng dẫn cài trên card |
+| **○ Chưa cài Claude Code** | Card Claude Code | Máy chạy Thansa chưa có lệnh `claude`, làm theo khung hướng dẫn cài trên card |
 | **Đăng nhập Claude** | Card Claude Code | Bắt đầu luồng đăng nhập bằng link |
 | **↻ Kiểm tra lại** | Card Claude Code (chỉ khi chưa đăng nhập) | Hỏi lại trạng thái đăng nhập |
 | **Đăng nhập ChatGPT** | Card OpenAI OAuth | Đăng nhập bằng mã device code |

@@ -297,10 +297,10 @@ def _cau_bao_tam_thoi(loi: str, so_lan: int = len(_NHIP_THU_LAI)) -> str:
     `so_lan` is the number of retries that really ran: a turn that already used a tool is never
     retried, and the old text claimed "retried 2 times" for it anyway (owner's screenshot 2026-10-18).
     """
-    vi_thu = ("Javis đã tự thử lại " + str(so_lan) + " lần, vẫn chưa được.\n\n" if so_lan
-              else "Lượt này đã làm được một phần nên Javis không tự chạy lại, tránh làm một việc hai lần.\n\n")
-    en_thu = ("Javis retried " + str(so_lan) + " times without success.\n\n" if so_lan
-              else "This turn had already done part of the work, so Javis did not run it again (that would repeat it).\n\n")
+    vi_thu = ("Thansa đã tự thử lại " + str(so_lan) + " lần, vẫn chưa được.\n\n" if so_lan
+              else "Lượt này đã làm được một phần nên Thansa không tự chạy lại, tránh làm một việc hai lần.\n\n")
+    en_thu = ("Thansa retried " + str(so_lan) + " times without success.\n\n" if so_lan
+              else "This turn had already done part of the work, so Thansa did not run it again (that would repeat it).\n\n")
     return localefmt.chu(
         "Google (Antigravity) đang trục trặc tạm thời nên lượt này không gửi đi được. " + vi_thu +
         "Chờ một lát rồi nhắn lại, hoặc đổi sang bộ não khác ở trang Models. Đây là lỗi "
@@ -317,13 +317,13 @@ def _cau_bao_het_gio(loi: str, giay: float) -> str:
     phut = max(1, int(round(giay / 60)))
     return localefmt.chu(
         "Lượt này chạy quá " + str(phut) + " phút nên Antigravity CLI tự dừng. Đây là trần thời gian "
-        "Javis đặt cho một lượt, không phải lỗi của Google hay cấu hình của bạn. Các bước đã chạy xong "
+        "Thansa đặt cho một lượt, không phải lỗi của Google hay cấu hình của bạn. Các bước đã chạy xong "
         "vẫn giữ kết quả.\n\n"
         "Nhắn \"làm tiếp\" để làm nốt phần còn lại, hoặc giao việc dài như vậy thành việc nền ở trang "
         "Việc. Cần trần dài hơn thì đặt biến môi trường JAVIS_AGY_TIMEOUT (tính bằng giây).\n\n"
         "_Nguyên văn:_ " + (loi or "")[:400],
         "This turn ran over " + str(phut) + " minutes, so Antigravity CLI stopped it. That is the time "
-        "cap Javis sets for one turn, not a Google error or your configuration. Steps that finished keep "
+        "cap Thansa sets for one turn, not a Google error or your configuration. Steps that finished keep "
         "their results.\n\n"
         "Send \"continue\" to finish the rest, or give a job this long to the background queue on the "
         "Work page. For a longer cap, set the environment variable JAVIS_AGY_TIMEOUT (in seconds).\n\n"
