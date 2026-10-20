@@ -365,8 +365,8 @@ def register_agents(app, deps: ResonanceApiDeps):
             return _err(400, "Thiếu trợ lý", "Missing assistant")
         if slug.lower() == "javis-core":
             # Javis Core (0.185.0) is the system assistant: it is not an Auto assistant and cannot be switched.
-            return _err(403, "Javis Core là trợ lý hệ thống, không bật hay tắt Auto được",
-                        "Javis Core is the system assistant; Auto cannot be switched for it")
+            return _err(403, "Thansa Core là trợ lý hệ thống, không bật hay tắt Auto được",
+                        "Thansa Core is the system assistant; Auto cannot be switched for it")
         if on and deps.agent_file(root, slug) is None:
             store = deps.store() if _store_exists() else None
             live = store.agent(root, slug) if store else None
