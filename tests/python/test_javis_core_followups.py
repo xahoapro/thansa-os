@@ -1,4 +1,4 @@
-"""Javis Core follow-ups (0.188.0): the chat's brain wins, a quieter Javis Core, a hard memory block for Claude
+"""Thansa Core follow-ups (0.188.0): the chat's brain wins, a quieter Thansa Core, a hard memory block for Claude
 Code, and a source on every new memory.
 
     python tests/python/test_javis_core_followups.py
@@ -66,15 +66,15 @@ check("the chat shows whose it is, with a switch button", "function veNhanBrain(
 check("clicking a bell item of another brain switches the brain first, only on that click",
       "if (chuyenBrainNeuCan(item)) { setTimeout(function () { moThuTiep(item); }, 450); return; }" in noti and "gs.dispatchEvent(new Event(\"change\"))" in noti)
 
-# ---- 2. a quieter Javis Core ----
+# ---- 2. a quieter Thansa Core ----
 cfg = main.cfgmod.read_settings()
 cfg.setdefault("telegram", {}).update({"enabled": True, "token": "1:a", "chat_id": "111,222", "owner_chat_id": "111"})
 main.cfgmod.write_settings(cfg)
 rt = main._report_route("", str(OTHER), "report", quiet=True)
-check("a run that went fine is not posted into Javis Core", rt["chat"] == "" and not rt.get("routing"))
+check("a run that went fine is not posted into Thansa Core", rt["chat"] == "" and not rt.get("routing"))
 rt = main._report_route("", str(OTHER), "report", quiet=False)
 check("a report that needs the owner still is", rt["chat"] != "")
-check("a colleague's Telegram report is not copied into the owner's Javis Core",
+check("a colleague's Telegram report is not copied into the owner's Thansa Core",
       main._report_route("222", str(OTHER), "answer")["chat"] == "")
 check("the owner's own Telegram report is", main._report_route("111", str(OTHER), "answer")["chat"] != "")
 cs = (ROOT / "dashboard" / "console.js").read_text(encoding="utf-8")

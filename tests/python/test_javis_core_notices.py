@@ -1,11 +1,11 @@
-"""System notices: server read state, asking Javis Core, push hygiene (0.187.0).
+"""System notices: server read state, asking Thansa Core, push hygiene (0.187.0).
 
     python tests/python/test_javis_core_notices.py
 
-Spec: owner, 16/10/2026 (Javis Core goal, sections 7, 8 and 15).
+Spec: owner, 16/10/2026 (Thansa Core goal, sections 7, 8 and 15).
 
 - the News tab's read set lives on the server: the same on every device, unchanged by switching brains;
-- "Ask Javis Core" copies the notice, with its source and time, into the person's own Javis Core chat of the right
+- "Ask Thansa Core" copies the notice, with its source and time, into the person's own Thansa Core chat of the right
   brain, once; the shared notice is not changed;
 - a push device is bound to the login it subscribed under: logout drops it, and an ended login receives nothing;
 - "hide content" sends a push that only says something arrived.
@@ -70,14 +70,14 @@ check("the dashboard reads and writes it on the server (old local set pushed up 
       'fetch("/notifications/read"' in js and "guiDaDoc({ ids: chiMayNay, initialized: true })" in js
       and "guiDaDoc({ all: true })" in js)
 
-# ---- 2. ask Javis Core about a notice ----
+# ---- 2. ask Thansa Core about a notice ----
 it = inbox.add("⚠ Bộ não AI ngừng trả lời", kind="system", source="system")
 rep = inbox.add("✅ Việc 'Tổng hợp' đã hoàn thành.\nchi tiết", kind="report", source="kanban", label="Kanban",
                 brain=main._brain_key(str(B)))
 r = client.post("/javis-core/cite", json={"source": "inbox", "id": it["id"], "brain": str(A)})
 sid = r.json().get("id")
 msgs = store.get_messages(sid)
-check("a system notice opens in Javis Core of the brain open now", r.status_code == 200
+check("a system notice opens in Thansa Core of the brain open now", r.status_code == 200
       and sid == javis_core.current_default(main._brain_key(str(A))) and msgs, r.text)
 txt = str(msgs[-1]["content"]) if msgs else ""
 check("the copy says what it is, where from, and that it is a snapshot",
@@ -86,17 +86,17 @@ check("the copy says what it is, where from, and that it is a snapshot",
 again = client.post("/javis-core/cite", json={"source": "inbox", "id": it["id"], "brain": str(A)}).json()
 check("asking twice reuses the copy", again["reused"] is True and len(store.get_messages(sid)) == len(msgs))
 r = client.post("/javis-core/cite", json={"source": "inbox", "id": rep["id"], "brain": str(A)}).json()
-check("a report goes to Javis Core of ITS brain, not the brain open now",
+check("a report goes to Thansa Core of ITS brain, not the brain open now",
       r["id"] == javis_core.current_default(main._brain_key(str(B))) and r["id"] != sid)
 r = client.post("/javis-core/cite", json={"source": "news", "id": "ann:bao-tri", "brain": str(A)}).json()
 check("a news item can be asked about too", r["id"] == sid
       and "Bảo trì tối nay" in str(store.get_messages(sid)[-1]["content"]))
 check("the shared notice is unchanged", inbox.get(it["id"])["body"] == "⚠ Bộ não AI ngừng trả lời")
 check("an unknown notice is a 404", client.post("/javis-core/cite", json={"source": "inbox", "id": "x"}).status_code == 404)
-check("0.191.0: tapping a notice with no chat of its own opens it in Javis Core (no separate Ask button)",
+check("0.191.0: tapping a notice with no chat of its own opens it in Thansa Core (no separate Ask button)",
       'if (!item.session_id) { closePanel(); hoiCore("inbox", item.id); return; }' in js
       and "openCommand(\"agent\", \"javis-core\", r.id)" in js)
-check("0.191.0: no notice card carries an Ask Javis Core button any more", "nutHoi" not in js and "noti-ask" not in js)
+check("0.191.0: no notice card carries an Ask Thansa Core button any more", "nutHoi" not in js and "noti-ask" not in js)
 
 # ---- 3. push devices bound to a login ----
 webpush.SUBS_FILE.unlink(missing_ok=True)

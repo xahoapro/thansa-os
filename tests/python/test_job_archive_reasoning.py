@@ -90,7 +90,7 @@ r = client.post("/agents/lan/reasoning", data={"level": "high", "brain": B})
 meta = main._read_md(BR / "agents" / "lan.md")[0]
 check("setting the level writes only that key", r.status_code == 200 and meta.get("reasoning") == "high"
       and meta.get("name") == "Lan", meta)
-check("a bad level or Javis Core is refused", client.post("/agents/lan/reasoning", data={"level": "max!", "brain": B}).status_code == 400
+check("a bad level or Thansa Core is refused", client.post("/agents/lan/reasoning", data={"level": "max!", "brain": B}).status_code == 400
       and client.post("/agents/javis-core/reasoning", data={"level": "low", "brain": B}).status_code == 400)
 r = client.post("/agents", data={"name": "Lan", "slug": "lan", "role": "Thành viên", "prompt": "Bạn là Lan.", "brain": B,
                                   "reasoning": "low"})

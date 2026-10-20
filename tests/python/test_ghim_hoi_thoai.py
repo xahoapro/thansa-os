@@ -4,7 +4,7 @@
 
 Chủ dự án (2026-10-19, ảnh ô tìm "sở" ở cột Lịch sử): "ở trong phần tìm và chọn hội thoại cho anh thêm nút ghim ở tất
 cả các màn có lịch sử hội thoại". Danh sách hội thoại thường đã có ghim từ trước, còn thiếu hai chỗ:
-  1. Kết quả TÌM của cột Lịch sử (trang Trò chuyện, lịch sử của trợ lý / Javis Core, trang Coding: cùng một cột
+  1. Kết quả TÌM của cột Lịch sử (trang Trò chuyện, lịch sử của trợ lý / Thansa Core, trang Coding: cùng một cột
      `sessions-ui.js`) không có nút ghim, và server không trả trạng thái ghim của kết quả.
   2. Hòm thư bot (trang Hội thoại) chưa có ghim ở đâu cả.
 """
