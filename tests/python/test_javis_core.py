@@ -99,8 +99,8 @@ r = client.post("/agents/delete", data={"brain": str(OLD), "slug": "javis-core"}
 check("delete refused (403, system_assistant)", r.status_code == 403 and r.json().get("code") == "system_assistant")
 r = client.post("/agents", data={"brain": str(OLD), "slug": "javis-core", "name": "Đổi tên", "prompt": "x"})
 check("rename or edit through the agent form refused", r.status_code == 403)
-r = client.post("/agents", data={"brain": str(NEW), "name": "Thansa Core", "prompt": "x"})
-check("a new agent named Thansa Core cannot take the reserved slug", r.status_code == 403
+r = client.post("/agents", data={"brain": str(NEW), "name": "Javis Core", "prompt": "x"})
+check("a new agent named Javis Core cannot take the reserved slug", r.status_code == 403
       and not (NEW / "agents" / "javis-core.md").exists())
 r = client.post("/capability/meta", data={"brain": str(OLD), "kind": "agent", "slug": "javis-core", "pinned": "0"})
 check("unpin refused", r.status_code == 403)
