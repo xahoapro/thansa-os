@@ -1,4 +1,4 @@
-"""0.199.0: a broken background run reaches Javis Core, which retries once or tells the owner.
+"""0.199.0: a broken background run reaches Thansa Core, which retries once or tells the owner.
 
 Covers: one incident per (source, ref) while open, a failed retry closing it as "needs you" with
 one message, person-only errors never retried even when the model says so, the model's last JSON
