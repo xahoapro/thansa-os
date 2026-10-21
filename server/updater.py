@@ -95,8 +95,13 @@ def systemd_unit():
 
 
 def systemd_service_name(env_name=None, cgroup=None):
-    """Resolve this installation's unit, including instances installed under a custom name."""
-    name = os.getenv("JAVIS_NAME", "") if env_name is None else env_name
+    """Resolve this installation's unit, including instances installed under a custom name.
+
+    Thansa: install.sh ghi JAVIS_SERVICE_NAME vào unit; updater đã bị lenh_tach_cgroup (P062) đưa sang
+    scope riêng thì cgroup không còn tên dịch vụ, nên lùi về systemd_unit() (thansa rồi javis) thay vì "javis"."""
+    if env_name is None:
+        env_name = os.getenv("JAVIS_SERVICE_NAME", "") or os.getenv("JAVIS_NAME", "")
+    name = env_name
     if name and re.fullmatch(r"[A-Za-z0-9._-]+", name):
         return name
     if cgroup is None:
@@ -105,7 +110,7 @@ def systemd_service_name(env_name=None, cgroup=None):
         except OSError:
             cgroup = ""
     match = re.search(r"(?:^|/)([A-Za-z0-9._-]+)\.service(?:/|$)", cgroup or "", re.MULTILINE)
-    return match.group(1) if match else "javis"
+    return match.group(1) if match else (systemd_unit() or "thansa")
 
 
 def has_systemd():
@@ -261,7 +266,7 @@ def stop_server(mode, server_pid=0, port=""):
     elif mode == "windows":
         run(["cmd", "/c", str(ROOT / "stop-thansa.bat")])
     elif mode == "systemd":
-        subprocess.run(["systemctl", "stop", systemd_unit() or "thansa"], capture_output=True, text=True,
+        subprocess.run(["systemctl", "stop", systemd_service_name()], capture_output=True, text=True,
                        creationflags=_CAM)
     elif mode == "launchd":
         # CỐ Ý không dừng gì: kill lúc này thì KeepAlive respawn ngay và bản respawn đó sẽ
@@ -294,7 +299,7 @@ def start_server(mode, port=""):
         subprocess.Popen(["wscript.exe", "//nologo", str(ROOT / "start-thansa.vbs")],
                          cwd=str(ROOT), creationflags=0x00000008)  # DETACHED_PROCESS
     elif mode == "systemd":
-        subprocess.run(["systemctl", "start", systemd_unit() or "thansa"], capture_output=True, text=True,
+        subprocess.run(["systemctl", "start", systemd_service_name()], capture_output=True, text=True,
                        creationflags=_CAM)
     elif mode == "launchd":
         # kickstart -k: launchd tự hạ bản đang chạy rồi bật bản mới - MỘT người điều phối,
