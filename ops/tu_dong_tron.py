@@ -355,7 +355,7 @@ def rebrand_moi() -> dict:
     return doi
 
 
-STUB_GATE = re.compile(r'(gate_active(=|", | = ))lambda: False')
+STUB_GATE = re.compile(r'(gate_active(=|", | = ))lambda: (False|True)\b')
 
 
 def va_stub_gate_active() -> int:
@@ -368,7 +368,7 @@ def va_stub_gate_active() -> int:
             continue
         p = WT / f
         s = p.read_text(encoding="utf-8")
-        t = STUB_GATE.sub(r"\1lambda *a, **k: False", s)
+        t = STUB_GATE.sub(r"\1lambda *a, **k: \3", s)
         if t != s:
             p.write_text(t, encoding="utf-8")
             sua.append(f)
