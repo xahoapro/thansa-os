@@ -580,7 +580,7 @@ def _launch_systemd_worker(a):
         return True
     log(f"  systemd-run: {error[:400]}")
     # A service running as a normal user (User= in the unit) may neither create system units nor stop its own
-    # service. Its own user manager can host the worker, which then restarts Javis by signal. Only Restart=always
+    # service. Its own user manager can host the worker, which then restarts Thansa by signal. Only Restart=always
     # brings the unit back after a SIGTERM: on-failure and friends count SIGTERM as a clean exit and leave it down.
     hint = ""
     if hasattr(os, "geteuid") and os.geteuid() != 0:
@@ -597,8 +597,8 @@ def _launch_systemd_worker(a):
             f"&& sudo systemctl restart {service_name}. Để nút Cập nhật chạy được: sudo loginctl enable-linger {user}.",
             f" Update by hand: cd {ROOT} && git pull --ff-only && .venv/bin/python -m pip install -r requirements.txt "
             f"&& sudo systemctl restart {service_name}. To make the Update button work: sudo loginctl enable-linger {user}.")
-    reason = _chu("Không chạy được updater độc lập; Javis vẫn được giữ nguyên. ",
-                  "Could not start an independent updater; Javis has been left running. ")
+    reason = _chu("Không chạy được updater độc lập; Thansa vẫn được giữ nguyên. ",
+                  "Could not start an independent updater; Thansa has been left running. ")
     if error:
         reason += error[:400]
     reason += hint
@@ -617,7 +617,7 @@ def main():
     ap.add_argument("--server-pid", type=int, default=0,
                     help="PID server đang chạy (để chế độ nohup kill đúng tiến trình)")
     ap.add_argument("--systemd-worker", action="store_true",
-                    help="Updater đã được tách khỏi cgroup của Javis")
+                    help="Updater đã được tách khỏi cgroup của Thansa")
     ap.add_argument("--restart-by-signal", action="store_true",
                     help="Worker under the user's systemd: restart the service by signal, not systemctl")
     ap.add_argument("--dry-run", action="store_true")

@@ -518,7 +518,7 @@ def chay(command: str, sid: str, goc: List[str], timeout: Optional[float] = None
         return "ERROR: phiên này chưa gắn thư mục làm việc nào."
     ly_do = kiem_rao_cung(cmd)
     if ly_do:
-        return (f"ERROR: chặn cứng: {ly_do}. Javis không cho model chạy lệnh có thể phá cả máy, ở "
+        return (f"ERROR: chặn cứng: {ly_do}. Thansa không cho model chạy lệnh có thể phá cả máy, ở "
                 f"mọi mức quyền. Cần thật thì chủ máy tự chạy trong tab Terminal.")
     nen = can_chay_nen(cmd)
     if nen:
@@ -686,7 +686,7 @@ def chay_nen(command: str, sid: str, goc: List[str], workdir: str = "", brain_ro
         return "ERROR: phiên này chưa gắn thư mục làm việc nào."
     ly_do = kiem_rao_cung(cmd)
     if ly_do:
-        return (f"ERROR: chặn cứng: {ly_do}. Javis không cho model chạy lệnh có thể phá cả máy, ở "
+        return (f"ERROR: chặn cứng: {ly_do}. Thansa không cho model chạy lệnh có thể phá cả máy, ở "
                 f"mọi mức quyền.")
     _don_nen()
     with _NEN_KHOA:
@@ -696,7 +696,7 @@ def chay_nen(command: str, sid: str, goc: List[str], workdir: str = "", brain_ro
         return (f"ERROR: phiên này đã có {len(cua_phien)} tiến trình nền đang chạy (trần "
                 f"{NEN_MOI_PHIEN}). Dừng bớt bằng javis_process action=kill.")
     if len(tong) >= NEN_TOAN_HE:
-        return f"ERROR: cả máy đã có {len(tong)} tiến trình nền của Javis (trần {NEN_TOAN_HE})."
+        return f"ERROR: cả máy đã có {len(tong)} tiến trình nền của Thansa (trần {NEN_TOAN_HE})."
     cwd, _ = _cwd_phien(sid, goc)
     if str(workdir or "").strip():
         w = str(workdir).strip()
@@ -739,8 +739,8 @@ def chay_nen(command: str, sid: str, goc: List[str], workdir: str = "", brain_ro
     time.sleep(0.3)
     tt.cap_nhat()
     trang = "đã thoát ngay" if tt.rc is not None else "đang chạy"
-    them = ("Xong là Javis tự báo vào khung chat này." if job_id else
-            "Javis không tự báo khi nó xong; dùng javis_process action=wait hoặc poll để biết.")
+    them = ("Xong là Thansa tự báo vào khung chat này." if job_id else
+            "Thansa không tự báo khi nó xong; dùng javis_process action=wait hoặc poll để biết.")
     out = [f"Đã bật nền: {tt.id} ({trang}, pid {p.pid}). Log: {tt.log}",
            f"Xem: javis_process action=log process_id={tt.id}. Dừng: action=kill. {them}"]
     if tt.rc is not None:

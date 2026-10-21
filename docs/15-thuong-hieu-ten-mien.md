@@ -97,45 +97,45 @@ Trên Hostinger, nút **Kích hoạt** bị ẩn đi, vì Traefik của hPanel m
 
 ## Truy cập từ xa trên máy Windows hoặc macOS
 
-Mục **TRUY CẬP TỪ XA** (Cài đặt, ngay dưới Tên miền & SSL) mở Javis ra Internet qua **Cloudflare Tunnel** (hoặc riêng tư qua **Tailscale**, xem Cách 3) mà không cần VPS, không mở cổng modem, không gõ lệnh. Javis tự tải `cloudflared` (công cụ chính thức, miễn phí của Cloudflare) đúng bản cho máy (Windows x64/ARM, macOS Intel/Apple Silicon, Linux), chạy nó cùng Javis và tự nối lại khi rớt mạng. Có HTTPS nên micro và giọng nói chạy được trên điện thoại.
+Mục **TRUY CẬP TỪ XA** (Cài đặt, ngay dưới Tên miền & SSL) mở Thansa ra Internet qua **Cloudflare Tunnel** (hoặc riêng tư qua **Tailscale**, xem Cách 3) mà không cần VPS, không mở cổng modem, không gõ lệnh. Thansa tự tải `cloudflared` (công cụ chính thức, miễn phí của Cloudflare) đúng bản cho máy (Windows x64/ARM, macOS Intel/Apple Silicon, Linux), chạy nó cùng Thansa và tự nối lại khi rớt mạng. Có HTTPS nên micro và giọng nói chạy được trên điện thoại.
 
-**Bắt buộc đặt mật khẩu đăng nhập trước** (mục Tài khoản đăng nhập). Khi tunnel đang bật, Javis luôn đòi đăng nhập và không cho tắt đăng nhập. Nếu mật khẩu bị xoá (ví dụ chạy `reset-auth`), tunnel tự dừng trong vài giây.
+**Bắt buộc đặt mật khẩu đăng nhập trước** (mục Tài khoản đăng nhập). Khi tunnel đang bật, Thansa luôn đòi đăng nhập và không cho tắt đăng nhập. Nếu mật khẩu bị xoá (ví dụ chạy `reset-auth`), tunnel tự dừng trong vài giây.
 
 ### Cách 1: Link nhanh (không cần tài khoản)
 
 1. Chọn **Link nhanh**, bấm **Bật truy cập từ xa**.
-2. Lần đầu Javis tải `cloudflared` (khoảng 40 MB), rồi hiện link dạng `https://ba-tu-ngau-nhien.trycloudflare.com`.
+2. Lần đầu Thansa tải `cloudflared` (khoảng 40 MB), rồi hiện link dạng `https://ba-tu-ngau-nhien.trycloudflare.com`.
 3. Mở link đó trên điện thoại, đăng nhập bằng mật khẩu.
 
-Link này **đổi mỗi lần Javis khởi động lại**, hợp để thử hoặc dùng tạm.
+Link này **đổi mỗi lần Thansa khởi động lại**, hợp để thử hoặc dùng tạm.
 
 ### Cách 2: Tên miền riêng (link cố định)
 
 Cần một tài khoản Cloudflare miễn phí và một tên miền đang dùng DNS của Cloudflare.
 
 1. Vào [one.dash.cloudflare.com](https://one.dash.cloudflare.com), mục **Networks**, chọn **Tunnels**, bấm **Create a tunnel**, chọn **Cloudflared**, đặt tên.
-2. Ở bước cài connector, bấm sao chép dòng lệnh (bản Windows hay Mac đều được). **Không cần chạy lệnh đó**, chỉ cần dán nguyên dòng vào ô **Token tunnel Cloudflare** trong Javis. Javis tự lấy token ra.
-3. Sang bước **Public Hostname**: chọn tên miền con (ví dụ `javis.tencuaban.com`), Service chọn **HTTP**, ô URL điền địa chỉ dịch vụ Javis hiện ra (mặc định `127.0.0.1:7777`, có nút sao chép).
-4. Quay lại Javis, chọn **Tên miền riêng**, bấm **Bật truy cập từ xa**. Khi trạng thái là **Đang chạy**, Javis đọc tên miền bạn vừa đặt và hiện link `https://javis.tencuaban.com`.
+2. Ở bước cài connector, bấm sao chép dòng lệnh (bản Windows hay Mac đều được). **Không cần chạy lệnh đó**, chỉ cần dán nguyên dòng vào ô **Token tunnel Cloudflare** trong Thansa. Thansa tự lấy token ra.
+3. Sang bước **Public Hostname**: chọn tên miền con (ví dụ `javis.tencuaban.com`), Service chọn **HTTP**, ô URL điền địa chỉ dịch vụ Thansa hiện ra (mặc định `127.0.0.1:7777`, có nút sao chép).
+4. Quay lại Thansa, chọn **Tên miền riêng**, bấm **Bật truy cập từ xa**. Khi trạng thái là **Đang chạy**, Thansa đọc tên miền bạn vừa đặt và hiện link `https://javis.tencuaban.com`.
 
 Token được mã hoá khi lưu, không bao giờ gửi ngược ra trình duyệt, và đưa cho `cloudflared` qua biến môi trường chứ không nằm trên dòng lệnh.
 
 ### Cách 3: Tailscale (riêng tư, chỉ máy của bạn)
 
-Hợp khi chỉ mình bạn dùng: link không lộ ra Internet, chỉ máy đã cài Tailscale và đăng nhập cùng tài khoản mới mở được. Javis không tự cài Tailscale (nó cần quyền hệ thống và đăng nhập tài khoản), nhưng lo phần còn lại.
+Hợp khi chỉ mình bạn dùng: link không lộ ra Internet, chỉ máy đã cài Tailscale và đăng nhập cùng tài khoản mới mở được. Thansa không tự cài Tailscale (nó cần quyền hệ thống và đăng nhập tài khoản), nhưng lo phần còn lại.
 
-1. Cài [Tailscale](https://tailscale.com/download) trên máy chạy Javis và trên điện thoại, đăng nhập cùng một tài khoản.
-2. Trong Javis chọn **Tailscale**, bấm **Bật truy cập từ xa**. Javis tự chạy `tailscale serve`, không cần gõ lệnh.
-3. Lần đầu, Tailscale có thể đòi bật HTTPS cho mạng của bạn: Javis hiện link **Mở trang bật HTTPS**, bấm vào rồi bấm **Enable**. Javis tự thử lại.
+1. Cài [Tailscale](https://tailscale.com/download) trên máy chạy Thansa và trên điện thoại, đăng nhập cùng một tài khoản.
+2. Trong Thansa chọn **Tailscale**, bấm **Bật truy cập từ xa**. Thansa tự chạy `tailscale serve`, không cần gõ lệnh.
+3. Lần đầu, Tailscale có thể đòi bật HTTPS cho mạng của bạn: Thansa hiện link **Mở trang bật HTTPS**, bấm vào rồi bấm **Enable**. Thansa tự thử lại.
 4. Mở link `https://ten-may.ten-mang.ts.net` trên điện thoại đang bật Tailscale.
 
-Link Tailscale vẫn chạy khi Javis khởi động lại; bấm **Tắt** thì Javis gỡ đúng phần nó đã thêm, không đụng các cấu hình Tailscale khác của bạn. Người ngoài mạng Tailscale của bạn không mở được link này, nên nó không dùng cho link chia sẻ hay webhook từ dịch vụ bên ngoài; những việc đó dùng Cách 1 hoặc Cách 2.
+Link Tailscale vẫn chạy khi Thansa khởi động lại; bấm **Tắt** thì Thansa gỡ đúng phần nó đã thêm, không đụng các cấu hình Tailscale khác của bạn. Người ngoài mạng Tailscale của bạn không mở được link này, nên nó không dùng cho link chia sẻ hay webhook từ dịch vụ bên ngoài; những việc đó dùng Cách 1 hoặc Cách 2.
 
 ### Nên biết
 
 - Máy tắt hoặc ngủ thì link cũng tắt. Muốn mở 24/7, tắt chế độ Sleep (Windows) hoặc bật "Prevent automatic sleeping" (macOS).
-- Javis bật lại tunnel sau khi khởi động lại hoặc cập nhật, nếu lần trước bạn để nó bật.
-- Nếu Javis báo Cloudflare đang trỏ tới một địa chỉ khác, sửa URL dịch vụ trong Public Hostname thành đúng địa chỉ Javis hiện.
+- Thansa bật lại tunnel sau khi khởi động lại hoặc cập nhật, nếu lần trước bạn để nó bật.
+- Nếu Thansa báo Cloudflare đang trỏ tới một địa chỉ khác, sửa URL dịch vụ trong Public Hostname thành đúng địa chỉ Thansa hiện.
 - Bản Docker trên VPS vẫn có thể dùng cách cũ (`docker compose --profile tunnel`) trong `DEPLOY.md`.
 
 ## Bảng tra nhanh nút và trạng thái
@@ -237,16 +237,16 @@ Sau khi Redeploy, trở lại Cài đặt và bấm **Kiểm tra lại**. Chi ti
 
 ### Badge SSL nói gì (từ 0.248.0)
 
-Mỗi lần Kiểm tra lại, Javis tự mở `https://<tên miền>` từ chính máy chủ và xem ai trả lời, rồi ghi đúng bước đang hỏng lên badge:
+Mỗi lần Kiểm tra lại, Thansa tự mở `https://<tên miền>` từ chính máy chủ và xem ai trả lời, rồi ghi đúng bước đang hỏng lên badge:
 
 - **SSL: đang bật**: xong, mở link là vào được.
-- **SSL: Hostinger chưa nhận tên miền**: DNS đã tới VPS nhưng Traefik chưa có đường cho tên miền này. Dòng `traefik...rule=Host(...)` của dự án vẫn là tên cũ: đặt `DOMAIN_NAME` đúng tên miền (hoặc sửa thẳng dòng `Host` trong YAML) rồi **Redeploy**. Đây là ca hay gặp nhất: đã nhập tên miền trong Javis và trỏ DNS, nhưng chưa Redeploy với tên miền mới.
-- **SSL: đang chờ cấp chứng chỉ**: đường đã thông tới Javis, Let's Encrypt chưa cấp xong. Đợi vài phút rồi Kiểm tra lại.
-- **SSL: proxy không gọi được Javis**: Traefik báo 502, kiểm tra container Javis có đang chạy.
-- **SSL: tên miền mở nhầm trang khác**: tên miền đang trỏ vào một trang khác hoặc một bản Javis khác (ví dụ stack thứ hai trên cùng VPS).
+- **SSL: Hostinger chưa nhận tên miền**: DNS đã tới VPS nhưng Traefik chưa có đường cho tên miền này. Dòng `traefik...rule=Host(...)` của dự án vẫn là tên cũ: đặt `DOMAIN_NAME` đúng tên miền (hoặc sửa thẳng dòng `Host` trong YAML) rồi **Redeploy**. Đây là ca hay gặp nhất: đã nhập tên miền trong Thansa và trỏ DNS, nhưng chưa Redeploy với tên miền mới.
+- **SSL: đang chờ cấp chứng chỉ**: đường đã thông tới Thansa, Let's Encrypt chưa cấp xong. Đợi vài phút rồi Kiểm tra lại.
+- **SSL: proxy không gọi được Thansa**: Traefik báo 502, kiểm tra container Thansa có đang chạy.
+- **SSL: tên miền mở nhầm trang khác**: tên miền đang trỏ vào một trang khác hoặc một bản Thansa khác (ví dụ stack thứ hai trên cùng VPS).
 - **SSL: không kết nối được cổng 443**: không có gì trả lời ở cổng HTTPS của VPS.
 
-Nếu bạn sửa thẳng dòng `Host(...)` trong YAML thay vì đặt `DOMAIN_NAME`, Javis không còn báo "còn bước Redeploy" khi tên miền đã chạy HTTPS.
+Nếu bạn sửa thẳng dòng `Host(...)` trong YAML thay vì đặt `DOMAIN_NAME`, Thansa không còn báo "còn bước Redeploy" khi tên miền đã chạy HTTPS.
 
 ## Theme riêng cho người vận hành (CSS)
 

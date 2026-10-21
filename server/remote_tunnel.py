@@ -542,9 +542,9 @@ class TunnelManager:
                                        "Cloudflare rejected this token. Paste it again or create a new tunnel.")
         elif "failed to request quick tunnel" in low or "failed to unmarshal quick tunnel" in low:
             self.error = localefmt.chu("Cloudflare chưa cấp được link nhanh (mạng chặn hoặc Cloudflare bận), "
-                                       "Javis sẽ thử lại.",
+                                       "Thansa sẽ thử lại.",
                                        "Cloudflare could not hand out a quick link (network blocked or Cloudflare "
-                                       "busy); Javis will retry.")
+                                       "busy); Thansa will retry.")
 
     def _command(self, binary: str, sec: dict):
         env = dict(os.environ)
@@ -567,8 +567,8 @@ class TunnelManager:
             self.mode = sec.get("mode") if sec.get("mode") in MODES else "quick"
             if not cfgmod.auth_enabled():
                 self.state = "error"
-                self.error = localefmt.chu("Cần đặt mật khẩu đăng nhập trước khi mở Javis ra Internet.",
-                                           "Set a login password before opening Javis to the Internet.")
+                self.error = localefmt.chu("Cần đặt mật khẩu đăng nhập trước khi mở Thansa ra Internet.",
+                                           "Set a login password before opening Thansa to the Internet.")
                 return
             if self.mode == "tailscale":
                 self._run_tailscale(stop)
@@ -665,9 +665,9 @@ class TunnelManager:
             if info.get("backend") != "Running":
                 self.state = "waiting"
                 self.error = localefmt.chu("Tailscale trên máy này chưa đăng nhập hoặc đang tắt. Mở app Tailscale "
-                                           "để đăng nhập, Javis tự thử lại.",
+                                           "để đăng nhập, Thansa tự thử lại.",
                                            "Tailscale on this computer is signed out or off. Open the Tailscale app "
-                                           "to sign in; Javis retries on its own.")
+                                           "to sign in; Thansa retries on its own.")
                 if self._wait(stop, TS_RETRY_EVERY) or not self._still_allowed():
                     return
                 continue
@@ -683,9 +683,9 @@ class TunnelManager:
                 if self.enable_url:
                     self.state = "waiting"
                     self.error = localefmt.chu("Tailscale cần bật HTTPS cho mạng của bạn (làm một lần). Mở link "
-                                               "bên dưới, bấm Enable, Javis tự thử lại.",
+                                               "bên dưới, bấm Enable, Thansa tự thử lại.",
                                                "Tailscale needs HTTPS switched on for your network (once). Open the "
-                                               "link below, click Enable, and Javis retries on its own.")
+                                               "link below, click Enable, and Thansa retries on its own.")
                 else:
                     tail = res["output"].splitlines()[-1] if res["output"] else ""
                     self.state = "error"

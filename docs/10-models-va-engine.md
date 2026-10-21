@@ -224,7 +224,7 @@ Dùng khi bạn mua key Claude (hoặc model khác) từ một bên bán lại, 
 
 **Chuẩn bị 3 thứ từ bên bán** (lấy thông tin của cổng ANTHROPIC, không phải cổng OpenAI):
 
-- **Base URL**: địa chỉ bên bán ghi cho `ANTHROPIC_BASE_URL`, ví dụ `https://api.tenbenban.com` hoặc `https://api.tenbenban.com/anthropic`. Lỡ dán cả đuôi `/v1` hay `/v1/messages` cũng không sao, Javis tự cắt.
+- **Base URL**: địa chỉ bên bán ghi cho `ANTHROPIC_BASE_URL`, ví dụ `https://api.tenbenban.com` hoặc `https://api.tenbenban.com/anthropic`. Lỡ dán cả đuôi `/v1` hay `/v1/messages` cũng không sao, Thansa tự cắt.
 - **API key**: chuỗi bên bán cấp, thường bắt đầu bằng `sk-`.
 - **Tên model**: ví dụ `claude-sonnet-4-6`. Hỏi bên bán gói của bạn dùng được model nào và chép đúng từng chữ.
 
@@ -232,10 +232,10 @@ Dùng khi bạn mua key Claude (hoặc model khác) từ một bên bán lại, 
 
 1. Vào **Models**, chọn tab **Cloud Model**, bấm **＋ Kết nối thêm nhà cung cấp** ở cuối trang, tìm thẻ **Anthropic Compatible**.
 2. Điền 3 ô từ trên xuống: Base URL, tên model (nhiều model thì cách nhau bằng dấu phẩy), API key.
-3. Bấm **Kết nối**. Javis gửi thử một tin rất ngắn tới bên bán để kiểm tra, xong thì thẻ hiện **● Đã kết nối** kèm số model.
+3. Bấm **Kết nối**. Thansa gửi thử một tin rất ngắn tới bên bán để kiểm tra, xong thì thẻ hiện **● Đã kết nối** kèm số model.
 4. Đặt làm model chính như mục D: thẻ **Anthropic Compatible** vừa vào cuối Thứ tự dùng, kéo nó lên đầu (hoặc bấm **⇅ Đảo**) rồi chọn tên model bằng chip model trên thẻ. Chat thử một câu, dưới câu trả lời có dòng nhỏ ghi "Anthropic Compatible · tên-model" là đã chạy đúng đường.
 
-Javis chỉ lưu khi kiểm tra thành công, nên thấy báo lỗi tức là chưa lưu gì. Lý do cần ô tên model: đa số cổng kiểu này không trả danh sách model, Javis không tự biết bên bán có những model nào. Cổng nào có danh sách thì Javis tự nạp thêm.
+Thansa chỉ lưu khi kiểm tra thành công, nên thấy báo lỗi tức là chưa lưu gì. Lý do cần ô tên model: đa số cổng kiểu này không trả danh sách model, Thansa không tự biết bên bán có những model nào. Cổng nào có danh sách thì Thansa tự nạp thêm.
 
 **Gặp lỗi khi bấm Kết nối:**
 
@@ -245,17 +245,17 @@ Javis chỉ lưu khi kiểm tra thành công, nên thấy báo lỗi tức là c
 | Cổng này không trả danh sách model | Chưa điền tên model | Điền tên model bên bán đưa rồi bấm Kết nối lại |
 | Không thấy .../v1/messages (HTTP 404) | Base URL chưa đúng | Hỏi lại bên bán địa chỉ cổng Anthropic; hay gặp nhất là lấy nhầm địa chỉ cổng OpenAI |
 | Cổng trả HTTP 400 khi thử model ... | Thường là tên model sai, hoặc gói không có model đó | Kiểm tra chính tả tên model, hoặc hỏi bên bán tên đúng |
-| Không gọi được ... | Máy chạy Javis không tới được địa chỉ đó | Kiểm tra Base URL, mạng, hoặc hỏi bên bán cổng còn chạy không |
+| Không gọi được ... | Máy chạy Thansa không tới được địa chỉ đó | Kiểm tra Base URL, mạng, hoặc hỏi bên bán cổng còn chạy không |
 
 Đã kết nối mà lúc chat báo **429** hoặc **529** nghĩa là bên bán đang quá tải hoặc bạn đã hết hạn mức: đợi một lúc rồi thử lại, hoặc hỏi bên bán về hạn mức gói.
 
 **Nên biết:**
 
-- Đổi key: điền key mới vào ô API key rồi bấm **Lưu**. Để trống ô key thì Javis giữ key cũ.
+- Đổi key: điền key mới vào ô API key rồi bấm **Lưu**. Để trống ô key thì Thansa giữ key cũ.
 - Thêm hay bớt model: sửa ô tên model rồi bấm **Lưu**.
-- Đổi sang Base URL khác thì phải nhập lại key: Javis không bao giờ gửi key cũ sang một địa chỉ mới.
+- Đổi sang Base URL khác thì phải nhập lại key: Thansa không bao giờ gửi key cũ sang một địa chỉ mới.
 - Thôi dùng: bấm **Ngắt** (xoá cả địa chỉ, key và tên model). Thẻ rời Thứ tự dùng; nếu nó đang là MAIN thì thẻ kế tiếp lên làm MAIN.
-- Javis gửi key theo cả hai kiểu xác thực (`x-api-key` và `Bearer`), nên bên bán đọc kiểu nào cũng nhận.
+- Thansa gửi key theo cả hai kiểu xác thực (`x-api-key` và `Bearer`), nên bên bán đọc kiểu nào cũng nhận.
 - Cổng này có đủ MCP, đọc ghi brain, skill, agent, việc nền và chatbot như các engine API khác. Như mọi engine API, nó không chạy lệnh máy (xem mục "Bốn thứ engine API không có").
 
 ### D. Thứ tự dùng: chọn MAIN và dự phòng

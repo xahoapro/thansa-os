@@ -346,7 +346,7 @@ Dừng bằng `stop-thansa.bat`. Mở http://localhost:7777
 >   mới dùng bản fork `ghcr.io/nicholas-fedor/watchtower:1` tự thương lượng phiên bản với Docker.
 > - **Bấm cập nhật mà vẫn đứng ở bản cũ, `image:` trong file compose là một tên lạ** (ví dụ
 >   `javis-cwi:pc-0.206.0`, không có `ghcr.io/...`): đây là image tự đóng gói, thường gặp khi nhờ
->   AI chuyển Javis từ máy tính lên VPS bằng `docker save` rồi `docker load`. Image đó không nằm trên
+>   AI chuyển Thansa từ máy tính lên VPS bằng `docker save` rồi `docker load`. Image đó không nằm trên
 >   kho nào nên kéo lại hay Redeploy vẫn ra đúng bản cũ (từ 0.267.0 trang Cập nhật nói thẳng điều này).
 >   Đổi sang image chính thức MỘT LẦN, dữ liệu giữ nguyên vì nó nằm trong các thư mục gắn vào:
 >   ```bash
@@ -354,11 +354,11 @@ Dừng bằng `stop-thansa.bat`. Mở http://localhost:7777
 >   cp compose.yml compose.yml.bak     # tên file có thể là docker-compose.yml
 >   docker compose config | grep -A1 "target:"   # đường dẫn bên trong phải là /data, /brains,
 >                                                 # /home/javis/.claude, /home/javis/.codex
->   sed -i 's#^\(\s*image:\s*\).*#\1ghcr.io/blogminhquy/javis-os:latest#' compose.yml
+>   sed -i 's#^\(\s*image:\s*\).*#\1ghcr.io/xahoapro/thansa-os:latest#' compose.yml
 >   docker compose up -d --pull always
 >   ```
 >   Dòng `sed` đổi MỌI dòng `image:` trong file, nên chỉ dùng khi file có đúng một service; có nhiều
->   service thì mở file sửa tay đúng dòng của Javis. Muốn có nút cập nhật trong app thì thêm service
+>   service thì mở file sửa tay đúng dòng của Thansa. Muốn có nút cập nhật trong app thì thêm service
 >   `watchtower` y như trong [`docker-compose.yml`](docker-compose.yml). Lỗi quyền ghi sau khi đổi: thư
 >   mục gắn vào phải thuộc user 10001 của container, chạy `sudo chown -R 10001:10001 brains data claude-auth codex-auth`.
 > - **Muốn TỰ cập nhật, khỏi bấm nút:** đặt `JAVIS_AUTO_UPDATE=true` trong `.env` (Hostinger: ô
