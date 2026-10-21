@@ -13852,11 +13852,11 @@ async def do_update():
             _write_update_state({"phase": "idle"})   # nhả claim
             return JSONResponse({"ok": False, "self_built": True, "current": cur, "latest": latest,
                 "error": localefmt.chu(
-                    f"Javis này chạy bằng image tự đóng gói, không phải image chính thức, nên kéo lại hay Redeploy "
+                    f"Thansa này chạy bằng image tự đóng gói, không phải image chính thức, nên kéo lại hay Redeploy "
                     f"vẫn ra đúng bản cũ. Đổi sang image chính thức một lần (dữ liệu, brain và đăng nhập giữ nguyên): "
                     f"trong file compose, sửa dòng image: thành {deploy_info.OFFICIAL_IMAGE}:latest rồi chạy lệnh dưới. "
                     f"Từ đó nút cập nhật dùng được. Tự build từ mã nguồn thì cập nhật bằng ./update.sh. Hướng dẫn đầy đủ: DEPLOY.md, mục Cập nhật.",
-                    f"This Javis runs a self-built image, not the official one, so pulling or Redeploying brings back "
+                    f"This Thansa runs a self-built image, not the official one, so pulling or Redeploying brings back "
                     f"the same old version. Switch to the official image once (data, brains and logins are kept): in "
                     f"the compose file, change the image: line to {deploy_info.OFFICIAL_IMAGE}:latest, then run the "
                     f"command below. After that the Update button works. Building from source? Update with ./update.sh. "

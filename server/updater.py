@@ -529,8 +529,8 @@ def _launch_systemd_worker(a):
         error = (result.stderr or result.stdout or "").strip()
     if result is not None and result.returncode == 0:
         return True
-    reason = _chu("Không chạy được updater độc lập; Javis vẫn được giữ nguyên. ",
-                  "Could not start an independent updater; Javis has been left running. ")
+    reason = _chu("Không chạy được updater độc lập; Thansa vẫn được giữ nguyên. ",
+                  "Could not start an independent updater; Thansa has been left running. ")
     if error:
         reason += error[:400]
     log(reason)
@@ -548,7 +548,7 @@ def main():
     ap.add_argument("--server-pid", type=int, default=0,
                     help="PID server đang chạy (để chế độ nohup kill đúng tiến trình)")
     ap.add_argument("--systemd-worker", action="store_true",
-                    help="Updater đã được tách khỏi cgroup của Javis")
+                    help="Updater đã được tách khỏi cgroup của Thansa")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
 

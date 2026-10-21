@@ -195,23 +195,23 @@ def _probe_reason(code: str, hostinger: bool) -> str:
         return localefmt.chu("DNS đã tới máy chủ nhưng proxy phía trước chưa có đường cho tên miền này.",
                              "DNS reaches the server but the proxy in front has no route for this domain.")
     if code == "cert_pending":
-        return localefmt.chu("Đường đã thông tới Javis nhưng chứng chỉ chưa cấp xong. Đợi vài phút rồi Kiểm tra lại; "
+        return localefmt.chu("Đường đã thông tới Thansa nhưng chứng chỉ chưa cấp xong. Đợi vài phút rồi Kiểm tra lại; "
                              "lâu hơn 10 phút thì xem cổng 80 có mở cho Let's Encrypt không.",
-                             "The route reaches Javis but the certificate is not issued yet. Wait a few minutes and "
+                             "The route reaches Thansa but the certificate is not issued yet. Wait a few minutes and "
                              "check again; after 10 minutes, check that port 80 is open for Let's Encrypt.")
     if code == "bad_gateway":
-        return localefmt.chu("Proxy đã nhận tên miền nhưng không gọi được Javis (502). Kiểm tra container Javis đang "
+        return localefmt.chu("Proxy đã nhận tên miền nhưng không gọi được Thansa (502). Kiểm tra container Thansa đang "
                              "chạy và nhãn loadbalancer.server.port=7777.",
-                             "The proxy knows the domain but cannot reach Javis (502). Check that the Javis "
+                             "The proxy knows the domain but cannot reach Thansa (502). Check that the Thansa "
                              "container is running and loadbalancer.server.port=7777.")
     if code == "other_javis":
-        return localefmt.chu("Tên miền này đang mở một bản Javis KHÁC (ví dụ stack thứ hai trên cùng VPS). Kiểm tra "
+        return localefmt.chu("Tên miền này đang mở một bản Thansa KHÁC (ví dụ stack thứ hai trên cùng VPS). Kiểm tra "
                              "DOMAIN_NAME của từng stack.",
-                             "This domain opens a DIFFERENT Javis (for example a second stack on the same VPS). "
+                             "This domain opens a DIFFERENT Thansa (for example a second stack on the same VPS). "
                              "Check each stack's DOMAIN_NAME.")
     if code in ("other_site", "cert_invalid"):
-        return localefmt.chu("Tên miền đang mở một trang khác, không phải Javis này. Kiểm tra bản ghi DNS và cấu hình "
-                             "proxy.", "The domain opens another site, not this Javis. Check the DNS record and the "
+        return localefmt.chu("Tên miền đang mở một trang khác, không phải Thansa này. Kiểm tra bản ghi DNS và cấu hình "
+                             "proxy.", "The domain opens another site, not this Thansa. Check the DNS record and the "
                              "proxy setup.")
     if hostinger:
         return localefmt.chu("Không kết nối được cổng 443 của VPS.", "Cannot connect to the VPS on port 443.")

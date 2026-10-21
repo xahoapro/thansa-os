@@ -348,7 +348,7 @@ Stop it with `stop-thansa.bat`. Open http://localhost:7777
 >   `ghcr.io/nicholas-fedor/watchtower:1`, which negotiates the API version with Docker.
 > - **You press update and stay on the old version, and `image:` in the compose file is an odd name**
 >   (for example `javis-cwi:pc-0.206.0`, with no `ghcr.io/...`): this is a self-built image, common when
->   an AI moved Javis from a computer to a VPS with `docker save` then `docker load`. It lives in no
+>   an AI moved Thansa from a computer to a VPS with `docker save` then `docker load`. It lives in no
 >   registry, so pulling or Redeploying brings back the same old version (since 0.267.0 the Updates page
 >   says so). Switch to the official image ONCE; your data stays because it lives in the mounted folders:
 >   ```bash
@@ -356,11 +356,11 @@ Stop it with `stop-thansa.bat`. Open http://localhost:7777
 >   cp compose.yml compose.yml.bak     # the file may be called docker-compose.yml
 >   docker compose config | grep -A1 "target:"   # the paths inside must be /data, /brains,
 >                                                 # /home/javis/.claude, /home/javis/.codex
->   sed -i 's#^\(\s*image:\s*\).*#\1ghcr.io/blogminhquy/javis-os:latest#' compose.yml
+>   sed -i 's#^\(\s*image:\s*\).*#\1ghcr.io/xahoapro/thansa-os:latest#' compose.yml
 >   docker compose up -d --pull always
 >   ```
 >   The `sed` line changes EVERY `image:` line in the file, so use it only when the file has a single
->   service; with several, edit Javis's line by hand. For the update button in the app, add the
+>   service; with several, edit Thansa's line by hand. For the update button in the app, add the
 >   `watchtower` service exactly as in [`docker-compose.yml`](docker-compose.yml). Write errors after the
 >   switch: the mounted folders must belong to the container's user 10001, so run
 >   `sudo chown -R 10001:10001 brains data claude-auth codex-auth`.
