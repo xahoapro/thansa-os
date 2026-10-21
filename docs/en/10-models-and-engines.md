@@ -224,7 +224,7 @@ Use this when you bought a Claude key (or another model) from a reseller that of
 
 **Get 3 things from the seller** (for the ANTHROPIC endpoint, not the OpenAI one):
 
-- **Base URL**: the address the seller gives for `ANTHROPIC_BASE_URL`, for example `https://api.seller.com` or `https://api.seller.com/anthropic`. Pasting it with `/v1` or `/v1/messages` at the end is fine, Javis trims it.
+- **Base URL**: the address the seller gives for `ANTHROPIC_BASE_URL`, for example `https://api.seller.com` or `https://api.seller.com/anthropic`. Pasting it with `/v1` or `/v1/messages` at the end is fine, Thansa trims it.
 - **API key**: the string the seller issued, usually starting with `sk-`.
 - **Model name**: for example `claude-sonnet-4-6`. Ask the seller which models your plan includes and copy the names exactly.
 
@@ -232,10 +232,10 @@ Use this when you bought a Claude key (or another model) from a reseller that of
 
 1. Open **Models**, choose the **Cloud Model** tab, press **＋ Connect another provider** at the bottom of the page and find the **Anthropic Compatible** card.
 2. Fill the 3 boxes from top to bottom: Base URL, model names (separate several with commas), API key.
-3. Click **Connect**. Javis sends one very short test message to the seller first; on success the card shows **● Connected** with a model count.
+3. Click **Connect**. Thansa sends one very short test message to the seller first; on success the card shows **● Connected** with a model count.
 4. Make it the main model as in section D: the **Anthropic Compatible** card has just joined the end of the Usage order, so drag it to the top (or press **⇅ Swap**) and pick the model name with the model chip on the card. Send a test message; a small line under the reply reading "Anthropic Compatible · model-name" means it went the right way.
 
-Javis only saves when the check succeeds, so an error means nothing was saved. The model name box is needed because most such gateways do not list their models, so Javis cannot know which ones the seller has. When a gateway does list them, Javis adds them too.
+Thansa only saves when the check succeeds, so an error means nothing was saved. The model name box is needed because most such gateways do not list their models, so Thansa cannot know which ones the seller has. When a gateway does list them, Thansa adds them too.
 
 **Errors when clicking Connect:**
 
@@ -245,7 +245,7 @@ Javis only saves when the check succeeds, so an error means nothing was saved. T
 | This gateway does not list its models | No model name was entered | Enter the model name the seller gave you and click Connect again |
 | .../v1/messages not found (HTTP 404) | The Base URL is wrong | Ask the seller for the Anthropic endpoint address; the usual mistake is using the OpenAI one |
 | The gateway returned HTTP 400 for model ... | Usually a wrong model name, or a model your plan lacks | Check the spelling, or ask the seller for the exact name |
-| Could not reach ... | The machine running Javis cannot reach that address | Check the Base URL and the network, or ask the seller whether the endpoint is up |
+| Could not reach ... | The machine running Thansa cannot reach that address | Check the Base URL and the network, or ask the seller whether the endpoint is up |
 
 If chat later reports **429** or **529**, the seller is overloaded or you have used up your quota: wait a moment and retry, or ask the seller about your plan's limits.
 
@@ -253,9 +253,9 @@ If chat later reports **429** or **529**, the seller is overloaded or you have u
 
 - Change the key: enter the new key in the API key box and click **Save**. Leaving the key box empty keeps the old key.
 - Add or remove models: edit the model name box and click **Save**.
-- Switching to a different Base URL requires entering the key again: Javis never sends a saved key to a new address.
+- Switching to a different Base URL requires entering the key again: Thansa never sends a saved key to a new address.
 - Stop using it: click **Disconnect** (clears the address, key and model names). The card leaves the Usage order; if it was MAIN, the next card becomes MAIN.
-- Javis sends the key both ways (`x-api-key` and `Bearer`), so it works whichever one the seller reads.
+- Thansa sends the key both ways (`x-api-key` and `Bearer`), so it works whichever one the seller reads.
 - This gateway gets MCP, reading and writing the brain, skills, agents, background work and chatbots like the other API engines. Like every API engine it cannot run shell commands (see "The four things API engines lack").
 
 ### D. Usage order: choosing MAIN and fallbacks

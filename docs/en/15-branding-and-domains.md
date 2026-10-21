@@ -6,7 +6,7 @@ This page covers two things: changing Thansa's logo/avatar to your own image, an
 
 ## What this feature is
 
-- **Avatar (logo):** replace the default JAVIS OS image with your own. The new image appears immediately in the top left corner, in the sidebar, on the sign-in screen, in the welcome window, and becomes the browser tab icon (favicon) too.
+- **Avatar (logo):** replace the default THANSA OS image with your own. The new image appears immediately in the top left corner, in the sidebar, on the sign-in screen, in the welcome window, and becomes the browser tab icon (favicon) too.
 - **Custom domain (HTTPS):** instead of opening Thansa by IP and port (something like `http://12.34.56.78:7777`), you use a memorable domain with the HTTPS padlock. Thansa obtains the HTTPS certificate itself (On-Demand TLS through Caddy), and there is an **Enable SSL** button to request the certificate on demand rather than waiting.
 
 One important note up front: the **Custom domain** section only works when you deploy Thansa with Docker on a VPS with ports 80/443 open. If you run Thansa on a personal machine (Windows, macOS), use the **Remote access** section right below it instead: Thansa sets up a Cloudflare Tunnel itself, with HTTPS and even your own domain, no VPS needed. See [Remote access on a Windows or macOS computer](#remote-access-on-a-windows-or-macos-computer). Deploy details in [.env configuration](16-env-configuration.md) and the `DEPLOY.md` file in the project folder.
@@ -90,45 +90,45 @@ On Hostinger the **Enable SSL** button is hidden, because hPanel's Traefik is wh
 
 ## Remote access on a Windows or macOS computer
 
-The **REMOTE ACCESS** section (Settings, right below Domain & SSL) opens Javis to the Internet through a **Cloudflare Tunnel** (or privately through **Tailscale**, see Option 3), with no VPS, no router port and no terminal. Javis downloads `cloudflared` (Cloudflare's official free tool) in the right build for the machine (Windows x64/ARM, macOS Intel/Apple Silicon, Linux), runs it alongside Javis and reconnects when the network drops. It is HTTPS, so the microphone and voice work on a phone.
+The **REMOTE ACCESS** section (Settings, right below Domain & SSL) opens Thansa to the Internet through a **Cloudflare Tunnel** (or privately through **Tailscale**, see Option 3), with no VPS, no router port and no terminal. Thansa downloads `cloudflared` (Cloudflare's official free tool) in the right build for the machine (Windows x64/ARM, macOS Intel/Apple Silicon, Linux), runs it alongside Thansa and reconnects when the network drops. It is HTTPS, so the microphone and voice work on a phone.
 
-**Set a login password first** (Login account section). While the tunnel is on, Javis always asks for a login and does not let you turn login off. If the password is removed (for example with `reset-auth`), the tunnel stops within seconds.
+**Set a login password first** (Login account section). While the tunnel is on, Thansa always asks for a login and does not let you turn login off. If the password is removed (for example with `reset-auth`), the tunnel stops within seconds.
 
 ### Option 1: Quick link (no account)
 
 1. Pick **Quick link** and click **Turn on remote access**.
-2. The first time, Javis downloads `cloudflared` (about 40 MB), then shows a link like `https://three-random-words.trycloudflare.com`.
+2. The first time, Thansa downloads `cloudflared` (about 40 MB), then shows a link like `https://three-random-words.trycloudflare.com`.
 3. Open that link on your phone and sign in with your password.
 
-The link **changes every time Javis restarts**, which is fine for trying it out or short-term use.
+The link **changes every time Thansa restarts**, which is fine for trying it out or short-term use.
 
 ### Option 2: Your own domain (fixed link)
 
 You need a free Cloudflare account and a domain that uses Cloudflare DNS.
 
 1. Go to [one.dash.cloudflare.com](https://one.dash.cloudflare.com), **Networks**, **Tunnels**, click **Create a tunnel**, pick **Cloudflared** and give it a name.
-2. On the connector install step, copy the command (the Windows or the Mac one, either works). **You do not need to run it**: paste the whole line into the **Cloudflare tunnel token** box in Javis, and Javis picks the token out of it.
-3. On the **Public Hostname** step: pick a subdomain (for example `javis.yourdomain.com`), set Service to **HTTP** and put the service address Javis shows in the URL box (by default `127.0.0.1:7777`, with a copy button).
-4. Back in Javis, pick **Your own domain** and click **Turn on remote access**. Once the status reads **Running**, Javis reads the hostname you set and shows the link `https://javis.yourdomain.com`.
+2. On the connector install step, copy the command (the Windows or the Mac one, either works). **You do not need to run it**: paste the whole line into the **Cloudflare tunnel token** box in Thansa, and Thansa picks the token out of it.
+3. On the **Public Hostname** step: pick a subdomain (for example `javis.yourdomain.com`), set Service to **HTTP** and put the service address Thansa shows in the URL box (by default `127.0.0.1:7777`, with a copy button).
+4. Back in Thansa, pick **Your own domain** and click **Turn on remote access**. Once the status reads **Running**, Thansa reads the hostname you set and shows the link `https://javis.yourdomain.com`.
 
 The token is stored encrypted, never sent back to the browser, and handed to `cloudflared` through an environment variable rather than on the command line.
 
 ### Option 3: Tailscale (private, only your devices)
 
-Best when only you use it: the link is not on the Internet at all, and only devices signed in to your Tailscale account can open it. Javis does not install Tailscale itself (it needs system rights and an account sign-in), but it handles the rest.
+Best when only you use it: the link is not on the Internet at all, and only devices signed in to your Tailscale account can open it. Thansa does not install Tailscale itself (it needs system rights and an account sign-in), but it handles the rest.
 
-1. Install [Tailscale](https://tailscale.com/download) on the computer running Javis and on your phone, signed in to the same account.
-2. In Javis pick **Tailscale** and click **Turn on remote access**. Javis runs `tailscale serve` itself, no commands needed.
-3. The first time, Tailscale may ask to switch HTTPS on for your network: Javis shows an **Open the HTTPS page** link; click it, then **Enable**. Javis retries on its own.
+1. Install [Tailscale](https://tailscale.com/download) on the computer running Thansa and on your phone, signed in to the same account.
+2. In Thansa pick **Tailscale** and click **Turn on remote access**. Thansa runs `tailscale serve` itself, no commands needed.
+3. The first time, Tailscale may ask to switch HTTPS on for your network: Thansa shows an **Open the HTTPS page** link; click it, then **Enable**. Thansa retries on its own.
 4. Open the `https://machine-name.tailnet-name.ts.net` link on a phone with Tailscale on.
 
-The Tailscale link keeps working while Javis restarts; **Turn off** removes only what Javis added and leaves your other Tailscale settings alone. People outside your Tailscale network cannot open it, so it does not serve share links or webhooks from outside services; use Option 1 or 2 for those.
+The Tailscale link keeps working while Thansa restarts; **Turn off** removes only what Thansa added and leaves your other Tailscale settings alone. People outside your Tailscale network cannot open it, so it does not serve share links or webhooks from outside services; use Option 1 or 2 for those.
 
 ### Worth knowing
 
 - When the computer is off or asleep, the link is down too. For 24/7 access, turn off Sleep (Windows) or enable "Prevent automatic sleeping" (macOS).
-- Javis turns the tunnel back on after a restart or an update if you left it on.
-- If Javis says Cloudflare points to a different address, change the service URL in the Public Hostname to the address Javis shows.
+- Thansa turns the tunnel back on after a restart or an update if you left it on.
+- If Thansa says Cloudflare points to a different address, change the service URL in the Public Hostname to the address Thansa shows.
 - The Docker build on a VPS can still use the older way (`docker compose --profile tunnel`) in `DEPLOY.md`.
 
 ## Quick reference of buttons and states
@@ -203,16 +203,16 @@ After the Redeploy, return to Settings and click **Check again**. Details and tr
 
 ### What the SSL badge says (since 0.248.0)
 
-On each Check again, Javis opens `https://<domain>` from the server itself, looks at what answers, and names the broken step on the badge:
+On each Check again, Thansa opens `https://<domain>` from the server itself, looks at what answers, and names the broken step on the badge:
 
 - **SSL: on**: done, the link works.
-- **SSL: Hostinger has no route yet**: DNS reaches the VPS but Traefik has no route for this domain. The project's `traefik...rule=Host(...)` still holds the old name: set `DOMAIN_NAME` to the domain (or edit the `Host` line in the YAML directly), then **Redeploy**. This is the most common case: the domain was entered in Javis and DNS points right, but the stack was not redeployed with the new name.
-- **SSL: certificate pending**: the route reaches Javis, Let's Encrypt has not issued the certificate yet. Wait a few minutes and check again.
-- **SSL: proxy cannot reach Javis**: Traefik answers 502; check that the Javis container is running.
-- **SSL: domain opens another site**: the domain points to another site or another Javis (a second stack on the same VPS, for example).
+- **SSL: Hostinger has no route yet**: DNS reaches the VPS but Traefik has no route for this domain. The project's `traefik...rule=Host(...)` still holds the old name: set `DOMAIN_NAME` to the domain (or edit the `Host` line in the YAML directly), then **Redeploy**. This is the most common case: the domain was entered in Thansa and DNS points right, but the stack was not redeployed with the new name.
+- **SSL: certificate pending**: the route reaches Thansa, Let's Encrypt has not issued the certificate yet. Wait a few minutes and check again.
+- **SSL: proxy cannot reach Thansa**: Traefik answers 502; check that the Thansa container is running.
+- **SSL: domain opens another site**: the domain points to another site or another Thansa (a second stack on the same VPS, for example).
 - **SSL: port 443 unreachable**: nothing answers on the VPS's HTTPS port.
 
-If you edit the `Host(...)` line in the YAML instead of setting `DOMAIN_NAME`, Javis no longer says "Redeploy still needed" once the domain works over HTTPS.
+If you edit the `Host(...)` line in the YAML instead of setting `DOMAIN_NAME`, Thansa no longer says "Redeploy still needed" once the domain works over HTTPS.
 
 ## Tips
 
