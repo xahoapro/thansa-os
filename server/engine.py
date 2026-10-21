@@ -2175,7 +2175,7 @@ def _nhac_sap_het(vong: int, tong: int) -> str:
     """Câu nối vào kết quả tool khi lượt chỉ còn NHAC_KHI_CON vòng. "" ở mọi vòng khác."""
     if tong <= NHAC_KHI_CON * 2 or tong - vong - 1 != NHAC_KHI_CON:
         return ""
-    return (f"\n\n⚠ [Javis] Lượt này chỉ còn {NHAC_KHI_CON} vòng gọi tool. Chốt việc: làm nốt bước "
+    return (f"\n\n⚠ [Thansa] Lượt này chỉ còn {NHAC_KHI_CON} vòng gọi tool. Chốt việc: làm nốt bước "
             "quan trọng nhất, rồi trả lời người dùng bằng bản tóm tắt đã làm gì, còn gì dở, và bước "
             "tiếp theo nên là gì.")
 

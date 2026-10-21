@@ -996,7 +996,7 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
             "Terminal thật (bash) trong thư mục làm việc của phiên: pipe, &&, cd đều được, nhớ thư mục "
             "và biến export giữa các lệnh. Dev server hay lệnh chạy mãi thì background=true rồi xem bằng "
             "javis_process. timeout mặc định 180 giây, tối đa 600 (xin lâu hơn thì tự chạy nền). workdir: "
-            "thư mục con chỉ cho lệnh này. Trước lệnh thay đổi file Javis tự tạo mốc khôi phục.",
+            "thư mục con chỉ cho lệnh này. Trước lệnh thay đổi file Thansa tự tạo mốc khôi phục.",
             {"command": {"type": "string"}, "background": {"type": "boolean"},
              "timeout": {"type": "number"}, "workdir": {"type": "string"}},
             ["command"], _terminal, effect="full")
