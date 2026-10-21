@@ -6,6 +6,151 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.268.0] - 2026-10-21
+### Sửa lỗi
+- **Đọc được file SharePoint qua Composio ở mức Chỉ đọc.** Trước đây mọi lệnh SharePoint, kể cả liệt kê thư mục hay tải file về đọc, đều bị chặn như thao tác nguy hiểm vì tên ứng dụng bắt đầu bằng chữ SHARE (chia sẻ). Giờ Javis bỏ qua tên ứng dụng khi xét lệnh: đọc chạy ở mức Chỉ đọc, còn tải lên, chia sẻ, xoá vẫn cần Toàn quyền như cũ.
+
+## [0.267.0] - 2026-10-21
+### Sửa lỗi
+- **Team không còn bắt duyệt khi trợ lý chỉ đọc file.** Ở nhóm "cần duyệt", lệnh đọc nối nhiều bước (`cd ...; cat ...; sed -n ...; grep "a\|b" ...`) từng bị coi là hành động ra ngoài và dừng việc chờ chủ nhóm. Giờ Javis tách từng lệnh ra xét riêng: đọc, tìm, in ra thì chạy luôn. Ghi file, xoá, chạy mã, gửi đi vẫn phải chờ duyệt như cũ.
+- **Khung chat Team không còn bị treo trên điện thoại.** Một lần gửi rơi đúng lúc mạng chập chờn từng làm nút gửi khoá mãi, phải thoát hẳn app mới dùng lại được. Giờ mỗi lần gọi máy chủ tự bỏ sau 30 giây và báo mất mạng, bấm gửi lại là được (không bị gửi trùng). Quay lại app sau hơn 20 giây thì khung Team tự tải lại tin mới.
+- **VPS chạy image tự đóng gói giờ được báo đúng cách cập nhật.** Javis chuyển từ máy tính lên VPS bằng cách đóng gói image tại chỗ (tên kiểu `javis-cwi:pc-0.206.0`) thì bấm cập nhật hay Redeploy vẫn đứng yên ở bản cũ, vì image đó không nằm trên kho nào. Trang Cập nhật giờ nói thẳng điều này và chỉ cách đổi sang image chính thức một lần, dữ liệu giữ nguyên. Các bước có trong DEPLOY.md, mục Cập nhật.
+- **Cập nhật trên VPS không còn làm Javis tắt hẳn.** Bấm cập nhật ở bản cài bằng systemd: updater từng bị chính lệnh dừng service giết giữa chừng, Javis tắt mà không bật lại. Giờ updater tách ra chạy riêng rồi mới dừng service. Bản cài đặt tên riêng (`JAVIS_NAME`, ví dụ `javis-shop`) cũng được dừng và bật đúng service của nó.
+
+## [0.266.0] - 2026-10-21
+### Cải thiện
+- **Ấn giữ tin nhắn trên điện thoại lại bôi chữ và sao chép như bình thường.** Khung chat chính bỏ lớp làm tối, hàng emoji và thẻ Trả lời / Sao chép khi ấn giữ: giữ ngón tay là điện thoại tự hiện tay kéo chọn chữ và nút Sao chép của máy, chọn được đúng đoạn cần copy. Các nút Trả lời, Sao chép, Sửa, Gửi lại vẫn ở hàng nhỏ hiện ra khi chạm vào tin, kéo tin sang trái vẫn là trích dẫn. Muốn thả emoji khác thì ấn giữ nút like ở góc bong bóng.
+
+## [0.265.0] - 2026-10-21
+### Cải thiện
+- **Tài liệu có hướng dẫn kết nối Anthropic Compatible.** Trang hướng dẫn Models thêm mục C1: chuẩn bị gì từ bên bán, điền 3 ô ở đâu, cách đặt làm model chính, và bảng xử lý từng câu báo lỗi. Gửi link mục này cho khách là họ tự làm được.
+
+## [0.263.0] - 2026-10-20
+### Sửa lỗi
+- **Bot không còn biến mất khỏi trang Chatbot.** Bot lưu bằng đường dẫn đầy đủ của Brain Default (tạo từ Telegram, từ chat hay từ bản cũ) giờ hiện đúng trong danh sách, kèm tài khoản kênh của nó, nên sửa token hay cấu hình được ngay, không phải xoá tạo lại. Bot của brain khác vẫn không lẫn vào.
+- Xoá một trợ lý còn bot đang dùng giờ luôn bị chặn đúng, dù brain của trợ lý được ghi theo kiểu nào.
+### Thêm mới
+- **Menu nút ngôi sao có thêm mục Chat Team** ở dòng cuối, bấm là mở thẳng trang Team.
+
+## [0.262.0] - 2026-10-20
+### Thêm mới
+- **Mọi bộ não đều tìm và đọc được web.** OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek, Ollama giờ tự tìm trên mạng và đọc trang web, file PDF để trả lời tin mới, giá cả, tài liệu, thay vì đoán từ trí nhớ. Không cần key: mặc định tìm qua DuckDuckGo. Có key Tavily hoặc Brave (biến `TAVILY_API_KEY`, `BRAVE_API_KEY`) hay máy SearXNG riêng (`SEARXNG_URL`) thì Javis dùng nguồn đó trước. Trang dài thì đọc tiếp từng đoạn, không bị cắt mất.
+- **Mọi khung chat đều có đủ đồ nghề như trang Code.** Khung chat thường, trang trợ lý và Telegram của bạn giờ cũng có terminal, sửa file từng đoạn, tìm trong file, mốc khôi phục và 150 vòng công cụ mỗi lượt. Chưa ghim thư mục thì Javis làm việc ngay trong brain; đã ghim thì làm trong thư mục đó.
+- **Hoàn tác ở mọi khung chat**: menu dấu "+" của ô soạn tin có thêm mục "Hoàn tác thay đổi của Javis", mở đúng bảng Hoàn tác như trang Code.
+### Cải thiện
+- Đọc file, terminal và đọc web được trả về tới 60.000 ký tự mỗi lần (trước là 8.000 ở khung chat thường), nên không còn bị cắt mất giữa chừng. Kết quả từ kết nối ngoài (POS, quảng cáo...) vẫn giữ trần cũ để lượt chat không nặng thêm.
+### Bảo mật
+- Đọc web không bao giờ chạm vào mạng nội bộ (localhost, mạng LAN, địa chỉ quản trị của máy chủ đám mây), kiểm lại ở mọi lần trang chuyển hướng. Nội dung trang được đánh dấu là dữ liệu, không phải lệnh, để một trang cố tình cài câu lệnh không điều khiển được Javis.
+- Chatbot nói chuyện với khách không có terminal và không có công cụ web, kể cả bot mức Toàn quyền.
+
+## [0.261.0] - 2026-10-20
+### Cải thiện
+- **Kho đăng nhập giờ tên là Cookies**, biểu tượng hình bánh quy, gọn hơn trên thanh bên. Nút và câu trên trang cũng nói "cookie" cho thống nhất.
+- **Tải file cookie lên được.** Bấm **Tải file lên** ở đầu trang (hoặc **Chọn file** trong form, hoặc kéo file thả vào ô): Javis nhận file JSON của Cookie-Editor và file `cookies.txt`, tự điền tên theo tên file. Không phải mở file ra chép dán nữa.
+
+## [0.260.0] - 2026-10-20
+### Cải thiện
+- **Gọi nhiều người trong một tin thì họ trả lời cùng lúc.** Trước đây @ ba người là chờ từng người xong mới tới người sau. Muốn kiểu cũ (người sau đọc câu người trước rồi mới nói) thì vào Nâng cao của team, ô "Khi gọi nhiều người trong một tin", chọn Lần lượt.
+- **Trưởng nhóm chia việc cho nhiều người thì họ làm cùng lúc**, tối đa 3 người một đợt, xong hết mới tổng hợp. Một người gặp lỗi thì phần của người khác vẫn được giữ, bấm Chạy lại chỉ làm lại phần lỗi.
+- **Các team cùng một brain làm việc có công cụ song song được.** Trước đây mọi bước có đọc ghi file trong một brain phải xếp hàng. Giờ mỗi thư mục làm việc cho tối đa 3 lượt cùng lúc, team đã ghim thư mục riêng thì không chờ team khác. Khi chạy cùng lúc, mỗi cộng sự được dặn chỉ sửa file của phần mình.
+- Muốn chặt như trước: đặt `JAVIS_TEAM_TOOL_SLOTS=1` (một người ghi file một lúc) hoặc `JAVIS_TEAM_JOB_PARALLEL=1` (làm lần lượt).
+
+## [0.257.0] - 2026-10-20
+### Cải thiện
+- **Một cộng sự làm được ở nhiều team cùng lúc.** Trước đây cộng sự đang trả lời ở team này thì team khác phải đứng chờ, có khi tới 30 phút. Giờ mỗi team có mạch riêng nên chạy song song. Trong cùng một team, mỗi cộng sự vẫn trả lời từng câu một.
+- **Nhiều team chạy việc cùng lúc hơn:** từ 2 lên 4 team. Đổi được bằng biến `JAVIS_TEAM_PARALLEL`.
+- **Có phanh để không quá tải gói đăng ký.** Mỗi engine dùng gói (Claude Code, ChatGPT, Grok, Antigravity) chạy tối đa 3 lượt team cùng lúc, engine dùng API key tối đa 6. Lượt vượt mức thì chờ, không mất. Đổi bằng `JAVIS_TEAM_CLI_SLOTS` và `JAVIS_TEAM_API_SLOTS`.
+- Còn lại một giới hạn: các bước **Làm có công cụ** của những team cùng một brain vẫn chạy lần lượt, để hai team không ghi đè cùng một file. Bản sau sẽ nới phần này.
+
+## [0.256.0] - 2026-10-20
+### Thêm mới
+- **Bộ não API lập trình được thật trên trang Code.** OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek, Ollama giờ làm được đúng việc của một lập trình viên trong thư mục bạn gắn: tìm code, đọc từng đoạn, sửa đúng vài dòng, chạy lệnh, bật web thử. Cách làm học từ Hermes Agent.
+- **Sửa từng đoạn thay vì viết lại cả file.** Javis chỉ thay đúng đoạn cần sửa, kể cả khi model gõ lệch thụt lề hay dấu nháy, rồi đưa lại phần khác biệt để xem. Sửa xong mà file hỏng cú pháp là báo ngay. Có thêm tìm trong code theo nội dung hoặc theo tên file.
+- **Terminal thật ở mức Toàn quyền.** Chạy được lệnh có `|`, `&&`, `cd`, nhớ thư mục giữa các lệnh. Web hay lệnh chạy lâu thì chạy nền, Javis xem log, dừng được, và báo vào khung chat khi xong.
+- **Nút Hoàn tác trên trang Code.** Trước lượt đầu tiên có sửa file, Javis tự lưu một mốc. Bấm Hoàn tác là thấy file nào đã đổi, xem từng chỗ khác, rồi trả về mốc. File bạn tự sửa sau đó được giữ nguyên. Không đụng vào git của dự án, thư mục không có git cũng dùng được.
+### Sửa lỗi
+- Trước bản này, bộ não API trong phiên Code thật ra không đọc được file nào của dự án: thư mục làm việc chưa hề được nối vào. Giờ đã nối.
+- Tạo file mới ở gốc dự án không còn rơi nhầm vào thư mục brain.
+- Ở mức Plan, công cụ chạy lệnh không còn hiện ra.
+### Cải thiện
+- Một lượt trên trang Code được tới 150 vòng gọi công cụ (chat thường vẫn 30), còn 10 vòng thì Javis nhắc tóm tắt và chốt việc. Đổi bằng biến `JAVIS_MAX_TOOL_ROUNDS_CODING`.
+### Bảo mật
+- Terminal không mang theo API key của Javis, output được che khoá bí mật. Lệnh có thể phá cả máy (xoá thư mục hệ thống, định dạng ổ đĩa, `sudo`, tắt máy) bị chặn ở mọi mức. Mọi lệnh đều được ghi nhật ký.
+
+## [0.255.0] - 2026-10-20
+### Cải thiện
+- **Chọn được giọng ElevenLabs dù cuộc gọi đang chạy ChatGPT Live.** Trước đây ô ElevenLabs chỉ hiện khi cuộc gọi chạy đường Cơ bản, nên đa số máy không thấy đâu. Giờ thẻ Giọng nói có thêm ô **Giọng đọc tin nhắn**: chọn ElevenLabs ở đó là Javis đọc câu trả lời trong chat bằng giọng ElevenLabs.
+- **Không phải dán Voice ID nữa.** Dán API key xong là hiện danh sách giọng trong tài khoản ElevenLabs theo tên, giọng bạn tự nhân bản đứng đầu. Ô key, giọng và model nằm ngay dưới chỗ chọn, không còn giấu trong Nâng cao.
+- **Giọng ElevenLabs đọc tiếng Việt chuẩn.** Model mặc định cũ (Multilingual v2) không có tiếng Việt nên đọc lơ lớ. Giờ mặc định là Flash v2.5 (nhanh, có tiếng Việt), chọn thêm được Eleven v3 (biểu cảm nhất); máy đang lưu model cũ thì câu tiếng Việt tự chuyển sang Flash v2.5.
+- **Ghi chú giọng nói gửi qua Telegram, Zalo cũng dùng giọng ElevenLabs** khi bạn chọn nó. ElevenLabs lỗi (hết lượt, key hỏng) thì ghi chú tự đọc bằng giọng Edge, không bị mất. Riêng cuộc gọi ChatGPT Live và Live qua API vẫn nói bằng giọng riêng của chúng.
+
+## [0.254.0] - 2026-10-20
+### Thêm mới
+- **Kết nối được cổng "Anthropic Compatible".** Trang Models có thẻ mới: dán Base URL, API key và tên model bên bán đưa là dùng được. Hợp với các bên bán lại Claude và cổng "anthropic" của DeepSeek, Kimi, MiniMax. Bên bán nào nói cổng Anthropic ổn định hơn cổng OpenAI thì giờ dùng thẳng cổng đó.
+- **Cổng không có danh sách model vẫn dùng được:** gõ tên model vào ô thứ hai (nhiều tên cách nhau bằng dấu phẩy). Javis thử một tin rất ngắn trước khi lưu, sai key hay sai địa chỉ là báo ngay, không lưu bừa.
+- Dùng đủ công cụ như mọi bộ não khác: MCP, đọc ghi brain, skill, agent, việc nền, chatbot. Nhãn dưới mỗi câu trả lời ghi "Anthropic Compatible" để biết lượt đó chạy bằng gì.
+
+## [0.253.0] - 2026-10-20
+### Bảo mật
+- **Bật truy cập từ xa không còn để lộ đường tạo nhắc việc.** Bốn đường Javis dùng nội bộ trên chính máy (tạo, sửa, huỷ nhắc việc và gửi file qua Telegram) được miễn đăng nhập. Nhưng Cloudflare Tunnel, Tailscale và proxy trên VPS cũng đi vào từ chính máy, nên ai có địa chỉ tunnel đều tạo được nhắc việc chạy AI hay script mà không cần mật khẩu. Giờ yêu cầu đi qua tunnel hay proxy phải đăng nhập; Javis tự gọi trên máy vẫn chạy như cũ.
+- Nếu bạn đã bật truy cập từ xa trước bản này, nên mở trang Việc định kỳ xem có nhắc việc lạ nào không.
+
+## [0.251.0] - 2026-10-20
+### Thêm mới
+- **Kho đăng nhập** (thanh bên, nhóm Kết nối): đăng nhập trên trình duyệt của bạn, xuất cookie bằng Cookie-Editor rồi dán vào. Javis dùng lại phiên đó để đọc trang cần đăng nhập (kênh người bán, trang affiliate, trang quản trị) và để **Theo dõi trang** canh được trang cần đăng nhập. Mỗi thẻ ghi còn đăng nhập hay đã hết hạn, hạn tới ngày nào, có công tắc cho Javis dùng.
+- Cookie được mã hoá trên máy chủ, AI không bao giờ thấy giá trị cookie, chatbot của khách không dùng được. Javis chỉ đọc trang, không bấm nút hay gửi form. Hướng dẫn ở `docs/33-kho-dang-nhap.md`.
+### Cải thiện
+- **Tên hội thoại hiện ngay cạnh nút Thu nhỏ** ở đầu trang Trò chuyện và trang Code, nên luôn biết mình đang ở cuộc nào. Tên dài tự cắt bằng dấu ba chấm, trên điện thoại tên co lại trước để các nút bên phải không bị đẩy ra ngoài.
+- **Bấm vào tên là đổi tên được ngay**, không phải mở cột Hội thoại. Cuộc chưa có tin nhắn nào thì hiện mờ chữ "Hội thoại mới".
+
+## [0.249.0] - 2026-10-20
+### Cải thiện
+- **Trang Công cụ (Plugins) có ô tìm kiếm.** Gõ tên plugin, tên công cụ bên trong hay một chữ trong mô tả là lọc ngay, không cần gõ dấu ("lich dang" vẫn ra "Lịch đăng bài"). Bấm Esc hoặc dấu X để xoá.
+- **Lọc nhanh Tất cả, Đang bật, Đang tắt** (có số đếm từng mục), thêm mục Lỗi khi có plugin bị lỗi.
+- **Plugin do bạn tạo nằm trên cùng**, rồi tới plugin từ Javis Store, cuối cùng là plugin có sẵn của Javis. Trước đây plugin tự tạo bị đẩy xuống dưới cả 20 plugin có sẵn.
+- **Thẻ gọn hơn một nửa, bật tắt bằng công tắc gạt** bên phải như trang Kỹ năng. Bật tắt xong vẫn giữ nguyên chữ đang tìm và chỗ đang xem.
+
+## [0.248.0] - 2026-10-20
+### Sửa lỗi
+- **Tên miền trên Hostinger: Javis nói rõ bước nào đang hỏng.** Trước đây đã trỏ DNS đúng mà tên miền chưa mở được thì Cài đặt chỉ ghi "SSL: qua Hostinger", kèm câu gợi ý DNS có thể sai. Giờ Javis tự mở tên miền từ máy chủ và ghi đúng nguyên nhân: Hostinger chưa nhận tên miền (cần đặt DOMAIN_NAME rồi Redeploy), đang chờ cấp chứng chỉ, proxy không gọi được Javis, tên miền mở nhầm trang khác, hay cổng 443 không trả lời.
+- Ai sửa thẳng dòng `Host(...)` trong file YAML thay vì đặt DOMAIN_NAME thì Javis không còn báo mãi "còn bước Redeploy" khi tên miền đã chạy.
+
+## [0.246.0] - 2026-10-20
+### Cải thiện
+- **Bỏ nút Lịch sử (hình đồng hồ) trên khung chat.** Nút này làm đúng việc của nút thu gọn ở góc cột Hội thoại, nên trên máy tính giờ chỉ còn nút thu gọn đó. Áp dụng cho trang Trò chuyện và trang Code.
+- **Trên điện thoại, nút mở cột hội thoại đổi thành biểu tượng thu gọn/mở rộng.** Mở ra thì góc cột có nút thu gọn để đóng lại, không phải với tay lên thanh trên.
+- **Điện thoại: chạm vào một hội thoại là cột tự thu gọn** để hiện ngay nội dung. Trang Cộng sự giờ cũng vậy khi chọn hội thoại ở tab Lịch sử bên phải. Máy tính giữ nguyên cột vì đủ chỗ.
+
+## [0.244.0] - 2026-10-20
+### Thêm mới
+- **Truy cập từ xa có thêm lựa chọn Tailscale.** Máy đã cài Tailscale thì chọn Tailscale, bấm Bật là có link `https://...ts.net` riêng tư: chỉ máy của bạn (cài Tailscale cùng tài khoản) mở được, không lộ ra Internet. Javis tự chạy `tailscale serve`, không cần gõ lệnh.
+- Lần đầu Tailscale đòi bật HTTPS cho mạng thì Javis hiện sẵn link để bấm, bật xong Javis tự thử lại. Máy chưa cài hoặc chưa đăng nhập Tailscale thì Javis nói rõ và có link tải.
+- Bấm Tắt, đổi sang cách khác hay mật khẩu bị xoá thì Javis gỡ đúng phần nó đã thêm, không đụng cấu hình Tailscale khác của bạn.
+
+## [0.242.0] - 2026-10-20
+### Thêm mới
+- **Mở Javis từ điện thoại hay máy khác, kể cả khi Javis chạy trên máy Windows hoặc macOS ở nhà.** Cài đặt có mục mới **Truy cập từ xa**: bấm Bật là có link HTTPS, không cần VPS, không mở cổng modem, không gõ lệnh. Micro và giọng nói chạy được qua link này.
+- **Hai cách:** **Link nhanh** dùng ngay, không cần tài khoản (link đổi mỗi lần khởi động lại). **Tên miền riêng** cho link cố định kiểu `https://javis.tencuaban.com`: dán dòng lệnh Cloudflare đưa vào ô token là xong, Javis tự lấy token và tự đọc ra tên miền.
+- Javis tự tải công cụ `cloudflared` của Cloudflare đúng bản cho máy, tự bật lại sau khi khởi động lại hoặc cập nhật, rớt mạng thì tự nối lại.
+- **An toàn:** chỉ bật được khi đã có mật khẩu đăng nhập; đang bật thì không tắt được đăng nhập; mật khẩu bị xoá là tunnel tự dừng. Token được mã hoá, không bao giờ gửi ra trình duyệt.
+
+## [0.240.0] - 2026-10-20
+### Cải thiện
+- **Chép được một đoạn ngắn trong tin nhắn trên điện thoại, giống Zalo.** Ấn giữ tin nhắn như cũ để hiện bảng (emoji, Trả lời, Sao chép cả tin). Nhấc tay ra rồi ấn giữ lần nữa vào tin đang sáng: điện thoại hiện con trỏ hai đầu, kéo chọn đúng đoạn cần rồi bấm Sao chép (hoặc Dịch) của máy.
+- **Tin dài vẫn chọn được hết.** Bản sáng của tin nằm gọn giữa đầu màn hình và bảng thao tác, vuốt trong đó để cuộn tới đoạn cần chép, mở ra đúng chỗ đang xem.
+- Chạm vào tin đang sáng không mở link trong đó. Bấm ra ngoài vùng tối là đóng và bỏ phần đã chọn. Áp dụng cho cả khung chat chính lẫn trang Đội nhóm, iPhone lẫn Android.
+
+### Sửa lỗi
+- **Xoay ngang iPhone rồi xoay dọc lại, chữ không còn bị to ra.** Safari tự phóng chữ khi màn hình nằm ngang và có lúc không thu lại; giao diện Javis giờ tắt việc tự phóng đó.
+
+## [0.239.0] - 2026-10-20
+### Thêm mới
+- **Theo dõi trang web không tốn token.** Canh một trang theo lịch: báo khi trang đổi, khi xuất hiện một cụm chữ (ví dụ "Còn hàng") hoặc khi có giá dưới ngưỡng. Mỗi lượt canh chỉ tải trang và so chữ, không gọi AI. Trước đây muốn canh trang phải dựng loop, mỗi vòng tốn một lượt AI.
+- **Hiểu giá kiểu Việt Nam:** 1.250.000đ, 990.000 ₫, 1,25 triệu, 1tr2, 250k, VND, và cả $ với USD.
+- **Không báo rác:** "3 phút trước", "hôm qua" tự nhảy không tính là đổi; dòng chỉ đổi giá được báo là "Cập nhật"; khởi động lại không báo trùng. Trang lỗi thì thử thưa dần, lỗi 5 lần liền thì tự dừng và báo đúng một lần.
+- **Tạo bằng lời trong chat** ("canh trang này, xuống dưới 900k thì báo") hoặc ở tab **Theo dõi trang** của trang Việc định kỳ. Tuỳ chọn tóm tắt bằng AI mỗi lần có thay đổi, mặc định tắt.
+- Chi tiết kỹ thuật: module mới `web_watch.py` (kho `web_watch.sqlite3`), tool `javis_watch` (plugin `javis-watch`, chỉ chủ dùng được, bot chăm khách không thấy), route `/watch`, tab `dashboard/web-watch.js`. Địa chỉ trỏ vào mạng nội bộ bị chặn ở mọi chặng chuyển hướng. Tài liệu: `docs/32-theo-doi-trang.md`. Ý tưởng lấy từ `page-diff.ts` của OpenMuse (CopilotKit, giấy phép MIT), viết lại cho Javis.
+
 ## [0.238.0] - 2026-10-20
 ### Sửa lỗi
 - **Việc nền chạy lại không còn gửi tin, đăng bài hay tạo đơn hai lần.** Việc nền chạy lại khi gặp lỗi tạm thời, khi máy chủ khởi động lại hoặc khi bạn bấm Thử lại, và trước đây mỗi lần như vậy là làm lại từ đầu, kể cả tin đã gửi cho khách. Giờ Javis ghi sổ từng thao tác ra ngoài của việc: cái gì đã làm xong thì lần sau bỏ qua.

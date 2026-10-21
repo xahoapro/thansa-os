@@ -59,7 +59,7 @@ _DEFAULT = {
         "openai_tts_model": "gpt-4o-mini-tts",        # hoặc tts-1 / tts-1-hd
         "elevenlabs_key": "",
         "elevenlabs_voice": "21m00Tcm4TlvDq8ikWAM",   # Rachel (premade, đa ngôn ngữ) - đổi được
-        "elevenlabs_model": "eleven_multilingual_v2",
+        "elevenlabs_model": "eleven_flash_v2_5",      # speaks Vietnamese (multilingual_v2 does not), tts_eleven.py
         # --- Voice V2 (docs/dev/2026-10-voice-call-spec.md mục 3.1 và 5) ---
         # standard | fast | live. Mặc định Làn nhanh (chủ dự án chốt 17/09). Chưa chọn bộ não
         # giọng thì tin từ mic vẫn đi bộ não chính y như chế độ chuẩn (xem _bao_lan_nhanh_bo_qua
@@ -139,6 +139,11 @@ _DEFAULT = {
         # và /models. Key có thể rỗng nếu endpoint không đòi xác thực.
         "openai_compat_base": "",
         "openai_compat_key": "",
+        # Provider 'anthropic-compat' (0.254.0): ONE gateway speaking the Anthropic Messages API
+        # (resellers of Claude, DeepSeek/Kimi/MiniMax "anthropic" endpoints...). The base URL has
+        # the shape of Claude Code's ANTHROPIC_BASE_URL (no /v1); Javis appends /v1/messages.
+        "anthropic_compat_base": "",
+        "anthropic_compat_key": "",
         # --- Ollama chạy trên MÁY NHÀ (provider 'ollama-local') ---
         # Ca đặc biệt mà khối chú thích ngay trên vừa từ chối, nay mở ra nhưng KHÔNG bằng cách
         # giả định "localhost là máy người dùng". Cái Javis lưu là một ĐỊA CHỈ người dùng tự
@@ -519,6 +524,7 @@ _SECRET_PATHS = (
     "packs.tokens.*",
     "model.openrouter_key", "model.anthropic_api_key", "model.openai_api_key", "model.gemini_api_key",
     "model.groq_api_key", "model.deepseek_api_key", "model.ollama_key", "model.ollama_local_key", "model.openai_compat_key",
+    "model.anthropic_compat_key",
     "model.openai_oauth.access_token", "model.openai_oauth.refresh_token", "model.openai_oauth.id_token",
     # Gemini CLI (đăng nhập Google ngay trên dashboard). Refresh token ở đây mở được cả gói
     # Code Assist của tài khoản Google, nên nó ngang hàng mọi secret khác trong danh sách.
@@ -528,6 +534,8 @@ _SECRET_PATHS = (
     # Secret TOTP là thứ SINH RA mã đăng nhập, nên nó ngang hàng mật khẩu chứ không phải một
     # tuỳ chọn. Ai đọc được nó thì tự sinh mã 2FA mãi mãi, và chủ máy không hề hay biết.
     "auth.totp.secret",
+    # Cloudflare Tunnel token (remote_tunnel.py): whoever holds it can serve any site on the owner's tunnel hostname.
+    "remote_tunnel.token",
 )
 
 
@@ -1170,10 +1178,18 @@ def require_login(conn=None):
       (xem den_tu_ngoai): lần cài đầu qua http://<ip> vẫn vào được, nhưng là vào màn TẠO
       tài khoản chứ không phải dashboard.
     - JAVIS_REQUIRE_LOGIN=1/0 ép bật/tắt tường minh (cho request cục bộ).
+    - Built-in remote access (Cloudflare Tunnel, remote_tunnel.py) is on → True.
     - Mặc định: BẬT khi server nghe public (JAVIS_HOST=0.0.0.0, vd Docker/Hostinger/VPS) -
       vì Claude chạy full quyền, không được để hở ai cũng vào được."""
     if den_tu_ngoai(conn):
         return True
+    # The built-in Cloudflare Tunnel (remote_tunnel.py) puts a localhost-only Javis on the Internet, which the bind
+    # address below cannot see. It wins over an explicit JAVIS_REQUIRE_LOGIN=0 for the same reason.
+    try:
+        if (read_settings().get("remote_tunnel") or {}).get("enabled"):
+            return True
+    except Exception:
+        pass
     v = os.getenv("JAVIS_REQUIRE_LOGIN", "").strip().lower()
     if v in ("1", "true", "yes", "on"):
         return True

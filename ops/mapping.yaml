@@ -2132,3 +2132,51 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P072
+  ten: "Rebrand nền 0.268.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-21 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.268.0 sang Thansa
+    theo luật P007/P026/P027/P048 (219 chỗ / 30 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P072: rebrand nen 0.268.0 (tu dong)"
+  diem_neo:
+    - file: DEPLOY.en.md
+      ky_hieu: '>   an AI moved Thansa from a computer to a VP'
+  vung_theo_doi:
+    - "DEPLOY.en.md"
+    - "DEPLOY.md"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/index.html"
+    - "docs/10-models-va-engine.md"
+    - "docs/15-thuong-hieu-ten-mien.md"
+    - "docs/32-theo-doi-trang.md"
+    - "docs/33-kho-dang-nhap.md"
+    - "docs/README.md"
+    - "docs/en/10-models-and-engines.md"
+    - "docs/en/15-branding-and-domains.md"
+    - "docs/en/32-page-watch.md"
+    - "docs/en/33-login-vault.md"
+    - "docs/en/README.md"
+    - "server/coding_terminal.py"
+    - "server/deploy_info.py"
+    - "server/engine.py"
+    - "server/login_vault.py"
+    - "server/main.py"
+    - "server/mcp_hub.py"
+    - "server/remote_tunnel.py"
+    - "server/routes/domain.py"
+    - "server/routes/remote_access.py"
+    - "server/updater.py"
+    - "server/web_watch.py"
+    - "system/plugins/javis-login/plugin.py"
+    - "system/plugins/javis-login/plugin.yaml"
+    - "system/plugins/javis-watch/plugin.py"
+    - "system/plugins/javis-watch/plugin.yaml"
+  anh_goc:
+    - file: DEPLOY.en.md
+      doan: '>   an AI moved Javis from a computer to a VP'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
