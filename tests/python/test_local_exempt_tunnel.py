@@ -27,7 +27,7 @@ def check(name, cond, extra=""):
         _fails.append(name)
 
 
-main.cfgmod.gate_active = lambda: True          # a password is set (the tunnel only runs with one)
+main.cfgmod.gate_active = lambda *a, **k: True          # a password is set (the tunnel only runs with one)
 main.cfgmod.auth_enabled = lambda: True
 
 local = TestClient(main.app, base_url="http://127.0.0.1:7777", client=("127.0.0.1", 50000))
