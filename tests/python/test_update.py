@@ -190,7 +190,7 @@ try:
     _sbb = json.loads(_sb.body) if isinstance(_sb, JSONResponse) else {}
     check("self-built image → says pulling cannot update it, names the official image, never calls Watchtower",
           isinstance(_sb, JSONResponse) and _sb.status_code == 400 and _sbb.get("self_built") is True
-          and "ghcr.io/blogminhquy/javis-os:latest" in _sbb.get("error", "") and _triggered == []
+          and f"{__import__('deploy_info').OFFICIAL_IMAGE}:latest" in _sbb.get("error", "") and _triggered == []   # Thansa: image chính thức theo deploy_info
           and _sbb.get("manual") == "docker compose up -d --pull always")
     check("self-built image → releases the claim", us.read_state().get("phase") == "idle")
 finally:
