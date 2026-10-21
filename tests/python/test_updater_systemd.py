@@ -39,7 +39,11 @@ check("unit name: a JAVIS_NAME with odd characters is ignored",
       updater.systemd_service_name("bad name;rm", CG_V2) == "javis-shop")
 check("unit name: read from the cgroup (v2 and v1)", updater.systemd_service_name("", CG_V2) == "javis-shop"
       and updater.systemd_service_name("", CG_V1) == "javis")
-check("unit name: a terminal session falls back to javis", updater.systemd_service_name("", CG_USER) == "javis")
+with patch.object(updater, "systemd_unit", lambda: ""):
+    check("unit name: a terminal session falls back to thansa", updater.systemd_service_name("", CG_USER) == "thansa")
+with patch.object(updater, "systemd_unit", lambda: "javis"):
+    check("unit name: an old install (javis.service only) falls back to javis",
+          updater.systemd_service_name("", CG_USER) == "javis")
 
 
 def unit_files(text):
