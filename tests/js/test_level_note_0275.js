@@ -13,8 +13,9 @@ const en = JSON.parse(fs.readFileSync(path.join(root, "dashboard", "i18n", "en.j
 let fails = 0;
 function check(name, cond) { console.log((cond ? "ok   " : "FAIL ") + name); if (!cond) fails++; }
 
-check("defaults stay Full for loops and task reminders",
-  /let fcur = \{ mode: "full" \};/.test(cs) && /let frmq = "full";/.test(cs) && /_LOOP_MODE_MAC_DINH = "full"/.test(plug));
+// Thansa P038 (chốt an toàn): loop tạo từ form/chat mặc định suggest, model không đổi được; nhắc hẹn kiểu task giữ Full + cảnh báo.
+check("Thansa P038: loop defaults to suggest, task reminders stay Full",
+  /let fcur = \{ mode: "suggest" \};/.test(cs) && /let frmq = "full";/.test(cs) && /mode: suggest\\n/.test(plug) && !/_LOOP_MODE_MAC_DINH/.test(plug));
 check("a note sits under both level rows", cs.includes('id="lpModeNote"') && cs.includes('id="lpRemMqNote"'));
 check("the note follows the picked level in both forms",
   /levelNote\("#lpModeNote", fcur\.mode\);/.test(cs) && /levelNote\("#lpRemMqNote", frmq\);/.test(cs));
@@ -23,7 +24,8 @@ check("notes in vi and en, one short line each (no (i) needed)",
   keys.every(k => vi[k] && en[k] && vi[k].length <= 100 && en[k].length <= 100));
 check("the Full note says it edits files and acts outside without asking",
   /sửa file/.test(vi["cs.si_level_note_full"]) && /không hỏi lại/.test(vi["cs.si_level_note_full"]));
-check("javis_schedule asks the model to explain a Full job in plain words, for loops and reminders",
-  /FULL_LEVEL_NOTE if mode == "full"/.test(plug) && /FULL_LEVEL_NOTE if mq == "full"/.test(plug));
+// Thansa P038: loop qua chat luôn suggest nên chỉ nhắc hẹn mức Full cần câu giải thích.
+check("javis_schedule asks the model to explain a Full reminder job in plain words",
+  /FULL_LEVEL_NOTE if mq == "full"/.test(plug));
 check("no em or en dash", [cs, plug].every(t => t.indexOf(String.fromCharCode(0x2014)) < 0 && t.indexOf(String.fromCharCode(0x2013)) < 0));
 process.exit(fails ? 1 : 0);

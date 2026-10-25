@@ -227,14 +227,15 @@ def _scan(root, language):
         meta, _ = _frontmatter(text, loop=True)
         record["projection"] = meta
         goal = str(meta.get("goal", "custom") or "custom").strip().lower()
-        mode = str(meta.get("mode", "full") or "").strip().lower()
+        # Thansa P038: khớp self_improve._norm_loop - loop thiếu/sai mode là suggest, không phải full.
+        mode = str(meta.get("mode", "suggest") or "").strip().lower()
         try:
             interval = max(5, int(meta.get("interval_min", 60)))
         except (ValueError, TypeError):
             interval = 60
         slug = Path(entry["name"]).stem
         caps["loops"].append({"slug": slug, "name": str(meta.get("name") or slug),
-            "enabled": bool(meta.get("enabled", False)), "mode": mode if mode in ("suggest", "auto", "full") else "full",
+            "enabled": bool(meta.get("enabled", False)), "mode": mode if mode in ("suggest", "auto", "full") else "suggest",
             "interval_min": interval, "goal": goal if goal in ("business", "brain", "product", "custom") else "custom",
             "paused": paused.get(slug, False)})
 
