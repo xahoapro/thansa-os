@@ -86,7 +86,7 @@ class CatalogTests(unittest.TestCase):
             "slug": "w", "name": "W", "status": "active", "description": "", "group": "Chung",
             "agents": ["a", None], "n_steps": 2})
         self.assertEqual(value["capabilities"]["loops"][0], {
-            "slug": "daily", "name": "D", "enabled": False, "mode": "full", "interval_min": 5,
+            "slug": "daily", "name": "D", "enabled": False, "mode": "suggest", "interval_min": 5,   # Thansa P038
             "goal": "custom", "paused": True})
 
     def test_router_priority_uses_captured_sidecar_without_live_reads(self):
