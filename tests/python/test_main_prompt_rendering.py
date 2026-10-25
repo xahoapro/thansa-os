@@ -234,9 +234,9 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
         _t = usage_store.summary().get("today", {}).get("total", {})
         if _t.get("in") or _t.get("out"):
             _c = f", ~${_t.get('cost', 0):.4f}" if _t.get("cost") else ""
-            base += (f"\n\n# === MỨC DÙNG HÔM NAY (Javis tự đo) ===\n"
+            base += (f"\n\n# === MỨC DÙNG HÔM NAY (Thansa tự đo) ===\n"
                      f"{_t.get('in', 0):,} token vào + {_t.get('out', 0):,} token ra qua "
-                     f"{_t.get('turns', 0)} lượt{_c}. Đây là token Javis TỰ ĐO, KHÔNG phải hạn mức gói "
+                     f"{_t.get('turns', 0)} lượt{_c}. Đây là token Thansa TỰ ĐO, KHÔNG phải hạn mức gói "
                      f"thuê bao (đa số nhà cung cấp không cho lấy hạn mức tài khoản qua API). Chi tiết "
                      f"từng nhà cung cấp ở panel 'Mức dùng' trên dashboard.")
     except Exception:
@@ -520,8 +520,8 @@ class MainRenderingTests(unittest.TestCase):
         self.assertEqual(R.render_clock_language("FIXED CLOCK", "\nLANGUAGE"), "\n\n# === BÂY GIỜ ===\nFIXED CLOCK\nLANGUAGE")
         self.assertEqual(R.render_usage_block({}), "")
         self.assertEqual(R.render_usage_block({"in": 0, "out": 0, "turns": 2, "cost": 3.0}), "")
-        expected = ("\n\n# === MỨC DÙNG HÔM NAY (Javis tự đo) ===\n"
-                    "1,234 token vào + 5 token ra qua 2 lượt, ~$0.1200. Đây là token Javis TỰ ĐO, KHÔNG phải hạn mức gói "
+        expected = ("\n\n# === MỨC DÙNG HÔM NAY (Thansa tự đo) ===\n"
+                    "1,234 token vào + 5 token ra qua 2 lượt, ~$0.1200. Đây là token Thansa TỰ ĐO, KHÔNG phải hạn mức gói "
                     "thuê bao (đa số nhà cung cấp không cho lấy hạn mức tài khoản qua API). Chi tiết "
                     "từng nhà cung cấp ở panel 'Mức dùng' trên dashboard.")
         self.assertEqual(R.render_usage_block({"in": 1234, "out": 5, "turns": 2, "cost": 0.12}), expected)
