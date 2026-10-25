@@ -113,7 +113,7 @@ def _session_block(session_id: str) -> str:
 
     Song sinh với `_project_block`, và cố ý cùng trần token: project là "luôn dùng cho mọi
     cuộc trong nhóm", còn cái này là "chỉ cuộc này". Không có nó thì nút thêm file chỉ là một
-    danh sách để ngắm - người dùng gắn bảng giá vào cuộc rồi hỏi ngay, và Javis trả lời như
+    danh sách để ngắm - người dùng gắn bảng giá vào cuộc rồi hỏi ngay, và Thansa trả lời như
     chưa hề thấy gì.
 
     Ghim thì NẠP NỘI DUNG, y như project: gắn tên vào cho biết chỗ mà tìm, ghim vào là bảo

@@ -354,7 +354,7 @@ check("parity: the CLI agent prompt has the agent's learned lessons", "PARITY LE
 check("parity: the CLI agent prompt names the CLI, not the Partners page",
       "trang Cộng sự). Trả lời" not in _cli_sp and "qua Javis CLI" in _cli_sp)
 check("parity: the dashboard agent prompt still names the Partners page",
-      "trên dashboard Javis (trang Cộng sự). Trả lời" in _dash)
+      "trên dashboard Thansa (trang Cộng sự). Trả lời" in _dash)
 
 
 # ================================================================
