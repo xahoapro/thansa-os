@@ -138,7 +138,7 @@ Trên bản web, `/new` và `/reset` cùng mở một hội thoại mới.
 
 Ngay bên dưới là **mười hai lệnh hệ thống** (xem mục tiếp theo), rồi tới **toàn bộ skill của brain đang chọn**. Từ 0.290.0 mỗi dòng gọn trên một hàng: cột `/lệnh` rộng bằng nhau nên tên và mô tả thẳng một cột, các nhóm (Lệnh, Cộng sự, Quy trình, Skill) có tiêu đề nhỏ. Khi đang gõ chữ để lọc, tiêu đề nhóm ẩn đi và nhãn nhóm nằm cuối dòng.
 
-Lệnh đã gõ vào ô nhập (ở đầu tin, hoặc tên skill có thật ở giữa câu) được **tô màu cam**, để bạn thấy ngay phần nào Javis sẽ hiểu là lệnh. Đang gõ dở một chữ chưa khớp lệnh nào thì chưa tô.
+Lệnh đã gõ vào ô nhập (ở đầu tin, hoặc tên skill có thật ở giữa câu) được **tô màu cam**, để bạn thấy ngay phần nào Thansa sẽ hiểu là lệnh. Đang gõ dở một chữ chưa khớp lệnh nào thì chưa tô.
 
 Cách điều khiển menu:
 

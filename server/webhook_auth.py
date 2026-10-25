@@ -79,7 +79,7 @@ def token_header_name(name: Any) -> str:
     if len(n) > 64 or not all(c.isalnum() or c == "-" for c in n) or n in (
             "authorization", "cookie", "content-length", "host", "x-forwarded-for") or n in STORED_HEADERS:
         # A header Javis stores with the event (or uses as the delivery key) would put the token in the log and exports.
-        raise VerifyError("the token header is a plain header name (letters, digits and -) that Javis does not "
+        raise VerifyError("the token header is a plain header name (letters, digits and -) that Thansa does not "
                           "store or use for anything else")
     return n
 
@@ -127,7 +127,7 @@ def validate(cfg: Any) -> dict:
         raise VerifyError("verify must be an object")
     prov = str(cfg.get("provider") or "none")
     if prov == "poscake":
-        raise VerifyError("POSCake's webhook signature is not known yet: use provider none (the Javis token) or "
+        raise VerifyError("POSCake's webhook signature is not known yet: use provider none (the Thansa token) or "
                           "hmac_sha256 once POSCake's contract is confirmed")
     if prov not in PROVIDERS:
         raise VerifyError(f"provider is one of {', '.join(PROVIDERS)}")
@@ -147,7 +147,7 @@ def validate(cfg: Any) -> dict:
     prev = cfg.get("previous_secret")
     if prev is not None:
         if not (isinstance(prev, dict) and "$secret" in prev) and not (isinstance(prev, str) and 8 <= len(prev) <= 500):
-            raise VerifyError("previous_secret is set by Javis when the secret changes")
+            raise VerifyError("previous_secret is set by Thansa when the secret changes")
         out["previous_secret"] = prev
         try:
             out["previous_until"] = float(cfg.get("previous_until") or 0)

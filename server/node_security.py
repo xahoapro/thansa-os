@@ -75,23 +75,23 @@ def node_version():
 def _fix_steps(mode: str) -> str:
     if mode == "docker":
         return localefmt.chu(
-            "Cập nhật Javis lên bản mới nhất (trang Cài đặt, mục Cập nhật, hoặc chạy ./update.sh trên VPS). "
+            "Cập nhật Thansa lên bản mới nhất (trang Cài đặt, mục Cập nhật, hoặc chạy ./update.sh trên VPS). "
             "Ảnh Docker mới đã có Node.js 22.23.4.",
-            "Update Javis to the latest version (Settings, Updates, or ./update.sh on the VPS). "
+            "Update Thansa to the latest version (Settings, Updates, or ./update.sh on the VPS). "
             "The new Docker image ships Node.js 22.23.4.")
     if mode == "windows":
         return localefmt.chu(
             "Mở PowerShell và chạy: winget upgrade OpenJS.NodeJS.LTS (hoặc tải bản LTS ở nodejs.org). "
-            "Xong thì khởi động lại Javis.",
+            "Xong thì khởi động lại Thansa.",
             "Open PowerShell and run: winget upgrade OpenJS.NodeJS.LTS (or download the LTS from nodejs.org). "
-            "Then restart Javis.")
+            "Then restart Thansa.")
     return localefmt.chu(
         "Cài Node.js 22.23.4, 24.22.1, 26.12.1 hoặc mới hơn, ví dụ: brew upgrade node (Mac), "
         "sudo apt-get install --only-upgrade nodejs (Ubuntu dùng NodeSource), nvm install 22 (nvm). "
-        "Hoặc chạy lại install.sh. Xong thì khởi động lại Javis.",
+        "Hoặc chạy lại install.sh. Xong thì khởi động lại Thansa.",
         "Install Node.js 22.23.4, 24.22.1, 26.12.1 or newer, for example: brew upgrade node (Mac), "
         "sudo apt-get install --only-upgrade nodejs (Ubuntu with NodeSource), nvm install 22 (nvm). "
-        "Or run install.sh again. Then restart Javis.")
+        "Or run install.sh again. Then restart Thansa.")
 
 
 def notice(version, mode: str):

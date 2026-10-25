@@ -199,9 +199,9 @@ def render_usage_block(today_total: dict) -> str:
     _t = today_total
     if _t.get("in") or _t.get("out"):
         _c = f", ~${_t.get('cost', 0):.4f}" if _t.get("cost") else ""
-        return (f"\n\n# === MỨC DÙNG HÔM NAY (Javis tự đo) ===\n"
+        return (f"\n\n# === MỨC DÙNG HÔM NAY (Thansa tự đo) ===\n"
                 f"{_t.get('in', 0):,} token vào + {_t.get('out', 0):,} token ra qua "
-                f"{_t.get('turns', 0)} lượt{_c}. Đây là token Javis TỰ ĐO, KHÔNG phải hạn mức gói "
+                f"{_t.get('turns', 0)} lượt{_c}. Đây là token Thansa TỰ ĐO, KHÔNG phải hạn mức gói "
                 f"thuê bao (đa số nhà cung cấp không cho lấy hạn mức tài khoản qua API). Chi tiết "
                 f"từng nhà cung cấp ở panel 'Mức dùng' trên dashboard.")
     return ""

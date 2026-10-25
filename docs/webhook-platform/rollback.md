@@ -1,6 +1,6 @@
 # Rolling the webhook platform back (0.274.0, spec §13)
 
-**What a rollback can and cannot do.** Going back to an older Javis build changes the program. It does not undo what
+**What a rollback can and cannot do.** Going back to an older Thansa build changes the program. It does not undo what
 actions already did outside: an order written to a sheet, a Zalo message sent, a CRM record created. Reconcile those
 from the receipts before resending anything. The new store (`webhook_events.sqlite3`) is kept as it is, so a later
 upgrade picks up where it stopped.

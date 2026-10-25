@@ -143,7 +143,7 @@ Nothing above deletes the log. Export it first (Events, Export CSV) if a stop is
 
 | Source | How | Pass | Then |
 |---|---|---|---|
-| Stripe | test-mode endpoint, `stripe trigger invoice.paid` | 202 with no Javis token, a dashboard resend is a duplicate, a changed secret gives 401 | mark `stripe` production verified |
+| Stripe | test-mode endpoint, `stripe trigger invoice.paid` | 202 with no Thansa token, a dashboard resend is a duplicate, a changed secret gives 401 | mark `stripe` production verified |
 | GitHub | repo webhook with secret, Redeliver | same, `_event.type` like `push` | same |
 | Shopify | development store | same | same |
 | Systeme.io | test account webhook with secret | header names and the signed form (`signed_form` in the event) as expected; dedup on `X-Webhook-Message-Id` | replace the synthetic fixtures; change the status from `unverified` |
@@ -167,7 +167,7 @@ Nothing above deletes the log. Export it first (Events, Export CSV) if a stop is
 
 - One hook in production, `notify: errors_only`, AI budget at the shop's normal volume plus half.
 - Daily: "Needs you" empty or resolved; ignored events are only the ones meant to be dropped.
-- Exit criteria (spec §16): no lost event (the provider's list matches Javis's count), no double effect, every unknown
+- Exit criteria (spec §16): no lost event (the provider's list matches Thansa's count), no double effect, every unknown
   reconciled within a day.
 - Ready to go back: `poscake-migration.md`, "The way back"; `rollback.md`.
 

@@ -35,7 +35,7 @@ A hook without `actions` has one branch, `main` of kind `ai` (its task or workfl
 
 Each branch has a delivery id, `dlv_<hash of event id and action id>`. It never changes for that branch: not on an
 automatic re-send, not on the owner's Retry. It is sent as `Idempotency-Key`, as `X-Javis-Delivery`, and as
-`_javis.delivery_id` in the body. Javis does not promise exactly-once delivery: a receiver that keeps the delivery id
+`_javis.delivery_id` in the body. Thansa does not promise exactly-once delivery: a receiver that keeps the delivery id
 can drop the second copy.
 
 ## Outcomes
@@ -59,7 +59,7 @@ others keep their outcome.
 ## Apps Script: redirect and receipt
 
 `doPost` runs when Google receives the POST. Google then answers `302` to a one-time address on
-`script.googleusercontent.com` that holds the script's output. Javis:
+`script.googleusercontent.com` that holds the script's output. Thansa:
 
 1. POSTs once to the `/exec` address and does not follow redirects. A POST is never repeated.
 2. Reads the `Location` with a plain GET (no body, none of the action's headers), and only on
@@ -132,7 +132,7 @@ def register(ctx):
   followed. Residual risk: DNS can change between the check and the connection (rebinding). The check reduces
   this risk but does not remove it.
 - `JAVIS_WH_NO_NETWORK=1` makes the default transport refuse every request. Tests use it as a fail-fast guard.
-- Only an `ai` branch reaches Javis Core's incident triage. A hook with only outside actions never calls a model.
+- Only an `ai` branch reaches Thansa Core's incident triage. A hook with only outside actions never calls a model.
 
 ## Where it sits
 

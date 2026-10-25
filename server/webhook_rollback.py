@@ -150,7 +150,7 @@ def run(state_dir: Path, check: bool = False, force: bool = False, now: float = 
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Prepare a rollback of the Javis webhook platform to an older build.")
+    ap = argparse.ArgumentParser(description="Prepare a rollback of the Thansa webhook platform to an older build.")
     ap.add_argument("--state-dir", required=True)
     ap.add_argument("--check", action="store_true", help="only print what would happen")
     ap.add_argument("--force", action="store_true", help="go on although a lease looks live (server certainly stopped)")
