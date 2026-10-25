@@ -26,7 +26,8 @@ check("notes in vi and en, one short line each (no (i) needed)",
   keys.every(k => vi[k] && en[k] && vi[k].length <= 100 && en[k].length <= 100));
 check("the Full note says it edits files and acts outside without asking",
   /sửa file/.test(vi["cs.si_level_note_full"]) && /không hỏi lại/.test(vi["cs.si_level_note_full"]));
-check("javis_schedule asks the model to explain a Full job in plain words, for loops and reminders",
-  /FULL_LEVEL_NOTE if mode == "full"/.test(plug) && /FULL_LEVEL_NOTE if mq == "full"/.test(plug));
+// Thansa P038: loop qua chat luôn suggest nên chỉ nhắc hẹn mức Full cần câu giải thích.
+check("javis_schedule asks the model to explain a Full reminder job in plain words",
+  /FULL_LEVEL_NOTE if mq == "full"/.test(plug));
 check("no em or en dash", [cs, plug].every(t => t.indexOf(String.fromCharCode(0x2014)) < 0 && t.indexOf(String.fromCharCode(0x2013)) < 0));
 process.exit(fails ? 1 : 0);

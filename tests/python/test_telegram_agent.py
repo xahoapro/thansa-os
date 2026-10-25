@@ -222,7 +222,7 @@ _k = OWNER + "@test-tham-dinh-vien"
 check("/reset also starts the agent conversation over", not main._TG_SID_MAP.get(_k)
       and main._tg_session(_k).get("sid") is None)
 res = command("agent", "off")
-check("/agent off: back to Thansa", OWNER not in main._TG_AGENT_MAP and "Javis" in res.get("reply", ""), res)
+check("/agent off: back to Thansa", OWNER not in main._TG_AGENT_MAP and "Thansa" in res.get("reply", ""), res)
 answer("after off")
 check("/agent off: Thansa answers", "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"])
 

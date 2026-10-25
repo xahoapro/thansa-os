@@ -352,7 +352,7 @@ check("parity: the CLI agent prompt has the lesson rule", main.agent_lessons.DM_
 check("parity: the CLI agent prompt has the agent's learned lessons", "PARITY LESSON MARKER" in _cli_sp,
       _cli_sp[-600:])
 check("parity: the CLI agent prompt names the CLI, not the Partners page",
-      "trang Cộng sự). Trả lời" not in _cli_sp and "qua Javis CLI" in _cli_sp)
+      "trang Cộng sự). Trả lời" not in _cli_sp and "qua Thansa CLI" in _cli_sp)
 check("parity: the dashboard agent prompt still names the Partners page",
       "trên dashboard Thansa (trang Cộng sự). Trả lời" in _dash)
 

@@ -59,16 +59,16 @@ def rendered(env):
 
 no = rendered({})
 check("no DOMAIN_NAME: no localhost anywhere in the labels", not any("localhost" in v for v in no.values()), no)
-check("no DOMAIN_NAME: router rule empty (no concrete Host for Open)", no.get("traefik.http.routers.javis.rule") == "", no)
+check("no DOMAIN_NAME: router rule empty (no concrete Host for Open)", no.get("traefik.http.routers.thansa.rule") == "", no)
 check("no DOMAIN_NAME: traefik.enable empty (Traefik skips the container)", no.get("traefik.enable") == "", no)
 yes = rendered({"DOMAIN_NAME": "javis.srv1.hstgr.cloud"})
 check("DOMAIN_NAME set: Host rule for exactly that name",
-      yes.get("traefik.http.routers.javis.rule") == "Host(`javis.srv1.hstgr.cloud`)" and yes.get("traefik.enable") == "true", yes)
+      yes.get("traefik.http.routers.thansa.rule") == "Host(`javis.srv1.hstgr.cloud`)" and yes.get("traefik.enable") == "true", yes)
 two = rendered({"DOMAIN_NAME": "b.srv1.hstgr.cloud", "JAVIS_NAME": "javis-b"})
 check("second instance keeps its own router name", two.get("traefik.http.routers.javis-b.rule") == "Host(`b.srv1.hstgr.cloud`)", two)
 check("the rest of the Traefik labels unchanged",
-      yes.get("traefik.http.routers.javis.entrypoints") == "websecure"
-      and yes.get("traefik.http.services.javis.loadbalancer.server.port") == "7777")
+      yes.get("traefik.http.routers.thansa.entrypoints") == "websecure"
+      and yes.get("traefik.http.services.thansa.loadbalancer.server.port") == "7777")
 
 # ---- 2. the free name ----
 from routes import domain as dom   # noqa: E402

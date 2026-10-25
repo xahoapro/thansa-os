@@ -38,7 +38,8 @@ _RESERVED = {"javis_connections", "javis_read_file", "javis_list_dir", "javis_wr
 _GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "javis-goal" / "plugin.py"
 # Pin the audited data-only branch; a coherent edited source+cache is still not
 # authority to reinterpret an arbitrary predicate as the ordinary-owner result.
-_GOAL_SOURCE_HASH = "4f68b2d4229506ae74598d8bb73db801ed0e465d8dd15605ab248586bbdf760d"
+# Thansa: băm theo nguồn javis-goal ĐÃ rebrand (P048/P07x); vòng trộn nào đổi plugin.py thì băm lại.
+_GOAL_SOURCE_HASH = "44d800206d2167483af087c3edc3e125ccf610395dcdd61dd25714f053a05391"
 
 
 def _plain(value):
