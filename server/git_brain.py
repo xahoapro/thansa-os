@@ -196,11 +196,14 @@ _GITIGNORE_BODY = (
        "memory/agents/*/runs/",
        "Memory/agents/*/runs/",
        ".javis-agy/",
-       "# Cấu hình MCP của hai engine CLI Google - chứa hub token của Javis, không phải tri thức.",
+       "# Cấu hình MCP của hai engine CLI Google - chứa hub token của Thansa, không phải tri thức.",
        ".agents/mcp_config.json",
        ".antigravity/",
        ".antigravitycli/",
        ".gemini/",
+       "# Learned knowledge that carries customer chat text (owner decision 2026-10-25, see",
+       "# server/learned_mirror.py): it stays in the brain folder but never goes to the backup.",
+       "Javis/learned/**/*.private.json",
        "*.tmp",
        "# Vùng cache media: ảnh sinh ra + file user gửi lên. Là NGUYÊN LIỆU đi qua, không phải",
        "# tri thức, và media_gc.py tự dọn theo hạn. Bốn dòng attachments vì tên thư mục có thể",
@@ -370,7 +373,7 @@ def ensure_git_repo(root: str) -> dict:
                     "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
         # Cấu hình identity cục bộ (repo có thể chạy trong container không có global config)
         _git(root, "config", "user.email", "javis@localhost")
-        _git(root, "config", "user.name", "Javis Learn")
+        _git(root, "config", "user.name", "Thansa Learn")
         _ensure_gitignore_lines(root)   # merge chứ không ghi đè (brain có thể đã có .gitignore)
         _git(root, "add", ".gitignore")
         _git(root, "add", "-A")   # commit NỀN duy nhất được phép add -A (baseline, chưa có state học)
@@ -577,12 +580,51 @@ _BACKUP_SKIP_SUBSTR = ("/memory/conversations/", "/Memory/conversations/",
                        "/.antigravity/", "/.antigravitycli/", "/.gemini/")
 
 
+def _raw_kept_out(rel: str) -> bool:
+    """Raw material that never goes to the GitHub backup even though it is text (customer report 0.270, code 14):
+    agent run logs (`memory/agents/<slug>/runs/`) and text files under an attachments folder (the text Javis extracts
+    from a Team attachment, uploaded .txt/.csv files). The brain .gitignore already ignores both, but that file is only
+    written when learning is switched on, so a brain without it pushed every run log and extracted text.
+
+    Images under attachments are NOT covered here: they stay governed by the sync_images switch.
+
+    These paths are OUT OF SCOPE for the backup both ways, like images on a machine with sync_images off: not copied
+    into the mirror, never pruned from it, never applied back. Copies an older version already pushed stay in the
+    repo: removing them would make a machine still on an older version delete its own local copies on the next merge.
+    """
+    parts = rel.replace("\\", "/").split("/")
+    dirs = parts[:-1]
+    for i in range(len(dirs) - 3):
+        if dirs[i] in ("memory", "Memory") and dirs[i + 1] == "agents" and dirs[i + 3] == "runs":
+            return True
+    if la_file_chu(parts[-1]) and any(d.lower().endswith("attachments") for d in dirs):
+        return True
+    return False
+
+
+# Learned-knowledge mirror files that carry customer chat text (server/learned_mirror.py). Owner decision 2026-10-25
+# ("Tach rieng"): what a bot or agent learned WITHOUT chat text is backed up, but the `*.private.json` files under
+# `Javis/learned/` stay in the brain folder only. A suffix cannot be expressed in `_BACKUP_SKIP_SUBSTR`, so
+# `_backup_skip` checks it right after that list, on every path (push, apply back, self-heal).
+_LEARNED_DIR = "/Javis/learned/"
+_LEARNED_PRIVATE_SUFFIX = ".private.json"
+
+
+def _learned_private(rel: str) -> bool:
+    r = "/" + rel.replace("\\", "/")
+    return _LEARNED_DIR in r and r.endswith(_LEARNED_PRIVATE_SUFFIX)
+
+
 def _backup_skip(rel: str, sync_images: bool = False) -> bool:
     r = "/" + rel.replace("\\", "/") + "/"
     if any(s in r for s in _BACKUP_SKIP_SUBSTR):
         return True
+    if _learned_private(rel):
+        return True
     name = rel.replace("\\", "/").rsplit("/", 1)[-1]
     if name == ".javis-learn.lock" or name.endswith(".tmp"):
+        return True
+    if _raw_kept_out(rel):
         return True
     # CHỈ CHỮ mới được sang mirror. Chặn ở đây chứ không trông cả vào .gitignore vì hai việc
     # khác nhau: .gitignore quyết định git COMMIT gì, còn chỗ này quyết định có CHÉP file sang
@@ -666,6 +708,8 @@ def _sync_mirror(src: str, mirror: str, sync_images: bool = False) -> dict:
             rel = str(full.relative_to(mirror)).replace("\\", "/")
             if rel in keep:
                 continue
+            if _raw_kept_out(rel):
+                continue   # out of scope: never pruned, see _raw_kept_out
             if la_anh(fn) and not la_file_chu(fn):
                 if not sync_images:
                     continue
@@ -990,6 +1034,9 @@ def _apply_tombstones(brains_dir: str, mirror_dir: str, trash_dir: str,
             r = _git(mirror_dir, "rm", "-r", "-f", "--ignore-unmatch", "--", name)
             if r.returncode == 0:
                 changed_mirror = True
+                # Untracked leftovers (raw files _sync_mirror never prunes, see _raw_kept_out) would keep
+                # mirror/<name> alive and let _restore_missing_brains bring the brain back once the tombstone expires.
+                shutil.rmtree(mp, ignore_errors=True)
             else:
                 ok = False
         if ok:
@@ -1054,7 +1101,7 @@ def _sync_brains_locked(brains_dir: str, mirror_dir: str, repo_url: str, token: 
         if r.returncode != 0:
             return {**rep, "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
     _git(mirror_dir, "config", "user.email", "javis@localhost")
-    _git(mirror_dir, "config", "user.name", f"Javis Sync ({_host_tag()})")
+    _git(mirror_dir, "config", "user.name", f"Thansa Sync ({_host_tag()})")
     # Sync truyền BYTE NGUYÊN VĂN giữa các máy: tắt autocrlf để git Windows không tự đổi
     # LF↔CRLF lúc add/checkout (nếu không, cùng 1 file sẽ lệch byte giữa local và VPS mãi mãi).
     _git(mirror_dir, "config", "core.autocrlf", "false")

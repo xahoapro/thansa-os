@@ -120,7 +120,9 @@ Three session commands lead the list:
 
 On the web build, `/new` and `/reset` both open a new conversation.
 
-Right below are **twelve system commands** (see the next section), followed by **all skills of the selected brain**, each row showing `/slug`, the skill name and a one-line description.
+Right below are **twelve system commands** (see the next section), followed by **all skills of the selected brain**. Since 0.290.0 each entry fits on one line: the `/command` column has one shared width, so names and descriptions line up, and the groups (Commands, Agents, Workflows, Skill) carry small headings. While you type to filter, the headings go away and the group label sits at the end of the row.
+
+A command you have typed into the box (at the start of the message, or the name of a real skill mid-sentence) is **highlighted in orange**, so you can see which part Thansa will treat as a command. A half-typed word that matches no command is not highlighted yet.
 
 Controlling the menu:
 
@@ -189,9 +191,15 @@ Thansa proposes "done or not", but **whether to keep going is decided by code**,
 - two rounds in a row report exactly the same thing missing (no progress);
 - Thansa asks you a question that needs your decision;
 - a round fails, or Thansa does not say whether the target was met;
-- **you type a new message, press Stop, open another conversation or type `/goal clear`** - your words always come first.
+- you type `/goal clear` or press the bin button on the goal bar.
 
-It runs inside the **chat tab that is open**: closing the tab or reloading the page stops it. Unlike `/plan`, `/goal` does real work (within the permissions you gave Thansa), so write a concrete target that can be checked.
+Unlike `/plan`, `/goal` does real work (within the permissions you gave Thansa), so write a concrete target that can be checked.
+
+**The goal bar (since 0.290.0).** While a goal exists, a bar sits right above the chat box in every chat view: an icon, the goal text, a timer of how long it has run, then three buttons: **delete**, **pause / resume** and an **arrow** that opens the details (full goal text, round out of five, what is still missing). With several goals (one per conversation) a **number** at the start of the bar says how many; press it to drop down the list and press a row to open that goal's conversation.
+
+- **Pause instead of stop:** pressing the chat's Stop button or typing a new message mid-run only pauses the goal (the timer stops), and your words still come first. Press resume on the bar and Thansa runs the next round.
+- **Moving to another conversation:** the goal is not lost, it waits. It only moves on while its conversation is open, because the automatic rounds are sent by the browser into the chat you are looking at. Open that conversation again and it carries on.
+- **Reloading the page:** the goal stays on the bar, paused; press resume to run the next round. The five-round cap still holds.
 
 #### On Telegram
 
@@ -396,7 +404,13 @@ The voice list depends on the call path:
 - **Live with an API key**: that provider's voices, with no preview button.
 - **Basic**: 7 free Edge voices, Emma (default), Hoài My, Nam Minh, Ava, Andrew, Brian, William. With an OpenAI API key on the **Models** page you also get the 11 OpenAI voices (alloy, ash, ballad, coral, echo, fable, nova, onyx, sage, shimmer, verse). Last in the list is **Your ElevenLabs voice**. **▶ Preview** reads a sample sentence.
 
-Picking a voice also picks the provider (Edge, OpenAI or ElevenLabs). The Edge voice and the speaking rate are stored on this device; updates do not overwrite the voice you picked.
+Picking a voice also picks the provider (Edge, OpenAI or ElevenLabs). Since 0.298.0 the Edge voice is also saved on the server, so a voice picked on the laptop is used on the phone too, and by the voice notes sent through Telegram and Zalo. The speaking rate is still stored per device.
+
+**Male or female, and which voice speaks when (since 0.298.0).** Every voice in the list says Female or Male, grouped as Female voices and Male voices. The top of the card says in words what you will hear: "The mic calls through ChatGPT Live, voice: Juniper · Female" and "Answers are read with: Hoài My · Female".
+
+- On **ChatGPT Live** or **Live with an API key** the card has two separate fields: **Call voice** (the voice of the call) and **Answer reading voice** (chat answers and voice notes). Changing the second one does not change the call voice.
+- When the two are of different genders (say a male call voice and a female reading voice), a yellow warning shows with a **Use ... for calls** button that switches the call voice to the same gender in one tap.
+- After a save, **Saved** shows right under the field you changed.
 
 If a paid voice fails (quota used up, wrong key, no network), Thansa reports the error so you can retry or pick another voice. It does not switch voices on its own.
 

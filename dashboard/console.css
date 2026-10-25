@@ -171,6 +171,10 @@ body.in-console .hud-actions { display: none; }
 .prov-help summary { cursor: pointer; color: var(--text2); }
 .prov-help > div { margin-top: 4px; color: var(--text2); }
 .prov-action .js-input { margin-bottom: 0; flex: 1; }
+/* Claude sign-in code (0.308.0): the box takes the row, at least 240px before the button wraps under it on a phone;
+   16px so iOS does not zoom in, monospace so a mistyped character is easy to spot. */
+.prov-code { margin-top: 6px; max-width: 560px; }
+.prov-code .js-input { flex: 1 1 240px; min-width: 0; font-size: 16px; font-family: var(--mono, ui-monospace, monospace); }
 .prov-action .gcard-btn { width: auto; flex: 0 0 auto; margin-top: 0; font-size: 16px; }
 .prov-note { font-size: 16px; line-height: 1.55; color: var(--text3); margin-top: 8px; overflow-wrap: anywhere; }
 /* Warning box on a provider card (missing CLI, a vendor cutting off a plan). Something the user
@@ -990,6 +994,18 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .amb-details summary::-webkit-details-marker { display: none; }
 .amb-details summary h3::before { content: "▸ "; opacity: .6; }
 .amb-details[open] summary h3::before { content: "▾ "; }
+/* Connected tab search and the built-in CLI sources (0.312.0) */
+.conn-search { max-width: 420px; font-size: 16px; margin: 10px 0 6px; }
+.amb-card .prov-status { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.amb-host { color: var(--text3); overflow-wrap: anywhere; }
+.amb-hidden { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 4px;
+  padding: 10px 14px; border: 1px dashed var(--glass-brd); border-radius: 12px; font-size: 16px; color: var(--text2); }
+.amb-hidden span { flex: 1; min-width: 200px; }
+.amb-off-list { display: grid; gap: 10px; margin-top: 10px; }
+.amb-off-list[hidden], #connNone[hidden] { display: none; }
+#mcpTabDaNoi.searching .conn-guide, #mcpTabDaNoi.searching #ambWrap .mp-empty, #mcpTabDaNoi.searching #ambWrap .amb-hidden { display: none !important; }
+#mcpMessenger:not(:empty) { margin-top: 18px; }
+.amb-off { opacity: .7; }
 @media (max-width: 700px) {
   .cat-grid { grid-template-columns: 1fr; }
   .conn-accounts { flex-wrap: wrap; }
@@ -1921,6 +1937,25 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .agent-editor .sp-g-body .sp span { min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.5; }
 .agent-editor .editor-actions { position:sticky; bottom:-20px; background:var(--bg2); padding:12px 0; border-top:1px solid var(--border); z-index:1; }
 .agent-editor .editor-actions button { min-height:36px; }
+/* 0.298.0: the agent's save bar. A filled primary button with an icon and a clear label, a line that says
+   "Unsaved changes" while something is unsaved and "Saved" after, pinned at the bottom of the form. */
+.agent-editor .ag-save-bar { display:flex; align-items:center; gap:10px; }
+.agent-editor .ag-save-state { flex:1 1 auto; min-width:0; font-size:14px; color:var(--text3); display:flex; align-items:center; gap:7px; }
+.agent-editor .ag-save-bar.dirty .ag-save-state { color:var(--warn-ink); font-weight:600; }
+.agent-editor .ag-save-bar.dirty .ag-save-state::before { content:""; width:8px; height:8px; border-radius:50%; background:currentColor; flex:none; }
+.agent-editor .ag-save-bar.saved .ag-save-state { color:var(--green, #3fb27f); font-weight:600; }
+.agent-editor .ag-save-bar.saved .ag-save-state::before, #voiceCard .vc-saved.on:not(.bad)::before {
+  content:""; width:1em; height:1em; flex:none; display:inline-block; vertical-align:-0.14em; margin-right:4px; background-color:currentColor;
+  -webkit-mask:var(--ic-check) center/contain no-repeat; mask:var(--ic-check) center/contain no-repeat; }
+.agent-editor .ag-save-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; padding:9px 18px;
+  background:var(--accent-solid); color:var(--on-accent); border:none; border-radius:10px; font-size:15px; font-weight:600; }
+.agent-editor .ag-save-btn .ic { width:17px; height:17px; }
+.agent-editor .ag-save-bar.dirty .ag-save-btn { box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent); }
+.agent-editor .ag-save-btn:disabled { opacity:.6; cursor:default; }
+.agent-editor .ag-save-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+@media (max-width:860px) { .agent-editor .ag-save-btn { min-height:44px; } }
+/* Beside the chat (Cộng sự page) the column has no modal padding to hide under: pin the bar to the very bottom. */
+#wsAgentForm.agent-editor .editor-actions { bottom:0; }
 .ws-workflow-head { padding-bottom:20px; margin-bottom:22px; border-bottom:1px solid var(--border); }
 .ws-workflow-head > .ic { width:30px; height:30px; color:var(--accent); }
 .ws-workflow-head h3 { margin:12px 0 8px; font-size:20px; line-height:1.35; color:var(--text); }
@@ -2052,9 +2087,15 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
   color: var(--text); font-size: 16px; min-width: 0; flex: 1 1 200px; }
 /* Bộ lọc dropdown (0.65.3): một hàng chung với ô tìm. Đang lọc thì dropdown sáng màu nhấn để nhìn là biết. */
 .ht-f { padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg3); color: var(--text);
-  font-size: 14px; min-width: 0; max-width: 100%; }
+  font-size: 16px; min-width: 0; max-width: 100%; }
 .ht-f.on { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-wash); }
 .ht-f[hidden], .ht-fclear[hidden] { display: none; }
+/* "Has phone/email" is an on/off filter of its own (combines with a status), drawn like the dropdowns next to it. */
+.ht-f-contact { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; }
+.ht-f-contact svg { width: 16px; height: 16px; flex: none; }
+/* Wide screens: the filter panel is just part of the row and the Filters button is never shown. */
+.ht-fpanel { display: contents; }
+.ht-fbtn { display: none; }
 .ht-fsum { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text3);
   min-height: 20px; padding: 0 4px; }
 /* 0.216.0: kết quả hỏi Zalo khi ô tìm là một số điện thoại. */
@@ -2072,11 +2113,110 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-bot-tag.c2 { background: var(--ok-wash); color: var(--green); }
 .ht-bot-tag.c3 { background: var(--accent-wash); color: var(--accent-ink); }
 .ht-need { background: var(--warn-wash); color: var(--warn-ink); }
+/* 2026-10-25 (owner: "thêm tag khách hàng", Pancake-style chips): the owner's tags, one colour each from a fixed palette
+   (conversations.TAG_COLORS). Tint, ink and border are mixed from one hue so a chip reads in light and dark themes. */
+.ht-tag { --tc: #8b8f98; display: inline-block; vertical-align: middle; min-width: 0; max-width: 140px; padding: 0 8px;
+  border-radius: 999px; font-size: 16px; line-height: 1.45; font-weight: 600; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; background: color-mix(in srgb, var(--tc) 16%, transparent);
+  color: color-mix(in srgb, var(--tc) 72%, var(--text)); border: 1px solid color-mix(in srgb, var(--tc) 42%, transparent); }
+.ht-tag[data-c="red"], .ht-sw[data-c="red"] { --tc: #e5484d; }
+.ht-tag[data-c="orange"], .ht-sw[data-c="orange"] { --tc: #f76b15; }
+.ht-tag[data-c="yellow"], .ht-sw[data-c="yellow"] { --tc: #d6a400; }
+.ht-tag[data-c="green"], .ht-sw[data-c="green"] { --tc: #30a46c; }
+.ht-tag[data-c="teal"], .ht-sw[data-c="teal"] { --tc: #12a594; }
+.ht-tag[data-c="blue"], .ht-sw[data-c="blue"] { --tc: #3e7bfa; }
+.ht-tag[data-c="purple"], .ht-sw[data-c="purple"] { --tc: #8e4ec6; }
+.ht-tag[data-c="pink"], .ht-sw[data-c="pink"] { --tc: #d6409f; }
+.ht-item-utags { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; margin-top: 2px; }
+.ht-item-utags .ht-tag { flex: 0 1 auto; }
+.ht-tag-more { flex: none; font-size: 16px; line-height: 1.45; padding: 0 7px; border-radius: 999px; color: var(--text2);
+  background: var(--surface-2); border: 1px solid var(--border); }
+.ht-has-contact { flex: none; display: inline-flex; color: var(--green); }
+.ht-has-contact svg { width: 14px; height: 14px; }
+.ht-item-ava { display: none; }
+/* Wide screens: one filter row when it fits (owner: no wall of buttons). Every control keeps its full text; when the
+   page is too narrow for all of them the row wraps instead of cutting words, and the search box takes what is left. */
+@media (min-width: 901px) {
+  .ht-bar { flex-wrap: wrap; }
+  .ht-bar .ht-search { flex: 1 1 220px; min-width: 200px; }
+  .ht-bar .ht-f { flex: 0 0 auto; }
+  /* The tag dropdown is as wide as its longest tag name; capped so one long tag does not squeeze the rest. */
+  .ht-bar .ht-f-tag { max-width: 170px; }
+}
+/* Thread: phone/email the customer left, this chat's tags, the Tag button and its picker. */
+.ht-tagrow { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline); font-size: 16px; }
+.ht-tagrow:empty { display: none; }
+.ht-contact { display: inline-flex; align-items: center; gap: 5px; color: var(--text); font-size: 16px; user-select: all; }
+.ht-contact svg { width: 16px; height: 16px; color: var(--green); }
+.ht-tag-on { display: inline-flex; align-items: center; gap: 2px; max-width: 240px; padding-right: 2px; }
+.ht-tag-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ht-tag-x { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; opacity: .7; padding: 0; }
+.ht-tag-x:hover { opacity: 1; background: color-mix(in srgb, var(--tc) 22%, transparent); }
+.ht-tag-x svg { width: 14px; height: 14px; }
+.ht-tag-add { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px dashed var(--border); background: none; color: var(--text2); font-size: 16px; }
+.ht-tag-add:hover, .ht-tag-add.on { color: var(--accent); border-color: var(--accent); }
+.ht-tag-add svg { width: 15px; height: 15px; }
+.ht-tagpop { position: absolute; top: calc(100% + 4px); left: 12px; z-index: 30; width: min(380px, calc(100% - 24px));
+  max-height: min(70vh, 480px); overflow-y: auto; padding: 10px 12px; border-radius: 12px; background: var(--bg2);
+  border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, .18); display: flex; flex-direction: column;
+  gap: 8px; font-size: 16px; }
+.ht-tagpop-h { display: flex; align-items: center; gap: 6px; }
+.ht-tagpop-h b { color: var(--text); }
+.ht-tag-close { margin-left: auto; display: inline-flex; border: 0; background: none; color: var(--text3); cursor: pointer;
+  padding: 4px; border-radius: 6px; }
+.ht-tag-close:hover { color: var(--text); background: var(--surface-2); }
+.ht-tagpop .info-body { font-size: 16px; }
+.ht-tagpop-list { display: flex; flex-direction: column; gap: 2px; }
+.ht-tagpop-row { display: flex; align-items: center; gap: 4px; }
+.ht-tag-pick { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 5px 6px; border: 0;
+  border-radius: 8px; background: none; cursor: pointer; text-align: left; }
+.ht-tag-pick:hover { background: var(--surface-2); }
+.ht-tag-pick .ht-tag { max-width: 100%; }
+.ht-tag-check { flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 5px; color: var(--accent); }
+.ht-tag-pick.on .ht-tag-check { border-color: var(--accent); background: var(--accent-wash); }
+.ht-tag-check svg { width: 14px; height: 14px; }
+.ht-tag-edit { flex: none; display: inline-flex; border: 0; background: none; color: var(--text3); cursor: pointer;
+  padding: 6px; border-radius: 6px; }
+.ht-tag-edit:hover { color: var(--text); background: var(--surface-2); }
+.ht-tag-edit svg { width: 15px; height: 15px; }
+.ht-tagpop-edit, .ht-tagpop-new { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px;
+  border-radius: 10px; background: var(--surface-1); border: 1px solid var(--hairline); }
+.ht-tagpop-new { border-style: dashed; }
+.ht-tagpop-edit input, .ht-tagpop-new input { flex: 1 1 100%; min-width: 0; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 16px; }
+.ht-tagpop-eacts { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.ht-tagpop-eacts .s-btn, .ht-tagpop-eacts .s-btn-ghost, .ht-tag-create { font-size: 16px; }
+.ht-tag-del { margin-left: auto; color: var(--red, #e5484d); }
+.ht-tagpop-none { color: var(--text3); font-size: 16px; }
+.ht-tagpop-err { display: flex; align-items: flex-start; gap: 6px; color: var(--red, #e5484d); font-size: 16px; }
+.ht-sws { display: inline-flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; }
+.ht-sw { --tc: #8b8f98; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; padding: 0; background: var(--tc);
+  border: 2px solid var(--bg2); box-shadow: 0 0 0 1px var(--border); }
+.ht-sw.on { box-shadow: 0 0 0 2px var(--text); }
 @media (max-width: 640px) {
-  /* Điện thoại: ô tìm và dropdown Bot mỗi cái một hàng, Tình trạng và Loại chia đôi hàng thứ ba (cỡ chữ 16px nên
-     ba ô một hàng bị cắt mất chữ). */
+  /* Phones (owner, 2026-10-25: the filters took half the screen): search and a Filters button share one row; the
+     filters open below them on demand, two per row, Bot and Channel full width. The button shows how many are on. */
+  .ht-bar { flex-wrap: nowrap; }
+  .ht-search { flex: 1 1 auto; }
+  .ht-fbtn { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 8px 12px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 16px; cursor: pointer; }
+  .ht-fbtn svg { width: 16px; height: 16px; }
+  .ht-fbtn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent-ink); }
+  .ht-fbtn-n { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--accent);
+    color: var(--on-accent, #fff); font-size: 16px; line-height: 22px; text-align: center; }
+  .ht-fbtn-n[hidden] { display: none; }
+  .ht-fpanel { display: none; }
+  .ht-fpanel.open { display: flex; flex-wrap: wrap; gap: 8px; position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+    z-index: 30; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg2);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .18); }
+  .ht-wrap .ht-bar { position: relative; }
   .ht-f { flex: 1 1 42%; font-size: 16px; }
-  .ht-search, .ht-f-bot, .ht-f-channel { flex-basis: 100%; }
+  .ht-f-bot, .ht-f-channel, .ht-f-contact { flex-basis: 100%; }
+  .ht-f-contact { justify-content: center; }
 }
 /* Từ 0.65.10 vùng làm việc lấp đầy phần còn lại của khung (trước là calc(100vh - 300px), thấp hơn thật khoảng 90px nên cả trang phải cuộn
    và khung tin bị đẩy xuống). Cột trái = dòng đếm + danh sách; danh sách và khung tin tự cuộn bên trong. */
@@ -2213,6 +2353,23 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 .ht-warn { color: var(--warn-ink); }
 .ht-switch { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2); cursor: pointer; }
 .ht-form-acts { display: flex; justify-content: flex-end; margin-top: 14px; }
+/* Drag the list column (2026-10-25), wide screens only: width from --ht-list-w (col-resize.js), handle in the 12px gap
+   right of the list; snapped into a strip (.ht-mini) the rows show only an initial, with a dot for unread. */
+@media (min-width: 901px) {
+  .ht-listcol { width: var(--ht-list-w, 320px); position: relative; }
+  .ht-listcol > .col-resize { display: block; position: absolute; top: 0; bottom: 0; right: -10px; width: 8px; z-index: 6;
+    cursor: col-resize; touch-action: none; }
+  .ht-mini .ht-fsum, .ht-mini .ht-sdt, .ht-mini .ht-item-text, .ht-mini .ht-item-ic, .ht-mini .ht-more { display: none; }
+  .ht-mini .ht-list { padding: 6px 4px; align-items: center; }
+  .ht-mini .ht-item { justify-content: center; padding: 6px 0; width: 52px; }
+  .ht-mini .ht-item-ava { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 40px;
+    height: 40px; border-radius: 50%; background: var(--accent-wash); color: var(--accent-ink); font-size: 18px; font-weight: 700; }
+  .ht-mini .ht-item.on .ht-item-ava { box-shadow: 0 0 0 2px var(--accent); }
+  .ht-item-ava-dot { position: absolute; top: 0; right: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--accent);
+    border: 2px solid var(--surface-1); }
+}
+.ws-mini-tip-ava > .ht-item-ava { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--accent-wash); color: var(--accent-ink); font-weight: 700; }
 @media (max-width: 900px) {
   .ht-body { height: auto; min-height: 0; flex: 1 1 auto; }
   .ht-listcol { width: 100%; }
@@ -2442,6 +2599,35 @@ body.has-rail .hud { margin-left: var(--rail-w); width: calc(100% - var(--rail-w
 /* Thẻ Giọng nói ẩn/hiện từng hàng bằng thuộc tính hidden theo đường gọi (renderVoiceCard), nhưng
    .qs-field và .gcard-btn tự đặt display nên đè mất hidden; luật này trả lại nghĩa cho hidden. */
 #voiceCard [hidden] { display: none !important; }
+/* 0.298.0: what you will hear, stated up front, and each field saying what it is for. The "saved" mark sits
+   right beside the field that changed (it used to be one line at the bottom of the card, out of sight). */
+#voiceCard .vc-now {
+  display: flex; flex-direction: column; gap: 4px; margin: 8px 0 12px; padding: 10px 12px;
+  border-radius: 10px; background: var(--bg2); border: 1px solid var(--border);
+  font-size: 15px; line-height: 1.45; color: var(--text);
+}
+#voiceCard .vc-now:empty { display: none; }
+#voiceCard .vc-now .vc-now-why { font-size: 13px; color: var(--text3); }
+#voiceCard .vc-field { align-items: flex-start; }
+#voiceCard .vc-lblcol { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 8px; }
+#voiceCard .vc-lblcol .qs-lbl { font-weight: 600; color: var(--text); }
+#voiceCard .vc-sub { font-size: 13px; line-height: 1.4; color: var(--text3); }
+#voiceCard .vc-sub:empty { display: none; }
+#voiceCard .vc-field > .v2-voice-row { flex-wrap: wrap; }
+#voiceCard .vc-saved {
+  flex-basis: 100%; min-height: 18px; font-size: 13px; color: var(--green, #3fb27f);
+  opacity: 0; transition: opacity .2s;
+}
+#voiceCard .vc-saved:not(.on) { display: none; }
+#voiceCard .vc-saved.on { opacity: 1; }
+#voiceCard .vc-saved.bad { color: var(--red); }
+#voiceCard .vc-mismatch {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 4px 0 10px; padding: 10px 12px;
+  border-radius: 10px; border: 1px solid var(--warn-line); background: var(--warn-wash); color: var(--warn-ink);
+  font-size: 14px; line-height: 1.45;
+}
+#voiceCard .vc-mismatch .gcard-btn { width: auto; flex: none; }
+@media (prefers-reduced-motion: reduce) { #voiceCard .vc-saved { transition: none; } }
 
 /* ---- Trang Kênh Admin (0.85.0): mỗi kênh một tab ----
    Một cột, rộng tối đa 620px: đây là trang cài đặt, phải đọc được trên điện thoại. Thanh tab cuộn
@@ -2779,9 +2965,7 @@ body.on-teams .cview-head { display: none; }
 .tm-hact .ic, .tm-hact svg { width: 15px; height: 15px; }
 .tm-hact:hover, .tm-hact:focus-visible { background: var(--surface-2); color: var(--text); }
 @media (hover: none) { .tm-hacts { display: none; } .tm-msg { -webkit-touch-callout: none; } }
-/* Swipe left to reply: a reply arrow shows on the right once the swipe is far enough. */
-.tm-msg.is-armed::after { content: ""; position: absolute; right: 6px; top: 50%; width: 22px; height: 22px; margin-top: -11px;
-  border-radius: 50%; background: var(--accent); opacity: .85; }
+/* Swipe left to reply: msg-swipe.js adds the main chat's quote mark (.msg-swipe-mark, style.css) on the right. */
 /* Long-press sheet under a message. */
 .tm-sheet { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding: 8px;
   border: 1px solid var(--border); border-radius: 14px; background: var(--bg); box-shadow: 0 6px 20px rgba(0, 0, 0, .12); }
@@ -2840,6 +3024,19 @@ body.on-teams .cview-head { display: none; }
 /* Khung soạn một hàng: công tắc Giao việc, ô chữ tự cao, nút gửi tròn. */
 .tm-composer { border-top: 1px solid var(--border); padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); position: relative; background: var(--bg); }
 .tm-composer[hidden] { display: none; }
+/* Keyboard open on a phone (mobile-chat.js sets body.kb-open from visualViewport): the Home bar sits under the keyboard,
+   so the safe-area gap under the input is dropped, like the main composer. */
+body.kb-open .tm-composer { padding-bottom: 8px; }
+/* The owner's message on its way (shown at once, replaced by the server's copy): a little faded with "Sending...";
+   "Not sent" in red with Try again and Remove when the POST failed. */
+.tm-msg-pending .tm-bubble { opacity: .72; }
+.tm-msg-pending.is-failed .tm-bubble { opacity: 1; border-color: var(--red, #d64545); }
+.tm-pending-st { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 26px; margin-top: 2px;
+  color: var(--text3); font-size: 12px; }
+.tm-msg-pending.is-failed .tm-pending-st { color: var(--red, #d64545); }
+.tm-pending-st svg { width: 14px; height: 14px; }
+.tm-pending-st .ws-btn { white-space: nowrap; }
+@media (pointer: coarse) { .tm-pending-st { font-size: 16px; } }
 .tm-row { display: flex; align-items: flex-end; gap: 6px; }
 .tm-row[hidden] { display: none; }
 /* 0.176.0 composer, the same shape as the main chat: "+" (menu: Assign job, Mention, Search), the input, mic, send. */
@@ -3488,6 +3685,12 @@ body.col-resizing { cursor: col-resize; user-select: none; }
 .tm-file.is-img { flex-direction: column; align-items: stretch; padding: 4px; }
 .tm-file.is-img img { width: 160px; max-height: 120px; object-fit: cover; border-radius: 8px; }
 .tm-file.is-img span { font-size: 12.5px; color: var(--text2); padding: 2px 4px; }
+.tm-file.is-img { cursor: zoom-in; }
+/* A long owner message collapses to ten lines with "Show more" (chat-acts.js), like the main chat's .utext.clamped. */
+.tm-msg-owner .tm-text.utext.clamped { display: -webkit-box; -webkit-line-clamp: 10; -webkit-box-orient: vertical; overflow: hidden; }
+/* The picture could not load (jvImgGone put the "not available" box in its place, with the name): no second name. */
+.tm-file.is-img .chat-img-gone { margin: 0; max-width: 160px; white-space: normal; }
+.tm-file.is-img .chat-img-gone + span { display: none; }
 .tm-folder-pop { position: fixed; z-index: 80; }
 .tm-ava-btn { border: 0; padding: 0; background: none; border-radius: 50%; cursor: pointer; flex: none; display: inline-flex; }
 .tm-ava-btn:hover, .tm-ava-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -3790,3 +3993,11 @@ button.tm-quote-ref:hover, button.tm-quote-ref:focus-visible { border-color: var
 .tm-md .tm-sub, .tm-ap .tm-sub, .tm-acc-form .tm-sub, .tm-md .tm-qhead, .tm-wm .tm-qhead {
   font-size: 16px; white-space: normal; overflow: visible; text-overflow: clip; }
 .tm-ap code, .tm-md code { font-size: 16px; }
+
+/* Quality settings and optional usage detail stay readable on narrow screens. */
+.tm-quality-form input, .tm-quality-form select, .tm-template-form textarea,
+.tm-quality-form .ws-btn, .tm-template-form .ws-btn { font-size: 16px; min-height: 40px; }
+.tm-quality-form select, .tm-template-form textarea { width: 100%; min-width: 0; }
+.tm-task-quality { flex-basis: 100%; min-width: 0; width: 100%; }
+.tm-filterbar:has(.tm-task-quality) { flex-wrap: wrap; }
+.tm-task-quality .tm-sec { overflow-wrap: anywhere; }

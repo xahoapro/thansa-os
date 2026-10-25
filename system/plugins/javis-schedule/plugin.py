@@ -203,6 +203,14 @@ def _loops_dir(vault_root: str) -> Path:
     return Path(vault_root) / "Javis" / "loops"
 
 
+_LOOP_MODES = ("suggest", "auto", "full")
+# 0.275.0 (customer report, codes 15 and 27; owner kept "full" as the default on 2026-10-22): the reply tells the
+# model to say plainly what a full-level job may do, so a user who never opened the form still knows.
+FULL_LEVEL_NOTE = (" Nói rõ với user bằng lời thường: việc này ở mức Toàn quyền, tới giờ sẽ tự sửa file, chạy lệnh và"
+                   " thao tác ra ngoài (gửi tin, đăng bài, tạo đơn) mà không hỏi lại; muốn nhẹ hơn thì nói để đổi"
+                   " sang mức chỉ ghi nháp (auto) hoặc chỉ đọc (suggest).")
+
+
 def _create_loop_file(vault_root: str, name: str, prompt: str, schedule: str,
                       owner_chat: str = "", brain_name: str = "") -> str:
     """Ghi 1 loop mới vào <vault_root>/Javis/loops/<slug>.md. AN TOÀN CỨNG (không nhận tham số
@@ -372,7 +380,7 @@ async def _post_reminder(payload: dict, brain_name: str = "") -> str:
     if data.get("mode") == "task" and mq:
         ten = {"full": "toàn quyền, tự thao tác ra ngoài", "auto": "chỉ ghi file nháp",
                "suggest": "chỉ đọc rồi báo lại"}.get(mq, mq)
-        ra += f" Mức quyền {mq} ({ten})."
+        ra += f" Mức quyền {mq} ({ten})." + (FULL_LEVEL_NOTE if mq == "full" else "")
     if data.get("remember_last"):
         ra += " Mỗi lần chạy sẽ nhận lại kết quả lần trước."
     if data.get("speak"):

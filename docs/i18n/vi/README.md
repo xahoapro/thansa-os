@@ -208,7 +208,7 @@ chmod +x install.sh && ./install.sh
 ```
 Script tự cài Python + Node + hai engine CLI (Claude Code, Codex), tạo venv, đăng ký dịch vụ systemd tự chạy khi boot, in ra địa chỉ. Báo Claude chưa đăng nhập thì chạy 1 lần: `claude auth login --claudeai`.
 
-> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `Thansa OS.app` (hoặc `Start Thansa OS.command`) để chạy server + mở dashboard; tự chạy khi đăng nhập máy: `./bin/thansa-autostart.sh install`. Chi tiết: [bin/README.md](../../../bin/README.md).
+> 🍎 **macOS - mở như một app:** sau khi cài xong, double-click `Thansa OS.app` (hoặc `Start Thansa OS.command`) để chạy server + mở dashboard; từ 0.306.0 `./install.sh` cho Thansa tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `./bin/thansa-autostart.sh uninstall`). Chi tiết: [bin/README.md](../../../bin/README.md).
 
 ### Cách 4 - Windows (máy cá nhân)
 
@@ -232,7 +232,7 @@ Mở dashboard:                          http://localhost:7777
 
 > ⚠️ **Cài thêm một CLI sau khi Thansa đang chạy thì phải khởi động lại Thansa** (`stop-thansa.bat` rồi `start-thansa.vbs`). Tiến trình đang chạy giữ PATH của lúc nó bật, nên CLI vừa cài nó không thấy - trang Models sẽ vẫn báo "CLI chưa cài" cho một CLI đã nằm sẵn trên ổ đĩa.
 
-> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`Thansa OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Tự chạy khi đăng nhập máy: `thansa-autostart.bat install` (gỡ: `uninstall`).
+> 🪟 **Windows - mở như một app:** sau khi `setup.bat` chạy xong lần đầu, từ đó về sau chỉ cần double-click **`Thansa OS.bat`** - server tự chạy nền (không cửa sổ đen) rồi dashboard tự mở thành **cửa sổ riêng** không thanh địa chỉ, có ô riêng trên taskbar. Từ 0.306.0 bộ cài cho Thansa tự chạy khi đăng nhập máy và tự mở dashboard (tắt: `thansa-autostart.bat uninstall` hoặc nút trong Cài đặt).
 
 ### Nhiều bản Thansa trên cùng một VPS (mỗi bản một link riêng)
 

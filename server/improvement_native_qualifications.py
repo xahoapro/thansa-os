@@ -1,0 +1,27 @@
+"""Reviewed release registrations for exact native-profile qualification evidence.
+
+Keys bind platform, binary/version, SDK and the complete profile source hash.
+Values are SHA-256 of actual qualification evidence retained with the release.
+This host source is the registration authority, deliberately outside the profile
+hash to avoid a self-referential digest. No environment/HTTP/model can register a
+profile. Add an entry only after its native black-box qualification has passed;
+changing profile source invalidates the entry. Historical receipts stay readable.
+"""
+from __future__ import annotations
+
+import re
+
+# Exact dummy-auth/native enforcement evidence; this does not attest account
+# readiness, actual role usage, business quality or candidate/final execution.
+# docs/superpowers/evidence/2026-10-23-m2c-native-qualification.json
+QUALIFIED_PROFILES = {('win32', '2.1.308',
+    'c9796ba22a9221586b36371b36f5b66198d66eb4badf6a4cf4a5f7b07becea53', '0.2.116',
+    'claude-isolated-roles-v2', '9dcf718470e70957d07454bb8b50fbde79575a3b23d8c06e24cc9b749051116b'):
+    '98ee4e8c406091ee84db2862cbf80b11a5f15cf88f7d4d96188d5e2360822ea7'}
+
+
+def profile_qualification(pin, platform):
+    key = (platform, pin["cli_version"], pin["cli_hash"], pin["sdk_version"],
+           pin["profile_version"], pin["profile_hash"])
+    evidence = QUALIFIED_PROFILES.get(key)
+    return evidence if type(evidence) is str and re.fullmatch(r"[0-9a-f]{64}", evidence) else None

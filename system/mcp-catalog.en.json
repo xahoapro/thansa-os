@@ -10,9 +10,9 @@
    }
   },
   "zalo": {
-   "description": "The javis-zalo MCP (Thansa's own Zalo CLI): read new messages and history, find chats, see who joined a group and when, approve join requests, view media and send messages from a personal Zalo account.",
+   "description": "The javis-zalo MCP (Thansa's own Zalo CLI): read new messages and history, find chats, see who joined a group and when, approve join requests, read the tags (labels) set on chats, view media and send messages from a personal Zalo account.",
    "risk": "This connector defaults to FULL ACCESS, which means the send tool is on. To block sending, lower it to Draft or Read-only.\n\njavis-zalo uses Zalo's unofficial API through zca-js. The account MAY be restricted or LOCKED; use a secondary account and do not auto-send in bulk.",
-   "guide": "Needs Node.js 20+. Press Connect, scan the QR code with the Zalo app, then use the 12 MCP tools of javis-zalo directly. There is no separate Thansa listener, webhook or Zalo rules file any more."
+   "guide": "Needs Node.js 20+. Press Connect, scan the QR code with the Zalo app, then use the 13 MCP tools of javis-zalo directly. There is no separate Thansa listener, webhook or Zalo rules file any more."
   },
   "botcake": {
    "description": "Customers, tags, flows and sending messages from a Botcake chatbot (through the Public API: Thansa builds the bridge itself, nothing else to install).",
@@ -91,6 +91,15 @@
     "client_secret": {"label": "OAuth Client Secret", "placeholder": "e.g. GOCSPX-..."},
     "developer_token": {"label": "Developer token (Google Ads API Center)", "placeholder": "22 characters, from the MCC manager account"},
     "login_customer_id": {"label": "MCC manager account ID (optional: when the ads account sits under an MCC or agency)", "placeholder": "10 digits, no dashes"},
+    "adc_json": {"label": "Or paste an ADC file if you already ran gcloud yourself (leave empty if you sign in above)", "placeholder": "e.g. { \"type\": \"authorized_user\", \"refresh_token\": ... }"}
+   }
+  },
+  "google-analytics": {
+   "description": "Website numbers through Google's official GA4 MCP (read-only): sessions, sources and campaigns (UTM), events, conversions and realtime reports. Runs locally; one Google sign-in.",
+   "guide": "Needed first: nothing to install. Thansa fetches Google's latest official release (PyPI) each time it starts.\n\nAlready connected Google Ads? Reuse that same OAuth client and only enable the 2 Analytics APIs.\n\nOne-time setup, about 10 minutes:\n1. Go to console.cloud.google.com, pick a project and enable BOTH APIs: Google Analytics Data API and Google Analytics Admin API.\n2. OAuth consent screen: choose External and add your email under Test users.\n3. Credentials > Create an OAuth client ID of type 'Web application'.\n4. Under 'Authorized redirect URIs', add exactly this address:\nhttp://localhost:7777/connect/oauth/callback\nOn a VPS also add https://<your-domain>/connect/oauth/callback\n5. Fill in the boxes below, then press the sign-in button. A browser opens so you can let Thansa read Google Analytics.\n\nThe account you sign in with needs at least Viewer access on the GA4 property. Thansa lists every property you can see, so no Property ID is needed.\n\nIf you see an 'app isn't verified' warning, press Advanced > Continue: this is your own app.\n\nAlready ran gcloud yourself? Paste the content of application_default_credentials.json into the last box and Thansa uses it as is.",
+   "fields": {
+    "client_id": {"label": "OAuth Client ID", "placeholder": "e.g. xxxx.apps.googleusercontent.com"},
+    "client_secret": {"label": "OAuth Client Secret", "placeholder": "e.g. GOCSPX-..."},
     "adc_json": {"label": "Or paste an ADC file if you already ran gcloud yourself (leave empty if you sign in above)", "placeholder": "e.g. { \"type\": \"authorized_user\", \"refresh_token\": ... }"}
    }
   },

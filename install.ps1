@@ -24,6 +24,7 @@
 # ============================================================
 param(
   [switch]$NoStart,      # cai xong khong tu bat server
+  [switch]$NoAutostart,  # khong bat tu khoi dong cung Windows (mac dinh BAT tu 0.306.0)
   [switch]$SkipCli       # bo qua buoc cai 4 CLI (chi cai Python deps)
 )
 
@@ -200,6 +201,19 @@ Line "  Cai them CLI sau nay thi phai KHOI DONG LAI Thansa (stop-thansa.bat roi 
 Line "  vi tien trinh dang chay giu PATH cua luc no bat."
 Line ""
 
+# ---------------------------------------------------------------- [5b] tu khoi dong
+# 0.306.0, chu repo 24/10/2026: "mac dinh cai javis tren win hoac mac thi cai khoi dong cung trinh duyet".
+# Dang nhap may la Thansa tu chay nen roi tu mo dashboard. Tat: -NoAutostart, thansa-autostart.bat uninstall,
+# hoac nut trong trang Cai dat.
+if (-not $NoAutostart) {
+  $as = Join-Path $Root "thansa-autostart.ps1"
+  if (Test-Path $as) {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $as install | Out-Null
+    if ($LASTEXITCODE -eq 0) { Ok "Tu khoi dong cung Windows: BAT (dang nhap may la Thansa tu mo)" }
+    else { Warn "Chua bat duoc tu khoi dong. Bat sau: thansa-autostart.bat install" }
+  }
+}
+
 # ---------------------------------------------------------------- [6] bat server
 if ($NoStart) {
   Line "  Cai xong. Bat server: start-thansa.vbs (chay nen) hoac setup.bat (hien cua so)."
@@ -208,8 +222,9 @@ if ($NoStart) {
 Step 6 "Bat Thansa"
 $vbs = Join-Path $Root "start-thansa.vbs"
 if (Test-Path $vbs) {
-  Start-Process "wscript.exe" -ArgumentList "//nologo `"$vbs`"" -WorkingDirectory $Root
-  Ok "Server dang chay nen. Log: server\thansa.log"
+  # /open: cho server len roi mo dashboard luon (0.306.0).
+  Start-Process "wscript.exe" -ArgumentList "//nologo `"$vbs`" /open" -WorkingDirectory $Root
+  Ok "Server dang chay nen, dashboard se tu mo. Log: server\thansa.log"
 } else {
   Start-Process $vpy -ArgumentList "main.py" -WorkingDirectory (Join-Path $Root "server")
   Ok "Server dang chay"

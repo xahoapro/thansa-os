@@ -42,7 +42,7 @@ _CO_Y = {
     # là hành động do người dùng bấm, và cửa sổ chính là thứ họ cần nhìn.
     ("claude_cli.py", "mcp_open_auth_terminal"),
     ("claude_cli.py", "codex_mcp_open_login_terminal"),
-    # Khởi động lại Javis sau khi cập nhật: tiến trình mới phải sống lâu hơn tiến trình sinh ra
+    # Khởi động lại Thansa sau khi cập nhật: tiến trình mới phải sống lâu hơn tiến trình sinh ra
     # nó, nên đi bằng DETACHED_PROCESS chứ không phải CREATE_NO_WINDOW. Chính là lệnh mở
     # updater.py trong do_update(); trước 0.65.27 mục này ghi "_trigger" chỉ vì một hàm lồng tên
     # đó (gọi Watchtower) nằm ngay phía trên, và _ham_chua lấy nhầm tên hàm lồng.
@@ -114,8 +114,13 @@ check("CANARY: không lấy CREATE_NO_WINDOW từ asyncio.subprocess (ở đó n
 sys.path.insert(0, str(ROOT / "server"))
 import winproc  # noqa: E402
 
-check("winproc.no_window() trả 0 ngoài Windows", winproc.no_window() == 0)
-check("winproc.kwargs_no_window() rỗng ngoài Windows", winproc.kwargs_no_window() == {})
+import os
+import subprocess
+
+expected_flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+expected_kwargs = {"creationflags": expected_flags} if os.name == "nt" else {}
+check("winproc.no_window() matches the platform's actual console flag", winproc.no_window() == expected_flags)
+check("winproc.kwargs_no_window() matches the platform", winproc.kwargs_no_window() == expected_kwargs)
 
 print()
 if _fails:

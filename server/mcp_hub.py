@@ -831,24 +831,23 @@ def _builtin_tools(mode, vault_root, include_ambient=False, hidden=None, lang=""
 
     async def _skill(args):
         name = str((args or {}).get("name") or "").strip()
-        # skill_router.resolve_skill_file đã validate slug + chống traversal, tìm canonical
-        # skills/ → .claude/skills → .agents.
-        f = skill_router.resolve_skill_file(vault_root, name)
-        if not f or not f.is_file():
+        asset = await asyncio.to_thread(skill_router.read_skill_asset, vault_root, name)
+        if asset is None:
             return ("ERROR: không có skill đó. Skill khả dụng: "
                     + (", ".join(_list_skills(vault_root)) or "(chưa có)"))
-        text = f.read_text(encoding="utf-8", errors="replace")[:60_000]
+        text = asset.text[:60_000]
         # ĐIỂM ĐẾM DUY NHẤT: mọi engine nạp skill qua tool này đều đi ngang đây. Chỉ đếm ở
         # đường THÀNH CÔNG - nhánh trên đã lọc slug sai/skill tắt nên không đếm gõ nhầm.
-        # Dùng f.parent.name (slug canonical trên đĩa) chứ không dùng `name` thô từ engine.
+        # Count the slug verified by the shared reader, not the raw name from the engine.
         # bump có I/O đĩa + fsync trong lock (chặn) → đẩy qua thread để không chẹn event
         # loop (WebSocket/telegram poller/loop scheduler đều chạy chung loop này).
         # bump tự nuốt lỗi → sidecar hỏng không bao giờ làm gãy việc nạp skill.
-        await asyncio.to_thread(skill_usage.bump, vault_root, f.parent.name)
+        await asyncio.to_thread(skill_usage.bump, vault_root, asset.slug)
         return text
 
     add("javis_read_file", "Đọc 1 file trong vault (Second Brain). path tương đối so với gốc vault; "
-        "nhận CẢ đường dẫn tuyệt đối của file người dùng vừa đính kèm/dán vào khung chat. File dài: "
+        "nhận CẢ đường dẫn tuyệt đối của file người dùng vừa đính kèm/dán vào khung chat. PDF, Word, Excel "
+        "(.xlsx: mọi sheet, giá trị công thức, ô lỗi) được bóc thành chữ. File dài: "
         "đọc từng đoạn bằng offset/limit (có số dòng).",
         {"path": {"type": "string"}, "offset": {"type": "integer"}, "limit": {"type": "integer"}},
         ["path"], _read)
@@ -1503,7 +1502,10 @@ def invalidate_cache():
     _ambient_cache["ts"] = 0.0   # ép nạp lại danh sách connector tài khoản ở lần discover kế
     try:
         for c in mcp_store.list_connections():
-            mcp_client.pool.invalidate(c["id"])
+            # A session still in its first package download is closed as soon as its handshake
+            # is over, not now: killing it mid-install leaves a half-installed npx folder that npx
+            # reuses forever. The new credentials or the disabled state apply right after.
+            mcp_client.pool.invalidate(c["id"], defer_if_starting=True)
     except Exception:
         pass
 
