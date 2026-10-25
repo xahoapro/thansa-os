@@ -19,8 +19,8 @@ Phần dễ sai nhất khi tự làm là token: dán token người dùng thay v
 
 1. Trên Meta, tạo app có trường hợp sử dụng Messenger và kết nối Trang (bước 1.1 đến 1.3 bên dưới, chưa cần bấm Generate).
 2. Mở [Graph API Explorer](https://developers.facebook.com/tools/explorer), chọn đúng app, thêm quyền `pages_show_list`, `pages_messaging`, `pages_manage_metadata`, `pages_read_engagement`, bấm **Generate Access Token** và tick đúng Trang. Chép chuỗi `EAA...`.
-3. Mở Javis bằng tên miền HTTPS, vào **Kết nối**, thẻ **Facebook Messenger**, bấm **Kết nối Fanpage**. Dán Page ID, App ID, App secret và token vừa chép, bấm **Kết nối và kiểm tra**.
-4. Javis đổi sang token Trang không hết hạn, khai webhook của app với `messages` và `messaging_postbacks`, gắn Trang vào app, lưu kênh rồi hiện bảng kiểm tra từng dòng xanh hoặc đỏ kèm cách sửa.
+3. Mở Thansa bằng tên miền HTTPS, vào **Kết nối**, thẻ **Facebook Messenger**, bấm **Kết nối Fanpage**. Dán Page ID, App ID, App secret và token vừa chép, bấm **Kết nối và kiểm tra**.
+4. Thansa đổi sang token Trang không hết hạn, khai webhook của app với `messages` và `messaging_postbacks`, gắn Trang vào app, lưu kênh rồi hiện bảng kiểm tra từng dòng xanh hoặc đỏ kèm cách sửa.
 5. Vào **Chatbot**, **Bot** để tạo bot cho kênh vừa nối (mục 3).
 
 Mỗi Trang đã nối có nút **Kiểm tra**, **Sửa tự động** (khai lại webhook và gắn lại Trang) và **Đổi token**. Bộ não nào cũng gọi được tool `messenger_check` và `messenger_repair` khi bot im lặng. Xác minh doanh nghiệp và nộp duyệt `pages_messaging` (mục 4) vẫn làm trên trang Meta.

@@ -24,7 +24,7 @@
 # KHÔNG tìm thấy ô Environment? Bấm Manage > sửa .yaml, đổi hai dòng nhãn traefik.enable và ...rule thành:
 #      - traefik.enable=true
 #      - traefik.http.routers.javis.rule=Host(`javis.srv1782015.hstgr.cloud`)   (thay bằng hostname VPS của bạn).
-# Không biết hostname VPS? Mở Javis bằng http://<ip>:7777 > Cài đặt > Tên miền: Javis hiện sẵn dòng DOMAIN_NAME=...
+# Không biết hostname VPS? Mở Thansa bằng http://<ip>:7777 > Cài đặt > Tên miền: Thansa hiện sẵn dòng DOMAIN_NAME=...
 #
 # GHI CHÚ:
 #   - Mấu chốt: KHÔNG khai báo networks - Traefik của Hostinger tự thấy container qua nhãn.
@@ -145,11 +145,11 @@ services:
   #
   # Chủ repo hỏi 24/10/2026: mẫu "Ubuntu 24 + Docker" của Hostinger có sẵn Traefik giữ cổng 80/443 và cấp SSL qua
   # nhãn traefik.* ở trên, còn mẫu Ubuntu 26 trắng thì không có Traefik nào. Trước bản này, dán link compose lên máy
-  # Ubuntu 26 là Javis chạy nhưng DOMAIN_NAME không bao giờ có HTTPS (không ai đọc nhãn traefik.*), và muốn có thì
+  # Ubuntu 26 là Thansa chạy nhưng DOMAIN_NAME không bao giờ có HTTPS (không ai đọc nhãn traefik.*), và muốn có thì
   # phải biết tự ghép thêm file Caddy. Giờ MỘT link dùng được cho cả hai:
   #   - Có proxy khác đang giữ 80/443 (Traefik của Hostinger) -> gateway đứng yên, Traefik cấp SSL như trước.
   #   - Cổng 80/443 trống (Ubuntu 26, VPS trắng) -> gateway chạy Caddy, tự xin + tự gia hạn Let's Encrypt cho
-  #     DOMAIN_NAME rồi chuyển vào Javis ở cổng ${JAVIS_HOST_PORT:-7777} của máy.
+  #     DOMAIN_NAME rồi chuyển vào Thansa ở cổng ${JAVIS_HOST_PORT:-7777} của máy.
   #   - Chưa đặt DOMAIN_NAME -> gateway đứng yên, vào bằng http://<ip>:7777 như cũ.
   #
   # Vì sao network_mode: host chứ không publish "80:80"/"443:443": publish cổng mà Traefik đang giữ thì Docker báo
@@ -159,7 +159,7 @@ services:
   #
   # Caddy chỉ xin chứng chỉ cho ĐÚNG DOMAIN_NAME (không on-demand), nên kẻ trỏ DNS bừa vào IP không ép được nó xin
   # cert lung tung. Không thêm ô nào vào form Environment: chỉ đọc DOMAIN_NAME và JAVIS_HOST_PORT đã có sẵn.
-  # Nhiều bản Javis trên một VPS KHÔNG có Traefik: gateway của bản đầu giữ 80/443, bản sau đứng yên -> bản sau dùng
+  # Nhiều bản Thansa trên một VPS KHÔNG có Traefik: gateway của bản đầu giữ 80/443, bản sau đứng yên -> bản sau dùng
   # docker-compose.proxy.yml (proxy dùng chung), xem DEPLOY.md.
   gateway:
     image: caddy:2-alpine
@@ -184,9 +184,9 @@ services:
         ghi() { mkdir -p /status 2>/dev/null; printf 'state=%s\nnames=%s\n' "$$1" "$$2" > "$$S" 2>/dev/null || true; }
         # Chua dat DOMAIN_NAME: lay ten VPS Hostinger (srv<so>.hstgr.cloud) lam link. 0.304.0: KHONG doan qua DNS nua.
         # Ban 0.302.0 so dia chi bang getent, ma getent doc /etc/hosts cua VPS truoc (Ubuntu ghi ten may -> 127.0.1.1),
-        # nen Caddy xin cert cho srv<so>.hstgr.cloud con Javis lai cho javis.srv<so>.hstgr.cloud: lech nhau, khong ai
+        # nen Caddy xin cert cho srv<so>.hstgr.cloud con Thansa lai cho javis.srv<so>.hstgr.cloud: lech nhau, khong ai
         # duoc chuyen sang https (chu repo bao 24/10/2026). Gio Caddy phuc vu CA HAI ten (<ten-ban>.<may> va, voi ban
-        # mac dinh, chinh ten may); ten nao DNS tro ve may thi co cert. Danh sach ghi vao $$S de Javis thu dung cac ten nay.
+        # mac dinh, chinh ten may); ten nao DNS tro ve may thi co cert. Danh sach ghi vao $$S de Thansa thu dung cac ten nay.
         if [ "$$D" = "localhost" ] || [ -z "$$D" ]; then
           M="$$( (hostname -f 2>/dev/null || hostname) | tr 'A-Z' 'a-z')"
           case "$$M" in
@@ -227,7 +227,7 @@ services:
     volumes:
       - gateway-data:/data       # chứng chỉ đã cấp - giữ qua Redeploy, không xin lại (tránh cạn rate-limit)
       - gateway-config:/config
-      # 0.304.0: gateway ghi nó đang làm gì (idle / busy / serving + các tên) vào đây; Javis đọc (chỉ đọc) để trang IP
+      # 0.304.0: gateway ghi nó đang làm gì (idle / busy / serving + các tên) vào đây; Thansa đọc (chỉ đọc) để trang IP
       # chuyển đúng sang tên Caddy đã xin cert, và Cài đặt > Tên miền nói rõ gateway đang ở bước nào.
       - gateway-status:/status
     labels:

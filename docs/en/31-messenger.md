@@ -19,8 +19,8 @@ The step people get wrong is the token: a user token pasted where a Page token b
 
 1. On Meta, create an app with the Messenger use case and connect the Page (steps 1.1 to 1.3 below, no need to click Generate yet).
 2. Open [Graph API Explorer](https://developers.facebook.com/tools/explorer), pick the right app, add `pages_show_list`, `pages_messaging`, `pages_manage_metadata`, `pages_read_engagement`, click **Generate Access Token** and tick the right Page. Copy the `EAA...` string.
-3. Open Javis through its HTTPS domain, go to **Connections**, card **Facebook Messenger**, click **Connect a Page**. Paste the Page ID, App ID, App secret and the token, then click **Connect and check**.
-4. Javis derives a non-expiring Page token, registers the app webhook with `messages` and `messaging_postbacks`, subscribes the Page to the app, saves the channel and shows a checklist with a fix for every red row.
+3. Open Thansa through its HTTPS domain, go to **Connections**, card **Facebook Messenger**, click **Connect a Page**. Paste the Page ID, App ID, App secret and the token, then click **Connect and check**.
+4. Thansa derives a non-expiring Page token, registers the app webhook with `messages` and `messaging_postbacks`, subscribes the Page to the app, saves the channel and shows a checklist with a fix for every red row.
 5. Open **Chatbot**, **Bots** to create a bot for the new channel (section 3).
 
 Every connected Page has **Check**, **Repair** (registers the webhook and subscribes the Page again) and **New token** buttons. Any brain can call the `messenger_check` and `messenger_repair` tools when the bot goes silent. Business verification and App Review for `pages_messaging` (section 4) still happen on Meta's site.
