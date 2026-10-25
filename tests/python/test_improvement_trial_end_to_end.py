@@ -42,7 +42,7 @@ class OwnerTrialEndToEndTests(unittest.IsolatedAsyncioTestCase):
                 (self.main, "RevisionBlobs", lambda *a, **kw: self.assets.blobs),
                 (self.main, "_IMPROVEMENT_TRIAL_SERVICE", None),
                 (self.main, "_IMPROVEMENT_TRIAL_SHUTTING_DOWN", False),
-                (self.main.cfgmod, "gate_active", lambda: False),
+                (self.main.cfgmod, "gate_active", lambda *a, **k: False),
                 (US, "_PATH", self.f.state / "usage.json"),
                 (US, "_EVENTS_PATH", self.f.state / "usage-events.jsonl"),
                 (US, "_TELEMETRY_ERRORS", {}),
