@@ -11,7 +11,7 @@ real owner bot functions and the real shell (`_tg_answer`), with only the model 
      own session, run log, lesson lines stripped), and the reply names the agent.
   3. Unknown or ambiguous mention: the list is the answer, before any turn runs.
   4. /agent <name> makes the agent answer the whole chat, `@javis` asks Javis once, /agent off goes
-     back to Javis; /reset also resets the agent's session.
+     back to Thansa; /reset also resets the agent's session.
   5. A chat that is not on the whitelist (or an empty whitelist) never reaches an agent, and the
      customer-facing bot accounts never get the owner functions.
 """
@@ -176,7 +176,7 @@ check("agent turn: /retry resends the message as written",
       main._tg_session(OWNER).get("last") == "@TEST-Thẩm định viên đánh giá giúp bản đề xuất")
 
 out = answer("plain question")
-check("no mention, nothing picked: Javis answers", "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"]
+check("no mention, nothing picked: Thansa answers", "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"]
       and not out["text"].startswith("🤝"), out)
 
 # ================================================================
@@ -222,15 +222,15 @@ _k = OWNER + "@test-tham-dinh-vien"
 check("/reset also starts the agent conversation over", not main._TG_SID_MAP.get(_k)
       and main._tg_session(_k).get("sid") is None)
 res = command("agent", "off")
-check("/agent off: back to Javis", OWNER not in main._TG_AGENT_MAP and "Javis" in res.get("reply", ""), res)
+check("/agent off: back to Thansa", OWNER not in main._TG_AGENT_MAP and "Javis" in res.get("reply", ""), res)
 answer("after off")
-check("/agent off: Javis answers", "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"])
+check("/agent off: Thansa answers", "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"])
 
 # A pick whose agent is gone is dropped with a notice instead of silently answering as Javis.
 command("agent", "writer-pro")
 (Path(BRAIN) / "agents" / "writer-pro.md").unlink()
 out = answer("still there?")
-check("deleted agent: Javis answers and says the pick was dropped",
+check("deleted agent: Thansa answers and says the pick was dropped",
       "JAVIS MAIN PROMPT" in FakeClaude.runs[-1]["system_prompt"] and "writer-pro" in out["text"]
       and OWNER not in main._TG_AGENT_MAP, out)
 check("/help mentions /agent and @<name>", "/agent" in command("help").get("reply", ""))

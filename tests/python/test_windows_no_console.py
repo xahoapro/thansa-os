@@ -42,7 +42,7 @@ _CO_Y = {
     # là hành động do người dùng bấm, và cửa sổ chính là thứ họ cần nhìn.
     ("claude_cli.py", "mcp_open_auth_terminal"),
     ("claude_cli.py", "codex_mcp_open_login_terminal"),
-    # Khởi động lại Javis sau khi cập nhật: tiến trình mới phải sống lâu hơn tiến trình sinh ra
+    # Khởi động lại Thansa sau khi cập nhật: tiến trình mới phải sống lâu hơn tiến trình sinh ra
     # nó, nên đi bằng DETACHED_PROCESS chứ không phải CREATE_NO_WINDOW. Chính là lệnh mở
     # updater.py trong do_update(); trước 0.65.27 mục này ghi "_trigger" chỉ vì một hàm lồng tên
     # đó (gọi Watchtower) nằm ngay phía trên, và _ham_chua lấy nhầm tên hàm lồng.
