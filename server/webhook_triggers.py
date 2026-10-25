@@ -1134,7 +1134,7 @@ class WebhookFeature(webhook_worker.WebhookWorker):
             return 404, {"ok": False, "error": localefmt.chu("Không thấy webhook này.", "Webhook not found.")}
         raw = p.get("payload")
         if raw in (None, ""):
-            raw = {"test": True, "note": "sample event sent from the Javis dashboard"}
+            raw = {"test": True, "note": "sample event sent from the Thansa dashboard"}
         body = (raw if isinstance(raw, str) else json.dumps(raw, ensure_ascii=False)).encode("utf-8")
         ct = str(p.get("content_type") or "application/json")
         code, prev = await asyncio.to_thread(self.simulate, {"id": hid, "payload": raw if isinstance(raw, str) else raw,

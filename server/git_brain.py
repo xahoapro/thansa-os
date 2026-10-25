@@ -196,7 +196,7 @@ _GITIGNORE_BODY = (
        "memory/agents/*/runs/",
        "Memory/agents/*/runs/",
        ".javis-agy/",
-       "# Cấu hình MCP của hai engine CLI Google - chứa hub token của Javis, không phải tri thức.",
+       "# Cấu hình MCP của hai engine CLI Google - chứa hub token của Thansa, không phải tri thức.",
        ".agents/mcp_config.json",
        ".antigravity/",
        ".antigravitycli/",
@@ -373,7 +373,7 @@ def ensure_git_repo(root: str) -> dict:
                     "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
         # Cấu hình identity cục bộ (repo có thể chạy trong container không có global config)
         _git(root, "config", "user.email", "javis@localhost")
-        _git(root, "config", "user.name", "Javis Learn")
+        _git(root, "config", "user.name", "Thansa Learn")
         _ensure_gitignore_lines(root)   # merge chứ không ghi đè (brain có thể đã có .gitignore)
         _git(root, "add", ".gitignore")
         _git(root, "add", "-A")   # commit NỀN duy nhất được phép add -A (baseline, chưa có state học)
@@ -1101,7 +1101,7 @@ def _sync_brains_locked(brains_dir: str, mirror_dir: str, repo_url: str, token: 
         if r.returncode != 0:
             return {**rep, "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
     _git(mirror_dir, "config", "user.email", "javis@localhost")
-    _git(mirror_dir, "config", "user.name", f"Javis Sync ({_host_tag()})")
+    _git(mirror_dir, "config", "user.name", f"Thansa Sync ({_host_tag()})")
     # Sync truyền BYTE NGUYÊN VĂN giữa các máy: tắt autocrlf để git Windows không tự đổi
     # LF↔CRLF lúc add/checkout (nếu không, cùng 1 file sẽ lệch byte giữa local và VPS mãi mãi).
     _git(mirror_dir, "config", "core.autocrlf", "false")

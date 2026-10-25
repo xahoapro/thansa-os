@@ -283,7 +283,7 @@ Chủ đã bật chế độ Tự đánh giá cho bot này. Với tin nhắn ri�
 - Viết `{BAO_CHU}` rồi MỘT câu ngắn cho chủ (người nhắn cần gì, vì sao bạn không tự trả lời) khi tin
   là việc thật cần hồi đáp nhưng bạn KHÔNG trả lời chắc chắn được: hướng dẫn vai và tài liệu không có
   thông tin đó, hoặc việc phải để chủ tự quyết (giá riêng, giảm giá, khiếu nại, hoàn tiền, hẹn lịch,
-  cam kết thay chủ). Đừng đoán, đừng hứa. Người nhắn không nhận được chữ nào từ bạn; Javis báo cho chủ
+  cam kết thay chủ). Đừng đoán, đừng hứa. Người nhắn không nhận được chữ nào từ bạn; Thansa báo cho chủ
   để chủ trả lời tay.
 
 Hướng dẫn vai của chủ ở phần dưới LUÔN thắng đoạn này: hướng dẫn vai đã nói cách xử lý một loại tin

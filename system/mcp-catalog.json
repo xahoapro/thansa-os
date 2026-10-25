@@ -72,7 +72,7 @@
         "type": "qr",
         "fields": [],
         "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp 13 tool MCP của javis-zalo. Không còn listener/webhook/luật Zalo riêng của Thansa.",
-        "guide_url": "https://github.com/blogminhquy/javis-os/blob/main/docs/12-zalo.md"
+        "guide_url": "https://github.com/xahoapro/thansa-os/blob/main/docs/12-zalo.md"
       },
       "tool_meta": {
         "read": [
@@ -462,7 +462,7 @@
             "optional": true
           }
         ],
-        "guide": "Cần trước: không cài thêm gì. Javis tự tải bản chính thức mới nhất của Google (PyPI) mỗi lần khởi động.\n\nĐã đấu Google Ads thì dùng lại đúng OAuth client đó, chỉ cần bật thêm 2 API Analytics.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com, chọn project rồi bật CẢ HAI API: Google Analytics Data API và Google Analytics Admin API.\n2. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n3. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n4. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n5. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Javis đọc Google Analytics.\n\nEmail đăng nhập phải có ít nhất quyền Xem (Viewer) trên property GA4. Javis tự liệt kê mọi property bạn xem được, không cần điền Property ID.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Javis sẽ dùng luôn.",
+        "guide": "Cần trước: không cài thêm gì. Thansa tự tải bản chính thức mới nhất của Google (PyPI) mỗi lần khởi động.\n\nĐã đấu Google Ads thì dùng lại đúng OAuth client đó, chỉ cần bật thêm 2 API Analytics.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com, chọn project rồi bật CẢ HAI API: Google Analytics Data API và Google Analytics Admin API.\n2. Màn hình đồng ý OAuth: chọn External, thêm email của bạn vào Test users.\n3. Thông tin xác thực > Tạo OAuth client ID loại 'Ứng dụng web'.\n4. Ở phần 'URI chuyển hướng được ủy quyền', thêm đúng địa chỉ này:\nhttp://localhost:7777/connect/oauth/callback\nNếu chạy trên VPS thì thêm cả https://<tên-miền>/connect/oauth/callback\n5. Điền các ô bên dưới rồi bấm nút đăng nhập. Trình duyệt sẽ mở để bạn cho phép Thansa đọc Google Analytics.\n\nEmail đăng nhập phải có ít nhất quyền Xem (Viewer) trên property GA4. Thansa tự liệt kê mọi property bạn xem được, không cần điền Property ID.\n\nGặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao > Tiếp tục, vì đây là app của chính bạn.\n\nĐã tự chạy gcloud rồi thì dán nội dung file application_default_credentials.json vào ô cuối, Thansa sẽ dùng luôn.",
         "guide_url": "https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com"
       },
       "validate": {

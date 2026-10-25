@@ -119,10 +119,10 @@ you **must set a `DOMAIN_NAME` variable**:
 > stay empty. The gateway reads the VPS name (`srvXXXX.hstgr.cloud`) and issues HTTPS for both
 > `javis.srvXXXX.hstgr.cloud` and `srvXXXX.hstgr.cloud` itself (since 0.304.0; whichever points at the machine gets a
 > certificate). **Settings → Domain** says whether the link works yet or is still waiting for its certificate. **Open** reaches
-> `http://<ip>:7777`, and the page moves to that HTTPS link as soon as it works and answers as this Javis. Add
+> `http://<ip>:7777`, and the page moves to that HTTPS link as soon as it works and answers as this Thansa. Add
 > `?stay=1` to the IP link to stay. Apps installed from Hostinger's Catalog (e.g. `omniroute-xxxx.srv....hstgr.cloud`)
 > are told the VPS name at install time; a "Compose from URL" deploy is not, so the Open button cannot carry that link.
-> On the Ubuntu 24 template with Traefik, set `DOMAIN_NAME` once: open Javis by IP → **Settings → Domain** shows
+> On the Ubuntu 24 template with Traefik, set `DOMAIN_NAME` once: open Thansa by IP → **Settings → Domain** shows
 > the line to copy.
 >
 > **Hostinger VPS on Ubuntu 26 (or any plain OS without Traefik), since 0.300.0:** paste the SAME link, nothing to
@@ -138,7 +138,7 @@ you **must set a `DOMAIN_NAME` variable**:
 
 > Without `DOMAIN_NAME` it still deploys (running temporarily on `:7777` with no HTTPS), and since 0.302.0 the
 > **Open** button goes to `http://<vps-ip>:7777` instead of `localhost` (Open follows the domain in the Traefik
-> label, which used to say `localhost`). Don't know the VPS hostname? Open Javis by IP → **Settings → Domain**: Javis
+> label, which used to say `localhost`). Don't know the VPS hostname? Open Thansa by IP → **Settings → Domain**: Thansa
 > looks it up and shows the line `DOMAIN_NAME=javis.srvXXXX.hstgr.cloud` with a copy button. No Environment box?
 > Click **Manage → edit the .yaml** and change the two label lines to `- traefik.enable=true` and
 > `- traefik.http.routers.javis.rule=Host(\`javis.srv1782015.hstgr.cloud\`)`.

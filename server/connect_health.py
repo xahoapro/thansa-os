@@ -125,7 +125,7 @@ def classify_error(err: str, conn=None) -> tuple[str, str]:
         # "Wait about two minutes": npx_cache leaves a folder touched in the last QUIET_SECONDS
         # alone (it may still be mid-install), so a Check right away would repair nothing.
         return "install", ("Gói cài đặt của trình kết nối bị thiếu file (cài dở). Chờ khoảng hai "
-                           "phút rồi bấm Kiểm tra để Javis dọn bản hỏng và cài lại.")
+                           "phút rồi bấm Kiểm tra để Thansa dọn bản hỏng và cài lại.")
     if any(s in low for s in _SPAWN_HINTS):
         return "spawn", "Không khởi động được trình kết nối trên máy chạy Thansa."
     if any(s in low for s in _NET_HINTS):
@@ -624,9 +624,9 @@ async def startup_smoke(version: str = "", pool=None, retry_after: float | None 
                            for f in failed[:5])
             try:
                 coro = notify(localefmt.chu(
-                    f"⚠ Sau khi Javis khởi động lại{ban}, {len(failed)} kết nối chưa chạy: {vi}. "
+                    f"⚠ Sau khi Thansa khởi động lại{ban}, {len(failed)} kết nối chưa chạy: {vi}. "
                     "Mở trang Kết nối và bấm Kiểm tra.",
-                    f"⚠ After Javis restarted{ver}, {len(failed)} connection(s) are not working: "
+                    f"⚠ After Thansa restarted{ver}, {len(failed)} connection(s) are not working: "
                     f"{en}. Open the Connections page and click Check."))
                 if asyncio.iscoroutine(coro):
                     await coro

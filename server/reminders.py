@@ -781,9 +781,9 @@ class RemindersFeature:
                     luc = _fmt_vn(retry_at)[:5]
                     msg = (localefmt.chu("⚠ Nhắc hẹn chưa chạy được nhiệm vụ: ", "⚠ The reminder could not run its task: ")
                            + err[:300] + "\n\n"
-                           + localefmt.chu(f"Có vẻ là lỗi mạng. Javis tự thử lại lúc {luc} "
+                           + localefmt.chu(f"Có vẻ là lỗi mạng. Thansa tự thử lại lúc {luc} "
                                            f"(lần 1/{len(RETRY_DELAYS_S)}), việc đã gửi đi rồi thì không gửi lại.",
-                                           f"This looks like a network error. Javis will try again at {luc} "
+                                           f"This looks like a network error. Thansa will try again at {luc} "
                                            f"(attempt 1 of {len(RETRY_DELAYS_S)}); anything already sent is not sent again."))
                 else:
                     deliver = False

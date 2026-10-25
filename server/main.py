@@ -10381,9 +10381,9 @@ def _agent_chat_prompt(brain, slug, channel="dashboard") -> str:
     if _resonance_turn_enabled(brain):
         sysprompt = (sysprompt.replace(_AGENT_HAI_LOI, _AGENT_BA_LOI)
                      + "\n# Cộng hưởng (đang bật cho bạn)\n- " + _RESONANCE_GOAL_HINT + "\n")
-    where = ("qua Javis CLI (terminal hoặc HTTP /chat)" if channel == "cli"
+    where = ("qua Thansa CLI (terminal hoặc HTTP /chat)" if channel == "cli"
              else "qua Telegram" if channel == "telegram"
-             else "trên dashboard Javis (trang Cộng sự)")
+             else "trên dashboard Thansa (trang Cộng sự)")
     return (sysprompt + _agent_builder_block(brain)
             + f"\n\n# Kênh: bạn đang trò chuyện trực tiếp với chủ {where}. "
             "Trả lời như đang nói chuyện, theo ngôn ngữ chủ đang dùng; "
@@ -22939,9 +22939,9 @@ def _tg_agent_list_text(rows, head="") -> str:
     lines = [f"• {r['name']}" + (f" ({r['slug']})" if _agent_name_key(r["name"]) != _agent_name_key(r["slug"]) else "")
              for r in rows[:30]]
     return ((head + "\n\n") if head else "") + "\n".join(lines) + "\n\n" + localefmt.chu(
-        "Gõ @<tên> <câu hỏi> để hỏi một câu, hoặc /agent <tên> để cộng sự đó trả lời cả chat (/agent off để về Javis).",
+        "Gõ @<tên> <câu hỏi> để hỏi một câu, hoặc /agent <tên> để cộng sự đó trả lời cả chat (/agent off để về Thansa).",
         "Type @<name> <question> to ask once, or /agent <name> to let that partner answer the whole chat "
-        "(/agent off to go back to Javis).")
+        "(/agent off to go back to Thansa).")
 
 
 def _tg_agent_pinned(chat, root, rows):
@@ -22956,8 +22956,8 @@ def _tg_agent_pinned(chat, root, rows):
     _TG_AGENT_MAP.pop(str(chat), None)
     _tg_save_agent_map()
     return None, localefmt.chu(
-        f"(Cộng sự '{pin.get('slug')}' đã chọn không còn trong brain này, Javis trả lời lại từ đây.)",
-        f"(The partner '{pin.get('slug')}' picked earlier is not in this brain any more, Javis answers from here.)")
+        f"(Cộng sự '{pin.get('slug')}' đã chọn không còn trong brain này, Thansa trả lời lại từ đây.)",
+        f"(The partner '{pin.get('slug')}' picked earlier is not in this brain any more, Thansa answers from here.)")
 
 
 def _tg_agent_route(chat, text, bot_username="") -> dict:
@@ -23053,15 +23053,15 @@ async def _tg_owner_command(cmd, arg, chat=None, meta=None):
             had = _TG_AGENT_MAP.pop(chat_key, None)
             if had:
                 _tg_save_agent_map()
-            return {"reply": localefmt.chu("Javis trả lời chat này như thường.",
-                                           "Javis answers this chat as usual.")}
+            return {"reply": localefmt.chu("Thansa trả lời chat này như thường.",
+                                           "Thansa answers this chat as usual.")}
         if not rows:
             return {"reply": localefmt.chu("Brain này chưa có cộng sự nào (tạo ở trang Cộng sự trên dashboard).",
                                            "This brain has no partner yet (create one on the Partners page).")}
         if not a:
             cur, notice = _tg_agent_pinned(chat_key, root, rows)
             head = (localefmt.chu(f"Đang trả lời chat này: {cur['name']}.", f"Answering this chat: {cur['name']}.")
-                    if cur else localefmt.chu("Đang trả lời chat này: Javis.", "Answering this chat: Javis."))
+                    if cur else localefmt.chu("Đang trả lời chat này: Thansa.", "Answering this chat: Thansa."))
             return {"reply": _tg_agent_list_text(rows, "\n".join(x for x in (notice, head) if x))}
         hits = _tg_agent_find(rows, a)
         if len(hits) != 1:
@@ -23074,8 +23074,8 @@ async def _tg_owner_command(cmd, arg, chat=None, meta=None):
         _tg_save_agent_map()
         name = hits[0]["name"]
         return {"reply": localefmt.chu(
-            f"🤝 Từ giờ {name} trả lời chat này. Gõ @javis <câu hỏi> để hỏi Javis một câu, /agent off để về Javis.",
-            f"🤝 {name} answers this chat from now on. Type @javis <question> to ask Javis once, /agent off to go back.")}
+            f"🤝 Từ giờ {name} trả lời chat này. Gõ @javis <câu hỏi> để hỏi Thansa một câu, /agent off để về Thansa.",
+            f"🤝 {name} answers this chat from now on. Type @javis <question> to ask Thansa once, /agent off to go back.")}
     res = await _tg_command(cmd, arg, chat, meta)
     if cmd in ("reset", "new", "clear"):
         # The chat's agent conversations live in their own sessions (`_agent_sess_key`): /reset
@@ -23090,14 +23090,14 @@ async def _tg_owner_command(cmd, arg, chat=None, meta=None):
             _tg_quen_sid(s)
     elif cmd in ("agents", "help", "menu", "start") and isinstance(res, dict) and "reply" in res:
         res["reply"] += "\n\n" + localefmt.chu(
-            "/agent <tên> - chọn cộng sự trả lời chat này (/agent off: về Javis) · @<tên> <câu hỏi> - hỏi cộng sự một câu",
-            "/agent <name> - pick the partner that answers this chat (/agent off: back to Javis) · "
+            "/agent <tên> - chọn cộng sự trả lời chat này (/agent off: về Thansa) · @<tên> <câu hỏi> - hỏi cộng sự một câu",
+            "/agent <name> - pick the partner that answers this chat (/agent off: back to Thansa) · "
             "@<name> <question> - ask a partner once")
     elif cmd == "status" and isinstance(res, dict) and "reply" in res:
         pin = _TG_AGENT_MAP.get(chat_key)
         if pin:
-            res["reply"] += "\n" + localefmt.chu(f"Cộng sự: {pin.get('slug')} (/agent off để về Javis)",
-                                                 f"Partner: {pin.get('slug')} (/agent off to go back to Javis)")
+            res["reply"] += "\n" + localefmt.chu(f"Cộng sự: {pin.get('slug')} (/agent off để về Thansa)",
+                                                 f"Partner: {pin.get('slug')} (/agent off to go back to Thansa)")
     return res
 
 

@@ -441,9 +441,9 @@ class Transport:
                     self.status = "error"
                     self.last_error = localefmt.chu(
                         "Một phiên khác của cùng nick đang giành kết nối Zalo, bot lỡ phần lớn tin. Đóng Zalo Web của "
-                        "nick này và các Javis hay Claude khác dùng cùng nick.",
+                        "nick này và các Thansa hay Claude khác dùng cùng nick.",
                         "Another session of this account keeps taking the Zalo connection, so the bot misses most "
-                        "messages. Close Zalo Web for this account and any other Javis or Claude client using it.")
+                        "messages. Close Zalo Web for this account and any other Thansa or Claude client using it.")
                 elif tt.get("lan_cuoi"):
                     self.status = "polling"
                     self.last_error = ""

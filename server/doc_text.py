@@ -45,7 +45,7 @@ def extract(path) -> str:
         if suf in XLSX_SUFFIXES:
             return _xlsx(p)
         if suf == ".xls":
-            return (f"ERROR: '{p.name}' là file Excel đời cũ (.xls), Javis chỉ đọc được .xlsx. Mở file bằng Excel hoặc "
+            return (f"ERROR: '{p.name}' là file Excel đời cũ (.xls), Thansa chỉ đọc được .xlsx. Mở file bằng Excel hoặc "
                     f"Google Sheets rồi lưu lại thành .xlsx.")
         return _docx(p)
     except Exception as e:      # noqa: BLE001 - file hỏng hay lạ: nói thẳng, đừng làm sập lượt chat

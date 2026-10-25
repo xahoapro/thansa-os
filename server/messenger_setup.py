@@ -196,8 +196,8 @@ async def run_checks(client, page_id: str, page_token: str, app_secret: str, app
                         "The token expired or was revoked. Connect again with a new token.")))
     is_page = info["type"] == "PAGE"
     items.append(_item("token_type", is_page, ("Là token của Trang", "Is a Page token"), info["type"],
-                       ("Đang là token người dùng, Meta sẽ báo lỗi 210 khi gửi tin. Kết nối lại để Javis tự đổi sang token Trang.",
-                        "This is a user token, Meta answers error 210 when sending. Connect again and Javis derives the Page token.")))
+                       ("Đang là token người dùng, Meta sẽ báo lỗi 210 khi gửi tin. Kết nối lại để Thansa tự đổi sang token Trang.",
+                        "This is a user token, Meta answers error 210 when sending. Connect again and Thansa derives the Page token.")))
     if is_page:
         same = not info["profile_id"] or info["profile_id"] == str(page_id)
         items.append(_item("token_page", same, ("Token đúng Trang", "Token matches the Page"), info["profile_id"],
@@ -230,14 +230,14 @@ async def run_checks(client, page_id: str, page_token: str, app_secret: str, app
             url_ok = wh.get("found") and url.rstrip("/").endswith(WEBHOOK_PATH) and (
                 not webhook_url or url.rstrip("/") == webhook_url.rstrip("/"))
             items.append(_item("webhook", bool(url_ok and wh.get("active")),
-                               ("Webhook của app trỏ về Javis", "App webhook points at Javis"), url,
-                               ("Bấm Sửa tự động để Javis khai lại webhook.", "Click Repair and Javis registers the webhook again."),
+                               ("Webhook của app trỏ về Thansa", "App webhook points at Thansa"), url,
+                               ("Bấm Sửa tự động để Thansa khai lại webhook.", "Click Repair and Thansa registers the webhook again."),
                                auto=True))
             lack = [f for f in WEBHOOK_FIELDS if f not in wh.get("fields", [])]
             items.append(_item("webhook_fields", wh.get("found") and not lack,
                                ("Webhook nhận tin nhắn", "Webhook receives messages"),
                                ", ".join(lack) if lack else ", ".join(WEBHOOK_FIELDS),
-                               ("Meta chưa gửi tin sang Javis. Bấm Sửa tự động.", "Meta does not forward messages yet. Click Repair."),
+                               ("Meta chưa gửi tin sang Thansa. Bấm Sửa tự động.", "Meta does not forward messages yet. Click Repair."),
                                auto=True))
         if is_page:
             ps = await page_subscription(client, page_id, page_token, app_id)
@@ -262,8 +262,8 @@ async def repair(client, page_id: str, page_token: str, app_id: str, app_secret:
         if not r.get("ok"):
             notes.append(r.get("error", ""))
     else:
-        notes.append(localefmt.chu("Mở Javis bằng địa chỉ HTTPS rồi bấm lại, Meta chỉ gửi tin tới HTTPS.",
-                                   "Open Javis over its HTTPS address and try again, Meta only calls HTTPS."))
+        notes.append(localefmt.chu("Mở Thansa bằng địa chỉ HTTPS rồi bấm lại, Meta chỉ gửi tin tới HTTPS.",
+                                   "Open Thansa over its HTTPS address and try again, Meta only calls HTTPS."))
     s = await subscribe_page(client, page_id, page_token)
     if not s.get("ok"):
         notes.append(s.get("error", ""))
@@ -287,8 +287,8 @@ async def connect(page_id: str, app_id: str, app_secret: str, token: str, webhoo
                                                                     "The token is too short, copy the whole EAA... string.")}
     if not str(webhook_url or "").startswith("https://"):
         return {"ok": False, "step": "https", "error": localefmt.chu(
-            "Javis cần địa chỉ HTTPS (Cài đặt, Truy cập từ xa) và bạn phải mở Javis bằng địa chỉ đó.",
-            "Javis needs an HTTPS address (Settings, Remote access) and you must open Javis through it.")}
+            "Thansa cần địa chỉ HTTPS (Cài đặt, Truy cập từ xa) và bạn phải mở Thansa bằng địa chỉ đó.",
+            "Thansa needs an HTTPS address (Settings, Remote access) and you must open Thansa through it.")}
     own = client is None
     client = client or httpx.AsyncClient(timeout=25)
     try:

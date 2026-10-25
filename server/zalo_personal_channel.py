@@ -859,17 +859,17 @@ def _soi_tranh_phien(conn: dict) -> None:
             return
         tt["tranh_phien_bao"] = time.time()
         tk = conn.get("label") or "Zalo"
-        don = (localefmt.chu(f" Javis đã tắt {len(killed)} bản Zalo cũ còn chạy trên máy này.",
-                             f" Javis stopped {len(killed)} old Zalo copy(ies) still running on this machine.")
+        don = (localefmt.chu(f" Thansa đã tắt {len(killed)} bản Zalo cũ còn chạy trên máy này.",
+                             f" Thansa stopped {len(killed)} old Zalo copy(ies) still running on this machine.")
                if killed else "")
         cau = localefmt.chu(
             f"Zalo ({tk}) đang bị một phiên khác của cùng nick giành kết nối: bot chỉ nghe được tin vài giây sau mỗi lần "
             f"nối lại, tin tag và tin nhắn riêng ở giữa bị lỡ.{don} Nếu vẫn tiếp diễn: đóng Zalo Web (chat.zalo.me) của "
-            "nick này trên mọi trình duyệt, tắt Javis hoặc Claude khác đang dùng cùng nick, rồi bấm Kiểm tra ở trang "
+            "nick này trên mọi trình duyệt, tắt Thansa hoặc Claude khác đang dùng cùng nick, rồi bấm Kiểm tra ở trang "
             "Kết nối.",
             f"Zalo ({tk}) is being evicted by another session of the same account: the bot only hears messages for a few "
             f"seconds after each reconnect, and tags and private messages in between are missed.{don} If it goes on: "
-            "close Zalo Web (chat.zalo.me) for this account in every browser, stop any other Javis or Claude client "
+            "close Zalo Web (chat.zalo.me) for this account in every browser, stop any other Thansa or Claude client "
             "using it, then click Check on the Connections page.")
         loop = asyncio.get_running_loop()
         t = loop.create_task(NOTIFY_OWNER("", cau, kind="system", label="Zalo", source="zalo"))
