@@ -2180,3 +2180,61 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P073
+  ten: "Rebrand nền 0.313.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-25 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.313.0 sang Thansa
+    theo luật P007/P026/P027/P048 (168 chỗ / 40 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P073: rebrand nen 0.313.0 (tu dong)"
+  diem_neo:
+    - file: DEPLOY.en.md
+      ky_hieu: 'and answers as this Thansa. Add'
+  vung_theo_doi:
+    - "DEPLOY.en.md"
+    - "DEPLOY.md"
+    - "QUICKSTART.md"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "docker-compose.hostinger.yml"
+    - "docs/02-tro-chuyen-va-giong-noi.md"
+    - "docs/31-messenger.md"
+    - "docs/en/02-chat-and-voice.md"
+    - "docs/en/31-messenger.md"
+    - "docs/webhook-platform/README.md"
+    - "docs/webhook-platform/huong-dan-su-dung.md"
+    - "docs/webhook-platform/m3-actions-and-delivery.md"
+    - "docs/webhook-platform/m4-security.md"
+    - "docs/webhook-platform/m5-operations.md"
+    - "docs/webhook-platform/poscake-migration.md"
+    - "docs/webhook-platform/rollback.md"
+    - "docs/webhook-platform/staging-pilot-pack.md"
+    - "server/channels/zalo_personal.py"
+    - "server/chatbot_runtime.py"
+    - "server/connect_health.py"
+    - "server/doc_text.py"
+    - "server/git_brain.py"
+    - "server/main.py"
+    - "server/main_prompt_rendering.py"
+    - "server/messenger_setup.py"
+    - "server/node_security.py"
+    - "server/reminders.py"
+    - "server/team_docs.py"
+    - "server/telegram_bot.py"
+    - "server/usage_pricing.json"
+    - "server/webhook_auth.py"
+    - "server/webhook_rollback.py"
+    - "server/webhook_triggers.py"
+    - "server/webhook_worker.py"
+    - "server/zalo_personal_channel.py"
+    - "system/mcp-catalog.en.json"
+    - "system/mcp-catalog.json"
+    - "system/plugins/messenger-health/plugin.py"
+    - "system/plugins/messenger-health/plugin.yaml"
+  anh_goc:
+    - file: DEPLOY.en.md
+      doan: 'and answers as this Javis. Add'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.

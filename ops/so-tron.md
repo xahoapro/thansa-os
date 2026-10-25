@@ -889,3 +889,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebase tự động trong worktree riêng. Tự gỡ: trộn tay: P015/P047 index.html (lucide v=10 + dich-en), P038 i18n UNION, P049 domain.py (ssl_code 0.248 + nginx/Caddy), P051 updater.py (systemd_service_name 0.267 + systemd_unit), P061 config.py (den_tu_ngoai + remote_tunnel 0.242), rebrand P027/P039/P048/P066/P071 lấy upstream+rebrand. Upstream xoá: không.
 - Rebrand: P072 (219 chỗ / 30 file). moc-goc 76fdc6d/0.268.0/so_patch 68.
 - **ĐÃ PHÁT HÀNH 2026-10-21** khi chủ bấm duyệt trên Telegram (origin/main 798bad1, tag + Release thansa-v1.33.0; backup me-backup-1.33.0).
+
+## Vòng TỰ ĐỘNG 2026-10-25 (goc 76fdc6d → 76e066d, nền 0.268.0 → 0.313.0, thansa 1.33.0→1.34.0)
+- 34 commit upstream: 0.313.0: bot inbox tags and filters, phone filter button, second-device disconnect fix (#820); 0.312.0: Connections page search, only working built-in sources, searchable agent picker (#819); 0.311.0: Messenger setup card (#810), disabled skills stay off (from #803) (#818); Fail closed when the workflow verifier reports an execution error (#807); 0.310.0: Team acceptance recheck really runs, changelog for GA4 connector (#817); 0.309.0: learned knowledge lives in the brain, bot card status popup, Zalo tag markup never reaches the group (#816); Add Google Analytics (GA4) to the connection store 
+- Rebase tự động trong worktree riêng. Tự gỡ: P007/P015/P025/P027/P035/P038/P039/P047/P048/P049/P051/P052/P060/P071/P072 (tay, rerere). Upstream xoá: javis-autostart.bat, javis-autostart.ps1 (-> thansa-autostart.*).
+- Rebrand: P073 (168 chỗ / 40 file). moc-goc 76e066d/0.313.0/so_patch 69.
