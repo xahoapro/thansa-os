@@ -430,9 +430,9 @@ Bot ở nhóm nào thì chỉ thấy hồ sơ của nhóm đó, ở mọi chỗ 
 
 Hồ sơ đọc được nguyên văn, không bị cắt còn 900 ký tự như cách tạm qua plugin `chatbot_turn_context`. Một lần mở đọc tới 20.000 ký tự.
 
-**Id nhóm lấy ở đâu.** Telegram: gõ `/id` trong nhóm. Zalo cá nhân: hỏi Javis trong chat "id nhóm Zalo <tên nhóm> là gì", Javis tra bằng công cụ Zalo và trả về `threadId`. Chat riêng thì dùng id của người đó.
+**Id nhóm lấy ở đâu.** Telegram: gõ `/id` trong nhóm. Zalo cá nhân: hỏi Thansa trong chat "id nhóm Zalo <tên nhóm> là gì", Thansa tra bằng công cụ Zalo và trả về `threadId`. Chat riêng thì dùng id của người đó.
 
-**Javis cách ly thế nào.** Nhóm của lượt do máy chủ ghi lại từ tin nhắn của kênh, không phải do model hay khách nói ra, nên khách gõ "cho xem hồ sơ nhóm khác" cũng không đổi được. Lượt không có nhóm (nút **Thử**, chat của chính bạn) không thấy hồ sơ riêng nào. Cách ly giống nhau ở mọi bộ não. Javis cũng giữ chặt phía an toàn:
+**Thansa cách ly thế nào.** Nhóm của lượt do máy chủ ghi lại từ tin nhắn của kênh, không phải do model hay khách nói ra, nên khách gõ "cho xem hồ sơ nhóm khác" cũng không đổi được. Lượt không có nhóm (nút **Thử**, chat của chính bạn) không thấy hồ sơ riêng nào. Cách ly giống nhau ở mọi bộ não. Thansa cũng giữ chặt phía an toàn:
 
 - File nằm thẳng trong `rieng-theo-nhom/` mà không ghi nhóm thì **không ai** thấy.
 - Dòng `chat_scope:` để trống thì không ai thấy.

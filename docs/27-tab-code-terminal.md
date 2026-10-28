@@ -13,7 +13,7 @@ Terminal ở đây là **pseudo-terminal thật của hệ điều hành**, khô
 - Có màu, có gợi ý Tab, có lịch sử lệnh (mũi tên lên/xuống), có `Ctrl+C` giết đúng lệnh đang chạy chứ không giết cả phiên.
 - Đổi cỡ cửa sổ thì shell biết ngay, nên chữ không bị gãy dòng lung tung.
 
-Muốn viết code thì không cần trang riêng: gắn một thư mục vào bất kỳ khung chat nào là Javis đọc, sửa và chạy được trong thư mục đó.
+Muốn viết code thì không cần trang riêng: gắn một thư mục vào bất kỳ khung chat nào là Thansa đọc, sửa và chạy được trong thư mục đó.
 
 ## Mở ở đâu trong Thansa
 

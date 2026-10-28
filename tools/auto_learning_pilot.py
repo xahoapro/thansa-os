@@ -99,7 +99,7 @@ def main():
 
     def answer_with(skill_text, items):
         body = A.split_frontmatter(skill_text)[1]
-        return engine._call("You are a Javis assistant. Follow the skill below.\n\n<skill>\n" + body + "\n</skill>",
+        return engine._call("You are a Thansa assistant. Follow the skill below.\n\n<skill>\n" + body + "\n</skill>",
                             request_text(items))
 
     log = {"model": args.model, "effort": args.effort, "started": time.strftime("%Y-%m-%d %H:%M")}

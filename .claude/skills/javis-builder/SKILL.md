@@ -175,7 +175,7 @@ Cài thẳng vào app, mọi engine đều gọi được: `javis_plugin` op=wri
 - Trước khi tạo: op=list xem đã có plugin nào trùng việc chưa; có thì op=read rồi sửa plugin đó.
 - Sửa: op=read lấy file hiện tại, op=write chỉ gửi file đổi; `remove` = danh sách file cần xoá.
 - Tool tự từ chối lỗi cú pháp Python, đường dẫn lạ, đuôi file lạ, slug trùng plugin hệ thống: đọc câu ERROR, sửa, gửi lại.
-- Plugin mới, hoặc bản sửa đổi mã (.py) hay đổi tools/hooks/min_mode, luôn nằm TẮT. Javis KHÔNG bật được;
+- Plugin mới, hoặc bản sửa đổi mã (.py) hay đổi tools/hooks/min_mode, luôn nằm TẮT. Thansa KHÔNG bật được;
   nói rõ với người dùng: đọc mã rồi bật ở trang Plugins. Sửa chỉ phần mô tả thì giữ nguyên trạng thái.
 - op=delete chỉ gỡ plugin do chính tool này tạo và đang tắt; còn lại để người dùng gỡ ở trang Plugins.
 

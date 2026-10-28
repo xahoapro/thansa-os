@@ -68,7 +68,7 @@
   "modifications": [
     "Selected definitions extracted verbatim; annotation-only BenchPrompts/SurfaceSpec imports replaced with postponed annotations.",
     "Excluded upstream benchmark/executor and _build_surface_texts Codex/OpenCode guardrail/plugin surface registry.",
-    "Javis immutable static body-only surface registry supplies the existing _st dependency. Wrapper supplies a minimal work/domain prompt input and calls exact compose_round with t=k=1.",
+    "Thansa immutable static body-only surface registry supplies the existing _st dependency. Wrapper supplies a minimal work/domain prompt input and calls exact compose_round with t=k=1.",
     "Host adapter maps context/harness to supplied baseline data, INV/DOM to two original patch angles and notes to closed JSON. No filesystem or permission grant.",
     "Host parser uses actual existing UTF8/body patch validator. Decisions remain unreviewed model claims; new content requires separate checks. No runtime/canonical authority imported."
   ],

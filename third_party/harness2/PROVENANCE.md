@@ -6,8 +6,8 @@ renderer/parser in `server/improvement_compose_protocol.py`. Exact unchanged
 definitions, upstream source/AST hashes, inspected recursion/test blobs and
 adapter modifications are in COMPOSE-PROVENANCE.json. It calls upstream
 compose_round for a single checkpoint, not a paraphrase of that method. Static
-Javis body-only registry replaces broad upstream surface construction; closed
-JSON and existing byte validator retain Javis contracts. This pure fixture slice
+Thansa body-only registry replaces broad upstream surface construction; closed
+JSON and existing byte validator retain Thansa contracts. This pure fixture slice
 has no operation/native execution, durable candidate, executable bundle, source
 authority, inherited pass or activation. Those consumers remain pending.
 
@@ -28,7 +28,7 @@ library, dataset or third_party code. The pinned repository tree has no upstream
 NOTICE file; the original LICENSE and this copyright attribution are retained.
 License Git blob:d645695673349e3947e8e5ae42332d0ac3164cd7.
 
-Modifications for Javis: only existing authorized evidence may be cited; private
+Modifications for Thansa: only existing authorized evidence may be cited; private
 answers/holdout/checkers/raw reasoning/secrets remain unavailable. Execution and
 domain_process retain their current angles. Only bounded UTF-8 body patches are
 permitted; no upstream guardrail/system-prompt/plugin editing or permissions.
@@ -37,7 +37,7 @@ guidance uses existing explanation fields and adds no model output fields or
 schema. Overall result remains separate from semantic/owner-rule review. No
 full-library loading, causal quality claim or token-savings claim is introduced.
 
-All upstream policy beyond these explicitly adapted methods is excluded. Javis
+All upstream policy beyond these explicitly adapted methods is excluded. Thansa
 keeps baseline in its own comparisons and its independent comparator/thresholds;
 upstream finals-only selection_pool is not reused.
 

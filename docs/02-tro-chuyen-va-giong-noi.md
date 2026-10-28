@@ -345,7 +345,7 @@ Rê chuột vào một tin nhắn (của bạn hay của Thansa đều được)
 Vài điểm hay gặp:
 
 - Đang chạy một lượt thì nút ↺ mờ đi và không bấm được: bấm Dừng trước rồi mới tua lại.
-- Tua lại xoá thật, kể cả trên máy chủ (F5 vẫn mất) và trong trí nhớ của bộ não đang chat: lượt sau Javis chỉ còn biết phần phía trên. Không hoàn tác được, nên Javis hỏi lại trước khi xoá.
+- Tua lại xoá thật, kể cả trên máy chủ (F5 vẫn mất) và trong trí nhớ của bộ não đang chat: lượt sau Thansa chỉ còn biết phần phía trên. Không hoàn tác được, nên Thansa hỏi lại trước khi xoá.
 - Muốn hỏi lại y nguyên một câu: tua lại rồi bấm gửi luôn.
 - Tin chỉ có ảnh mà không kèm chữ thì không có nút ↺ (không có chữ để đưa về ô nhập).
 - Tin lưu từ trước bản có mốc giờ thì phần giờ được ẩn đi chứ không lấy giờ hiện tại đắp vào.

@@ -468,9 +468,9 @@ async def thu_lai_khi_tam_thoi(tao_stream, *, so_lan=3, nhan=""):
                 )
             elif _qua_tai(loi_hoan):
                 cuoi["content"] += _c(
-                    " - model này đang quá tải phía nhà cung cấp, không phải lỗi của Javis hay của bạn. Thường hết sau "
+                    " - model này đang quá tải phía nhà cung cấp, không phải lỗi của Thansa hay của bạn. Thường hết sau "
                     "vài phút: gửi lại sau ít phút, hoặc bấm chip model ở ô chat để đổi sang model khác.",
-                    " - this model is overloaded on the provider's side; it is not a fault in Javis or on your end. It "
+                    " - this model is overloaded on the provider's side; it is not a fault in Thansa or on your end. It "
                     "usually passes within minutes: send again shortly, or press the model chip in the chat box to "
                     "switch to another model.")
             yield cuoi

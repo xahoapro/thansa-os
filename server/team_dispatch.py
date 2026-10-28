@@ -46,7 +46,7 @@ def check_caller(turn: Optional[dict]) -> dict:
         raise DispatchError("không rõ ai đang giao việc (lượt không có danh tính), nên không giao việc cho nhóm. "
                             "Chủ giao ở trang Nhóm trên dashboard.")
     if turn.get("kenh") == "team" or turn.get("team_gate"):
-        raise DispatchError("một bước việc của nhóm không được mở việc ở nhóm. Chỉ chủ hay Javis Core giao việc cho nhóm.")
+        raise DispatchError("một bước việc của nhóm không được mở việc ở nhóm. Chỉ chủ hay Thansa Core giao việc cho nhóm.")
     if not turn.get("la_chu") and turn.get("kenh") not in SCHEDULED:
         raise DispatchError("chỉ chủ mới giao việc cho nhóm được.")
     return turn
@@ -168,8 +168,8 @@ def phase(task: dict, acc: Optional[dict], team: Optional[dict] = None) -> tuple
                 "Nghiệm thu KHÔNG đạt, việc dừng: {r}", "Acceptance FAILED, the job stopped: {r}", r=reason or "-"), True, False
         if kind in _OWNER_BLOCKS or "approval" in kind:
             return "needs_owner", localefmt.chu(
-                "Đang chờ chủ quyết trên thẻ việc ở trang Nhóm (Javis không tự duyệt thay): {r}",
-                "Waiting for the owner on the job card in Teams (Javis never approves for you): {r}", r=reason or kind), True, False
+                "Đang chờ chủ quyết trên thẻ việc ở trang Nhóm (Thansa không tự duyệt thay): {r}",
+                "Waiting for the owner on the job card in Teams (Thansa never approves for you): {r}", r=reason or kind), True, False
         return "blocked", localefmt.chu("Việc bị chặn ({k}): {r}", "The job is blocked ({k}): {r}", k=kind or "-",
                                         r=reason or "-"), True, False
     if st == "team_running":

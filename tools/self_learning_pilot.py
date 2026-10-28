@@ -264,12 +264,12 @@ class CliEngine:
         return str(data.get("result") or "")
 
     def solve(self, skill: str, prompt: str) -> str:
-        system = ("Ban la tro ly Javis cua mot cua hang. Lam dung theo skill duoi day.\n\n<skill>\n" + skill +
+        system = ("Ban la tro ly Thansa cua mot cua hang. Lam dung theo skill duoi day.\n\n<skill>\n" + skill +
                   "\n</skill>\n\nChi tra ve JSON, khong giai thich.")
         return self._call(system, prompt)
 
     def improve(self, instructions: str) -> str:
-        return self._call("You improve skills for the Javis assistant. Write the skill in Vietnamese without "
+        return self._call("You improve skills for the Thansa assistant. Write the skill in Vietnamese without "
                           "diacritics, like the current one.", instructions)
 
 

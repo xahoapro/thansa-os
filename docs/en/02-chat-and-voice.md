@@ -328,7 +328,7 @@ Hovering over a message (yours or Thansa's) reveals a small button row underneat
 Common points:
 
 - While a turn is running, ↺ dims and cannot be clicked: press Stop first, then rewind.
-- Rewind really deletes, on the server too (a reload does not bring it back) and from the chatting brain's memory: on the next turn Javis only knows what is above. It cannot be undone, so Javis asks first.
+- Rewind really deletes, on the server too (a reload does not bring it back) and from the chatting brain's memory: on the next turn Thansa only knows what is above. It cannot be undone, so Thansa asks first.
 - To ask the same question again unchanged: rewind, then press send.
 - Messages with only an image and no text have no ↺ button (there is no text to put back).
 - Messages saved before timestamps existed simply hide the time rather than showing a made-up current time.

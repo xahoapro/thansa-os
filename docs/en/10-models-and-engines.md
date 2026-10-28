@@ -362,7 +362,7 @@ A few things to know:
 
 ### E1. Which model runs where (lookup table)
 
-Javis has three places to set a model, and the most common question is "which one wins". The order: **the Agent's model** (the Model field in the assistant's settings) beats **the main model**, while **the background model** only applies to background routes.
+Thansa has three places to set a model, and the most common question is "which one wins". The order: **the Agent's model** (the Model field in the assistant's settings) beats **the main model**, while **the background model** only applies to background routes.
 
 | Where you are | The model that actually runs |
 |---|---|
@@ -372,7 +372,7 @@ Javis has three places to set a model, and the most common question is "which on
 | A step in a workflow | The model of the assistant at that step; left on **Default**, the **background model** |
 | Loops, Kanban work, reminders, self-learning, source ingestion | The background model |
 
-If the provider an assistant picked has its key removed, Javis falls back to the main model rather than leaving the assistant or bot dead silent.
+If the provider an assistant picked has its key removed, Thansa falls back to the main model rather than leaving the assistant or bot dead silent.
 
 The **Model** field in the assistant's settings uses the same picker as the model bar under the chat: type to search, and providers without an API key still appear with a lock, clicking which takes you to the Models page to unlock them. (The picker in the chat composer itself now lists connected providers only.)
 

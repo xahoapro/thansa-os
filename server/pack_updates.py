@@ -97,10 +97,10 @@ def notify(updates: List[dict]) -> Optional[dict]:
     if n > MAX_LINES:
         lines.append(localefmt.chu(f"- và {n - MAX_LINES} gói khác", f"- and {n - MAX_LINES} more"))
     body = "\n".join(lines) + "\n\n" + localefmt.chu(
-        "Bấm để mở Javis Store và cập nhật. Javis không tự cập nhật: mỗi bản mới vẫn qua màn hình xác nhận.",
-        "Press to open the Javis Store and update. Javis never updates on its own: each new version still goes "
+        "Bấm để mở Thansa Store và cập nhật. Thansa không tự cập nhật: mỗi bản mới vẫn qua màn hình xác nhận.",
+        "Press to open the Thansa Store and update. Thansa never updates on its own: each new version still goes "
         "through the confirm screen.")
-    item = inbox.add(body, kind="system", title=title, label="Javis Store", source="store", channel=CHANNEL,
+    item = inbox.add(body, kind="system", title=title, label="Thansa Store", source="store", channel=CHANNEL,
                      dedup="pack-updates:" + ",".join(sorted(f"{u['id']}@{u['to']}" for u in fresh)))
     told.update({u["id"]: u["to"] for u in fresh})
     _save(told)

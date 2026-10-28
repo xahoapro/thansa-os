@@ -2353,7 +2353,7 @@ _TURN_ENGINE: dict = {}
 
 # Sent in the same Claude Code thread when a chat turn ended cleanly with no text at all (0.332.0). Model prompt:
 # Vietnamese, like the other Javis notes to the model.
-EMPTY_ANSWER_NUDGE = ("[Javis] Lượt vừa rồi bạn kết thúc mà không viết chữ nào cho người dùng, nên họ chỉ thấy một "
+EMPTY_ANSWER_NUDGE = ("[Thansa] Lượt vừa rồi bạn kết thúc mà không viết chữ nào cho người dùng, nên họ chỉ thấy một "
                       "bong bóng trống. Hãy trả lời tin nhắn cuối cùng của họ ngay bây giờ (kể cả khi chỉ là một câu "
                       "ngắn). Việc lượt trước đã làm bằng công cụ là ĐÃ xong, đừng làm lại.")
 
@@ -5378,13 +5378,13 @@ async def connect_add(request: Request):
             # computer, which reaches the sign-in listener only when the container publishes port 8000
             # (docker-compose.google.yml). Javis cannot see the host's port mapping from inside, so it says it once.
             return {"ok": False, "can_force": True, "error": localefmt.chu(
-                    "Javis đang chạy trong Docker. Sau khi bấm đồng ý, Google chuyển trình duyệt về "
+                    "Thansa đang chạy trong Docker. Sau khi bấm đồng ý, Google chuyển trình duyệt về "
                     "localhost:8000 trên máy bạn, nên container phải mở cổng 8000 (chỉ cho chính máy này). "
-                    "Làm một lần trong thư mục Javis: docker compose -f docker-compose.yml -f "
+                    "Làm một lần trong thư mục Thansa: docker compose -f docker-compose.yml -f "
                     "docker-compose.google.yml up -d. Đã làm rồi thì bấm Kết nối lần nữa.",
-                    "Javis is running in Docker. After you click Allow, Google sends the browser back to "
+                    "Thansa is running in Docker. After you click Allow, Google sends the browser back to "
                     "localhost:8000 on your computer, so the container must publish port 8000 (to this "
-                    "computer only). Do it once in the Javis folder: docker compose -f docker-compose.yml -f "
+                    "computer only). Do it once in the Thansa folder: docker compose -f docker-compose.yml -f "
                     "docker-compose.google.yml up -d. If you already did, click Connect again.")}
     # Dùng lại key OAuth client của connection khác (vd Gmail dùng lại key đã tạo cho
     # Calendar) - copy server-side, secrets không bao giờ về browser.
@@ -25099,7 +25099,7 @@ def _github_session_info(sid: str) -> dict:
             if m.get("role") != "user":
                 continue
             text = chat_recall.strip_block(str(m.get("content") or "")).strip()
-            if text and not text.startswith("[Javis GitHub]"):
+            if text and not text.startswith("[Thansa GitHub]"):
                 task = text
                 break
     except Exception:  # noqa: BLE001
@@ -28283,12 +28283,12 @@ def _improvement_loop_engines(root):
     except team_engine.TeamEngineUnavailable as error:
         raise PermissionError(f"engine_unavailable: {error.reason}") from None
     def solve(skill, prompt):
-        system = ("You are a Javis assistant. Follow the skill below exactly.\n\n<skill>\n" + skill +
+        system = ("You are a Thansa assistant. Follow the skill below exactly.\n\n<skill>\n" + skill +
                   "\n</skill>\n\nAnswer only in the format the skill asks for.")
         return _improvement_text_call(system, prompt, "improvement-loop-solve-" + __import__("secrets").token_hex(4))
 
     def improve(instructions):
-        return _improvement_text_call("You improve skills for the Javis assistant. Keep the skill's language and "
+        return _improvement_text_call("You improve skills for the Thansa assistant. Keep the skill's language and "
                                       "style.", instructions, "improvement-loop-improve-" + __import__("secrets").token_hex(4))
     return solve, improve
 
