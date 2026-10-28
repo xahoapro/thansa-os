@@ -503,7 +503,7 @@ def tu_kiem(up: str) -> None:
 
 
 def suite(cwd: Path, ten: str) -> tuple[set, str]:
-    r = sh([str(PY), "tests/run.py"], cwd=cwd, check=False, timeout=3600)
+    r = sh([str(PY), "tests/run.py"], cwd=cwd, check=False, timeout=10800)  # 0.369: suite >1h
     (BT / f"tu-dong-{ten}.log").write_text(r.stdout + r.stderr, encoding="utf-8")
     m = re.search(r"^ĐỎ: (.*)$", r.stdout, re.M)
     tong = re.search(r"^(\d+/\d+) xanh", r.stdout, re.M)
