@@ -91,7 +91,7 @@ check(
 
 # Mục "Dev conventions" đã ĐẨY RA NGOÀI ngày 2026-09-22 (đúng cách file này dặn: chạm trần thì
 # cắt thật hoặc đẩy một mục ra, đừng nâng số). Nó chỉ dành cho phiên Claude Code sửa repo, còn
-# người dùng Javis không bao giờ cần, nên để trong prompt là đánh thuế mọi lượt chat. Trong
+# người dùng Thansa không bao giờ cần, nên để trong prompt là đánh thuế mọi lượt chat. Trong
 # CLAUDE.md giờ chỉ còn một dòng trỏ sang. Hai canary dưới đây giữ cho dòng trỏ không rỗng:
 # xoá file mà quên dòng trỏ, hay đổi tên file mà quên sửa CLAUDE.md, đều đỏ ở đây.
 _QUY_UOC = ROOT / "docs" / "quy-uoc-dev.md"
