@@ -123,7 +123,7 @@ def _chay_mot_luot(mp, tmpdir, kich_ban, sid):
     mcfg = _mcfg()
     mp.setattr(main, "_CHAT_RUNTIME", runtime)
     mp.setattr(main, "get_store", lambda: store)
-    mp.setattr(main.cfgmod, "gate_active", lambda: False)
+    mp.setattr(main.cfgmod, "gate_active", lambda *a, **k: False)
     mp.setattr(main.cfgmod, "read_settings", lambda: {"model": mcfg})
     mp.setattr(main, "_chat_provider", lambda _cfg: ("openai-oauth", "oauth", "", "gpt-5.6-luna"))
     mp.setattr(main, "_routing_connected_ids", lambda _s: ["openai-oauth"])
