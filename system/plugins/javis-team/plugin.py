@@ -66,12 +66,12 @@ def _dispatch(ops, root, team, args, turn) -> str:
            f"Mã việc: {got['task_id']}", f"Mã đối chiếu: {got['correlation_id']}",
            "Trạng thái: " + team_dispatch.phase(task, None, team)[1]]
     if got["report_to"]:
-        out.append("Nhóm làm xong, bị chặn hay cần chủ quyết thì Javis tự báo về đúng khung chat này (và hòm thư); "
+        out.append("Nhóm làm xong, bị chặn hay cần chủ quyết thì Thansa tự báo về đúng khung chat này (và hòm thư); "
                    "không cần chờ hay hứa báo lại. Xem tiến độ: op=job với task là mã việc.")
     else:
-        out.append("Không rõ khung chat để báo, nên kết quả về Javis Core của brain và hòm thư. Xem tiến độ: op=job.")
+        out.append("Không rõ khung chat để báo, nên kết quả về Thansa Core của brain và hòm thư. Xem tiến độ: op=job.")
     if got["quality"]:
-        out.append("Nhóm bật nghiệm thu: việc chỉ tính ĐẠT khi qua kiểm hay chủ xác nhận trên thẻ; Javis không tự duyệt.")
+        out.append("Nhóm bật nghiệm thu: việc chỉ tính ĐẠT khi qua kiểm hay chủ xác nhận trên thẻ; Thansa không tự duyệt.")
     if got["paused"]:
         out.append("CẢNH BÁO: nhóm đang tạm dừng nên việc NẰM CHỜ, chưa chạy. Nói rõ với chủ: bật lại nhóm ở trang Nhóm.")
     return "\n".join(out)

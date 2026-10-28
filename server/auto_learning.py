@@ -348,7 +348,7 @@ class Targets:
             return None
         front, body = split_frontmatter(asset.content.decode("utf-8"))
         return Target("skill", slug, -1, body.strip(), lambda v: (
-            "You are a Javis assistant. Follow the skill below.\n\n<skill>\n" + v + "\n</skill>"),
+            "You are a Thansa assistant. Follow the skill below.\n\n<skill>\n" + v + "\n</skill>"),
             meta={"hash": asset.content_hash, "front": front, "path": asset.relative_path})
 
     def _read_agent(self, brain, slug, step):
@@ -375,7 +375,7 @@ class Targets:
         def prompt(version, material):  # what the runner sends: placeholders replaced, nothing added; step 0 has no prev
             return version.replace("{{input}}", material).replace("{{prev}}", material if step > 0 else "")
         return Target("workflow", slug, step, str(steps[step].get("task") or ""), lambda v: (
-            persona or "You are a Javis assistant doing one step of a workflow."), prompt,
+            persona or "You are a Thansa assistant doing one step of a workflow."), prompt,
             meta={"hash": hashlib.sha256(raw).hexdigest(), "path": str(path)})
 
     # apply returns undo info; undo restores it
@@ -682,7 +682,7 @@ class AutoLearner:
                 return self.host.text_call(target.system(version), target.prompt(version, case_prompt))
 
             def improve(instructions):
-                answer = self.background(f"You improve the instructions of a Javis {kind}. Keep their language "
+                answer = self.background(f"You improve the instructions of a Thansa {kind}. Keep their language "
                                              "and style." + (" Keep every {{placeholder}} exactly as it is."
                                                              if kind == "workflow" else ""), instructions)
                 check_candidate(kind, L.extract_skill(answer), target.text)  # unsafe text never enters the run

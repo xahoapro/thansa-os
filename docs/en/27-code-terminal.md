@@ -13,7 +13,7 @@ The terminal here is **a real operating-system pseudo-terminal**, not a simulate
 - There are colours, Tab completion, command history (up and down arrows), and `Ctrl+C` kills the running command rather than the whole session.
 - Resizing the window is noticed by the shell immediately, so text does not wrap oddly.
 
-To write code you need no separate page: attach a folder to any chat and Javis reads, edits and runs things in it.
+To write code you need no separate page: attach a folder to any chat and Thansa reads, edits and runs things in it.
 
 ## Where to open it in Thansa
 

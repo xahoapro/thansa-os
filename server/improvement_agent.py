@@ -43,7 +43,7 @@ _OVERRIDES = re.compile(
     r"(?:(?:all|any|the|previous|above|every|mọi|các|tất cả|những)\s+)*"
     r"(owner|owner's|rules?|instructions?|system prompt|luật|quy tắc|hướng dẫn|chỉ dẫn|lời dặn)\b|"
     r"\b(đổi|chuyển|change|switch)\s+(?:sang\s+|to\s+)?(?:\w+\s+)?(model|provider|reasoning)\b", re.IGNORECASE)
-_PROCEDURE_HEADER = "# Quy trình đã được chủ duyệt (Javis quản lý)"
+_PROCEDURE_HEADER = "# Quy trình đã được chủ duyệt (Thansa quản lý)"
 
 
 def unsafe_reason(text: str, original: str = "") -> str:

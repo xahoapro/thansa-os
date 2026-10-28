@@ -712,11 +712,11 @@ def prompt_block(sid: str, brain: str = "") -> str:
         lines.append(f"- {r['full_name']}: sửa trong {r['worktree']} (nhánh {r['branch'] or session_branch(sid)}, "
                      f"tách từ {r.get('base_branch') or r['default_branch'] or 'main'})")
     lines.append("Chỉ sửa trong các thư mục trên, KHÔNG sửa bản clone gốc. KHÔNG tự `git push`, không tự merge, "
-                 "không đổi remote: việc đẩy lên GitHub do Javis làm.")
+                 "không đổi remote: việc đẩy lên GitHub do Thansa làm.")
     lines.append("Trước khi kết thúc lượt có sửa code: tự chạy test và lint của repo. Sửa lỗi thì viết hoặc chạy một "
                  "test TÁI HIỆN lỗi trước (đỏ), sửa, rồi chạy lại đúng test đó cho xanh. KHÔNG bỏ qua, xoá hay nới "
-                 "test, không sửa workflow CI để cho xanh. Sau mỗi lượt Javis tự chạy bộ kiểm tra của repo; xanh thì Javis "
-                 "tự commit, đẩy lên nhánh của cuộc này, mở PR và theo dõi CI. CI đỏ thì Javis mở một lượt sửa "
+                 "test, không sửa workflow CI để cho xanh. Sau mỗi lượt Thansa tự chạy bộ kiểm tra của repo; xanh thì Thansa "
+                 "tự commit, đẩy lên nhánh của cuộc này, mở PR và theo dõi CI. CI đỏ thì Thansa mở một lượt sửa "
                  "kèm log, tối đa 3 vòng.")
     # Spec 7.1: the repo's own rules reach every engine, not only the ones that read CLAUDE.md natively.
     # Spec 13.1: plus the lessons Javis wrote down for this repo after real failures (kept in the brain).

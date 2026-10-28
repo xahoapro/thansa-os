@@ -97,17 +97,17 @@ def notify(updates: List[dict]) -> Optional[dict]:
     if n > MAX_LINES:
         lines.append(localefmt.chu(f"- và {n - MAX_LINES} gói khác", f"- and {n - MAX_LINES} more"))
     body = "\n".join(lines) + "\n\n" + localefmt.chu(
-        "Bấm để mở Javis Store và cập nhật. Javis không tự cập nhật: mỗi bản mới vẫn qua màn hình xác nhận.",
-        "Press to open the Javis Store and update. Javis never updates on its own: each new version still goes "
+        "Bấm để mở Thansa Store và cập nhật. Thansa không tự cập nhật: mỗi bản mới vẫn qua màn hình xác nhận.",
+        "Press to open the Thansa Store and update. Thansa never updates on its own: each new version still goes "
         "through the confirm screen.")
-    # 0.403.0: an update is an "info" notice of the group "update"; Javis Core's rules decide if it rings.
+    # 0.403.0: an update is an "info" notice of the group "update"; Thansa Core's rules decide if it rings.
     import notify_policy
     dec = notify_policy.decide("update", "info", title)
     if dec["verdict"] == "drop":
         told.update({u["id"]: u["to"] for u in fresh})
         _save(told)
         return None
-    item = inbox.add(body, kind="system", title=title, label="Javis Store", source="store", channel=CHANNEL,
+    item = inbox.add(body, kind="system", title=title, label="Thansa Store", source="store", channel=CHANNEL,
                      dedup="pack-updates:" + ",".join(sorted(f"{u['id']}@{u['to']}" for u in fresh)),
                      group=dec["group"], level=dec["level"], sig=dec["sig"], filtered=dec["verdict"] != "loud",
                      why=dec["why"])
