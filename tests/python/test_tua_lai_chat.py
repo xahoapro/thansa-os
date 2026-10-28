@@ -77,7 +77,7 @@ def phien(tin, **cot):
     return s
 
 
-HOI = [("user", "[FILE ĐANG MỞ trong trình sửa của Javis: notes/a.md]\n\nviết lại đoạn mở bài"),
+HOI = [("user", "[FILE ĐANG MỞ trong trình sửa của Thansa: notes/a.md]\n\nviết lại đoạn mở bài"),
        ("assistant", "bản một"), ("user", "ok"), ("assistant", "xong"),
        ("user", "viết lại đoạn mở bài"), ("assistant", "bản hai"), ("user", "ok"), ("assistant", "xong hai")]
 
