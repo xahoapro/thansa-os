@@ -200,7 +200,7 @@ check("kênh hỏng: không đánh dấu đã báo", asyncio.run(api.core_report
 REPORT_OK[0] = True
 SENT.clear()
 n = asyncio.run(api.core_reports())
-check("chờ chủ quyết: báo về, nói rõ Javis không tự duyệt", n == 1 and "Javis không tự duyệt" in SENT[0]["text"]
+check("chờ chủ quyết: báo về, nói rõ Thansa không tự duyệt", n == 1 and "Thansa không tự duyệt" in SENT[0]["text"]
       and "cần chủ duyệt đăng bài" in SENT[0]["text"], SENT)
 check("cổng duyệt vẫn là của chủ: việc vẫn bị chặn sau khi báo", store.get_task(t2["id"])["status"] == "team_blocked")
 check("việc còn chờ chủ: vẫn theo dõi tiếp", any(t["id"] == t2["id"] for t in store.team_core_watch()))

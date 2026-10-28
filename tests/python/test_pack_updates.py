@@ -47,7 +47,7 @@ check("one bell notice for all new versions", item and item.get("kind") == "syst
       item)
 check("it names each pack with old and new version", item and "1.3.0 → 1.4.0" in item["body"]
       and "1.9.0 → 1.10.0" in item["body"], item and item["body"])
-check("it says Javis never updates on its own", item and ("không tự cập nhật" in item["body"]
+check("it says Thansa never updates on its own", item and ("không tự cập nhật" in item["body"]
                                                        or "never updates on its own" in item["body"]))
 check("the same versions do not ring again", PU.notify(ups) is None)
 again = PU.notify([dict(ids["javis.zalo"], to="1.5.0")])
@@ -82,7 +82,7 @@ check("no timer runs the Store check any more", "pack_updates.tick" not in src a
 check("the check rides on the dashboard opening (/version)",
       "asyncio.create_task(pack_updates.on_open())" in src[src.index('@app.get("/version")'):][:800])
 nj = (ROOT / "dashboard" / "notifications.js").read_text(encoding="utf-8")
-check("pressing the notice opens the Javis Store",
+check("pressing the notice opens the Thansa Store",
       'item.channel === "store:updates"' in nj and "window.JavisPacks.moKho(\"\")" in nj)
 import json  # noqa: E402
 vi = json.loads((ROOT / "dashboard" / "i18n" / "vi.json").read_text(encoding="utf-8"))

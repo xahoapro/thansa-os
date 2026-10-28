@@ -32,7 +32,7 @@ def check(name, cond, extra=""):
         fails.append(name)
 
 
-# ---- 1. CLAUDE.md của Javis không nạp hai lần ----
+# ---- 1. CLAUDE.md của Thansa không nạp hai lần ----
 # claude_sdk_engine.py bị ghim băm bởi bằng chứng kiểm định native, nên việc này làm ở factory
 # claude_cli.claude_engine (mọi engine Claude đều dựng qua đó) và ở main._cli_fast (lượt chat).
 CLAUDE_MD = (ROOT / "CLAUDE.md").resolve()

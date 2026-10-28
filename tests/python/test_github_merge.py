@@ -138,7 +138,7 @@ green(r["head_sha"])
 run(w.tick())
 r = S().get("c3", "acme/off")
 check("auto-merge off: ready, not merged", r["integ"] == "ready" and not fake.pulls["acme/off"][0]["merged"])
-check("the chat is told why Javis did not merge", any("acme/off" in t and ("tắt" in t or "off" in t) for _, t, _ in posted))
+check("the chat is told why Thansa did not merge", any("acme/off" in t and ("tắt" in t or "off" in t) for _, t, _ in posted))
 out = run(w.merge_by_person("c3", "acme/off"))
 check("a person can merge a ready PR", out["row"]["integ"] == "merged" and fake.pulls["acme/off"][0]["merged"])
 
