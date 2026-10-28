@@ -148,7 +148,7 @@ check("tiêu đề là đoạn đầu của mục tiêu, cả mục tiêu là y�
 check("trả về mã việc và mã đối chiếu", t1["id"] in r and core.get("correlation_id", "x") in r, r)
 check("lời trả không hứa sẽ chờ: kết quả tự báo về", "tự báo về" in r, r)
 msg = main.get_store().message_by_client_id(A["session_id"], "core:" + core["correlation_id"]) or {}
-check("tin giao việc nằm trong khung chat nhóm, của chủ, ghi rõ qua Javis Core",
+check("tin giao việc nằm trong khung chat nhóm, của chủ, ghi rõ qua Thansa Core",
       t1["source_ref"] == f"msg:{A['session_id']}:{msg.get('id')}"
       and (msg.get("meta") or {}).get("via_core", {}).get("correlation_id") == core["correlation_id"], msg)
 r2 = run({"op": "dispatch", "team": "Phòng nội dung", "objective": "Viết 3 bài về nước mắm\n\nMỗi bài 500 chữ"},
@@ -239,8 +239,8 @@ check("mã đối chiếu từ model bị lọc ký tự lạ", team_dispatch.co
 JS = (ROOT / "dashboard" / "teams.js").read_text(encoding="utf-8")
 VI = json.loads((ROOT / "dashboard" / "i18n" / "vi.json").read_text(encoding="utf-8"))
 EN = json.loads((ROOT / "dashboard" / "i18n" / "en.json").read_text(encoding="utf-8"))
-check("khung chat nhóm ghi 'qua Javis Core' trên tin Core gửi", "meta.via_core" in JS
-      and VI.get("teams.via_core") == "qua Javis Core" and EN.get("teams.via_core") == "via Javis Core")
+check("khung chat nhóm ghi 'qua Thansa Core' trên tin Core gửi", "meta.via_core" in JS
+      and VI.get("teams.via_core") == "qua Thansa Core" and EN.get("teams.via_core") == "via Thansa Core")
 check("host nối báo về bằng _notify_owner", main._TEAM_API.deps.report is _fake_report
       and "report=_notify_owner" in (SERVER / "main.py").read_text(encoding="utf-8"))
 

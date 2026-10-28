@@ -169,6 +169,7 @@ MARKER = re.compile(r"^(<<<<<<< |>>>>>>> |=======$)", re.M)
 KHOI = re.compile(r"^<<<<<<< [^\n]*\n(.*?)^=======\n(.*?)^>>>>>>> [^\n]*\n", re.S | re.M)
 SKIP_DEM = re.compile(r'^(CHANGELOG|ops/|bao-cao/|nhiem-vu/|docs/superpowers/|docs/dev/|tests/|ANNOUNCEMENTS)')
 FILE_BAO_VE = {"server/codex_realtime.py",          # clientInfo "Javis OS" (P048 GIỮ)
+               "server/claude_sdk_engine.py",       # băm khoá chứng nhận native (PROFILE_SOURCES, 0.369) - giữ đúng byte upstream
                "RELEASES.md"}                       # sổ Thansa: "Nền Javis" là thật, bảng mỗi vòng thêm dòng (13/10)
 CHUOI_BAO_VE = ("adaptive source contract",)          # header test canh (P048 GIỮ)
 
