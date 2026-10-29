@@ -50,7 +50,7 @@ import channels as _channels   # noqa: E402  (nhẹ: sổ không kéo httpx hay 
 KENH = _channels.ids()
 KENH_NHAN = _channels.nhan_theo_id()
 NGUOI_GUI = ("customer", "ai", "human", "system")
-LOAI_TIN = ("text", "image", "file", "audio", "video", "sticker", "other")
+LOAI_TIN = ("text", "image", "file", "audio", "video", "sticker", "reaction", "other")
 CHE_DO = ("ai", "human", "waiting", "closed")
 CHE_DO_DEFAULT = "ai"
 
@@ -191,6 +191,10 @@ def _nang_cap(db: sqlite3.Connection) -> None:
         # by `ghi_su_kien`; an old store is scanned once here so conversations from before the column count too.
         db.execute("ALTER TABLE conversations ADD COLUMN contact TEXT NOT NULL DEFAULT ''")
         _backfill_contact(db)
+    if "hidden" not in cot_hoi_thoai:
+        # Owner, 2026-10-25 (row menu like Zalo's): "Hide conversation" takes a chat out of the normal inbox list; the
+        # "Hidden" filter shows it again. A NEW customer message clears it (`ghi_su_kien`), so a customer is never missed.
+        db.execute("ALTER TABLE conversations ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0")
 
 
 def close() -> None:
@@ -258,7 +262,7 @@ def chuan_hoa(ev: dict) -> dict:
         sender_type          customer | ai | human | system
         sender_id            id người gửi phía kênh (khách) - rỗng với ai/human/system
         sender_name          tên người gửi
-        message_type         text | image | file | audio | video | sticker | other
+        message_type         text | image | file | audio | video | sticker | reaction | other
         text                 nội dung chữ (hoặc mô tả media)
         external_message_id  id tin phía kênh, dùng chống trùng (tuỳ chọn)
         created_at           epoch giây (mặc định: bây giờ)
@@ -404,12 +408,17 @@ def ghi_su_kien(ev: dict, dem_chua_doc: bool = True) -> dict:
                 them_chua_doc = 1 if e["sender_type"] == "customer" and dem_chua_doc else 0
                 # A phone number or email in the CUSTOMER's own words marks the conversation for the "has phone/email" filter.
                 contact = find_contact(e["text"]) if e["sender_type"] == "customer" else ""
+                # A NEW customer message brings a hidden conversation back into the inbox (owner's rule for "Hide
+                # conversation": a customer is never missed). Old messages imported from history (dem_chua_doc=False)
+                # and messages from the bot or the owner leave it hidden.
+                unhide = 1 if e["sender_type"] == "customer" and dem_chua_doc else 0
                 db.execute(
                     "UPDATE conversations SET last_message=?, last_message_at=?, last_sender_type=?,"
                     " unread_count=unread_count+?, message_count=message_count+1, updated_at=?,"
-                    " contact=CASE WHEN ?!='' THEN ? ELSE contact END"
+                    " contact=CASE WHEN ?!='' THEN ? ELSE contact END,"
+                    " hidden=CASE WHEN ?=1 THEN 0 ELSE hidden END"
                     " WHERE id=?",
-                    (tom, ts, e["sender_type"], them_chua_doc, now, contact, contact, conv_id))
+                    (tom, ts, e["sender_type"], them_chua_doc, now, contact, contact, unhide, conv_id))
                 # 6. NHÓM chỉ giữ GIU_TIN_NHOM tin gần nhất (cùng giao dịch: không có lúc nào kho chứa thừa). `message_count` vẫn là số tin
                 # từng nhận, không giảm theo.
                 if e["chat_type"] == "group":
@@ -563,6 +572,50 @@ def tin_theo_id(channel: str, account_id: str, external_chat_id: str, external_m
         return {}
 
 
+def own_messages_without_id(channel: str, account_id: str, external_chat_id: str, since: float, n: int = 10) -> list:
+    """Messages this account sent in a chat (the bot, or the owner from the inbox) since `since` that still have no
+    channel message id, newest first: `[{id, text}]` (0.334.0). Never raises.
+
+    Javis writes those rows before Zalo gives the message an id; the id comes back with the message's echo in the read
+    loop (`zalo_personal_channel.attach_echo_id`). A customer's reaction names the message by that id, so without
+    it a heart on the bot's price quote could not be told apart from a heart on anything else."""
+    try:
+        with _lock:
+            rows = _conn().execute(
+                "SELECT m.id, m.text FROM messages m JOIN conversations c ON c.id=m.conversation_id"
+                " WHERE c.channel_account_id=? AND c.external_chat_id=? AND m.sender_type IN ('ai', 'human')"
+                " AND (m.external_message_id IS NULL OR m.external_message_id='') AND m.created_at>=?"
+                " ORDER BY m.id DESC LIMIT ?",
+                (_tai_khoan_id(channel, account_id), str(external_chat_id), float(since), int(n))).fetchall()
+        return [dict(r) for r in rows]
+    except Exception as ex:      # noqa: BLE001
+        print(f"[conversations] đọc tin chưa có mã lỗi: {type(ex).__name__}: {ex}", file=sys.stderr)
+        return []
+
+
+def set_message_id(row_id: int, external_message_id: str) -> bool:
+    """Give a stored message its channel id (see `own_messages_without_id`). False when the id is empty, already used in the
+    same conversation, or the row already has one. Never raises."""
+    mid = str(external_message_id or "").strip()
+    if not mid:
+        return False
+    try:
+        with _lock:
+            db = _conn()
+            r = db.execute("SELECT conversation_id, external_message_id FROM messages WHERE id=?", (int(row_id),)).fetchone()
+            if r is None or str(r["external_message_id"] or ""):
+                return False
+            if db.execute("SELECT 1 FROM messages WHERE conversation_id=? AND external_message_id=?",
+                          (r["conversation_id"], mid)).fetchone():
+                return False
+            db.execute("UPDATE messages SET external_message_id=? WHERE id=?", (mid, int(row_id)))
+            db.commit()
+        return True
+    except Exception as ex:      # noqa: BLE001
+        print(f"[conversations] gắn mã tin lỗi: {type(ex).__name__}: {ex}", file=sys.stderr)
+        return False
+
+
 # ============================================================
 # Đọc
 # ============================================================
@@ -621,7 +674,8 @@ BOT_KHONG_CO = "-"      # giá trị `bot_id` của bộ lọc để chỉ lấy
 
 def danh_sach(channel: str = "", bot_id: str = "", account_id: str = "", q: str = "",
               mode: str = "", limit: int = 50, offset: int = 0, status: str = "", chat_type: str = "",
-              hesitant=None, tag: int = 0, has_contact: bool = False, sort: str = "") -> List[dict]:
+              hesitant=None, tag: int = 0, has_contact: bool = False, sort: str = "",
+              hidden: str = "") -> List[dict]:
     """Danh sách hội thoại, ĐÃ GHIM rồi tới MỚI NHẤT TRƯỚC, kèm tên khách và kênh.
 
     `q` tìm theo tên khách, tiêu đề, id chat, tin cuối (LIKE, không phân biệt hoa thường).
@@ -631,6 +685,10 @@ def danh_sach(channel: str = "", bot_id: str = "", account_id: str = "", q: str 
     `tag` (an inbox tag id): only conversations carrying it. `has_contact`: only conversations where the customer left a
     phone number or email. `sort="waiting"`: conversations whose last message is an unanswered customer message come
     first, the one waiting longest on top (the rest follow, newest first). Each row carries `tags`.
+
+    `hidden` (2026-10-25, row menu "Hide conversation"): "exclude" leaves hidden conversations out (the inbox list),
+    "only" returns just them (the "Hidden" filter), "" ignores the flag (other callers, such as the bot form's chat
+    picker, still see every chat).
     """
     n = max(1, min(int(limit or 50), MAX_DANH_SACH))
     o = max(0, int(offset or 0))
@@ -656,6 +714,10 @@ def danh_sach(channel: str = "", bot_id: str = "", account_id: str = "", q: str 
         where.append("c.id IN (SELECT conversation_id FROM conversation_tags WHERE tag_id=?)"); args.append(int(tag))
     if has_contact:
         where.append("c.contact!=''")
+    if hidden == "exclude":
+        where.append("c.hidden=0")
+    elif hidden == "only":
+        where.append("c.hidden=1")
     if q:
         like = f"%{str(q).strip()}%"
         dk = ["k.name LIKE ?", "c.title LIKE ?", "c.external_chat_id LIKE ?", "c.last_message LIKE ?"]
@@ -699,6 +761,10 @@ def dem_bo_loc(hesitant=None) -> dict:
 
     `{"tong", "bots": {bot_id: {tong, unread, need_reply, human}}, "status": {...}, "type": {group, private}}`.
     Cuộc chat không có bot trực nằm ở khoá "" của `bots`.
+
+    Hidden conversations (2026-10-25) are left out of every count, the same as they are left out of the list, so
+    "All bots (N)" matches what the list shows and drops by one when a chat is hidden. They are counted once, in
+    `status.hidden`, for the "Hidden" filter option.
     """
     sql_nr, args_nr = _sql_can_tra_loi(hesitant)
     with _lock:
@@ -709,8 +775,9 @@ def dem_bo_loc(hesitant=None) -> dict:
             " SUM(CASE WHEN c.mode='human' THEN 1 ELSE 0 END) AS human,"
             " SUM(CASE WHEN c.chat_type='group' THEN 1 ELSE 0 END) AS grp,"
             " SUM(CASE WHEN c.contact!='' THEN 1 ELSE 0 END) AS contact"
-            " FROM conversations c GROUP BY c.bot_id", args_nr).fetchall()
-    out = {"tong": 0, "bots": {}, "status": {"unread": 0, "need_reply": 0, "human": 0},
+            " FROM conversations c WHERE c.hidden=0 GROUP BY c.bot_id", args_nr).fetchall()
+        n_hidden = _conn().execute("SELECT COUNT(*) FROM conversations WHERE hidden=1").fetchone()[0]
+    out = {"tong": 0, "bots": {}, "status": {"unread": 0, "need_reply": 0, "human": 0, "hidden": int(n_hidden or 0)},
            "type": {"group": 0, "private": 0}, "has_contact": 0}
     for r in rows:
         tong = int(r["tong"] or 0)
@@ -809,6 +876,27 @@ def danh_dau_da_doc(conversation_id: int) -> bool:
         db = _conn()
         cur = db.execute("UPDATE conversations SET unread_count=0, updated_at=? WHERE id=?",
                          (_now(), int(conversation_id)))
+        db.commit()
+    return cur.rowcount > 0
+
+
+def mark_unread(conversation_id: int) -> bool:
+    """Mark a conversation unread again (row menu, 2026-10-25): the red badge and the "Unread" filter come back.
+    Keeps a real unread count; a read chat gets 1. Opening the chat marks it read as usual (`danh_dau_da_doc`).
+    Does not touch `updated_at`: nothing new arrived."""
+    with _lock:
+        db = _conn()
+        cur = db.execute("UPDATE conversations SET unread_count=MAX(unread_count, 1) WHERE id=?", (int(conversation_id),))
+        db.commit()
+    return cur.rowcount > 0
+
+
+def set_hidden(conversation_id: int, hidden: bool) -> bool:
+    """Hide a conversation from the inbox list, or bring it back (row menu, 2026-10-25). A new customer message
+    unhides it on its own (`ghi_su_kien`). Does not touch `updated_at`."""
+    with _lock:
+        db = _conn()
+        cur = db.execute("UPDATE conversations SET hidden=? WHERE id=?", (1 if hidden else 0, int(conversation_id)))
         db.commit()
     return cur.rowcount > 0
 
@@ -1011,7 +1099,10 @@ def _dau_ngay() -> float:
 
 
 def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "") -> dict:
-    """Vài con số cho thẻ bot và đầu trang Hộp thư: tổng, hôm nay, chưa đọc, cần người."""
+    """Vài con số cho thẻ bot và đầu trang Hộp thư: tổng, hôm nay, chưa đọc, cần người.
+
+    `chua_doc` (the inbox tab badge) and `theo_kenh` (channel filter counts) leave hidden conversations out, like the
+    list does; `tong` still counts every conversation the bot has had."""
     where, args = ["1=1"], []
     if bot_id:
         where.append("c.bot_id=?"); args.append(str(bot_id))
@@ -1026,7 +1117,7 @@ def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "") -> dict:
         r = db.execute(
             f"SELECT COUNT(*) AS tong,"
             f" SUM(CASE WHEN COALESCE(c.last_message_at,0)>=? THEN 1 ELSE 0 END) AS hom_nay,"
-            f" SUM(CASE WHEN c.unread_count>0 THEN 1 ELSE 0 END) AS chua_doc,"
+            f" SUM(CASE WHEN c.unread_count>0 AND c.hidden=0 THEN 1 ELSE 0 END) AS chua_doc,"
             f" SUM(CASE WHEN c.mode IN ('human','waiting') THEN 1 ELSE 0 END) AS can_nguoi,"
             f" SUM(c.message_count) AS tin"
             f" FROM conversations c JOIN channel_accounts a ON a.id=c.channel_account_id WHERE {w}",
@@ -1038,7 +1129,7 @@ def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "") -> dict:
             [dau] + args).fetchone()[0]
         theo_kenh = db.execute(
             f"SELECT a.channel AS channel, COUNT(*) AS n FROM conversations c"
-            f" JOIN channel_accounts a ON a.id=c.channel_account_id WHERE {w} GROUP BY a.channel",
+            f" JOIN channel_accounts a ON a.id=c.channel_account_id WHERE {w} AND c.hidden=0 GROUP BY a.channel",
             args).fetchall()
     return {
         "tong": int(r["tong"] or 0), "hom_nay": int(r["hom_nay"] or 0),

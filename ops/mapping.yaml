@@ -2238,3 +2238,74 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P074
+  ten: "Rebrand nền 0.369.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-28 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.369.0 sang Thansa
+    theo luật P007/P026/P027/P048 (318 chỗ / 53 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P074: rebrand nen 0.369.0 (tu dong)"
+  diem_neo:
+    - file: .claude/skills/javis-builder/SKILL.md
+      ky_hieu: 'mode, luôn nằm TẮT. Thansa KHÔNG bật được;'
+  vung_theo_doi:
+    - ".claude/skills/javis-builder/SKILL.md"
+    - "README.md"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/star-nudge.js"
+    - "docker-compose.google.yml"
+    - "docs/02-tro-chuyen-va-giong-noi.md"
+    - "docs/07-agents-va-workflows.md"
+    - "docs/25-chatbot.md"
+    - "docs/27-tab-code-terminal.md"
+    - "docs/34-github-trong-chat.md"
+    - "docs/README.md"
+    - "docs/en/02-chat-and-voice.md"
+    - "docs/en/07-agents-and-workflows.md"
+    - "docs/en/10-models-and-engines.md"
+    - "docs/en/27-code-terminal.md"
+    - "docs/en/34-github-in-chat.md"
+    - "docs/en/README.md"
+    - "docs/handoffs/claude-opus-5-5/HANDOFF.md"
+    - "docs/handoffs/claude-opus-5-5/NEXT-PROMPT.md"
+    - "docs/handoffs/claude-opus-5-5/checkpoint.json"
+    - "docs/i18n/de/README.md"
+    - "docs/i18n/es/README.md"
+    - "docs/i18n/fr/README.md"
+    - "docs/i18n/hi/README.md"
+    - "docs/i18n/id/README.md"
+    - "docs/i18n/ja/README.md"
+    - "docs/i18n/ko/README.md"
+    - "docs/i18n/pt-BR/README.md"
+    - "docs/i18n/ru/README.md"
+    - "docs/i18n/vi/README.md"
+    - "docs/i18n/zh/README.md"
+    - "server/auto_learning.py"
+    - "server/claude_auth.py"
+    - "server/engine.py"
+    - "server/github_repos.py"
+    - "server/github_work.py"
+    - "server/improvement_agent.py"
+    - "server/main.py"
+    - "server/pack_updates.py"
+    - "server/plugin_authoring.py"
+    - "server/plugin_install.py"
+    - "server/routes/plugin_zip.py"
+    - "server/star_nudge.py"
+    - "server/team_dispatch.py"
+    - "system/plugins/javis-github/plugin.py"
+    - "system/plugins/javis-github/plugin.yaml"
+    - "system/plugins/javis-plugin/plugin.yaml"
+    - "system/plugins/javis-team/plugin.py"
+    - "third_party/harness2/COMPOSE-PROVENANCE.json"
+    - "third_party/harness2/PROVENANCE.md"
+    - "tools/auto_learning_pilot.py"
+    - "tools/self_learning_pilot.py"
+  anh_goc:
+    - file: .claude/skills/javis-builder/SKILL.md
+      doan: 'mode, luôn nằm TẮT. Javis KHÔNG bật được;'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.

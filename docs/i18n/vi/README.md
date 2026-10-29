@@ -59,7 +59,7 @@ Thansa OS **không phải** một chatbot. Nó là một **AI agentic tự host*
 <img src="../../../docs/assets/diagrams/swappable-brain.svg" width="100%" alt="Hình động: lõi Thansa ở giữa, bộ đồ nghề (MCP Hub, Skills, Second Brain, Tasks, Schedules, Plugins) bao quanh, 12 bộ não lần lượt lắp vào mà mọi công cụ vẫn sáng nguyên">
 </p>
 
-> ⚠️ **Đọc trước khi cho gói subscription chạy việc nền.** Anthropic chỉ tính gói Claude Pro/Max cho việc dùng **cá nhân, thông thường** của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm ngoài phạm vi đó, và đã có người **bị khoá tài khoản** vì lý do này. Thansa không tự đọc token đăng nhập của bạn (đường đó đã gỡ ở 0.26.17) - nó chạy qua đúng binary `claude`, nhưng như vậy vẫn không làm việc chạy nền 24/7 trở thành hợp lệ. Muốn yên tâm: ở trang **Models**, đặt Claude Code chạy bằng **API key**, hoặc trỏ **model việc nền** sang một provider khác. Xem `server/claude_auth.py`.
+> **Lưu ý khi cho gói subscription chạy việc nền.** Anthropic chỉ tính gói Claude Pro/Max cho việc dùng **cá nhân, thông thường** của Claude Code. Chạy nền liên tục (loop, nhắc hẹn, việc Kanban, chatbot), chạy trên VPS, hoặc nhiều người dùng chung một tài khoản đều nằm ngoài phạm vi đó nên có nguy cơ **bị khoá tài khoản**, dù tới nay Thansa chưa ghi nhận trường hợp nào. Nếu bạn gặp, hãy báo cho nhà phát triển qua [Issues](https://github.com/xahoapro/thansa-os/issues/new/choose). Thansa không tự đọc token đăng nhập của bạn (đường đó đã gỡ ở 0.26.17) - nó chạy qua đúng binary `claude`, nhưng như vậy vẫn không làm việc chạy nền 24/7 trở thành hợp lệ. Muốn yên tâm: ở trang **Models**, đặt Claude Code chạy bằng **API key**, hoặc trỏ **model việc nền** sang một provider khác. Xem `server/claude_auth.py`.
 
 > Triết lý: **năng lực nằm ở Thansa, không nằm ở model.** Mọi bộ não đều được cấp cùng bộ đồ nghề qua trung tâm kết nối (MCP Hub) chung - MCP đã đấu, tool đọc/ghi brain, skill, việc Kanban, agent/workflow/loop/nhắc hẹn. Khác biệt duy nhất: hai engine CLI chạy thêm được **lệnh máy**. Đổi từ Claude sang Gemini không làm Thansa mất chức năng nào ngoài chuyện đó.
 
@@ -266,7 +266,7 @@ Mở Thansa → bộ cài đặt sẽ dẫn bạn qua:
 
 > 📚 **Tài liệu chi tiết:** xem thư mục **[docs/](../../../docs/README.md)** - hướng dẫn từng chức năng (mở ở đâu, bấm gì, dùng thế nào). Bảng dưới là bản đồ nhanh; cột **Chi tiết** dẫn tới trang hướng dẫn tương ứng.
 
-Thanh điều hướng bên trái gom **22 trang** thành **6 nhóm** (bấm tên nhóm để mở):
+Thanh điều hướng bên trái gom **22 trang** thành **5 nhóm** (bấm tên nhóm để mở):
 
 | Nhóm | Mục | Làm gì | Chi tiết |
 |---|---|---|---|
@@ -274,13 +274,13 @@ Thanh điều hướng bên trái gom **22 trang** thành **6 nhóm** (bấm tê
 | | **Trò chuyện** | Khung chat rộng toàn màn hình kèm cột lịch sử hội thoại. | [Phiên hội thoại](../../../docs/04-phien-hoi-thoai.md) |
 | | **Tệp tin** | Duyệt brain, **sửa `.md`/`.txt` trực tiếp**, tìm file theo tên/nội dung, tải lên/về. | [Quản lý tệp tin](../../../docs/05-quan-ly-tep-tin.md) |
 | | **Tự học** | Thansa tự rút ký ức, đúc Wiki, kỹ năng sau mỗi hội thoại; hoàn tác được. | [Tự học](../../../docs/22-tu-hoc.md) |
-| **Code** | **Terminal** | **Dòng lệnh thật** của máy chạy Thansa, mở ngay trong trình duyệt - khỏi mở SSH. | [Nhóm Code: Terminal](../../../docs/27-tab-code-terminal.md) |
 | **Năng lực** | **Agents** | Tạo trợ lý chuyên biệt (vai trò + skill + bộ nhớ riêng). | [Agents & Workflows](../../../docs/07-agents-va-workflows.md) |
 | | **Skills** | Gom nhóm + tìm kiếm + **bật/tắt** + thêm/sửa/xoá + nhập/xuất skill. | [Skills](../../../docs/06-skills.md) |
 | | **Workflows** | Tạo/chạy chuỗi tự động (agent → agent), có bước kiểm chứng. | [Agents & Workflows](../../../docs/07-agents-va-workflows.md) |
 | | **Plugins** | Thêm tool/hook native cho mọi engine bằng một thư mục Python. | [Plugins](../../../docs/20-plugins.md) |
 | | **Chatbot** | Đem Agent ra trả lời khách qua bot Telegram/Zalo/Slack/WhatsApp/Lark riêng, brain riêng. | [Chatbot](../../../docs/25-chatbot.md) |
 | | **Hội thoại** | Hộp thư gom mọi cuộc chat khách nhắn cho bot và Zalo cá nhân; đọc lại, tiếp quản khi cần người thật. | [Hội thoại khách](../../../docs/28-hoi-thoai-khach.md) |
+| | **Terminal** | **Dòng lệnh thật** của máy chạy Thansa, mở ngay trong trình duyệt - khỏi mở SSH. | [Terminal](../../../docs/27-tab-code-terminal.md) |
 | **Việc** | **Việc** | Hàng đợi task nền do AI tự đặc tả và tự chạy; bạn chỉ xử lý ngoại lệ. | [Việc (Kanban)](../../../docs/21-viec-kanban.md) |
 | | **Việc định kỳ** | Nhiều vòng lặp chạy nền + nhắc hẹn theo giờ hoặc cron. | [Việc định kỳ & Nhắc hẹn](../../../docs/08-viec-dinh-ky.md) |
 | **Kết nối** | **Kết nối** | Kho dịch vụ ngoài, đa tài khoản cùng một dịch vụ, phân quyền 3 mức. | [Kết nối & số liệu](../../../docs/09-mcp-va-so-lieu.md) |

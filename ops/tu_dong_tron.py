@@ -169,6 +169,7 @@ MARKER = re.compile(r"^(<<<<<<< |>>>>>>> |=======$)", re.M)
 KHOI = re.compile(r"^<<<<<<< [^\n]*\n(.*?)^=======\n(.*?)^>>>>>>> [^\n]*\n", re.S | re.M)
 SKIP_DEM = re.compile(r'^(CHANGELOG|ops/|bao-cao/|nhiem-vu/|docs/superpowers/|docs/dev/|tests/|ANNOUNCEMENTS)')
 FILE_BAO_VE = {"server/codex_realtime.py",          # clientInfo "Javis OS" (P048 GIỮ)
+               "server/claude_sdk_engine.py",       # băm khoá chứng nhận native (PROFILE_SOURCES, 0.369) - giữ đúng byte upstream
                "RELEASES.md"}                       # sổ Thansa: "Nền Javis" là thật, bảng mỗi vòng thêm dòng (13/10)
 CHUOI_BAO_VE = ("adaptive source contract",)          # header test canh (P048 GIỮ)
 
@@ -502,7 +503,7 @@ def tu_kiem(up: str) -> None:
 
 
 def suite(cwd: Path, ten: str) -> tuple[set, str]:
-    r = sh([str(PY), "tests/run.py"], cwd=cwd, check=False, timeout=3600)
+    r = sh([str(PY), "tests/run.py"], cwd=cwd, check=False, timeout=10800)  # 0.369: suite >1h
     (BT / f"tu-dong-{ten}.log").write_text(r.stdout + r.stderr, encoding="utf-8")
     m = re.search(r"^ĐỎ: (.*)$", r.stdout, re.M)
     tong = re.search(r"^(\d+/\d+) xanh", r.stdout, re.M)

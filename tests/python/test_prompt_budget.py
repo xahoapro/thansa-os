@@ -77,10 +77,9 @@ def _tok(chars):
 # Đo lại khi cần (chú ý `python -m pip` để chắc chắn cài vào đúng Python đang chạy):
 #     python -m pip install tiktoken
 #     python -c "import tiktoken; print(len(tiktoken.get_encoding('cl100k_base').encode(open('CLAUDE.md', encoding='utf-8').read())))"
-# THUE CAU TRUC FORK (0.64.50): CLAUDE.md rebrand + P038/P040 -> 33.630, vuot tran goc
-# 33.600 dung 30 ky tu. Nang 33_600->33_800 (khop main.PROMPT_KERNEL_MAX_CHARS), co y thuc.
-# Vong 0.64.74: QUY TAC tran fork = tran upstream (33_600) + 300 thue fork. Chi doi khi upstream doi tran.
-KERNEL_MAX_CHARS = 33_900
+# THUE CAU TRUC FORK: QUY TAC tran fork = tran upstream + 300 (khop main.PROMPT_KERNEL_MAX_CHARS).
+# Vong 0.369.0: upstream 0.345.0 ha tran 33_600 -> 29_200 nen tran fork 29_500. Chi doi khi upstream doi tran.
+KERNEL_MAX_CHARS = 29_500
 
 _claude_md = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
 check(
@@ -92,7 +91,7 @@ check(
 
 # Mục "Dev conventions" đã ĐẨY RA NGOÀI ngày 2026-09-22 (đúng cách file này dặn: chạm trần thì
 # cắt thật hoặc đẩy một mục ra, đừng nâng số). Nó chỉ dành cho phiên Claude Code sửa repo, còn
-# người dùng Javis không bao giờ cần, nên để trong prompt là đánh thuế mọi lượt chat. Trong
+# người dùng Thansa không bao giờ cần, nên để trong prompt là đánh thuế mọi lượt chat. Trong
 # CLAUDE.md giờ chỉ còn một dòng trỏ sang. Hai canary dưới đây giữ cho dòng trỏ không rỗng:
 # xoá file mà quên dòng trỏ, hay đổi tên file mà quên sửa CLAUDE.md, đều đỏ ở đây.
 _QUY_UOC = ROOT / "docs" / "quy-uoc-dev.md"

@@ -1003,7 +1003,7 @@ def login_huong_dan() -> dict:
         "cai": lenh_cai(),
         "dang_nhap": "agy",
         "ghi_chu": localefmt.chu(
-            "Dùng trang Code (Terminal) NGAY TRONG Thansa - nó mở shell bằng đúng user "
+            "Dùng trang Terminal (nhóm Năng lực) NGAY TRONG Thansa - nó mở shell bằng đúng user "
             "đang chạy Thansa, đăng nhập ở đó là Thansa nhận liền. (SSH bằng user khác, "
             "vd root, đăng nhập xong Thansa vẫn không thấy - đây là lý do hay gặp nhất "
             "của cảnh 'cài rồi mà không nhận'.) Gõ `agy`: nó in ra một đường link. Mở "

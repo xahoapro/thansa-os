@@ -180,38 +180,38 @@ def _init_timeout_text(n, cd):
     cham = max([x for x in (hub.get("init_s"), hub.get("list_s")) if x is not None] or [0.0])
     list_s = hub.get("list_s")
     if not cd.get("hub_attached", True):
-        vi = ("lượt này không đấu cổng công cụ của Thansa nên hub không phải thủ phạm. Nếu máy có đấu "
+        vi = ("lượt này không đấu cổng công cụ của Javis nên hub không phải thủ phạm. Nếu máy có đấu "
               "connector của chính Claude Code (claude.ai, cài đặt người dùng) thì kiểm tra chúng; "
               "không thì " + login_vi[0].lower() + login_vi[1:])
-        en = ("this run did not attach the Thansa tool hub, so the hub is not the culprit. If the machine "
+        en = ("this run did not attach the Javis tool hub, so the hub is not the culprit. If the machine "
               "attaches Claude Code's own connectors (claude.ai, user settings) check those; otherwise "
               + login_en[0].lower() + login_en[1:])
     elif not hub.get("called"):
-        vi = ("nó chưa hề gọi tới cổng công cụ của Thansa, nên KHÔNG phải do nguồn MCP. Nó kẹt từ trước "
+        vi = ("nó chưa hề gọi tới cổng công cụ của Javis, nên KHÔNG phải do nguồn MCP. Nó kẹt từ trước "
               "đó, thường vì đăng nhập Claude hết hạn, máy không ra được mạng hoặc đang tự cập nhật. "
               + login_vi)
-        en = ("it never reached the Thansa tool hub, so it is NOT a data source (MCP). It got stuck "
+        en = ("it never reached the Javis tool hub, so it is NOT a data source (MCP). It got stuck "
               "before that, usually an expired Claude sign-in, no network or a self-update. " + login_en)
     elif hub.get("pending") and hub.get("pending_s", 0.0) >= _HUB_SLOW_S:
-        vi = (f"cổng công cụ của Thansa nhận yêu cầu {_giay(hub['pending_s'])} trước mà chưa trả lời. "
+        vi = (f"cổng công cụ của Javis nhận yêu cầu {_giay(hub['pending_s'])} trước mà chưa trả lời. "
               + mcp_vi)
-        en = (f"the Thansa tool hub got a request {_giay(hub['pending_s'])} ago and has not answered. "
+        en = (f"the Javis tool hub got a request {_giay(hub['pending_s'])} ago and has not answered. "
               + mcp_en)
     elif cham >= _HUB_SLOW_S:
-        vi = f"cổng công cụ của Thansa trả quá chậm (mất {_giay(cham)} mới trả lời). " + mcp_vi
-        en = f"the Thansa tool hub answered far too slowly ({_giay(cham)} to reply). " + mcp_en
+        vi = f"cổng công cụ của Javis trả quá chậm (mất {_giay(cham)} mới trả lời). " + mcp_vi
+        en = f"the Javis tool hub answered far too slowly ({_giay(cham)} to reply). " + mcp_en
     elif list_s is not None:
-        vi = (f"cổng công cụ của Thansa trả lời bình thường (liệt kê công cụ mất {_giay(list_s)}), nên "
+        vi = (f"cổng công cụ của Javis trả lời bình thường (liệt kê công cụ mất {_giay(list_s)}), nên "
               "không phải do nguồn MCP. Claude Code kẹt ở bước khác, thường là đăng nhập hết hạn hoặc "
               "mạng. " + login_vi)
-        en = (f"the Thansa tool hub answered normally (listing tools took {_giay(list_s)}), so it is not "
+        en = (f"the Javis tool hub answered normally (listing tools took {_giay(list_s)}), so it is not "
               "a data source (MCP). Claude Code is stuck on something else, usually an expired sign-in "
               "or the network. " + login_en)
     else:
-        vi = ("cổng công cụ của Thansa đã nhận kết nối nhưng Claude Code chưa hỏi tới danh sách công cụ, "
+        vi = ("cổng công cụ của Javis đã nhận kết nối nhưng Claude Code chưa hỏi tới danh sách công cụ, "
               "nên chưa tới bước dò nguồn MCP. Nó kẹt ở bước khác, thường là đăng nhập hết hạn hoặc "
               "mạng. " + login_vi)
-        en = ("the Thansa tool hub accepted the connection but Claude Code never asked for the tool "
+        en = ("the Javis tool hub accepted the connection but Claude Code never asked for the tool "
               "list, so the data sources (MCP) were not even reached. It is stuck on something else, "
               "usually an expired sign-in or the network. " + login_en)
     tail = [str(x).strip()[:120] for x in (cd.get("stderr") or []) if str(x).strip()][-2:]
@@ -367,10 +367,10 @@ def map_message(msg):
             events.append({"type": "error", "resume_failed": True,
                            "content": localefmt.chu(
                                "Phiên Claude cũ không còn trên máy (mạch hội thoại phía "
-                               "Claude Code đã mất). Thansa mở mạch mới và mồi lại từ "
+                               "Claude Code đã mất). Javis mở mạch mới và mồi lại từ "
                                "lịch sử đã lưu.",
                                "The old Claude session is no longer on this machine (Claude Code lost "
-                               "the conversation thread). Thansa opens a new thread and primes it from "
+                               "the conversation thread). Javis opens a new thread and primes it from "
                                "the saved history.")})
         elif msg.is_error and not (msg.result or "").strip():
             events.append({"type": "error",
@@ -907,7 +907,7 @@ class ClaudeSDK:
             ok, msg = await asyncio.to_thread(team_gate.native_check, self.team_gate, name,
                                               (input_data or {}).get("tool_input") or {})
         except Exception as e:  # noqa: BLE001
-            ok, msg = False, f"Thansa không kiểm được quyền của lời gọi này ({type(e).__name__}), đã chặn."
+            ok, msg = False, f"Javis không kiểm được quyền của lời gọi này ({type(e).__name__}), đã chặn."
         if ok:
             return {}
         _audit(self.tag, name, False, "chờ chủ nhóm duyệt")
@@ -965,7 +965,7 @@ class ClaudeSDK:
             return {"ok": False, "reason": f"{type(e).__name__}: {e}"}
 
         async def _deny(tool_name, input_data, context):
-            return PermissionResultDeny(message="Thansa keep-warm ping: no tools")
+            return PermissionResultDeny(message="Javis keep-warm ping: no tools")
 
         client = None
         try:
@@ -1034,8 +1034,12 @@ class ClaudeSDK:
         # này; chữ thông thường, tool_use và câu trả lời của subagent KHÔNG đủ để chốt lượt.
         RESULT_IDLE = tran_watchdog("JAVIS_CLAUDE_RESULT_TIMEOUT", "30")
         self._sweep_stale_tmp()   # dọn file prompt tạm sót từ lượt trước bị crash/kill
-        # Nới trần `initialize` TRƯỚC khi dựng client: SDK đọc env ngay trong connect().
-        tran_init = ap_tran_khoi_dong()
+        trial_profile = getattr(self, "trial_profile", None)
+        client_factory = getattr(trial_profile, "create_client", None)
+        # An owned client keeps its verified process environment exact. Its SDK
+        # initialize timeout and outer lifetime remain independently bounded.
+        # Legacy clients still install the existing startup override first.
+        tran_init = ap_tran_khoi_dong() if client_factory is None else None
         self._stderr_tail.clear()   # chỉ giữ dòng của lượt này
         loop = asyncio.get_running_loop()
         # Off the event loop (0.194.0): building options reads the MCP config, loads every plugin (imports their code
@@ -1043,7 +1047,10 @@ class ClaudeSDK:
         # (loop_watch caught it). `to_thread` copies the turn's context variables, so the per-turn hub key still lands.
         options = await asyncio.to_thread(self._options)
         completion = _CompletionWatch(RESULT_IDLE if getattr(options, "include_hook_events", False) else None)
-        client = ClaudeSDKClient(options=options)
+        # The trusted isolated profile may construct the client with its owned
+        # native transport. A factory failure must escape before connect/query;
+        # falling back would bypass that transport's held-create boundary.
+        client = client_factory(options) if client_factory is not None else ClaudeSDKClient(options=options)
         started = time.time()
         tools_running = 0   # số tool đã gọi mà CHƯA thấy kết quả về
         da_co_chu = False   # đã nhận được sự kiện đầu tiên chưa (quyết định dùng trần nào)
