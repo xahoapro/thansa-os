@@ -902,3 +902,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebase tự động trong worktree riêng. Tự gỡ: b29ee8c69:dashboard/i18n/en.json, b29ee8c69:dashboard/i18n/vi.json, 54be2e2f8:tests/python/info_tip_allow.json. Upstream xoá: không.
 - Rebrand: P074 (318 chỗ / 53 file). moc-goc b36d446/0.369.0/so_patch 70.
 - **ĐÃ PHÁT HÀNH 2026-10-29** khi chủ bấm duyệt trên Telegram (origin/main 4ea1ba1, tag + Release thansa-v1.35.0; backup me-backup-1.35.0).
+
+## Vòng TỰ ĐỘNG 2026-10-31 (goc b36d446 → ff8a0cf, nền 0.369.0 → 0.429.0, thansa 1.35.0→1.36.0)
+- 56 commit upstream: 0.429.0: chatbot jobs under their bot, no search on Stats (#935); 0.428.2: Zalo Bot notices a group tag by its display name (#933); 0.428.1: lead the gated-provider refusal with a recovery that works here (#932); 0.428.0: Tasks page stats for both tabs, Javis tab first (#931); 0.427.0: habit lines written by Core, Google Calendar on the Tasks page (#930); 0.425.0 + 0.426.0: appointments and javis_mytask; Tasks page review pass (#928); 0.424.0: habits on the Tasks page: streaks, freezes, rest days, mascot, reminders (#927); 0.423.0: Tasks page tab "Mine" with projects, date and repeat pickers (
+- Rebase tự động trong worktree riêng. Tự gỡ: P003/P015/P025/P038/P047/P060 + .gitignore (tay, rerere); P038 port chot an toan sang trang Viec moi tasks.js (0.422-0.426 bo form console.js). Upstream xoá: không.
+- Rebrand: P075 (247 chỗ / 24 file). moc-goc ff8a0cf/0.429.0/so_patch 71.
