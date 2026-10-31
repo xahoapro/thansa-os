@@ -14,12 +14,13 @@ const en = JSON.parse(fs.readFileSync(path.join(root, "dashboard", "i18n", "en.j
 let fails = 0;
 function check(name, cond) { console.log((cond ? "ok   " : "FAIL ") + name); if (!cond) fails++; }
 
-check("defaults stay Full for loops and task reminders",
-  /lmode: lp\.mode \|\| "full"/.test(cs) && /var lv = f\.mq \|\| "full";/.test(cs) && /muc_quyen: f\.mq \|\| "full"/.test(cs)
-  && /_LOOP_MODE_MAC_DINH = "full"/.test(plug));
+// Thansa P038 (chủ giữ chốt an toàn): loop mặc định Suggest, nhắc hẹn tự-làm vẫn Full.
+check("defaults: loops Suggest, task reminders Full",
+  /lmode: lp\.mode \|\| "suggest"/.test(cs) && /var lv = f\.mq \|\| "full";/.test(cs) && /muc_quyen: f\.mq \|\| "full"/.test(cs)
+  && /mode: suggest\\n/.test(plug));
 check("a note sits under both level rows", (cs.match(/class="nv-hint/g) || []).length === 2);
 check("the note follows the picked level in both forms",
-  /tw\(LP_NOTE\[f\.lmode\] \|\| LP_NOTE\.full\)/.test(cs) && /tw\(LP_NOTE\[lv\]\)/.test(cs)
+  /tw\(LP_NOTE\[f\.lmode\] \|\| LP_NOTE\.suggest\)/.test(cs) && /tw\(LP_NOTE\[lv\]\)/.test(cs)
   && /LP_NOTE = \{ suggest: "cs\.si_level_note_suggest", auto: "cs\.si_level_note_auto", full: "cs\.si_level_note_full" \}/.test(cs));
 const keys = ["cs.si_level_note_full", "cs.si_level_note_auto", "cs.si_level_note_suggest"];
 check("notes in vi and en, one short line each (no (i) needed)",

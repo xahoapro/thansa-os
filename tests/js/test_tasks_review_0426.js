@@ -19,12 +19,13 @@ function check(name, ok) { console.log((ok ? "ok   " : "FAIL ") + name); if (!ok
 
 // ---- loops: Edit opens a form with the loop's own fields and saves through POST /loops
 check("loops get Edit in the menu", /\|\| src === "loop"\) out\.push\(\["edit", "pencil", "nv\.a\.edit"\]\)/.test(js));
+// Thansa P038: loop thiếu mức thì về Suggest (chủ giữ chốt an toàn).
 check("the form starts from the loop's name, body, level and interval",
-  /S\.form = \{ loop: it\.ref, name: lp\.name \|\| it\.ref, text: lp\.body \|\| "", lmode: lp\.mode \|\| "full", iv: String\(lp\.interval_min \|\| 60\) \}/.test(js));
+  /S\.form = \{ loop: it\.ref, name: lp\.name \|\| it\.ref, text: lp\.body \|\| "", lmode: lp\.mode \|\| "suggest", iv: String\(lp\.interval_min \|\| 60\) \}/.test(js));
 check("the form has name, body, level and interval fields",
   js.includes('id="nvLn"') && js.includes('seg("lmode"') && js.includes('id="nvIv" type="number" min="5"'));
 check("save posts the loop by its slug with mode and an interval of at least 5",
-  /postForm\("\/loops", \{ brain: b, slug: f\.loop,[\s\S]{0,120}mode: f\.lmode \|\| "full",\s*interval_min: String\(Math\.max\(5, Number\(f\.iv\) \|\| 60\)\)/.test(js));
+  /postForm\("\/loops", \{ brain: b, slug: f\.loop,[\s\S]{0,120}mode: f\.lmode \|\| "suggest",\s*interval_min: String\(Math\.max\(5, Number\(f\.iv\) \|\| 60\)\)/.test(js));
 check("typed name and interval survive a re-render", /S\.form\.name = g\("#nvLn"\)\.value/.test(js) && /S\.form\.iv = g\("#nvIv"\)\.value/.test(js));
 
 // ---- reminder options

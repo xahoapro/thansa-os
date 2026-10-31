@@ -73,7 +73,7 @@ setTimeout(() => {
   check("stats classes do not clash with the Chatbot stats (ts-, not st-)", !/\.st-[a-z]/.test(css.slice(css.indexOf("Stats (0.428.0)"))));
   check("poll pauses while the minutes form is open", /JavisTaskStats\.isEditing\(\)/.test(js));
   const vi = JSON.parse(read("dashboard/i18n/vi.json")), en = JSON.parse(read("dashboard/i18n/en.json"));
-  check("tab names", vi["nv.tab.ai"] === "Việc của Javis" && vi["nv.tab.me"] === "Việc của tôi" && en["nv.tab.ai"] && en["nv.tab.me"]);
+  check("tab names", vi["nv.tab.ai"] === "Việc của Thansa" && vi["nv.tab.me"] === "Việc của tôi" && en["nv.tab.ai"] && en["nv.tab.me"]);
   const keys = new Set([...(read("dashboard/tasks-stats.js") + js).matchAll(/"(nv\.sta\.[a-z0-9_]+)"/g)].map((m) => m[1]));
   check("every stats string in both languages", [...keys].every((k) => vi[k] && en[k]), [...keys].filter((k) => !vi[k] || !en[k]).join(","));
   check("no long dashes in them", [...keys].every((k) => !/[–—]/.test(vi[k] + en[k])));

@@ -44,7 +44,6 @@
  "cs.si_toggle_confirm": "confirm: confirm() before enabling a full-permission loop (Thansa P038 safety gate)",
  "cs.tfa_s1": "content: 2FA setup step after pressing Turn on",
  "cs.tfa_saved_note": "status: shown after enabling 2FA",
- "dict.unsupported": "error: passing note shown after pressing the dictate mic",
  "fresh.stuck_sub": "status: banner after reload did not fix stale files",
  "ht.xn_nhap_cu": "confirm: confirm() before importing old messages",
  "kanban.confirm_grant": "confirm: grant full permission",
