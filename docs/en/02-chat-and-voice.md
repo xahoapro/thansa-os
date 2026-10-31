@@ -325,8 +325,8 @@ Hovering over a message (yours or Thansa's) reveals a small button row underneat
 | Timestamp | The full date, for example "Wednesday, 29/07/2026 14:05" | Display only |
 | ↺ | "Rewind to here" | Only on your messages. Asks first, then **deletes this message and everything below it** and puts the question back in the input to edit or resend; the conversation goes on from there as if the deleted turns never happened |
 | ⧉ | "Copy content" | Copies the whole message; the button briefly reads "✓ Copied" |
-| Pin | "Pin to contents" | Only on Javis's answers. Pins the answer into the conversation's **contents** (the marks rail on the right, or the ≡ button on phones): it sits in its place among your questions, with a pin instead of a number, and a click jumps to it. Click again to unpin. A pinned answer always shows its button row, with the pin in orange |
-| Speaker | "Read aloud" | Only on Javis's answers. Reads that answer aloud, even outside a call. While it reads, the button becomes a square "Stop reading"; click it to stop |
+| Pin | "Pin to contents" | Only on Thansa's answers. Pins the answer into the conversation's **contents** (the marks rail on the right, or the ≡ button on phones): it sits in its place among your questions, with a pin instead of a number, and a click jumps to it. Click again to unpin. A pinned answer always shows its button row, with the pin in orange |
+| Speaker | "Read aloud" | Only on Thansa's answers. Reads that answer aloud, even outside a call. While it reads, the button becomes a square "Stop reading"; click it to stop |
 
 Common points:
 

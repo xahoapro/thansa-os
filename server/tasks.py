@@ -755,7 +755,7 @@ class TasksFeature:
         if not roster:
             return 'agent: luôn để rỗng ("").'
         dong = ["Trợ lý sẵn có trong brain. Chọn MỘT slug nếu việc khớp RÕ chuyên môn của trợ lý đó, "
-                'không khớp rõ thì để rỗng ("") cho Javis tự làm:']
+                'không khớp rõ thì để rỗng ("") cho Thansa tự làm:']
         for a in roster:
             vai = str(a.get("role") or "").strip().replace("\n", " ")[:120]
             dong.append(f"- {a['slug']}: {str(a.get('name') or a['slug'])[:60]}" + (f" ({vai})" if vai else ""))
@@ -1393,9 +1393,9 @@ Trả DUY NHẤT một dòng JSON, không markdown:
             return parts
         if len(items) == 1:
             parts = [localefmt.chu(
-                f"Việc '{items[0]['title']}' tạm dừng vì một trục trặc kỹ thuật. Bạn không cần làm gì: Javis đã ghi lại, "
+                f"Việc '{items[0]['title']}' tạm dừng vì một trục trặc kỹ thuật. Bạn không cần làm gì: Thansa đã ghi lại, "
                 "sẽ tự thử lại khi được, và chỉ nhắn bạn nếu thật sự cần bạn.",
-                f"Job '{items[0]['title']}' paused on a technical hitch. You do not need to do anything: Javis logged "
+                f"Job '{items[0]['title']}' paused on a technical hitch. You do not need to do anything: Thansa logged "
                 "it, will retry when it can, and only messages you if it really needs you.")]
             cho = items[0].get("waiting") or []
             if cho:
@@ -1409,8 +1409,8 @@ Trả DUY NHẤT một dòng JSON, không markdown:
                 parts.append(localefmt.chu("Chi tiết kỹ thuật: ", "Technical detail: ") + items[0]["reason"][:240])
         else:
             parts = [localefmt.chu(
-                f"{len(items)} việc tạm dừng vì trục trặc kỹ thuật. Bạn không cần làm gì, Javis đang lo:",
-                f"{len(items)} jobs paused on technical hitches. You do not need to do anything, Javis is on it:")]
+                f"{len(items)} việc tạm dừng vì trục trặc kỹ thuật. Bạn không cần làm gì, Thansa đang lo:",
+                f"{len(items)} jobs paused on technical hitches. You do not need to do anything, Thansa is on it:")]
             parts += [f"- {it['title']}" for it in items[:BAO_GOM_LIET_KE]]
             if len(items) > BAO_GOM_LIET_KE:
                 con = len(items) - BAO_GOM_LIET_KE
@@ -1633,13 +1633,13 @@ Trả DUY NHẤT một dòng JSON, không markdown:
         if kind == "limit" and reason:
             return reason  # already written for people: which plan, and when it runs again
         if st == "blocked":
-            return localefmt.chu("Tạm dừng vì một trục trặc kỹ thuật. Bạn không cần làm gì: Javis đã ghi lại, tự thử "
+            return localefmt.chu("Tạm dừng vì một trục trặc kỹ thuật. Bạn không cần làm gì: Thansa đã ghi lại, tự thử "
                                  "lại khi được, và chỉ nhắn bạn nếu thật sự cần.",
-                                 "Paused on a technical hitch. You do not need to do anything: Javis logged it, retries "
+                                 "Paused on a technical hitch. You do not need to do anything: Thansa logged it, retries "
                                  "when it can, and only messages you if it really needs you.")
         if st in ("ready", "todo", "triage") and kind:
-            return localefmt.chu("Lần trước gặp trục trặc, Javis sẽ tự chạy lại.",
-                                 "The last try hit a hitch; Javis will run it again by itself.")
+            return localefmt.chu("Lần trước gặp trục trặc, Thansa sẽ tự chạy lại.",
+                                 "The last try hit a hitch; Thansa will run it again by itself.")
         return ""
 
     @classmethod

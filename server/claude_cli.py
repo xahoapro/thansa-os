@@ -893,17 +893,17 @@ def _login_verify() -> dict:
     if sys.platform == "darwin":
         msg = localefmt.chu(
             "Claude báo đăng nhập xong nhưng không lưu được phiên vào Keychain của Mac, nên máy vẫn chưa đăng nhập. "
-            "Mở Terminal trên máy chạy Javis, gõ: claude auth login (nếu Keychain đang khoá thì mở khoá trước: "
+            "Mở Terminal trên máy chạy Thansa, gõ: claude auth login (nếu Keychain đang khoá thì mở khoá trước: "
             "security unlock-keychain), xong bấm Kiểm tra lại.",
             "Claude said the sign-in worked but could not save it to the Mac Keychain, so this machine is still "
-            "signed out. Open Terminal on the machine running Javis and run: claude auth login (if the Keychain is "
+            "signed out. Open Terminal on the machine running Thansa and run: claude auth login (if the Keychain is "
             "locked, unlock it first: security unlock-keychain), then click Check again.")
     else:
         msg = localefmt.chu(
             "Claude báo đăng nhập xong nhưng không lưu được phiên đăng nhập, nên máy vẫn chưa đăng nhập. Mở terminal "
-            "trên máy chạy Javis, gõ: claude auth login, xong bấm Kiểm tra lại.",
+            "trên máy chạy Thansa, gõ: claude auth login, xong bấm Kiểm tra lại.",
             "Claude said the sign-in worked but could not save it, so this machine is still signed out. Open a "
-            "terminal on the machine running Javis and run: claude auth login, then click Check again.")
+            "terminal on the machine running Thansa and run: claude auth login, then click Check again.")
     tail = _login_tail()
     return {"ok": False, "error": msg + (f" ({tail})" if tail else "")}
 

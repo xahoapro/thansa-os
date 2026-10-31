@@ -244,9 +244,9 @@ def dinh_dang_muc_dung(summary: dict, openrouter=None) -> str:
     return "\n".join(dong)
 
 
-_NHAN_COT = (("running", "Đang chạy"), ("review", "Chờ duyệt"), ("blocked", "Tạm dừng, Javis đang lo"),
+_NHAN_COT = (("running", "Đang chạy"), ("review", "Chờ duyệt"), ("blocked", "Tạm dừng, Thansa đang lo"),
              ("ready", "Sẵn sàng"), ("todo", "Chờ làm"), ("triage", "Mới nhận"))
-_NHAN_COT_EN = {"running": "Running", "review": "Awaiting review", "blocked": "Paused, Javis is on it",
+_NHAN_COT_EN = {"running": "Running", "review": "Awaiting review", "blocked": "Paused, Thansa is on it",
                 "ready": "Ready", "todo": "To do", "triage": "New"}
 
 

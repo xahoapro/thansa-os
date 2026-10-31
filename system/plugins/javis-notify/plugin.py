@@ -36,7 +36,7 @@ def _status() -> str:
     st = NP.status(10)
     dong = ["Chế độ từng nhóm (mặc định: " + NP.mode_name(st["default"]) + "):"]
     for g in st["groups"]:
-        ai = {"core": " (Javis Core chỉnh)", "owner": " (bạn chọn)"}.get(g["set_by"], "")
+        ai = {"core": " (Thansa Core chỉnh)", "owner": " (bạn chọn)"}.get(g["set_by"], "")
         dong.append(f"- {g['name']} [{g['group']}]: {NP.mode_name(g['mode'])}{ai}")
     if st["rules"]:
         dong.append("Loại tin có luật riêng:")
@@ -112,7 +112,7 @@ def _chay(args, ctx) -> str:
 def register(ctx):
     ctx.register_tool(
         "javis_notify",
-        "Chỉ huy thông báo của Javis Core: chọn thông báo nào được báo (chấm đỏ trên chuông, đẩy lên điện thoại, "
+        "Chỉ huy thông báo của Thansa Core: chọn thông báo nào được báo (chấm đỏ trên chuông, đẩy lên điện thoại, "
         "Telegram của chủ). Mỗi thông báo thuộc một nhóm (job, reminder, question, agent, team, incident, "
         "connection, chatbot, cost, update, other) và có mức info, important hoặc urgent. Mỗi nhóm có chế độ: all, "
         "important, urgent (mặc định: chỉ tin khẩn) hoặc off. Tin không đủ mức vẫn nằm trong chuông, ở ngăn Đã lọc. "

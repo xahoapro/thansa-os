@@ -188,7 +188,7 @@ async def events(brain: str, start_iso: str, end_iso: str, conns=None, pool=None
                 continue
             args = build_args(tool, start_iso, end_iso, c)
             if args is None:
-                errors.append(f"{name}: {tool.get('name')} needs arguments Javis cannot fill")
+                errors.append(f"{name}: {tool.get('name')} needs arguments Thansa cannot fill")
                 continue
             raw = await pool.call_tool(spec, tool["name"], args)
             if isinstance(raw, str) and raw.startswith("ERROR:"):

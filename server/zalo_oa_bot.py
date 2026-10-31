@@ -608,7 +608,7 @@ class ZaloOABot(HangLuot):
         }
         if self.chat_ids and chat not in self.chat_ids:
             await self._send(client, chat, localefmt.chu(
-                "Bạn không có quyền dùng bot Javis này.", "You are not allowed to use this Javis bot."))
+                "Bạn không có quyền dùng bot Thansa này.", "You are not allowed to use this Thansa bot."))
             return
         text = await self._event_text(client, ev, chat)
         if not text:
@@ -773,8 +773,8 @@ _WINDOW = ("khách đã lâu không nhắn cho OA nên Zalo không cho gửi tin
            "the customer has not written to the OA for too long, so Zalo no longer allows a consultation "
            "message. The window reopens when they write again")
 _ERRORS = {
-    -216: ("access token Zalo OA không hợp lệ. Javis đã thử làm mới; nếu vẫn lỗi, tạo refresh token mới rồi dán lại",
-           "the Zalo OA access token is invalid. Javis tried to refresh it; if it still fails, create a new "
+    -216: ("access token Zalo OA không hợp lệ. Thansa đã thử làm mới; nếu vẫn lỗi, tạo refresh token mới rồi dán lại",
+           "the Zalo OA access token is invalid. Thansa tried to refresh it; if it still fails, create a new "
            "refresh token and paste it again"),
     -124: ("access token Zalo OA đã hết hạn", "the Zalo OA access token has expired"),
     -213: ("người này chưa quan tâm OA hoặc đã bỏ quan tâm", "this person does not follow the OA (or unfollowed it)"),

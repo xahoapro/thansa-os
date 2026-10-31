@@ -12815,7 +12815,7 @@ async def _habit_coach_ask(prompt: str) -> str:
     """Habit coach (0.427.0): one text-only turn on the background model, like the page watch summary."""
     if os.environ.get("JAVIS_NO_REAL_JUDGE_ENGINE") == "1":
         raise RuntimeError("JAVIS_NO_REAL_JUDGE_ENGINE")
-    cli = _reply_policy_sandbox_engine("You write short, warm habit lines as Javis's star mascot. Answer with JSON only.",
+    cli = _reply_policy_sandbox_engine("You write short, warm habit lines as Thansa's star mascot. Answer with JSON only.",
                                        "habit-coach", cwd_name="habit_coach_cwd")
     base = cli
     cli = aux_engine.strip_tools(_aux_swap(cli, mode="suggest", tag="habit-coach"), base)
@@ -15720,7 +15720,7 @@ async def _core_say(brain: str, text: str) -> None:
         if sid:
             await _gui_qua_kenh(f"{WEB_CHAT_PREFIX}{sid}", text)
     except Exception as e:  # noqa: BLE001
-        print(f"[notify policy] Javis Core could not say it: {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"[notify policy] Thansa Core could not say it: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 @app.post("/inbox/react")

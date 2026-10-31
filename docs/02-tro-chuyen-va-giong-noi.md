@@ -342,8 +342,8 @@ Rê chuột vào một tin nhắn (của bạn hay của Thansa đều được)
 | Giờ gửi | Ngày đầy đủ, ví dụ "Thứ tư, 29/07/2026 14:05" | Chỉ để xem |
 | ↺ | "Tua lại từ câu này" | Chỉ có ở tin của bạn. Hỏi xác nhận, rồi **xoá câu này cùng mọi thứ bên dưới** và đưa câu hỏi về ô nhập để sửa hoặc gửi lại; hội thoại đi tiếp từ đó như thể các lượt đã xoá chưa từng có |
 | ⧉ | "Sao chép nội dung" | Copy cả tin nhắn, nút đổi thành "✓ Đã copy" trong giây lát |
-| Đinh ghim | "Ghim vào mục lục" | Chỉ có ở câu trả lời của Javis. Ghim câu trả lời vào **mục lục** của cuộc trò chuyện (dải mốc bên phải, hay nút ≡ trên điện thoại): nó đứng đúng chỗ của nó giữa các câu hỏi, có dấu ghim thay cho số thứ tự, bấm là nhảy tới. Bấm lần nữa để bỏ ghim. Câu đã ghim luôn hiện hàng nút, đinh ghim màu cam |
-| Loa | "Đọc thành tiếng" | Chỉ có ở câu trả lời của Javis. Đọc to câu trả lời đó, kể cả khi không trong cuộc gọi. Đang đọc thì nút thành ô vuông "Dừng đọc", bấm là dừng |
+| Đinh ghim | "Ghim vào mục lục" | Chỉ có ở câu trả lời của Thansa. Ghim câu trả lời vào **mục lục** của cuộc trò chuyện (dải mốc bên phải, hay nút ≡ trên điện thoại): nó đứng đúng chỗ của nó giữa các câu hỏi, có dấu ghim thay cho số thứ tự, bấm là nhảy tới. Bấm lần nữa để bỏ ghim. Câu đã ghim luôn hiện hàng nút, đinh ghim màu cam |
+| Loa | "Đọc thành tiếng" | Chỉ có ở câu trả lời của Thansa. Đọc to câu trả lời đó, kể cả khi không trong cuộc gọi. Đang đọc thì nút thành ô vuông "Dừng đọc", bấm là dừng |
 
 Vài điểm hay gặp:
 
