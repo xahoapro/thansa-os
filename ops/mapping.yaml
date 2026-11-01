@@ -388,11 +388,11 @@
   diem_neo:
     - file: CLAUDE.md
       ky_hieu: "System Prompt"
-    - file: .claude/skills/javis-builder/SKILL.md
+    - file: .claude/skills/thansa-builder/SKILL.md
       ky_hieu: "description:"
     - file: system/mcp-catalog.json
       ky_hieu: '"_doc"'
-    - file: system/plugins/javis-schedule/plugin.yaml
+    - file: system/plugins/thansa-schedule/plugin.yaml
       ky_hieu: "author:"
   vung_theo_doi:
     - CLAUDE.md
@@ -747,7 +747,7 @@
     - file: server/main.py
       ky_hieu: 'os.getenv("THANSA_UPDATE_REPO"'
     - file: VERSION
-      ky_hieu: "-javis-"
+      ky_hieu: "-nen-"
   vung_theo_doi:
     - VERSION
     - "server/main.py: GITHUB_REPO, _ver_thansa/_ver_javis, version_info, changelog_index, do_update"
@@ -790,7 +790,7 @@
     - file: LICENSE
       ky_hieu: "Duy Quang (thansa.org)"
     - file: server/main.py
-      ky_hieu: '.replace("javisos.com", "thansa.org")'
+      ky_hieu: '.replace("thansa.org", "thansa.org")'
     - file: Dockerfile
       ky_hieu: 'image.title="Thansa OS"'
   vung_theo_doi:
@@ -1117,7 +1117,7 @@
   diem_neo:
     - file: CLAUDE.md
       ky_hieu: "money/order/publishing actions are ALWAYS forbidden to self-execute"
-    - file: system/plugins/javis-schedule/plugin.py
+    - file: system/plugins/thansa-schedule/plugin.py
       ky_hieu: "muc_quyen"
   vung_theo_doi:
     - "CLAUDE.md mục Safety when orchestrating; console.js hộp cảnh báo + confirm trang Việc"
@@ -1243,7 +1243,7 @@
     - file: server/packs_store.py
       ky_hieu: "def _them_en"
     - file: system/store-en.json
-      ky_hieu: "javis.tts-dropship"
+      ky_hieu: "thansa.tts-dropship"
     - file: server/main.py
       ky_hieu: "_TEN_KY_EN"
   vung_theo_doi:
@@ -1299,7 +1299,7 @@
     - file: server/coding_store.py
       ky_hieu: "Ask Thansa to run `git init` once"
     - file: dashboard/coding.js
-      ky_hieu: "JavisSessions"
+      ky_hieu: "ThansaSessions"
   vung_theo_doi:
     - "dashboard/i18n vi/en.json: khoá coding.*"
     - "dashboard/coding.js + server/routes/coding.py + server/coding_store.py"
@@ -1379,9 +1379,9 @@
   commit: "[me] P047: dong bo lop phu EN theo ngon ngu theo thiet bi (0.66-0.67)"
   diem_neo:
     - file: dashboard/i18n/dich-en.js
-      ky_hieu: 'window.addEventListener("javis:i18n"'
+      ky_hieu: 'window.addEventListener("thansa:i18n"'
     - file: server/main.py
-      ky_hieu: 'ma = request.cookies.get("javis_lang") or request.cookies.get("thansa_lang")'
+      ky_hieu: 'ma = request.cookies.get("thansa_lang") or request.cookies.get("thansa_lang")'
   vung_theo_doi:
     - "dashboard/i18n/index.js: _doan_tu_trinh_duyet, setLang, sự kiện javis:i18n, cookie javis_lang"
     - "dashboard/console.js: khối áp ui_lang server khi máy chưa chọn (daChon)"
@@ -1458,7 +1458,7 @@
     - file: bin/thansa-nginx-ssl.sh
       ky_hieu: 'MAPVAR="thansa_conn_upgrade_$('
     - file: docker-compose.yml
-      ky_hieu: "replicas: ${JAVIS_CADDY:-1}"
+      ky_hieu: "replicas: ${THANSA_CADDY:-1}"
     - file: server/routes/domain.py
       ky_hieu: "async def _activate_caddy("
   vung_theo_doi:
@@ -1539,14 +1539,14 @@
     trong image (token đăng nhập), tên MCP hub "javis", đường vault Javis/.
   commit: "[me] P051: bo cai mang ten Thansa - cai moi 100% thansa, may dang chay co cau noi"
   diem_neo:
-    - file: stop-javis.bat
-      ky_hieu: 'call "%~dp0stop-thansa.bat"'
+    - file: stop-thansa.bat
+      ky_hieu: 'title Dung Thansa OS'
     - file: server/updater.py
       ky_hieu: "def systemd_unit():"
     - file: install.sh
       ky_hieu: "update-index --skip-worktree"
     - file: server/main.py
-      ky_hieu: "def _autostart_chuyen_ten_cu() -> None:"
+      ky_hieu: '_AUTOSTART_NAME = "ThansaOS"'
   vung_theo_doi:
     - "start-javis.vbs / stop-javis.bat: CẦU NỐI - KHÔNG BAO GIỜ sửa nội dung (máy cài mới giấu bằng skip-worktree; bản phát hành nào sửa chúng là file hiện lại trên máy mới). Upstream sửa 2 file này khi trộn → GIẢI lấy bản cầu nối của fork, port thay đổi thật sang start-thansa.vbs / stop-thansa.bat."
     - "Upstream sửa file đã đổi tên (start-javis.bat, javis-autostart.ps1, bin/javis-*.sh, JAVIS OS.app, javis.service...) → git rebase dò rename; kiểm lại tay đã áp vào tên thansa."
@@ -1580,7 +1580,7 @@
   diem_neo:
     - file: server/slack_bot.py
       ky_hieu: "Bạn không có quyền dùng bot Thansa này."
-    - file: system/plugins/javis-reply-policy/plugin.yaml
+    - file: system/plugins/thansa-reply-policy/plugin.yaml
       ky_hieu: "author: Thansa (bundled)"
   vung_theo_doi:
     - "server/{slack_bot,whatsapp_bot,owner_channels,channel_context}.py + channels/*: chuỗi kênh mới"
@@ -1998,7 +1998,7 @@
     theo luật P007/P026/P027/P048 (131 chỗ / 40 file) + kéo link repo gốc về xahoapro/thansa-os.
   commit: "[me] P070: rebrand nen 0.176.0 (tu dong)"
   diem_neo:
-    - file: .claude/skills/javis-builder/SKILL.md
+    - file: .claude/skills/thansa-builder/SKILL.md
       ky_hieu: 'Thansa cho tải plugin người dù'
   vung_theo_doi:
     - ".claude/skills/javis-builder/SKILL.md"
@@ -2246,7 +2246,7 @@
     theo luật P007/P026/P027/P048 (318 chỗ / 53 file) + kéo link repo gốc về xahoapro/thansa-os.
   commit: "[me] P074: rebrand nen 0.369.0 (tu dong)"
   diem_neo:
-    - file: .claude/skills/javis-builder/SKILL.md
+    - file: .claude/skills/thansa-builder/SKILL.md
       ky_hieu: 'mode, luôn nằm TẮT. Thansa KHÔNG bật được;'
   vung_theo_doi:
     - ".claude/skills/javis-builder/SKILL.md"
