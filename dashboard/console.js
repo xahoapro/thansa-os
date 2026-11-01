@@ -536,6 +536,10 @@
     // nội dung/nút của trang mới. Đặc biệt bảo vệ các node chat mà tab Trò chuyện mượn vào
     // cviewBody (trước đây bị 1 render async trễ xoá mất → chat vỡ). Cũng hết nháy nội dung cũ.
     const fresh = el.cloneNode(false); el.parentNode.replaceChild(fresh, el); el = fresh;
+    // #936: the clone keeps every attribute. The Teams page marks this node data-localdrop (its own drop zone), so after a
+    // visit there the Chat page, which borrows the chat into this same node, ignored every dropped file. A new page starts
+    // without the mark; a page with its own drop zone sets it again while it renders.
+    el.removeAttribute("data-localdrop");
     // Trang Chatbot (0.65.10) tự vẽ tiêu đề cùng hàng với tab và chiếm trọn khung, nên đầu trang chung phải ẩn. Lớp nằm trên
     // #cview (KHÔNG bị clone như cviewBody) nên phải bật/tắt ở MỌI lần đổi trang, không thì trang sau mất đầu trang.
     const cv = document.getElementById("cview");
@@ -2271,6 +2275,8 @@
       brains = (d.brains || []).map(b => ({ name: b.label || b.name, path: b.path, is_default: b.is_default }));
     } catch (e) {}
     if (myGen !== _renderGen) return;
+    // 0.432.0: the hook popup hangs off <body>; leaving the page closes it.
+    _pageLeave = () => { try { window.JavisWebhooks.unmount(); } catch (e) {} };
     window.JavisWebhooks.mount(el.querySelector("#whSection"), { brains: () => brains, current: () => fbrain() });
   }
 
@@ -7250,7 +7256,7 @@
       const infoBtn = () => (JI ? JI.btn(t("info.more")) : "");
       const infoBody = (h) => (JI ? JI.body(h) : '<div class="info-body">' + h + "</div>");
       el.innerHTML = `<div class="settings-page"><div class="settings-card">
-        <div class="settings-card-head"><b>${esc(t("share.heading"))}${infoBtn()}</b><span class="gcard-tag">${ds.length}</span></div>
+        <div class="settings-card-head"><b><span class="share-total">${ds.length}</span> ${esc(t("share.live_links"))}${infoBtn()}</b></div>
         ${infoBody(esc(t("share.warn")))}
         ${coTim ? `<input id="shareSearch" class="share-search" type="search" spellcheck="false"
           autocomplete="off" placeholder="${esc(t("share.search_ph"))}" value="${esc(tuKhoa)}">
@@ -7403,7 +7409,7 @@
       const infoBody = (h) => (JI ? JI.body(h) : '<div class="info-body">' + h + "</div>");
       host.innerHTML = `<div class="settings-card"><div class="pet-editor" data-pet-editor>${P.editorHtml(cur, OPTS_ED)}</div></div>
       <div class="settings-card">
-        <div class="settings-card-head"><b>${esc(t("settings.pet"))}${infoBtn()}</b><span class="gcard-tag">${esc(cur.enabled ? t("settings.tag_on") : t("settings.tag_off"))}</span></div>
+        <div class="settings-card-head"><b>${esc(t(cur.enabled ? "settings.pet_state_on" : "settings.pet_state_off"))}${infoBtn()}</b></div>
         ${infoBody(esc(t("settings.pet_desc")) + "<br>" + esc(t("settings.pet_hint")))}
         <div class="js-actions">
           <button class="gcard-btn" id="setPetSave">${SAVE_ICON} ${esc(t("settings.pet_save"))}</button>
@@ -9232,11 +9238,17 @@
     _neDangDiLichSu = false;
     if (!laLichSu) _neDayLichSu(rel, it);
     _neVeNutLui();
-    // `inPlace`: open RIGHT IN the current frame (the middle column of the main screen, where the
-    // chat sits) instead of covering the whole screen. Today's daily note uses it: Ctrl+D is for
-    // jotting a few lines next to the work at hand, not for leaving that screen. The toolbar's
-    // maximize button can still go full screen.
-    ed.hidden = false; ed.classList.toggle("ne-full", !(opts && opts.inPlace)); _neSyncFull();
+    // 0.432.1: a file opens RIGHT IN the current frame (the middle column of the main screen, the
+    // chat's place on the Chat page, the file list on the Files page), never full screen by itself.
+    // Owner, 01/11/2026: "html hoặc .md khi mở mặc định nó zoom to hết cỡ, anh cần nó zoom trong
+    // khung, ấn mở zoom ra thì mới ra toàn màn hình". The toolbar's maximize button goes full screen,
+    // and moving to another file (a [[wikilink]], Back/Forward) keeps whatever size the owner chose.
+    // `inPlace` still forces the frame (Ctrl+D daily note); `full` forces full screen.
+    const daMo = !ed.hidden;
+    ed.hidden = false;
+    if (opts && opts.full) ed.classList.add("ne-full");
+    else if (!daMo || (opts && opts.inPlace)) ed.classList.remove("ne-full");
+    _neSyncFull();
     _neOpenRel = rel || "";     // để chip "file đang mở" biết có cần nạp lại hay chỉ cần đưa mắt về
     _neLayNoiDung = null; _neGocText = null;   // file mới: mốc so sánh dựng lại ở dưới
     // Đang ở trang Trò chuyện thì trình sửa chiếm chỗ khung chat thay vì đè lên visual não
@@ -9339,6 +9351,8 @@
         } catch (e) {}
         // File chữ khác không có thanh định dạng: bộ đếm đứng đầu thanh nút phía trên, đếm nguyên văn.
         _neGanDemTu(actions, () => ({ text: ta.value, md: false }), [ta]);
+        // .html (0.430.2): opens on the PREVIEW, like an artifact, with a Code tab (html-preview.js).
+        if (window.JavisHtmlPreview && window.JavisHtmlPreview.isHtmlPath(rel)) _neHtmlTabs(body, actions, ta, rel);
       }
       const saveBtn = document.createElement("button"); saveBtn.innerHTML = SAVE_ICON + " " + esc(window.t("common.save")); saveBtn.title = window.t("cs.ne_save_title");
       // Mốc so sánh "đã sửa gì chưa": lấy SAU khi dựng xong khung soạn, tức là bản đã vòng
@@ -9366,10 +9380,39 @@
       actions.appendChild(saveBtn);
       _neCommonBtns(actions, rel, it);
       _vtMarkActive(isMd ? rel : null);
-      ta.focus();
+      if (!body.classList.contains("mode-preview")) ta.focus();   // a preview needs no keyboard (phones)
       return;
     }
     _neRenderDownload(body, actions, rel, it); _vtMarkActive(null);
+  }
+
+  // Preview / Code tabs for an .html file in the editor. The preview draws the code in the editor
+  // right now, so an edit shows on the next switch back without saving first.
+  function _neHtmlTabs(body, actions, ta, rel) {
+    const HP = window.JavisHtmlPreview;
+    const prev = document.createElement("div");
+    prev.className = "ne-prev ne-html-prev";
+    body.appendChild(prev);
+    body.className = "ne-body mode-preview";
+    let shown = null;
+    const draw = () => {
+      if (shown === ta.value) return;
+      shown = ta.value;
+      HP.render(prev, ta.value, rel, (p) => _vtRaw(p));
+    };
+    const seg = document.createElement("span"); seg.className = "ne-seg";
+    [["preview", window.t("crender.ap_preview")], ["source", window.t("crender.ap_source")]].forEach(([mode, lbl]) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = lbl;
+      b.classList.toggle("active", mode === "preview");
+      b.onclick = () => {
+        body.className = "ne-body mode-" + mode;
+        seg.querySelectorAll("button").forEach(x => x.classList.toggle("active", x === b));
+        if (mode === "preview") draw(); else ta.focus();
+      };
+      seg.appendChild(b);
+    });
+    actions.insertBefore(seg, actions.firstChild);
+    draw();
   }
 
   // Tooltip NHANH cho rail khi thu gọn (native title trễ ~500ms). 1 node body-level, thoát mọi overflow clip.

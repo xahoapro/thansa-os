@@ -6,6 +6,114 @@ Lịch sử phiên bản Javis OS. Bản mới nhất ở trên cùng. Xem ngay 
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.438.1] - 2026-11-01
+### Cải thiện
+- **Thẻ GitHub ở trang Kết nối gọn như các thẻ khác.** Có chấm xanh báo đang kết nối, logo to bằng các thẻ còn lại.
+- Bỏ nút **Chọn repo cho Javis** và dòng "Chưa tải repo nào": repo chọn ngay trong khung chat bằng dấu cộng. Nút chọn repo chỉ hiện khi app GitHub chưa được cài vào tài khoản nào.
+- **Thêm repo ngay trong bảng chọn.** Không thấy repo cần dùng thì bấm **Thêm repo trên GitHub** ở đáy bảng, tick thêm repo bên GitHub rồi quay lại Javis là repo hiện ra, khỏi tải lại trang.
+
+## [0.438.0] - 2026-11-01
+### Thêm mới
+- **Một lần nối Fanpage dùng cho cả đăng bài.** Fanpage nối ở thẻ Facebook Messenger giờ dùng được luôn cho việc Javis đăng bài (ngay khi nhờ hoặc tự động theo lịch), nên Kho cài đặt gỡ thẻ Facebook Trang (máy đã cài vẫn dùng như cũ). Trang đã nối từ trước thì Đăng nhập Facebook lại một lần để cấp quyền đăng bài.
+### Cải thiện
+- Thẻ Facebook Messenger ở trang Kết nối đổi sang logo Meta, vì giờ nó lo cả tin nhắn, bình luận lẫn đăng bài.
+- **Messenger nối một chỗ.** Thẻ Facebook Messenger ở trang Kết nối giờ hiện cả Địa chỉ webhook và Mã xác minh kèm nút Chép, dán tay vào app Meta khi cần mà không phải sang trang khác.
+- Fanpage đã nối ở trang Kết nối tự có trong danh sách kênh của Chatbot. Chọn Messenger ở Thêm kênh sẽ thấy lời nhắc kèm nút mở thẳng thẻ Messenger, khỏi nối lại lần hai.
+- **Hướng dẫn nối Messenger viết lại cho đúng:** đi đường nút Đăng nhập Facebook (thêm quyền, khai Facebook Login và hai địa chỉ của Javis, chọn Trang, gắn bot, chuyển Live), dán token chỉ còn là đường dự phòng. Bảng lỗi có thêm "URL bị chặn" và "Invalid Scopes".
+
+## [0.437.0] - 2026-11-01
+### Cải thiện
+- **Bước của nhóm chờ đúng bước nó cần.** Trưởng nhóm giờ ghi được phần nào cần kết quả của phần nào. Các phần không liên quan nhau chạy cùng lúc, phần cần kết quả thì bắt đầu ngay khi đúng các phần nó cần đã xong, không phải chờ cả việc.
+- Ví dụ "A nghiên cứu đối thủ, B lấy số liệu, C viết kế hoạch từ cả hai": A và B làm cùng lúc, C làm sau. Còn "B viết bài, C làm ảnh, cả hai dựa trên số liệu của A" thì B và C làm cùng lúc ngay sau A, thay vì lần lượt như trước.
+- **Không tốn thêm lượt nào:** mỗi phần chỉ đọc kết quả của đúng các phần nó chờ. Việc yêu cầu "làm lần lượt" vẫn chạy như cũ.
+
+## [0.436.1] - 2026-11-01
+### Cải thiện
+- **Hướng dẫn nối Messenger từng bước, có link ngay trong form.** Chọn Messenger ở Chatbot, Kênh, Thêm kênh là thấy link "Hướng dẫn từng bước" mở trang hướng dẫn trên GitHub, đi từng cú bấm trên trang Meta cho người mới. Thẻ Messenger ở trang Kết nối cũng có link.
+- **Kho cài đặt gọn lại còn hai thẻ Meta:** "Meta Ads (Facebook & Instagram)" xem số liệu quảng cáo và "Facebook Trang (đăng bài, bình luận)". Thẻ Meta Ads bản beta của Meta bị bỏ vì Meta chưa cho tự kết nối; máy đã cài vẫn dùng như cũ. Mô tả ghi rõ một app Meta dùng chung được cho mọi thẻ.
+### Sửa lỗi
+- Nối Messenger (cũng như WhatsApp, Zalo OA) không còn hiện dòng "Bot này không vào được nhóm Zalo". Dòng đó chỉ dành cho Zalo Bot.
+
+## [0.436.0] - 2026-11-01
+### Cải thiện
+- **Nhóm tự chạy lại khi gặp lỗi tạm thời.** Model quá tải, mạng chập hay gói hết lượt không còn làm việc của nhóm đứng tới sáng chờ bạn bấm Chạy lại. Nhóm tự thử lại sau 1, 5 rồi 15 phút (hết lượt gói thì chờ đúng giờ gói mở lại), tối đa 3 lần, rồi mới dừng hỏi bạn.
+- **An toàn trước đã:** bước nào đã gọi công cụ (gửi tin, đăng bài, ghi file) thì không bao giờ tự chạy lại, để không có gì bị làm hai lần. Trong lúc chờ, nhóm khác vẫn chạy bình thường.
+- **Thành viên báo kết quả gọn và thật.** Cuối mỗi bước, thành viên báo làm được hay chưa, tóm tắt 3 câu và file đã ghi. Bước báo chưa làm được thì việc dừng hỏi bạn, không tốn thêm lượt tổng hợp một kết quả hỏng.
+- **Tốn ít token hơn khi tổng hợp:** kết quả dài được đọc bằng bản tóm tắt, và mỗi kết quả chỉ nằm một lần trong lời nhắc thay vì hai lần như trước.
+
+## [0.435.0] - 2026-11-01
+### Thêm mới
+- **Nghe tin thoại và lời nói trong video không cần Groq.** Javis thử lần lượt các key bạn có ở trang Models: Groq, rồi OpenAI, rồi Gemini. Key này lỗi hay hết lượt thì tự chuyển sang key kế tiếp.
+- **Bộ nghe offline:** trang Công cụ có thêm thẻ "Bộ nghe offline (Whisper)". Bấm cài một lần (tải khoảng 1 GB) là Javis nghe ngay trên máy, không cần key nào, dùng khi mọi key đều không có hoặc đều lỗi. Máy yếu nghe chậm hơn và kém hơn Groq.
+- **Chatbot Zalo cá nhân nghe được tin thoại của khách.** Trước đây tin thoại bị bỏ qua hẳn. Không nghe được thì bot nói thật và nhờ khách gõ chữ, không đoán.
+
+## [0.434.0] - 2026-11-01
+### Thêm mới
+- **Nối Fanpage bằng nút Đăng nhập Facebook.** Thẻ Messenger ở trang Kết nối chỉ còn hỏi App ID và App secret. Bấm đăng nhập, tick các Fanpage muốn nối, Javis tự làm phần còn lại. Hết cảnh mở Graph API Explorer chép token và Page ID.
+- **Bình luận Fanpage vào Hộp thư, giống Pancake.** Mỗi bình luận gốc dưới bài viết là một hội thoại riêng, các trả lời bên dưới gom chung vào đó. Bạn trả lời trong Hộp thư thì câu đó hiện ngay dưới bình luận trên Facebook.
+- Mỗi Fanpage chọn được cách xử lý bình luận: hiện ở Hộp thư để bạn trả lời (mặc định), để bot tự trả lời công khai, hoặc tắt.
+- Javis tự phục vụ sẵn trang chính sách quyền riêng tư trên tên miền của bạn, dán vào app Meta là chuyển được app sang chế độ Live.
+
+## [0.433.0] - 2026-11-01
+### Thêm mới
+- **Chatbot Zalo cá nhân xem được video khách gửi.** Trước đây video bị bỏ qua nên bot chỉ biết nói "em chưa xem được video". Giờ Javis cắt 4 khung hình rải đều trong video đưa cho bot xem, như khi khách gửi ảnh.
+- **Bot nghe được cả lời nói trong video** nếu bạn đã dán key Groq ở trang Models (cùng key nghe tin thoại). Chưa có key thì bot vẫn xem hình, và biết là mình không nghe tiếng.
+- Khách gửi video rồi nhắn tiếp "anh xem giúp em với" thì bot vẫn thấy video đó trong 10 phút, không cần gửi lại. Video không tải được (link hết hạn, quá 60MB) thì bot nói thật là chưa xem được và nhờ khách tả lại.
+
+## [0.432.4] - 2026-11-01
+### Cải thiện
+- **Chọn repo trong khung chat: tick là gắn luôn.** Bỏ nút "Gắn repo vào cuộc trò chuyện" ở cuối danh sách, khỏi phải kéo xuống tìm. Bỏ tick là gỡ repo khỏi cuộc trò chuyện.
+- Dòng **Kết nối thêm** đứng cố định ở đáy bảng chọn, danh sách dài cũng không đẩy nó khuất.
+
+## [0.432.3] - 2026-11-01
+### Cải thiện
+- **Tìm quy trình ngay khi tạo webhook.** Phía trên ô chọn Quy trình có thêm ô tìm: gõ vài chữ trong tên là danh sách thu gọn lại, kèm dòng "3/40 quy trình khớp". Gõ không dấu cũng được, "cham soc" vẫn ra "Chăm sóc khách".
+- Không quy trình nào khớp thì ô chọn nói rõ, và nút Lưu nhắc bạn chọn một quy trình thay vì lưu webhook trống.
+
+## [0.432.2] - 2026-11-01
+### Sửa lỗi
+- **Thẻ GitHub thôi báo nhầm "Token còn thiếu quyền: repo, workflow"** khi bạn kết nối bằng nút Đăng nhập bằng GitHub. Cách đăng nhập này không dùng loại quyền đó nên không bao giờ thiếu, repo thì vẫn chọn trong khung chat như cũ. Ai đã thấy dòng vàng này thì nó tự biến mất, không cần đăng nhập lại.
+
+## [0.432.1] - 2026-11-01
+### Sửa lỗi
+- **Kéo thả file vào khung chat chạy lại.** Sau khi ghé trang Nhóm, thả file vào trang Trò chuyện không có gì xảy ra. Giờ thả là lớp phủ hiện ra và file vào hàng đính kèm như nút kẹp giấy. Cảm ơn @thaihatr-source (#936).
+- **Mở file .html hay .md nằm gọn trong khung**, không tự phóng to kín màn hình nữa. Muốn xem toàn màn hình thì bấm nút phóng to, chuyển sang file khác vẫn giữ cỡ đã chọn.
+- **Kết nối MCP qua OAuth chuẩn hơn.** Javis gửi đúng định danh máy chủ khai báo (như SDK chính thức), và báo thẳng khi nhà cung cấp không nhận địa chỉ quay về của Javis thay vì để bạn thử mật khẩu mãi. Cảm ơn @dev23072005 (#939).
+- **Trí nhớ gợi lại đúng hơn.** Nhật ký chạy agent không còn dội lại thành ký ức, hết báo mâu thuẫn giả giữa các ký ức chung dòng "Vì sao:", file có chữ "profile" trong tên không còn chiếm chỗ mọi lượt, và mục lục phụ trong memory/ được hiểu. File Office mở từ chat giữ đúng tên. Cảm ơn @sohophotography (#934), @ethan1nguyen1 (#898).
+
+## [0.432.0] - 2026-11-01
+### Cải thiện
+- **Trang Webhook làm lại cho dễ theo dõi.** Đầu trang là một hàng số gọn: bao nhiêu webhook đang chạy, sự kiện và lỗi trong 24 giờ, việc cần bạn xem. Có sự kiện chưa rõ đã xong chưa thì một dải màu cam hiện lên, bấm **Xem ngay** là tới đúng chỗ.
+- **Mỗi webhook gọn thành một dòng** có chấm trạng thái và thanh 20 lần chạy gần nhất: xanh là ổn, cam là cần xem, đỏ là lỗi. Nhìn một cái là biết webhook nào có vấn đề.
+- **Bấm vào webhook là mở cửa sổ riêng, không xổ xuống nữa.** Đổi tab Sự kiện, Cấu hình, Tình trạng, lọc hay mở một lần chạy đều đổi ngay trong cửa sổ đó, chỉ đóng khi bạn bấm X. Lần chạy chia theo ngày, bỏ chữ `[SILENT]` khó hiểu, bật tắt nhận và xử lý bằng công tắc gạt.
+- **Bỏ tiêu đề lặp lại** ở trang Webhook, Cookies, Link đang chia sẻ và Linh vật cho đỡ tốn chỗ. Lời giải thích vẫn nằm trong nút (i).
+
+## [0.431.0] - 2026-11-01
+### Cải thiện
+- **Ô chọn bộ não mới, giống nhau trên mọi máy.** Trước đây mỗi điện thoại, máy tính hiện danh sách một kiểu vì đó là ô chọn của trình duyệt. Giờ Javis tự vẽ: máy tính thả xuống ngay dưới nút, điện thoại trượt lên từ đáy màn hình với chữ to, có số ghi chú và dấu tích ở bộ não đang dùng. Nhiều bộ não thì có ô tìm.
+- **Tự sắp thứ tự bộ não.** Mở ô chọn, bấm **Sắp xếp**, kéo tay nắm hoặc bấm mũi tên lên xuống rồi bấm **Xong**. Thứ tự lưu trên máy chủ nên mọi máy đều thấy giống nhau.
+- Chưa sắp thì danh sách xếp theo tên hiển thị như người đọc: "2-..." đứng trước "10-...". Trước đây xếp theo tên thư mục nên bộ não đã đổi tên hay bị lộn chỗ.
+
+## [0.430.2] - 2026-11-01
+### Cải thiện
+- **Mở file .html là thấy ngay trang chạy thật.** Bấm link file .html trong chat hoặc mở trong Brain, Javis hiện trang ở chế độ **Xem trước** giống artifact của Claude, ảnh, màu và nút bấm đúng như khi mở bằng trình duyệt. Bấm **Mã nguồn** để xem và sửa code, Lưu như cũ.
+- Sửa code xong bấm lại Xem trước là thấy thay đổi ngay, chưa cần lưu. Trang chạy trong khung cách ly nên script trong file không đọc được dữ liệu của Javis.
+
+## [0.430.1] - 2026-11-01
+### Cải thiện
+- **Dán văn bản dài vào chat không còn tự biến thành file.** Đoạn đến 12.000 ký tự và 150 dòng dán thẳng vào ô chat như thường, xem và sửa được trước khi gửi. Trước đây chỉ quá 1.500 ký tự là thành thẻ `.txt`, không còn thấy mình đã dán gì.
+- **Đoạn dài hơn thì Javis hỏi trước.** Một hộp hiện toàn bộ đoạn dán, chọn Dán vào chat, Đính kèm .txt hoặc Hủy. Áp dụng cho cả chat chính lẫn chat Nhóm. Cảm ơn @hwangrin (#937).
+
+## [0.430.0] - 2026-11-01
+### Thêm mới
+- **Kết nối GitHub bằng nút Đăng nhập, không phải tạo token.** Trên trang Kết nối, bấm **Đăng nhập bằng GitHub**: Javis hiện một mã ngắn, bạn bấm Mở GitHub, dán mã, bấm Authorize là xong. Chạy được cả trên VPS không có trình duyệt.
+- **Bạn tự chọn repo cho Javis.** Đăng nhập xong, bấm **Chọn repo cho Javis** để cài app Javis OS vào đúng những repo muốn cho Javis làm việc. Repo nào không chọn thì Javis không thấy.
+- Ô dán token vẫn còn ngay bên dưới cho ai quen cách cũ.
+
+## [0.429.1] - 2026-10-31
+### Sửa lỗi
+- **Bot chạy ChatGPT (Codex) không còn gửi lời dẫn cho khách.** Câu kiểu "Em tra danh sách lớp hiện có để xác nhận ạ" trước khi bot tra cứu không còn lọt vào tin gửi khách, chỉ câu trả lời cuối được gửi.
+
 ## [0.429.0] - 2026-10-31
 ### Sửa lỗi
 - **Việc do chatbot tạo giờ nằm đúng dưới chatbot đó.** Trước đây mọi lời nhắc, loop và việc Kanban mà chatbot (ví dụ trợ lý Zalo của bạn) tạo trong lúc trò chuyện đều hiện dưới Javis Core. Giờ chúng nằm dưới trợ lý mà chatbot đang dùng, cả ở danh sách lẫn ở Thống kê. Trợ lý đó không thuộc brain này thì chatbot có hẳn một dòng riêng.

@@ -31,7 +31,7 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=153">
+  <link rel="stylesheet" href="/static/style.css?v=156">
   <link rel="stylesheet" href="/static/console.css?v=130">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
@@ -961,7 +961,7 @@
   "/static/agent-judge-ui.js?v=2"
  ],
  "teams": [
-  "/static/teams.js?v=20"
+  "/static/teams.js?v=21"
  ],
  "packs": [
   "/static/packs.js?v=4"
@@ -984,7 +984,8 @@
   "/static/usage.js?v=3"
  ],
  "webhooks": [
-  "/static/webhooks.js?v=7"
+  "/static/webhooks.css?v=1",
+  "/static/webhooks.js?v=8"
  ],
  "nhiemvu": [
   "/static/date-range.css?v=1",
@@ -1031,7 +1032,9 @@
   <script src="/static/editor-cmds.js?v=2"></script>
   <!-- Đếm từ + ký tự cho trình sửa file (0.65.32). Thuần, console.js dùng qua window.JavisWordCount. -->
   <script src="/static/word-count.js?v=1"></script>
-  <script src="/static/file-editor.js?v=14"></script>
+  <!-- .html opens on its preview with a Code tab (0.430.2): before file-editor.js and console.js. -->
+  <script src="/static/html-preview.js?v=1"></script>
+  <script src="/static/file-editor.js?v=15"></script>
   <!-- Insert images into a note (paste/drop/button): compress, then save into images/. After
        editor-cmds.js because it shares its editor lookup (contextFor). -->
   <script src="/static/note-images.js?v=1"></script>
@@ -1048,6 +1051,8 @@
   <!-- Stick to the latest message, the jump button and its "New messages" pill, shared by app.js and teams.js. -->
   <script src="/static/chat-scroll.js?v=1"></script>
   <script src="/static/chat-quote.js?v=2"></script>
+  <!-- Long paste (0.430.1): preview the whole text, then paste inline or attach .txt. Before app.js and teams.js. -->
+  <script src="/static/chat-paste.js?v=1"></script>
   <!-- Sáu reaction dùng chung (T2 0.154.0): nạp TRƯỚC chat-reactions.js, app.js, teams.js và mobile-chat.js. -->
   <script src="/static/reactions.js?v=3"></script>
   <!-- Nhấn giữ tin trên điện thoại (0.179.0): nạp TRƯỚC chat-reactions.js và teams.js. -->
@@ -1075,7 +1080,7 @@
   <script src="/static/screen-awake.js?v=1"></script>
   <script src="/static/incoming-call.js?v=1"></script>
   <script src="/static/call-bar.js?v=1"></script>
-  <script src="/static/app.js?v=156"></script>
+  <script src="/static/app.js?v=157"></script>
   <!-- Sau app.js: dải việc nền đọc window.JavisSessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=3"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -1093,7 +1098,9 @@
   <script src="/static/quick-settings.js?v=11"></script>
   <script src="/static/remote-access.js?v=2"></script>
   <script src="/static/chat-zoom.js?v=6"></script>
-  <script src="/static/brains-ui.js?v=8"></script>
+  <script src="/static/brains-ui.js?v=9"></script>
+  <!-- Brain picker drawn by Javis over #graphSource (0.431.0): after brains-ui.js and app.js. -->
+  <script src="/static/brain-picker.js?v=1"></script>
   <script src="/static/sessions-ui.js?v=25"></script>
   <link rel="stylesheet" href="/static/improvement-candidates.css?v=3">
   <script src="/static/improvement-experiments.js?v=1"></script>
@@ -1136,7 +1143,7 @@
   <script src="/static/login-vault.js?v=2"></script>
   <script src="/static/messenger-connect.js?v=3"></script>
   <script src="/static/voice-catalog.js?v=1"></script>
-  <script src="/static/console.js?v=204"></script>
+  <script src="/static/console.js?v=206"></script>
   <script src="/static/mobile-chat.js?v=16"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=3"></script>
