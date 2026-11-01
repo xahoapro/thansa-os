@@ -350,11 +350,11 @@ async def start_auth(conn_id, redirect_uri, _retry=0):
                 print(f"[oauth dcr] {e}", file=sys.stderr)
         if dcr_mismatch:
             return {"ok": False, "error": localefmt.chu(
-                "Nhà cung cấp trả về một ứng dụng đăng nhập dùng chung không chấp nhận địa chỉ quay về của Javis ("
+                "Nhà cung cấp trả về một ứng dụng đăng nhập dùng chung không chấp nhận địa chỉ quay về của Thansa ("
                 + redirect_uri + "). Trang đăng nhập của họ sẽ báo lỗi dù bạn nhập đúng mật khẩu, nên đừng thử lại "
                 "mật khẩu. Đây là giới hạn phía nhà cung cấp: cần họ cho tự đăng ký đúng địa chỉ này. Trong lúc chờ, "
                 "dùng API key hoặc cách kết nối khác nếu nhà cung cấp có.",
-                "The provider answered with a shared sign-in app that does not accept Javis's return address ("
+                "The provider answered with a shared sign-in app that does not accept Thansa's return address ("
                 + redirect_uri + "). Their sign-in page will fail even with the right password, so retrying the "
                 "password will not help. This is a provider-side limit: they need to allow registering this address. "
                 "Meanwhile, use an API key or another way to connect if the provider offers one.")}

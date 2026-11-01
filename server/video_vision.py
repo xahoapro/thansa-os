@@ -148,7 +148,7 @@ async def _look(url: str, dest: Path, msg_id: str, transcribe: Optional[Transcri
         res["why"] = "tin video không kèm link tải"
         return res
     if not available():
-        res["why"] = "máy chủ Javis chưa cài ffmpeg"
+        res["why"] = "máy chủ Thansa chưa cài ffmpeg"
         return res
     import image_vision
     import zalo_attachments

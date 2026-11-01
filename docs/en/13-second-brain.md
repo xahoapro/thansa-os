@@ -72,7 +72,7 @@ The starting brain is named **Brain Default** and cannot be deleted (it is the "
 
 1. Open the brain selector and press **Reorder**.
 2. Drag the handle (the two-way arrow at the start of a row), or press the up / down arrow at the end of a row.
-3. Press **Done**. The order is saved on the Javis server, so your phone and computer show the same list.
+3. Press **Done**. The order is saved on the Thansa server, so your phone and computer show the same list.
 
 Until you set an order, brains sort by their shown name with numbers read by value: "2-..." comes before "10-...". A brain created after you set an order goes to the end of the list.
 

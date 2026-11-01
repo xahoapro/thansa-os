@@ -595,7 +595,7 @@ async def nghe_cho_bot(meta: dict, cfg: dict) -> str:
 
     async def _one(url: str, i: int) -> str:
         if hear is None:
-            return "(khách gửi một tin thoại nhưng bạn không nghe được: Javis chưa nối bộ nghe. Nhờ khách gõ chữ.) "
+            return "(khách gửi một tin thoại nhưng bạn không nghe được: Thansa chưa nối bộ nghe. Nhờ khách gõ chữ.) "
         with tempfile.TemporaryDirectory(prefix="javis-voice-") as d:
             saved, why = await zalo_attachments.fetch_file({"url": url, "name": f"voice{i}.m4a"}, Path(d), AUDIO_MAX_BYTES)
             if not saved:

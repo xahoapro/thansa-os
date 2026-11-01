@@ -72,7 +72,7 @@ Brain khởi đầu tên **Brain Default**, không xoá được (đây là "nã
 
 1. Mở ô chọn brain, bấm **Sắp xếp**.
 2. Kéo tay nắm (biểu tượng mũi tên hai chiều) ở đầu dòng, hoặc bấm mũi tên lên / xuống ở cuối dòng.
-3. Bấm **Xong**. Thứ tự lưu trên máy chủ Javis nên điện thoại và máy tính đều thấy giống nhau.
+3. Bấm **Xong**. Thứ tự lưu trên máy chủ Thansa nên điện thoại và máy tính đều thấy giống nhau.
 
 Chưa sắp lần nào thì brain xếp theo tên hiển thị, số đọc theo giá trị: "2-..." đứng trước "10-...". Brain mới tạo sau khi đã sắp sẽ đứng cuối danh sách.
 

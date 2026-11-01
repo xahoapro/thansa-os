@@ -88,10 +88,10 @@ def _error_text(code: str, desc: str = "") -> str:
                             "You pressed Cancel on GitHub. Press Sign in again to connect."),
         "expired_token": _c("Mã đã hết hạn. Bấm Đăng nhập lần nữa để lấy mã mới.",
                             "The code expired. Press Sign in again for a new one."),
-        "device_flow_disabled": _c("GitHub App của Javis chưa bật Device Flow.",
-                                   "The Javis GitHub App does not have Device Flow enabled."),
-        "incorrect_client_credentials": _c("GitHub không nhận Client ID của Javis.",
-                                           "GitHub does not recognise the Javis client id."),
+        "device_flow_disabled": _c("GitHub App của Thansa chưa bật Device Flow.",
+                                   "The Thansa GitHub App does not have Device Flow enabled."),
+        "incorrect_client_credentials": _c("GitHub không nhận Client ID của Thansa.",
+                                           "GitHub does not recognise the Thansa client id."),
     }
     return known.get(code) or _c(f"GitHub từ chối đăng nhập: {desc or code}", f"GitHub refused the sign-in: {desc or code}")
 

@@ -93,8 +93,8 @@ async def start(app_id: str, app_secret: str, redirect_uri: str, brain: str = ""
         return {"ok": False, "error": bad}
     if not str(redirect_uri or "").startswith("https://"):
         return {"ok": False, "error": _c(
-            "Javis cần địa chỉ HTTPS (Cài đặt, Truy cập từ xa) và bạn phải mở Javis bằng địa chỉ đó.",
-            "Javis needs an HTTPS address (Settings, Remote access) and you must open Javis through it.")}
+            "Thansa cần địa chỉ HTTPS (Cài đặt, Truy cập từ xa) và bạn phải mở Thansa bằng địa chỉ đó.",
+            "Thansa needs an HTTPS address (Settings, Remote access) and you must open Thansa through it.")}
     own = client is None
     client = client or httpx.AsyncClient(timeout=20)
     try:
@@ -133,8 +133,8 @@ async def callback(state: str, code: str, error: str = "", error_description: st
     with _lock:
         p = dict(_pending.get(str(state or "")) or {})
     if not p:
-        return {"ok": False, "error": _c("Phiên đăng nhập đã hết hạn. Quay lại Javis bấm Đăng nhập Facebook lần nữa.",
-                                         "This sign-in expired. Go back to Javis and click Log in with Facebook again.")}
+        return {"ok": False, "error": _c("Phiên đăng nhập đã hết hạn. Quay lại Thansa bấm Đăng nhập Facebook lần nữa.",
+                                         "This sign-in expired. Go back to Thansa and click Log in with Facebook again.")}
     if error or not code:
         msg = error_description or error or _c("Facebook không trả mã đăng nhập.", "Facebook returned no sign-in code.")
         if error == "access_denied":
@@ -215,12 +215,12 @@ def forget(state: str) -> None:
         _pending.pop(str(state or ""), None)
 
 
-def privacy_html(brand: str = "Javis OS", pages=()) -> str:
+def privacy_html(brand: str = "Thansa OS", pages=()) -> str:
     """A plain privacy policy page Meta accepts as the app's Privacy Policy URL and User data deletion
     instructions URL, served by this Javis itself so the owner can switch the app to Live. Both
     languages on one page: Meta's reviewers and the Page's customers may read either."""
     import html as h
-    b = h.escape(str(brand or "Javis OS"))
+    b = h.escape(str(brand or "Thansa OS"))
     names = ", ".join(h.escape(str(n)) for n in pages if str(n or "").strip())
     on_vi = f" của {names}" if names else ""
     on_en = f" of {names}" if names else ""

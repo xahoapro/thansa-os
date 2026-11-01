@@ -25148,15 +25148,15 @@ async def messenger_oauth_callback(state: str = Query(""), code: str = Query("")
     res = await messenger_oauth.callback(state, code, error, error_description)
     if res.get("ok"):
         title = localefmt.chu("✓ Đã đăng nhập Facebook", "✓ Signed in with Facebook")
-        body = localefmt.chu(f"Tìm thấy {len(res['pages'])} Fanpage. Quay lại tab Javis để chọn Trang muốn nối, "
+        body = localefmt.chu(f"Tìm thấy {len(res['pages'])} Fanpage. Quay lại tab Thansa để chọn Trang muốn nối, "
                              "tab này tự đóng.",
-                             f"Found {len(res['pages'])} Page(s). Go back to the Javis tab to pick the Pages to "
+                             f"Found {len(res['pages'])} Page(s). Go back to the Thansa tab to pick the Pages to "
                              "connect, this tab closes by itself.")
     else:
         title = localefmt.chu("⚠ Chưa đăng nhập được", "⚠ Sign-in did not finish")
         body = str(res.get("error", ""))
     html = ("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, "
-            "initial-scale=1'><title>Javis</title></head><body style='font-family:system-ui,sans-serif;font-size:18px;"
+            "initial-scale=1'><title>Thansa</title></head><body style='font-family:system-ui,sans-serif;font-size:18px;"
             "background:#111;color:#eee;text-align:center;padding:72px 16px'>"
             f"<h2>{html_mod.escape(title)}</h2><p>{html_mod.escape(body)}</p>"
             + ("<script>setTimeout(function(){try{window.close()}catch(e){}},1500)</script>" if res.get("ok") else "")
@@ -25240,9 +25240,9 @@ async def messenger_comments_mode(request: Request):
 async def messenger_privacy():
     """Privacy policy and data deletion page for the owner's Meta app (needed to go Live)."""
     try:
-        brand = str(cfgmod.read_settings().get("workspace_name") or "") or "Javis OS"
+        brand = str(cfgmod.read_settings().get("workspace_name") or "") or "Thansa OS"
     except Exception:
-        brand = "Javis OS"
+        brand = "Thansa OS"
     pages = []
     try:
         pages = [(a.get("meta") or {}).get("bot_name") or a.get("label") or ""

@@ -1,8 +1,8 @@
 # Quy ước dev (phiên Claude Code làm việc trên repo này)
 
 File này tách khỏi `CLAUDE.md` ngày 2026-09-22. Lý do: `CLAUDE.md` là system prompt đi vào
-MỌI lượt chat của Javis, có trần ngân sách (`tests/python/test_prompt_budget.py`), mà quy ước
-dev thì người dùng Javis không bao giờ cần. Để ở đây thì viết bao nhiêu cũng được, không đánh
+MỌI lượt chat của Thansa, có trần ngân sách (`tests/python/test_prompt_budget.py`), mà quy ước
+dev thì người dùng Thansa không bao giờ cần. Để ở đây thì viết bao nhiêu cũng được, không đánh
 thuế lên lượt chat nào cả.
 
 ## Nhánh, PR và merge
@@ -88,7 +88,7 @@ Chủ repo chốt 01/11/2026: "đừng lặp lại tiêu đề như vậy, thậ
 biết tiết kiệm không gian". Đầu mỗi trang đã có thanh tiêu đề chung (`.cview-head`, chữ lấy từ `page.<id>.title` và
 `page.<id>.sub`), nên:
 
-- **Thân trang không vẽ lại tên trang**, kể cả khi kèm một câu khẩu hiệu ("Webhook: sự kiện bên ngoài gọi Javis làm
+- **Thân trang không vẽ lại tên trang**, kể cả khi kèm một câu khẩu hiệu ("Webhook: sự kiện bên ngoài gọi Thansa làm
   việc" ngay dưới tiêu đề "Webhook" là sai). Mở trang là vào thẳng thứ cần nhìn: số liệu, danh sách, nút bấm.
 - Nút (i) từng đứng cạnh cái tiêu đề thừa thì dời sang cạnh nút hành động chính, hoặc dùng `JavisInfo.pair(html, nhãn)`
   với một nhãn nói đúng nội dung bên trong ("Cách lấy cookie").

@@ -47,10 +47,10 @@ def describe() -> dict:
         "id": "local_ear",
         "ten": localefmt.chu("Bộ nghe offline (Whisper)", "Offline ear (Whisper)"),
         "mo_ta": localefmt.chu(
-            "Nghe tin thoại và lời nói trong video khách gửi ngay trên máy này, không cần API key nào. Javis chỉ dùng "
+            "Nghe tin thoại và lời nói trong video khách gửi ngay trên máy này, không cần API key nào. Thansa chỉ dùng "
             "khi không có key Groq, OpenAI hay Gemini, hoặc các key đó đang lỗi. Tải về khoảng 1 GB. Máy yếu nghe chậm "
             "hơn (một video 30 giây mất vài chục giây) và nghe tiếng Việt kém hơn Groq.",
-            "Hears voice messages and the speech in customers' videos on this machine, with no API key. Javis uses it "
+            "Hears voice messages and the speech in customers' videos on this machine, with no API key. Thansa uses it "
             "only when there is no Groq, OpenAI or Gemini key, or those keys fail. About 1 GB to download. A weak "
             "machine hears slowly (a 30 second video can take tens of seconds) and less accurately than Groq."),
         "dung_luong_uoc": SIZE_HINT,
@@ -95,8 +95,8 @@ def status(d: dict, job: dict) -> dict:
         tt, why = "chua_cai", localefmt.chu("Bản tải về chưa đủ (thiếu thư viện hoặc mô hình). Bấm cài lại.",
                                             "The download is incomplete (library or model missing). Install again.")
     else:
-        tt, why = "chua_cai", localefmt.chu("Chưa cài. Không có key nào thì Javis chưa nghe được tin thoại.",
-                                            "Not installed. Without a key Javis cannot hear voice messages yet.")
+        tt, why = "chua_cai", localefmt.chu("Chưa cài. Không có key nào thì Thansa chưa nghe được tin thoại.",
+                                            "Not installed. Without a key Thansa cannot hear voice messages yet.")
     d.update({"trang_thai": tt, "ly_do": why, "go_duoc": ROOT.exists() and not job.get("dang_chay"),
               "duong_dan": str(ROOT) if ROOT.exists() else "",
               "dung_luong": _doc_mb(_size(ROOT)) if ROOT.exists() else ""})

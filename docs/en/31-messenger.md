@@ -19,17 +19,17 @@ From 0.134.0 a dedicated bot can answer a Facebook Page's inbox, the same way a 
 No Graph API Explorer, no Page ID or token to copy. First time, and want every click on Meta's site: [Messenger step by step](31-messenger-step-by-step.md).
 
 1. On [developers.facebook.com/apps](https://developers.facebook.com/apps), create an app with the Messenger use case and add four permissions `pages_read_engagement`, `pages_read_user_content`, `pages_manage_engagement`, `pages_manage_posts` (once).
-2. Open Javis through its HTTPS domain, go to **Connections**, card **Facebook Messenger**, click **Connect**. The form shows two addresses with a **Copy** button:
+2. Open Thansa through its HTTPS domain, go to **Connections**, card **Facebook Messenger**, click **Connect**. The form shows two addresses with a **Copy** button:
    - **Redirect address**: paste it into **Valid OAuth Redirect URIs** in the app's **Facebook Login** settings (add the Facebook Login product first if the app has none).
-   - **Privacy policy link**: Javis serves this page itself. Paste it into **App settings, Basic**, Privacy Policy URL and User data deletion.
+   - **Privacy policy link**: Thansa serves this page itself. Paste it into **App settings, Basic**, Privacy Policy URL and User data deletion.
 3. Paste the **App ID** and **App secret**, pick how comments are handled, click **Log in with Facebook**. A Facebook tab opens: sign in, tick the Pages, accept the permissions.
-4. Back on the Javis tab the Page list appears: tick the Pages to connect and click **Connect the ticked Pages**. Javis gets a non-expiring Page token, registers the webhook, subscribes each Page to the app and shows a checklist per Page.
-5. Open **Chatbot**, **Bots**, tick the new channel on a bot and switch the bot on. Until a bot is on, Javis does not take in messages.
+4. Back on the Thansa tab the Page list appears: tick the Pages to connect and click **Connect the ticked Pages**. Thansa gets a non-expiring Page token, registers the webhook, subscribes each Page to the app and shows a checklist per Page.
+5. Open **Chatbot**, **Bots**, tick the new channel on a bot and switch the bot on. Until a bot is on, Thansa does not take in messages.
 6. Switch the app to **Live** (section 4), then test with a Facebook account that has no role on the app.
 
 ## Posting to the Page (from 0.438.0)
 
-The same connection on the Facebook Messenger card lets Javis post to the Page: text, photos, albums, video, editing and deleting posts. Ask Javis "post this to the Page" to post now, or "every day at 8am post something" to schedule it. It needs `pages_manage_posts` (Log in with Facebook asks for it; the app must add that permission first, see the [step-by-step guide](31-messenger-step-by-step.md)). A Page connected before 0.438.0 needs one more Log in with Facebook. The checklist has a **Can post to the Page** row saying whether the permission is there. The store no longer lists the Facebook Pages card; machines that installed it keep using it.
+The same connection on the Facebook Messenger card lets Thansa post to the Page: text, photos, albums, video, editing and deleting posts. Ask Thansa "post this to the Page" to post now, or "every day at 8am post something" to schedule it. It needs `pages_manage_posts` (Log in with Facebook asks for it; the app must add that permission first, see the [step-by-step guide](31-messenger-step-by-step.md)). A Page connected before 0.438.0 needs one more Log in with Facebook. The checklist has a **Can post to the Page** row saying whether the permission is there. The store no longer lists the Facebook Pages card; machines that installed it keep using it.
 
 ## Page comments (from 0.434.0)
 
@@ -41,7 +41,7 @@ Each Page picks one of three modes, on the connect form or in the list of connec
 - **The bot replies publicly**: the bot answers like a message, told that everyone can read the reply, so it keeps it short, shares nothing private and invites the person to message the Page when needed.
 - **Off**: comments are ignored.
 
-Comments need two more permissions, `pages_read_user_content` and `pages_manage_engagement` (Log in with Facebook asks for both). The checklist has a **Receives Page comments** row: yellow means a permission is missing or the Page does not send comments to Javis yet; log in with Facebook again, then click **Repair**. Without the comment permissions Messenger messages keep working.
+Comments need two more permissions, `pages_read_user_content` and `pages_manage_engagement` (Log in with Facebook asks for both). The checklist has a **Receives Page comments** row: yellow means a permission is missing or the Page does not send comments to Thansa yet; log in with Facebook again, then click **Repair**. Without the comment permissions Messenger messages keep working.
 
 ## Pasting a token (from 0.311.0)
 
@@ -83,7 +83,7 @@ Switch the bot on. Thansa then subscribes the Page to the app's webhook by itsel
 ## 4. Test, then open it to everyone
 
 - While the app is in development mode, **only people with a role on the app** (admin, developer, tester) get replies. Test with your own Facebook account: send the Page a message.
-- To answer **everyone**, switch the app to **Live**. Meta asks for a privacy policy link: use the **Privacy policy link** Javis shows on the connect form.
+- To answer **everyone**, switch the app to **Live**. Meta asks for a privacy policy link: use the **Privacy policy link** Thansa shows on the connect form.
 - Meta's documentation says an app that only messages **your own Page** needs no App Review. Some people still see the bot blocked when replying to strangers after going Live, so test with **a Facebook account that has no role on the app**. If Meta still blocks it, submit **App Review** for **pages_messaging** (usually with business verification). Meanwhile messages from the public still land in the inbox; the bot card shows the error and why.
 
 ## Common errors

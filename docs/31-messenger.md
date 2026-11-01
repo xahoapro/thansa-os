@@ -19,17 +19,17 @@ Từ 0.134.0 một Bot chuyên trách trả lời được hộp thư Fanpage Fa
 Không cần Graph API Explorer, không cần chép Page ID hay token. Làm lần đầu và muốn xem từng cú bấm trên trang Meta: [Nối Messenger từng bước](31-messenger-tung-buoc.md).
 
 1. Trên [developers.facebook.com/apps](https://developers.facebook.com/apps), tạo app có trường hợp sử dụng Messenger và thêm bốn quyền `pages_read_engagement`, `pages_read_user_content`, `pages_manage_engagement`, `pages_manage_posts` (một lần).
-2. Mở Javis bằng tên miền HTTPS, vào **Kết nối**, thẻ **Facebook Messenger**, bấm **Kết nối**. Form hiện sẵn hai địa chỉ kèm nút **Chép**:
+2. Mở Thansa bằng tên miền HTTPS, vào **Kết nối**, thẻ **Facebook Messenger**, bấm **Kết nối**. Form hiện sẵn hai địa chỉ kèm nút **Chép**:
    - **Địa chỉ quay về**: dán vào ô **Valid OAuth Redirect URIs** trong cài đặt **Facebook Login** của app (chưa có Facebook Login thì thêm sản phẩm đó trước).
-   - **Link chính sách quyền riêng tư**: Javis tự phục vụ trang này. Dán vào **Cài đặt ứng dụng, Thông tin cơ bản**, ô Chính sách quyền riêng tư và ô Hướng dẫn xoá dữ liệu.
+   - **Link chính sách quyền riêng tư**: Thansa tự phục vụ trang này. Dán vào **Cài đặt ứng dụng, Thông tin cơ bản**, ô Chính sách quyền riêng tư và ô Hướng dẫn xoá dữ liệu.
 3. Dán **App ID** và **App secret**, chọn cách xử lý bình luận, bấm **Đăng nhập Facebook**. Một tab Facebook mở ra: đăng nhập, tick các Fanpage, đồng ý các quyền.
-4. Quay lại tab Javis: danh sách Fanpage hiện ra, tick Trang muốn nối, bấm **Kết nối các Trang đã chọn**. Javis tự lấy token Trang không hết hạn, khai webhook, gắn Trang vào app và hiện bảng kiểm tra cho từng Trang.
-5. Vào **Chatbot**, **Bot**, tick kênh vừa nối vào một bot và bật bot. Chưa có bot thì Javis chưa nhận tin.
+4. Quay lại tab Thansa: danh sách Fanpage hiện ra, tick Trang muốn nối, bấm **Kết nối các Trang đã chọn**. Thansa tự lấy token Trang không hết hạn, khai webhook, gắn Trang vào app và hiện bảng kiểm tra cho từng Trang.
+5. Vào **Chatbot**, **Bot**, tick kênh vừa nối vào một bot và bật bot. Chưa có bot thì Thansa chưa nhận tin.
 6. Chuyển app sang chế độ **Live** (mục 4), rồi thử bằng một nick Facebook không có vai trò trong app.
 
 ## Đăng bài lên Fanpage (từ 0.438.0)
 
-Cùng một lần nối ở thẻ Facebook Messenger, Javis đăng được bài lên Trang: chữ, ảnh, album, video, sửa và xoá bài. Nhắn Javis "đăng bài này lên Fanpage" để đăng ngay, hoặc "8 giờ sáng mỗi ngày đăng một bài" để đặt lịch. Cần quyền `pages_manage_posts` (nút Đăng nhập Facebook tự xin; app phải thêm quyền này trước, xem [hướng dẫn từng bước](31-messenger-tung-buoc.md)). Trang nối trước bản 0.438.0 thì Đăng nhập Facebook lại một lần. Bảng kiểm tra có dòng **Đăng bài lên Trang** báo còn thiếu quyền hay không. Kho cài đặt đã gỡ thẻ Facebook Trang; máy đã cài thẻ đó vẫn dùng như cũ.
+Cùng một lần nối ở thẻ Facebook Messenger, Thansa đăng được bài lên Trang: chữ, ảnh, album, video, sửa và xoá bài. Nhắn Thansa "đăng bài này lên Fanpage" để đăng ngay, hoặc "8 giờ sáng mỗi ngày đăng một bài" để đặt lịch. Cần quyền `pages_manage_posts` (nút Đăng nhập Facebook tự xin; app phải thêm quyền này trước, xem [hướng dẫn từng bước](31-messenger-tung-buoc.md)). Trang nối trước bản 0.438.0 thì Đăng nhập Facebook lại một lần. Bảng kiểm tra có dòng **Đăng bài lên Trang** báo còn thiếu quyền hay không. Kho cài đặt đã gỡ thẻ Facebook Trang; máy đã cài thẻ đó vẫn dùng như cũ.
 
 ## Bình luận Fanpage (từ 0.434.0)
 
@@ -41,7 +41,7 @@ Mỗi Fanpage chọn một trong ba cách, ở form kết nối hoặc trong dan
 - **Bot tự trả lời công khai**: bot trả lời như tin nhắn, nhưng được dặn rằng câu trả lời ai cũng đọc được nên ngắn gọn, không nêu thông tin riêng, cần thì mời khách nhắn tin cho Page.
 - **Tắt**: bỏ qua bình luận.
 
-Bình luận cần thêm quyền `pages_read_user_content` và `pages_manage_engagement` (nút Đăng nhập Facebook tự xin). Bảng kiểm tra có dòng **Nhận bình luận Trang**: vàng là còn thiếu quyền hoặc Trang chưa gửi bình luận sang Javis, bấm Đăng nhập Facebook lại rồi **Sửa tự động**. Thiếu quyền bình luận thì tin nhắn Messenger vẫn chạy bình thường.
+Bình luận cần thêm quyền `pages_read_user_content` và `pages_manage_engagement` (nút Đăng nhập Facebook tự xin). Bảng kiểm tra có dòng **Nhận bình luận Trang**: vàng là còn thiếu quyền hoặc Trang chưa gửi bình luận sang Thansa, bấm Đăng nhập Facebook lại rồi **Sửa tự động**. Thiếu quyền bình luận thì tin nhắn Messenger vẫn chạy bình thường.
 
 ## Cách dán token (từ 0.311.0)
 
@@ -83,7 +83,7 @@ Bật bot. Lúc bật, Thansa tự đăng ký Page với webhook của app (bạ
 ## 4. Thử, rồi mở cho mọi người
 
 - Khi app còn ở chế độ phát triển, **chỉ người có vai trò trong app** (admin, developer, tester) nhận được trả lời. Thử bằng chính tài khoản Facebook của bạn: nhắn cho Page một câu.
-- Để bot trả lời **mọi người**, chuyển app sang chế độ **Live**. Meta đòi một link chính sách quyền riêng tư: dùng **Link chính sách quyền riêng tư** Javis hiện ở form kết nối.
+- Để bot trả lời **mọi người**, chuyển app sang chế độ **Live**. Meta đòi một link chính sách quyền riêng tư: dùng **Link chính sách quyền riêng tư** Thansa hiện ở form kết nối.
 - Theo tài liệu của Meta, app chỉ nhắn tin cho **Fanpage của chính bạn** thì không cần App Review. Một số người vẫn gặp lỗi khi bot trả lời người lạ dù app đã Live, nên hãy thử bằng **một nick Facebook không có vai trò gì trong app**. Nếu Meta vẫn chặn, nộp **App Review** cho quyền **pages_messaging** (thường kèm xác minh doanh nghiệp). Trong lúc chờ, tin của người ngoài vẫn vào Hộp thư; thẻ bot hiện lỗi kèm lý do.
 
 ## Lỗi hay gặp
