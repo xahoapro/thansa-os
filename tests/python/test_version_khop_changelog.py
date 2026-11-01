@@ -40,11 +40,11 @@ _ver = _ver_path.read_text(encoding="utf-8").strip()
 _cl = _cl_path.read_text(encoding="utf-8")
 _muc = _MUC_RE.findall(_cl)
 
-# Thansa (P025): VERSION mang NEO dạng "<semver-thansa>-javis-<nền-javis>" (vd 1.2.0-javis-0.40.0),
+# Thansa (P025): VERSION mang NEO dạng "<semver-thansa>-nen-<nền-javis>" (vd 1.2.0-nen-0.40.0),
 # semver Thansa độc lập với số Javis. Vẫn chấp nhận x.y.z thuần cho bản chưa tách version.
 # Phần NEO (nền Javis) mới là thứ phải khớp changelog - changelog đánh số theo Javis.
-_m_neo = re.match(r"^(\d+\.\d+\.\d+)-javis-(\d+\.\d+\.\d+)$", _ver)
-check("VERSION đúng dạng <semver>-javis-<nền> (hoặc x.y.z thuần)",
+_m_neo = re.match(r"^(\d+\.\d+\.\d+)-nen-(\d+\.\d+\.\d+)$", _ver)
+check("VERSION đúng dạng <semver>-nen-<nền> (hoặc x.y.z thuần)",
       bool(_m_neo) or bool(_VER_RE.match(_ver)))
 _nen = _m_neo.group(2) if _m_neo else _ver     # phần neo Javis
 check("CHANGELOG có ít nhất một mục phiên bản", len(_muc) >= 1)

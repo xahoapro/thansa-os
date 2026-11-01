@@ -10175,7 +10175,7 @@ async def delete_workflow(slug: str = Form(...), brain: str = Form("brain")):
 
 # ---- Xuất / Nhập năng lực (chia sẻ agent/skill/workflow qua file .zip) ----
 def _app_version() -> str:
-    # Version tem vào ?v= của asset tĩnh + hiển thị: dùng semver Thansa, CẮT neo '-javis-<nền>'
+    # Version tem vào ?v= của asset tĩnh + hiển thị: dùng semver Thansa, CẮT neo '-nen-<nền>'
     # để không lộ Javis trong mã nguồn trang. (Khoá cache đổi theo semver Thansa là đủ.)
     try:
         return _ver_thansa((PROJECT_ROOT / "VERSION").read_text(encoding="utf-8").strip())
@@ -14605,19 +14605,19 @@ async def config():
 GITHUB_REPO = os.getenv("THANSA_UPDATE_REPO", "xahoapro/thansa-os")
 _UPDATE_TASKS = set()   # giữ ref mạnh cho asyncio.create_task (tránh GC nuốt mất task)
 
-# Chuỗi VERSION mang NEO: "<semver-thansa>-javis-<phiên-bản-nền-javis>" (vd 1.2.0-javis-0.40.0).
+# Chuỗi VERSION mang NEO: "<semver-thansa>-nen-<phiên-bản-nền>" (vd 1.2.0-nen-0.40.0).
 # - semver Thansa (phần đầu) lái việc so bản mới + là thứ HIỂN THỊ cho người dùng.
 # - phần nền javis là NEO nội bộ: giúp so với changelog (đánh số theo Javis) biết bản nào đã cài.
-# Bản cũ chưa mang neo (chỉ "0.40.0") vẫn chạy: _ver_thansa/_ver_javis đều trả về chính nó.
+# Bản cũ chưa mang neo (chỉ "0.40.0") vẫn chạy: _ver_thansa/_ver_nen đều trả về chính nó.
 def _ver_thansa(v: str) -> str:
-    """Phần semver Thansa để HIỂN THỊ + so bản mới. Cắt bỏ neo '-javis-...' (ẩn Javis khỏi UI)."""
-    return (v or "").split("-javis-", 1)[0].strip() or "0.0.0"
+    """Phần semver Thansa để HIỂN THỊ + so bản mới. Cắt bỏ neo '-nen-...'."""
+    return (v or "").split("-nen-", 1)[0].strip() or "0.0.0"
 
 
-def _ver_javis(v: str) -> str:
+def _ver_nen(v: str) -> str:
     """Phần nền Javis (neo) để so với changelog đánh số theo Javis. Không có neo thì trả nguyên."""
     s = (v or "").strip()
-    return s.split("-javis-", 1)[1].strip() if "-javis-" in s else (_ver_thansa(s))
+    return s.split("-nen-", 1)[1].strip() if "-nen-" in s else (_ver_thansa(s))
 
 
 def _read_version() -> str:
@@ -15025,8 +15025,7 @@ async def do_update():
 # ============================================================
 _AUTOSTART_NAME = "ThansaOS"
 # Tên mục của máy bật autostart TRƯỚC 1.19 (Task Manager hiện đúng chữ này). Lệnh của nó trỏ vào
-# start-javis.vbs - nay là file cầu nối. _autostart_chuyen_ten_cu() đổi nó sang tên mới.
-_AUTOSTART_NAME_CU = "JavisOS"
+# start-javis.vbs - nay là file cầu nối.
 _AUTOSTART_RUN_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 # Task Manager tab "Startup" KHÔNG xoá mục trong Run key khi người dùng bấm Disable. Nó ghi
 # một cờ 12 byte vào khoá riêng dưới đây, rồi Explorer bỏ qua mục đó lúc đăng nhập.
@@ -15054,37 +15053,6 @@ def _autostart_legacy_command() -> str:
     """Lệnh trước 0.306.0 (chỉ chạy nền, không mở trình duyệt). Vẫn hợp lệ, bật lại là lên bản có /open."""
     vbs = str(PROJECT_ROOT / "start-thansa.vbs")
     return f'wscript.exe //nologo "{vbs}"'
-
-
-def _autostart_chuyen_ten_cu() -> None:
-    """Máy cũ có mục "JavisOS" -> chuyển sang "ThansaOS" với lệnh mới (start-thansa.vbs).
-
-    Chép luôn cờ StartupApproved: người dùng đã TẮT mục cũ trong Task Manager thì mục mới cũng
-    phải tắt, đổi tên không được tự ý bật lại. Không chuyển thì `_autostart_status` thấy lệnh lệch
-    và báo nhầm "thư mục cài đặt đã đổi chỗ". Lỗi gì cũng nuốt: đây là dọn dẹp, mục cũ vẫn chạy
-    được qua file cầu nối."""
-    if os.name != "nt":
-        return
-    try:
-        import winreg
-        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_RUN_KEY, 0,
-                            winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
-            try:
-                winreg.QueryValueEx(k, _AUTOSTART_NAME_CU)
-            except FileNotFoundError:
-                return
-            winreg.SetValueEx(k, _AUTOSTART_NAME, 0, winreg.REG_SZ, _autostart_command())
-            winreg.DeleteValue(k, _AUTOSTART_NAME_CU)
-        try:
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_APPROVED_KEY, 0,
-                                winreg.KEY_READ | winreg.KEY_SET_VALUE) as k:
-                raw, kieu = winreg.QueryValueEx(k, _AUTOSTART_NAME_CU)
-                winreg.SetValueEx(k, _AUTOSTART_NAME, 0, kieu, raw)
-                winreg.DeleteValue(k, _AUTOSTART_NAME_CU)
-        except FileNotFoundError:
-            pass
-    except Exception:
-        pass
 
 
 def _autostart_bi_chan(raw) -> bool:
@@ -15150,7 +15118,6 @@ def _autostart_status() -> dict:
     """
     if os.name != "nt":
         return {"supported": False, "enabled": False}
-    _autostart_chuyen_ten_cu()
     expected = _autostart_command()
     st = {"supported": True, "enabled": False, "expected": expected,
           "log": str(PROJECT_ROOT / "server" / "thansa.log")}
@@ -15183,7 +15150,6 @@ def _autostart_status() -> dict:
 def _autostart_set(enabled: bool) -> dict:
     if os.name != "nt":
         return {"ok": False, "error": localefmt.chu("Chỉ hỗ trợ trên Windows", "Only supported on Windows")}
-    _autostart_chuyen_ten_cu()
     try:
         import winreg
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _AUTOSTART_RUN_KEY) as k:
@@ -15448,7 +15414,7 @@ async def changelog_full(refresh: bool = False):
     # CHANGELOG đánh số theo NỀN JAVIS (vd 0.40.0), còn VERSION nay là semver Thansa mang neo.
     # So "đã cài" phải dùng phần NEO javis, không phải semver Thansa, kẻo (1,2,0) > (0,40,0) làm
     # mọi mục changelog bị đánh dấu đã cài sai bét.
-    ct = _ver_tuple(_ver_javis(cur)) or (0, 0, 0)
+    ct = _ver_tuple(_ver_nen(cur)) or (0, 0, 0)
     for rel in merged:
         vt = _ver_tuple(rel["version"]) or (0, 0, 0)
         rel["installed"] = vt <= ct
@@ -15457,7 +15423,7 @@ async def changelog_full(refresh: bool = False):
     # current HIỂN THỊ theo semver Thansa (cắt neo); update_available so theo NEO javis (đồng bộ
     # với cột installed ở trên). Giữ paging của upstream (total + changelog_index).
     data = {"current": _ver_thansa(cur), "latest": latest,
-            "update_available": bool(_ver_newer(latest, _ver_javis(cur))),
+            "update_available": bool(_ver_newer(latest, _ver_nen(cur))),
             "releases": merged, "total": len(merged), "error": err}
     _CL_MERGED.update({"key": key, "data": data})
     return data
