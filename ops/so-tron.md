@@ -908,3 +908,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebase tự động trong worktree riêng. Tự gỡ: P003/P015/P025/P038/P047/P060 + .gitignore (tay, rerere); P038 port chot an toan sang trang Viec moi tasks.js (0.422-0.426 bo form console.js). Upstream xoá: không.
 - Rebrand: P075 (247 chỗ / 24 file). moc-goc ff8a0cf/0.429.0/so_patch 71.
 - **ĐÃ PHÁT HÀNH 2026-11-01** khi chủ bấm duyệt trên Telegram (origin/main 07824ab, tag + Release thansa-v1.36.0; backup me-backup-1.36.0).
+
+## Vòng TỰ ĐỘNG 2026-11-01 (goc ff8a0cf → 1b3ab32, nền 0.429.0 → 0.438.1, thansa 1.36.0→1.37.0)
+- 18 commit upstream: 0.438.1: GitHub card with a status dot and matching logo; add repos on GitHub from the chat picker (#956); 0.438.0: one Page connection for messages, comments and posting; Messenger setup in one place (#954); 0.437.0: team plan parts declare which parts they wait for (#955); 0.436.1: Messenger step-by-step guide in the forms, Zalo note scoped, one Meta Ads card in the docs (#953); 0.436.0: team steps retry temporary errors and report a structured result (#952); 0.435.0: speech-to-text without Groq (OpenAI, Gemini, offline Whisper); personal Zalo hears voice messages (#951); 0.434.0: Messenger 
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/app.js, dashboard/i18n/en.json, dashboard/i18n/vi.json, docs/02-tro-chuyen-va-giong-noi.md, docs/09-mcp-va-so-lieu.md, docs/13-second-brain-bo-nho-wiki.md, docs/31-messenger.md, docs/en/02-chat-and-voice.md, docs/en/09-connections-and-business-data.md, docs/en/13-second-brain.md, docs/en/31-messenger.md, server/stt.py, system/plugins/meta-pages-graph/plugin.yaml. Claude gỡ: không. Xoá: không.
+- Rebrand: P076 (154 chỗ / 21 file). moc-goc 1b3ab32/0.438.1/so_patch 72.
