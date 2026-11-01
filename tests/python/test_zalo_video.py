@@ -144,7 +144,7 @@ text, paths = asyncio.run(cr.anh_cho_bot("Xem giúp em", {"chat_id": "t1", "vide
 check("CANARY: a video that cannot be fetched -> no images and an honest note", not paths and "KHÔNG xem được" in text
       and "Đừng nói như đã xem" in text and text.endswith("Xem giúp em"), text)
 check("the reason is kept for the bot log", "video" in str(CFG.get("_anh_loi") or ""), CFG)
-check("no ffmpeg -> honest note too", "ffmpeg" in vv.note({"frames": [], "why": "máy chủ Javis chưa cài ffmpeg"}))
+check("no ffmpeg -> honest note too", "ffmpeg" in vv.note({"frames": [], "why": "máy chủ Thansa chưa cài ffmpeg"}))
 
 # ============================================================
 # 4. The live bot answers a private video, and shows it again with the next text

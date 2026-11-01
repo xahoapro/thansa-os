@@ -5,7 +5,7 @@
 Reported with the official Spacemail MCP: the server is https://mcp.spacemail.com/mcp but its protected-resource metadata
 (RFC 9728) declares resource https://mcp.spacemail.com/. Javis sent the transport URL as the RFC 8707 `resource`, which the
 authorization server answers with invalid_target. Its DCR also hands back a shared client ("starlight.mcp") whose callback
-allowlist does not hold Javis's callback, so the provider's sign-in page fails and never comes back to Javis.
+allowlist does not hold Javis's callback, so the provider's sign-in page fails and never comes back to Thansa.
 
 This file guards:
   1. canonical_resource takes the declared resource only when it covers the MCP URL (same origin, path prefix).

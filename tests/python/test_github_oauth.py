@@ -1,4 +1,4 @@
-"""Sign in to GitHub with one button: the device flow of the Javis OS GitHub App (0.430.0).
+"""Sign in to GitHub with one button: the device flow of the Thansa OS GitHub App (0.430.0).
 
     python tests/run.py github_oauth      (no network: a local fake GitHub serves both github.com and the API)
 
@@ -57,7 +57,7 @@ def reset_device(**kw):
 
 # ---- 1. Start ----
 check("the app's client id is the registered one", github_oauth.client_id() == "Iv23limeL0BsyXptmTz2")
-check("repos are picked on the Javis OS app page",
+check("repos are picked on the Thansa OS app page",
       github_oauth.install_url() == "https://github.com/apps/javis-os/installations/new")
 reset_device(pending=2, slow=True)
 d = github_oauth.start()

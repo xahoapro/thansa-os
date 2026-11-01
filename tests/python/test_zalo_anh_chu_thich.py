@@ -56,7 +56,7 @@ check("chú thích bắt đầu bằng '[' nhưng là lời thật vẫn giữ",
 # 2. Chuẩn hoá tin ảnh đúng dạng MCP
 # ============================================================
 conn = {"id": "zalo-1", "label": "Javis Vũ"}
-ten = {"G1": {"name": "Zoom | Javis OS", "type": "group"}}
+ten = {"G1": {"name": "Zoom | Thansa OS", "type": "group"}}
 anh = {"id": "m1", "threadId": "G1", "from": "7770555", "senderName": "Ngô Văn Ngợi", "type": "chat.photo",
        "text": "@Javis Vũ hướng dẫn thao tác tạo Agent", "threadType": 1, "ts": 1790000000000}
 ev = zc.chuan_hoa_tin(conn, anh, ten)
