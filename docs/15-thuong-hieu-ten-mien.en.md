@@ -2,7 +2,7 @@
 
 *[Tiếng Việt](15-thuong-hieu-ten-mien.md) · **English***
 
-This page guides two things: change Thansa's logo/avatar to your own image, and point a custom domain (e.g., `javis.yourname.com`) to Thansa to run over HTTPS. These operations are in **Settings → Voice, Brand & Access**.
+This page guides two things: change Thansa's logo/avatar to your own image, and point a custom domain (e.g., `thansa.yourname.com`) to Thansa to run over HTTPS. These operations are in **Settings → Voice, Brand & Access**.
 
 ## What This Feature Is
 
@@ -16,7 +16,7 @@ Important note right from the start: the **Custom Domain** section only works wh
 Both features are in **Settings → Voice, Brand & Access**. If the group is collapsed, click title to open. Inside has two cards:
 
 - **AVATAR** field: has preview image, **Upload Image** button and **Restore Default** button.
-- **DOMAIN & SSL** field: has input field (blank shows "e.g.: javis.yourname.com"), **Save & Check** button, two badges showing DNS and SSL status, two buttons **Enable SSL** and **Check Again**, plus a three-step wizard that changes content based on right VPS/Hostinger environment.
+- **DOMAIN & SSL** field: has input field (blank shows "e.g.: thansa.yourname.com"), **Save & Check** button, two badges showing DNS and SSL status, two buttons **Enable SSL** and **Check Again**, plus a three-step wizard that changes content based on right VPS/Hostinger environment.
 
 Each time you open Settings, Thansa auto-reloads current values, checks DNS/HTTPS, and shows correct next steps.
 
@@ -55,9 +55,9 @@ This section assumes you deployed Thansa via Docker on VPS, enabled Caddy (On-De
 ### Step A: Enter and Save Domain
 
 1. Open **Settings → Voice, Brand & Access**, find the **DOMAIN & SSL** field.
-2. Enter the domain (or subdomain) you want into the field, e.g., `javis.yourname.com`. No need to type `https://`; if you do, Thansa strips it.
+2. Enter the domain (or subdomain) you want into the field, e.g., `thansa.yourname.com`. No need to type `https://`; if you do, Thansa strips it.
 3. Click **Save & Check** button (or press Enter in field). Thansa shows **Saving and checking…**, saves domain, then auto-runs DNS/SSL check and draws a three-step wizard right on UI.
-4. If domain format is wrong, Thansa says: **Invalid domain (e.g.: javis.yourname.com)**. Fix and save again.
+4. If domain format is wrong, Thansa says: **Invalid domain (e.g.: thansa.yourname.com)**. Fix and save again.
 
 To **delete** domain: clear the field then click **Save & Check**. Thansa says **Domain deleted.** and hides the instruction section.
 
@@ -70,7 +70,7 @@ After saving (or clicking **Check Again**), wizard shows step **2. Point DNS to 
    | Field | Value |
    |---|---|
    | Type | A |
-   | Name/Host | domain you just entered, e.g., `javis.yourname.com` |
+   | Name/Host | domain you just entered, e.g., `thansa.yourname.com` |
    | Value/Points to | your VPS server's IP address (Thansa auto-found and filled this in the wizard) |
 
 2. Wait for DNS to propagate (few minutes to few hours), click **Check Again**. When DNS is correct, step 2 turns to checkmark and description changes to "A record correctly points to server IP."
@@ -130,7 +130,7 @@ Status line at bottom of card can be:
 | Can't reach port 443 - Caddy/HTTPS not running, or ports 80/443 occupied by other proxy | Nobody answers on port 443. | Enable HTTPS layer per Thansa's suggestion, and check if ports 80/443 already taken by other service. |
 | Saved in Thansa; still need to set DOMAIN_NAME and Redeploy on Hostinger. | Hostinger: Traefik route doesn't match domain. | Do step 3 of Hostinger wizard. |
 | Please enter and save domain first. | Clicked Enable SSL with empty domain field. | Enter domain then save. |
-| Invalid domain (e.g.: javis.yourname.com) | Input doesn't match domain format. | Remove spaces, remove path after domain, type as `name.yourname.com`. |
+| Invalid domain (e.g.: thansa.yourname.com) | Input doesn't match domain format. | Remove spaces, remove path after domain, type as `name.yourname.com`. |
 | Enable SSL failed | Server rejected enabling. | Read extra reason line that came with it. |
 | Can't check (network error). | Browser can't reach server. | Try again in a few minutes. |
 | Network error saving / Network error enabling SSL | Lost connection mid-operation. | Try again. |
@@ -141,7 +141,7 @@ Status line at bottom of card can be:
 - To prevent abuse, before issuing a certificate Caddy asks Thansa (via internal gate `/tls-check`) and only issues for domains you entered in the app. Strangers pointing DNS anywhere to your IP can't force server to request certs for random domains.
 - When changing or deleting domain on VPS using Caddy, you just edit **DOMAIN & SSL** field then click **Save & Check**, then **Enable SSL** for new domain. Hostinger needs Redeploy when changing Traefik route.
 - Enabling Caddy (running `docker compose ... up -d` with HTTPS config) and opening ports 80/443 is infrastructure deploy, outside this interface. See detailed deploy guide in project's `DEPLOY.md`.
-- When visiting Thansa via correct custom domain over HTTPS, server auto-marks login cookie as `secure`, no need to set `JAVIS_SECURE_COOKIE` manually. See [Security & Account](14-bao-mat-tai-khoan.md).
+- When visiting Thansa via correct custom domain over HTTPS, server auto-marks login cookie as `secure`, no need to set `THANSA_SECURE_COOKIE` manually. See [Security & Account](14-bao-mat-tai-khoan.md).
 
 ## If You Deploy on Hostinger (Different Process)
 

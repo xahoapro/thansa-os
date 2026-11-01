@@ -93,7 +93,7 @@ Deleting a brain is **not permanent**. Thansa moves the entire folder to local t
 3. Dialog appears stating: "This brain will be moved to TRASH (kept 30 days then auto-deleted), and deletion will SYNC to other machines." It requires **typing the brain name EXACTLY** to confirm.
 4. Type correctly and the brain goes to trash and Thansa returns to Brain Default with message "Deleted brain ... (moved to trash 30 days, synced deletion to other machines)". Type incorrectly and it shows "Name doesn't match - deletion canceled".
 
-Trash is in the `brain-trash` folder in Thansa's state directory (`JAVIS_STATE_DIR`; running on machine it's `server/`, Docker it's the state volume). Each deletion creates a subfolder like `Brain name__20260729-153012`. Cleaning trash older than 30 days runs alongside each brain-to-GitHub sync.
+Trash is in the `brain-trash` folder in Thansa's state directory (`THANSA_STATE_DIR`; running on machine it's `server/`, Docker it's the state volume). Each deletion creates a subfolder like `Brain name__20260729-153012`. Cleaning trash older than 30 days runs alongside each brain-to-GitHub sync.
 
 Cannot delete **Brain Default**, clicking 🗑 while it's selected shows "Cannot delete default brain (root brain)."
 
@@ -134,7 +134,7 @@ Thansa classifies 4 types of memory: info about you (`user`), how you like to wo
 
 ### MEMORY.md index has a load ceiling
 
-Because `MEMORY.md` is loaded into **every** chat turn, it has a ceiling around **20,000 characters** (changeable via `JAVIS_MEMORY_INDEX_MAX`). When brain gets dense and exceeds ceiling, Thansa lowers it in steps, prioritizing keeping enough memories:
+Because `MEMORY.md` is loaded into **every** chat turn, it has a ceiling around **20,000 characters** (changeable via `THANSA_MEMORY_INDEX_MAX`). When brain gets dense and exceeds ceiling, Thansa lowers it in steps, prioritizing keeping enough memories:
 
 1. Trim each line description to 100 characters, then 60 characters.
 2. Keep only heading and file path, drop description.
@@ -271,4 +271,4 @@ Results don't fix anything, just dump into the **Learning log** below as "Wiki L
 - [Agents & Workflows](07-agents-va-workflows.md) - operating layer in `agents/` and `workflows/`.
 - [Recurring tasks & Reminders](08-viec-dinh-ky.md) - give Thansa recurring tasks to digest sources on schedule.
 - [Tasks & Dataview in notes](19-task-va-dataview.md) - bullet journal in brain.
-- [Configuration .env](16-cau-hinh-env.md) - variables `BRAINS_DIR`, `JAVIS_STATE_DIR`, `JAVIS_MEMORY_INDEX_MAX`.
+- [Configuration .env](16-cau-hinh-env.md) - variables `BRAINS_DIR`, `THANSA_STATE_DIR`, `THANSA_MEMORY_INDEX_MAX`.

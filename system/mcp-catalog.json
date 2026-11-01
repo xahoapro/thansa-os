@@ -49,32 +49,32 @@
       "name": "Zalo Agent MCP",
       "icon": "/static/logos/zalo.png",
       "category": "Nhắn tin",
-      "description": "MCP của javis-zalo (bản CLI Zalo riêng của Thansa): đọc tin mới/lịch sử, tìm cuộc chat, biết ai vừa vào nhóm và vào lúc nào, duyệt người xin vào nhóm, đọc tag (thẻ phân loại) của cuộc chat, xem media và gửi tin bằng tài khoản Zalo cá nhân.",
+      "description": "MCP của thansa-zalo (bản CLI Zalo riêng của Thansa): đọc tin mới/lịch sử, tìm cuộc chat, biết ai vừa vào nhóm và vào lúc nào, duyệt người xin vào nhóm, đọc tag (thẻ phân loại) của cuộc chat, xem media và gửi tin bằng tài khoản Zalo cá nhân.",
       "status": "beta",
       "transport": "stdio",
       "command": "npx",
-      "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.9.0", "mcp", "start"],
+      "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.9.0", "mcp", "start"],
       "lenh_cu": [
         { "command": "npx", "args": ["-y", "zalo-agent-cli", "mcp", "start"] },
         { "command": "npx", "args": ["-y", "zalo-agent-cli@1.6.2", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.0.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.1.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.2.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.3.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.4.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.5.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.6.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.6.1", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.7.0", "mcp", "start"] },
-        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/blogminhquy/javis-zalo/tar.gz/refs/tags/v1.8.0", "mcp", "start"] }
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.0.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.1.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.2.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.3.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.4.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.5.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.6.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.6.1", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.7.0", "mcp", "start"] },
+        { "command": "npx", "args": ["-y", "--prefer-offline", "https://codeload.github.com/xahoapro/thansa-zalo/tar.gz/refs/tags/v1.8.0", "mcp", "start"] }
       ],
-      "ngoai_le_ban_chinh_thuc": "Zalo KHÔNG đi theo bản gốc nữa (chủ repo chốt 2026-10-05): Thansa chạy bản CLI riêng javis-zalo (github.com/blogminhquy/javis-zalo), cài từ tarball của tag phát hành, chỉ thư viện zca-js bên dưới đi theo bản chính thức trên npm. Ghim theo tag vì đăng nhập QR (zalo_login.py), gửi ảnh/tag/ghi chú nhóm (zalo_cli.py) và gói javis.zalo đọc thẳng định dạng của đúng bản đó. Ba chỗ ghim (ở đây, zalo_cli.py, zalo_login.py) phải luôn trùng nhau; --prefer-offline vì tag không đổi nên khỏi hỏi lại GitHub mỗi lần khởi động.",
+      "ngoai_le_ban_chinh_thuc": "Zalo KHÔNG đi theo bản gốc nữa (chủ repo chốt 2026-10-05): Thansa chạy bản CLI riêng thansa-zalo (github.com/xahoapro/thansa-zalo), cài từ tarball của tag phát hành, chỉ thư viện zca-js bên dưới đi theo bản chính thức trên npm. Ghim theo tag vì đăng nhập QR (zalo_login.py), gửi ảnh/tag/ghi chú nhóm (zalo_cli.py) và gói thansa.zalo đọc thẳng định dạng của đúng bản đó. Ba chỗ ghim (ở đây, zalo_cli.py, zalo_login.py) phải luôn trùng nhau; --prefer-offline vì tag không đổi nên khỏi hỏi lại GitHub mỗi lần khởi động.",
       "requires": { "node": ">=20" },
       "isolate_home": true,
       "auth": {
         "type": "qr",
         "fields": [],
-        "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp các tool MCP của javis-zalo. Không còn listener/webhook/luật Zalo riêng của Thansa.",
+        "guide": "Cần Node.js 20+. Bấm Kết nối, quét QR bằng app Zalo rồi dùng trực tiếp các tool MCP của thansa-zalo. Không còn listener/webhook/luật Zalo riêng của Thansa.",
         "guide_url": "https://github.com/xahoapro/thansa-os/blob/main/docs/12-zalo.md"
       },
       "tool_meta": {
@@ -93,9 +93,9 @@
         "danger": ["zalo_send_message", "zalo_send_typing", "zalo_send_file", "zalo_add_reaction", "zalo_review_join_requests"]
       },
       "default_perm": "full",
-      "companion_pack": "javis.zalo",
+      "companion_pack": "thansa.zalo",
       "purge_warning": "Xoá kết nối này là mất luôn phiên đăng nhập QR. Muốn dùng lại phải mở app Zalo trên điện thoại quét mã một lần nữa.",
-      "risk": "Connector này MẶC ĐỊNH ở mức TOÀN QUYỀN, tức tool gửi tin đang bật. Muốn chặn gửi, hãy hạ xuống Ghi nháp hoặc Chỉ đọc.\n\njavis-zalo dùng API Zalo không chính thức qua zca-js. Tài khoản CÓ THỂ bị hạn chế hoặc KHOÁ; khuyến nghị dùng tài khoản phụ và không tự động gửi hàng loạt.",
+      "risk": "Connector này MẶC ĐỊNH ở mức TOÀN QUYỀN, tức tool gửi tin đang bật. Muốn chặn gửi, hãy hạ xuống Ghi nháp hoặc Chỉ đọc.\n\nthansa-zalo dùng API Zalo không chính thức qua zca-js. Tài khoản CÓ THỂ bị hạn chế hoặc KHOÁ; khuyến nghị dùng tài khoản phụ và không tự động gửi hàng loạt.",
       "rate_limit": { "calls_per_min": 20 }
     },
             {
@@ -227,7 +227,7 @@
       "group": "google",
       "group_line": "Gộp Gmail, Lịch, Drive, Docs, Sheets vào MỘT kết nối. Cần máy có màn hình; VPS thì dùng thẻ Lịch và Gmail riêng.",
       "category": "Văn phòng",
-      "description": "Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Tasks... trong MỘT kết nối. Tạo OAuth client 1 lần, khoảng 10 phút, có hướng dẫn từng bước. Lần đầu gọi tool Google, trình duyệt TRÊN MÁY CHẠY JAVIS mở ra để bấm đồng ý, nên máy phải có màn hình.",
+      "description": "Gmail, Calendar, Drive, Docs, Sheets, Slides, Forms, Tasks... trong MỘT kết nối. Tạo OAuth client 1 lần, khoảng 10 phút, có hướng dẫn từng bước. Lần đầu gọi tool Google, trình duyệt TRÊN MÁY CHẠY THANSA mở ra để bấm đồng ý, nên máy phải có màn hình.",
       "status": "beta",
       "transport": "stdio",
       "command": "uvx",
@@ -264,7 +264,7 @@
             "optional": true
           }
         ],
-        "guide": "Kết nối này chạy TRÊN MÁY CÀI JAVIS: lần đầu gọi tool Google, trình duyệt của chính máy đó\nmở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì dùng hai thẻ Lịch và Gmail riêng,\nhai thẻ đó đăng nhập gọn trong dashboard.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com tạo project mới, hoặc dùng lại project đã tạo cho thẻ Lịch/Gmail.\n2. Bật API cho từng dịch vụ muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API,\nGoogle Drive API, Google Docs API.\nMuốn Thansa đụng tới Sheets, Slides, Forms, Danh bạ, Việc cần làm thì bật thêm Google Sheets API,\nGoogle Slides API, Google Forms API, People API, Google Tasks API.\nQuên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy bình thường.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả - khác thẻ Lịch/Gmail, thấy trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới (tự điền Client ID + Secret),\nhoặc copy tay hai giá trị đó.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu Thansa gọi tool Google, trình duyệt trên máy chạy Thansa mở ra. Gặp cảnh báo 'ứng dụng chưa\nđược xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô\nquyền: bỏ ô nào là đúng nhóm tool đó chết.",
+        "guide": "Kết nối này chạy TRÊN MÁY CÀI THANSA: lần đầu gọi tool Google, trình duyệt của chính máy đó\nmở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì dùng hai thẻ Lịch và Gmail riêng,\nhai thẻ đó đăng nhập gọn trong dashboard.\n\nLàm 1 lần, khoảng 10 phút:\n1. Vào console.cloud.google.com tạo project mới, hoặc dùng lại project đã tạo cho thẻ Lịch/Gmail.\n2. Bật API cho từng dịch vụ muốn dùng. Bốn cái cơ bản: Gmail API, Google Calendar API,\nGoogle Drive API, Google Docs API.\nMuốn Thansa đụng tới Sheets, Slides, Forms, Danh bạ, Việc cần làm thì bật thêm Google Sheets API,\nGoogle Slides API, Google Forms API, People API, Google Tasks API.\nQuên bật cái nào thì đúng nhóm tool đó báo lỗi, phần còn lại vẫn chạy bình thường.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả - khác thẻ Lịch/Gmail, thấy trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới (tự điền Client ID + Secret),\nhoặc copy tay hai giá trị đó.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu Thansa gọi tool Google, trình duyệt trên máy chạy Thansa mở ra. Gặp cảnh báo 'ứng dụng chưa\nđược xác minh' thì bấm Nâng cao rồi Tiếp tục, vì đây là app của chính bạn. Nhớ TICK HẾT các ô\nquyền: bỏ ô nào là đúng nhóm tool đó chết.",
         "guide_url": "https://github.com/taylorwilsdon/google_workspace_mcp",
         "steps": [
           { "text": "TRƯỚC KHI LÀM: kết nối chạy trên chính máy cài Thansa, lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Thansa trên VPS không màn hình thì bỏ thẻ này, dùng hai thẻ Google Calendar và Gmail riêng, hai thẻ đó đăng nhập gọn trong dashboard." },
@@ -331,7 +331,7 @@
             "optional": true
           }
         ],
-        "guide": "Kết nối này chạy TRÊN MÁY CÀI JAVIS: lần đầu gọi tool Google Tasks, trình duyệt của chính\nmáy đó mở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì đường này không đi được.\n\nLàm 1 lần, khoảng 10 phút. Đã đấu Google Workspace rồi thì dùng lại đúng Client ID + Secret cũ,\nchỉ cần làm thêm bước 2:\n1. Vào console.cloud.google.com tạo project, hoặc dùng project sẵn có.\n2. Bật Google Tasks API cho project đó.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả, thấy phần đó trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới, hoặc copy tay Client ID + Secret.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu gọi tool, gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục,\nvì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền.",
+        "guide": "Kết nối này chạy TRÊN MÁY CÀI THANSA: lần đầu gọi tool Google Tasks, trình duyệt của chính\nmáy đó mở ra để bạn bấm đồng ý. Máy không có màn hình (VPS) thì đường này không đi được.\n\nLàm 1 lần, khoảng 10 phút. Đã đấu Google Workspace rồi thì dùng lại đúng Client ID + Secret cũ,\nchỉ cần làm thêm bước 2:\n1. Vào console.cloud.google.com tạo project, hoặc dùng project sẵn có.\n2. Bật Google Tasks API cho project đó.\n3. Màn hình đồng ý OAuth: chọn External rồi thêm email Google của bạn vào Test users.\nBỏ bước này là Google chặn ngay lúc đăng nhập.\n4. Tạo OAuth client, chọn loại 'Ứng dụng dành cho máy tính' (Desktop app).\nLoại này KHÔNG phải khai URI chuyển hướng nào cả, thấy phần đó trống là đúng.\n5. Tải file JSON của client rồi kéo thả vào ô bên dưới, hoặc copy tay Client ID + Secret.\n6. Điền luôn ô email Google rồi bấm Kết nối.\n\nLần đầu gọi tool, gặp cảnh báo 'ứng dụng chưa được xác minh' thì bấm Nâng cao rồi Tiếp tục,\nvì đây là app của chính bạn. Nhớ TICK HẾT các ô quyền.",
         "guide_url": "https://github.com/taylorwilsdon/google_workspace_mcp",
         "steps": [
           { "text": "TRƯỚC KHI LÀM, đọc dòng này: kết nối này chạy trên chính máy cài Thansa, và lần đầu gọi tool nó mở trình duyệt CỦA MÁY ĐÓ để bạn bấm đồng ý. Thansa chạy trên VPS không màn hình thì đường này không đi được." },

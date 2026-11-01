@@ -5,7 +5,7 @@ Graph API Explorer. The token was where owners got lost. This module replaces th
 standard Facebook Login redirect flow on the owner's OWN Meta app:
 
   1. `start()` checks the App ID and App secret (an app token call) and returns the Facebook
-     login address. The owner adds this Javis's callback address to the app's Valid OAuth
+     login address. The owner adds this Thansa's callback address to the app's Valid OAuth
      Redirect URIs once; the card shows it ready to copy.
   2. Facebook sends the browser back to `/messenger/oauth/callback`; `callback()` trades the code
      for a user token, makes it long-lived and lists the Pages the person manages.
@@ -13,14 +13,14 @@ standard Facebook Login redirect flow on the owner's OWN Meta app:
      hands each ticked Page to `messenger_setup.connect`, which derives the non-expiring Page
      token, registers the webhook and subscribes the Page, exactly as the wizard did.
 
-Why the owner's own app and not one shared "Javis OS" app: every Javis runs at its own address,
+Why the owner's own app and not one shared "Thansa OS" app: every Thansa runs at its own address,
 Meta wants each redirect URI registered in advance, its webhook takes one callback URL per app,
 and the repo is public so it cannot carry an app secret. A shared app needs a central relay;
-this flow needs nothing outside the owner's Javis.
+this flow needs nothing outside the owner's Thansa.
 
 Pending logins live in memory for 15 minutes and are keyed by an unguessable `state`. The user
 token never leaves this module or the server; results carry Page ids, names and pictures only.
-Endpoints are configurable (`JAVIS_FACEBOOK_WEB`) so tests can point the login address elsewhere.
+Endpoints are configurable (`THANSA_FACEBOOK_WEB`) so tests can point the login address elsewhere.
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def _c(vi: str, en: str) -> str:
 
 
 def _web() -> str:
-    return (os.environ.get("JAVIS_FACEBOOK_WEB") or "https://www.facebook.com").rstrip("/")
+    return (os.environ.get("THANSA_FACEBOOK_WEB") or "https://www.facebook.com").rstrip("/")
 
 
 def _purge(now: float = 0.0) -> None:
@@ -217,7 +217,7 @@ def forget(state: str) -> None:
 
 def privacy_html(brand: str = "Thansa OS", pages=()) -> str:
     """A plain privacy policy page Meta accepts as the app's Privacy Policy URL and User data deletion
-    instructions URL, served by this Javis itself so the owner can switch the app to Live. Both
+    instructions URL, served by this Thansa itself so the owner can switch the app to Live. Both
     languages on one page: Meta's reviewers and the Page's customers may read either."""
     import html as h
     b = h.escape(str(brand or "Thansa OS"))

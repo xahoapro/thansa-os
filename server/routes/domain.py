@@ -61,9 +61,9 @@ def _domain_deploy_target(request: Request = None):
 
     Hostinger không cho container sửa label Traefik đang chạy, vì vậy UI chỉ có thể lưu
     tên miền + kiểm tra DNS rồi hướng dẫn đúng bước Environment/Redeploy. Compose mới đặt
-    JAVIS_DEPLOY_TARGET rõ ràng; nhận diện hostname .hstgr.cloud giữ tương thích bản cũ.
+    THANSA_DEPLOY_TARGET rõ ràng; nhận diện hostname .hstgr.cloud giữ tương thích bản cũ.
     """
-    explicit = (os.getenv("JAVIS_DEPLOY_TARGET", "") or "").strip().lower()
+    explicit = (os.getenv("THANSA_DEPLOY_TARGET", "") or "").strip().lower()
     if explicit in ("hostinger", "vps", "native", "windows"):
         return explicit
     host = ""
@@ -131,9 +131,9 @@ def _caddy_reachable() -> bool:
 
 def _detect_public_ip():
     """This server's public address, or None. BLOCKING (DNS plus up to three HTTPS requests): call it in a thread,
-    never on the event loop. Owner report 25/10/2026: every page that opened Javis asked /domain/status, which ran this
+    never on the event loop. Owner report 25/10/2026: every page that opened Thansa asked /domain/status, which ran this
     on the loop; on a server whose DNS or outbound HTTPS is slow that froze the whole server for 12 to 24 seconds, and
-    everyone else's live socket missed its pong ("Mất kết nối" as soon as another person opened Javis)."""
+    everyone else's live socket missed its pong ("Mất kết nối" as soon as another person opened Thansa)."""
     import time as _t
     c = _PUBLIC_IP_CACHE
     if c["ip"] and _t.time() - c["ts"] < PUBLIC_IP_TTL:
@@ -169,8 +169,8 @@ def _lookup_public_ip():
 
 
 def _instance_label() -> str:
-    """The sub-name this instance uses under the VPS hostname: JAVIS_NAME, "javis" when unset."""
-    return re.sub(r"[^a-z0-9-]+", "-", (os.getenv("JAVIS_NAME", "") or "javis").strip().lower()).strip("-") or "javis"
+    """The sub-name this instance uses under the VPS hostname: THANSA_NAME, "thansa" when unset."""
+    return re.sub(r"[^a-z0-9-]+", "-", (os.getenv("THANSA_NAME", "") or "thansa").strip().lower()).strip("-") or "thansa"
 
 
 def hostinger_names(base: str, label: str) -> list:
@@ -178,13 +178,13 @@ def hostinger_names(base: str, label: str) -> list:
 
     `label.base`, then for the default instance the bare `base` too. 0.304.0: no DNS guessing any more. 0.302.0 picked
     ONE name by comparing addresses, and the gateway's lookup read the VPS's /etc/hosts first (Ubuntu maps its own
-    hostname to 127.0.1.1), so Caddy got a certificate for srv123.hstgr.cloud while Javis checked javis.srv123...:
+    hostname to 127.0.1.1), so Caddy got a certificate for srv123.hstgr.cloud while Thansa checked thansa.srv123...:
     nobody was moved to https (owner report 24/10/2026, Ubuntu 26). The gateway now serves both names; whichever DNS
-    sends to this VPS gets a certificate, and Javis tries them in this order.
+    sends to this VPS gets a certificate, and Thansa tries them in this order.
     """
     if not base:
         return []
-    out = [f"{label}.{base}"] + ([base] if label == "javis" else [])
+    out = [f"{label}.{base}"] + ([base] if label == "thansa" else [])
     return [n for n in out if _DOMAIN_RE.match(n)]
 
 
@@ -203,26 +203,26 @@ def _hostinger_base(ip, ptr_lookup=None) -> str:
 
 
 def hostinger_suggestion(ip, ptr_lookup=None) -> str:
-    """The free Hostinger name for this VPS, ready for DOMAIN_NAME: "javis.srv123456.hstgr.cloud", or "".
+    """The free Hostinger name for this VPS, ready for DOMAIN_NAME: "thansa.srv123456.hstgr.cloud", or "".
 
     0.302.0 (owner 24/10/2026: Open in hPanel led to localhost). Hostinger does not tell a pasted compose its VPS
     hostname (TRAEFIK_HOST and HOSTNAME are not set for Compose-from-URL), so the owner had to dig the
-    srv<id>.hstgr.cloud name out of hPanel. Hostinger's reverse DNS of the VPS IP carries that name, so Javis can
+    srv<id>.hstgr.cloud name out of hPanel. Hostinger's reverse DNS of the VPS IP carries that name, so Thansa can
     offer the exact line to paste.
     """
     names = hostinger_names(_hostinger_base(ip, ptr_lookup), _instance_label())
     return names[0] if names else ""
 
 
-# 0.304.0: the gateway service writes what it is doing into a volume Javis mounts read-only (docker-compose.hostinger.yml):
-# "state=idle|busy|serving" and "names=<the names Caddy serves>". Javis then checks exactly the names that have a
+# 0.304.0: the gateway service writes what it is doing into a volume Thansa mounts read-only (docker-compose.hostinger.yml):
+# "state=idle|busy|serving" and "names=<the names Caddy serves>". Thansa then checks exactly the names that have a
 # certificate, and Settings can say which step is stuck. Missing file = an older compose or no gateway at all.
 GATEWAY_STATUS_FILE = "/gateway/gateway.txt"
 
 
 def read_gateway_status(path=None) -> dict:
     try:
-        text = Path(path or os.getenv("JAVIS_GATEWAY_STATUS", "") or GATEWAY_STATUS_FILE).read_text(encoding="utf-8")
+        text = Path(path or os.getenv("THANSA_GATEWAY_STATUS", "") or GATEWAY_STATUS_FILE).read_text(encoding="utf-8")
     except Exception:
         return {}
     kv = {}
@@ -248,7 +248,7 @@ def auto_candidates(ip, gateway=None) -> list:
 
 
 # 0.302.0: who answers on a candidate link. A random id per server process; /domain/auto only sends the browser to an
-# https link that answers with THIS id, so it never moves anyone to another site or another Javis on the same VPS.
+# https link that answers with THIS id, so it never moves anyone to another site or another Thansa on the same VPS.
 _WHOAMI = __import__("secrets").token_hex(12)
 _AUTO = {"url": "", "ts": 0.0}
 AUTO_TTL_OK, AUTO_TTL_MISS = 300.0, 90.0
@@ -265,7 +265,7 @@ async def _answers_as_me(url: str) -> bool:
 
 
 async def _auto_link() -> str:
-    """The first candidate link that answers as THIS Javis over valid https, or "" (cached a few minutes)."""
+    """The first candidate link that answers as THIS Thansa over valid https, or "" (cached a few minutes)."""
     import asyncio as _aio
     import time as _t
     now = _t.time()
@@ -294,24 +294,24 @@ def _req_is_secure(request: Request) -> bool:
 #   no_route     the proxy in front (Traefik on Hostinger) has no route for this hostname: its own 404
 #   cert_pending the route reaches this server, but the certificate is not issued yet (only works unverified)
 #   bad_gateway  the proxy has a route but cannot reach the app (502/503/504)
-#   other_javis  another Javis answered (a second stack on the same VPS, or the domain saved differently there)
+#   other_thansa  another Thansa answered (a second stack on the same VPS, or the domain saved differently there)
 #   other_site   some other website answered: DNS or the route points somewhere else
 #   cert_invalid the certificate is wrong and the page behind it is not ours either
 #   unreachable  nothing answers on port 443
 # Why /tls-check: it is public, and it answers 200 only when the hostname is the domain saved on THIS server,
-# so it tells this Javis apart from any other site or Javis behind the same address.
-PROBE_CODES = ("ok", "no_route", "cert_pending", "bad_gateway", "other_javis", "other_site", "cert_invalid",
+# so it tells this Thansa apart from any other site or Thansa behind the same address.
+PROBE_CODES = ("ok", "no_route", "cert_pending", "bad_gateway", "other_thansa", "other_site", "cert_invalid",
                "unreachable")
 
 
 def _classify_answer(status: int, body: str, verified: bool) -> str:
-    """Code for an HTTP answer to /tls-check. Pure, so tests can feed it real Traefik and Javis answers."""
+    """Code for an HTTP answer to /tls-check. Pure, so tests can feed it real Traefik and Thansa answers."""
     text = (body or "").strip()
-    javis_json = text.startswith("{") and '"ok"' in text
-    if status == 200 and javis_json and '"ok": true' in text.replace('":true', '": true'):
+    thansa_json = text.startswith("{") and '"ok"' in text
+    if status == 200 and thansa_json and '"ok": true' in text.replace('":true', '": true'):
         return "ok" if verified else "cert_pending"
-    if status == 403 and javis_json:
-        return "other_javis"
+    if status == 403 and thansa_json:
+        return "other_thansa"
     if status == 404 and text.lower().startswith("404 page not found"):
         return "no_route"   # Traefik's own answer when no router matches the Host
     if status in (502, 503, 504):
@@ -342,7 +342,7 @@ def _probe_reason(code: str, hostinger: bool) -> str:
                              "chạy và nhãn loadbalancer.server.port=7777.",
                              "The proxy knows the domain but cannot reach Thansa (502). Check that the Thansa "
                              "container is running and loadbalancer.server.port=7777.")
-    if code == "other_javis":
+    if code == "other_thansa":
         return localefmt.chu("Tên miền này đang mở một bản Thansa KHÁC (ví dụ stack thứ hai trên cùng VPS). Kiểm tra "
                              "DOMAIN_NAME của từng stack.",
                              "This domain opens a DIFFERENT Thansa (for example a second stack on the same VPS). "
@@ -404,16 +404,16 @@ def _make_router() -> APIRouter:
 
     @router.get("/domain/whoami")
     async def domain_whoami():
-        """Public: lets /domain/auto tell this Javis apart from anything else answering on a candidate link."""
+        """Public: lets /domain/auto tell this Thansa apart from anything else answering on a candidate link."""
         return JSONResponse({"id": _WHOAMI})
 
     @router.get("/domain/auto")
     async def domain_auto(request: Request):
-        """Public: the https link a browser that opened Javis by IP should move to, or "" (0.302.0).
+        """Public: the https link a browser that opened Thansa by IP should move to, or "" (0.302.0).
 
         Owner 24/10/2026: "khi cài nó tự cài 1 đường dẫn của vps hostinger sẵn để khách hàng mở luôn". hPanel's Open
-        reaches http://<ip>:7777; the page asks here and moves to https://javis.srv<id>.hstgr.cloud (served by the
-        gateway, or by Traefik with DOMAIN_NAME) once that link answers as THIS Javis over a valid certificate.
+        reaches http://<ip>:7777; the page asks here and moves to https://thansa.srv<id>.hstgr.cloud (served by the
+        gateway, or by Traefik with DOMAIN_NAME) once that link answers as THIS Thansa over a valid certificate.
         Hostinger stack only, cached a few minutes.
         """
         if _domain_deploy_target(request) != "hostinger":
@@ -424,8 +424,8 @@ def _make_router() -> APIRouter:
     async def domain_set(domain: str = Form("")):
         d = _norm_domain(domain)
         if d and not _DOMAIN_RE.match(d):
-            return JSONResponse({"ok": False, "error": localefmt.chu("Tên miền không hợp lệ (vd: javis.tencuaban.com)",
-                                                                   "Invalid domain (e.g. javis.yourdomain.com)")}, status_code=400)
+            return JSONResponse({"ok": False, "error": localefmt.chu("Tên miền không hợp lệ (vd: thansa.tencuaban.com)",
+                                                                   "Invalid domain (e.g. thansa.yourdomain.com)")}, status_code=400)
         cfg = cfgmod.read_settings()
         cfg.setdefault("domain", {})
         cfg["domain"]["custom"] = d

@@ -1,4 +1,4 @@
-"""Windows mở Javis như một app - bản đối xứng của bộ launcher macOS (PR #3).
+"""Windows mở Thansa như một app - bản đối xứng của bộ launcher macOS (PR #3).
 
     python tests/run.py windows_launcher
 
@@ -39,7 +39,7 @@ i_vbs = bat.find("wscript //nologo start-thansa.vbs")   # dòng GỌI thật, kh
 check("CANARY: thăm dò /health TRƯỚC khi gọi start-thansa.vbs (vbs kill instance cũ - "
       "thiếu bước này là double-click lần hai giết việc nền đang chạy)",
       0 < i_health < i_vbs)
-check("tôn trọng JAVIS_PORT, không hardcode một cổng", "JAVIS_PORT" in bat)
+check("tôn trọng THANSA_PORT, không hardcode một cổng", "THANSA_PORT" in bat)
 check("mở dạng cửa sổ app (--app=), không chỉ mở tab trần", "--app=" in bat)
 check("có fallback trình duyệt mặc định khi không có Edge/Chrome", 'start "" %URL%' in bat)
 check("máy thiếu curl vẫn mở được (Windows cũ)", "where curl" in bat)

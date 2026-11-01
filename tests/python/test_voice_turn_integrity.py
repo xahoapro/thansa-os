@@ -68,8 +68,8 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
                 store._conn.close()
 
     async def test_destructive_first_line_cannot_overwrite_or_execute_ui(self):
-        original = 'Javis, đừng mở trang Models, đưa anh về trò chuyện nhé.'
-        messages, frames, fallbacks, ui = await self.run_turn(original, ['JAVIS_NGHE: Javis\n', 'Đã mở.\nJAVIS_UI: open_page models'])
+        original = 'Thansa, đừng mở trang Models, đưa anh về trò chuyện nhé.'
+        messages, frames, fallbacks, ui = await self.run_turn(original, ['THANSA_NGHE: Thansa\n', 'Đã mở.\nTHANSA_UI: open_page models'])
         self.assertEqual(messages, [original])
         self.assertEqual(fallbacks, [original])
         self.assertFalse(ui)
@@ -77,31 +77,31 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
 
     async def test_late_rewrite_is_validated_before_speech(self):
         original = 'Đưa anh về màn hình trò chuyện nhé.'
-        messages, frames, fallbacks, ui = await self.run_turn(original, ['Em đây anh.\n', 'JAVIS_NGHE: Javis'])
+        messages, frames, fallbacks, ui = await self.run_turn(original, ['Em đây anh.\n', 'THANSA_NGHE: Thansa'])
         self.assertEqual(messages, [original])
         self.assertEqual(fallbacks, [original])
         self.assertFalse([f for f in frames if f['type'] == 'stream'])
 
     async def test_missing_transcript_marker_falls_back_without_ui_action(self):
         original = 'Đừng mở trang Models.'
-        messages, frames, fallbacks, ui = await self.run_turn(original, ['JAVIS_UI: open_page models'])
+        messages, frames, fallbacks, ui = await self.run_turn(original, ['THANSA_UI: open_page models'])
         self.assertEqual(messages, [original])
         self.assertEqual(fallbacks, [original])
         self.assertFalse(ui)
 
     async def test_noise_decision_cannot_delete_another_turn(self):
-        messages, frames, _, _ = await self.run_turn('tiếng TV', ['JAVIS_BO_QUA: tạp âm'], append_new='câu mới')
+        messages, frames, _, _ = await self.run_turn('tiếng TV', ['THANSA_BO_QUA: tạp âm'], append_new='câu mới')
         self.assertEqual(messages, ['tiếng TV', 'câu mới'])
         self.assertFalse([f for f in frames if f.get('bo_qua')])
 
     async def test_model_noise_guess_cannot_delete_an_accepted_utterance(self):
-        messages, frames, fallbacks, _ = await self.run_turn('không', ['JAVIS_BO_QUA: tạp âm'])
+        messages, frames, fallbacks, _ = await self.run_turn('không', ['THANSA_BO_QUA: tạp âm'])
         self.assertEqual(messages, ['không'])
         self.assertEqual(fallbacks, ['không'])
         self.assertFalse([f for f in frames if f.get('bo_qua')])
 
     async def test_spelling_correction_cannot_replace_newer_message(self):
-        messages, frames, _, ui = await self.run_turn('David ơi', ['JAVIS_NGHE: Javis ơi\nEm đây anh.'], append_new='câu mới')
+        messages, frames, _, ui = await self.run_turn('David ơi', ['THANSA_NGHE: Thansa ơi\nEm đây anh.'], append_new='câu mới')
         self.assertEqual(messages, ['David ơi', 'câu mới'])
         self.assertFalse([f for f in frames if f['type'] == 'user_text'])
         self.assertFalse(ui)
@@ -109,10 +109,10 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
     async def test_grounded_context_repair_updates_bubble_with_raw(self):
         # 0.64.38: sửa từ nghe nhầm có căn cứ về âm được nhận, và không âm thầm.
         prefix = '[NGỮ CẢNH GIAO DIỆN: trang=chat]\n\n'
-        messages, frames, fallbacks, _ = await self.run_turn(prefix + 'David ơi', ['JAVIS_NGHE: Javis ơi\n', 'Em đây anh.'])
-        self.assertEqual(messages, [prefix + 'Javis ơi'])
+        messages, frames, fallbacks, _ = await self.run_turn(prefix + 'David ơi', ['THANSA_NGHE: Thansa ơi\n', 'Em đây anh.'])
+        self.assertEqual(messages, [prefix + 'Thansa ơi'])
         corrected = [f for f in frames if f['type'] == 'user_text']
-        self.assertEqual(corrected[0]['text'], 'Javis ơi')
+        self.assertEqual(corrected[0]['text'], 'Thansa ơi')
         self.assertEqual(corrected[0]['raw'], 'David ơi')
         self.assertFalse(fallbacks)
 
@@ -120,7 +120,7 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
         # Ca 0.64.32: "vâng" không được thành tên "Vân"; phủ định không được đổi.
         for original, proposed in (('Em phải trả lời vâng', 'Em phải trở thành Vân'),
                                    ('Đừng gửi tin cho khách', 'Gửi tin cho khách')):
-            messages, frames, fallbacks, _ = await self.run_turn(original, ['JAVIS_NGHE: ' + proposed + '\nVâng.'])
+            messages, frames, fallbacks, _ = await self.run_turn(original, ['THANSA_NGHE: ' + proposed + '\nVâng.'])
             self.assertEqual(messages, [original])
             self.assertEqual(fallbacks, [original])
             self.assertFalse([f for f in frames if f['type'] == 'user_text'])
@@ -130,7 +130,7 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
 
     async def test_exact_transcript_can_answer_without_fallback(self):
         original = 'Em phải trả lời vâng'
-        messages, frames, fallbacks, _ = await self.run_turn(original, ['JAVIS_NGHE: ' + original + '\nVâng anh.'])
+        messages, frames, fallbacks, _ = await self.run_turn(original, ['THANSA_NGHE: ' + original + '\nVâng anh.'])
         self.assertEqual(messages, [original])
         self.assertFalse(fallbacks)
         self.assertTrue([f for f in frames if f['type'] == 'stream'])

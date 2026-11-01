@@ -2,7 +2,7 @@
 Cầu nối Substack (transport "internal" trong catalog).
 
 Server MCP cộng đồng substack-mcp (marcomoauro) CHỈ có 1 tool tạo nháp và không
-đăng được, nên Javis tự bọc thẳng API Substack (giống botcake_mcp) để có đủ:
+đăng được, nên Thansa tự bọc thẳng API Substack (giống botcake_mcp) để có đủ:
 liệt kê nháp, tạo nháp, và ĐĂNG bài. Pure-Python, không cần Node/npx.
 
 Auth: cookie phiên đăng nhập Substack (substack.sid) - dùng cho cả substack.sid

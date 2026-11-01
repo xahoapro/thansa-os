@@ -12,7 +12,7 @@ Run it on your laptop or a small VPS. Talk to it by voice. Plug in Claude, ChatG
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/thansa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -94,7 +94,7 @@ In Thansa the model is a part you can swap. Everything you build up lives with y
 | **Knowledge** | the Wiki and Sources folders of your brain | Markdown, Obsidian-compatible |
 | **Skills** | `skills/<name>/SKILL.md` | Markdown |
 | **Agents and workflows** | `agents/*.md`, `workflows/*.md` | Markdown with front matter |
-| **Loops and reminders** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+| **Loops and reminders** | `Thansa/loops/*.md`, `Thansa/reminders.json` | Markdown, JSON |
 
 What that buys you:
 
@@ -252,17 +252,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → paste the Hostinger
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-The **Environment** box needs only three fields: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, plus an optional `JAVIS_AUTO_UPDATE` (set it to `true` and Thansa updates itself daily).
+The **Environment** box needs only three fields: `DOMAIN_NAME`, `THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`, plus an optional `THANSA_AUTO_UPDATE` (set it to `true` and Thansa updates itself daily).
 
 Set `DOMAIN_NAME` so Hostinger's Traefik issues HTTPS:
-- **Free link** (no domain purchase): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (hostname under hPanel → VPS, e.g. `javis.srv1562015.hstgr.cloud`).
+- **Free link** (no domain purchase): `DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud` (hostname under hPanel → VPS, e.g. `thansa.srv1562015.hstgr.cloud`).
 - **Your own domain:** `DOMAIN_NAME=example.com` and point an A record at the VPS IP.
 
-Wait 1-3 minutes for the certificate, then open `https://<DOMAIN_NAME>`. No Traefik on the VPS (a plain Ubuntu 26 image)? Use the same link: the bundled `javis-gateway` (Caddy) issues the certificate itself when ports 80/443 are free.
+Wait 1-3 minutes for the certificate, then open `https://<DOMAIN_NAME>`. No Traefik on the VPS (a plain Ubuntu 26 image)? Use the same link: the bundled `thansa-gateway` (Caddy) issues the certificate itself when ports 80/443 are free.
 
 **Three one-time steps:**
-1. **Make the GHCR image Public:** GitHub → repo → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **Create the admin account:** fill in `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` (recommended), or open the app right after deploying and set one yourself. While no admin exists, whoever opens the link first can create it. Then **turn on 2FA** ([Security and accounts](docs/en/14-security-and-accounts.md)).
+1. **Make the GHCR image Public:** GitHub → repo → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**.
+2. **Create the admin account:** fill in `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` (recommended), or open the app right after deploying and set one yourself. While no admin exists, whoever opens the link first can create it. Then **turn on 2FA** ([Security and accounts](docs/en/14-security-and-accounts.md)).
 3. **Sign in to a brain** on the **Models** page.
 
 Details and troubleshooting: [DEPLOY.en.md](DEPLOY.en.md).
@@ -279,11 +279,11 @@ Details and troubleshooting: [DEPLOY.en.md](DEPLOY.en.md).
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm thansa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-Open `http://<vps-ip>:7777` and set the admin username and password right away (at least 8 characters), or preset `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` in the environment. Then turn on 2FA.
+Open `http://<vps-ip>:7777` and set the admin username and password right away (at least 8 characters), or preset `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` in the environment. Then turn on 2FA.
 
 Remote access without a domain: `docker compose --profile tunnel up -d`, then `docker compose logs tunnel | grep trycloudflare` prints an HTTPS link.
 
@@ -327,11 +327,11 @@ Dashboard:                             http://localhost:7777
 <details>
 <summary><b>Several Thansa instances on one VPS</b></summary>
 
-Brains, settings and accounts stay fully separate per instance. Only three values differ between them: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Brains, settings and accounts stay fully separate per instance. Only three values differ between them: `THANSA_NAME`, `THANSA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` again as a second stack and fill in those three fields.
 - **Self-managed VPS:** run the shared proxy `docker-compose.proxy.yml` once for the whole machine, then give each instance its own folder with `docker-compose.multi.yml`. The proxy discovers new instances and requests SSL by itself.
-- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`.
 
 Step by step: [DEPLOY.en.md](DEPLOY.en.md).
 
@@ -383,14 +383,14 @@ Every line can stay empty and Thansa still runs. Copy `env.example` → `.env` a
 
 | Variable | Meaning | Default |
 |---|---|---|
-| `JAVIS_HOST` | Listen address. `127.0.0.1` = this machine only, `0.0.0.0` = public | `127.0.0.1` |
-| `JAVIS_PORT` | Port | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` to force login on or off (default: on when bound publicly) | *(auto)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Create the admin at deploy time | - |
-| `JAVIS_ALLOWED_HOSTS` | Extra hostnames on the allow-list (CSRF and DNS-rebinding protection) | localhost + your domain |
-| `JAVIS_STATE_DIR` | Where settings, sessions and the encryption key live | `server/` (Docker: `/data/state`) |
+| `THANSA_HOST` | Listen address. `127.0.0.1` = this machine only, `0.0.0.0` = public | `127.0.0.1` |
+| `THANSA_PORT` | Port | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0` to force login on or off (default: on when bound publicly) | *(auto)* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | Create the admin at deploy time | - |
+| `THANSA_ALLOWED_HOSTS` | Extra hostnames on the allow-list (CSRF and DNS-rebinding protection) | localhost + your domain |
+| `THANSA_STATE_DIR` | Where settings, sessions and the encryption key live | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Parent folder holding every brain | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` turns your own plugins off (they run real Python inside the server) | *(on)* |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` turns your own plugins off (they run real Python inside the server) | *(on)* |
 | `TTS_VOICE` / `TTS_RATE` | Voice and speed for Edge TTS | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -401,7 +401,7 @@ Every line can stay empty and Thansa still runs. Copy `env.example` → `.env` a
 - **2FA (TOTP)**, login rate limiting, passwords of at least 8 characters, `Secure` cookies under HTTPS, sessions that expire after 30 days.
 - **CSRF and DNS-rebinding protection**: any write request from an unknown origin is rejected.
 - **Secrets are encrypted** in `settings.json` (API keys, OAuth tokens, bot tokens) with a per-machine key.
-- **Your own plugins load by default, but each one stays off until you enable it** in the app; set `JAVIS_ENABLE_USER_PLUGINS=false` to turn them all off.
+- **Your own plugins load by default, but each one stays off until you enable it** in the app; set `THANSA_ENABLE_USER_PLUGINS=false` to turn them all off.
 - **Connection permissions are enforced** by the hub, not by the model: a read-only account cannot be used to send, pay or publish.
 
 Found a vulnerability? Please follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
@@ -430,7 +430,7 @@ More in [docs/en/17-troubleshooting.md](docs/en/17-troubleshooting.md).
 ## 📂 Repository layout
 
 ```
-javis-os/
+thansa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

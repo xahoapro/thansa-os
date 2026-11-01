@@ -18,10 +18,10 @@
 > Dùng cả ba cùng lúc cũng được, chúng không đụng nhau.
 
 Thansa kết nối Zalo cá nhân bằng MCP của
-[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), bản CLI Zalo riêng của Thansa. Chỉ có
+[`thansa-zalo`](https://github.com/xahoapro/thansa-zalo), bản CLI Zalo riêng của Thansa. Chỉ có
 một tiến trình MCP: đăng nhập QR, đọc hoặc tìm hội thoại và gửi tin qua các tool của nó.
 
-> `javis-zalo` dùng API Zalo không chính thức qua `zca-js`. Zalo không hỗ trợ cách
+> `thansa-zalo` dùng API Zalo không chính thức qua `zca-js`. Zalo không hỗ trợ cách
 > kết nối này và tài khoản có thể bị hạn chế hoặc khoá. Nên dùng tài khoản phụ, tránh
 > gửi tự động hàng loạt và tự chịu trách nhiệm khi sử dụng.
 
@@ -31,7 +31,7 @@ một tiến trình MCP: đăng nhập QR, đọc hoặc tìm hội thoại và 
 - Điện thoại đã đăng nhập tài khoản Zalo cần kết nối.
 - Thansa đã được khởi động và bạn đăng nhập được dashboard.
 
-Thansa ghim `javis-zalo` theo tag phát hành (hiện là `v1.2.0`) và cài thẳng từ tarball của tag
+Thansa ghim `thansa-zalo` theo tag phát hành (hiện là `v1.2.0`) và cài thẳng từ tarball của tag
 đó trên GitHub, không cần tài khoản npm hay Git. Chỉ thư viện `zca-js` bên dưới đi theo bản chính
 thức trên npm. Từ 0.83.0 Thansa thay `zalo-agent-cli` 1.6.2 của tác giả ngoài bằng bản riêng này;
 kết nối đã đăng nhập từ trước tự chuyển sang mà không phải quét QR lại.
@@ -53,7 +53,7 @@ Nút **Hướng dẫn trên GitHub** trong thẻ Zalo luôn mở trang tài li�
 
 Mới đăng nhập Zalo vào Thansa thì Hộp thư chỉ có tin từ lúc bật **Ghi hội thoại** trở đi. Muốn có cả tin cũ, bấm **Nhập tin cũ** trên thẻ tài khoản Zalo ở trang Chatbot, thẻ Bot, mục Kênh chưa có bot. Zalo đã gắn bot thì bấm vào ô Zalo trên thẻ bot đó.
 
-- Thansa lấy các tin javis-zalo tự kéo về mỗi lần kết nối: khoảng **2 tuần** gần nhất, vì Zalo không cho lấy xa hơn. Tối đa 5.000 tin mỗi lần.
+- Thansa lấy các tin thansa-zalo tự kéo về mỗi lần kết nối: khoảng **2 tuần** gần nhất, vì Zalo không cho lấy xa hơn. Tối đa 5.000 tin mỗi lần.
 - Chỉ nhập vào cuộc chat **chưa có tin nào** trong Hộp thư. Cuộc chat đã có tin thì bỏ qua, vì tin cũ chen vào sau sẽ hiện sai thứ tự.
 - Bot **không trả lời** các tin này, chúng **không tính là chưa đọc**, và nhóm vẫn chỉ giữ 1.000 tin gần nhất như thường lệ.
 - Vừa quét QR xong thì đợi vài phút cho Zalo tải xong tin cũ rồi hãy bấm. Bấm lại nhiều lần không bị nhân đôi.
@@ -70,20 +70,20 @@ Mới đăng nhập Zalo vào Thansa thì Hộp thư chỉ có tin từ lúc b�
 | `zalo_review_join_requests` | Duyệt hoặc từ chối người xin vào nhóm | Nguy hiểm |
 | `zalo_list_threads` | Liệt kê các cuộc chat đang có trong bộ đệm | Đọc |
 | `zalo_search_threads` | Tìm nhóm hoặc người theo tên | Đọc |
-| `zalo_get_labels` | Tag (thẻ phân loại) chủ gắn cho cuộc chat trong app Zalo, của một cuộc chat hoặc tất cả (từ javis-zalo 1.6.0) | Đọc |
+| `zalo_get_labels` | Tag (thẻ phân loại) chủ gắn cho cuộc chat trong app Zalo, của một cuộc chat hoặc tất cả (từ thansa-zalo 1.6.0) | Đọc |
 | `zalo_view_media` | Tải/mở ảnh, âm thanh hoặc video trên máy chủ (bộ não không thấy ảnh, xem `zalo_read_images` bên dưới) | Đọc |
 | `zalo_mark_read` | Đánh dấu đã xử lý đến một cursor | Ghi |
 | `zalo_send_message` | Gửi tin cho cá nhân hoặc nhóm | Nguy hiểm |
 | `zalo_send_file` | Gửi file (Excel, PDF, Word...) kèm lời nhắn, chỉ file nằm trong hộp gửi của phiên (xem "Gửi ảnh và file") | Nguy hiểm |
 
-Danh sách trên theo mã nguồn `javis-zalo` 1.5.0. Tên tham số lấy từ mã nguồn: kiểu cuộc chat của
+Danh sách trên theo mã nguồn `thansa-zalo` 1.5.0. Tên tham số lấy từ mã nguồn: kiểu cuộc chat của
 `zalo_send_message` là `threadType` (0 = chat riêng, 1 = nhóm), và `zalo_get_messages` đọc bằng
 `since` chứ không có `cursor`. Lịch sử chỉ có từ lúc MCP kết nối, cộng phần Zalo gửi lại lúc kết
 nối (khoảng hai tuần gần nhất); tin cũ hơn thì không API nào lấy được.
 
-### Khi nào có thể thiếu tin (từ 0.183.0, javis-zalo 1.5.0)
+### Khi nào có thể thiếu tin (từ 0.183.0, thansa-zalo 1.5.0)
 
-Ba tool đọc tin chỉ đọc kho do chính javis-zalo gom: tin tới lúc đang kết nối, cộng phần Zalo gửi
+Ba tool đọc tin chỉ đọc kho do chính thansa-zalo gom: tin tới lúc đang kết nối, cộng phần Zalo gửi
 lại mỗi lần vừa kết nối. Không có cách hỏi lại Zalo lịch sử chat riêng sau đó. Nên tin tới đúng lúc
 mất kết nối (Thansa khởi động lại hay cập nhật, mạng rớt, một phiên Zalo Web khác đang giữ kết nối)
 chỉ thấy được nếu phần gửi lại mang nó về.
@@ -98,7 +98,7 @@ chỉ thấy được nếu phần gửi lại mang nó về.
 
 ## Duyệt người xin vào nhóm
 
-Từ Thansa 0.84.7 (javis-zalo 1.2.0), với nhóm bật "duyệt thành viên":
+Từ Thansa 0.84.7 (thansa-zalo 1.2.0), với nhóm bật "duyệt thành viên":
 
 - **Thansa báo bạn khi có người xin vào**, qua chuông hòm thư và Telegram của bạn: một tin cho mỗi nhóm, có tên người
   xin và tên nhóm.
@@ -110,7 +110,7 @@ Từ Thansa 0.84.7 (javis-zalo 1.2.0), với nhóm bật "duyệt thành viên":
 
 ## Người mới vào nhóm
 
-Từ Thansa 0.84.2 (javis-zalo 1.1.0), Thansa biết ai vừa vào nhóm và vào **lúc nào**, kể cả người
+Từ Thansa 0.84.2 (thansa-zalo 1.1.0), Thansa biết ai vừa vào nhóm và vào **lúc nào**, kể cả người
 được thêm vào bởi chính tài khoản của bạn:
 
 - **Hỏi lại được.** "Tuần này ai mới vào nhóm Zoom | Thansa OS?" thì bộ não gọi
@@ -129,7 +129,7 @@ Từ Thansa 0.84.2 (javis-zalo 1.1.0), Thansa biết ai vừa vào nhóm và và
 ## Gói Zalo mở rộng (Thansa Store)
 
 Ba nhóm tool dưới đây (đọc ảnh, gửi ảnh và file, tag người cùng ghi chú, nhắc hẹn, poll) bù đúng
-chỗ MCP chuẩn còn thiếu. Từ 0.73.0 chúng nằm trong gói **`javis.zalo`** trên Thansa Store thay vì
+chỗ MCP chuẩn còn thiếu. Từ 0.73.0 chúng nằm trong gói **`thansa.zalo`** trên Thansa Store thay vì
 đi sẵn trong app, để ai không dùng Zalo thì không phải mang theo:
 
 - **Quét QR Zalo xong là Thansa mời cài gói**, qua đúng màn hình đồng ý của kho: liệt kê từng tệp
@@ -142,7 +142,7 @@ chỗ MCP chuẩn còn thiếu. Từ 0.73.0 chúng nằm trong gói **`javis.zal
 ## Đọc ảnh trong nhóm
 
 MCP của Zalo chỉ trả **đường link** của ảnh, giữ tin trong 2 giờ, và `zalo_view_media` mở ảnh
-bằng trình xem ảnh của máy chủ chứ không đưa cho bộ não. Nên gói `javis.zalo` có tool
+bằng trình xem ảnh của máy chủ chứ không đưa cho bộ não. Nên gói `thansa.zalo` có tool
 `zalo_read_images`:
 
 | Tool | Công dụng | Mức thao tác |
@@ -160,13 +160,13 @@ Nói trong chat như bình thường, ví dụ “xem ảnh hoá đơn chị Lan
   chép nguyên văn chữ và số trong ảnh. Chưa đăng nhập ChatGPT ở trang Model thì vẫn tải được ảnh,
   chỉ thiếu phần tả.
 
-Phần ChatGPT xem ảnh nằm trong app (plugin có sẵn `image-chatgpt`, tool `javis_describe_image`),
+Phần ChatGPT xem ảnh nằm trong app (plugin có sẵn `image-chatgpt`, tool `thansa_describe_image`),
 nên xem được cả mọi ảnh khác trong brain, có cài gói Zalo hay không.
 
 ## Gửi ảnh và file
 
 `zalo_send_message` ở trên **chỉ gửi được chữ**. Muốn gửi ảnh (ví dụ ảnh Thansa vừa tạo) hay
-file (báo cáo PDF, bảng tính) thì dùng tool `zalo_send_image` trong gói `javis.zalo`. Nó dùng
+file (báo cáo PDF, bảng tính) thì dùng tool `zalo_send_image` trong gói `thansa.zalo`. Nó dùng
 đúng tài khoản Zalo bạn đã quét QR.
 
 | Tool | Công dụng | Mức thao tác |
@@ -205,17 +205,17 @@ Từ 0.139.0 file đi qua tool `zalo_send_file` của chính tiến trình MCP �
 - **Zalo không xác nhận trong 60 giây thì báo lỗi rõ và KHÔNG gửi gì**, kể cả khi xác nhận tới
   muộn sau đó. Gửi lại là an toàn. Kết nối thời gian thực đang rớt thì báo ngay, không chờ.
 - Ảnh (jpg, png, webp, gif) vẫn đi đường cũ.
-- Kết nối Zalo còn chạy bản `javis-zalo` cũ (chưa có tool này) thì Thansa báo cập nhật Thansa rồi
+- Kết nối Zalo còn chạy bản `thansa-zalo` cũ (chưa có tool này) thì Thansa báo cập nhật Thansa rồi
   tắt-bật lại kết nối Zalo, không phải quét QR lại.
 
-Lệnh dòng lệnh `javis-zalo msg send-file` gửi file khi không có kết nối thời gian thực thì báo lỗi
+Lệnh dòng lệnh `thansa-zalo msg send-file` gửi file khi không có kết nối thời gian thực thì báo lỗi
 ngay. Thêm `--listen` để nó tự mở kết nối cho lượt gửi đó, nhưng chỉ dùng trên máy KHÔNG chạy MCP
 Zalo, vì kết nối mới sẽ đá MCP ra.
 
 ## Tag người, ghi chú, nhắc hẹn và poll
 
 `zalo_send_message` chỉ gửi chữ nên không tag được ai, và MCP của Zalo cũng không có ghi chú, nhắc hẹn hay poll. Gói
-`javis.zalo` bù đúng các chỗ đó bằng năm tool, mọi bộ não đều gọi được:
+`thansa.zalo` bù đúng các chỗ đó bằng năm tool, mọi bộ não đều gọi được:
 
 | Tool | Công dụng | Mức thao tác |
 |---|---|---|
@@ -232,7 +232,7 @@ Bốn điều nên biết:
 - **Tag chỉ cần nói tên.** “@minhquy” hay “Minh Quý” đều được, không phân biệt hoa thường hay dấu. Thansa tìm ID Zalo thật trong
   những người đã nhắn ở nhóm đó trước, rồi tới danh sách thành viên của Zalo. **Trùng tên hoặc không thấy thì Thansa hỏi lại kèm
   danh sách ứng viên**, không đoán, vì tag nhầm người thì không rút lại được. Tag cả nhóm (`@All`) chỉ khi bạn yêu cầu rõ.
-- **Nhắc hẹn này khác nhắc hẹn riêng của Thansa** (`javis_schedule`): nó hiện trong Zalo nên cả nhóm cùng thấy. Giờ tính theo múi giờ của Thansa.
+- **Nhắc hẹn này khác nhắc hẹn riêng của Thansa** (`thansa_schedule`): nó hiện trong Zalo nên cả nhóm cùng thấy. Giờ tính theo múi giờ của Thansa.
 - **Nhóm khoá quyền tạo ghi chú hoặc poll của thành viên** thì Zalo từ chối và Thansa báo thẳng lý do đó. Nếu lệnh quá giờ, Thansa nói
   **không rõ đã tạo chưa** và dặn xem lại nhóm trước khi thử tiếp, để khỏi ra hai poll.
 - **Đấu nhiều tài khoản Zalo thì Thansa hỏi lại** nên dùng tài khoản nào, giống phần gửi ảnh.
@@ -244,9 +244,9 @@ Bot chuyên trách đứng trong nhóm Zalo thì **tự tag người nó đang t
 Bot trả lời trên Zalo cá nhân giờ nhắn giống người thật hơn:
 
 - **Chữ đậm, nghiêng, gạch ngang và chữ màu.** Bot viết `**85.000đ**` thì khách thấy chữ đậm, không còn thấy dấu sao. Màu viết `{red:Giảm 50%}`, có `red`, `orange`, `yellow`, `green`, và `{big:...}`, `{small:...}` để đổi cỡ chữ. Dòng `- ` thành dấu `•`, tiêu đề thành một dòng đậm. Bot được dặn chỉ nhấn một hai chỗ như người thật nhắn tin.
-- **"Đang soạn tin".** Trong chat riêng, khách thấy dòng "đang soạn tin" trong lúc bot viết câu trả lời. Phần này cần javis-zalo 1.9.0 trở lên; bản cũ hơn thì bot vẫn trả lời bình thường, chỉ không hiện dòng đó. Trong nhóm không hiện, vì nhiều tin bot chọn không trả lời.
+- **"Đang soạn tin".** Trong chat riêng, khách thấy dòng "đang soạn tin" trong lúc bot viết câu trả lời. Phần này cần thansa-zalo 1.9.0 trở lên; bản cũ hơn thì bot vẫn trả lời bình thường, chỉ không hiện dòng đó. Trong nhóm không hiện, vì nhiều tin bot chọn không trả lời.
 
-Tin có định dạng đi qua lệnh `javis-zalo msg send --style`. Lệnh đó lỗi thì tin vẫn đi dưới dạng chữ thường, đã bỏ ký hiệu.
+Tin có định dạng đi qua lệnh `thansa-zalo msg send --style`. Lệnh đó lỗi thì tin vẫn đi dưới dạng chữ thường, đã bỏ ký hiệu.
 
 ## Cách dùng trong chat
 
@@ -276,7 +276,7 @@ giới hạn vẫn bị MCP Hub chặn gửi tin, dù tài khoản đang đặt 
 ## Khác với tích hợp Zalo cũ
 
 Luồng mới đã bỏ sidecar `listen --webhook`, endpoint `/hook/zalo`, panel “Nghe tin liên
-tục”, file luật theo từng cuộc chat và hai plugin `javis_zalo_rule`/`javis_zalo_send`.
+tục”, file luật theo từng cuộc chat và hai plugin `thansa_zalo_rule`/`thansa_zalo_send`.
 Không còn việc một tiến trình listener tự tắt rồi bật lại connector MCP.
 
 Do đó Thansa không tự chuyển tiếp tin Zalo sang Telegram ở nền. Khi cần kiểm tra tin, hãy
@@ -292,9 +292,9 @@ hỏi Thansa; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặ
   `zalo_get_history` thay vì chỉ dùng `zalo_get_messages`.
 - **Tool gửi bị chặn**: mở menu chip tài khoản và chuyển quyền sang **Toàn quyền**.
 - **Báo phiên đang được dùng nơi khác**: đóng Zalo Web hoặc tiến trình
-  `javis-zalo` (hay `zalo-agent-cli` cũ) khác đang dùng cùng tài khoản, rồi thử lại.
+  `thansa-zalo` (hay `zalo-agent-cli` cũ) khác đang dùng cùng tài khoản, rồi thử lại.
 - **Bot im sau khi Thansa khởi động lại**: trước 0.114.0, nếu Thansa tắt không êm (crash, bị
-  dừng cứng khi cập nhật) thì tiến trình `javis-zalo` cũ còn sống. Server mới mở thêm một phiên,
+  dừng cứng khi cập nhật) thì tiến trình `thansa-zalo` cũ còn sống. Server mới mở thêm một phiên,
   và cùng một tài khoản có hai phiên nghe. Zalo chỉ đẩy tin về một phiên nên bot đọc phiên kia
   và không thấy gì. Từ 0.114.0 Thansa ghi lại mọi tiến trình MCP nó mở và tự dọn tiến trình sót
   của lần chạy trước. Bản cũ hơn thì khởi động lại cả máy chủ (hoặc container) là sạch.
@@ -303,6 +303,6 @@ hỏi Thansa; MCP có thể dùng `zalo_get_messages` cho tin đang đệm hoặ
 
 ## Tham khảo
 
-- [Repository `javis-zalo`](https://github.com/blogminhquy/javis-zalo)
+- [Repository `thansa-zalo`](https://github.com/xahoapro/thansa-zalo)
 - [zca-js](https://github.com/RFS-ADRENO/zca-js), thư viện nói chuyện với Zalo bên dưới
 - [Kết nối và phân quyền MCP trong Thansa](09-mcp-va-so-lieu.md)

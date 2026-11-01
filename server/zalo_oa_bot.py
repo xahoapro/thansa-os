@@ -1,6 +1,6 @@
 """Zalo Official Account (OA) gateway over the official OA Open API v3 (0.412.0).
 
-Same shape as `messenger_bot`: Javis cannot pull messages, Zalo POSTs every event a customer
+Same shape as `messenger_bot`: Thansa cannot pull messages, Zalo POSTs every event a customer
 sends to the OA to one webhook. Two halves:
 
   - `ZaloOABot`: the transport, same contract as `TelegramBot` (start/stop/status/send_text/
@@ -54,8 +54,8 @@ import stt
 from bot_gateway import HangLuot, dong_vet, parse_chat_ids, ten_tool
 from messenger_bot import _chunks, md_to_plain
 
-OAUTH_URL = os.getenv("JAVIS_ZALO_OA_OAUTH", "https://oauth.zaloapp.com/v4/oa/access_token")
-OPENAPI = os.getenv("JAVIS_ZALO_OA_OPENAPI", "https://openapi.zalo.me")
+OAUTH_URL = os.getenv("THANSA_ZALO_OA_OAUTH", "https://oauth.zaloapp.com/v4/oa/access_token")
+OPENAPI = os.getenv("THANSA_ZALO_OA_OPENAPI", "https://openapi.zalo.me")
 
 CHANNEL = "zalo_oa"
 MAX_MSG = 1900               # Zalo allows 2000 per text; keep a margin
@@ -80,7 +80,7 @@ def split_credentials(raw) -> dict:
     Two forms. What the owner pastes: "<App ID> <App secret key> <OA secret key> <Refresh token>",
     told apart by shape: the App ID is all digits, the refresh token is the long one, and the two
     short keys are taken IN ORDER (app secret first). `key=value` parts are read by name, so
-    "oa_secret=..." fixes the order when needed. What Javis writes back after a refresh: JSON.
+    "oa_secret=..." fixes the order when needed. What Thansa writes back after a refresh: JSON.
     """
     out = {k: "" for k in _FIELDS}
     out["expires_at"] = 0.0
@@ -545,9 +545,9 @@ class ZaloOABot(HangLuot):
             try:
                 kq = await self.stt_fn(data, f"zalo_oa_{int(time.time())}.m4a")
             except Exception as e:
-                kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+                kq = {"ok": False, "noi_voi_thansa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
             if not (kq or {}).get("ok"):
-                return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+                return (kq or {}).get("noi_voi_thansa") or stt.loi_thanh_dong("loi")
             return stt.khoi_thoai(kq.get("text"), "Zalo OA")
         ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
         d = Path(ddir) if ddir else Path("zalo-oa-inbox")

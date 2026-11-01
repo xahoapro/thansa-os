@@ -88,6 +88,6 @@ pytest bắt buộc.
 ## Đề xuất cho GĐ2
 
 - Trạm #1 soạn `nhiem-vu/GD2.md`: chốt danh sách chuỗi hiển thị cần đổi (P001/P003 — tôi
-  sẽ grep toàn bộ "Javis OS" phía client trước khi sửa) + nguồn ảnh logo/favicon Thansa
+  sẽ grep toàn bộ "Thansa OS" phía client trước khi sửa) + nguồn ảnh logo/favicon Thansa
   cho P002 (cần chủ cung cấp ảnh, hoặc chốt phương án tạm) + xác nhận image GHCR
   `ghcr.io/xahoapro/thansa-os` cho P005.

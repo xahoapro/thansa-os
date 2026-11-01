@@ -44,14 +44,14 @@ def stable_bucket(session_id: str, salt: str, buckets: int = 10_000) -> int:
     return int.from_bytes(digest[:8], "big") % max(1, int(buckets or 10_000))
 
 
-# 0.345.0: pure small talk ("chào em", "cảm ơn em nhé", "hi Javis") takes the fast path on every
+# 0.345.0: pure small talk ("chào em", "cảm ơn em nhé", "hi Thansa") takes the fast path on every
 # engine, whatever the saving level. On Claude Code the full path costs ~48k tokens for a greeting;
 # the lean fast path costs a few hundred. The match is deliberately strict: EVERY word must be a
 # greeting, a thanks, or an address/particle word, so "chào em, doanh thu hôm nay?" or "ok làm đi"
 # never qualifies. "ok" is left out on purpose: it is how people say "go ahead".
 _ST_GREET = r"xin chao|chao|hello|helo|hi|hey|alo|good morning|good afternoon|good evening"
 _ST_THANK = r"cam on|thanks|thank you|thank u|thank|thx|tks|many thanks"
-_ST_FILL = (r"em|anh|chi|ban|minh|javis|a|nhe|nha|nhieu|lam|oi|ha|ca nha|rat|very much|so much|"
+_ST_FILL = (r"em|anh|chi|ban|minh|thansa|a|nhe|nha|nhieu|lam|oi|ha|ca nha|rat|very much|so much|"
             r"buoi sang|buoi chieu|buoi toi")
 _ST_FULL = re.compile(rf"^(?:(?:{_ST_GREET}|{_ST_THANK}|{_ST_FILL})\b\s*)+$")
 _ST_CORE = re.compile(rf"\b(?:{_ST_GREET}|{_ST_THANK})\b")
@@ -92,7 +92,7 @@ class FastIntentClassifier:
         if len(text) > max(1, int(max_chars or 12_000)):
             return IntentDecision(False, "oversized", "objective_too_large", 1.0)
 
-        # Bộ từ vựng theo ĐÚNG ngôn ngữ người dùng đang viết, không phải ngôn ngữ Javis được
+        # Bộ từ vựng theo ĐÚNG ngôn ngữ người dùng đang viết, không phải ngôn ngữ Thansa được
         # lệnh trả lời: cổng này đọc câu HỎI, nên nó phải hiểu ngôn ngữ của câu hỏi.
         # `lang` do nơi gọi truyền xuống (đã có ngữ cảnh phiên) được tin hơn là tự dò.
         ma = lang_registry.chuan_hoa(lang) or lang_mod.detect(text)[0]
@@ -290,7 +290,7 @@ class FastPathCanary:
 
     def prepare(self, trace: context_runtime.TurnTrace | None, objective: str, brain: str,
                 # `lang`        = ngôn ngữ của CÂU HỎI, dùng để chọn bộ từ vựng cho cổng.
-                # `lang_tra_loi` = ngôn ngữ Javis phải TRẢ LỜI, đi vào hợp đồng đầu ra.
+                # `lang_tra_loi` = ngôn ngữ Thansa phải TRẢ LỜI, đi vào hợp đồng đầu ra.
                 # Hai cái này KHÁC nhau khi user ghim ngôn ngữ trả lời, và lẫn chúng chính là
                 # con bệnh đã đo được: cổng chấm câu tiếng Việt bằng bộ từ vựng tiếng Anh.
                 channel: str, provider: str, model: str, provider_kind: str,

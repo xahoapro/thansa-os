@@ -23,10 +23,10 @@ import tempfile
 import time
 from pathlib import Path
 
-STATE = Path(tempfile.mkdtemp(prefix="javis-wh-m5-"))
-os.environ["JAVIS_STATE_DIR"] = str(STATE)
-os.environ["JAVIS_NO_REAL_JUDGE_ENGINE"] = "1"
-os.environ["JAVIS_WH_NO_NETWORK"] = "1"
+STATE = Path(tempfile.mkdtemp(prefix="thansa-wh-m5-"))
+os.environ["THANSA_STATE_DIR"] = str(STATE)
+os.environ["THANSA_NO_REAL_JUDGE_ENGINE"] = "1"
+os.environ["THANSA_WH_NO_NETWORK"] = "1"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:

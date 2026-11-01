@@ -3,8 +3,8 @@
 Sự cố Thansa 08/10: settings.json bị reset gần hết về mặc định (mật khẩu admin, Discord, Slack,
 Lark, voice...) mà không có request ghi nào. Cơ chế: write_text cắt file về 0 byte rồi mới ghi;
 luồng khác đọc đúng lúc đó → json lỗi → read_settings nuốt lỗi trả bộ MẶC ĐỊNH → caller sửa một
-mục rồi ghi cả bộ xuống. Gốc thật (Javis 0.86.2 tìm ra): GET /whatsapp/status ghi một MẢNH settings.
-Javis 0.86.2 đã vá phần ghi (nguyên tử, .bak, gộp mảnh - test_settings_ghi_an_toan). File này khoá
+mục rồi ghi cả bộ xuống. Gốc thật (Thansa 0.86.2 tìm ra): GET /whatsapp/status ghi một MẢNH settings.
+Thansa 0.86.2 đã vá phần ghi (nguyên tử, .bak, gộp mảnh - test_settings_ghi_an_toan). File này khoá
 lớp Thansa thêm: write_settings không ghi `auth` rỗng đè lên mật khẩu đang có, trừ khi caller nói
 rõ (cho_xoa_mat_khau=True ở /auth/disable); bỏ hẳn mục auth (pop rồi ghi) vẫn được.
 
@@ -18,8 +18,8 @@ import tempfile
 import threading
 from pathlib import Path
 
-state = tempfile.mkdtemp(prefix="javis-ghiset-")
-os.environ["JAVIS_STATE_DIR"] = state
+state = tempfile.mkdtemp(prefix="thansa-ghiset-")
+os.environ["THANSA_STATE_DIR"] = state
 
 import config as cfg  # noqa: E402
 
@@ -59,7 +59,7 @@ check("file dở: read_settings vẫn giữ kênh Discord", (c.get("discord") or
 P.write_text(tot, encoding="utf-8")
 
 # ---- 3. chốt cuối: cfg mặc định (auth rỗng) không ghi đè được mật khẩu ----
-# Nguyên bộ mặc định: từ Javis 0.166.4 upstream TỪ CHỐI ghi hẳn (_chan_ghi_trang); nền cũ thì P061
+# Nguyên bộ mặc định: từ Thansa 0.166.4 upstream TỪ CHỐI ghi hẳn (_chan_ghi_trang); nền cũ thì P061
 # ghi nhưng giữ auth. Cách nào thì mật khẩu trên đĩa cũng phải còn.
 mac_dinh = json.loads(json.dumps(cfg._DEFAULT))
 mac_dinh.setdefault("model", {})["ghi_chu"] = "caller sửa một mục trên cfg hỏng"

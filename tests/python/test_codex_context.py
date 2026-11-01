@@ -29,7 +29,7 @@ def check(name, cond):
         _fails.append(name)
 
 
-with tempfile.TemporaryDirectory(prefix="javis-codex-context-") as tmp:
+with tempfile.TemporaryDirectory(prefix="thansa-codex-context-") as tmp:
     tmp_path = Path(tmp)
 
     # 1) DB cũ tự thêm cột riêng của Codex, không đụng cli_session_id của Claude.
@@ -63,9 +63,9 @@ with tempfile.TemporaryDirectory(prefix="javis-codex-context-") as tmp:
     store._conn.close()
 
     # 2) Lượt mới và lượt resume dựng đúng argv theo CLI chính thức.
-    cli = CodexCLI(cwd=tmp, model="gpt-test", instructions="Bạn là Javis.")
+    cli = CodexCLI(cwd=tmp, model="gpt-test", instructions="Bạn là Thansa.")
     cli.cli_path = "codex"
-    cli.profile = "javis"
+    cli.profile = "thansa"
     fresh_args = cli._build_args()
     check("argv: lượt mới không có resume", "resume" not in fresh_args and fresh_args[-1] == "-")
     cli.session_id = "0199a213-81c0-7800-8aa1-bbab2a035a53"

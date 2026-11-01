@@ -666,14 +666,14 @@
       e.preventDefault(); e.stopPropagation();
       var p = a.getAttribute("data-vault-path") || "";
       if (!p) return;
-      if (a.closest("#noteEditor") && typeof window.JavisOpenNote === "function") window.JavisOpenNote(p);
-      else if (typeof window.JavisEditFile === "function") window.JavisEditFile(p);
-      else if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(p);
+      if (a.closest("#noteEditor") && typeof window.ThansaOpenNote === "function") window.ThansaOpenNote(p);
+      else if (typeof window.ThansaEditFile === "function") window.ThansaEditFile(p);
+      else if (typeof window.ThansaOpenFiles === "function") window.ThansaOpenFiles(p);
     }, true);
   }
 
   if (typeof window !== "undefined") {
-    window.JavisDataview = { run: run, parseQuery: parseQuery, execQuery: execQuery, dropCache: dropCache };
+    window.ThansaDataview = { run: run, parseQuery: parseQuery, execQuery: execQuery, dropCache: dropCache };
   }
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { parseQuery: parseQuery, execQuery: execQuery, compile: compile,

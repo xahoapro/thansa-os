@@ -41,18 +41,18 @@ import localefmt
 
 CACHE = STATE_DIR / "packs-store-cache.json"
 TTL = 6 * 3600
-FORMAT = "javis-pack-index"
+FORMAT = "thansa-pack-index"
 FORMAT_VERSION = 1
 
 # Kho mặc định. Người dùng đổi được trong Cài đặt, nên đây chỉ là điểm khởi đầu.
 #
 # Kho nằm ở REPO RIÊNG chứ không trong repo Thansa OS, và đó là điểm mấu chốt của cả tầng này:
 # thêm một gói vào kho không còn dính gì tới việc ra bản mới của app. Người phát hành đẩy một
-# commit vào `javis-store`, và mọi máy đang chạy Thansa thấy ngay ở lần làm mới danh mục kế tiếp.
+# commit vào `thansa-store`, và mọi máy đang chạy Thansa thấy ngay ở lần làm mới danh mục kế tiếp.
 #
 # Tách repo còn mở được đường đóng góp: người lạ gửi Pull Request vào kho, chủ kho đọc mã rồi mới
 # trộn - mà không ai phải có quyền ghi vào mã nguồn Thansa.
-STORE_MAC_DINH = ("https://raw.githubusercontent.com/blogminhquy/javis-store/"
+STORE_MAC_DINH = ("https://raw.githubusercontent.com/xahoapro/thansa-store/"
                   "main/index.json")
 
 # Loại năng lực một mục trong kho mang lại. Đây là thứ chia lưới thành các tab "Trợ lý /
@@ -94,7 +94,7 @@ def _upstream(v) -> dict:
     The Store shows it as a "Follows the source repo" line with a link to github.com/<repo>, so the repo
     has to be a plain owner/name before it becomes a link: anything else drops the field and the card
     shows as an ordinary pack. The store refreshes these packs from the source daily
-    (javis-store `tools/theo-goc.py`); updating still goes through the usual confirm screen."""
+    (thansa-store `tools/theo-goc.py`); updating still goes through the usual confirm screen."""
     if not isinstance(v, dict):
         return {}
     repo = _chuoi(v.get("repo"), 201)
@@ -170,7 +170,7 @@ def _ghi_cache(d: dict) -> None:
         pass
 
 
-# Bản dịch EN cho catalog Store. Catalog upstream (javis-store) chỉ có mô tả 'vi'; fork tự
+# Bản dịch EN cho catalog Store. Catalog upstream (thansa-store) chỉ có mô tả 'vi'; fork tự
 # dịch sang 'en' để packs.js nn() (v[lang]||v.en||...) hiện English khi giao diện EN. Không
 # đụng catalog gốc, không cần overlay. File: system/store-en.json = {id: {name, desc}}.
 _STORE_EN_CACHE = None

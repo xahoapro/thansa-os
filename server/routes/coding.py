@@ -285,7 +285,7 @@ def _make_router() -> APIRouter:
             return _400(str(e))
 
     # ---- Hoàn tác về mốc tự động (0.256.0, coding_checkpoint) ----
-    # Khác điểm hồi ở trên: mốc do Javis TỰ tạo trước thao tác thay đổi đầu tiên của mỗi lượt,
+    # Khác điểm hồi ở trên: mốc do Thansa TỰ tạo trước thao tác thay đổi đầu tiên của mỗi lượt,
     # nằm trong kho git bóng (không đụng repo), có ở cả thư mục không phải git, và khôi phục
     # chọn lọc chứ không `reset --hard`.
     @r.get("/coding/session/{sid}/undo")

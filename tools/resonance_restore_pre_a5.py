@@ -3,7 +3,7 @@
     python tools/resonance_restore_pre_a5.py --yes
     python tools/resonance_restore_pre_a5.py --state-dir /duong/dan/state --yes
 
-CHẠY KHI JAVIS ĐÃ TẮT. Script làm đúng hai bước, đều bằng SQLite backup API (lấy cả phần còn trong WAL, không chép thô
+CHẠY KHI THANSA ĐÃ TẮT. Script làm đúng hai bước, đều bằng SQLite backup API (lấy cả phần còn trong WAL, không chép thô
 file `.sqlite3`):
 1. Chép kho HIỆN TẠI sang `resonance.sqlite3.post-0.109.0-<thời điểm>` để giữ hồ sơ sau nâng (đội, lượt theo vai, các
    lần review và kết luận).
@@ -55,12 +55,12 @@ def restore(state_dir: str) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Khôi phục kho Resonance về snapshot trước 0.109.0 (chạy khi Thansa đã tắt).")
-    ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của Thansa (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--state-dir", default=os.environ.get("THANSA_STATE_DIR", ""),
+                    help="thư mục state của Thansa (mặc định THANSA_STATE_DIR)")
     ap.add_argument("--yes", action="store_true", help="xác nhận Thansa đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
-        print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
+        print("Thiếu --state-dir (hay biến THANSA_STATE_DIR).", file=sys.stderr)
         return 2
     if not a.yes:
         print("Tắt Thansa trước, rồi chạy lại với --yes. Mọi thay đổi của mục tiêu sau lúc nâng lên 0.109.0 sẽ không còn "

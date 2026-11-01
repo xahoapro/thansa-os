@@ -18,9 +18,9 @@
    ```
 3. (वैकल्पिक, HTTPS + domain के लिए) **Environment** box में यह सेट कीजिए:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud
    ```
-   (Hostname hPanel → VPS में मिलेगा, जैसे `javis.srv1782015.hstgr.cloud`।)
+   (Hostname hPanel → VPS में मिलेगा, जैसे `thansa.srv1782015.hstgr.cloud`।)
 4. **Deploy** कीजिए। 1-3 मिनट इंतज़ार कीजिए। App को **Open** button से खोलिए (या `https://<DOMAIN_NAME>` पर)।
 5. पहली बार चलाने पर screen आपसे एक admin account बनाने को कहती है। उसके बाद container के terminal में एक बार Claude Code में sign in कीजिए: `claude auth login --claudeai`।
 

@@ -32,13 +32,13 @@ _SLUG = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}\Z")
 _TOOL = re.compile(r"[a-z][a-z0-9_]{0,63}\Z")
 _LOCK_TYPES = (type(threading.Lock()), type(threading.RLock()))
 _SESSION_FIELDS = {"id", "brain", "channel", "engine", "model", "project_id", "pinned_provider", "pinned_model", "archived"}
-_RESERVED = {"javis_connections", "javis_read_file", "javis_list_dir", "javis_write_file", "javis_use_skill",
-    "javis_edit_file", "javis_search_files", "javis_run_command", "javis_terminal", "javis_process",
-    "javis_web_search", "javis_web_fetch"}
-_GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "javis-goal" / "plugin.py"
+_RESERVED = {"thansa_connections", "thansa_read_file", "thansa_list_dir", "thansa_write_file", "thansa_use_skill",
+    "thansa_edit_file", "thansa_search_files", "thansa_run_command", "thansa_terminal", "thansa_process",
+    "thansa_web_search", "thansa_web_fetch"}
+_GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "thansa-goal" / "plugin.py"
 # Pin the audited data-only branch; a coherent edited source+cache is still not
 # authority to reinterpret an arbitrary predicate as the ordinary-owner result.
-# Thansa: băm theo nguồn javis-goal ĐÃ rebrand (P048/P07x); vòng trộn nào đổi plugin.py thì băm lại.
+# Thansa: băm theo nguồn thansa-goal ĐÃ rebrand (P048/P07x); vòng trộn nào đổi plugin.py thì băm lại.
 _GOAL_SOURCE_HASH = "44d800206d2167483af087c3edc3e125ccf610395dcdd61dd25714f053a05391"
 
 
@@ -254,7 +254,7 @@ class PluginCapabilityProjection:
         if (any(item["kind"] == "directory" and not item["name"].startswith((".", "_")) for item in pack_members or [])
                 or packs._cache.get("packs") or packs._cache.get("connectors") or (ledger_raw and _mapping(ledger_raw))):
             raise ValueError("unsupported_pack_context")
-        pack_off = str(os.getenv("JAVIS_DISABLE_PACKS", "")).strip().lower() in ("1", "true", "yes", "on")
+        pack_off = str(os.getenv("THANSA_DISABLE_PACKS", "")).strip().lower() in ("1", "true", "yes", "on")
         if pack_off:
             pack_signature = "off"
         elif pack_members is None:
@@ -267,12 +267,12 @@ class PluginCapabilityProjection:
                 pack_signature.append(("_so", info.st_mtime_ns, info.st_size))
             pack_signature = tuple(pack_signature)
         user_env = [str(os.getenv(key, "") or "").strip().lower() for key in
-                    ("JAVIS_ENABLE_USER_PLUGINS", "JAVIS_ENABLE_VAULT_PLUGINS")]
+                    ("THANSA_ENABLE_USER_PLUGINS", "THANSA_ENABLE_VAULT_PLUGINS")]
         effective_env = next((value for value in user_env if value), "")
         user_enabled = effective_env not in ("0", "false", "no", "off")
         flat = observation.directory(root, "plugins")
-        nested = observation.directory(root, "Javis/plugins")
-        layout = "plugins" if flat is not None else "Javis/plugins" if nested is not None else "plugins"
+        nested = observation.directory(root, "Thansa/plugins")
+        layout = "plugins" if flat is not None else "Thansa/plugins" if nested is not None else "plugins"
         dirs = {}
         for source, base, members in (("bundled", bundled, observation.directory(bundled.parent, bundled.name)),
                                      ("user", global_dir, observation.directory(global_dir.parent, global_dir.name)),
@@ -425,7 +425,7 @@ class PluginCapabilityProjection:
                 if vis is not None and not skipped:
                     visibility = function(vis, pdir)
                     module = sys.modules.get(vis.__module__)
-                    if (source != "bundled" or lp.slug != "javis-goal" or pdir / "plugin.py" != _GOAL_FILE
+                    if (source != "bundled" or lp.slug != "thansa-goal" or pdir / "plugin.py" != _GOAL_FILE
                             or hashlib.sha256(observation.read(pdir, "plugin.py", required=True).encode("utf-8")).hexdigest() != _GOAL_SOURCE_HASH
                             or vis.__name__ != "_visible" or type(module) is not types.ModuleType or vis.__globals__ is not module.__dict__):
                         raise ValueError("unsupported_plugin_visibility")

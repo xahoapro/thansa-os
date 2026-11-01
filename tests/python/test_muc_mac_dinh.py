@@ -24,7 +24,7 @@ import os
 import sys
 import tempfile
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-macdinh-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-macdinh-")
 
 import config as cfg  # noqa: E402
 import main  # noqa: E402

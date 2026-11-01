@@ -1,6 +1,6 @@
 """Cập nhật trên bản cài native/systemd không được làm CHẾT app.
 
-Sự cố máy khách (Ubuntu 22.04, cài bằng install.sh, dịch vụ javis.service) 07/10 và 09/10:
+Sự cố máy khách (Ubuntu 22.04, cài bằng install.sh, dịch vụ thansa.service) 07/10 và 09/10:
   1. Nút "Cập nhật ngay": updater chạy bằng start_new_session=True nhưng vẫn nằm trong cgroup
      của dịch vụ → `systemctl stop` ở bước dừng server giết luôn updater → app chết hẳn.
   2. `./update.sh`: `systemctl list-unit-files | grep -q` dưới pipefail ra 141 (SIGPIPE) dù khớp →
@@ -21,7 +21,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-updsysd-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-updsysd-"))
 import updater  # noqa: E402
 
 _fails = []
@@ -34,10 +34,10 @@ def check(name, cond):
 
 
 # ---- 1. updater ra khỏi cgroup của dịch vụ ----
-CG_DV = "0::/system.slice/javis.service\n"
+CG_DV = "0::/system.slice/thansa.service\n"
 CG_SSH = "0::/user.slice/user-1000.slice/user@1000.service/app.slice/tmux-spawn-1.scope\n"
 CG_PHIEN = "0::/user.slice/user-1000.slice/session-5.scope\n"
-check("nhận ra đang trong dịch vụ javis.service", updater._cgroup_dich_vu(CG_DV) == "javis.service")
+check("nhận ra đang trong dịch vụ thansa.service", updater._cgroup_dich_vu(CG_DV) == "thansa.service")
 check("phiên SSH/tmux (user@.service) KHÔNG tính là dịch vụ", updater._cgroup_dich_vu(CG_SSH) == "")
 check("phiên đăng nhập thường không phải dịch vụ", updater._cgroup_dich_vu(CG_PHIEN) == "")
 check("cgroup v1 nhiều dòng vẫn nhận ra",
@@ -79,20 +79,20 @@ check("mọi *.sh có pipefail không dùng `| grep -q`", not dinh)
 # Chạy thật: helper trong update.sh nhận ra unit/container dù lệnh in ra nhiều (đúng tình huống
 # grep -q thoát sớm làm SIGPIPE).
 if shutil.which("bash"):
-    tmp = Path(tempfile.mkdtemp(prefix="javis-fakebin-"))
-    (tmp / "systemctl").write_text('#!/bin/sh\n[ "$1" = cat ] && [ "$2" = javis.service ] && { seq 1 200000; exit 0; }\nexit 1\n')
-    (tmp / "docker").write_text('#!/bin/sh\nseq 1 200000; echo javis\n')
+    tmp = Path(tempfile.mkdtemp(prefix="thansa-fakebin-"))
+    (tmp / "systemctl").write_text('#!/bin/sh\n[ "$1" = cat ] && [ "$2" = thansa.service ] && { seq 1 200000; exit 0; }\nexit 1\n')
+    (tmp / "docker").write_text('#!/bin/sh\nseq 1 200000; echo thansa\n')
     for x in ("systemctl", "docker"):
         os.chmod(tmp / x, 0o755)
     helpers = "\n".join(ln for ln in UPD.splitlines() if ln.startswith(("_co_unit()", "_ds_container()", "_co_container()")))
     kich = ("set -euo pipefail\n" + helpers + "\n"
-            "_co_unit javis && echo UNIT_JAVIS\n_co_unit thansa || echo KHONG_THANSA\n"
-            "_co_container javis && echo CT_JAVIS\n_co_container thansa || echo KHONG_CT_THANSA\n")
+            "_co_unit thansa && echo UNIT_THANSA\n_co_unit thansa || echo KHONG_THANSA\n"
+            "_co_container thansa && echo CT_THANSA\n_co_container thansa || echo KHONG_CT_THANSA\n")
     r = subprocess.run(["bash", "-c", kich], capture_output=True, text=True,
                        env={**os.environ, "PATH": f"{tmp}:{os.environ.get('PATH', '')}"})
     out = r.stdout.split()
-    check("chạy thật: _co_unit thấy javis.service, không thấy thansa", "UNIT_JAVIS" in out and "KHONG_THANSA" in out)
-    check("chạy thật: _co_container thấy javis giữa 200k dòng", "CT_JAVIS" in out and "KHONG_CT_THANSA" in out)
+    check("chạy thật: _co_unit thấy thansa.service, không thấy thansa", "UNIT_THANSA" in out and "KHONG_THANSA" in out)
+    check("chạy thật: _co_container thấy thansa giữa 200k dòng", "CT_THANSA" in out and "KHONG_CT_THANSA" in out)
 
 # ---- 3. bit thực thi trong git ----
 if shutil.which("git") and (ROOT / ".git").exists() or (ROOT / ".git").is_file():
@@ -102,8 +102,8 @@ if shutil.which("git") and (ROOT / ".git").exists() or (ROOT / ".git").is_file()
           modes.get("update.sh") == "100755" and modes.get("install.sh") == "100755")
 
 # ---- 4. update.sh thấy npm của install.sh ----
-check("update.sh đưa ~/.thansa/node/bin (và ~/.javis/node/bin) vào PATH",
-      '"$HOME/.thansa/node/bin"' in UPD and '"$HOME/.javis/node/bin"' in UPD)
+check("update.sh đưa ~/.thansa/node/bin (và ~/.thansa/node/bin) vào PATH",
+      '"$HOME/.thansa/node/bin"' in UPD and '"$HOME/.thansa/node/bin"' in UPD)
 
 # ---- 5. install.sh nhận ra thiếu python3.X-venv ----
 INS = (ROOT / "install.sh").read_text(encoding="utf-8")

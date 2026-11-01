@@ -1,4 +1,4 @@
-"""`javis_web_search` và `javis_web_fetch`: tìm và đọc web cho mọi bộ não API (0.259.0).
+"""`thansa_web_search` và `thansa_web_fetch`: tìm và đọc web cho mọi bộ não API (0.259.0).
 
     python tests/run.py web_tools
 
@@ -19,7 +19,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-web-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-web-")
 for k in ("TAVILY_API_KEY", "BRAVE_API_KEY", "BRAVE_SEARCH_API_KEY", "SEARXNG_URL"):
     os.environ.pop(k, None)
 
@@ -124,20 +124,20 @@ check("chuyển hướng vào mạng nội bộ bị chặn ở chặng sau", ra
       and any("127.0.0.1" in k for k in kiem), (ra, kiem))
 check("địa chỉ nội bộ gõ thẳng bị chặn", chay(w.doc("http://localhost:3000")).startswith("ERROR"))
 check("file ảnh thì từ chối, nói rõ loại", "image/png" in chay(w.doc("https://a.vn/anh")))
-check("403 thì gợi ý javis_login", "javis_login" in chay(w.doc("https://a.vn/kin")))
+check("403 thì gợi ý thansa_login", "thansa_login" in chay(w.doc("https://a.vn/kin")))
 check("chữ thường đọc nguyên", "chỉ là chữ thường" in chay(w.doc("https://a.vn/txt")))
 check("thiếu http:// thì tự thêm https://", "Tài liệu A" in chay(w.doc("a.vn/dai")))
 check("offset quá cuối thì nói rõ", "quá cuối" in chay(w.doc("https://a.vn/dai", 10_000_000)))
 
 # ---- 4. Qua hub ----
-_v = tempfile.mkdtemp(prefix="javis-web-vault-")
+_v = tempfile.mkdtemp(prefix="thansa-web-vault-")
 _t, r = mcp_hub._builtin_tools("full", _v)
-check("hub có javis_web_search và javis_web_fetch", "javis_web_search" in r and "javis_web_fetch" in r)
-ra = chay(r["javis_web_fetch"]["call"]({"url": "https://a.vn/txt"}))
+check("hub có thansa_web_search và thansa_web_fetch", "thansa_web_search" in r and "thansa_web_fetch" in r)
+ra = chay(r["thansa_web_fetch"]["call"]({"url": "https://a.vn/txt"}))
 check("gọi qua route của hub chạy được", "chỉ là chữ thường" in ra, ra)
-check("bot của khách không có tool web", {"javis_web_search", "javis_web_fetch"} <= mcp_hub.OWNER_ONLY_TOOLS)
+check("bot của khách không có tool web", {"thansa_web_search", "thansa_web_fetch"} <= mcp_hub.OWNER_ONLY_TOOLS)
 check("tool web không vào nhóm hạt nhân (không tốn chỗ mọi lượt)",
-      not ({"javis_web_search", "javis_web_fetch"} & set(mcp_hub.CORE_TOOL_FNS)))
+      not ({"thansa_web_search", "thansa_web_fetch"} & set(mcp_hub.CORE_TOOL_FNS)))
 
 # ---- 5. Rào thật (không giả) chặn địa chỉ nội bộ trước khi gọi mạng ----
 import importlib  # noqa: E402

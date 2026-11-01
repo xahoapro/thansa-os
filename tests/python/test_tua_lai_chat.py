@@ -18,8 +18,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-tualai-")
-os.environ["JAVIS_ALLOWED_HOSTS"] = "testserver"
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-tualai-")
+os.environ["THANSA_ALLOWED_HOSTS"] = "testserver"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:

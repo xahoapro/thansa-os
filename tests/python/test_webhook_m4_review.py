@@ -25,11 +25,11 @@ import tempfile
 import time
 from pathlib import Path
 
-STATE = Path(tempfile.mkdtemp(prefix="javis-wh-m4r-"))
-os.environ["JAVIS_STATE_DIR"] = str(STATE)
-os.environ["JAVIS_NO_REAL_JUDGE_ENGINE"] = "1"
-os.environ["JAVIS_WH_NO_NETWORK"] = "1"
-os.environ.pop("JAVIS_WH_MASTER_KEY", None)
+STATE = Path(tempfile.mkdtemp(prefix="thansa-wh-m4r-"))
+os.environ["THANSA_STATE_DIR"] = str(STATE)
+os.environ["THANSA_NO_REAL_JUDGE_ENGINE"] = "1"
+os.environ["THANSA_WH_NO_NETWORK"] = "1"
+os.environ.pop("THANSA_WH_MASTER_KEY", None)
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -229,7 +229,7 @@ async def main():
 asyncio.run(main())
 
 # P3: vault errors are SecretError, not crashes
-os.environ["JAVIS_WH_MASTER_KEY"] = "!!!not-base64!!!"
+os.environ["THANSA_WH_MASTER_KEY"] = "!!!not-base64!!!"
 try:
     wsec.Vault(Path(tempfile.mkdtemp())).put("a/b", "v")
     r = "no error"
@@ -237,8 +237,8 @@ except wsec.SecretError as e:
     r = "SecretError"
 except Exception as e:
     r = type(e).__name__
-del os.environ["JAVIS_WH_MASTER_KEY"]
-check("P3: a bad JAVIS_WH_MASTER_KEY is a clear SecretError", r == "SecretError", r)
+del os.environ["THANSA_WH_MASTER_KEY"]
+check("P3: a bad THANSA_WH_MASTER_KEY is a clear SecretError", r == "SecretError", r)
 d = Path(tempfile.mkdtemp())
 (d / "webhook_keys.json").write_text("{damaged")
 try:
@@ -272,7 +272,7 @@ try:
 except wa.ActionError as e:
     r = str(e)
 check("P3: a renamed header still showing the mask asks for the value (never silently dropped)", "enter header X-New again" in r, r)
-for meta in ("javis_run_tool", "javis_search_tools"):
+for meta in ("thansa_run_tool", "thansa_search_tools"):
     try:
         wa.validate([{"id": "t", "kind": "tool", "tool": meta, "args": {"name": "{tool}"}}])
         r = "accepted"

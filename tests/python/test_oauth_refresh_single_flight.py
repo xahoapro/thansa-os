@@ -15,7 +15,7 @@ import os
 import tempfile
 import time
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-oauth-refresh-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-oauth-refresh-")
 
 import mcp_client  # noqa: E402
 import oauth_mcp  # noqa: E402

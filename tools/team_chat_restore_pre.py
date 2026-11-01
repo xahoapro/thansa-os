@@ -3,7 +3,7 @@
     python tools/team_chat_restore_pre.py --yes
     python tools/team_chat_restore_pre.py --state-dir /duong/dan/state --yes
 
-CHẠY KHI JAVIS ĐÃ TẮT. Khôi phục CẢ BỘ ba kho liên quan, nhất quán với nhau (review T1, R6):
+CHẠY KHI THANSA ĐÃ TẮT. Khôi phục CẢ BỘ ba kho liên quan, nhất quán với nhau (review T1, R6):
 - `kanban.sqlite3`, `conversations.db`: về snapshot `<tên>.pre-0.140.0` mà mã 0.140.0 tạo một lần lúc nâng.
 - `team.sqlite3`: trước 0.140.0 không có kho này, nên trạng thái trước nâng là KHÔNG CÓ. Kho được cất sang bên (bản sao
   bằng chứng) rồi gỡ khỏi chỗ chạy. Nhờ vậy nâng lại lần sau không có nhóm nào trỏ vào phiên đã mất.
@@ -175,12 +175,12 @@ def restore(state_dir: str, *, _fail_on: str = "") -> dict:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Khôi phục kho Kanban, kho phiên và kho nhóm về trước 0.140.0 "
                                              "(chạy khi Thansa đã tắt).")
-    ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của Thansa (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--state-dir", default=os.environ.get("THANSA_STATE_DIR", ""),
+                    help="thư mục state của Thansa (mặc định THANSA_STATE_DIR)")
     ap.add_argument("--yes", action="store_true", help="xác nhận Thansa đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
-        print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
+        print("Thiếu --state-dir (hay biến THANSA_STATE_DIR).", file=sys.stderr)
         return 2
     if not a.yes:
         print("Tắt Thansa trước, rồi chạy lại với --yes. Việc Kanban, tin chat và nhóm sau lúc nâng lên 0.140.0 sẽ không "

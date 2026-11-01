@@ -15,11 +15,11 @@ import sys
 import tempfile
 from pathlib import Path
 
-_STATE = tempfile.mkdtemp(prefix="javis-ghim-")
-os.environ["JAVIS_STATE_DIR"] = _STATE
-os.environ["JAVIS_SESSIONS_DB"] = str(Path(_STATE) / "sessions.db")
+_STATE = tempfile.mkdtemp(prefix="thansa-ghim-")
+os.environ["THANSA_STATE_DIR"] = _STATE
+os.environ["THANSA_SESSIONS_DB"] = str(Path(_STATE) / "sessions.db")
 os.environ["BRAINS_DIR"] = str(Path(_STATE) / "brains")
-os.environ["JAVIS_ALLOWED_HOSTS"] = "testserver"
+os.environ["THANSA_ALLOWED_HOSTS"] = "testserver"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -42,7 +42,7 @@ if _STATE not in str(conversations.DB_PATH):
     sys.exit(1)
 
 # ---- 1. Kết quả tìm hội thoại mang trạng thái ghim, cuộc đã ghim đứng trước ----
-st = sessions.SessionStore(os.environ["JAVIS_SESSIONS_DB"])
+st = sessions.SessionStore(os.environ["THANSA_SESSIONS_DB"])
 cu = st.create_session(title="Đăng ký sở hữu trí tuệ")
 st.append_message(cu, "user", "hỏi về sở hữu trí tuệ")
 moi = st.create_session(title="Zoom sở khoa học")
@@ -70,7 +70,7 @@ check("bấm ghim không mở hội thoại", "ev.stopPropagation();" in tim)
 check("ghim từ kết quả tìm thì tìm lại đúng câu đó", "togglePin({ id: h.session_id, pinned: h.pinned }, q);" in tim
       and "if (q) doSearch(q); else loadList();" in ui)
 check("cả trang Trò chuyện, lịch sử trợ lý và Coding cùng dùng cột này",
-      all("JavisChatSide.mount(" in (ROOT / "dashboard" / f).read_text(encoding="utf-8")
+      all("ThansaChatSide.mount(" in (ROOT / "dashboard" / f).read_text(encoding="utf-8")
           for f in ("console.js", "workspace.js", "coding.js")))
 
 # ---- 2. Hòm thư bot: kho cũ được thêm cột pinned ----

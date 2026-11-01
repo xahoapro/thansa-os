@@ -27,7 +27,7 @@ Corrected filter for a paid-order trigger, once the owner names the paid status 
 ```json
 {"filter": {"all": [
   {"path": "status", "op": "eq", "value": <P>},
-  {"path": "items[*].variation_info.name", "op": "contains", "value": "TRỢ LÝ AI JAVIS", "quantifier": "any",
+  {"path": "items[*].variation_info.name", "op": "contains", "value": "TRỢ LÝ AI THANSA", "quantifier": "any",
    "case_sensitive": false, "reason": "product_not_found"}]}}
 ```
 
@@ -41,7 +41,7 @@ actions that do not need AI.
   "rules": {
     "filter": {"all": [
       {"path": "status", "op": "eq", "value": 1},
-      {"path": "items[*].name", "op": "contains", "value": "TRỢ LÝ AI JAVIS", "quantifier": "any",
+      {"path": "items[*].name", "op": "contains", "value": "TRỢ LÝ AI THANSA", "quantifier": "any",
        "case_sensitive": false, "reason": "product_not_found"}
     ]},
     "dedup": {"policy_version": 1, "business_paths": ["shop_id", "id", "status"], "ttl_s": 604800,
@@ -68,7 +68,7 @@ confirms `status`, `shop_id` and `id` but puts the product name at `items[*].var
   with `?token=` keeps working. Add the rules and actions above **to that hook** (Configuration, Advanced) instead of
   creating a new one, unless step 2 shows POSCake can send a header. An older hook keeps `notify: all` (one
   message per order): set **Notifications** to `errors_only` there too, once its actions run without AI.
-- A **new** hook accepts the key only in a header (`X-Javis-Token`, or one the owner names, or `Authorization:
+- A **new** hook accepts the key only in a header (`X-Thansa-Token`, or one the owner names, or `Authorization:
   Bearer`). Use one only if POSCake can send that header.
 - Never switch authentication off to make POSCake fit (spec §10). If POSCake signs its deliveries, its scheme becomes
   an adapter once its documentation is in hand (see the end of this page).

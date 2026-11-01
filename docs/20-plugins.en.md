@@ -13,7 +13,7 @@ A plugin is **a folder** with 2 files:
 
 A plugin gives Thansa two things:
 
-- **Tool**: a tool engines can call, e.g., `javis_now` (ask what time it is in Vietnam) or `javis_generate_image` (make an image). Plugin tools go through the MCP Hub so **every engine can use it**, not just Claude Code.
+- **Tool**: a tool engines can call, e.g., `thansa_now` (ask what time it is in Vietnam) or `thansa_generate_image` (make an image). Plugin tools go through the MCP Hub so **every engine can use it**, not just Claude Code.
 - **Hook**: code that runs **around every tool call**. Currently supports two events: `pre_tool_call` (before a tool runs) and `post_tool_call` (after it finishes). When no plugin registers a hook, Thansa doesn't wrap anything, so no overhead.
 
 Plugin tools **respect exactly 3 permission levels** like all other tools, so a loop in read-only mode won't auto-call a write-level plugin tool.
@@ -37,7 +37,7 @@ Open the dashboard (default port 7777), look at the left nav bar, click the **Ca
 Just below the title are three intro boxes:
 
 1. Description: "Plugins add **tools** (callable by engines) and **hooks** native to Thansa without modifying core - work in ALL engines (Claude Code, Codex, API) via hub, respect 3 permission levels like other tools."
-2. Warning box in orange (only shows if not unlocked yet): "**⚠ Plugins you installed are blocked.** Plugins run real Python code in your server, so OFF by default. To enable: set `JAVIS_ENABLE_USER_PLUGINS=true` env var then restart Thansa. Built-in plugins still run normally."
+2. Warning box in orange (only shows if not unlocked yet): "**⚠ Plugins you installed are blocked.** Plugins run real Python code in your server, so OFF by default. To enable: set `THANSA_ENABLE_USER_PLUGINS=true` env var then restart Thansa. Built-in plugins still run normally."
 3. Gray instruction line: "Drop global plugins (used by ALL brains) into `<actual path on your machine>` · each plugin is a `plugin.yaml` + `plugin.py` pair. Or ask Thansa in chat: 'make a plugin ...'."
 
 The path in line 3 is the **actual** path on your machine running Thansa, copy from the screen rather than typing from docs.
@@ -53,8 +53,8 @@ Each plugin is one card. Read top to bottom:
 | Source Label | Means | Located at |
 |---|---|---|
 | **Built-in** (green) | Comes with app, Thansa-made, trusted | `system/plugins/<slug>/` in install folder |
-| **Global** (blue) | You installed it, used by **all brains** | Thansa state folder, `<JAVIS_STATE_DIR>/plugins/<slug>/` |
-| **This brain** (orange) | You installed it, used by **one brain** | `<brain>/plugins/<slug>` (older brains might have `<brain>/Javis/plugins/<slug>/`) |
+| **Global** (blue) | You installed it, used by **all brains** | Thansa state folder, `<THANSA_STATE_DIR>/plugins/<slug>/` |
+| **This brain** (orange) | You installed it, used by **one brain** | `<brain>/plugins/<slug>` (older brains might have `<brain>/Thansa/plugins/<slug>/`) |
 
 Slug clash means later source overrides: a "This brain" plugin named `datetime-vn` replaces the "Built-in" one same name.
 
@@ -86,9 +86,9 @@ For **built-in** plugins, Thansa doesn't edit app files: on/off choice is saved 
 
 For **global** and **this brain** plugins, Thansa writes `enabled: true/false` straight into their `plugin.yaml`.
 
-Enable/disable takes effect immediately, no restart needed: Thansa refreshes the hub cache so tools appear or vanish at the next chat, and the brain's `Javis/index.md` capability index rebuilds.
+Enable/disable takes effect immediately, no restart needed: Thansa refreshes the hub cache so tools appear or vanish at the next chat, and the brain's `Thansa/index.md` capability index rebuilds.
 
-One exception: if you enable a **global/this brain** plugin while the env gate isn't unlocked yet, Thansa shows a dialog: "Enabled in manifest BUT user-installed plugins only run when you set `JAVIS_ENABLE_USER_PLUGINS=true` then restart (protects against malicious code)." The card switches to **⚠ waiting for env**.
+One exception: if you enable a **global/this brain** plugin while the env gate isn't unlocked yet, Thansa shows a dialog: "Enabled in manifest BUT user-installed plugins only run when you set `THANSA_ENABLE_USER_PLUGINS=true` then restart (protects against malicious code)." The card switches to **⚠ waiting for env**.
 
 ### Step 3: Check tools reached the engine
 
@@ -102,16 +102,16 @@ These come with the app (label **Built-in**). All enabled by default except `too
 
 | Card Name | slug | Tools it provides | Minimum permission | Default |
 |---|---|---|---|---|
-| Time & date (VN) | `datetime-vn` | `javis_now`, `javis_date_add` | read-only | On |
-| Schedule tasks & reminders | `javis-schedule` | `javis_schedule` | write (safe) | On |
-| Kanban task dispatch | `javis-task` | `javis_task` | write (safe) | On |
-| Add MCP connection | `javis-connect` | `javis_add_mcp` | write (safe) | On |
-| Generate images (ChatGPT) | `image-chatgpt` | `javis_generate_image` | write (safe) | On |
+| Time & date (VN) | `datetime-vn` | `thansa_now`, `thansa_date_add` | read-only | On |
+| Schedule tasks & reminders | `thansa-schedule` | `thansa_schedule` | write (safe) | On |
+| Kanban task dispatch | `thansa-task` | `thansa_task` | write (safe) | On |
+| Add MCP connection | `thansa-connect` | `thansa_add_mcp` | write (safe) | On |
+| Generate images (ChatGPT) | `image-chatgpt` | `thansa_generate_image` | write (safe) | On |
 | Meta Ads (Graph API) | `meta-ads-graph` | `meta_ads_accounts`, `meta_ads_insights`, `meta_ads_campaigns`, `meta_ads_get` | read-only | On |
 | Facebook Pages (Graph API) | `meta-pages-graph` | `fb_pages_list`, `fb_page_posts`, `fb_page_comments`, `fb_page_post`, `fb_page_photo`, `fb_page_album`, `fb_page_video`, `fb_page_edit`, `fb_page_delete`, `fb_page_reply` | full | On |
 | Monitor Facebook (Apify) | `fb-monitor-apify` | `fb_monitor` | read-only | On |
 | Send images & files via Zalo | `zalo-image` | `zalo_send_image` | full | On |
-| Tool usage log | `tool-audit` | `javis_tool_stats` + hook `post_tool_call` | read-only | **Off** |
+| Tool usage log | `tool-audit` | `thansa_tool_stats` + hook `post_tool_call` | read-only | **Off** |
 
 What each does:
 
@@ -119,7 +119,7 @@ What each does:
 - **Add MCP connection**: ask Thansa to wire in a new MCP source right in chat, it **shows up on the Connections page** in the "Connected" section like you added it by hand, shared for all brains. Before this plugin Thansa had no way to write to the connection store, it could only run `claude mcp add` - that lives in Claude Code's personal config, the other 5 brains don't see it, and on the Connections page it appears in the folded "Built-in connections of Claude Code and Codex" section (hidden by default), making it look like nothing was added. Three safety layers: default permission is **read-only** (you elevate on Connections page if you want write); sources running via machine **commands** (stdio) add in **off** state so you read the command first; services already in the Connection Hub (Gmail, Calendar, POS...) just get pointed to the right card instead of spawning a duplicate. Failed connection test still **stays on the page** with the reason, doesn't silently vanish.
 - **Send images & files via Zalo**: send images (e.g., Thansa just created) or files with a message via Zalo, using the account already QR-scanned on the Connections page. Exists because the standard MCP tool `zalo_send_message` only sends text, but the underlying library has long supported attachments and 1.6.2 is latest so waiting upstream is forever. Only sends files inside the current brain - intentional gate because sent Zalo messages can't be recalled. Needs Node.js 20+. Details at [Zalo](12-zalo.md).
 - **Time & date (VN)**: tells Thansa what today is, current time, day of week in Vietnam time (UTC+7), and relative dates ("3 days from now", "last week"). Pure stdlib, no network. Also the simplest plugin example to read if you want to write your own.
-- **Schedule tasks & reminders**: create, list, cancel scheduled tasks and reminders **right in chat**, skip typing YAML by hand. Recurring tasks and running ones write to `Javis/loops/<slug>.md` (editable in Obsidian); one-time or cron reminders go to the reminder store. Details at [Scheduled Tasks & Reminders](08-viec-dinh-ky.md).
+- **Schedule tasks & reminders**: create, list, cancel scheduled tasks and reminders **right in chat**, skip typing YAML by hand. Recurring tasks and running ones write to `Thansa/loops/<slug>.md` (editable in Obsidian); one-time or cron reminders go to the reminder store. Details at [Scheduled Tasks & Reminders](08-viec-dinh-ky.md).
 - **Generate images (ChatGPT)**: make images from description using the **ChatGPT account** you're logged into (OAuth), no separate OpenAI API key needed. Images save to `attachments/` of the brain then embed in the answer. Needs ChatGPT connected on the **Models** page; if not, the tool replies "ChatGPT not connected (OAuth). Go to Models page to log in then try again...".
 - **Meta Ads (Graph API)**: read ad performance numbers (list ad accounts, campaigns, metrics). **Read-only, no spending.** Needs "Meta Ads (custom app - Graph API)" connection wired on the Connections page.
 - **Facebook Pages (Graph API)**: manage Pages/Fanpages. Reading Pages, posts, comments is read-only; posting, adding photos, adding videos, editing text, deleting posts, replying to comments are **real, public actions** needing full permission. Needs "Facebook Pages (custom app - Graph API)" connection.
@@ -146,7 +146,7 @@ The chat box you type in runs at full ceiling so it can call all three types. A 
 
 Two choices, your call on shared vs. single-brain:
 
-- **Global** (recommended): `<JAVIS_STATE_DIR>/plugins/<slug>/`. All brains see this plugin, all engines can call it. Real path shown on the Plugins page, copy from there. Default `JAVIS_STATE_DIR` is the repo's `server/` folder; on Docker/VPS usually `/data/state`.
+- **Global** (recommended): `<THANSA_STATE_DIR>/plugins/<slug>/`. All brains see this plugin, all engines can call it. Real path shown on the Plugins page, copy from there. Default `THANSA_STATE_DIR` is the repo's `server/` folder; on Docker/VPS usually `/data/state`.
 - **One brain only**: `<brain>/plugins/<slug>/`. Only that brain uses it. Good when plugin is tied to a specific brain's data.
 
 `<slug>` is the folder name, must be ASCII lowercase no accents, start with letter or digit, contain only letters, digits, dots, underscores, hyphens. Wrong format and Thansa skips it with a "invalid slug" warning.
@@ -200,17 +200,17 @@ Tips for writing:
 User-installed plugins are **blocked by default**, even if `enabled: true`. To unlock:
 
 1. Open `.env` file in the repo root (create if missing, see [.env Configuration](16-cau-hinh-env.md)).
-2. Add line: `JAVIS_ENABLE_USER_PLUGINS=true`
+2. Add line: `THANSA_ENABLE_USER_PLUGINS=true`
 3. Save and **restart Thansa**.
 4. Back on **Plugins** page: the orange warning box vanishes, enabled plugins show **● running**.
 
-Values accepted: `1`, `true`, `yes`, or `on` (case-insensitive). Old name `JAVIS_ENABLE_VAULT_PLUGINS` still works for backward compat, but use the new name.
+Values accepted: `1`, `true`, `yes`, or `on` (case-insensitive). Old name `THANSA_ENABLE_VAULT_PLUGINS` still works for backward compat, but use the new name.
 
 ## Safety guardrails (read before installing unknown plugins)
 
 This is the most important part of this page.
 
-- **User-installed plugins run REAL PYTHON CODE, inside Thansa's server process.** They get the process's permissions: read/write files, call network, read env vars. So Thansa **hard-gates by default** and only runs when you manually set `JAVIS_ENABLE_USER_PLUGINS=true` then restart. This blocks someone from dropping a malicious folder into a brain and getting code execution on your machine.
+- **User-installed plugins run REAL PYTHON CODE, inside Thansa's server process.** They get the process's permissions: read/write files, call network, read env vars. So Thansa **hard-gates by default** and only runs when you manually set `THANSA_ENABLE_USER_PLUGINS=true` then restart. This blocks someone from dropping a malicious folder into a brain and getting code execution on your machine.
 - **Only unlock after YOU READ THE CODE** of every plugin in those two folders. The env var unlocks **all** user plugins, not individually.
 - **Built-in plugins (label "Built-in") skip this gate** because they come with the Thansa release. They run normally when the env gate isn't set.
 - **Plugins Thansa creates in chat always start disabled** (`enabled: false`) and read-only mode. Thansa won't auto-enable; you read the code then click **Enable**.
@@ -241,7 +241,7 @@ Hooks wrap **every** tool call, including MCP and core tools, not just this plug
 | You see | Means / Action |
 |---|---|
 | **● running** (green) | Plugin loaded, tools available to engines |
-| **⚠ waiting for env** (orange) | You enabled it but haven't set `JAVIS_ENABLE_USER_PLUGINS=true`, or set it but haven't restarted |
+| **⚠ waiting for env** (orange) | You enabled it but haven't set `THANSA_ENABLE_USER_PLUGINS=true`, or set it but haven't restarted |
 | **⚠ error** (red) | Manifest broken or code won't load; reason shown below chips |
 | **○ off** (gray) | Plugin present but disabled, no tools out |
 | **● enabled (not loaded yet)** (orange) | Rare: enabled but loading failed for another reason. Reload page, if same check server log |
@@ -261,18 +261,18 @@ Hooks wrap **every** tool call, including MCP and core tools, not just this plug
 - Put plugin in **Global** unless you have reason to bind it to one brain. Global doesn't depend on brain so you can switch brains and still use it.
 - Not using a plugin? **Disable** it instead of deleting, next time enable it back.
 - Disabling unused plugins also shortens the tool list sent to the model, helps it pick tools better.
-- Want to know what capabilities Thansa sees (agents, skills, workflows, loops, plugins)? Open `Javis/index.md` in the brain via **Files** page; this file auto-rebuilds each time you toggle a plugin.
+- Want to know what capabilities Thansa sees (agents, skills, workflows, loops, plugins)? Open `Thansa/index.md` in the brain via **Files** page; this file auto-rebuilds each time you toggle a plugin.
 
 ## Common issues
 
-- **Card says "⚠ waiting for env":** you didn't set `JAVIS_ENABLE_USER_PLUGINS=true`, or set it but didn't restart. This var is only read at startup.
+- **Card says "⚠ waiting for env":** you didn't set `THANSA_ENABLE_USER_PLUGINS=true`, or set it but didn't restart. This var is only read at startup.
 - **Set env var but still blocked:** check `.env` is in the repo root folder, line isn't commented with `#` at start, and value is `true` (or `1`/`yes`/`on`). On Docker, set the var in container Environment, not a file on the host.
 - **New plugin folder dropped but doesn't appear:** must be **directly** in the plugins folder (no extra nesting), and must have `plugin.py` inside (or `__init__.py`). Missing one and Thansa doesn't treat it as a plugin. Folder name must be valid slug too (lowercase no accents).
 - **Card says "⚠ error" with "missing plugin.py":** folder only has `plugin.yaml`. Add the code file.
 - **Card says "⚠ error" with "manifest error: ...":** `plugin.yaml` has YAML syntax wrong. Common: description with colons not quoted.
 - **Card says "⚠ error" with "missing register(ctx) function":** `plugin.py` doesn't have a `register` function, or you named it differently. Must be exactly `register` and take one parameter.
 - **Card says "⚠ error" with a Python error name (e.g., `ModuleNotFoundError`):** plugin code uses a library not installed in Thansa's Python. Install it in Thansa's venv, restart.
-- **Plugin running but engine doesn't see tool:** likely tool name **duplicates** an existing MCP or core tool. Thansa doesn't let plugins shadow core tools, skips the duplicate and logs once to server. Rename your tool (prefix it uniquely). Core reserved names: `javis_connections`, `javis_read_file`, `javis_list_dir`, `javis_write_file`, `javis_use_skill`.
+- **Plugin running but engine doesn't see tool:** likely tool name **duplicates** an existing MCP or core tool. Thansa doesn't let plugins shadow core tools, skips the duplicate and logs once to server. Rename your tool (prefix it uniquely). Core reserved names: `thansa_connections`, `thansa_read_file`, `thansa_list_dir`, `thansa_write_file`, `thansa_use_skill`.
 - **Tool returns `ERROR: tool '<name>' requires higher permission`:** the run is permission-capped. If it's a scheduled task, raise its mode (see [Scheduled Tasks & Reminders](08-viec-dinh-ky.md)); if your plugin, check `min_mode` in `register_tool`.
 - **Tool returns "Not connected ...":** plugin needs a connection you haven't wired. Follow the exact instruction in the error, usually go to **Connections** (or **Models** for image plugin).
 - **Click Enable reports "plugin not found":** on-screen list stale compared to disk (you deleted or renamed the folder). Reload page.
@@ -283,7 +283,7 @@ Hooks wrap **every** tool call, including MCP and core tools, not just this plug
 - [Skills](06-skills.md) - when the missing thing is instructions, not code.
 - [Connections & Business Data](09-mcp-va-so-lieu.md) - wire outside data; Meta Ads, Facebook Pages, Apify plugins pull tokens from here.
 - [Models & Engine](10-models-va-engine.md) - why all engines can call plugin tools.
-- [Scheduled Tasks & Reminders](08-viec-dinh-ky.md) - three permission levels for background tasks; plugin `javis-schedule`.
+- [Scheduled Tasks & Reminders](08-viec-dinh-ky.md) - three permission levels for background tasks; plugin `thansa-schedule`.
 - [Zalo Agent MCP](12-zalo.md) - Zalo now uses standard MCP, no separate plugin.
 - [.env Configuration](16-cau-hinh-env.md) - how to set env vars and restart.
 - [Agents & Workflows](07-agents-va-workflows.md) - other capability types of Thansa.

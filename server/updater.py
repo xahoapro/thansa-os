@@ -28,7 +28,7 @@ import winproc  # noqa: E402
 # Updater được server spawn DETACHED, tức nó chạy KHÔNG CÓ console. Trên Windows, một tiến trình
 # không console mà gọi chương trình console (git, pip, systemctl...) thì hệ điều hành tự cấp cho
 # đứa con một cửa sổ mới - người dùng thấy màn hình nháy đen liên tục suốt lượt cập nhật. Nên
-# mọi lời gọi dưới đây đều truyền cờ này. Hai chỗ CỐ Ý không truyền là lúc khởi động lại Javis,
+# mọi lời gọi dưới đây đều truyền cờ này. Hai chỗ CỐ Ý không truyền là lúc khởi động lại Thansa,
 # vì tiến trình đó phải sống lâu hơn updater.
 _CAM = winproc.no_window()
 
@@ -76,10 +76,10 @@ def venv_python():
 def systemd_unit():
     """Tên dịch vụ systemd của bản này, "" nếu không có.
 
-    install.sh từ 1.19 ghi JAVIS_SERVICE_NAME vào unit (bản cài mới mặc định "thansa", nhiều bản
-    trên một máy thì mỗi bản một tên). Máy cài TRƯỚC đó không có biến này và dịch vụ tên "javis" -
-    dò theo thứ tự thansa rồi javis."""
-    ten = (os.getenv("JAVIS_SERVICE_NAME") or "").strip()
+    install.sh từ 1.19 ghi THANSA_SERVICE_NAME vào unit (bản cài mới mặc định "thansa", nhiều bản
+    trên một máy thì mỗi bản một tên). Máy cài TRƯỚC đó không có biến này và dịch vụ tên "thansa" -
+    dò theo thứ tự thansa rồi thansa."""
+    ten = (os.getenv("THANSA_SERVICE_NAME") or "").strip()
     try:
         r = subprocess.run(["systemctl", "list-unit-files"], capture_output=True, text=True,
                            creationflags=_CAM)
@@ -88,7 +88,7 @@ def systemd_unit():
         co = set(re.findall(r"^(\S+)\.service\s", r.stdout or "", re.M))
     except Exception:
         return ""
-    for t in ([ten] if ten else []) + ["thansa", "javis"]:
+    for t in ([ten] if ten else []) + ["thansa", "thansa"]:
         if t in co:
             return t
     return ""
@@ -97,10 +97,10 @@ def systemd_unit():
 def systemd_service_name(env_name=None, cgroup=None):
     """Resolve this installation's unit, including instances installed under a custom name.
 
-    Thansa: install.sh ghi JAVIS_SERVICE_NAME vào unit; updater đã bị lenh_tach_cgroup (P062) đưa sang
-    scope riêng thì cgroup không còn tên dịch vụ, nên lùi về systemd_unit() (thansa rồi javis) thay vì "javis"."""
+    Thansa: install.sh ghi THANSA_SERVICE_NAME vào unit; updater đã bị lenh_tach_cgroup (P062) đưa sang
+    scope riêng thì cgroup không còn tên dịch vụ, nên lùi về systemd_unit() (thansa rồi thansa) thay vì "thansa"."""
     if env_name is None:
-        env_name = os.getenv("JAVIS_SERVICE_NAME", "") or os.getenv("JAVIS_NAME", "")
+        env_name = os.getenv("THANSA_SERVICE_NAME", "") or os.getenv("THANSA_NAME", "")
     name = env_name
     if name and re.fullmatch(r"[A-Za-z0-9._-]+", name):
         return name
@@ -160,13 +160,13 @@ def lenh_tach_cgroup(args, cgroup_text=None, euid=None, systemd_run=None, now=No
 
 def _launchd_label():
     """Nhãn job launchd: đặt tường minh qua env, không thì bản mới com.thansa.os, máy cài trước
-    1.19 com.javis.os (nhận ra qua file plist đang có trong LaunchAgents)."""
-    for k in ("THANSA_LAUNCHD_LABEL", "JAVIS_LAUNCHD_LABEL"):
+    1.19 com.thansa.os (nhận ra qua file plist đang có trong LaunchAgents)."""
+    for k in ("THANSA_LAUNCHD_LABEL", "THANSA_LAUNCHD_LABEL"):
         if os.getenv(k):
             return os.getenv(k)
     agents = Path.home() / "Library" / "LaunchAgents"
-    if not (agents / "com.thansa.os.plist").exists() and (agents / "com.javis.os.plist").exists():
-        return "com.javis.os"
+    if not (agents / "com.thansa.os.plist").exists() and (agents / "com.thansa.os.plist").exists():
+        return "com.thansa.os"
     return "com.thansa.os"
 
 
@@ -178,7 +178,7 @@ def _launchd_target():
 
 
 def has_launchd_job():
-    """Mac chạy Javis dưới launchd (job KeepAlive) thì restart PHẢI qua launchd.
+    """Mac chạy Thansa dưới launchd (job KeepAlive) thì restart PHẢI qua launchd.
 
     Bài học 14/08/2026: updater kill PID server -> launchd KeepAlive respawn ngay tức thì,
     trong khi updater cũng Popen một bản uvicorn của riêng nó -> hai tiến trình giành cổng
@@ -306,13 +306,13 @@ def start_server(mode, port=""):
         # không còn cửa cho hai tiến trình cùng bind cổng.
         run(["launchctl", "kickstart", "-k", _launchd_target()])
     else:  # nohup: chạy lại uvicorn nền y như install.sh (fallback không systemd)
-        host = os.getenv("JAVIS_HOST", "127.0.0.1")
+        host = os.getenv("THANSA_HOST", "127.0.0.1")
         logf = open(us.STATE_DIR / "thansa.log", "a", encoding="utf-8")
-        subprocess.Popen(   # noqa: JAVIS_CONSOLE - server mới phải sống lâu hơn updater
+        subprocess.Popen(   # noqa: THANSA_CONSOLE - server mới phải sống lâu hơn updater
             [venv_python(), "-m", "uvicorn", "main:app", "--host", host, "--port", str(port or "7777")],
             cwd=str(ROOT / "server"), stdout=logf, stderr=subprocess.STDOUT,
             start_new_session=True,
-            env={**os.environ, "JAVIS_STATE_DIR": os.getenv("JAVIS_STATE_DIR", str(us.STATE_DIR))})
+            env={**os.environ, "THANSA_STATE_DIR": os.getenv("THANSA_STATE_DIR", str(us.STATE_DIR))})
 
 
 def git_dirty():
@@ -334,7 +334,7 @@ def stash_local_changes():
     if not (status.stdout or "").strip():
         return "", ""
     previous = _stash_head()
-    saved = run(["git", "stash", "push", "-m", "javis-auto-update"])
+    saved = run(["git", "stash", "push", "-m", "thansa-auto-update"])
     current = _stash_head()
     if saved.returncode != 0 or not current or current == previous:
         return "", _chu("Không cất được sửa đổi cục bộ; dừng cập nhật. Kiểm tra git stash list "
@@ -369,8 +369,8 @@ def release_source():
     """The same official release branch that /version checks in main.py.
 
     Thansa: PHẢI cùng repo với GITHUB_REPO của main.py (env THANSA_UPDATE_REPO, mặc định
-    xahoapro/thansa-os). Upstream ghi cứng repo Javis gốc; giữ nguyên thì nút Cập nhật đi kéo
-    Javis về `git merge` vào bản Thansa - 251 xung đột, tự huỷ, máy KHÔNG BAO GIỜ lên được bản mới
+    xahoapro/thansa-os). Upstream ghi cứng repo Thansa gốc; giữ nguyên thì nút Cập nhật đi kéo
+    Thansa về `git merge` vào bản Thansa - 251 xung đột, tự huỷ, máy KHÔNG BAO GIỜ lên được bản mới
     bằng nút trong app (lọt từ Thansa 1.14 tới 1.18, bắt được 06/10)."""
     repo = (os.getenv("THANSA_UPDATE_REPO") or "xahoapro/thansa-os").strip().strip("/")
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
@@ -489,7 +489,7 @@ def pip_install():
     """Cài thư viện. Mã lỗi TRẢ VỀ CHO NƠI GỌI KIỂM - trước đây không ai kiểm.
 
     pip hỏng (mất mạng giữa chừng, một gói bị gỡ khỏi PyPI, xung đột phiên bản giữa hai bản
-    Javis) là một trong hai đường dẫn thẳng tới cảnh "cập nhật xong máy chết hẳn": server mới
+    Thansa) là một trong hai đường dẫn thẳng tới cảnh "cập nhật xong máy chết hẳn": server mới
     thiếu thư viện nên không lên, rồi đường lùi cũng chạy pip và cũng hỏng y hệt. Nuốt mã lỗi
     thì cả hai lần đều im lặng, và người dùng chỉ nhận được một câu chung chung."""
     r = run([venv_python(), "-m", "pip", "install", "-r", "requirements.txt", "-q"])
@@ -526,17 +526,17 @@ def poll_health(port, timeout_s=90):
 def _systemd_worker_command(a, service_name, user=False):
     """`user=True`: a unit of the user's own systemd manager, for a service running as a normal user, who may not
     create system units ("Interactive authentication required"). It lives outside the service's cgroup all the same."""
-    unit = f"javis-update-{os.getpid()}"
+    unit = f"thansa-update-{os.getpid()}"
     command = ["systemd-run", "--user"] if user else ["systemd-run"]
     command += ["--quiet", "--collect", f"--unit={unit}", "--property=Type=exec"]
     if not user:
         command += [f"--property=User={os.getuid()}", f"--property=Group={os.getgid()}"]
     command += [
         f"--working-directory={ROOT}",
-        f"--setenv=JAVIS_NAME={service_name}",
-        f"--setenv=JAVIS_PORT={a.port}",
-        f"--setenv=JAVIS_STATE_DIR={us.STATE_DIR}",
-        f"--setenv=JAVIS_HOST={os.getenv('JAVIS_HOST', '127.0.0.1')}",
+        f"--setenv=THANSA_NAME={service_name}",
+        f"--setenv=THANSA_PORT={a.port}",
+        f"--setenv=THANSA_STATE_DIR={us.STATE_DIR}",
+        f"--setenv=THANSA_HOST={os.getenv('THANSA_HOST', '127.0.0.1')}",
         f"--setenv=HOME={os.getenv('HOME', str(Path.home()))}",
         f"--setenv=PATH={os.getenv('PATH', '')}",
         sys.executable, str(Path(__file__).resolve()),
@@ -571,7 +571,7 @@ def _run_worker(command, env=None):
 
 
 def _launch_systemd_worker(a):
-    """Move the updater out of Javis's cgroup before stopping the systemd service."""
+    """Move the updater out of Thansa's cgroup before stopping the systemd service."""
     service_name = systemd_service_name()
     command = _systemd_worker_command(a, service_name)
     log(f"Tách updater khỏi {service_name}.service bằng systemd-run…")
@@ -613,7 +613,7 @@ def main():
     ap.add_argument("--old-sha", default="")
     ap.add_argument("--old-version", default="")
     ap.add_argument("--target", default="")
-    ap.add_argument("--port", default=os.getenv("JAVIS_PORT", "7777"))
+    ap.add_argument("--port", default=os.getenv("THANSA_PORT", "7777"))
     ap.add_argument("--server-pid", type=int, default=0,
                     help="PID server đang chạy (để chế độ nohup kill đúng tiến trình)")
     ap.add_argument("--systemd-worker", action="store_true",

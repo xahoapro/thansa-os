@@ -6,9 +6,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-os.environ['JAVIS_STATE_DIR'] = tempfile.mkdtemp(prefix='javis-quality-api-')
-BRAIN = Path(tempfile.mkdtemp(prefix='javis-quality-brain-'))
-OTHER = Path(tempfile.mkdtemp(prefix='javis-quality-other-'))
+os.environ['THANSA_STATE_DIR'] = tempfile.mkdtemp(prefix='thansa-quality-api-')
+BRAIN = Path(tempfile.mkdtemp(prefix='thansa-quality-brain-'))
+OTHER = Path(tempfile.mkdtemp(prefix='thansa-quality-other-'))
 (BRAIN / 'agents').mkdir()
 for slug in ('leader', 'maker'):
     (BRAIN / 'agents' / f'{slug}.md').write_text(

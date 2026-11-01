@@ -27,7 +27,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt pytest
 ```
 
 Muốn cài trọn gói (kèm các bộ não CLI) thì chạy `install.sh` (Linux/macOS) hoặc `install.ps1`
-(Windows). Để thử nghiệm không đụng dữ liệu thật, trỏ `JAVIS_STATE_DIR` và `BRAINS_DIR` vào một
+(Windows). Để thử nghiệm không đụng dữ liệu thật, trỏ `THANSA_STATE_DIR` và `BRAINS_DIR` vào một
 thư mục nháp.
 
 ## Chạy test

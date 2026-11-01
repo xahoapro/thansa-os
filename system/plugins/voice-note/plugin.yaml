@@ -8,5 +8,5 @@ author: Thansa (bundled)
 enabled: true
 min_mode: safe
 tools:
-  - javis_voice_note
+  - thansa_voice_note
 hooks: []

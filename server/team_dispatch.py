@@ -1,6 +1,6 @@
-"""Javis Core giao việc cho một nhóm có sẵn rồi báo kết quả về đúng chỗ đã giao (0.357.0, issue #826).
+"""Thansa Core giao việc cho một nhóm có sẵn rồi báo kết quả về đúng chỗ đã giao (0.357.0, issue #826).
 
-Chủ nói với Javis Core (web chat, Telegram, Zalo...) một mục tiêu; Core chọn nhóm và gọi `javis_team` op=dispatch. Việc đi
+Chủ nói với Thansa Core (web chat, Telegram, Zalo...) một mục tiêu; Core chọn nhóm và gọi `thansa_team` op=dispatch. Việc đi
 đúng đường của trang Nhóm: một tin giao việc trong khung chat nhóm (`TeamRunner.submit`, `as_job`), nên hàng đợi, trưởng
 nhóm điều phối, nghiệm thu và lịch sử là của nhóm như khi chủ tự gõ. Không có bộ điều phối hay kho thứ hai.
 
@@ -54,7 +54,7 @@ def check_caller(turn: Optional[dict]) -> dict:
 
 def report_to(turn: dict) -> str:
     """Nơi báo kết quả, theo đúng định dạng `owner_chat` của việc nền: web:<phiên> cho dashboard, còn lại là chat_id của
-    lượt (kênh nhắn đã gắn tiền tố zalo:, slack:...; việc nền mang sẵn nơi báo của nó). Rỗng: Javis Core và hòm thư."""
+    lượt (kênh nhắn đã gắn tiền tố zalo:, slack:...; việc nền mang sẵn nơi báo của nó). Rỗng: Thansa Core và hòm thư."""
     if turn.get("kenh") == "dashboard":
         sid = _s(turn.get("session_id") or turn.get("chat_id"))
         return f"web:{sid}" if sid else ""

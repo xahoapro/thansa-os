@@ -10,7 +10,7 @@
  * NAY: bỏ hẳn lớp nổi. Phóng to = CHUYỂN sang trang Trò chuyện; ở đó có nút thu nhỏ để về
  * lại màn Thansa. Một khung chat, một đường vào, không còn tranh node.
  *
- * Giữ nguyên tên window.JavisChatStage vì console.js/sessions-ui.js đang gọi: isOpen() nay
+ * Giữ nguyên tên window.ThansaChatStage vì console.js/sessions-ui.js đang gọi: isOpen() nay
  * luôn false nên các nhát "thu lại" ở nơi khác thành vô hại, khỏi phải sửa lan man.
  */
 (function () {
@@ -48,7 +48,7 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
   else bind();
 
-  window.JavisChatStage = {
+  window.ThansaChatStage = {
     expand: expand,
     collapse: function () { /* không còn lớp nổi để thu; xem isOpen() */ },
     toggle: toggle,

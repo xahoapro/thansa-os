@@ -7,7 +7,7 @@ thời gian đang xây adaptive runtime để CHỐNG phình, và không ai bi�
 Mỗi ký tự thêm vào các khối dưới đây là thuế đánh lên MỌI lượt chat của MỌI model.
 
 Bối cảnh số học, để các trần dưới đây không phải con số cảm tính: gói Groq on_demand miễn
-phí cho `llama-3.3-70b-versatile` là 12.000 token mỗi phút. Một lượt Javis từng gửi 21.446
+phí cho `llama-3.3-70b-versatile` là 12.000 token mỗi phút. Một lượt Thansa từng gửi 21.446
 token nên bị chặn trước khi kịp trả lời. Đó là bài toán gốc của cả nhánh này.
 
 Ba trần, ba mục đích khác nhau:
@@ -21,7 +21,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-budget-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-budget-"))
 
 _fails = []
 
@@ -198,7 +198,7 @@ CORE_TOOLS_MAX_CHARS = 3_000
 import mcp_hub  # noqa: E402
 import config  # noqa: E402
 
-_vault = tempfile.mkdtemp(prefix="javis-budget-vault-")
+_vault = tempfile.mkdtemp(prefix="thansa-budget-vault-")
 os.makedirs(os.path.join(_vault, "skills"), exist_ok=True)
 # 30 skill mô tả dài: mô phỏng brain thật, để bắt được đúng kiểu phình theo N.
 for _i in range(30):

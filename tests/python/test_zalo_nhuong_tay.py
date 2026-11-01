@@ -22,9 +22,9 @@ import tempfile
 import time
 from pathlib import Path
 
-_STATE = tempfile.mkdtemp(prefix="javis-zpnhuong-")
-os.environ["JAVIS_STATE_DIR"] = _STATE
-os.environ["JAVIS_ALLOWED_HOSTS"] = "testserver"
+_STATE = tempfile.mkdtemp(prefix="thansa-zpnhuong-")
+os.environ["THANSA_STATE_DIR"] = _STATE
+os.environ["THANSA_ALLOWED_HOSTS"] = "testserver"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -315,7 +315,7 @@ async def chay():
     tb.stop()
 
     # ---- review point 3: tin trả lời tin của nick, mang FILE, trong lúc nhường -------------------------
-    inbox = Path(tempfile.mkdtemp(prefix="javis-zpfile-")) / "inbox" / "khach"
+    inbox = Path(tempfile.mkdtemp(prefix="thansa-zpfile-")) / "inbox" / "khach"
     inbox.mkdir(parents=True)
     TAI = []
 

@@ -128,7 +128,7 @@ Graph detail: [Knowledge graph](../03-do-thi-tri-thuc.md).
 
 **The Normalise brain card** collects the `agents`, `workflows`, `memory` and `skills` folders of the selected brain into one flat structure. Press **Normalise the selected brain** to run it.
 
-It is safe: it only moves when the destination does not exist, it never overwrites, and running it repeatedly is harmless (for example moving `Javis/agents` to `agents`, `Memory` to `memory`). Afterwards Thansa reports what it moved, or "Nothing to move (already normalised)".
+It is safe: it only moves when the destination does not exist, it never overwrites, and running it repeatedly is harmless (for example moving `Thansa/agents` to `agents`, `Memory` to `memory`). Afterwards Thansa reports what it moved, or "Nothing to move (already normalised)".
 
 **The AI image provenance card** decides whether images Thansa generates carry a provenance mark (Content Credentials, the C2PA standard). The corner label reads "Keeping" or "Stripping".
 
@@ -196,7 +196,7 @@ On Hostinger, open Docker Manager and hit **Redeploy** (the stack re-reads the c
 
 Reload the page and the button appears. If you would rather go without Watchtower, updating by hand still works: `docker compose up -d --pull always`.
 
-**Want Thansa to update itself with no button at all:** add `JAVIS_AUTO_UPDATE=true` to `.env` (Hostinger: the Environment box) and bring the stack up again. It is off by default on purpose: auto-updating means the app restarts itself whenever a new version lands, cutting across background work. The default cadence is 24 hours, changed with `JAVIS_AUTO_UPDATE_INTERVAL` (seconds).
+**Want Thansa to update itself with no button at all:** add `THANSA_AUTO_UPDATE=true` to `.env` (Hostinger: the Environment box) and bring the stack up again. It is off by default on purpose: auto-updating means the app restarts itself whenever a new version lands, cutting across background work. The default cadence is 24 hours, changed with `THANSA_AUTO_UPDATE_INTERVAL` (seconds).
 
 The Updates panel distinguishes these cases and prints the right procedure for your machine.
 
@@ -222,7 +222,7 @@ Below the update panel is the version changelog: what each release added, pagina
 
 When Thansa runs publicly (listening on `0.0.0.0`, i.e. VPS/Docker/Hostinger) with no admin account yet, the first-run screen only asks for a username and password. That means **whoever opens the link before an admin exists can create it**, and the brain runs with full rights on the machine. So:
 
-- **Recommended:** set the environment variables `JAVIS_ADMIN_USER` and `JAVIS_ADMIN_PASSWORD` at deploy time (`install.sh` already asks for both). Thansa creates the admin at startup and opening the app gives you a sign-in screen, with no gap at all. Details: [.env configuration](../16-cau-hinh-env.md).
+- **Recommended:** set the environment variables `THANSA_ADMIN_USER` and `THANSA_ADMIN_PASSWORD` at deploy time (`install.sh` already asks for both). Thansa creates the admin at startup and opening the app gives you a sign-in screen, with no gap at all. Details: [.env configuration](../16-cau-hinh-env.md).
 - **Without the env vars:** open the app and create the account right after deploying; do not leave a public server without an admin.
 - **After the first sign-in:** turn on two-factor authentication (2FA) on the **Account** page. See [Security & accounts](../14-bao-mat-tai-khoan.md).
 

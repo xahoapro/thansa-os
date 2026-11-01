@@ -131,7 +131,7 @@
       catch (e) { return "brain"; }
     }
     function contextFor(target) {
-      var EC = window.JavisEditorCmds;
+      var EC = window.ThansaEditorCmds;
       return (EC && EC.contextFor) ? EC.contextFor(target) : null;
     }
 
@@ -484,7 +484,7 @@
 
     api.pickFiles = pickFiles;
     api.handleFiles = handleFiles;
-    window.JavisNoteImages = api;
+    window.ThansaNoteImages = api;
   }
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;

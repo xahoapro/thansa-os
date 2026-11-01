@@ -42,7 +42,7 @@ Ngày: 2026-08-18. GĐ4-GĐ5 theo lệnh trực tiếp của chủ (chưa có nh
 ### Ghi nhận cho vòng sau
 
 - **Upstream thêm LICENSE MIT** → mục rủi ro cuối trong DAC-TA mục 8 đã được gỡ.
-- File launcher mới `JAVIS OS.bat/.app`, `Start/Stop JAVIS OS.command`, `bin/javis-*`:
+- File launcher mới `THANSA OS.bat/.app`, `Start/Stop THANSA OS.command`, `bin/thansa-*`:
   CHƯA đụng (giai đoạn máy Windows/macOS theo spec 5.2). Khi triển khai các máy đó
   cần chủ quyết có đổi tên file hiển thị không (đổi tên file = patch nặng hơn đổi chuỗi).
 - Đo thời gian thật của vòng trộn (mục 10.2 spec): ~40 phút gồm 2 xung đột + 2 lần

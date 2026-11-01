@@ -18,9 +18,9 @@
    ```
 3. （可选，用于 HTTPS + 域名）在 **Environment** 框中设置：
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud
    ```
-   （主机名可在 hPanel → VPS 中找到，例如 `javis.srv1782015.hstgr.cloud`。）
+   （主机名可在 hPanel → VPS 中找到，例如 `thansa.srv1782015.hstgr.cloud`。）
 4. 点击 **Deploy**。等待 1-3 分钟。用 **Open** 按钮打开应用（或访问 `https://<DOMAIN_NAME>`）。
 5. 首次运行时，界面会要求你创建一个管理员账号。之后，在容器终端里登录一次 Claude Code：`claude auth login --claudeai`。
 

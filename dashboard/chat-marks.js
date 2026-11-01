@@ -71,7 +71,7 @@
   // markdown. Đọc markdown gốc (dataset.md) chứ không đọc chữ đã vẽ: bảng, code, ảnh vẽ ra thì dòng đầu là rác.
   function tenTraLoi(el) {
     var md = el.dataset && el.dataset.md != null ? el.dataset.md : "";
-    if (window.JavisVisibleMarkdown) { try { md = window.JavisVisibleMarkdown(md); } catch (e) {} }
+    if (window.ThansaVisibleMarkdown) { try { md = window.ThansaVisibleMarkdown(md); } catch (e) {} }
     var dong = String(md || el.textContent || "").split("\n").map(function (x) { return x.trim(); })
       .filter(function (x) { return x && !/^(```|\||---|!\[)/.test(x); });
     var tieuDe = dong.filter(function (x) { return /^#{1,6}\s/.test(x); })[0];
@@ -85,10 +85,10 @@
   function docMoc() {
     var ds = [];
     if (!chatArea) return ds;
-    var els = chatArea.querySelectorAll(".msg-user, .msg-javis[data-pinned]");
+    var els = chatArea.querySelectorAll(".msg-user, .msg-thansa[data-pinned]");
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
-      if (el.classList.contains("msg-javis")) {
+      if (el.classList.contains("msg-thansa")) {
         ds.push({ el: el, text: tenTraLoi(el) || window.t("cmark.answer_untitled"), ghim: true });
         continue;
       }
@@ -401,5 +401,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", gan);
   else gan();
 
-  window.JavisChatMarks = { refresh: veLai, jump: nhayToi };
+  window.ThansaChatMarks = { refresh: veLai, jump: nhayToi };
 })();

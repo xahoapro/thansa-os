@@ -56,15 +56,15 @@ Line " =========================================="
 
 # ---------------------------------------------------------------- [1] Python
 # --- Chuyen may cu sang ten Thansa + giau file cau noi ---
-# start-javis.vbs / stop-javis.bat chi de may cai TRUOC 1.19 cap nhat qua duoc (updater cu goi dich
-# danh). Shortcut Startup cu "JAVIS OS.lnk" tro vao start-javis.vbs, nen PHAI doi sang shortcut moi
+# start-thansa.vbs / stop-thansa.bat chi de may cai TRUOC 1.19 cap nhat qua duoc (updater cu goi dich
+# danh). Shortcut Startup cu "THANSA OS.lnk" tro vao start-thansa.vbs, nen PHAI doi sang shortcut moi
 # truoc khi giau file cau noi, khong thi may khong tu chay khi dang nhap.
 $StartupDir = [Environment]::GetFolderPath("Startup")
-if (Test-Path (Join-Path $StartupDir "JAVIS OS.lnk")) {
+if (Test-Path (Join-Path $StartupDir "THANSA OS.lnk")) {
   & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "thansa-autostart.ps1") install | Out-Null
 }
 if (Get-Command git -ErrorAction SilentlyContinue) {
-  foreach ($cu in @("start-javis.vbs", "stop-javis.bat")) {
+  foreach ($cu in @("start-thansa.vbs", "stop-thansa.bat")) {
     $f = Join-Path $Root $cu
     if (Test-Path $f) {
       git -C $Root ls-files --error-unmatch $cu 2>$null | Out-Null
@@ -202,7 +202,7 @@ Line "  vi tien trinh dang chay giu PATH cua luc no bat."
 Line ""
 
 # ---------------------------------------------------------------- [5b] tu khoi dong
-# 0.306.0, chu repo 24/10/2026: "mac dinh cai javis tren win hoac mac thi cai khoi dong cung trinh duyet".
+# 0.306.0, chu repo 24/10/2026: "mac dinh cai thansa tren win hoac mac thi cai khoi dong cung trinh duyet".
 # Dang nhap may la Thansa tu chay nen roi tu mo dashboard. Tat: -NoAutostart, thansa-autostart.bat uninstall,
 # hoac nut trong trang Cai dat.
 if (-not $NoAutostart) {

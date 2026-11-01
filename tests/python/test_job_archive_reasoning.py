@@ -12,8 +12,8 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-job-archive-")
-BR = Path(tempfile.mkdtemp(prefix="javis-job-archive-brain-")).resolve()
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-job-archive-")
+BR = Path(tempfile.mkdtemp(prefix="thansa-job-archive-brain-")).resolve()
 (BR / "agents").mkdir()
 for slug, name in (("lan", "Lan"), ("minh", "Minh")):
     (BR / "agents" / f"{slug}.md").write_text(f"---\nname: {name}\nrole: Thành viên\n---\nBạn là {name}.\n",
@@ -95,16 +95,16 @@ check("a bad level is refused", client.post("/agents/lan/reasoning", data={"leve
 # chip changed, the MAIN chat's level.
 import config as cfgmod  # noqa: E402
 main_before = cfgmod.read_settings().get("model", {}).get("reasoning")
-r = client.post("/agents/javis-core/reasoning", data={"level": "low", "brain": B})
+r = client.post("/agents/thansa-core/reasoning", data={"level": "low", "brain": B})
 mcfg = cfgmod.read_settings().get("model", {})
 check("Thansa Core keeps its own level", r.status_code == 200 and mcfg.get("core_reasoning") == "low", (r.status_code, mcfg))
 check("...and the main chat's level is untouched", mcfg.get("reasoning") == main_before, mcfg)
 check("Thansa Core follows the main chat's level until it has its own (owner 22/10/2026)",
       main._core_reasoning({"reasoning": "high"}) == "high" and main._core_reasoning({"reasoning": "high", "core_reasoning": "x"}) == "high"
       and main._core_reasoning({"reasoning": "high", "core_reasoning": "low"}) == "low")
-sc = main.get_store().create_session(brain=main._brain_key(B), engine="cli", channel="agent:javis-core")
+sc = main.get_store().create_session(brain=main._brain_key(B), engine="cli", channel="agent:thansa-core")
 mc = client.get(f"/sessions/{sc}/meta").json()
-check("the model bar of a Thansa Core chat reads Thansa Core's level", mc.get("agent_slug") == "javis-core"
+check("the model bar of a Thansa Core chat reads Thansa Core's level", mc.get("agent_slug") == "thansa-core"
       and mc.get("agent_reasoning") == "low", mc)
 sm = main.get_store().create_session(brain=main._brain_key(B), engine="cli")
 check("a main chat is not an assistant's chat", "agent_slug" not in client.get(f"/sessions/{sm}/meta").json())
@@ -161,7 +161,7 @@ check("a Claude engine in a team turn gets the effort (or the keyword on an old 
       (c.effort == "medium" and out == "câu hỏi") or (c.effort is None and out != "câu hỏi"), (c.effort, out))
 src = (ROOT / "server" / "main.py").read_text(encoding="utf-8")
 check("an assistant's chat turn uses its own level", 'reasoning = _agent_reasoning(_read_md(_agents_dir(brain) / f"{_persona[1]}.md")[0])' in src)
-check("a Javis Core chat turn uses Javis Core's level", "reasoning = _core_reasoning(mcfg)" in src)
+check("a Thansa Core chat turn uses Thansa Core's level", "reasoning = _core_reasoning(mcfg)" in src)
 
 print()
 if fails:

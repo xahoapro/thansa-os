@@ -17,7 +17,7 @@ After a few chat turns, Thansa opens a **separate learning process** to re-read 
 
 Before writing, code still scans two more layers: **scans for leaked secrets** (API key, Telegram token, JWT, database connection string, lines tagged "password"/"mật khẩu") and **scans for injection attempts** like "ignore all prior instructions". Anything caught gets blocked, not written, reason logged. Reverse too: conversation content fed to learning process has injection commands disabled, so a message from a guest can't hijack the learning loop.
 
-Finally, Thansa only lets writing go to exactly these folders: `memory/`, `Memory/`, `Wiki/`, `skills/`, `.claude/skills/`, `Javis/` in the brain. Any path escaping this list gets restored immediately.
+Finally, Thansa only lets writing go to exactly these folders: `memory/`, `Memory/`, `Wiki/`, `skills/`, `.claude/skills/`, `Thansa/` in the brain. Any path escaping this list gets restored immediately.
 
 ## Open where in Thansa
 
@@ -216,7 +216,7 @@ One reassurance: git here tracks only **curated knowledge** (memory, Wiki, skill
 
 ## Block "Learn log"
 
-Last block shows up to 10 newest entries, gathered from three newest log files in `Javis/learn-log/` of the brain (one file per day `YYYY-MM-DD.md`).
+Last block shows up to 10 newest entries, gathered from three newest log files in `Thansa/learn-log/` of the brain (one file per day `YYYY-MM-DD.md`).
 
 Each entry has timestamp, type (`learn` or `curator`), reason (`auto` when self-fired, `manual` when you clicked), status (`auto-write` or `dry-run` with reason downgraded), then list of what learned like `fact=[...] wiki=[...] skill=[...]`, and commit hash if any. Body is one Vietnamese summary line of the batch, with **Blocked** section listing each thing blocked gate blocked and why.
 
@@ -272,7 +272,7 @@ This page works on selected brain at top. Switch to right brain, save config and
 Runs every 24 hours, and skips brain silent over 14 days. Also when Wiki didn't change any notes it skips that part (log says "wiki unchanged"), because scanning costs and there's nothing to fix. To run one pass right now click **🧹 Curator now**.
 
 **Scared self-learning will trash hand-written notes.**
-Learning process has no write power. Write code doesn't overwrite existing memory, doesn't overwrite existing Wiki notes, doesn't overwrite existing skills, deletes nothing, and only touches `memory/`, `Wiki/`, `skills/`, `Javis/` folders. Any path escaping gets restored right away.
+Learning process has no write power. Write code doesn't overwrite existing memory, doesn't overwrite existing Wiki notes, doesn't overwrite existing skills, deletes nothing, and only touches `memory/`, `Wiki/`, `skills/`, `Thansa/` folders. Any path escaping gets restored right away.
 
 ## Related
 

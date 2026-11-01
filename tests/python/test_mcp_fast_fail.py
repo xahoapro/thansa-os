@@ -17,7 +17,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-mcp-fast-fail-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-mcp-fast-fail-"))
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:

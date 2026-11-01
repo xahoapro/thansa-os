@@ -24,9 +24,9 @@ Mỗi brain của Thansa thực chất là một thư mục trên máy/VPS chứ
 |---|---|---|
 | Chạy cục bộ, không bắt đăng nhập (localhost) | **Ổ đĩa chứa brain** | Bạn duyệt và sửa được cả file ngoài brain, vì máy là của chính bạn |
 | Nghe public / bắt buộc đăng nhập (Docker, VPS) | Thư mục brain | Khoá cứng trong brain, không hở ổ đĩa ra web |
-| Đặt `JAVIS_FILES_ROOT=brain` (hoặc `vault`) | Thư mục brain | Khoá trong brain kể cả khi chạy cục bộ |
-| Đặt `JAVIS_FILES_ROOT=drive` (hoặc `root`) | Ổ đĩa chứa brain | Ép mở rộng tới ổ đĩa |
-| Đặt `JAVIS_FILES_ROOT=<đường dẫn>` | Đúng thư mục đó | Trần tuỳ ý, phải là thư mục có chứa brain |
+| Đặt `THANSA_FILES_ROOT=brain` (hoặc `vault`) | Thư mục brain | Khoá trong brain kể cả khi chạy cục bộ |
+| Đặt `THANSA_FILES_ROOT=drive` (hoặc `root`) | Ổ đĩa chứa brain | Ép mở rộng tới ổ đĩa |
+| Đặt `THANSA_FILES_ROOT=<đường dẫn>` | Đúng thư mục đó | Trần tuỳ ý, phải là thư mục có chứa brain |
 
 Vì thế trên máy cá nhân, bấm **↑ Lên** nhiều lần có thể đưa bạn ra ngoài brain tới tận gốc ổ đĩa. Nút **⌂ Brain** đưa bạn về nhà ngay lập tức. Khi đã đứng ở trần, nút **↑ Lên** tự ẩn đi. Thansa luôn chặn các đường dẫn cố vượt quá trần (kiểu `../../`), và brain luôn nằm trong trần.
 
@@ -308,7 +308,7 @@ Kết luận thực dụng: tài liệu bạn muốn giữ lâu dài thì chuy�
 
 **Bấm ↑ Lên mà không thấy nút đâu.** Bạn đã ở trần duyệt rồi, nút tự ẩn. Bấm **⌂ Brain** để về gốc brain.
 
-**Duyệt lạc ra ngoài brain, không biết đường về.** Bấm **⌂ Brain**. Đây đúng là hành vi thiết kế khi chạy cục bộ: trần duyệt là ổ đĩa chứ không phải thư mục brain. Muốn khoá cứng trong brain thì đặt `JAVIS_FILES_ROOT=brain` rồi khởi động lại server.
+**Duyệt lạc ra ngoài brain, không biết đường về.** Bấm **⌂ Brain**. Đây đúng là hành vi thiết kế khi chạy cục bộ: trần duyệt là ổ đĩa chứ không phải thư mục brain. Muốn khoá cứng trong brain thì đặt `THANSA_FILES_ROOT=brain` rồi khởi động lại server.
 
 **Tìm kiếm không ra file mà bạn biết chắc là có.** Ba nguyên nhân hay gặp: file nằm ngoài gốc brain (tìm kiếm chỉ quét trong brain); file nằm trong thư mục bị bỏ qua như `.git`, `node_modules`, `.trash`; hoặc bạn đang ở chip **Nội dung** mà file đó không phải dạng chữ hay nặng hơn 1MB. Thử đổi sang chip **Tên**.
 
@@ -339,5 +339,5 @@ Kết luận thực dụng: tài liệu bạn muốn giữ lâu dài thì chuy�
 - [Second Brain: bộ nhớ, Wiki, INGEST](13-second-brain-bo-nho-wiki.md) - cấu trúc bên trong một brain.
 - [Sao lưu brain lên GitHub](18-sao-luu-github.md) - giữ lịch sử thay đổi và cứu file lỡ xoá.
 - [Task & Dataview trong note](19-task-va-dataview.md) - viết task và bảng truy vấn trong file .md.
-- [Cấu hình .env](16-cau-hinh-env.md) - biến `JAVIS_FILES_ROOT` và các biến khác.
+- [Cấu hình .env](16-cau-hinh-env.md) - biến `THANSA_FILES_ROOT` và các biến khác.
 - [Khắc phục sự cố & FAQ](17-khac-phuc-su-co.md)

@@ -24,16 +24,16 @@ Rất nhiều lỗi biến mất sau một trong hai việc này, nên thử tr�
 |---|---|
 | Sửa code (hoặc vừa cập nhật) mà **không thấy đổi** | Nếu đổi file `.py`: **khởi động lại server** (Windows: `stop-thansa.bat` rồi `start-thansa.vbs`; Docker: `docker compose restart`). Nếu chỉ đổi giao diện: nhấn **Ctrl+Shift+R**. |
 | **Cổng 7777 bị giữ**, bản mới không lên được | Tắt tiến trình cũ TRƯỚC rồi mới bật lại. Windows: chạy `stop-thansa.bat`, hoặc `taskkill /F /PID <pid>` với PID đang giữ cổng. Docker: `docker compose down` rồi `docker compose up -d`. |
-| **Hostinger không pull được image** | Đặt package GHCR ở chế độ **Public** (GitHub, repo, mục Packages, chọn `javis-os`, Package settings, Visibility = Public). Sau đó đợi GitHub Action build xong (xem tab Actions của repo) rồi Deploy lại. |
-| Mở app ra **màn tạo tài khoản admin** trên server public | Chưa có admin nên ai mở link trước sẽ tạo được admin. Tạo tài khoản ngay (mật khẩu tối thiểu 8 ký tự), hoặc lần sau đặt sẵn env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` lúc deploy để đăng nhập luôn. Vào được rồi thì bật 2FA. |
+| **Hostinger không pull được image** | Đặt package GHCR ở chế độ **Public** (GitHub, repo, mục Packages, chọn `thansa-os`, Package settings, Visibility = Public). Sau đó đợi GitHub Action build xong (xem tab Actions của repo) rồi Deploy lại. |
+| Mở app ra **màn tạo tài khoản admin** trên server public | Chưa có admin nên ai mở link trước sẽ tạo được admin. Tạo tài khoản ngay (mật khẩu tối thiểu 8 ký tự), hoặc lần sau đặt sẵn env `THANSA_ADMIN_USER` và `THANSA_ADMIN_PASSWORD` lúc deploy để đăng nhập luôn. Vào được rồi thì bật 2FA. |
 | **Claude báo chưa đăng nhập** (Thansa không trả lời được) | Đăng nhập lại "bộ não" Claude 1 lần. Cách trong app: mở **Models**, ở thẻ Claude Code bấm **Đăng nhập Claude**, mở link, dán code nếu được yêu cầu. Cách bằng lệnh: `claude auth login --claudeai` (Docker: chạy trong App terminal). |
 | **Trang Tệp tin báo lỗi ở "Đang tải..."** | Máy chủ chưa có endpoint Tệp tin (báo lỗi 404). **Khởi động lại server** để nạp endpoint mới, rồi nhấn **Ctrl+Shift+R**. |
 | Ảnh trong hội thoại cũ hiện ô xám **Ảnh đã hết hạn** | Đúng thiết kế: `attachments/` và `inbox/` là vùng cache, file quá 30 ngày (hoặc khi vượt trần 300MB) bị dọn. Xem mục "Ảnh và file cũ biến mất" bên dưới để biết cách giữ lại hoặc tắt hẳn. |
 | Voice / micro không bật được | Trình duyệt chỉ cấp quyền micro trên **HTTPS** (hoặc localhost). Mở qua `http://<ip>:7777` sẽ luôn bị chặn. Dùng URL `https://` (Hostinger `*.hstgr.cloud`, Cloudflare Tunnel, hoặc tên miền riêng có SSL). Xem [Thương hiệu & tên miền riêng](15-thuong-hieu-ten-mien.md). |
 | Cập nhật trong app xong mà **phiên bản không đổi** | Đợi thêm; nếu vẫn báo bản cũ, kiểm tra log cập nhật: `update.log` trong thư mục state (`server/update.log` khi chạy local, `/data/state/update.log` trên Docker), hoặc `docker compose logs`. |
-| **`javis` báo 401** hoặc "token không hợp lệ" | Token sai hoặc đã bị thu hồi. Tạo cái mới ở **Tài khoản > Token API** rồi `javis login <địa-chỉ>` lại. Xem [Thansa CLI](24-cli-terminal.md). |
-| **`javis task add` / `javis brain ls` báo 403** | Token của bạn là loại **chỉ chat**. Những lệnh này cần token **toàn quyền** - tạo thêm một cái ở Tài khoản > Token API. |
-| **`javis up` báo không thấy bản cài Thansa** | Đúng như nó nói: gói CLI KHÔNG chứa server bên trong. Đặt `JAVIS_HOME` trỏ tới thư mục Thansa, chạy lệnh từ trong thư mục đó, hoặc `javis login <địa-chỉ>` để nối tới một Thansa đang chạy nơi khác. |
+| **`thansa` báo 401** hoặc "token không hợp lệ" | Token sai hoặc đã bị thu hồi. Tạo cái mới ở **Tài khoản > Token API** rồi `thansa login <địa-chỉ>` lại. Xem [Thansa CLI](24-cli-terminal.md). |
+| **`thansa task add` / `thansa brain ls` báo 403** | Token của bạn là loại **chỉ chat**. Những lệnh này cần token **toàn quyền** - tạo thêm một cái ở Tài khoản > Token API. |
+| **`thansa up` báo không thấy bản cài Thansa** | Đúng như nó nói: gói CLI KHÔNG chứa server bên trong. Đặt `THANSA_HOME` trỏ tới thư mục Thansa, chạy lệnh từ trong thư mục đó, hoặc `thansa login <địa-chỉ>` để nối tới một Thansa đang chạy nơi khác. |
 
 Các mục dưới đây giải thích chi tiết hơn từng dòng trong bảng.
 
@@ -56,20 +56,20 @@ Cổng mặc định của Thansa là **7777**. Khi một tiến trình cũ chư
 1. Tắt tiến trình cũ trước. Windows: chạy `stop-thansa.bat`. Nếu vẫn còn, tìm PID đang giữ cổng rồi `taskkill /F /PID <pid>`. Docker: `docker compose down`.
 2. Bật lại. Windows: `start-thansa.vbs`. Docker: `docker compose up -d`.
 
-Muốn đổi sang cổng khác (khi 7777 đụng phần mềm khác), đặt biến `JAVIS_PORT` trong file `.env`; xem [Cấu hình .env](16-cau-hinh-env.md).
+Muốn đổi sang cổng khác (khi 7777 đụng phần mềm khác), đặt biến `THANSA_PORT` trong file `.env`; xem [Cấu hình .env](16-cau-hinh-env.md).
 
 ## Hostinger không pull được image
 
 Khi deploy bằng Hostinger Docker Manager mà nó không tải được image, thường do hai nguyên nhân:
 
-1. **Image ở chế độ riêng tư (Private).** Vào GitHub, mở repo, chọn mục **Packages**, chọn `javis-os`, vào **Package settings**, đặt **Visibility = Public**. Có vậy Hostinger mới pull được mà không cần đăng nhập registry.
+1. **Image ở chế độ riêng tư (Private).** Vào GitHub, mở repo, chọn mục **Packages**, chọn `thansa-os`, vào **Package settings**, đặt **Visibility = Public**. Có vậy Hostinger mới pull được mà không cần đăng nhập registry.
 2. **Image chưa build xong.** Mỗi lần đẩy code mới lên nhánh `main`, GitHub Action mới bắt đầu build. Mở tab **Actions** của repo, đợi lượt build gần nhất chạy xong (dấu tích xanh), rồi bấm Deploy lại trên Hostinger.
 
 ## Mở app ra màn tạo tài khoản admin trên server public
 
 Khi Thansa chạy public (Docker/VPS/Hostinger) mà chưa có admin, lần đầu mở app sẽ ra màn tạo tài khoản, chỉ hỏi tên đăng nhập và mật khẩu. Nghĩa là **ai mở link trước sẽ tạo được admin** (mà engine chạy toàn quyền trên máy), nên:
 
-1. **Đặt sẵn admin lúc deploy (khuyến nghị)**: hai env `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` trong compose hoặc `.env`. Khi đó mở app là đăng nhập luôn.
+1. **Đặt sẵn admin lúc deploy (khuyến nghị)**: hai env `THANSA_ADMIN_USER` và `THANSA_ADMIN_PASSWORD` trong compose hoặc `.env`. Khi đó mở app là đăng nhập luôn.
 2. **Không đặt env**: tạo tài khoản ngay sau khi deploy, mật khẩu tối thiểu 8 ký tự.
 3. **Vào được rồi**: bật xác thực 2 lớp (2FA) ở trang **Tài khoản**.
 
@@ -149,15 +149,15 @@ Có vài nơi xem "nhật ký" tùy loại thông tin:
 3. **Trang Cập nhật** (nhóm **Hệ thống**, tiêu đề trang là **Nhật ký cập nhật**): đây là nơi xem phiên bản đang chạy và lịch sử tính năng mới theo từng bản. Không còn trang "Logs" hay "Nhật ký hoạt động" riêng nào nữa; mục `logs` trên rail chính là trang này.
 4. **Log kỹ thuật của server** (khi cần soi lỗi sâu):
    - Windows chạy ngầm bằng `start-thansa.vbs`: log ghi ở `server\thansa.log`.
-   - Docker / VPS: `docker compose logs javis` (thêm `-f` để xem trực tiếp: `docker compose logs -f`).
+   - Docker / VPS: `docker compose logs thansa` (thêm `-f` để xem trực tiếp: `docker compose logs -f`).
    - Linux systemd: `journalctl -u thansa -f`.
-5. **Log cập nhật** khi bấm nút cập nhật trong app: file `update.log` nằm trong thư mục state, tức `server/update.log` khi chạy local và `/data/state/update.log` trên Docker (đường dẫn theo biến `JAVIS_STATE_DIR`). Thường bạn không cần mở tệp: khi cập nhật lỗi, giao diện đã hiện sẵn thông báo và app cũng đọc 50 dòng cuối của tệp này để báo trạng thái.
+5. **Log cập nhật** khi bấm nút cập nhật trong app: file `update.log` nằm trong thư mục state, tức `server/update.log` khi chạy local và `/data/state/update.log` trên Docker (đường dẫn theo biến `THANSA_STATE_DIR`). Thường bạn không cần mở tệp: khi cập nhật lỗi, giao diện đã hiện sẵn thông báo và app cũng đọc 50 dòng cuối của tệp này để báo trạng thái.
 
 ## Câu hỏi thường gặp (FAQ)
 
 ### Dữ liệu có mất khi cập nhật không?
 
-Không, nếu chạy bằng Docker. Mọi ghi chú, brain, settings và cả token đăng nhập Claude nằm trong **Docker volume** (`javis-data`, `claude-auth`), tách khỏi image. Khi bạn cập nhật (bấm **⬆ Cập nhật ngay** trong **Cập nhật**, Redeploy trên Hostinger, hoặc chạy `./update.sh` trên VPS), image được thay mới nhưng volume giữ nguyên nên dữ liệu **không mất**. Với bản cài native, dữ liệu nằm trong thư mục `brains/` của repo, cũng không bị `git pull` xoá.
+Không, nếu chạy bằng Docker. Mọi ghi chú, brain, settings và cả token đăng nhập Claude nằm trong **Docker volume** (`thansa-data`, `claude-auth`), tách khỏi image. Khi bạn cập nhật (bấm **⬆ Cập nhật ngay** trong **Cập nhật**, Redeploy trên Hostinger, hoặc chạy `./update.sh` trên VPS), image được thay mới nhưng volume giữ nguyên nên dữ liệu **không mất**. Với bản cài native, dữ liệu nằm trong thư mục `brains/` của repo, cũng không bị `git pull` xoá.
 
 ### Cập nhật trong app hoạt động thế nào?
 
@@ -167,15 +167,15 @@ Bản cài trực tiếp trên máy (Windows, Linux, macOS) luôn tự cập nh�
 
 Từ 0.55.56 Watchtower **đi kèm sẵn** trong cả compose VPS lẫn compose Hostinger, nên cài mới là có nút. Còn thiếu nút nghĩa là stack đang chạy bằng file compose cũ: trước đó Watchtower nằm trong `profiles: ["update"]` (lệnh `docker compose up -d` không bật nó) và stack Hostinger thì không kèm nó. Cách ra là lấy compose mới rồi dựng lại - VPS chạy `curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml` rồi `docker compose up -d --pull always`, Hostinger bấm **Redeploy** trong Docker Manager. Chưa muốn đổi file thì bật riêng bằng `docker compose --profile update up -d`. Khung Cập nhật tự nói máy bạn rơi vào trường hợp nào.
 
-**Muốn khỏi bấm nút, để Thansa tự cập nhật**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại stack. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
+**Muốn khỏi bấm nút, để Thansa tự cập nhật**: thêm `THANSA_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại stack. Mặc định tắt, vì tự cập nhật nghĩa là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `THANSA_AUTO_UPDATE_INTERVAL` (giây).
 
-**Stack báo "Partially running" sau khi cập nhật compose**: gần như luôn là container `<tên>-watchtower` không đụng được Docker socket của host (Hostinger từng dính đúng lỗi này). App Thansa KHÔNG bị ảnh hưởng - nó là container riêng, vẫn chạy bình thường; chỉ là nút "Cập nhật ngay" không dùng được và bạn quay lại cách Redeploy. Xem lý do thật trong log: `docker logs javis-watchtower`.
+**Stack báo "Partially running" sau khi cập nhật compose**: gần như luôn là container `<tên>-watchtower` không đụng được Docker socket của host (Hostinger từng dính đúng lỗi này). App Thansa KHÔNG bị ảnh hưởng - nó là container riêng, vẫn chạy bình thường; chỉ là nút "Cập nhật ngay" không dùng được và bạn quay lại cách Redeploy. Xem lý do thật trong log: `docker logs thansa-watchtower`.
 
 **Gõ lệnh compose mà báo `not found`** - ba kiểu, ba nguyên nhân khác hẳn:
 
 | Báo lỗi | Nguyên nhân | Cách xử lý |
 |---|---|---|
-| `no configuration file provided: not found` | Đứng sai thư mục. Tên thư mục tuỳ lúc clone: `javis` nếu theo đúng lệnh trong DEPLOY.md, `javis-os` nếu clone thẳng không đổi tên | `cd` vào đúng thư mục chứa `docker-compose.yml`. Không nhớ nó đâu thì hỏi Docker: `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'` |
+| `no configuration file provided: not found` | Đứng sai thư mục. Tên thư mục tuỳ lúc clone: `thansa` nếu theo đúng lệnh trong DEPLOY.md, `thansa-os` nếu clone thẳng không đổi tên | `cd` vào đúng thư mục chứa `docker-compose.yml`. Không nhớ nó đâu thì hỏi Docker: `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'` |
 | `docker: command not found` | Đang gõ **bên trong** container Thansa (terminal của app) chứ không phải trên máy chủ | SSH vào VPS rồi gõ |
 | `docker: 'compose' is not a docker command` | Compose bản cũ (v1) | Viết có gạch nối: `docker-compose --profile update up -d` |
 

@@ -1,6 +1,6 @@
-"""Bóc CHỮ từ file PDF và Word (.docx) cho tool `javis_read_file` của hub (0.92.2).
+"""Bóc CHỮ từ file PDF và Word (.docx) cho tool `thansa_read_file` của hub (0.92.2).
 
-Vì sao có. Engine CLI (Claude Code, Codex) tự mở được PDF, còn sáu engine API và Ollama máy nhà chỉ có `javis_read_file`, mà tool
+Vì sao có. Engine CLI (Claude Code, Codex) tự mở được PDF, còn sáu engine API và Ollama máy nhà chỉ có `thansa_read_file`, mà tool
 đó đọc mọi file bằng `read_text`: PDF/Word ra toàn mã nhị phân, model đọc xong báo "không đọc được" (người dùng Ollama local trên
 Mac báo 11/10, kèm bản thử bằng pypdf tóm tắt đúng một PDF 17 trang).
 

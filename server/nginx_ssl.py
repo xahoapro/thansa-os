@@ -63,7 +63,7 @@ def sudo_ok() -> bool:
 
 
 def app_port() -> str:
-    return str(os.getenv("JAVIS_PORT", "7777") or "7777").strip()
+    return str(os.getenv("THANSA_PORT", "7777") or "7777").strip()
 
 
 def manual_cmd(domain: str, email: str = "") -> str:
@@ -94,7 +94,7 @@ def status() -> dict:
 
 
 def _log_path() -> Path:
-    base = os.getenv("JAVIS_STATE_DIR") or str(ROOT / "server")
+    base = os.getenv("THANSA_STATE_DIR") or str(ROOT / "server")
     return Path(base) / "nginx-ssl.log"
 
 

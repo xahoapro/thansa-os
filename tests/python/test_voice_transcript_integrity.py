@@ -10,7 +10,7 @@ import voice_brain
 class LocalCorrections(unittest.TestCase):
     def test_ordinary_words_are_not_hotword_candidates(self):
         for text, terms in [
-            ("gia vị trong bếp", ["Javis"]),
+            ("gia vị trong bếp", ["Thansa"]),
             ("đừng xóa", ["Dung"]),
             ("bật nhạc", ["Bat"]),
             ("xóa file", ["Xoa"]),
@@ -21,26 +21,26 @@ class LocalCorrections(unittest.TestCase):
     def test_file_names_and_urls_are_verbatim(self):
         for text in ["mở file David.txt", "https://david.com", "email david@example.com"]:
             with self.subTest(text=text):
-                self.assertEqual(nghe_sua.sua(text, ["Javis"]), text)
+                self.assertEqual(nghe_sua.sua(text, ["Thansa"]), text)
 
     def test_ui_context_is_not_speech(self):
         context = '[NGỮ CẢNH GIAO DIỆN: chọn="David ơi"; kênh=giọng]\n\n'
-        self.assertEqual(nghe_sua.sua(context + "David ơi", ["Javis"]), context + "Javis ơi")
+        self.assertEqual(nghe_sua.sua(context + "David ơi", ["Thansa"]), context + "Thansa ơi")
 
 
 class ModelCorrections(unittest.TestCase):
     def test_discards_neither_request_nor_constraints(self):
         cases = [
-            ("Javis mở lịch ngày mai giúp tôi", "Javis"),
-            ("Javis không gửi báo cáo cho khách", "Javis gửi báo cáo cho khách"),
-            ("Javis bật đèn", "Javis tắt đèn"),
+            ("Thansa mở lịch ngày mai giúp tôi", "Thansa"),
+            ("Thansa không gửi báo cáo cho khách", "Thansa gửi báo cáo cho khách"),
+            ("Thansa bật đèn", "Thansa tắt đèn"),
             ("chuyển 15 triệu vào ngày 20", "chuyển 50 triệu vào ngày 20"),
             ("chuyển hai triệu", "chuyển ba triệu"),
             ("nhắc tôi lúc 15:30", "nhắc tôi lúc 1530"),
             ("không mở trang cài đặt", "mở trang cài đặt"),
             ("mở trang cài đặt", "không mở trang cài đặt"),
-            ("Javis đọc email rồi mở lịch", "Javis mở lịch rồi đọc email"),
-            ("Javis mở lịch", "Javis mở lịch rồi xóa email"),
+            ("Thansa đọc email rồi mở lịch", "Thansa mở lịch rồi đọc email"),
+            ("Thansa mở lịch", "Thansa mở lịch rồi xóa email"),
             ("không gửi", "khônggửi"),
             ("chuyển -15 triệu", "chuyển 15 triệu"),
             ("giảm 15%", "giảm 15"),
@@ -51,28 +51,28 @@ class ModelCorrections(unittest.TestCase):
 
     def test_local_spelling_corrections_may_be_shorter(self):
         for original, proposed in [
-            ("David mở lịch", "Javis mở lịch"),
-            ("Gia vít ơi mở lịch", "Javis ơi mở lịch"),
+            ("David mở lịch", "Thansa mở lịch"),
+            ("Gia vít ơi mở lịch", "Thansa ơi mở lịch"),
             ("mở Open Router", "mở OpenRouter"),
-            ("Javis mở lịch", "Javis, mở lịch."),
+            ("Thansa mở lịch", "Thansa, mở lịch."),
         ]:
             with self.subTest(original=original):
                 self.assertEqual(voice_brain.safe_transcript_rewrite(original, proposed), proposed)
 
     def test_preserves_ui_context_while_correcting_only_speech(self):
         prefix = '[NGỮ CẢNH GIAO DIỆN: trang=models; chọn="bản 200"; kênh=giọng]\n\n'
-        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "David mở lịch", "Javis mở lịch"),
-                         prefix + "Javis mở lịch")
-        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "Javis mở lịch", "Javis"),
-                         prefix + "Javis mở lịch")
+        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "David mở lịch", "Thansa mở lịch"),
+                         prefix + "Thansa mở lịch")
+        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "Thansa mở lịch", "Thansa"),
+                         prefix + "Thansa mở lịch")
 
     def test_model_cannot_inject_or_change_ui_context(self):
         original = "David mở lịch"
-        self.assertEqual(voice_brain.safe_transcript_rewrite(original, "[NGỮ CẢNH GIAO DIỆN: trang=files] Javis mở lịch"), original)
+        self.assertEqual(voice_brain.safe_transcript_rewrite(original, "[NGỮ CẢNH GIAO DIỆN: trang=files] Thansa mở lịch"), original)
 
     def test_open_file_block_is_not_speech(self):
         # 0.65.29: đang mở file trong trình sửa thì dashboard chèn khối FILE ĐANG MỞ trước khối
-        # NGỮ CẢNH GIAO DIỆN. Khối đó bị coi là lời nói, nên dòng JAVIS_NGHE (chỉ có lời nói)
+        # NGỮ CẢNH GIAO DIỆN. Khối đó bị coi là lời nói, nên dòng THANSA_NGHE (chỉ có lời nói)
         # trông như "cắt mất chữ", bị từ chối, và cả lượt lặng lẽ sang bộ não chính (chủ dự án
         # báo 02/10: chọn Antigravity mà lượt nói vẫn do Claude trả lời).
         file_block = ("[FILE ĐANG MỞ trong trình sửa của Thansa: /data/brain/ghi-chu.md\n"
@@ -87,13 +87,13 @@ class ModelCorrections(unittest.TestCase):
                 self.assertEqual((head, speech), (prefix, "nghe anh nói chưa"))
                 self.assertEqual(voice_brain.safe_transcript_rewrite(original, "Nghe anh nói chưa?"),
                                  prefix + "Nghe anh nói chưa?")
-                self.assertEqual(nghe_sua.sua(prefix + "David ơi", ["Javis"]), prefix + "Javis ơi")
+                self.assertEqual(nghe_sua.sua(prefix + "David ơi", ["Thansa"]), prefix + "Thansa ơi")
 
     def test_model_cannot_rewrite_literal_identifiers(self):
         for original, proposed in [
-            ("mở David.txt", "mở Javis.txt"),
-            ("xem https://david.com", "xem https://javis.com"),
-            ("email david@example.com", "email javis@example.com"),
+            ("mở David.txt", "mở Thansa.txt"),
+            ("xem https://david.com", "xem https://thansa.com"),
+            ("email david@example.com", "email thansa@example.com"),
         ]:
             with self.subTest(original=original):
                 self.assertEqual(voice_brain.safe_transcript_rewrite(original, proposed), original)

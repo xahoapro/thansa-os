@@ -3,7 +3,7 @@
 Khi người dùng NÓI với Thansa, lượt đi qua một bộ não nhanh và nhẹ ở đây thay vì bộ não chính
 (vốn dựng tiến trình, nạp MCP và prompt dài, mất 5-10 giây mới ra chữ đầu). Bộ não giọng trả
 lời ngắn, và khi câu hỏi cần dữ liệu, tool, file, ký ức hay hành động thì nó trả đúng một dòng
-`JAVIS_ASK_MAIN: <yêu cầu>`; main.py đọc dòng đó rồi chạy lượt bộ não chính như thường.
+`THANSA_ASK_MAIN: <yêu cầu>`; main.py đọc dòng đó rồi chạy lượt bộ não chính như thường.
 
 Hai loại bộ não:
   - AntigravityVoiceBrain: MỘT tiến trình `agy --input-format stream-json` sống suốt phiên
@@ -30,21 +30,21 @@ import localefmt
 import nghe_sua
 import phien_am
 
-MARKER = "JAVIS_ASK_MAIN:"
+MARKER = "THANSA_ASK_MAIN:"
 # Đường TẮT cho việc chỉ đụng tới giao diện: bộ não giọng tự phát, server gọi thẳng dashboard,
 # không phải đánh thức bộ não chính (xem parse_ui).
-UI_MARKER = "JAVIS_UI:"
+UI_MARKER = "THANSA_UI:"
 UI_ACTIONS = ("open_page", "open_group", "sidebar", "scroll")
 # Dòng ĐẦU của mọi câu trả lời: câu người dùng đã DIỄN GIẢI (máy nghe chép sai từ tiếng Anh,
 # bộ não giọng viết lại đúng ý). Server bóc dòng này ra: thay tin người dùng trong kho phiên
 # và trong khung chat, không bao giờ đọc ra loa (xem parse_nghe, split_speakable).
-NGHE_MARKER = "JAVIS_NGHE:"
+NGHE_MARKER = "THANSA_NGHE:"
 # CỬA TẠP ÂM: mic bật liên tục nên tiếng TV, người khác trong phòng hay tiếng lẩm bẩm cũng
 # được chép thành chữ rồi chốt thành một lượt. Bộ não giọng đã đọc mọi lượt để viết dòng
-# JAVIS_NGHE, nên nó xét luôn: cắt phần tạp âm ngay trong dòng ấy, còn cả lượt không có gì
+# THANSA_NGHE, nên nó xét luôn: cắt phần tạp âm ngay trong dòng ấy, còn cả lượt không có gì
 # nói với Thansa thì trả đúng một dòng này. Server bỏ lượt, không đọc loa, không để lại bong
 # bóng (xem run_voice_turn trong main.py).
-BO_QUA_MARKER = "JAVIS_BO_QUA:"
+BO_QUA_MARKER = "THANSA_BO_QUA:"
 # Mọi dòng lệnh: không bao giờ ra loa (split_speakable), luôn bị bóc khỏi câu trả lời.
 MARKERS = (MARKER, UI_MARKER, NGHE_MARKER, BO_QUA_MARKER)
 IDLE_S = 300.0
@@ -210,7 +210,7 @@ def _giong_doc(cu: list, moi: list) -> float:
 
 def _giong_am(cu: list, moi: list) -> float:
     """Độ giống âm giữa cụm máy nghe và cụm bộ não sửa, lấy cách so CAO HƠN trong hai:
-      - theo mặt chữ (nghe_sua.khoa_am) như trước: "David" với "Javis";
+      - theo mặt chữ (nghe_sua.khoa_am) như trước: "David" với "Thansa";
       - theo cách người Việt ĐỌC từ tiếng Anh (phien_am): "action" viết một đằng đọc một
         nẻo, so mặt chữ "huyết áp Action" với "GitHub Actions" chỉ được 0,6 và bị chặn,
         còn so cách đọc ("ghít hắp ác sừn") thì khớp (0.64.68).
@@ -221,7 +221,7 @@ def _giong_am(cu: list, moi: list) -> float:
         # Chữ cũ là tiếng Việt, chữ mới là tiếng Anh: so MẶT CHỮ là so hai thứ khác loại
         # ("việc" với chính tả "Webhook" được 0,67 và từng lọt, đổi hẳn trang cần mở). Khi đó
         # chỉ tin cách ĐỌC ("việc" với "quép húc" 0,44). Hai bên cùng tiếng Anh ("David" ->
-        # "Javis") hay cùng tiếng Việt thì mặt chữ vẫn có nghĩa, lấy điểm cao hơn.
+        # "Thansa") hay cùng tiếng Việt thì mặt chữ vẫn có nghĩa, lấy điểm cao hơn.
         anh_moi = all(phien_am.la_tu_tieng_anh(w) for w in moi)
         anh_cu = all(phien_am.la_tu_tieng_anh(w) for w in cu)
         doc = _giong_doc(cu, moi)
@@ -298,7 +298,7 @@ def safe_transcript_rewrite(original: str, proposed: str) -> str:
 
 
 def parse_nghe(text: str):
-    """(phần còn lại, câu đã diễn giải | None) cho dòng `JAVIS_NGHE:` (dòng ĐẦU TIÊN chỉ được
+    """(phần còn lại, câu đã diễn giải | None) cho dòng `THANSA_NGHE:` (dòng ĐẦU TIÊN chỉ được
     tìm ở bất kỳ đâu vì model nhỏ có khi đặt nó sau câu xác nhận). Bóc cả dòng khỏi phần còn
     lại, kể cả dấu xuống dòng của nó. Câu diễn giải rỗng thì coi như không có."""
     t = str(text or "")
@@ -314,9 +314,9 @@ _BO_QUA_RE = re.compile(r"^[ \t]*" + re.escape(BO_QUA_MARKER) + r"[ \t]*(.*?)[ \
 
 
 def parse_bo_qua(text: str):
-    """Lý do bỏ lượt (chuỗi, có thể rỗng) nếu bộ não giọng ra dòng `JAVIS_BO_QUA:`, không thì None.
+    """Lý do bỏ lượt (chuỗi, có thể rỗng) nếu bộ não giọng ra dòng `THANSA_BO_QUA:`, không thì None.
 
-    Tìm ở BẤT KỲ đâu chứ không chỉ dòng đầu: model nhỏ có khi viết dòng JAVIS_NGHE trước rồi mới
+    Tìm ở BẤT KỲ đâu chứ không chỉ dòng đầu: model nhỏ có khi viết dòng THANSA_NGHE trước rồi mới
     chốt bỏ. Lý do rỗng vẫn là bỏ - dòng lệnh có mặt đã là quyết định, lý do chỉ để ghi log.
 
     Không trả phần còn lại như parse_nghe/parse_marker: lượt bị bỏ thì cả câu trả lời bị vứt,
@@ -352,10 +352,10 @@ def parse_marker(text: str):
 
 
 def parse_ui(text: str):
-    """(câu nói, (action, target) | None) cho dòng `JAVIS_UI:`.
+    """(câu nói, (action, target) | None) cho dòng `THANSA_UI:`.
 
     Vì sao có đường tắt này: mở một tab là việc KHÔNG cần dữ liệu gì. Trước đây nó vẫn phải đi
-    `JAVIS_ASK_MAIN` sang bộ não chính, mà bộ não chính mang cả ngữ cảnh hội thoại (có lúc hơn
+    `THANSA_ASK_MAIN` sang bộ não chính, mà bộ não chính mang cả ngữ cảnh hội thoại (có lúc hơn
     200 nghìn token) nên một câu "mở trang Models" mất hàng chục giây. Bộ não giọng tự phát
     dòng này thì server gọi thẳng dashboard, còn đúng độ trễ của chính bộ não giọng.
     """
@@ -388,7 +388,7 @@ def split_speakable(text: str, start: int, final: bool = False):
     Nay chỉ phát khi CÂU đã khép (dấu . ! ? … hoặc xuống dòng), hoặc khi đoạn dở dài quá
     SPEAK_MAX thì cắt ở dấu phẩy/khoảng trắng cuối; `final` thì đẩy nốt phần đuôi.
 
-    Dòng marker `JAVIS_ASK_MAIN:` không bao giờ ra loa: dòng mới mà chữ đầu trùng đầu marker
+    Dòng marker `THANSA_ASK_MAIN:` không bao giờ ra loa: dòng mới mà chữ đầu trùng đầu marker
     thì giữ lại tới khi biết chắc; đã là marker thì bỏ cả dòng.
     """
     out: List[str] = []
@@ -733,7 +733,7 @@ class ClaudeVoiceBrain(VoiceBrain):
             kw["model"] = self.model
         try:
             import claude_cli
-            _cli = (os.environ.get("JAVIS_CLAUDE_CLI") or "").strip() or (claude_cli.tim_binary("claude") or "")
+            _cli = (os.environ.get("THANSA_CLAUDE_CLI") or "").strip() or (claude_cli.tim_binary("claude") or "")
             if _cli and "_bundled" not in _cli.replace("\\", "/") and "cli_path" in fields:
                 kw["cli_path"] = _cli
         except Exception:
@@ -876,7 +876,7 @@ class GrokVoiceBrain(VoiceBrain):
 # ============================================================
 # Việc nền đang chạy của mỗi phiên nói (Voice V3, spec mục 14: tách NÓI khỏi LÀM)
 # ============================================================
-# Khi bộ não giọng phát JAVIS_ASK_MAIN, main.py giao yêu cầu đó cho bộ não chính chạy NỀN rồi
+# Khi bộ não giọng phát THANSA_ASK_MAIN, main.py giao yêu cầu đó cho bộ não chính chạy NỀN rồi
 # kết thúc lượt giọng ngay, để người dùng nói tiếp được. Sổ này cho bộ não giọng biết còn việc
 # gì đang chạy, để nó trả lời "đang chạy" thay vì bịa kết quả hay giao lại việc cũ.
 _PENDING: Dict[str, List[dict]] = {}

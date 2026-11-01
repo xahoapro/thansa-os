@@ -8,6 +8,6 @@ author: Thansa (bundled)
 enabled: true
 min_mode: safe
 tools:
-  - javis_generate_image
-  - javis_describe_image
+  - thansa_generate_image
+  - thansa_describe_image
 hooks: []

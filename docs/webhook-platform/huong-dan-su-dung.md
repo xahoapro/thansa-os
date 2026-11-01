@@ -15,7 +15,7 @@ Mỗi webhook có ba phần: **Cấu hình**, **Sự kiện**, **Tình trạng**
    - **Toàn quyền**: được làm việc ra ngoài như gửi tin, tạo đơn.
 4. Lưu. Thansa hiện địa chỉ và khoá bí mật **một lần duy nhất**. Chép ngay vào hệ thống bên ngoài.
 
-Khoá gửi kèm trong header `X-Javis-Token` hoặc `Authorization: Bearer <khoá>`. Webhook tạo trước bản 0.274.0 vẫn nhận
+Khoá gửi kèm trong header `X-Thansa-Token` hoặc `Authorization: Bearer <khoá>`. Webhook tạo trước bản 0.274.0 vẫn nhận
 khoá trên địa chỉ (`?token=`) như cũ. Webhook mới thì không, vì địa chỉ hay bị ghi lại trong nhật ký của bên gửi.
 
 ## 2. "Đã nhận" nghĩa là gì
@@ -36,7 +36,7 @@ Người chỉ cần chạy một quy trình thì không cần phần này. Ô *
 {
   "filter": {"all": [
     {"path": "status", "op": "eq", "value": 0},
-    {"path": "items[*].variation_info.name", "op": "contains", "value": "TRỢ LÝ AI JAVIS", "quantifier": "any",
+    {"path": "items[*].variation_info.name", "op": "contains", "value": "TRỢ LÝ AI THANSA", "quantifier": "any",
      "case_sensitive": false}
   ]},
   "mapping": {"order_id": "id", "phone": {"path": "bill_phone_number", "transform": "digits"}},
@@ -92,7 +92,7 @@ Mỗi sự kiện có thể tới nhiều nơi. Mỗi nơi chạy riêng:
 
 - Một nơi lỗi không chặn nơi khác. `depends_on` cho một nơi chờ nơi kia xong rồi mới chạy.
 - **Tự thử lại** khi nơi nhận bận: sau 1 phút, 5 phút rồi 30 phút, tối đa 4 lần trong 24 giờ. Mọi lần gửi mang
-  **cùng một mã giao nhận** (`X-Javis-Event-Id`) để bên kia bỏ được bản trùng.
+  **cùng một mã giao nhận** (`X-Thansa-Event-Id`) để bên kia bỏ được bản trùng.
 - **Không rõ bên kia đã làm chưa** (hết giờ chờ, lỗi máy chủ, chuyển hướng sau khi gửi) thì Thansa **không tự gửi
   lại**. Sự kiện thành "đang chờ (chưa rõ)": bạn kiểm tra bên ngoài rồi bấm **Đã xong** hoặc **Chạy lại**. Nơi nào
   khai `"retry_safety": "idempotent"` (bên nhận tự bỏ bản trùng) thì được tự gửi lại.

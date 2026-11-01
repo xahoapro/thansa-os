@@ -8,8 +8,8 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-team-id-")
-BR = Path(tempfile.mkdtemp(prefix="javis-team-id-brain-"))
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-team-id-")
+BR = Path(tempfile.mkdtemp(prefix="thansa-team-id-brain-"))
 (BR / "agents").mkdir()
 
 import main  # noqa: E402

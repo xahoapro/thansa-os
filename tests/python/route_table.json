@@ -1324,8 +1324,8 @@
  {
   "order": 132,
   "type": "APIRoute",
-  "path": "/javis-core/session",
-  "name": "javis_core_session",
+  "path": "/thansa-core/session",
+  "name": "thansa_core_session",
   "methods": [
    "POST"
   ],
@@ -3102,8 +3102,8 @@
  {
   "order": 311,
   "type": "APIRoute",
-  "path": "/javis/index",
-  "name": "javis_index",
+  "path": "/thansa/index",
+  "name": "thansa_index",
   "methods": [
    "GET"
   ],
@@ -3282,8 +3282,8 @@
  {
   "order": 329,
   "type": "APIRoute",
-  "path": "/javis-core/cite",
-  "name": "javis_core_cite",
+  "path": "/thansa-core/cite",
+  "name": "thansa_core_cite",
   "methods": [
    "POST"
   ],

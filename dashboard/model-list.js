@@ -171,5 +171,5 @@
     return html;
   }
 
-  window.JavisModelList = { models, peek, render, clearCache };
+  window.ThansaModelList = { models, peek, render, clearCache };
 })();

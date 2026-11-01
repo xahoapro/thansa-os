@@ -23,7 +23,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt pytest
 .venv/bin/python -m uvicorn main:app --app-dir server --port 7777   # http://localhost:7777
 ```
 
-`install.sh` (Linux/macOS) and `install.ps1` (Windows) do the full install, including the CLI brains, if you want the complete app. To keep your experiments away from your real data, point `JAVIS_STATE_DIR` and `BRAINS_DIR` at a scratch folder.
+`install.sh` (Linux/macOS) and `install.ps1` (Windows) do the full install, including the CLI brains, if you want the complete app. To keep your experiments away from your real data, point `THANSA_STATE_DIR` and `BRAINS_DIR` at a scratch folder.
 
 ## Running the tests
 

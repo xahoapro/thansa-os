@@ -8,5 +8,5 @@ author: Thansa (bundled)
 enabled: true
 min_mode: readonly
 tools:
-  - javis_youtube_read
+  - thansa_youtube_read
 hooks: []

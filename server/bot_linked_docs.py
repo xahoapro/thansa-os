@@ -10,11 +10,11 @@ How, and why this way rather than through an MCP connector:
 1. **Only links the OWNER wrote.** URLs come from the Agent file (its `assets.links` plus links in its
    text), never from a customer message. A customer pasting a link gets nothing fetched.
 2. **Only Google's public export endpoint, rebuilt from the document id.** The owner's URL is parsed
-   for a document id and Javis requests `docs.google.com/<kind>/d/<id>/export?...` itself, so the URL
+   for a document id and Thansa requests `docs.google.com/<kind>/d/<id>/export?...` itself, so the URL
    cannot steer the request anywhere else. This needs the document shared as "Anyone with the link can
    view"; a private one comes back as a Google sign-in page, which is reported to the owner as exactly
    that, so the fix is one click in Google, not a guess.
-3. **No connector, no extra permission level.** Fetching happens in Javis' own code before the turn,
+3. **No connector, no extra permission level.** Fetching happens in Thansa' own code before the turn,
    like the keyword search, so it works at every bot level including the default read-only one, on
    every engine, on every fork. Going through a hub connector would hand a stranger-steered turn a
    live data source, which is what the "read_docs" level was built to avoid.

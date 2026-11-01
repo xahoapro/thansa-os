@@ -5,10 +5,10 @@ Chạy: python tests/run.py nginx_ssl
 import os
 import tempfile
 
-# Đặt state tạm TRƯỚC khi import config - test ghi settings.json (xem bẫy JAVIS_STATE_DIR).
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-nginx-test-")
-os.environ.pop("JAVIS_REQUIRE_LOGIN", None)
-os.environ["JAVIS_HOST"] = "127.0.0.1"
+# Đặt state tạm TRƯỚC khi import config - test ghi settings.json (xem bẫy THANSA_STATE_DIR).
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-nginx-test-")
+os.environ.pop("THANSA_REQUIRE_LOGIN", None)
+os.environ["THANSA_HOST"] = "127.0.0.1"
 
 from _paths import ROOT, SERVER  # noqa: E402,F401
 import asyncio  # noqa: E402
@@ -85,7 +85,7 @@ check("install.sh tắt được nhánh nginx", 'THANSA_NGINX:-1' in INS)
 for _fn in ("docker-compose.yml", "docker-compose.https.yml"):
     _t = (ROOT / _fn).read_text(encoding="utf-8")
     check(f"{_fn}: Caddy cho IP vào thẳng app, tên miền mới chuyển HTTPS",
-          "@ip header_regexp Host" in _t and "handle @ip" in _t and "reverse_proxy javis:7777" in _t)
+          "@ip header_regexp Host" in _t and "handle @ip" in _t and "reverse_proxy thansa:7777" in _t)
 check("certbot không hỏi, tự chuyển HTTPS, giữ chứng chỉ còn hạn",
       all(x in src for x in ("--non-interactive", "--redirect", "--keep-until-expiring")))
 check("proxy giữ WebSocket + stream", "proxy_buffering off" in src and "Upgrade \\$http_upgrade" in src)
@@ -161,17 +161,17 @@ import yaml  # noqa: E402
 _dc = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
 _cd = _dc["services"].get("caddy") or {}
 check("compose mặc định có sẵn Caddy", _cd.get("image", "").startswith("caddy:"))
-check("Caddy tắt được bằng JAVIS_CADDY", str((_cd.get("deploy") or {}).get("replicas")) == "${JAVIS_CADDY:-1}")
-check("Caddy mang tên theo bản (JAVIS_NAME)", _cd.get("container_name") == "${JAVIS_NAME:-thansa}-caddy")
-_cf = ((_dc.get("configs") or {}).get("javis_caddyfile") or {}).get("content", "")
+check("Caddy tắt được bằng THANSA_CADDY", str((_cd.get("deploy") or {}).get("replicas")) == "${THANSA_CADDY:-1}")
+check("Caddy mang tên theo bản (THANSA_NAME)", _cd.get("container_name") == "${THANSA_NAME:-thansa}-caddy")
+_cf = ((_dc.get("configs") or {}).get("thansa_caddyfile") or {}).get("content", "")
 check("Caddy chỉ xin chứng chỉ khi /tls-check gật (on-demand có cổng gác)",
-      "ask http://javis:7777/tls-check" in _cf and "on_demand" in _cf)
+      "ask http://thansa:7777/tls-check" in _cf and "on_demand" in _cf)
 check("Caddy giữ chứng chỉ qua restart", any(str(v).startswith("caddy-data:") for v in _cd.get("volumes", [])))
 _mu = yaml.safe_load((ROOT / "docker-compose.multi.yml").read_text(encoding="utf-8"))
 check("nhiều bản/VPS: overlay multi tắt Caddy riêng (proxy chung giữ 443)",
       ((_mu["services"].get("caddy") or {}).get("deploy") or {}).get("replicas") == 0)
 _up = (ROOT / "update.sh").read_text(encoding="utf-8")
-check("update.sh không để Caddy mới giành 80/443 của web server có sẵn", "export JAVIS_CADDY=0" in _up)
+check("update.sh không để Caddy mới giành 80/443 của web server có sẵn", "export THANSA_CADDY=0" in _up)
 
 cfg = cfgmod.read_settings()
 dom._caddy_reachable = lambda: False

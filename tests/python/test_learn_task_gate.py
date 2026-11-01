@@ -22,7 +22,7 @@ def _lyDo(title, intent=""):
 def test_loai_viec_can_tay_nguoi_dung():
     """Cookie/đăng nhập/OTP: chỉ chủ mới làm được, worker không có trình duyệt đăng nhập."""
     assert _lyDo("Cập nhật cookie Facebook cá nhân (đã hết hạn)")
-    assert _lyDo("Xác thực Google Workspace OAuth tài khoản hi@minhquy.vn")
+    assert _lyDo("Xác thực Google Workspace OAuth tài khoản hi@tradingauto.org")
     assert _lyDo("Đăng nhập lại Zalo", "phiên hết hạn cần quét mã QR")
 
 
@@ -74,7 +74,7 @@ def test_ly_do_la_tieng_viet_ngan():
 
 # ---- Tự tạo việc: TẮT hẳn theo mặc định ----
 # Chủ chốt 2026-07-28: bảng 28 việc đều do máy tự đẻ, không cái nào chủ thật sự cần.
-# Javis chỉ tạo việc khi được BẢO THẲNG ("giao việc này cho Javis" → POST /kanban/task),
+# Thansa chỉ tạo việc khi được BẢO THẲNG ("giao việc này cho Thansa" → POST /kanban/task),
 # không tự suy ra từ hội thoại nữa. Công tắc vẫn còn trong Cài đặt để bật lại nếu muốn.
 import json as _json
 from pathlib import Path as _Path

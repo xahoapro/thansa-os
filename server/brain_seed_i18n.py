@@ -57,7 +57,7 @@ HAT_GIONG = {
                "> This file is loaded at the start of every question so Thansa remembers the context.\n\n"
                "_(No memories yet. Thansa learns a little after every conversation.)_\n"),
     },
-    "javis_readme": {
+    "thansa_readme": {
         "vi": ("# Thansa\n\nLớp điều phối của Thansa OS trong vault này.\n\n"
                "- `agents/` - các Agent (vai trò + skills + bộ nhớ riêng)\n"
                "- `workflows/` - quy trình nhiều agent (status active/off)\n"
@@ -142,7 +142,7 @@ def _vi_tri(root: Path) -> dict:
     return {
         "dashboard": _thu_muc_con(root, r"^(\d+\s*[-_.]\s*)?dashboard$", "00 - Dashboard") / "Dashboard.md",
         "memory": root / "memory" / "MEMORY.md",
-        "javis_readme": root / "Javis" / "README.md",
+        "thansa_readme": root / "Thansa" / "README.md",
         "wiki_index": wiki / "index.md",
         "wiki_log": wiki / "log.md",
         "open_questions": wiki / "_open-questions.md",

@@ -18,9 +18,9 @@
    ```
 3. （任意。HTTPS + ドメインを使う場合）**Environment** 欄に次を設定します。
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud
    ```
-   （ホスト名は hPanel → VPS で確認できます。例：`javis.srv1782015.hstgr.cloud`。）
+   （ホスト名は hPanel → VPS で確認できます。例：`thansa.srv1782015.hstgr.cloud`。）
 4. **Deploy** を押します。1-3 分待ちます。**Open** ボタン（または `https://<DOMAIN_NAME>`）でアプリを開きます。
 5. 初回起動時に、管理者アカウントの作成を求める画面が表示されます。そのあと、コンテナのターミナルで Claude Code に一度だけサインインします：`claude auth login --claudeai`。
 

@@ -4,7 +4,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-upd-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-upd-"))
 import updater  # noqa: E402
 
 fails = []
@@ -49,18 +49,18 @@ check("file cục bộ chặn merge: hướng dẫn kiểm tra",
 check("lỗi lạ không bịa nguyên nhân",
       updater.chan_doan_pull_hong("fatal: một lỗi chưa từng gặp") == "")
 
-os.environ["JAVIS_UPDATE_REMOTE"] = "some-fork"
-os.environ["JAVIS_UPDATE_BRANCH"] = "stable"
+os.environ["THANSA_UPDATE_REMOTE"] = "some-fork"
+os.environ["THANSA_UPDATE_BRANCH"] = "stable"
 check("nút cập nhật luôn dùng cùng nguồn với /version",
       updater.release_source() == ("https://github.com/xahoapro/thansa-os.git", "main"))
 # Thansa: nguồn phát hành = repo Thansa (THANSA_UPDATE_REPO, giống GITHUB_REPO của /version),
-# KHÔNG BAO GIỜ là repo Javis gốc - kéo Javis về merge là 251 xung đột (lỗi 1.14-1.18).
-check("nguồn phát hành không phải repo Javis gốc", "blogminhquy" not in updater.release_source()[0])
+# KHÔNG BAO GIỜ là repo Thansa gốc - kéo Thansa về merge là 251 xung đột (lỗi 1.14-1.18).
+check("nguồn phát hành không phải repo Thansa gốc", "blogminhquy" not in updater.release_source()[0])
 os.environ["THANSA_UPDATE_REPO"] = "x/y; rm -rf /"
 check("THANSA_UPDATE_REPO bẩn thì rơi về repo Thansa mặc định", updater.release_source()[0] == "https://github.com/xahoapro/thansa-os.git")
 os.environ.pop("THANSA_UPDATE_REPO", None)
-os.environ.pop("JAVIS_UPDATE_REMOTE", None)
-os.environ.pop("JAVIS_UPDATE_BRANCH", None)
+os.environ.pop("THANSA_UPDATE_REMOTE", None)
+os.environ.pop("THANSA_UPDATE_BRANCH", None)
 
 if fails:
     print(f"THẤT BẠI {len(fails)}: {fails}")

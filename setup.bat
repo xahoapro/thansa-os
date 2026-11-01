@@ -64,8 +64,8 @@ call :cai_script agy "Antigravity CLI cua Google" https://antigravity.google/cli
 call :cai_script grok "Grok Build cua xAI" https://x.ai/cli/install.ps1
 
 REM 0.306.0: bat tu khoi dong cung Windows (dang nhap may la Thansa tu chay va tu mo dashboard).
-REM Khong muon thi dat JAVIS_NO_AUTOSTART=1 truoc khi chay, hoac tat trong trang Cai dat sau.
-if not "%JAVIS_NO_AUTOSTART%"=="1" (
+REM Khong muon thi dat THANSA_NO_AUTOSTART=1 truoc khi chay, hoac tat trong trang Cai dat sau.
+if not "%THANSA_NO_AUTOSTART%"=="1" (
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0thansa-autostart.ps1" install >nul 2>&1
   if not errorlevel 1 echo     OK  Tu khoi dong cung Windows: BAT
 )
@@ -128,6 +128,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "try { irm %3 -UseBasicPa
 if errorlevel 1 (
   echo       [!] Chua cai duoc. Cai tay: irm %3 ^| iex
 ) else (
-  echo       Da chay script cai. Neu trang Models van bao chua cai thi khoi dong lai Javis.
+  echo       Da chay script cai. Neu trang Models van bao chua cai thi khoi dong lai Thansa.
 )
 goto :eof

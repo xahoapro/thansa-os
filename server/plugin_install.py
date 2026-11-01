@@ -17,7 +17,7 @@ sha256, so what the person read is what gets installed.
 Rules on top of the zip rules
 -----------------------------
 - The zip holds ONE plugin: `plugin.yaml` + `plugin.py` (or `__init__.py`) at the root or inside
-  one wrapper folder. A full store pack (it has `javis-pack.yaml`) is reported as `kind: pack`
+  one wrapper folder. A full store pack (it has `thansa-pack.yaml`) is reported as `kind: pack`
   so the route hands it to the pack installer instead of a weaker copy of it.
 - No compiled or native code (`.pyc`, `.so`, ...): the screen lists the source files the person
   can read, and an unchecked-hash `.pyc` would run something else than that source.

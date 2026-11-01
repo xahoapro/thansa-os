@@ -37,7 +37,7 @@ Khi tắt, Thansa không dựng đồ thị và mở thẳng trang **Trò chuy�
 
 ## Chọn brain
 
-Ô chọn brain nằm trên thanh trên cùng, cạnh chữ JAVIS OS. Khi đổi brain, Thansa đồng thời cập nhật đồ thị, bộ nhớ, số agent/skill/workflow, cây tệp tin và khung hội thoại.
+Ô chọn brain nằm trên thanh trên cùng, cạnh chữ THANSA OS. Khi đổi brain, Thansa đồng thời cập nhật đồ thị, bộ nhớ, số agent/skill/workflow, cây tệp tin và khung hội thoại.
 
 Ba nút nhỏ cạnh ô chọn:
 

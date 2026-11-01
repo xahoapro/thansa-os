@@ -4,7 +4,7 @@
 
 Every brain reaches MCP connectors through the same hub, by different doors:
   - Claude Code and Codex, Grok, Antigravity: HTTP POST /hub/mcp with a Bearer token, each with
-    its own X-Javis-Mode (chat turns "full", a Codex background job its own level, e.g. "suggest");
+    its own X-Thansa-Mode (chat turns "full", a Codex background job its own level, e.g. "suggest");
   - API engines (OpenRouter, Anthropic API...): in-process `mcp_hub.discover_all(mode)`.
 Each door has its own tool-list cache entry, so right after a restart they all trigger discovery
 of the same cold source, through ONE pooled session. On 2026-10-13 that is how an `npx -y`
@@ -25,14 +25,14 @@ import tempfile
 import time
 from pathlib import Path
 
-_TMP = Path(tempfile.mkdtemp(prefix="javis-hub-cold-"))
-os.environ["JAVIS_STATE_DIR"] = str(_TMP / "state")
-os.environ["JAVIS_SESSIONS_DB"] = str(_TMP / "conversations.db")
+_TMP = Path(tempfile.mkdtemp(prefix="thansa-hub-cold-"))
+os.environ["THANSA_STATE_DIR"] = str(_TMP / "state")
+os.environ["THANSA_SESSIONS_DB"] = str(_TMP / "conversations.db")
 os.environ["BRAINS_DIR"] = str(_TMP / "brains")
 os.environ["HOME"] = str(_TMP / "home")
-for _d in ("state", "brains/Brain Default/Javis", "home"):
+for _d in ("state", "brains/Brain Default/Thansa", "home"):
     (_TMP / _d).mkdir(parents=True, exist_ok=True)
-os.environ["JAVIS_MCP_DISCOVER_TIMEOUT"] = "0.4"
+os.environ["THANSA_MCP_DISCOVER_TIMEOUT"] = "0.4"
 
 import httpx  # noqa: E402
 from starlette.applications import Starlette  # noqa: E402
@@ -70,9 +70,9 @@ app = Starlette(routes=[Route("/hub/mcp", _hub_endpoint, methods=["POST"])])
 TOKEN = mcp_hub.hub_token()
 # The headers each engine really sends (mcp_hub config writers, aux_engine).
 PROVIDERS = {
-    "claude-code chat": {"X-Javis-Mode": "full", "X-Javis-Engine": "claude"},
-    "codex background job": {"X-Javis-Mode": "suggest"},
-    "grok / antigravity job": {"X-Javis-Mode": "auto"},
+    "claude-code chat": {"X-Thansa-Mode": "full", "X-Thansa-Engine": "claude"},
+    "codex background job": {"X-Thansa-Mode": "suggest"},
+    "grok / antigravity job": {"X-Thansa-Mode": "auto"},
 }
 
 
@@ -99,7 +99,7 @@ async def echo_over_http(client, headers):
         _, out = await rpc(client, headers, "tools/call", {"name": direct[0], "arguments": {"text": "hi"}}, mid=3)
         return status, text_of(out)
     _, found = await rpc(client, headers, "tools/call",
-                         {"name": "javis_search_tools", "arguments": {"query": "echo slow source"}}, mid=3)
+                         {"name": "thansa_search_tools", "arguments": {"query": "echo slow source"}}, mid=3)
     try:
         found_tools = json.loads(text_of(found).split("\n\n(")[0]).get("tools", [])
     except ValueError:
@@ -108,7 +108,7 @@ async def echo_over_http(client, headers):
     if not fns:
         return status, ""
     _, out = await rpc(client, headers, "tools/call",
-                       {"name": "javis_run_tool", "arguments": {"name": fns[0], "args": {"text": "hi"}}}, mid=4)
+                       {"name": "thansa_run_tool", "arguments": {"name": fns[0], "args": {"text": "hi"}}}, mid=4)
     return status, text_of(out)
 
 
@@ -193,7 +193,7 @@ async def main():
 
 
 asyncio.run(main())
-os.environ.pop("JAVIS_MCP_DISCOVER_TIMEOUT", None)
+os.environ.pop("THANSA_MCP_DISCOVER_TIMEOUT", None)
 
 print()
 if fails:

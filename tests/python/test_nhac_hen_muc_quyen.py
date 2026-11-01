@@ -25,8 +25,8 @@ import tempfile
 
 from _paths import ROOT, SERVER  # noqa: E402,F401
 
-_STATE = tempfile.mkdtemp(prefix="javis-nhachen-")
-os.environ.setdefault("JAVIS_STATE_DIR", _STATE)
+_STATE = tempfile.mkdtemp(prefix="thansa-nhachen-")
+os.environ.setdefault("THANSA_STATE_DIR", _STATE)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -82,7 +82,7 @@ _GHI = {}
 class _Deps:
     safe_tools = ["Read", "Write", "Edit"]
     readonly_tools = ["Read", "Glob", "Grep"]
-    mcp_allow_patterns = staticmethod(lambda: ["mcp__javis__*"])
+    mcp_allow_patterns = staticmethod(lambda: ["mcp__thansa__*"])
     aux_swap = None
     aux_model = staticmethod(lambda: None)
 
@@ -133,7 +133,7 @@ check("toàn quyền: prompt dặn đừng hỏi lại rồi ngồi đợi (khô
 g = _chay("auto")
 check("ghi file: allowlist là bộ tool ghi được", "Write" in (g["allowed_tools"] or []))
 check("ghi file: vẫn kèm pattern MCP để gọi được tool đọc",
-      "mcp__javis__*" in (g["allowed_tools"] or []))
+      "mcp__thansa__*" in (g["allowed_tools"] or []))
 check("ghi file: hub chạy ở mức auto", g["hub_mode"] == "auto")
 check("ghi file: prompt vẫn cấm hành động ra ngoài",
       "KHÔNG tạo đơn" in g["prompt"] and "gửi tin ra ngoài" in g["prompt"])
@@ -166,8 +166,8 @@ check("endpoint tạo trả kèm canh_bao", '"canh_bao"' in SRC)
 check("chỉ cảnh báo đúng ca đáng cảnh báo (task + toàn quyền)",
       'rem["mode"] == "task" and rem.get("muc_quyen") == "full"' in SRC)
 
-PLUGIN = (ROOT / "system" / "plugins" / "javis-schedule" / "plugin.py").read_text(encoding="utf-8")
-check("tool javis_schedule đọc lại cảnh báo cho user", 'data.get("canh_bao")' in PLUGIN)
+PLUGIN = (ROOT / "system" / "plugins" / "thansa-schedule" / "plugin.py").read_text(encoding="utf-8")
+check("tool thansa_schedule đọc lại cảnh báo cho user", 'data.get("canh_bao")' in PLUGIN)
 check("tool dặn model đừng nuốt cảnh báo", "đừng nuốt" in PLUGIN)
 check("tool nhận tham số muc_quyen", '"muc_quyen"' in PLUGIN)
 

@@ -75,8 +75,8 @@ quả hiệu quả. M2 chỉ dùng mô phỏng; pilot thật vẫn PENDING ngoà
 
 | Mục | Trạng thái xác minh lúc khởi tạo |
 |---|---|
-| Worktree được phép | `C:\Users\admin\.codex\worktrees\agent-skill-improvement-m2a\Javis-OS` |
-| Checkout chính cần bảo toàn | `D:\Project\Javis-OS`, có thể bẩn; không reset/clean/checkout/ghi đè |
+| Worktree được phép | `C:\Users\admin\.codex\worktrees\agent-skill-improvement-m2a\Thansa-OS` |
+| Checkout chính cần bảo toàn | `D:\Project\Thansa-OS`, có thể bẩn; không reset/clean/checkout/ghi đè |
 | Nhánh | `codex/agent-skill-improvement-m2d1` |
 | HEAD docs trước scope override | `f2c8f3fe` (xác minh full SHA bằng Git) |
 | PR | [draft803](https://github.com/xahoapro/thansa-os/pull/803) |
@@ -271,9 +271,9 @@ code-first; direct compose/Library reuse; **scope M2 mới ưu tiên trên lịc
   config: Claude CLI2.1.309/SDK0.2.116/opus5.5/medium/fastfalse/subscription;
   đây là snapshot cần xác minh metadata cục bộ, không chạy model/auth query.
 - PowerShell trong worktree trên. Dùng Python hiện có
-  `D:\Project\Javis-OS\.venv\Scripts\python.exe -B` với cwd worktree;
+  `D:\Project\Thansa-OS\.venv\Scripts\python.exe -B` với cwd worktree;
   không ghi/cài vào checkout chính. `tests/run.py` là runner isolation thật.
-  No-real flags: JAVIS_NO_REAL_JUDGE_ENGINE/REVIEW_ENGINE/TEAM_ENGINE=1.
+  No-real flags: THANSA_NO_REAL_JUDGE_ENGINE/REVIEW_ENGINE/TEAM_ENGINE=1.
 - `.superpowers/` ignored trong worktree giữ logs/briefs/reports/review packages/
   source freezes/CI raw logs và checkpoint khôi phục. Giữ nguyên tại chỗ;
   không `git clean -fdx`, mass-copy blobs, xóa/move worktree/key.

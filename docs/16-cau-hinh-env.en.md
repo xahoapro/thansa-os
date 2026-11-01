@@ -6,7 +6,7 @@ This page lists environment variables that Thansa OS reads at startup, including
 
 Most important thing to remember: **every blank line still works**. On personal machine, you almost never need to touch `.env` file. Editing `.env` mainly for when you put Thansa on VPS/public server or want to change voice, port, data path.
 
-Only when installing via **Hostinger Docker Manager**, you won't see the full advanced list below. Hostinger compose only puts 3 user fields in Environment box: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. Internal variables about port, state, brain, and work directory are already in the Docker image.
+Only when installing via **Hostinger Docker Manager**, you won't see the full advanced list below. Hostinger compose only puts 3 user fields in Environment box: `DOMAIN_NAME`, `THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`. Internal variables about port, state, brain, and work directory are already in the Docker image.
 
 ## What This Feature Is
 
@@ -37,7 +37,7 @@ Quick copy via command (run in project folder):
 - Windows PowerShell: `Copy-Item env.example .env`
 - Git Bash / Linux / macOS: `cp env.example .env`
 
-Note about `#`: lines starting with `#` are comments, Thansa skips them. To enable a variable that's commented, delete the `#` at line start. Example: change from `# JAVIS_PORT=7777` to `JAVIS_PORT=8080`.
+Note about `#`: lines starting with `#` are comments, Thansa skips them. To enable a variable that's commented, delete the `#` at line start. Example: change from `# THANSA_PORT=7777` to `THANSA_PORT=8080`.
 
 ## List of Variables
 
@@ -54,28 +54,28 @@ Grouped by function. "Default" column shows value used when you leave blank or d
 
 | Variable | Meaning | Default | When to Change |
 |---|---|---|---|
-| `JAVIS_HOST` | Address server listens on. `127.0.0.1` = only this machine connects. `0.0.0.0` = listen everywhere (public, anyone with address enters) | `127.0.0.1` (Docker image pre-sets `0.0.0.0`) | Change to `0.0.0.0` only when running on VPS/server and want access from other machines. Then must enable login (see group 3). |
-| `JAVIS_PORT` | Port for dashboard | `7777` | Port `7777` occupied or want different port. After changing remember to use right port in browser. |
+| `THANSA_HOST` | Address server listens on. `127.0.0.1` = only this machine connects. `0.0.0.0` = listen everywhere (public, anyone with address enters) | `127.0.0.1` (Docker image pre-sets `0.0.0.0`) | Change to `0.0.0.0` only when running on VPS/server and want access from other machines. Then must enable login (see group 3). |
+| `THANSA_PORT` | Port for dashboard | `7777` | Port `7777` occupied or want different port. After changing remember to use right port in browser. |
 
-Detail about `JAVIS_HOST`: Thansa uses "secure by default" logic. If you set listen address NOT loopback (i.e., not `127.0.0.1`, `localhost`, `::1`), server auto-treats as public and **auto-enables forced login** so nobody enters without account. Reason: AI brain runs with full machine permissions, leaving it open is dangerous.
+Detail about `THANSA_HOST`: Thansa uses "secure by default" logic. If you set listen address NOT loopback (i.e., not `127.0.0.1`, `localhost`, `::1`), server auto-treats as public and **auto-enables forced login** so nobody enters without account. Reason: AI brain runs with full machine permissions, leaving it open is dangerous.
 
 ### Group 3: Login and Security
 
 | Variable | Meaning | Default | When to Change |
 |---|---|---|---|
-| `JAVIS_REQUIRE_LOGIN` | Force enable/disable forced login. `1`/`true`/`yes`/`on` = enable. `0`/`false`/`no`/`off` = disable | Auto (enable when public) | Running localhost then expose via tunnel (Cloudflare, ngrok...): set `JAVIS_REQUIRE_LOGIN=1` to block strangers. |
-| `JAVIS_ADMIN_USER` | Admin login name pre-created at deploy | `admin` | Set together with `JAVIS_ADMIN_PASSWORD` to pre-create account, no need to fetch SETUP CODE from log. |
-| `JAVIS_ADMIN_PASSWORD` | Admin password pre-created at deploy | (blank) | Deploy public: set a strong password here. With this variable and no existing admin, Thansa creates admin at boot and closes account creation screen (safest for public). |
-| `JAVIS_SECURE_COOKIE` | Enable cookie only sent over HTTPS. `1`/`true`/`yes`/`on` = enable | Disable | Enable only when CERTAIN running HTTPS end-to-end (custom domain with SSL). Enabling by mistake when proxy runs HTTP will jam login loop (correct password still gets rejected from login screen). |
-| `JAVIS_ALLOWED_HOSTS` | Add hostname allowed to call Thansa (blocks CSRF and DNS-rebinding). Multiple names separated by comma | (blank) | Running behind reverse proxy with undeclared domain but no password yet, got 403 "host not allowed". By default already allows `localhost`, `127.0.0.1`, `::1` and domain you set in Settings. |
-| `JAVIS_ENABLE_USER_PLUGINS` | Hard gate for user-installed plugins. `true` only loads them | Disable | You installed plugins (folder `plugins/` globally or in brain) and want them to run. User plugins run ACTUAL PYTHON CODE in server process so blocked by default. Old alias: `JAVIS_ENABLE_VAULT_PLUGINS`. Bundled plugins aren't gated. See [Plugins](20-plugins.md). |
-| `JAVIS_TERMINAL` | Switch to disable Terminal completely in Code group. `0`/`off`/`false`/`no` = disable | Enable | Don't want any terminal opened from browser. Terminal already restricted to ALREADY-LOGGED-IN browser (API tokens can't open), but many still want server-level lockdown. See [Code Tab: Terminal](27-tab-code-terminal.md). |
-| `JAVIS_TERMINAL_SHELL` | Shell that Terminal runs | `$SHELL`, fallback `bash`/`sh`. Windows: `powershell.exe` then `cmd.exe` | Want to force a different shell (`zsh`, `fish`, `cmd.exe`). |
-| `JAVIS_TERMINAL_CWD` | Directory terminal opens in | HOME of user running Thansa | Want shell to open in brain root or another project folder. |
+| `THANSA_REQUIRE_LOGIN` | Force enable/disable forced login. `1`/`true`/`yes`/`on` = enable. `0`/`false`/`no`/`off` = disable | Auto (enable when public) | Running localhost then expose via tunnel (Cloudflare, ngrok...): set `THANSA_REQUIRE_LOGIN=1` to block strangers. |
+| `THANSA_ADMIN_USER` | Admin login name pre-created at deploy | `admin` | Set together with `THANSA_ADMIN_PASSWORD` to pre-create account, no need to fetch SETUP CODE from log. |
+| `THANSA_ADMIN_PASSWORD` | Admin password pre-created at deploy | (blank) | Deploy public: set a strong password here. With this variable and no existing admin, Thansa creates admin at boot and closes account creation screen (safest for public). |
+| `THANSA_SECURE_COOKIE` | Enable cookie only sent over HTTPS. `1`/`true`/`yes`/`on` = enable | Disable | Enable only when CERTAIN running HTTPS end-to-end (custom domain with SSL). Enabling by mistake when proxy runs HTTP will jam login loop (correct password still gets rejected from login screen). |
+| `THANSA_ALLOWED_HOSTS` | Add hostname allowed to call Thansa (blocks CSRF and DNS-rebinding). Multiple names separated by comma | (blank) | Running behind reverse proxy with undeclared domain but no password yet, got 403 "host not allowed". By default already allows `localhost`, `127.0.0.1`, `::1` and domain you set in Settings. |
+| `THANSA_ENABLE_USER_PLUGINS` | Hard gate for user-installed plugins. `true` only loads them | Disable | You installed plugins (folder `plugins/` globally or in brain) and want them to run. User plugins run ACTUAL PYTHON CODE in server process so blocked by default. Old alias: `THANSA_ENABLE_VAULT_PLUGINS`. Bundled plugins aren't gated. See [Plugins](20-plugins.md). |
+| `THANSA_TERMINAL` | Switch to disable Terminal completely in Code group. `0`/`off`/`false`/`no` = disable | Enable | Don't want any terminal opened from browser. Terminal already restricted to ALREADY-LOGGED-IN browser (API tokens can't open), but many still want server-level lockdown. See [Code Tab: Terminal](27-tab-code-terminal.md). |
+| `THANSA_TERMINAL_SHELL` | Shell that Terminal runs | `$SHELL`, fallback `bash`/`sh`. Windows: `powershell.exe` then `cmd.exe` | Want to force a different shell (`zsh`, `fish`, `cmd.exe`). |
+| `THANSA_TERMINAL_CWD` | Directory terminal opens in | HOME of user running Thansa | Want shell to open in brain root or another project folder. |
 
-About SETUP CODE: when running public with no admin, opening app first time asks for setup code. Code only prints to server log at startup, so only log viewers can create account, URL-only visitors can't do anything. If you pre-set `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` then skip code, just login with set account. See more in [Security & Account](14-bao-mat-tai-khoan.md).
+About SETUP CODE: when running public with no admin, opening app first time asks for setup code. Code only prints to server log at startup, so only log viewers can create account, URL-only visitors can't do anything. If you pre-set `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` then skip code, just login with set account. See more in [Security & Account](14-bao-mat-tai-khoan.md).
 
-About custom domain and HTTPS: VPS using Caddy enters domain right in **Settings → Voice, Brand & Access → Domain & SSL** then click **Enable SSL**. Hostinger wizard pre-creates `DOMAIN_NAME` variable to copy to Docker Manager then Redeploy. When accessing via correct domain over HTTPS, server auto-enables cookie Secure so no need to set `JAVIS_SECURE_COOKIE` manually. Detail in [Brand & Domain](15-thuong-hieu-ten-mien.md).
+About custom domain and HTTPS: VPS using Caddy enters domain right in **Settings → Voice, Brand & Access → Domain & SSL** then click **Enable SSL**. Hostinger wizard pre-creates `DOMAIN_NAME` variable to copy to Docker Manager then Redeploy. When accessing via correct domain over HTTPS, server auto-enables cookie Secure so no need to set `THANSA_SECURE_COOKIE` manually. Detail in [Brand & Domain](15-thuong-hieu-ten-mien.md).
 
 ### Group 4: Data Paths (Second Brain and State)
 
@@ -86,13 +86,13 @@ About custom domain and HTTPS: VPS using Caddy enters domain right in **Settings
 | `OBSIDIAN_VAULT_PATH` | Path to main Second Brain vault | `vault/` in project (Docker: `/data/vault`) | Server already has real Obsidian vault then point this here. Blank uses sample vault in repo (new machine runs immediately). |
 | `BRAIN_PATH` | Old-style brain folder, time of one-brain. Only for migrating old data | `brain/` in project (Docker: `/data/brain`) | Almost never need touch. Don't use for new install. |
 | `SOURCES_PATH` | Where to save file attachments from chat (source for Second Brain) | `brain/01 - Sources/` in project | Want source folder elsewhere. |
-| `JAVIS_STATE_DIR` | Where Thansa writes its own state: `settings.json`, login sessions, schedule config, encryption key `.secret_key`, conversation database | `server/` (Docker: `/data/state`) | Docker/VPS must point to writable volume (source tree in container is read-only). Personal machine blank is fine. |
-| `JAVIS_SESSIONS_DB` | Path to conversation history database file (`conversations.db`) | Inside `JAVIS_STATE_DIR` | Want history file elsewhere. See [Conversation Sessions](04-phien-hoi-thoai.md). |
-| `JAVIS_FILES_ROOT` | Ceiling of file browser on Files page (can't go up past here). `brain`/`vault` = locked in brain; `drive`/`root` = whole drive with brain; `<path>` = specific folder (must contain brain) | localhost: whole drive; public: locked in brain | Running public but still want broader browse, set `drive` or a parent folder. Want tight lock on personal machine, set `brain`. |
+| `THANSA_STATE_DIR` | Where Thansa writes its own state: `settings.json`, login sessions, schedule config, encryption key `.secret_key`, conversation database | `server/` (Docker: `/data/state`) | Docker/VPS must point to writable volume (source tree in container is read-only). Personal machine blank is fine. |
+| `THANSA_SESSIONS_DB` | Path to conversation history database file (`conversations.db`) | Inside `THANSA_STATE_DIR` | Want history file elsewhere. See [Conversation Sessions](04-phien-hoi-thoai.md). |
+| `THANSA_FILES_ROOT` | Ceiling of file browser on Files page (can't go up past here). `brain`/`vault` = locked in brain; `drive`/`root` = whole drive with brain; `<path>` = specific folder (must contain brain) | localhost: whole drive; public: locked in brain | Running public but still want broader browse, set `drive` or a parent folder. Want tight lock on personal machine, set `brain`. |
 
 Note on Second Brain: `BRAINS_DIR` is the folder actually containing your brains (not `brain/` at repo root, that's old-style path). Blank works immediately with sample data in repo. See more on how memory works at [Second Brain: Memory, Wiki, Ingest](13-second-brain-bo-nho-wiki.md) and [Knowledge Graph](03-do-thi-tri-thuc.md).
 
-**Warning on `.secret_key`:** inside `JAVIS_STATE_DIR` there's a small file `.secret_key`. It's the key encrypting sensitive fields in `settings.json` (OpenRouter/Anthropic/OpenAI/Gemini API keys, ChatGPT login tokens, Telegram token, GitHub backup token, ElevenLabs key). Copy `settings.json` to another machine but forget `.secret_key` and **all keys lost**: Thansa reads `enc:` but can't decrypt so returns empty string and you must re-enter everything. Backup both together. If machine missing `cryptography` library, Thansa can't encrypt: secret falls to `plain:` prefix plus warning line in log; install via `pip install cryptography` then restart and encryption re-enables. See detail in [Security & Account](14-bao-mat-tai-khoan.md).
+**Warning on `.secret_key`:** inside `THANSA_STATE_DIR` there's a small file `.secret_key`. It's the key encrypting sensitive fields in `settings.json` (OpenRouter/Anthropic/OpenAI/Gemini API keys, ChatGPT login tokens, Telegram token, GitHub backup token, ElevenLabs key). Copy `settings.json` to another machine but forget `.secret_key` and **all keys lost**: Thansa reads `enc:` but can't decrypt so returns empty string and you must re-enter everything. Backup both together. If machine missing `cryptography` library, Thansa can't encrypt: secret falls to `plain:` prefix plus warning line in log; install via `pip install cryptography` then restart and encryption re-enables. See detail in [Security & Account](14-bao-mat-tai-khoan.md).
 
 ### Group 5: Voice (TTS)
 
@@ -108,32 +108,32 @@ Note: these two TTS variables apply to default free Edge TTS voice. If you pick 
 | Variable | Meaning | Default | When to Change |
 |---|---|---|---|
 | `DOMAIN_NAME` | Domain that reverse proxy (Traefik of Hostinger) routes to Thansa. Thansa reads to compare with domain you entered in app and know if Redeploy needed | (blank; Hostinger compose sets `localhost`) | Hostinger deploy: set to your domain in Docker Manager then Redeploy. Wizard in app has **Copy Variable** button to copy this line. |
-| `JAVIS_DEPLOY_TARGET` | Clarify which environment running: `hostinger`, `vps`, `native`, `windows` | Auto-guess (hostname `.hstgr.cloud` = hostinger; Docker = vps) | Almost never set by hand. Hostinger compose pre-sets `hostinger`. Set when Thansa guesses wrong and domain wizard shows wrong instructions. |
-| `WATCHTOWER_TOKEN` | Token for "Update Now" button (page **Updates**) to call Watchtower when running Docker | In `docker-compose.yml`: `javis-update`. Outside Docker: blank (no variable means Watchtower not running) | Want tighter security: change to random string, set same value for both app and watchtower service. |
+| `THANSA_DEPLOY_TARGET` | Clarify which environment running: `hostinger`, `vps`, `native`, `windows` | Auto-guess (hostname `.hstgr.cloud` = hostinger; Docker = vps) | Almost never set by hand. Hostinger compose pre-sets `hostinger`. Set when Thansa guesses wrong and domain wizard shows wrong instructions. |
+| `WATCHTOWER_TOKEN` | Token for "Update Now" button (page **Updates**) to call Watchtower when running Docker | In `docker-compose.yml`: `thansa-update`. Outside Docker: blank (no variable means Watchtower not running) | Want tighter security: change to random string, set same value for both app and watchtower service. |
 
 ### Group 7: Advanced Variables (Rarely Need Touching)
 
 | Variable | Meaning | Default | When to Change |
 |---|---|---|---|
-| `JAVIS_CLAUDE_IDLE_TIMEOUT` | Ceiling wait when engine answered but silent without tool running, in seconds. `0` = no limit | `0` | Default skips ceiling: engine silent doesn't mean stuck (model thinking hard, or composing long file to write, both silent for minutes). Only set positive number if really need auto-cut. |
-| `JAVIS_CLAUDE_FIRST_TIMEOUT` | Ceiling wait for FIRST LETTER of a turn, in seconds. `0` = no limit | `0` | Same reason as above: long conversation needs to reload all context so first turn slow. |
-| `JAVIS_CLAUDE_TOOL_TIMEOUT` | Ceiling wait when TOOL running (render video, background remove, build...), in seconds. `0` = no limit | `3600` | This ceiling stays because it measures REAL child process alive, not silence. Task running over 1 hour (encode long video, train model...) increase it. |
-| `JAVIS_CODEX_SANDBOX` | Use Codex's own sandbox for background jobs or not. `auto` = yes, matches job's permission level (suggest becomes read-only, auto becomes workspace-write). `off` = no separate sandbox | `auto`, but **Docker image pre-sets `off`** | Codex wraps file read/write in bubblewrap, but bubblewrap can't start in container (regular user, no CAP_SYS_ADMIN, Ubuntu 24.04 even blocks user namespace via AppArmor) so that sandbox doesn't tighten but breaks - all jobs running via ChatGPT can't read any file. Outside Docker leave `auto`. Trade-off when `off`: Codex has no per-call allowlist like Claude so level `suggest` loses the barrier that blocks file write; but barriers on money/orders/posting/messaging are NOT affected because they live in MCP Hub. |
-| `JAVIS_AGY_PROMPT_DAI` | Force how Thansa passes prompt to Antigravity CLI when longer than command-line ceiling: `stdin` (pipe through), `file` (write to file, model reads), `argv` (put straight in command) | (blank, Thansa picks: stdin first, if breaks auto-fallback to file) | Only when your machine hits rare case. Windows caps total command line at 32767 chars while Thansa system prompt already over 36,000, so `argv` there certain to break. See [Models & Engine](10-models-va-engine.md). |
-| `JAVIS_AGY_TIMEOUT` | Ceiling duration of one Antigravity CLI turn, in seconds. Thansa passes this down to `--print-timeout` of the CLI itself | `900` | Background job cut off mid-way increase it. No variable then `agy` auto-cuts at 5 minutes and returns partial answer without error. |
-| `JAVIS_MAX_TOOL_ROUNDS` | Max tool-call rounds for ONE turn of API-key engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama). Clamped between 1 to 40 | `8` | Multi-step job (read few files, check few sources then write result) or stops halfway with "ran N tool rounds" message then increase to 15-20. Must restart Thansa after change. Claude Code and Codex NOT subject to this - they manage their own loops. |
-| `JAVIS_KANBAN_MAX_WORKERS` | Number of Kanban jobs running parallel. Clamped between 1 to 8 | `2` | Strong VPS and long job queue increase it; weak machine or often congested then set `1`. See [Jobs / Kanban](21-viec-kanban.md). |
-| `JAVIS_MEMORY_INDEX_MAX` | Ceiling characters of memory index (`MEMORY.md`) loaded in every chat turn. Over ceiling Thansa shortens description instead of dropping memory | `20000` | Memory too thick burns tokens each turn; want tighter set this lower. See [Second Brain](13-second-brain-bo-nho-wiki.md). |
-| `JAVIS_CLAUDE_ENGINE` | (Legacy) Since 0.9.37 Claude engine always runs via main Agent SDK - this variable no longer works, setting `cli`/`sdk-loops` gets ignored with warning log | `sdk` | No need to touch. Claude engine error then report with server logs. |
-| `JAVIS_CODEX_BIN` | Absolute path to `codex` executable | Auto-find in PATH and usual install spots | Codex CLI installed somewhere unusual and Thansa can't find it. |
+| `THANSA_CLAUDE_IDLE_TIMEOUT` | Ceiling wait when engine answered but silent without tool running, in seconds. `0` = no limit | `0` | Default skips ceiling: engine silent doesn't mean stuck (model thinking hard, or composing long file to write, both silent for minutes). Only set positive number if really need auto-cut. |
+| `THANSA_CLAUDE_FIRST_TIMEOUT` | Ceiling wait for FIRST LETTER of a turn, in seconds. `0` = no limit | `0` | Same reason as above: long conversation needs to reload all context so first turn slow. |
+| `THANSA_CLAUDE_TOOL_TIMEOUT` | Ceiling wait when TOOL running (render video, background remove, build...), in seconds. `0` = no limit | `3600` | This ceiling stays because it measures REAL child process alive, not silence. Task running over 1 hour (encode long video, train model...) increase it. |
+| `THANSA_CODEX_SANDBOX` | Use Codex's own sandbox for background jobs or not. `auto` = yes, matches job's permission level (suggest becomes read-only, auto becomes workspace-write). `off` = no separate sandbox | `auto`, but **Docker image pre-sets `off`** | Codex wraps file read/write in bubblewrap, but bubblewrap can't start in container (regular user, no CAP_SYS_ADMIN, Ubuntu 24.04 even blocks user namespace via AppArmor) so that sandbox doesn't tighten but breaks - all jobs running via ChatGPT can't read any file. Outside Docker leave `auto`. Trade-off when `off`: Codex has no per-call allowlist like Claude so level `suggest` loses the barrier that blocks file write; but barriers on money/orders/posting/messaging are NOT affected because they live in MCP Hub. |
+| `THANSA_AGY_PROMPT_DAI` | Force how Thansa passes prompt to Antigravity CLI when longer than command-line ceiling: `stdin` (pipe through), `file` (write to file, model reads), `argv` (put straight in command) | (blank, Thansa picks: stdin first, if breaks auto-fallback to file) | Only when your machine hits rare case. Windows caps total command line at 32767 chars while Thansa system prompt already over 36,000, so `argv` there certain to break. See [Models & Engine](10-models-va-engine.md). |
+| `THANSA_AGY_TIMEOUT` | Ceiling duration of one Antigravity CLI turn, in seconds. Thansa passes this down to `--print-timeout` of the CLI itself | `900` | Background job cut off mid-way increase it. No variable then `agy` auto-cuts at 5 minutes and returns partial answer without error. |
+| `THANSA_MAX_TOOL_ROUNDS` | Max tool-call rounds for ONE turn of API-key engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama). Clamped between 1 to 40 | `8` | Multi-step job (read few files, check few sources then write result) or stops halfway with "ran N tool rounds" message then increase to 15-20. Must restart Thansa after change. Claude Code and Codex NOT subject to this - they manage their own loops. |
+| `THANSA_KANBAN_MAX_WORKERS` | Number of Kanban jobs running parallel. Clamped between 1 to 8 | `2` | Strong VPS and long job queue increase it; weak machine or often congested then set `1`. See [Jobs / Kanban](21-viec-kanban.md). |
+| `THANSA_MEMORY_INDEX_MAX` | Ceiling characters of memory index (`MEMORY.md`) loaded in every chat turn. Over ceiling Thansa shortens description instead of dropping memory | `20000` | Memory too thick burns tokens each turn; want tighter set this lower. See [Second Brain](13-second-brain-bo-nho-wiki.md). |
+| `THANSA_CLAUDE_ENGINE` | (Legacy) Since 0.9.37 Claude engine always runs via main Agent SDK - this variable no longer works, setting `cli`/`sdk-loops` gets ignored with warning log | `sdk` | No need to touch. Claude engine error then report with server logs. |
+| `THANSA_CODEX_BIN` | Absolute path to `codex` executable | Auto-find in PATH and usual install spots | Codex CLI installed somewhere unusual and Thansa can't find it. |
 | `CLAUDE_CONFIG_DIR` | Config directory of Claude Code (where `.credentials.json` is). Setting this variable is an escape hatch, same as Claude Code's behavior | `~/.claude` | You changed Claude Code's config folder. |
 | `CLAUDE_CODE_OAUTH_TOKEN` | OAuth token of Claude Code, for asking real model list from Anthropic | (blank, read from credentials file) | Environment has no credentials file (CI, minimal container) but want dynamic model list. |
-| `JAVIS_CLAUDE_PROJECTS_DIR` | Where Thansa reads Claude Code session logs to compute **Usage** | `~/.claude/projects` | Claude Code log elsewhere. See [Usage: Tokens & Cost](23-muc-dung-token.md). |
-| `JAVIS_CODEX_SESSIONS_DIR` | Where Thansa reads Codex session logs to compute **Usage** | `~/.codex/sessions` | Codex log elsewhere. |
-| `JAVIS_IMAGE_HOST_MODEL` | "Host" chat model for calling image creation tool via ChatGPT package | `gpt-5.5` | Provider renamed model breaking image function. |
-| `JAVIS_IMAGE_MODEL` | Actual image generation model | `gpt-image-2` | Like above. |
+| `THANSA_CLAUDE_PROJECTS_DIR` | Where Thansa reads Claude Code session logs to compute **Usage** | `~/.claude/projects` | Claude Code log elsewhere. See [Usage: Tokens & Cost](23-muc-dung-token.md). |
+| `THANSA_CODEX_SESSIONS_DIR` | Where Thansa reads Codex session logs to compute **Usage** | `~/.codex/sessions` | Codex log elsewhere. |
+| `THANSA_IMAGE_HOST_MODEL` | "Host" chat model for calling image creation tool via ChatGPT package | `gpt-5.5` | Provider renamed model breaking image function. |
+| `THANSA_IMAGE_MODEL` | Actual image generation model | `gpt-image-2` | Like above. |
 
-Note: `JAVIS_ENABLE_USER_PLUGINS` is also advanced but security gate so listed in group 3.
+Note: `THANSA_ENABLE_USER_PLUGINS` is also advanced but security gate so listed in group 3.
 
 ## `media` Block in settings.json (No UI Yet)
 
@@ -176,24 +176,24 @@ TTS_RATE=+0%
 Public deploy on VPS, pre-create admin and open for outside access:
 
 ```
-JAVIS_HOST=0.0.0.0
-JAVIS_ADMIN_USER=admin
-JAVIS_ADMIN_PASSWORD=put-strong-password-here
+THANSA_HOST=0.0.0.0
+THANSA_ADMIN_USER=admin
+THANSA_ADMIN_PASSWORD=put-strong-password-here
 OBSIDIAN_VAULT_PATH=/data/vault
-JAVIS_STATE_DIR=/data/state
-JAVIS_ALLOWED_HOSTS=javis.yourname.com
+THANSA_STATE_DIR=/data/state
+THANSA_ALLOWED_HOSTS=thansa.yourname.com
 ```
 
-In the second example, since `JAVIS_HOST=0.0.0.0` (public) Thansa auto-enables forced login, and since have `JAVIS_ADMIN_PASSWORD` you login right away with that account, no need for SETUP CODE.
+In the second example, since `THANSA_HOST=0.0.0.0` (public) Thansa auto-enables forced login, and since have `THANSA_ADMIN_PASSWORD` you login right away with that account, no need for SETUP CODE.
 
 ## Tips
 
 1. Always keep `env.example` as reference copy. Only edit `.env`.
 2. After changing `.env` must restart Thansa. Different from Settings table in app (change is immediate).
 3. Unsure what a variable does, leave it commented for safety. Default already works well.
-4. For on/off variables (`JAVIS_REQUIRE_LOGIN`, `JAVIS_SECURE_COOKIE`, `JAVIS_ENABLE_USER_PLUGINS`), true values accept `1`, `true`, `yes`, `on`. False values accept `0`, `false`, `no`, `off`.
+4. For on/off variables (`THANSA_REQUIRE_LOGIN`, `THANSA_SECURE_COOKIE`, `THANSA_ENABLE_USER_PLUGINS`), true values accept `1`, `true`, `yes`, `on`. False values accept `0`, `false`, `no`, `off`.
 5. `.env` contains passwords and sensitive config. Don't put anywhere public. On shared machine set read permission tight. File `.secret_key` in state folder same way, even more important: losing it loses all stored API keys.
-6. Enabling `JAVIS_ENABLE_USER_PLUGINS=true` is a big decision: plugins you install run real Python code in server. Enable only when you know exactly where each plugin in `plugins/` folder comes from.
+6. Enabling `THANSA_ENABLE_USER_PLUGINS=true` is a big decision: plugins you install run real Python code in server. Enable only when you know exactly where each plugin in `plugins/` folder comes from.
 
 ## Common Issues
 
@@ -201,19 +201,19 @@ In the second example, since `JAVIS_HOST=0.0.0.0` (public) Thansa auto-enables f
 You didn't restart Thansa. `.env` reads only at startup. Stop server then start again.
 
 **Changed port then can't reach app.**
-You're opening browser at old port. E.g., changed to `JAVIS_PORT=8080` must open `http://localhost:8080`, not `7777` anymore.
+You're opening browser at old port. E.g., changed to `THANSA_PORT=8080` must open `http://localhost:8080`, not `7777` anymore.
 
 **Login with correct password but keeps returning to login screen.**
-Likely you enabled `JAVIS_SECURE_COOKIE=1` but actually accessing via HTTP (not HTTPS). Secure cookie only sends over HTTPS so browser can't keep session. Remove that line or set to off, restart.
+Likely you enabled `THANSA_SECURE_COOKIE=1` but actually accessing via HTTP (not HTTPS). Secure cookie only sends over HTTPS so browser can't keep session. Remove that line or set to off, restart.
 
 **All operations return 403 "host not allowed".**
-You visiting Thansa via domain not in allowlist, no password set. Add domain to `JAVIS_ALLOWED_HOSTS` (or enter in Settings → Domain & SSL), or simply set password.
+You visiting Thansa via domain not in allowlist, no password set. Add domain to `THANSA_ALLOWED_HOSTS` (or enter in Settings → Domain & SSL), or simply set password.
 
 **Enabled plugin in app but still not running.**
-User plugins need `JAVIS_ENABLE_USER_PLUGINS=true` in `.env` then restart. App also clearly says when blocking a plugin.
+User plugins need `THANSA_ENABLE_USER_PLUGINS=true` in `.env` then restart. App also clearly says when blocking a plugin.
 
 **App asks for SETUP CODE, don't know where to get.**
-Code prints in server log at startup. Docker: check container logs for "SETUP TOKEN", or read `.setup_token` file in state folder. Simpler: set `JAVIS_ADMIN_PASSWORD` to skip needing code.
+Code prints in server log at startup. Docker: check container logs for "SETUP TOKEN", or read `.setup_token` file in state folder. Simpler: set `THANSA_ADMIN_PASSWORD` to skip needing code.
 
 **Set workspace name in .env but app shows different name.**
 App prioritizes name already saved in Settings over `WORKSPACE_NAME`. Edit name in app Settings, or delete saved name so app uses `.env` value again.

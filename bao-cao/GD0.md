@@ -4,7 +4,7 @@ Ngày: 2026-08-17. Tham chiếu: DAC-TA-THANSA-OS.md mục 7 (GĐ0) + START-HERE
 
 ## Việc đã làm
 
-1. Clone upstream `blogminhquy/javis-os` → `/home/thansa/thansa/goc`, remote đặt tên `upstream`.
+1. Clone upstream `xahoapro/thansa-os` → `/home/thansa/thansa/goc`, remote đặt tên `upstream`.
    - Commit nền: `0b8f2c0` — khớp nền khảo sát của đặc tả (v0.35.10).
 2. Ba nhánh cùng đứng tại `0b8f2c0`:
    - `main` (track `upstream/main`, không commit)

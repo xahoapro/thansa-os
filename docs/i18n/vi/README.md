@@ -93,7 +93,7 @@ Trong Thansa, model chỉ là một bộ phận thay được. Mọi thứ bạn
 | **Tri thức** | thư mục Wiki và Sources của brain | Markdown, mở được bằng Obsidian |
 | **Skill** | `skills/<tên>/SKILL.md` | Markdown |
 | **Agent và workflow** | `agents/*.md`, `workflows/*.md` | Markdown có front matter |
-| **Loop và nhắc hẹn** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+| **Loop và nhắc hẹn** | `Thansa/loops/*.md`, `Thansa/reminders.json` | Markdown, JSON |
 
 Nhờ vậy:
 
@@ -136,7 +136,7 @@ Nhờ vậy:
 - 🗃️ **Việc (Kanban)** - giao một "goal" bằng lời, AI tự đặc tả, chọn worker, chạy nền và chỉ gọi bạn khi có ngoại lệ.
 - 🧠 **Tự học** - sau mỗi hội thoại Thansa tự rút ký ức, đúc tri thức Wiki và kỹ năng; mỗi lần học là một commit git nên **hoàn tác được một chạm**.
 - 🔌 **Kho kết nối đa tài khoản** - Pancake POS, Zalo, Meta/Google/TikTok Ads, Google Workspace, Slack, Webcake, Substack… nhiều tài khoản cùng một dịch vụ, mỗi tài khoản một mức quyền riêng, Thansa **chặn cứng** thao tác vượt quyền.
-- 📱 **Telegram & Zalo** - hỏi Thansa qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP của `javis-zalo`, bản CLI Zalo riêng của Thansa.
+- 📱 **Telegram & Zalo** - hỏi Thansa qua Telegram; đọc, tìm lịch sử và gửi tin Zalo bằng MCP của `thansa-zalo`, bản CLI Zalo riêng của Thansa.
 - 💬 **Slack & WhatsApp** - chat với Thansa và đặt bot khách hàng trên Slack (không cần tên miền) và WhatsApp (API chính thức của Meta). Hướng dẫn: [docs/29](../../../docs/29-slack-whatsapp.md).
 - 🎨 **Tạo ảnh** bằng chính gói ChatGPT đã đăng nhập, không cần API key riêng.
 - 📊 **Mức dùng** - Thansa tự đo token vào/ra và chi phí theo ngày, theo nhà cung cấp, tách rõ phần bạn gõ tay với phần Thansa tự chạy nền.
@@ -164,14 +164,14 @@ VPS Hostinger → **Docker Manager → Compose → URL** → dán **file Hosting
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 Ô **Environment** của mẫu mới chỉ còn 3 trường cần thiết: `DOMAIN_NAME`,
-`JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, cộng một trường tuỳ chọn
-`JAVIS_AUTO_UPDATE` (đặt `true` là Thansa tự cập nhật mỗi ngày, bỏ trống thì cập
+`THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`, cộng một trường tuỳ chọn
+`THANSA_AUTO_UPDATE` (đặt `true` là Thansa tự cập nhật mỗi ngày, bỏ trống thì cập
 nhật bằng nút trong app). Các biến kỹ thuật về cổng, state, brain và thư mục chạy
 đã được ẩn vì Docker image tự đặt đúng.
 
 Đặt `DOMAIN_NAME` để Traefik của Hostinger cấp HTTPS:
-- **Link miễn phí** (không cần mua tên miền): `DOMAIN_NAME=javis.<hostname-vps>.hstgr.cloud`
-  (hostname xem ở hPanel → VPS, vd `javis.srv1562015.hstgr.cloud`).
+- **Link miễn phí** (không cần mua tên miền): `DOMAIN_NAME=thansa.<hostname-vps>.hstgr.cloud`
+  (hostname xem ở hPanel → VPS, vd `thansa.srv1562015.hstgr.cloud`).
 - **Tên miền riêng:** `DOMAIN_NAME=tenmien.com` + trỏ DNS A về IP VPS.
 
 Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. (Chi tiết + xử lý sự cố: [DEPLOY.md](../../../DEPLOY.md).)
@@ -179,9 +179,9 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 > Chỉ muốn chạy nhanh bằng `http://<ip>:7777` (chưa cần tên miền): dùng `docker-compose.yml` (Cách 2).
 
 **3 việc làm 1 lần:**
-1. **Để image GHCR ở chế độ Public:** GitHub → repo → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
+1. **Để image GHCR ở chế độ Public:** GitHub → repo → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**.
 2. **Tạo tài khoản admin** (chọn 1):
-   - *Khuyến nghị:* điền sẵn `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` đang có trong ô Environment → mở app **đăng nhập luôn**.
+   - *Khuyến nghị:* điền sẵn `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` đang có trong ô Environment → mở app **đăng nhập luôn**.
    - *Hoặc:* bỏ trống rồi mở app **ngay sau khi deploy** và tự đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự). Lưu ý: khi chưa có admin, ai mở link trước sẽ tạo được tài khoản, nên đừng để trống lâu.
    - Vào được rồi thì **bật 2FA** (xem [Bảo mật & tài khoản](../../../docs/14-bao-mat-tai-khoan.md)).
 3. **Đăng nhập bộ não:** App terminal → `claude auth login --claudeai` → mở link, dán code. (Dùng gói ChatGPT thì đăng nhập ở trang **Models** sau khi mở app.)
@@ -195,10 +195,10 @@ Deploy → đợi 1-3 phút Traefik cấp SSL → mở `https://<DOMAIN_NAME>`. 
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # đăng nhập Claude 1 lần
+docker compose run --rm thansa claude auth login --claudeai   # đăng nhập Claude 1 lần
 docker compose up -d                                          # pull image + chạy
 ```
-Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự), làm ngay sau khi chạy vì ai mở link trước sẽ tạo được admin (hoặc đặt sẵn `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` trong env). Vào được rồi thì bật 2FA.
+Mở `http://<ip-vps>:7777` → màn tạo tài khoản admin: đặt tên đăng nhập + mật khẩu (tối thiểu 8 ký tự), làm ngay sau khi chạy vì ai mở link trước sẽ tạo được admin (hoặc đặt sẵn `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` trong env). Vào được rồi thì bật 2FA.
 
 ### Cách 3 - Cài trực tiếp lên Linux/macOS (không Docker)
 
@@ -237,13 +237,13 @@ Mở dashboard:                          http://localhost:7777
 ### Nhiều bản Thansa trên cùng một VPS (mỗi bản một link riêng)
 
 Chạy được bao nhiêu bản cũng được - brain, cài đặt và tài khoản của mỗi bản tách bạch hoàn toàn.
-Chỉ cần ba giá trị khác nhau giữa các bản: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Chỉ cần ba giá trị khác nhau giữa các bản: `THANSA_NAME`, `THANSA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` thành stack thứ hai, điền ba ô đó.
 - **VPS tự quản:** chạy proxy dùng chung `docker-compose.proxy.yml` **một lần cho cả máy**, rồi
   mỗi bản một thư mục riêng dùng kèm `docker-compose.multi.yml`. Proxy tự phát hiện bản mới,
   tự xin SSL - thêm bản không phải sửa gì ở proxy.
-- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`.
 
 Bỏ trống các biến = y hệt cách cài cũ. Từng bước một: **[DEPLOY.md](../../../DEPLOY.md)**.
 
@@ -285,7 +285,7 @@ Thanh điều hướng bên trái gom **22 trang** thành **5 nhóm** (bấm tê
 | | **Việc định kỳ** | Nhiều vòng lặp chạy nền + nhắc hẹn theo giờ hoặc cron. | [Việc định kỳ & Nhắc hẹn](../../../docs/08-viec-dinh-ky.md) |
 | **Kết nối** | **Kết nối** | Kho dịch vụ ngoài, đa tài khoản cùng một dịch vụ, phân quyền 3 mức. | [Kết nối & số liệu](../../../docs/09-mcp-va-so-lieu.md) |
 | | **Kênh** | Bật bot Telegram, Zalo, Slack, WhatsApp (hỏi Thansa qua điện thoại). | [Kênh Telegram](../../../docs/11-telegram.md) · [Kênh Zalo](../../../docs/12-zalo.md) · [Slack và WhatsApp](../../../docs/29-slack-whatsapp.md) |
-| | *(terminal)* | `pip install javis-cli` rồi gõ `javis "..."` - kênh thứ ba, cùng một Thansa. | [Thansa CLI](../../../docs/24-cli-terminal.md) |
+| | *(terminal)* | `pip install thansa-cli` rồi gõ `thansa "..."` - kênh thứ ba, cùng một Thansa. | [Thansa CLI](../../../docs/24-cli-terminal.md) |
 | | **Models** | Main model + các provider + mức suy nghĩ + model việc nền. | [Models & engine](../../../docs/10-models-va-engine.md) |
 | **Hệ thống** | **Mức dùng** | Token và chi phí theo ngày, theo nhà cung cấp, theo nguồn phát sinh. | [Mức dùng](../../../docs/23-muc-dung-token.md) |
 | | **Cài đặt** | Trạng thái hệ thống, giao diện & brain, giọng nói, thương hiệu, tên miền. | [Bắt đầu & thiết lập](../../../docs/01-bat-dau-thiet-lap.md) |
@@ -313,18 +313,18 @@ File mẫu cố ý **chỉ có dòng `TÊN=giá trị`, không một dòng chú 
 
 | Biến | Ý nghĩa | Mặc định |
 |---|---|---|
-| `JAVIS_HOST` | Địa chỉ nghe. `127.0.0.1`=chỉ máy này; `0.0.0.0`=public | `127.0.0.1` |
-| `JAVIS_PORT` | Cổng | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` ép bật/tắt bắt buộc đăng nhập (mặc định: bật khi bind public) | *(auto)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Tạo sẵn admin lúc deploy (khuyến nghị khi chạy public) | - |
-| `JAVIS_ALLOWED_HOSTS` | Thêm hostname vào danh sách cho phép (chống CSRF / DNS-rebinding) | localhost + tên miền đã đặt |
-| `JAVIS_SECURE_COOKIE` | Ép cookie `Secure`. Chỉ bật khi chắc chắn HTTPS đầu-cuối | *(auto theo tên miền)* |
-| `JAVIS_STATE_DIR` | Nơi ghi state (settings, sessions, khoá mã hoá, cấu hình việc định kỳ) | `server/` (Docker: `/data/state`) |
+| `THANSA_HOST` | Địa chỉ nghe. `127.0.0.1`=chỉ máy này; `0.0.0.0`=public | `127.0.0.1` |
+| `THANSA_PORT` | Cổng | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0` ép bật/tắt bắt buộc đăng nhập (mặc định: bật khi bind public) | *(auto)* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | Tạo sẵn admin lúc deploy (khuyến nghị khi chạy public) | - |
+| `THANSA_ALLOWED_HOSTS` | Thêm hostname vào danh sách cho phép (chống CSRF / DNS-rebinding) | localhost + tên miền đã đặt |
+| `THANSA_SECURE_COOKIE` | Ép cookie `Secure`. Chỉ bật khi chắc chắn HTTPS đầu-cuối | *(auto theo tên miền)* |
+| `THANSA_STATE_DIR` | Nơi ghi state (settings, sessions, khoá mã hoá, cấu hình việc định kỳ) | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Thư mục CHA chứa mọi brain | `brains/` (Docker: `/brains`) |
 | `OBSIDIAN_VAULT_PATH` | Vault Second Brain ngoài (nếu bạn đã có vault sẵn) | `vault/` (Docker: `/data/vault`) |
 | `CLAUDE_CWD` | Thư mục dự phòng của bộ não Claude (chat chạy trong thư mục brain) | repo root |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` để tắt plugin do bạn cài (chúng chạy code Python thật trong server) | *(bật)* |
-| `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" trên bản Docker | `javis-update` |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` để tắt plugin do bạn cài (chúng chạy code Python thật trong server) | *(bật)* |
+| `WATCHTOWER_TOKEN` | Token cho nút "Cập nhật ngay" trên bản Docker | `thansa-update` |
 | `TTS_VOICE` / `TTS_RATE` | Giọng đọc + tốc độ (Edge TTS) | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs/16-cau-hinh-env.md).
@@ -334,11 +334,11 @@ Danh sách đầy đủ mọi biến: [docs/16 - Cấu hình .env](../../../docs
 ## 🔐 Bảo mật
 
 - Khi chạy public, **bắt buộc đăng nhập** trước khi dùng bất kỳ chức năng nào (bộ não chạy full quyền trên máy).
-- Màn chạy lần đầu chỉ hỏi tên đăng nhập + mật khẩu. Trên server public, **ai mở link trước khi có admin sẽ tạo được admin** → đặt sẵn admin qua env (`JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD`) hoặc tạo tài khoản ngay sau khi deploy, rồi **bật 2FA** (TOTP).
+- Màn chạy lần đầu chỉ hỏi tên đăng nhập + mật khẩu. Trên server public, **ai mở link trước khi có admin sẽ tạo được admin** → đặt sẵn admin qua env (`THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD`) hoặc tạo tài khoản ngay sau khi deploy, rồi **bật 2FA** (TOTP).
 - **Rate-limit** đăng nhập (khoá tạm sau nhiều lần sai), mật khẩu ≥ 8 ký tự, cookie `secure` khi HTTPS, session hết hạn 30 ngày.
 - **Chặn CSRF và DNS-rebinding**: mọi request ghi có Origin lạ đều bị từ chối.
-- **Khoá bí mật được mã hoá** trong `settings.json` (API key, token OAuth, token bot Telegram, token backup) bằng khoá riêng của máy ở `JAVIS_STATE_DIR/.secret_key`.
-- **Plugin do bạn cài được tải mặc định, nhưng từng plugin vẫn tắt cho tới khi bạn bật nó trong app**; đặt `JAVIS_ENABLE_USER_PLUGINS=false` nếu muốn tắt hết.
+- **Khoá bí mật được mã hoá** trong `settings.json` (API key, token OAuth, token bot Telegram, token backup) bằng khoá riêng của máy ở `THANSA_STATE_DIR/.secret_key`.
+- **Plugin do bạn cài được tải mặc định, nhưng từng plugin vẫn tắt cho tới khi bạn bật nó trong app**; đặt `THANSA_ENABLE_USER_PLUGINS=false` nếu muốn tắt hết.
 - Truy cập từ xa nên qua **HTTPS** (Hostinger `*.hstgr.cloud` hoặc Cloudflare Tunnel) - đừng phơi cổng thô.
 
 ---
@@ -400,7 +400,7 @@ Zalo Agent MCP ──────────────┤          │       
 ## 📂 Cấu trúc thư mục
 
 ```
-javis-os/
+thansa-os/
 ├── server/              # Backend FastAPI (engine, kết nối, việc nền, kênh, bộ nhớ…)
 │   └── routes/          # Route tách riêng (tên miền, đồ thị)
 ├── dashboard/           # Frontend (voice, đồ thị, console, studio, usage)

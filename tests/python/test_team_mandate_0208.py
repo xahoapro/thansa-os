@@ -12,8 +12,8 @@ import tempfile
 import time
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-team-mandate-")
-STATE = Path(os.environ["JAVIS_STATE_DIR"])
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-team-mandate-")
+STATE = Path(os.environ["THANSA_STATE_DIR"])
 
 import sessions  # noqa: E402
 import task_store  # noqa: E402

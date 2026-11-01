@@ -150,7 +150,7 @@ Zalo cá nhân (`kind: account`) không bị lọc: nó là một kết nối �
 **Tài khoản của chính bạn** (Zalo cá nhân) đến từ trang **Kết nối** (quét QR ở Zalo Agent MCP) và hiện ở đây với công tắc **Ghi hội thoại**. Bật lên là Thansa đọc tin mới mỗi 20 giây qua MCP và đổ vào hộp thư. Ba điều về kênh này, nói thẳng:
 
 - **Mặc định tắt.** Bật là giữ phiên Zalo của bạn sống liên tục qua API không chính thức, tức tài khoản đăng nhập 24/7 trên máy chạy Thansa. Đó là lựa chọn của bạn, không phải của Thansa. Nên dùng tài khoản phụ.
-- **Chỉ lưu từ lúc bật.** Không kéo lịch sử cũ. Tin do chính bạn (hay nhân viên dùng chung nick) gửi từ điện thoại hiện là tin "Bạn". Với Zalo cá nhân điều này cần Thansa 0.108.0 trở lên: các bản trước dùng javis-zalo 1.2.0, bản đó bỏ mọi tin của chính tài khoản khỏi luồng tin mới nên tin bạn nhắn tay không bao giờ vào Hộp thư.
+- **Chỉ lưu từ lúc bật.** Không kéo lịch sử cũ. Tin do chính bạn (hay nhân viên dùng chung nick) gửi từ điện thoại hiện là tin "Bạn". Với Zalo cá nhân điều này cần Thansa 0.108.0 trở lên: các bản trước dùng thansa-zalo 1.2.0, bản đó bỏ mọi tin của chính tài khoản khỏi luồng tin mới nên tin bạn nhắn tay không bao giờ vào Hộp thư.
 - **Không có bot trực.** Trả lời từ Hòm thư bot là gửi dưới tên bạn. Muốn nick này tự trả lời khách thì tạo một Bot chuyên trách và chọn kênh Zalo cá nhân (chat riêng từ 0.64.80, nhóm và chế độ Tự đánh giá từ 0.64.82), xem [Chatbot](25-chatbot.md).
 
 ## Dữ liệu lưu ở đâu, giữ gì
@@ -183,7 +183,7 @@ Thêm một kênh = thêm một file ở sổ, một dòng đăng ký, một log
 
 ## Muốn hơn thế: gói Quản lý khách hàng (CRM)
 
-Kho cài đặt có gói **Quản lý khách hàng (CRM)** (`javis.khach-hang-crm`, cần bản 0.60.1 trở lên) đặt lên chính hộp thư này. Cài xong hỏi Thansa bằng lời: "khách nào chờ hơn 2 tiếng chưa được trả lời", "chị Lan đã hỏi gì", "gắn tag VIP cho chị Lan", "tuần này bao nhiêu khách mới", "xuất danh sách khách đã hỏi giá ra Excel". Kèm một trợ lý chăm sóc khách và một quy trình rà soát mỗi ngày. Gói chỉ đọc hộp thư và ghi tag, ghi chú lên khách; không gửi tin cho ai.
+Kho cài đặt có gói **Quản lý khách hàng (CRM)** (`thansa.khach-hang-crm`, cần bản 0.60.1 trở lên) đặt lên chính hộp thư này. Cài xong hỏi Thansa bằng lời: "khách nào chờ hơn 2 tiếng chưa được trả lời", "chị Lan đã hỏi gì", "gắn tag VIP cho chị Lan", "tuần này bao nhiêu khách mới", "xuất danh sách khách đã hỏi giá ra Excel". Kèm một trợ lý chăm sóc khách và một quy trình rà soát mỗi ngày. Gói chỉ đọc hộp thư và ghi tag, ghi chú lên khách; không gửi tin cho ai.
 
 ## Tham khảo
 

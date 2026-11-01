@@ -1,4 +1,4 @@
-"""Regression: model ChatGPT của Javis phải đến từ Codex app-server, không từ list ghim cứng.
+"""Regression: model ChatGPT của Thansa phải đến từ Codex app-server, không từ list ghim cứng.
 
     python tests/run.py codex_models
 

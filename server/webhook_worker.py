@@ -608,7 +608,7 @@ class WebhookWorker:
             try:
                 await branch(b)
             except Exception as e:
-                # A fault in Javis itself. After the dispatch was recorded the delivery may already have acted: the
+                # A fault in Thansa itself. After the dispatch was recorded the delivery may already have acted: the
                 # owner decides (unknown). Before it nothing was sent: it is tried again shortly, within its deadline.
                 # The other deliveries keep running under the heartbeat (gather waits for all of them).
                 aid = b["action_id"]

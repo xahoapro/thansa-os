@@ -83,7 +83,7 @@ alignment. `test_webhook_bench_short` runs the §16 benchmark briefly.
 
 | Requirement | Code | Proof | Status |
 |---|---|---|---|
-| 8.1 HTTP forward: raw bytes and content type, `X-Javis-Event-Id`, no sender cookie or token, SSRF guard with pinned connections, redirects not followed | `run_http`, `_pinned_backend` | matrix "§15 Chuyển tiếp" (DNS rebinding included) | done |
+| 8.1 HTTP forward: raw bytes and content type, `X-Thansa-Event-Id`, no sender cookie or token, SSRF guard with pinned connections, redirects not followed | `run_http`, `_pinned_backend` | matrix "§15 Chuyển tiếp" (DNS rebinding included) | done |
 | 8.1 A name that does not resolve is retried (nothing sent) | `_refused` | matrix "§8: a name that does not resolve" | done |
 | 8.1 Apps Script profile: echo hop checked, receipt required, sign-in page is blocked, `delivery_ref: query` | `run_apps_script` | matrix "§15 Apps Script" (two rows) | done (fakes); open (real deployment) |
 | 8.2 Plugin contract: completed, accepted, retryable_error, permanent_error, unknown, waiting_approval; same delivery id gives the same job | `run_plugin`, `register_event_handler` | matrix "§15 Plugin" (three rows) | done (fake plugin); open (poscake-zalo, §17) |
@@ -139,7 +139,7 @@ alignment. `test_webhook_bench_short` runs the §16 benchmark briefly.
 | Retry keeps the delivery id and snapshot, re-runs dependents a failure cancelled, never sends an empty body; a failed event can also be closed without resending | `Store.retry`, `Store.resolve`, `close_failed` | matrix "§15 Apps Script: the owner's retry sends the same delivery id"; review "R2 P2-2", "R3 P1-1" | done |
 | Process again with the current setup: a new generation under the current revision; the preview names every delivery that may act again (succeeded or unknown), and a confirm after the hook changed is refused | `replay_confirm`, `Store.replay` | review "R2 P2-1", "R6 P2-6" | done |
 | A block fixed outside the hook (plugin switched back on, key changed at the receiver) runs again from Retry all blocked; a fix in the hook runs it by itself | `Store.unblock`, `/webhooks/events/retry_blocked` | review "R6 P2-4" | done |
-| A test event is marked for the receiver: `_javis.test` in the envelope, `X-Javis-Test: 1` on every HTTP call, `javis_test=1` for Apps Script | `_headers`, `target_url` | review "R6 P2-7" | done |
+| A test event is marked for the receiver: `_thansa.test` in the envelope, `X-Thansa-Test: 1` on every HTTP call, `thansa_test=1` for Apps Script | `_headers`, `target_url` | review "R6 P2-7" | done |
 | Raw view and export masked by default (payload, fields, headers, trace, result, error, correlation, deliveries, timeline, list rows, tool arguments), raw always audited (view, export with or without bodies, simulation of a logged event) | `mask_row()`, `/webhooks/audit` | matrix "§15 UI ... customer data masked"; review "R3 P2-5", "R3 P2-6", "R1 P2-5", "R6 P2-5" | done |
 | Pause processing vs stop receiving, two switches | `pause()`, `enabled` | `test_webhooks_ui_spec.js`; `test_webhook_ops_m5` | done |
 | Notify modes; older hooks keep `all`, new non-AI hooks start `errors_only` | `create()` | `test_webhook_ops_m5` | done |
@@ -153,7 +153,7 @@ alignment. `test_webhook_bench_short` runs the §16 benchmark briefly.
 |---|---|---|---|
 | Module split: triggers (routes), store, rules, auth, worker, actions, plugins_host | as named; `webhook_verify.py` is a re-export shim | | done |
 | Migration of `webhooks.json` once, idempotent, with a snapshot and a marker; older hook = one AI action, no filter added, level kept | `_migrate_json` | matrix "§15 Tương thích: migrating twice" | done |
-| Public `POST /hooks/{id}`, admin under `/webhooks/...` behind the login | `main.py` wiring | matrix "§16.7" (real host, `JAVIS_REQUIRE_LOGIN=1`) | done |
+| Public `POST /hooks/{id}`, admin under `/webhooks/...` behind the login | `main.py` wiring | matrix "§16.7" (real host, `THANSA_REQUIRE_LOGIN=1`) | done |
 | Old `seen_keys` kept as legacy keys with their age | `import_hooks` | `test_webhook_store_m1` | done |
 | Rollback: stop, export the backlog and hold it, write a legacy config, say what will not run; the new store kept; the next upgrade restores each hook's own switches | `server/webhook_rollback.py`, `rollback.md` | matrix "§15 Tương thích / §13"; review "R1 P2-2 / R3 P1-2" | done |
 
@@ -168,7 +168,7 @@ alignment. `test_webhook_bench_short` runs the §16 benchmark briefly.
 Every row is a named section of `test_webhook_spec_matrix.py`: Lưu bền (3), Phục hồi, Chống trùng (5), Filter (2),
 Nhận body (2), Xác thực (2), Provider, Chuyển tiếp (3), Apps Script (2), Retry (4), Fan-out, Plugin (3), Tool, AI (3),
 Chờ chủ, Không AI, Replay, UI, Thông báo (2), Tải (4), Tương thích (3). Crash rows run in child processes that stop at
-named crash points (`JAVIS_WH_CRASH_AT`). Narrow screens and languages: `test_webhooks_ui_spec.js` (every key in vi and
+named crash points (`THANSA_WH_CRASH_AT`). Narrow screens and languages: `test_webhooks_ui_spec.js` (every key in vi and
 en), `test_i18n.mjs`, and `tools/webhook_ui_narrow_check.mjs` (390 px, no sideways scroll, nothing under 16px).
 
 ### §16 Acceptance
@@ -295,7 +295,7 @@ found the denylist still missing keys, so payload masking moved to an allowlist 
 | R6 P2 a block fixed outside the hook never ran again | Retry all blocked (per hook, audited); the notice says when to press it |
 | R6 P2 the correlation value was shown unmasked | masked like every other dashboard text |
 | R6 P2 replay preview left out unknown deliveries; a confirm used whatever revision was current | unknown listed as may act again; the confirm carries the previewed revision, 409 when it changed |
-| R6 P2 a raw-body test event could not tell the receiver it was a test | `X-Javis-Test` header, `javis_test` query for Apps Script |
+| R6 P2 a raw-body test event could not tell the receiver it was a test | `X-Thansa-Test` header, `thansa_test` query for Apps Script |
 | R6 P2 deleting a hook left its unknown, waiting and blocked events where no view shows them; an ingest racing the delete stored an orphan | closed as cancelled with the reason; the ingest refuses (401) |
 | R6 P2 a fault in Thansa inside one delivery left the event without a settled branch | that delivery is unknown (it may have acted), the others finish |
 | R6 P2 hooks with a slow AI action could take every worker slot | at most WORKER_MAX - 1 AI events run at once |
@@ -303,7 +303,7 @@ found the denylist still missing keys, so payload masking moved to an allowlist 
 | R7 P2 deleting the last hook left the ingest race open (202 for a deleted hook) | a tombstone per deleted hook; the ingest refuses (401) |
 | R7 P2 events queued when their hook was deleted ended dead and were kept forever with their body | cancelled, removed by retention |
 | R7 P2 an internal fault before the send marked the delivery "may have acted" | before the dispatch is recorded it is retried within its deadline; after it, unknown |
-| R7 P3 (all fixed) | the replay confirm must carry the previewed revision (400 without it, or with a bad one); a correlation is masked like the key it reads (`customer.name`); an Apps Script test event carries `javis_test` even with the delivery id in a header; plugins allowed to use AI count among the AI hooks; the last known AI list keeps the slot protected when it cannot be read |
+| R7 P3 (all fixed) | the replay confirm must carry the previewed revision (400 without it, or with a bad one); a correlation is masked like the key it reads (`customer.name`); an Apps Script test event carries `thansa_test` even with the delivery id in a header; plugins allowed to use AI count among the AI hooks; the last known AI list keeps the slot protected when it cannot be read |
 | R8 (second whole-chain review at ac47dac1, two reviewers: M1-M3 and M4-M5) P1 a dependent waiting on a delivery in retry requeued its event at once: a claim loop writing an attempt row each time (389 in 2 s) | a delivery is due no sooner than what it waits for, down the whole chain |
 | R8 P1 rollback left an AI hook with approval or a condition switched on for the older build, which would run it on every event unapproved | an AI action with any field beyond id and kind switches the hook off there |
 | R8 P2 replay skipped business dedup: a duplicate replayed sent the order again; a filtered event replayed took no key | the preview names the event holding the key and the confirm refuses; a replay takes the key |

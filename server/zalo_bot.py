@@ -1,14 +1,14 @@
 """Cổng Zalo Bot - API CHÍNH THỨC của Zalo (bot.zaloplatforms.com).
 
-Đây là kênh thứ tư của Javis, sau dashboard, Telegram và CLI. Nó KHÔNG thay
-`javis-zalo` (xem docs/12-zalo.md): hai thứ khác bản chất và cùng tồn tại.
+Đây là kênh thứ tư của Thansa, sau dashboard, Telegram và CLI. Nó KHÔNG thay
+`thansa-zalo` (xem docs/12-zalo.md): hai thứ khác bản chất và cùng tồn tại.
 
-  - `javis-zalo` đăng nhập CHÍNH tài khoản Zalo của bạn qua API không chính thức. Đọc
+  - `thansa-zalo` đăng nhập CHÍNH tài khoản Zalo của bạn qua API không chính thức. Đọc
     được hội thoại thật, nhắn cho bất kỳ ai, và tài khoản CÓ THỂ bị khoá.
   - Zalo Bot là một DANH TÍNH RIÊNG, chính thức, không bị khoá, nhưng chỉ thấy được thứ
     người ta nhắn thẳng cho nó.
 
-Cái đầu để Javis thao tác thay bạn. Cái sau để người khác nói chuyện với Javis. Gộp hai cái
+Cái đầu để Thansa thao tác thay bạn. Cái sau để người khác nói chuyện với Thansa. Gộp hai cái
 làm một là mất một nửa năng lực.
 
 Về hình dạng, Zalo Bot API gần như một bản sao của Telegram Bot API (cùng vỏ
@@ -129,7 +129,7 @@ def _lay_url(msg: dict, khoa_thu) -> str:
 
 
 def _chat_type(raw, chat_id: str = "", sender_id: str = "") -> str:
-    """Zalo dùng PRIVATE/GROUP, Javis dùng private/group ở mọi nơi khác (xem
+    """Zalo dùng PRIVATE/GROUP, Thansa dùng private/group ở mọi nơi khác (xem
     `chatbot_runtime._ly_do_im`). Quy về MỘT bảng chữ ngay tại cửa vào, chứ đừng bắt mỗi
     chỗ đọc meta phải nhớ kênh nào viết hoa.
 
@@ -154,7 +154,7 @@ class ZaloBot(HangLuot):
                  download_dir=None, commands=None, precheck_fn=None, event_fn=None,
                  giau_trang_thai=False, stt_fn=None, cfg_fn=None):
         self.token = token
-        # Live chatbot config (#885): the names the owner gave this bot in Javis, read on every message so a rename on
+        # Live chatbot config (#885): the names the owner gave this bot in Thansa, read on every message so a rename on
         # the Chatbot page applies at once. None for the owner's own bot (main.py), which only knows its handle.
         self.cfg_fn = cfg_fn
         self.giau_trang_thai = bool(giau_trang_thai)
@@ -246,7 +246,7 @@ class ZaloBot(HangLuot):
         await self._api(client, "sendChatAction", chat_id=chat, action="typing")
 
     async def _giu_typing(self, client, chat):
-        """Giữ chấm "đang nhập" suốt lượt. Trên Zalo đây là THỨ DUY NHẤT báo được là Javis
+        """Giữ chấm "đang nhập" suốt lượt. Trên Zalo đây là THỨ DUY NHẤT báo được là Thansa
         đang làm việc: không sửa được tin nên không có tin trạng thái nào để cập nhật."""
         while True:
             await self._typing(client, chat)
@@ -370,7 +370,7 @@ class ZaloBot(HangLuot):
 
         #885: `getMe` only returns the handle (`account_name`, e.g. "bot.VDKyGxQvc"), while people tag the bot by its
         display name ("@Bot Nori VQT Piano"), which no Zalo API returns. So a tag also counts when "@" is followed by
-        a name the owner gave this bot in Javis (`_ten_tag`). Those names need the "@": a bare "Nori" in a group is
+        a name the owner gave this bot in Thansa (`_ten_tag`). Those names need the "@": a bare "Nori" in a group is
         often a person, and the reply policy already handles bare names with its own rules.
         """
         s = " ".join(str(msg.get("text") or msg.get("caption") or "").split())
@@ -380,7 +380,7 @@ class ZaloBot(HangLuot):
         return any(re.search("@ ?" + re.escape(t) + _HET_TU, s, re.I) for t in self._ten_tag())
 
     def _ten_tag(self):
-        """Names a group tag may carry for this bot: its Javis name, the same name with Zalo's mandatory "Bot "
+        """Names a group tag may carry for this bot: its Thansa name, the same name with Zalo's mandatory "Bot "
         prefix (Zalo requires a bot name to start with "Bot"), and the owner's call names. Whitespace collapsed."""
         try:
             cfg = (self.cfg_fn() if self.cfg_fn else None) or {}
@@ -431,9 +431,9 @@ class ZaloBot(HangLuot):
         try:
             kq = await self.stt_fn(data, ten)
         except Exception as e:
-            kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+            kq = {"ok": False, "noi_voi_thansa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
         if not (kq or {}).get("ok"):
-            return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+            return (kq or {}).get("noi_voi_thansa") or stt.loi_thanh_dong("loi")
         # Caption là LỆNH thì để `_caption_command_text` đưa nó lên đầu; ghép ở đây nữa là
         # lệnh xuất hiện hai lần trong cùng một lượt.
         khoi = stt.khoi_thoai(kq.get("text"), "Zalo")
@@ -451,7 +451,7 @@ class ZaloBot(HangLuot):
         if ev == SK_VOICE:
             # Tin thoại đi ĐƯỜNG RIÊNG: nghe thành chữ rồi chạy như một câu hỏi, không tải về
             # đĩa rồi báo "đã tải về path" - người ta ghi âm để RA LỆNH, không phải để gửi
-            # Javis một file .ogg.
+            # Thansa một file .ogg.
             return await self._nghe_tin_thoai(client, msg, caption)
         if ev not in (SK_ANH,):
             return None

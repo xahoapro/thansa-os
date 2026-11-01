@@ -14,9 +14,9 @@ import sys
 import tempfile
 import time
 
-_STATE = tempfile.mkdtemp(prefix="javis-htim-")
-os.environ["JAVIS_STATE_DIR"] = _STATE
-os.environ["JAVIS_ALLOWED_HOSTS"] = "testserver"
+_STATE = tempfile.mkdtemp(prefix="thansa-htim-")
+os.environ["THANSA_STATE_DIR"] = _STATE
+os.environ["THANSA_ALLOWED_HOSTS"] = "testserver"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:

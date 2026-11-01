@@ -8,26 +8,26 @@ Ngày: 2026-08-17. Thi hành theo `nhiem-vu/GD2b.md`. Khảo sát bằng 3 subag
 | Patch | Phạm vi thật (rộng hơn bản đồ nhiệm vụ nhờ sweep) |
 |---|---|
 | P007 | 42 file: persona `CORE_CONTRACT` ("Bạn là Thansa"), khối context (channel_context, compaction, learn, tasks, self_improve), tin bot Zalo/Telegram/STT, thông báo write-gate + lỗi các *_path_runtime + **readonly_orchestrator.py** (subagent quét sót, bắt lại bằng AST), antigravity/connect_health/cred_exchange/mcp_hub…, 2 tiêu đề cửa sổ Windows (claude_cli). Cặp marker `# === NĂNG LỰC THANSA` đổi đồng bộ main.py + context_runtime.py. Kèm fixture test + 7 file test bám chuỗi bot nói (cùng lớp ngoại lệ #1). |
-| P008 | 22 file: FastAPI title (/docs), OAuth client_name, codex clientInfo title, nhãn Authenticator (totp default + issuer), X-Title OpenRouter, template ghi vào vault (Memory index, Javis/README, AGENTS.md seed, Vault Schema meta_tools, .gitignore header), ~117 chuỗi UI dashboard (console/usage/branding/chatbots/code-term/mobile-chat/studio/index/voice-test/style.css) + subdomain ví dụ. Kèm 3 file test bám nhãn UI (engine_ngang_quyen, muc_dung_moi, trang_chatbot.js). |
+| P008 | 22 file: FastAPI title (/docs), OAuth client_name, codex clientInfo title, nhãn Authenticator (totp default + issuer), X-Title OpenRouter, template ghi vào vault (Memory index, Thansa/README, AGENTS.md seed, Vault Schema meta_tools, .gitignore header), ~117 chuỗi UI dashboard (console/usage/branding/chatbots/code-term/mobile-chat/studio/index/voice-test/style.css) + subdomain ví dụ. Kèm 3 file test bám nhãn UI (engine_ngang_quyen, muc_dung_moi, trang_chatbot.js). |
 | P009 | `BRAND_SOFTWARE="Thansa OS"`; **bỏ chunk Source** (chưa có tên miền Thansa — không bịa); docstring; câu mô tả console.js; 3 assertion `test_image_gen.py` (ngoại lệ #2). |
 | P010 | app.js đúng 2 dòng fallback, sửa bằng THAO TÁC BYTE (giữ nguyên encoding hỗn hợp), `git diff` = 2 dòng, `node --check` OK. |
 
 ## Danh sách GIỮ (đúng LUẬT phân loại — trạm #1 đối chiếu khi nghiệm thu)
 
-- Kỹ thuật: `JAVIS_*`, tool `javis_*`, header `X-Javis-*`, enum `source='javis'`,
-  path `Javis/`, tên container/service `javis`, `stop-javis.bat`/`start-javis.vbs`,
-  lệnh `javis login`, localStorage `javis.*`, định danh JS `Javis*`, sentinel
-  `JAVIS-STDIN-OK-7413`, User-Agent `javis-os/0.3`, tiền tố file `javis-img`,
-  contract id `javis-core-contract-v1`.
+- Kỹ thuật: `THANSA_*`, tool `thansa_*`, header `X-Thansa-*`, enum `source='thansa'`,
+  path `Thansa/`, tên container/service `thansa`, `stop-thansa.bat`/`start-thansa.vbs`,
+  lệnh `thansa login`, localStorage `thansa.*`, định danh JS `Thansa*`, sentinel
+  `THANSA-STDIN-OK-7413`, User-Agent `thansa-os/0.3`, tiền tố file `thansa-img`,
+  contract id `thansa-core-contract-v1`.
 - **Tên kỹ thuật hiển thị TRONG HƯỚNG DẪN giữ nguyên có chủ đích** (đổi là hướng dẫn
-  thành sai): "container javis", "docker compose logs javis", `JAVIS_ADMIN_*`…
-- `"# Javis adaptive source contract"` (main.py:471): `test_adaptive_context_phase8:251`
+  thành sai): "container thansa", "docker compose logs thansa", `THANSA_ADMIN_*`…
+- `"# Thansa adaptive source contract"` (main.py:471): `test_adaptive_context_phase8:251`
   bám chuỗi này; xếp là CONTRACT ID kỹ thuật, không đổi — tránh ngoại lệ test thứ ba.
-- Git author "Javis Learn"/"Javis Sync" (git_brain): tên committer trong repo backup
+- Git author "Thansa Learn"/"Thansa Sync" (git_brain): tên committer trong repo backup
   brain — máy đọc là chính; đổi sẽ lệch lịch sử backup. Giữ, chờ chủ quyết.
-- Link `javisos.com` + 2 link GitHub `blogminhquy/javis-os` trong index.html (tài liệu
+- Link `thansa.org` + 2 link GitHub `xahoapro/thansa-os` trong index.html (tài liệu
   tham khảo upstream) và `dashboard/docs/`, `CLAUDE.md`, `README*`: ngoài phạm vi vòng
-  này theo nhiệm vụ. LƯU Ý cho trạm #1: CLAUDE.md dòng đầu vẫn "Bạn là **Javis**" —
+  này theo nhiệm vụ. LƯU Ý cho trạm #1: CLAUDE.md dòng đầu vẫn "Bạn là **Thansa**" —
   nó là prompt cho engine CLI đọc repo; persona runtime đã đổi ở CORE_CONTRACT, nhưng
   nếu muốn triệt để thì cần quyết rebrand CLAUDE.md (file churn cao) ở vòng sau.
 
@@ -37,10 +37,10 @@ Ngày: 2026-08-17. Thi hành theo `nhiem-vu/GD2b.md`. Khảo sát bằng 3 subag
 2. Test: full suite **241/241 XANH** (243 giây — kể cả `test_chat_disconnect` qua được
    ngưỡng vì máy nhẹ tải). Trước đó lần chạy đầu sau P007–P010 lộ **10 test đỏ** do bám
    chuỗi bot nói/UI (lớp coupling subagent test đã quét sót) — tất cả được đồng bộ
-   Javis→Thansa (CHỈ chuỗi kỳ vọng, không đổi logic test) và gộp vào đúng patch
+   Thansa→Thansa (CHỈ chuỗi kỳ vọng, không đổi logic test) và gộp vào đúng patch
    tương ứng: 7 file vào P007, 3 file vào P008. Danh sách đủ trong sổ trộn + mapping.
 3. Sweep: AST scan string-literal server (loại docstring) chỉ còn đúng danh sách GIỮ;
-   HTML trả về client: 0 chuỗi "javis" hiển thị (12 mục còn lại đều kỹ thuật: định danh
+   HTML trả về client: 0 chuỗi "thansa" hiển thị (12 mục còn lại đều kỹ thuật: định danh
    JS, key localStorage, tên file thật, env, link tham khảo). ✓
 4. App chạy thật: `<title>Thansa OS</title>`, `/docs` = "Thansa OS - Swagger UI",
    `/settings` khởi động sạch = "Thansa OS". Persona: fixture + CORE_CONTRACT khớp
@@ -66,4 +66,4 @@ Ngày: 2026-08-17. Thi hành theo `nhiem-vu/GD2b.md`. Khảo sát bằng 3 subag
 
 - GĐ3 (chờ trạm #1 nghiệm thu + chủ ra lệnh): release `thansa-v1.0`.
 - Chủ quyết vòng sau: rebrand CLAUDE.md + dashboard/docs/ + README (churn cao);
-  đổi git author "Javis Learn/Sync"; domain Thansa cho BRAND_SOURCE.
+  đổi git author "Thansa Learn/Sync"; domain Thansa cho BRAND_SOURCE.

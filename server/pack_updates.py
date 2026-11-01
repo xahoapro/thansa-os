@@ -7,16 +7,16 @@ the banner and the "Có bản mới" filter take it from there.
 
 No background scan (0.340.0, owner 2026-10-26: "khi có bản mới thì mới báo chứ lại tự quét như này anh thấy không
 ổn, tốn tài nguyên"). 0.335.0 ran a timer on the 30-second scheduler loop that fetched the catalog every six hours
-whether anyone used Javis or not. Now nothing runs on its own: the check rides on the dashboard opening (the
+whether anyone used Thansa or not. Now nothing runs on its own: the check rides on the dashboard opening (the
 `/version` call it already makes for the version label), at most once per `INTERVAL`, and reads the catalog through
-`packs_store.lay`, whose cache answers without any network for six hours. A Javis nobody opens does no work at all.
+`packs_store.lay`, whose cache answers without any network for six hours. A Thansa nobody opens does no work at all.
 
 Rules:
   - Only packs installed from the Store or a zip (they have a row in the install ledger, `pack_install.doc_so`); the
     connectors that ship with the app update with the app.
   - Each version is announced once: `STATE` remembers the last version told per pack, so the bell does not ring every
     six hours for the same update, and the next version rings again.
-  - Javis never updates anything on its own: an update installs new code and goes through the same confirm screen as
+  - Thansa never updates anything on its own: an update installs new code and goes through the same confirm screen as
     a first install.
   - A stale catalog (the last fetch failed) is not used: better one notice late than a notice built from old data.
 """

@@ -181,7 +181,7 @@ This way is convenient when you can describe your intention by voice but don't w
 
 In the new brain structure, each agent is a `agents/<slug>.md` file and each workflow is a `workflows/<slug>.md` file. `slug` is the name in lowercase with hyphens, no diacritics (example "write email" becomes `write-email`).
 
-**Old brain structure not yet converted** keeps these two folders in `Javis/agents/` and `Javis/workflows/`. Thansa auto-detects: if the new folders exist it uses them, otherwise it uses the old path. So if you open the File management page and don't see `agents/` at the brain root, look inside `Javis/`.
+**Old brain structure not yet converted** keeps these two folders in `Thansa/agents/` and `Thansa/workflows/`. Thansa auto-detects: if the new folders exist it uses them, otherwise it uses the old path. So if you open the File management page and don't see `agents/` at the brain root, look inside `Thansa/`.
 
 Since these are text files, you can open them via [File management](05-quan-ly-tep-tin.md) to view or edit by hand. File structure:
 
@@ -241,7 +241,7 @@ Note: exported package contains only definition files. **Agent's personal memory
 - **Skills field empty when creating agent.** Vault has no skills yet in the skill folder. Create agent first, create skills later on [Skills](06-skills.md) page then come back to assign.
 - **Choose GPT-5.x model but agent still runs with Claude.** By design when workflow runs automatically in background: that mode forces Claude to maintain tool limits. To use Codex click **▶ Run** directly on workflow card, and machine must already have ChatGPT logged in.
 - **Leave Model field empty but agent runs with strange model.** Empty field means take secondary model from Models page before. To force specific model, choose it directly for the agent.
-- **Can't find `agents/` folder in brain.** Old brain keeps them in `Javis/agents/` and `Javis/workflows/`. Open File management page and look in the `Thansa` folder.
+- **Can't find `agents/` folder in brain.** Old brain keeps them in `Thansa/agents/` and `Thansa/workflows/`. Open File management page and look in the `Thansa` folder.
 - **Step shows warning "⚠ Not passed verification after number of attempts".** The working agent has fixed to limit but verifier still grades not passed. Read the step output yourself; consider clarifying task description, switching to stronger model, or increasing correction attempts then re-run.
 - **Tracking panel stops mid-run.** Closing tracking panel cuts off running part. If network hiccups, panel may also freeze; open the workflow again and click ▶ Run to restart.
 - **Page keeps showing "Loading...".** Server slow or not running. Check Thansa is up on port 7777, then reload page. If still error, see [Troubleshooting & FAQ](17-khac-phuc-su-co.md).

@@ -22,7 +22,7 @@
   // Người dùng bấm Tắt trên trình duyệt này (0.223.0). Tắt chỉ huỷ đăng ký, quyền thông báo của trình duyệt vẫn là
   // "granted" (trang web không tự thu lại quyền được), nên thiếu dấu này thì tuNoiLai thấy quyền còn và lặng lẽ bật lại ở
   // lần tải trang sau. Chủ dự án 19/10: "tắt thông báo đẩy ở máy tính xong nó tự bật lên".
-  var KHOA_TAT = "javis.push.off";
+  var KHOA_TAT = "thansa.push.off";
   function daTat() { try { return localStorage.getItem(KHOA_TAT) === "1"; } catch (e) { return false; } }
   function nhoTat(tat) {
     try { if (tat) localStorage.setItem(KHOA_TAT, "1"); else localStorage.removeItem(KHOA_TAT); } catch (e) {}
@@ -138,8 +138,8 @@
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", function (ev) {
       var d = ev.data || {};
-      if (d.type !== "javis-open-inbox") return;
-      try { if (window.JavisInbox) window.JavisInbox.moTu(d.url || ""); } catch (e) {}
+      if (d.type !== "thansa-open-inbox") return;
+      try { if (window.ThansaInbox) window.ThansaInbox.moTu(d.url || ""); } catch (e) {}
     });
   }
 
@@ -153,7 +153,7 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", tuNoiLai);
   else tuNoiLai();
 
-  window.JavisPush = { batDuoc: function () { return coHoTro() && antoan(); },
+  window.ThansaPush = { batDuoc: function () { return coHoTro() && antoan(); },
                        lyDo: vichLyDo, dangBat: dangBat, bat: bat, tat: tat, thu: thu,
                        thietBi: thietBi };
 })();

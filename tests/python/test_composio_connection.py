@@ -1,4 +1,4 @@
-"""Composio Connect key failures must point to the Javis-side credential."""
+"""Composio Connect key failures must point to the Thansa-side credential."""
 
 from _paths import ROOT, SERVER  # noqa: F401
 

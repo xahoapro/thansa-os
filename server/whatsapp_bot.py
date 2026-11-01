@@ -1,6 +1,6 @@
 """WhatsApp gateway over the official WhatsApp Business Cloud API (Meta), 0.71.0.
 
-Unlike Telegram, Zalo and Slack, WhatsApp has no way for Javis to pull messages: Meta POSTs
+Unlike Telegram, Zalo and Slack, WhatsApp has no way for Thansa to pull messages: Meta POSTs
 every inbound message to a webhook. So this module has two halves:
 
   - `WhatsAppBot`: the transport, same contract as `TelegramBot` (start/stop/status/send_text/
@@ -45,7 +45,7 @@ from bot_gateway import HangLuot, dong_vet, parse_chat_ids, ten_tool
 
 # Graph API versions are retired about two years after release. Pin a recent one and let an
 # environment variable move it without a release when Meta retires it.
-GRAPH_VERSION = os.getenv("JAVIS_WHATSAPP_GRAPH_VERSION", "v23.0")
+GRAPH_VERSION = os.getenv("THANSA_WHATSAPP_GRAPH_VERSION", "v23.0")
 GRAPH = f"https://graph.facebook.com/{GRAPH_VERSION}"
 
 MAX_MSG = 4000
@@ -341,9 +341,9 @@ class WhatsAppBot(HangLuot):
                 try:
                     kq = await self.stt_fn(data, f"whatsapp_{int(time.time())}.ogg")
                 except Exception as e:
-                    kq = {"ok": False, "noi_voi_javis": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
+                    kq = {"ok": False, "noi_voi_thansa": stt.loi_thanh_dong("loi", f"{type(e).__name__}: {e}")}
                 if not (kq or {}).get("ok"):
-                    return (kq or {}).get("noi_voi_javis") or stt.loi_thanh_dong("loi")
+                    return (kq or {}).get("noi_voi_thansa") or stt.loi_thanh_dong("loi")
                 return stt.khoi_thoai(kq.get("text"), "WhatsApp")
             ddir = self.download_dir(chat) if callable(self.download_dir) else self.download_dir
             d = Path(ddir) if ddir else Path("whatsapp-inbox")

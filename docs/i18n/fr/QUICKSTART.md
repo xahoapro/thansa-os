@@ -18,9 +18,9 @@ Faites tourner Thansa OS en quelques minutes. Guides complets : [docs/en/](../..
    ```
 3. (Facultatif, pour le HTTPS + un domaine) définissez ceci dans le champ **Environment** :
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud
    ```
-   (Le hostname se trouve dans hPanel → VPS, par ex. `javis.srv1782015.hstgr.cloud`.)
+   (Le hostname se trouve dans hPanel → VPS, par ex. `thansa.srv1782015.hstgr.cloud`.)
 4. **Deploy**. Attendez 1-3 minutes. Ouvrez l'application avec le bouton **Open** (ou via `https://<DOMAIN_NAME>`).
 5. Au premier lancement, l'écran vous demande de créer un compte administrateur. Ensuite, connectez-vous une fois à Claude Code depuis le terminal du conteneur : `claude auth login --claudeai`.
 

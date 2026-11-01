@@ -14,9 +14,9 @@ import tempfile
 import time
 from pathlib import Path
 
-_STATE = Path(tempfile.mkdtemp(prefix="javis-res-a5perf-"))
-os.environ["JAVIS_STATE_DIR"] = str(_STATE)
-os.environ.pop("JAVIS_RESONANCE_CALL_CEILING", None)
+_STATE = Path(tempfile.mkdtemp(prefix="thansa-res-a5perf-"))
+os.environ["THANSA_STATE_DIR"] = str(_STATE)
+os.environ.pop("THANSA_RESONANCE_CALL_CEILING", None)
 
 import resonance as R  # noqa: E402
 import _resonance_team as T  # noqa: E402
