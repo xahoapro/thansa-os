@@ -5272,7 +5272,6 @@
   "teams.info_no_files": "Chưa có file nào. File gửi trong chat và file thêm ở đây cả team đều đọc được.",
   "teams.info_no_links": "Chưa có link nào. Link gửi trong chat tự hiện ở đây.",
   "teams.info_folder": "Thư mục làm việc",
-  "wh.head": "Webhook: sự kiện bên ngoài gọi Thansa làm việc",
   "wh.add": "Thêm webhook",
   "wh.intro": "Mỗi webhook là một đường link bí mật. Form trên landing page, đơn thanh toán hay một hệ thống khác gọi vào link này là Thansa chạy ngay quy trình hoặc việc bạn chọn, kèm dữ liệu sự kiện, rồi báo kết quả như nhắc hẹn.",
   "wh.empty": "Chưa có webhook nào.",
