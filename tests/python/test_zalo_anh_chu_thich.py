@@ -56,7 +56,7 @@ check("chú thích bắt đầu bằng '[' nhưng là lời thật vẫn giữ",
 # 2. Chuẩn hoá tin ảnh đúng dạng MCP
 # ============================================================
 conn = {"id": "zalo-1", "label": "Javis Vũ"}
-ten = {"G1": {"name": "Zoom | Javis OS", "type": "group"}}
+ten = {"G1": {"name": "Zoom | Thansa OS", "type": "group"}}
 anh = {"id": "m1", "threadId": "G1", "from": "7770555", "senderName": "Ngô Văn Ngợi", "type": "chat.photo",
        "text": "@Javis Vũ hướng dẫn thao tác tạo Agent", "threadType": 1, "ts": 1790000000000}
 ev = zc.chuan_hoa_tin(conn, anh, ten)
@@ -91,7 +91,7 @@ check("lượt chủ nhờ bot: ảnh trơn bị coi là chưa có tin để tr�
       "conversations.chu_thich_anh(last.get(\"text\")) if (last or {}).get(\"message_type\") == \"image\"" in src and "text = chu_khach" in src)
 tp = (SERVER / "channels" / "zalo_personal.py").read_text(encoding="utf-8")
 check("Transport nhận cả 'text' lẫn 'image', ảnh lấy chú thích, và đánh dấu co_anh vào meta",
-      'kieu not in ("text", "image", "file", "reaction")' in tp and "conversations.chu_thich_anh(ev.get(\"text\"))" in tp and 'meta["co_anh"] = True' in tp)
+      'kieu not in ("text", "image", "file", "reaction", "video", "audio")' in tp and "conversations.chu_thich_anh(ev.get(\"text\"))" in tp and 'meta["co_anh"] = True' in tp)
 
 check("không dùng em dash trong file này", chr(0x2014) not in open(__file__, encoding="utf-8").read())
 

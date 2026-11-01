@@ -1,8 +1,8 @@
 # Quy ước dev (phiên Claude Code làm việc trên repo này)
 
 File này tách khỏi `CLAUDE.md` ngày 2026-09-22. Lý do: `CLAUDE.md` là system prompt đi vào
-MỌI lượt chat của Javis, có trần ngân sách (`tests/python/test_prompt_budget.py`), mà quy ước
-dev thì người dùng Javis không bao giờ cần. Để ở đây thì viết bao nhiêu cũng được, không đánh
+MỌI lượt chat của Thansa, có trần ngân sách (`tests/python/test_prompt_budget.py`), mà quy ước
+dev thì người dùng Thansa không bao giờ cần. Để ở đây thì viết bao nhiêu cũng được, không đánh
 thuế lên lượt chat nào cả.
 
 ## Nhánh, PR và merge
@@ -81,6 +81,21 @@ chứ không để xổ hết ra bên ngoài". Luật cứng cho MỌI màn hìn
 - `tests/python/test_info_tip_rule.py` đỏ khi một chuỗi trên 100 ký tự được vẽ ra mà không nằm trong khối (i). Chuỗi
   dài hợp lệ (lỗi, xác nhận...) ghi vào `tests/python/info_tip_allow.json` kèm lý do; đừng ghi một lời giải thích
   vào đó để cho qua test.
+
+## Không lặp lại tiêu đề trang (từ 0.432.0)
+
+Chủ repo chốt 01/11/2026: "đừng lặp lại tiêu đề như vậy, thật tốn diện tích hiển thị và không có tác dụng gì", "phải
+biết tiết kiệm không gian". Đầu mỗi trang đã có thanh tiêu đề chung (`.cview-head`, chữ lấy từ `page.<id>.title` và
+`page.<id>.sub`), nên:
+
+- **Thân trang không vẽ lại tên trang**, kể cả khi kèm một câu khẩu hiệu ("Webhook: sự kiện bên ngoài gọi Thansa làm
+  việc" ngay dưới tiêu đề "Webhook" là sai). Mở trang là vào thẳng thứ cần nhìn: số liệu, danh sách, nút bấm.
+- Nút (i) từng đứng cạnh cái tiêu đề thừa thì dời sang cạnh nút hành động chính, hoặc dùng `JavisInfo.pair(html, nhãn)`
+  với một nhãn nói đúng nội dung bên trong ("Cách lấy cookie").
+- Tiêu đề thẻ bên trong trang phải mang thông tin mới (một con số, một trạng thái), không nhắc lại tên trang hay tên tab.
+- Trang tự ẩn `.cview-head` (Nhiệm vụ, Hội thoại, Nhóm, Chat) thì được có tiêu đề riêng, vì không còn gì để lặp.
+- Tiết kiệm chỗ nói chung: phần tổng quan đầu trang giữ một hàng thấp, cái gì bấm mới cần thì mở trong popup thay vì
+  xổ xuống đẩy cả trang.
 
 ## Viết CHANGELOG.md
 

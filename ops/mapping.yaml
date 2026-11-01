@@ -2351,3 +2351,42 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P076
+  ten: "Rebrand nền 0.438.1 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-11-01 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.438.1 sang Thansa
+    theo luật P007/P026/P027/P048 (154 chỗ / 21 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P076: rebrand nen 0.438.1 (tu dong)"
+  diem_neo:
+    - file: dashboard/i18n/en.json
+      ky_hieu: 'ts under posts, and Thansa posts to the Page (when'
+  vung_theo_doi:
+    - "dashboard/conversations.js"
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/index.html"
+    - "dashboard/messenger-connect.js"
+    - "docs/05-quan-ly-tep-tin.md"
+    - "docs/13-second-brain-bo-nho-wiki.md"
+    - "docs/31-messenger-tung-buoc.md"
+    - "docs/31-messenger.md"
+    - "docs/en/05-file-manager.md"
+    - "docs/en/13-second-brain.md"
+    - "docs/en/31-messenger-step-by-step.md"
+    - "docs/en/31-messenger.md"
+    - "docs/quy-uoc-dev.md"
+    - "server/chatbot_runtime.py"
+    - "server/github_oauth.py"
+    - "server/local_stt.py"
+    - "server/main.py"
+    - "server/messenger_oauth.py"
+    - "server/oauth_mcp.py"
+    - "server/video_vision.py"
+  anh_goc:
+    - file: dashboard/i18n/en.json
+      doan: 'ts under posts, and Javis posts to the Page (when'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
