@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Tự động TRỘN + NGHIỆM THU bản Javis mới cho Thansa - KHÔNG tự phát hành. Cron qua ops/tu-dong-tron.sh.
 
+TỪ 01/11/2026 (chủ chốt): Thansa là GỐC. Bản Javis mới được lấy toàn bộ và MERGE vào Thansa (tron_merge), không còn
+rebase chuỗi patch lên Javis. Xung đột: luật máy (đổi tên, JSON theo khoá, VERSION, route_table) → còn lại nhờ Claude
+Code headless sửa phần Javis theo logic Thansa (tắt bằng --khong-claude) → test Thansa vs Javis gốc là cửa chặn.
+
 Chủ chốt 07/10/2026 (cách 2): định kỳ quét Javis; có bản mới thì tự trộn + nghiệm thu trong một WORKTREE
 RIÊNG (không đụng nhánh me/main đang làm việc), kết quả để ở nhánh `san-sang-<bản>` trên máy rồi nhắn
 Telegram "sẵn sàng, chờ duyệt". Xung đột thật / hồi quy / chốt an toàn hỏng → nhắn Telegram và dừng.
@@ -264,6 +268,157 @@ def tron(up: str, ver_moi: str, base_moi: str) -> dict:
     return ttin
 
 
+
+# ---------------------------------------------------------------- TRỘN KIỂU MỚI (01/11/2026): MERGE thay rebase
+# Chủ chốt 01/11: code Thansa là GỐC; mỗi bản Javis mới được LẤY TOÀN BỘ và trộn VÀO Thansa (git merge),
+# chỗ không khớp thì sửa phần của Javis theo logic Thansa. Không phát lại chuỗi 265 commit nữa → mỗi xung đột
+# chỉ gỡ MỘT lần. Trong merge: "ours" = Thansa (HEAD), "theirs" = Javis (MERGE_HEAD), base = bản Javis trước.
+
+KHOI3 = re.compile(r"^<<<<<<< [^\n]*\n(.*?)^\|\|\|\|\|\|\| [^\n]*\n(.*?)^=======\n(.*?)^>>>>>>> [^\n]*\n", re.S | re.M)
+I18N_JSON = re.compile(r"^(dashboard/i18n/[^/]+\.json|tests/python/info_tip_allow\.json)$")
+DUNG_CLAUDE = "--khong-claude" not in sys.argv
+
+
+def dang_merge() -> bool:
+    return (Path(git("rev-parse", "--absolute-git-dir")) / "MERGE_HEAD").exists()
+
+
+def _ban(rev: str, f: str):
+    r = sh(["git", "show", f"{rev}:{f}"], check=False)
+    return r.stdout if r.returncode == 0 else None
+
+
+def go_json_3chieu(f: str, base_rev: str) -> bool:
+    """JSON phẳng (từ điển i18n, danh sách miễn): trộn 3 chiều THEO KHOÁ. Javis thêm/sửa khoá mà Thansa không
+    động → lấy của Javis; Javis xoá khoá Thansa không sửa → xoá; hai bên cùng sửa → nếu Thansa chỉ đổi tên thì
+    lấy Javis (rebrand_moi đổi tên sau), còn lại GIỮ Thansa."""
+    try:
+        b = json.loads(_ban(base_rev, f) or "{}")
+        o = json.loads(_ban("HEAD", f) or "{}")
+        t = json.loads(_ban("MERGE_HEAD", f) or "{}")
+    except ValueError:
+        return False
+    if not all(isinstance(x, dict) for x in (b, o, t)):
+        return False
+    kq = dict(o)
+    for k in list(b):
+        if k not in t and kq.get(k) == b[k]:
+            kq.pop(k, None)
+    for k, v in t.items():
+        if b.get(k) == v:
+            continue                                   # Javis không đổi khoá này
+        if k not in o or o.get(k) == b.get(k) or (isinstance(o.get(k), str) and nguoc(o[k]) == (b.get(k) or "")):
+            kq[k] = v
+    raw = _ban("HEAD", f) or ""
+    ind = 2 if '\n  "' in raw[:80] else 1
+    (WT / f).write_text(json.dumps(kq, ensure_ascii=False, indent=ind) + "\n", encoding="utf-8")
+    return True
+
+
+def go_file_merge(f: str) -> bool:
+    """Gỡ khối xung đột (diff3) theo luật: Thansa chỉ đổi tên → lấy dòng Javis + đổi tên; một bên giữ nguyên
+    base → lấy bên kia; dòng hiển thị dich-en.js (P015) giữ bản Thansa, còn lại của dòng đó theo Javis."""
+    p = WT / f
+    s = p.read_text(encoding="utf-8", errors="surrogateescape")
+
+    def mot(m):
+        ours, base, theirs = m.group(1), m.group(2), m.group(3)
+        if ours == base:
+            return theirs
+        if theirs == base:
+            return ours
+        if nguoc(ours) == base or set(re.findall(r"\w+", nguoc(ours))) <= set(re.findall(r"\w+", theirs)):
+            return rebrand(theirs)
+        if "dich-en.js" in ours and "dich-en.js" not in theirs:   # P015: lớp phủ EN của Thansa
+            d = [l for l in ours.splitlines(True) if "dich-en.js" in l]
+            return "".join(d) + theirs
+        return m.group(0)
+
+    s2 = KHOI3.sub(mot, s)
+    p.write_text(s2, encoding="utf-8", errors="surrogateescape")
+    return not MARKER.search(s2)
+
+
+def goi_claude_go(files: list, base_rev: str, ver_cu: str, ver_moi: str) -> None:
+    """Xung đột luật máy không gỡ được: nhờ Claude Code (headless) sửa phần của Javis theo logic Thansa."""
+    if not files:
+        return
+    if not DUNG_CLAUDE:
+        raise Loi(f"còn xung đột cần người/Claude xử lý: {files}")
+    prompt = f"""Bạn đang trộn Javis OS {ver_cu} → {ver_moi} vào Thansa OS (một bản tách của Javis) bằng git merge.
+Các file sau còn dấu xung đột kiểu diff3 (<<<<<<< ours = Thansa, ||||||| base = Javis {ver_cu}, ======= , >>>>>>> theirs = Javis {ver_moi}):
+{chr(10).join('- ' + f for f in files)}
+
+Luật: LẤY TOÀN BỘ thay đổi của Javis {ver_moi}, nhưng sửa cho hợp với Thansa:
+1. Thương hiệu: chữ hiển thị "Javis"/"JAVIS OS" → "Thansa"/"THANSA OS"; link blogminhquy/javis-os → xahoapro/thansa-os.
+   KHÔNG đổi định danh code (javis_task, javisTheme, thư mục vault "Javis/", tên plugin javis-*, biến JAVIS_*).
+2. Giữ mọi tuỳ biến riêng của Thansa: chốt an toàn P038 (loop tạo qua chat luôn mode suggest, hộp cảnh báo đỏ +
+   confirm khi chọn/bật Toàn quyền), bảo mật P061 (cổng ngoài, gate_active nhận request), bộ cài/updater Thansa (P051/P053/P062),
+   lớp phủ dịch EN (dich-en.js, en-goi.json), số phiên bản VERSION của Thansa.
+3. Nếu Javis viết lại hẳn một vùng mà Thansa đã tuỳ biến: dùng code mới của Javis rồi CÀI LẠI tuỳ biến Thansa lên đó.
+Chỉ sửa đúng các file trên, xoá hết dấu xung đột, không commit, không chạy git. Cuối cùng in một dòng tóm tắt đã làm gì."""
+    r = sh(["claude", "-p", prompt, "--permission-mode", "acceptEdits", "--allowedTools", "Read,Edit,Write,Grep,Glob"],
+           check=False, timeout=3600)
+    log("Claude gỡ xung đột: " + (r.stdout.strip().splitlines() or ["(không in gì)"])[-1][:300])
+    con = [f for f in files if (WT / f).is_file() and MARKER.search((WT / f).read_text(encoding="utf-8", errors="replace"))]
+    if con:
+        raise Loi(f"Claude chưa gỡ hết xung đột: {con}")
+
+
+def tron_merge(up: str, ver_moi: str, base_moi: str, ver_cu: str) -> dict:
+    ttin = {"tu_go": [], "xoa": [], "claude": []}
+    base_rev = git("merge-base", "HEAD", up)
+    r = sh(["git", "-c", "merge.conflictStyle=diff3", "merge", "--no-ff", "--no-commit", up], check=False)
+    if r.returncode != 0 and not dang_merge():
+        raise Loi(f"git merge hỏng: {(r.stdout + r.stderr)[-400:]}")
+    can_claude, can_chup_route = [], False
+    for l in git("status", "--porcelain").splitlines():
+        kieu, f = l[:2], l[3:]
+        if kieu not in ("UU", "AA", "DU", "UD", "AU", "UA", "DD"):
+            continue
+        if f == "VERSION":
+            (WT / "VERSION").write_text(f"{ver_moi}-javis-{base_moi}\n", encoding="utf-8")
+        elif f == "tests/python/route_table.json":
+            sh(["git", "checkout", "--ours", "--", f]); can_chup_route = True
+        elif f in FILE_BAO_VE and f != "RELEASES.md" and kieu == "UU":
+            sh(["git", "checkout", "--theirs", "--", f])          # giữ đúng byte Javis
+        elif f == "RELEASES.md":
+            sh(["git", "checkout", "--ours", "--", f])
+        elif kieu == "UD":                                         # Javis xoá file Thansa đã sửa → theo Javis
+            git("rm", "-q", "--", f); ttin["xoa"].append(f); continue
+        elif kieu == "DD":
+            git("rm", "-q", "--", f); continue
+        elif kieu == "DU":                                         # Thansa đã xoá, Javis còn sửa → giữ xoá
+            git("rm", "-q", "--", f); ttin["xoa"].append(f + " (Thansa đã bỏ)"); continue
+        elif kieu == "UU" and I18N_JSON.match(f) and go_json_3chieu(f, base_rev):
+            ttin["tu_go"].append(f)
+        elif kieu == "UU" and go_file_merge(f):
+            ttin["tu_go"].append(f)
+        else:
+            can_claude.append(f); continue
+        git("add", "--", f)
+    goi_claude_go(can_claude, base_rev, ver_cu, base_moi)
+    for f in can_claude:
+        sh(["git", "add", "-A", "--", f])
+    ttin["claude"] = can_claude
+    if can_chup_route:
+        sh([str(PY), "tests/python/test_route_table.py", "--update"], check=False)
+        git("add", "tests/python/route_table.json")
+    if (WT / "VERSION").read_text().strip() != f"{ver_moi}-javis-{base_moi}":
+        (WT / "VERSION").write_text(f"{ver_moi}-javis-{base_moi}\n", encoding="utf-8")
+        git("add", "VERSION")
+    con = [l[3:] for l in git("status", "--porcelain").splitlines() if l[:2] in ("UU", "AA", "DU", "UD", "AU", "UA", "DD")]
+    if con:
+        raise Loi(f"còn file chưa gỡ: {con}")
+    nhiem = sh(["bash", "-c", "git diff --cached --name-only -z | xargs -0 -r grep -alE '^(<<<<<<< |>>>>>>> )' 2>/dev/null | head -5"]).stdout.strip()
+    if nhiem:
+        raise Loi(f"sau trộn còn dấu xung đột: {nhiem}")
+    git("commit", "-q", "-m", f"merge: Javis {ver_cu} -> {base_moi} vao Thansa {ver_moi}\n\n"
+        f"Tu go: {', '.join(ttin['tu_go']) or 'khong'}. Claude go: {', '.join(can_claude) or 'khong'}. "
+        f"Xoa: {', '.join(ttin['xoa']) or 'khong'}.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+    return ttin
+
+
 def dem(rev: str) -> dict:
     out = {}
     for f in git("ls-tree", "-r", "--name-only", rev).splitlines():
@@ -333,6 +488,11 @@ def rebrand_moi() -> dict:
         elif re.search(r"\.(md|json|ya?ml)$", f) or f in ("dashboard/index.html", "CLAUDE.md"):
             s = p.read_text(encoding="utf-8")
             t = rebrand(s)
+            if f.startswith("dashboard/i18n/"):                 # 31/10: test JS so nguyên văn chuỗi i18n
+                for m in CUM_RE.finditer(s):
+                    cum = m.group(0)
+                    if cum.startswith("Javis") or cum.count(" ") >= 2 or cum[:1].isupper():
+                        CUM_DOI[cum] = RB.sub("Thansa", cum)
             if t != s:
                 n = len(RB.findall(s)) + s.count("JAVIS OS")
                 p.write_text(t, encoding="utf-8")
@@ -387,9 +547,9 @@ def va_test_theo_rebrand() -> int:
     if not CUM_DOI:
         return 0
     sua = []
-    for f in git("diff", "--name-only", "origin/me", "HEAD", "--", "tests/python").splitlines():
+    for f in git("diff", "--name-only", "origin/me", "HEAD", "--", "tests/python", "tests/js").splitlines():
         p = WT / f
-        if not f.endswith(".py") or not p.exists():
+        if not f.endswith((".py", ".js")) or not p.exists():
             continue
         s = p.read_text(encoding="utf-8")
         t = s
@@ -487,7 +647,7 @@ def ghi_ho_so(moc: dict, up: str, ver_moi: str, base_moi: str, cac_commit: list,
         f.write(f"""
 ## Vòng TỰ ĐỘNG {hom_nay} (goc {moc['goc_commit'][:7]} → {up[:7]}, nền {moc['goc_version']} → {base_moi}, thansa {moc['thansa_version']}→{ver_moi})
 - {len(cac_commit)} commit upstream: {goc_tom[:600]}
-- Rebase tự động trong worktree riêng. Tự gỡ: {", ".join(ttin["tu_go"]) or "không"}. Upstream xoá: {", ".join(ttin["xoa"]) or "không"}.
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: {", ".join(ttin["tu_go"]) or "không"}. Claude gỡ: {", ".join(ttin.get("claude", [])) or "không"}. Xoá: {", ".join(ttin["xoa"]) or "không"}.
 - Rebrand: {pid or "không cần"} ({sum(doi.values())} chỗ / {len(doi)} file). moc-goc {up[:7]}/{base_moi}/so_patch {m['so_patch']}.
 """)
     git("add", "ops/mapping.yaml", "ops/moc-goc.json", "RELEASES.md", "ops/so-tron.md")
@@ -503,7 +663,7 @@ def tu_kiem(up: str) -> None:
 
 
 def suite(cwd: Path, ten: str) -> tuple[set, str]:
-    r = sh([str(PY), "tests/run.py"], cwd=cwd, check=False, timeout=10800)  # 0.369: suite >1h
+    r = sh([str(PY), "tests/run.py", "--jobs", "2"], cwd=cwd, check=False, timeout=10800)  # 0.369: suite >1h
     (BT / f"tu-dong-{ten}.log").write_text(r.stdout + r.stderr, encoding="utf-8")
     m = re.search(r"^ĐỎ: (.*)$", r.stdout, re.M)
     tong = re.search(r"^(\d+/\d+) xanh", r.stdout, re.M)
@@ -741,8 +901,8 @@ def main() -> int:
         return 0
     try:
         chuan_bi(up)
-        ttin = tron(up, ver_moi, base_moi)
-        log(f"rebase xong; tự gỡ {len(ttin['tu_go'])} khối, theo upstream xoá {len(ttin['xoa'])} file")
+        ttin = tron_merge(up, ver_moi, base_moi, moc["goc_version"])
+        log(f"merge xong; tự gỡ {len(ttin['tu_go'])} file, Claude gỡ {len(ttin['claude'])}, xoá {len(ttin['xoa'])}")
         doi = rebrand_moi()
         log(f"rebrand {sum(doi.values())} chỗ / {len(doi)} file")
         n_test = va_test_theo_rebrand()
@@ -767,6 +927,8 @@ def main() -> int:
         log(f"LỖI: {e}")
         if WT.exists() and dang_rebase():
             sh(["git", "rebase", "--abort"], check=False)
+        if WT.exists() and dang_merge():
+            sh(["git", "merge", "--abort"], check=False)
         don_dep()
         ghi_state(loi_up=up, loi_luc=time.strftime("%Y-%m-%d %H:%M"), loi=str(e)[:500])
         tele("🚨 THANSA - tự trộn Javis DỪNG",
