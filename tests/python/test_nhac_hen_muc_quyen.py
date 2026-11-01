@@ -176,16 +176,19 @@ check("CLAUDE.md dặn đọc lại nguyên văn cảnh báo",
       "read it back VERBATIM" in CLAUDEMD and "muc_quyen" in CLAUDEMD)
 
 
-# ---- 4. Giao diện: mức quyền phải hiện ra, và cảnh báo phải nổi ----
-JS = (ROOT / "dashboard" / "console.js").read_text(encoding="utf-8")
-check("thẻ nhắc hẹn hiện mức quyền", "MQ_LBL" in JS and "rm-mq" in JS)
-check("form có ô chọn mức quyền", "lpRemMq" in JS)
-check("form hiện cảnh báo khi chọn toàn quyền", "lpRemMqWarn" in JS)
-check("ô mức quyền chỉ hiện với kiểu tự-làm", 'frmode === "task" ? "" : "none"' in JS)
-check("form gửi muc_quyen lên server", JS.count("muc_quyen: frmq") + JS.count('"muc_quyen", frmq') >= 2)
-CSS = (ROOT / "dashboard" / "style.css").read_text(encoding="utf-8")
-check("mức toàn quyền nổi bật trên thẻ, không chìm như dòng phụ chú", ".rm-mq.on" in CSS)
-
+# ---- 4. Giao diện: mức quyền phải hiện ra, và cảnh báo phải nổi (Thansa P038 giữ chốt an toàn) ----
+# 0.426.0: reminders/loops are added and edited on the Tasks page (dashboard/tasks.js); console.js keeps no old form.
+JS = (ROOT / "dashboard" / "tasks.js").read_text(encoding="utf-8")
+check("chi tiết nhắc hẹn và loop hiện mức quyền", 'kv(tw("nv.lp.mode"), \'<span class="nv-lvl\'' in JS and "((it.raw || {}).muc_quyen || \"full\")" in JS)
+check("form có ô chọn mức quyền", 'data-k="mq"' in JS)
+check("lời nhắc mới mặc định toàn quyền trên form", 'var lv = f.mq || "full";' in JS)
+check("ô mức quyền chỉ hiện với kiểu tự-làm", '(f.mode === "do" ? \'<div class="nv-fld"><span>\' + esc(tw("nv.lp.mode"))' in JS)
+check("form gửi muc_quyen lên server khi tạo và khi sửa",
+      'muc_quyen: f.mq || "full", call: !!f.call' in JS and 'muc_quyen: f.mq || "full",\n' in JS)
+check("form hiện hộp cảnh báo đỏ khi chọn toàn quyền", 'lv === "full" ? fullWarn("reminder")' in JS and 'f.lmode === "full" ? fullWarn("loop")' in JS)
+check("loop thiếu mức thì về suggest, không phải toàn quyền", 'lmode: lp.mode || "suggest"' in JS and 'mode: f.lmode || "suggest"' in JS)
+check("lưu loop toàn quyền phải confirm()", 'f.lmode === "full" && !window.confirm(tw("cs.si_full_confirm"' in JS)
+check("bật loop toàn quyền phải confirm()", '(r.raw || {}).mode === "full" && !window.confirm(tw("cs.si_toggle_confirm"' in JS)
 
 if _fails:
     raise SystemExit(f"\nFAIL - test_nhac_hen_muc_quyen: {len(_fails)} lỗi: {_fails}")

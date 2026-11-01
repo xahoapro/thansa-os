@@ -100,8 +100,17 @@ def notify(updates: List[dict]) -> Optional[dict]:
         "Bấm để mở Thansa Store và cập nhật. Thansa không tự cập nhật: mỗi bản mới vẫn qua màn hình xác nhận.",
         "Press to open the Thansa Store and update. Thansa never updates on its own: each new version still goes "
         "through the confirm screen.")
+    # 0.403.0: an update is an "info" notice of the group "update"; Thansa Core's rules decide if it rings.
+    import notify_policy
+    dec = notify_policy.decide("update", "info", title)
+    if dec["verdict"] == "drop":
+        told.update({u["id"]: u["to"] for u in fresh})
+        _save(told)
+        return None
     item = inbox.add(body, kind="system", title=title, label="Thansa Store", source="store", channel=CHANNEL,
-                     dedup="pack-updates:" + ",".join(sorted(f"{u['id']}@{u['to']}" for u in fresh)))
+                     dedup="pack-updates:" + ",".join(sorted(f"{u['id']}@{u['to']}" for u in fresh)),
+                     group=dec["group"], level=dec["level"], sig=dec["sig"], filtered=dec["verdict"] != "loud",
+                     why=dec["why"])
     told.update({u["id"]: u["to"] for u in fresh})
     _save(told)
     return item

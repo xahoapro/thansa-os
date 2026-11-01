@@ -6,19 +6,22 @@
 const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..", "..");
-const cs = fs.readFileSync(path.join(root, "dashboard", "console.js"), "utf8");
+// 0.426.0: the forms moved to the Tasks page (dashboard/tasks.js): the loop edit form and the reminder options.
+const cs = fs.readFileSync(path.join(root, "dashboard", "tasks.js"), "utf8");
 const plug = fs.readFileSync(path.join(root, "system", "plugins", "javis-schedule", "plugin.py"), "utf8");
 const vi = JSON.parse(fs.readFileSync(path.join(root, "dashboard", "i18n", "vi.json"), "utf8"));
 const en = JSON.parse(fs.readFileSync(path.join(root, "dashboard", "i18n", "en.json"), "utf8"));
 let fails = 0;
 function check(name, cond) { console.log((cond ? "ok   " : "FAIL ") + name); if (!cond) fails++; }
 
-// Thansa P038 (chốt an toàn): loop tạo từ form/chat mặc định suggest, model không đổi được; nhắc hẹn kiểu task giữ Full + cảnh báo.
-check("Thansa P038: loop defaults to suggest, task reminders stay Full",
-  /let fcur = \{ mode: "suggest" \};/.test(cs) && /let frmq = "full";/.test(cs) && /mode: suggest\\n/.test(plug) && !/_LOOP_MODE_MAC_DINH/.test(plug));
-check("a note sits under both level rows", cs.includes('id="lpModeNote"') && cs.includes('id="lpRemMqNote"'));
+// Thansa P038 (chủ giữ chốt an toàn): loop mặc định Suggest, nhắc hẹn tự-làm vẫn Full.
+check("defaults: loops Suggest, task reminders Full",
+  /lmode: lp\.mode \|\| "suggest"/.test(cs) && /var lv = f\.mq \|\| "full";/.test(cs) && /muc_quyen: f\.mq \|\| "full"/.test(cs)
+  && /mode: suggest\\n/.test(plug));
+check("a note sits under both level rows", (cs.match(/class="nv-hint/g) || []).length === 2);
 check("the note follows the picked level in both forms",
-  /levelNote\("#lpModeNote", fcur\.mode\);/.test(cs) && /levelNote\("#lpRemMqNote", frmq\);/.test(cs));
+  /tw\(LP_NOTE\[f\.lmode\] \|\| LP_NOTE\.suggest\)/.test(cs) && /tw\(LP_NOTE\[lv\]\)/.test(cs)
+  && /LP_NOTE = \{ suggest: "cs\.si_level_note_suggest", auto: "cs\.si_level_note_auto", full: "cs\.si_level_note_full" \}/.test(cs));
 const keys = ["cs.si_level_note_full", "cs.si_level_note_auto", "cs.si_level_note_suggest"];
 check("notes in vi and en, one short line each (no (i) needed)",
   keys.every(k => vi[k] && en[k] && vi[k].length <= 100 && en[k].length <= 100));

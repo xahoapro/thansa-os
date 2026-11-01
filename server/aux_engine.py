@@ -675,6 +675,14 @@ class _FallbackChain:
                         got_error = (f"{self._name(e)} mất đăng nhập: "
                                      + (ev.get("content") or "").strip()[:200])
                         break
+                    # Claude Code ends a failed turn (out of plan usage, API 429) with a final flagged
+                    # `is_error` whose text is the provider's message. Passing it on as a success kept
+                    # the next link from ever running, and the job was reported done with that message
+                    # as its result. Codex says the same thing as an `error` event; treat both alike.
+                    if t == "final" and ev.get("is_error"):
+                        got_error = ((ev.get("content") or "").strip()[:300]
+                                     or f"{self._name(e)} kết thúc lỗi ({ev.get('subtype') or 'final'})")
+                        break
                     yield ev
                     if t == "final":
                         got_final = True
@@ -766,7 +774,8 @@ def la_viec_nen_theo_lich(tag) -> bool:
     t = str(tag or "").strip()
     if t.endswith("-main"):
         t = t[:-len("-main")]
-    return t in _TAG_VIEC_NEN_THEO_LICH or t.startswith("dispatch:")
+    # A reminder's own run is tagged "reminder:<id>" since 0.422.0 (so one run can be stopped).
+    return t in _TAG_VIEC_NEN_THEO_LICH or t.startswith(("dispatch:", "reminder:"))
 
 
 def _hub_bat_buoc_hong(text) -> bool:

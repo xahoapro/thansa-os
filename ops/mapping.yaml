@@ -2309,3 +2309,45 @@
     Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
   dieu_kien_bo: >
     Như P048.
+
+- id: P075
+  ten: "Rebrand nền 0.429.0 (tự động)"
+  y_dinh: >
+    Vòng trộn TỰ ĐỘNG 2026-10-31 (ops/tu_dong_tron.py): đổi chữ Javis hiển thị mới của nền 0.429.0 sang Thansa
+    theo luật P007/P026/P027/P048 (247 chỗ / 24 file) + kéo link repo gốc về xahoapro/thansa-os.
+  commit: "[me] P075: rebrand nen 0.429.0 (tu dong)"
+  diem_neo:
+    - file: dashboard/i18n/en.json
+      ky_hieu: 'kground job paused, Thansa is on it",'
+  vung_theo_doi:
+    - "dashboard/i18n/en.json"
+    - "dashboard/i18n/vi.json"
+    - "dashboard/index.html"
+    - "docs/02-tro-chuyen-va-giong-noi.md"
+    - "docs/07-agents-va-workflows.md"
+    - "docs/28-hoi-thoai-khach.md"
+    - "docs/35-zalo-oa.md"
+    - "docs/en/02-chat-and-voice.md"
+    - "docs/en/07-agents-and-workflows.md"
+    - "docs/en/28-customer-conversations.md"
+    - "docs/en/35-zalo-oa.md"
+    - "server/channels/zalo_oa.py"
+    - "server/claude_cli.py"
+    - "server/gcal_read.py"
+    - "server/lenh_he_thong.py"
+    - "server/main.py"
+    - "server/my_tasks.py"
+    - "server/tasks.py"
+    - "server/zalo_oa_bot.py"
+    - "system/mcp-catalog.json"
+    - "system/plugins/javis-mine/plugin.py"
+    - "system/plugins/javis-mine/plugin.yaml"
+    - "system/plugins/javis-notify/plugin.py"
+    - "system/plugins/javis-notify/plugin.yaml"
+  anh_goc:
+    - file: dashboard/i18n/en.json
+      doan: 'kground job paused, Javis is on it",'
+  kiem_chung: >
+    Đếm Javis hiển thị theo file so bản phát hành trước; nghiệm thu fork vs upstream sạch; chốt an toàn P038.
+  dieu_kien_bo: >
+    Như P048.
