@@ -302,7 +302,7 @@ def go_json_3chieu(f: str, base_rev: str) -> bool:
         return False
     kq = dict(o)
     for k in list(b):
-        if k not in t and kq.get(k) == b[k]:
+        if k not in t and (kq.get(k) == b[k] or (isinstance(kq.get(k), str) and nguoc(kq[k]) == b[k])):
             kq.pop(k, None)
     for k, v in t.items():
         if b.get(k) == v:
