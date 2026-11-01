@@ -6,7 +6,7 @@ set -uo pipefail
 OPS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PATH="/home/thansa/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export HOME="${HOME:-/home/thansa}"
-unset JAVIS_STATE_DIR JAVIS_BRAIN JAVIS_IN_TERMINAL     # bẫy 28/09: test không được ghi state app thật
+unset JAVIS_STATE_DIR JAVIS_BRAIN JAVIS_IN_TERMINAL THANSA_STATE_DIR THANSA_BRAIN THANSA_IN_TERMINAL     # bẫy 28/09: test không được ghi state app thật
 # --nghe (đọc nút Telegram, cron mỗi phút) dùng khoá RIÊNG: không bị một lượt trộn 35 phút chặn. Bước phát hành
 # mà nút gọi tự lấy khoá trộn (.tu-dong.lock) bên trong python nên vẫn không chạy chồng với lượt trộn.
 if [ "${1:-}" = "--nghe" ]; then
