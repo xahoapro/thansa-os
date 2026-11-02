@@ -26,7 +26,7 @@ _state: dict = {}         # conn_id -> {ok, kind, message, checked_at, tools}
 _task = None
 
 # Bản tiếng Anh của các câu cố định bên dưới. `_state` và `_engines` vẫn GIỮ câu tiếng Việt
-# (`javis_connections` của bộ não đọc chúng), chỉ lúc trả ra màn hình (`snapshot`,
+# (`thansa_connections` của bộ não đọc chúng), chỉ lúc trả ra màn hình (`snapshot`,
 # `engines_snapshot`, `check_by_id`) mới chọn theo ngôn ngữ giao diện. Câu có phần động
 # (thiếu quyền gì) mang sẵn `message_en` trong bản ghi.
 _EN = {
@@ -184,7 +184,7 @@ async def check_one(conn, pool=None) -> dict:
         rec.update(ok=True, tools=len(tools))
         # Nối được nhưng hộp công cụ RỖNG thì không được tô xanh. Đèn xanh ghi "Hoạt động
         # bình thường (0 công cụ)" là câu nói dối tai hại nhất trang này: người dùng tin là
-        # nguồn ổn nên đi tìm lỗi ở chỗ khác, còn bộ não thì đọc `javis_connections` thấy
+        # nguồn ổn nên đi tìm lỗi ở chỗ khác, còn bộ não thì đọc `thansa_connections` thấy
         # "ổn" rồi kết luận bừa (vụ 03/09: "POS ổn nhưng không có tool nào" - model quay ra
         # đổ cho brain chưa gắn nguồn). Máy chủ có thật mà không có tool là hỏng, nói thẳng.
         if not tools:
@@ -297,7 +297,7 @@ def _engine_notice_path():
 
 def _engine_notified_saved() -> dict:
     """{engine name: time} of the down notices already sent and not yet followed by a recovery (0.402.0). Kept on disk
-    so a restart while an engine is still down does not send the same "Javis is not usable" notice again."""
+    so a restart while an engine is still down does not send the same "Thansa is not usable" notice again."""
     try:
         d = json.loads(_engine_notice_path().read_text(encoding="utf-8"))
         return d if isinstance(d, dict) else {}
@@ -337,7 +337,7 @@ def _set_engine(name, ok, message="", source="probe"):
     if not ok and not rec["notified"] and on_engine_down:
         # Chỉ báo Telegram khi bộ não này ĐANG là Main Model. Đèn của bộ não khác (vd lượt
         # chạy việc nền bằng Claude phát hiện mất đăng nhập trên máy Main Codex) vẫn được
-        # ghi lại, nhưng câu "Javis chưa dùng được" là SAI với người dùng đó - việc nền đã
+        # ghi lại, nhưng câu "Thansa chưa dùng được" là SAI với người dùng đó - việc nền đã
         # tự chạy tiếp bằng bộ não chat (_FallbackChain, 0.43.3).
         try:
             if name not in engines_in_use():
@@ -347,7 +347,7 @@ def _set_engine(name, ok, message="", source="probe"):
         rec["notified"] = True
         _engine_notified_set(name, True)
         try:
-            # Nói theo góc NGƯỜI DÙNG: với họ chỉ có một sự thật là chưa dùng được Javis,
+            # Nói theo góc NGƯỜI DÙNG: với họ chỉ có một sự thật là chưa dùng được Thansa,
             # và một việc phải làm. Tên engine để trong ngoặc cho ai cần đi tra, không đặt
             # lên đầu câu.
             import localefmt
@@ -370,7 +370,7 @@ def flag_engine_auth_error(name, raw) -> bool:
 
     0.402.0: only a short error line counts (`looks_like_error_line`). The engine passes the result of every turn, so
     a normal answer that quoted "not logged in" or "invalid api key" used to light the red light and tell the owner
-    that Javis is not usable. The check lives here, not in the engine: `claude_sdk_engine.py` is part of the pinned
+    that Thansa is not usable. The check lives here, not in the engine: `claude_sdk_engine.py` is part of the pinned
     improvement profile (`improvement_claude.PROFILE_SOURCES`)."""
     if not looks_like_error_line(raw):
         return False
@@ -459,7 +459,7 @@ def engines_in_use() -> set:
 
     Model việc nền KHÔNG soi ở đây nữa (0.47.4). Từ 0.43.3 việc nền có _FallbackChain:
     Claude không sẵn sàng thì nó tự chạy bằng chính bộ não chat - tức 'model việc nền
-    chưa đăng nhập' KHÔNG còn nghĩa là 'Javis chưa dùng được'. Trong khi đó banner đọc
+    chưa đăng nhập' KHÔNG còn nghĩa là 'Thansa chưa dùng được'. Trong khi đó banner đọc
     đúng nghĩa đen như vậy, và trong một ngày (27/08) đã hai lần bắt oan máy Main Model
     Codex chỉ vì cấu hình việc nền còn trỏ một model Claude (bản đầu lọc mỗi ca
     'anthropic-cli + model rỗng' của nút Về mặc định - vẫn sót ca chọn hẳn haiku theo
@@ -640,7 +640,7 @@ async def startup_smoke(version: str = "", pool=None, retry_after: float | None 
     if again:
         await asyncio.sleep(wait)
         p = pool or mcp_client.pool
-        budget = mcp_client._env_seconds("JAVIS_MCP_INSTALL_TIMEOUT", mcp_client._INSTALL_TIMEOUT)
+        budget = mcp_client._env_seconds("THANSA_MCP_INSTALL_TIMEOUT", mcp_client._INSTALL_TIMEOUT)
         deadline = time.time() + budget
         while time.time() < deadline and any(p.is_starting(mcp_client._conn_spec(c)) for c in again):
             await asyncio.sleep(min(5.0, max(0.1, wait)))

@@ -17,7 +17,7 @@
     "server/improvement_trial_schema.py": "ac7066cdac48cf35213ed2591ed462d53d4f22955ea127904f568c69643dcae1",
     "tests/python/test_improvement_views.py": "db4723f237ab0f1c85d517e0c1b2c6950040edaffbaa76a8ff2c1106647fee06",
     "tests/python/test_improvement_view_schema.py": "c5b5abd3559048342bd7c6393a0e9d4b25b2410a4baa9347380769df82aeb5a7",
-    "tests/python/test_improvement_store.py": "174eade77e58e39312015e47c3eb5be049ebb92eeb14301ef0aee16ad0f0f3cb",
+    "tests/python/test_improvement_store.py": "1884f8875092920719c6ad576773e84ba1c4052a43e6d2d737304e6fd42c6f98",
     "tests/python/test_improvement_operations.py": "d7d1ffa7dc3ef9a47281647fa8ed5a140780f1a1a27c7e9fda3642aaff628792",
     "tests/python/test_improvement_experiments.py": "7d34fa06f4349c52008562b609ae69ddb10ad219f23e45205b9acb823f1c90a7",
     "tests/python/test_improvement_operation_execution.py": "fb94fc8d649983c925ad2a2c40024e507293e7584e3857f2a9ed535f3027d448"
@@ -33,7 +33,7 @@
     {
       "script": "test_improvement_views.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_views.py",
         "-v"
       ],
@@ -46,7 +46,7 @@
     {
       "script": "test_improvement_view_schema.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_view_schema.py",
         "-v"
       ],
@@ -59,7 +59,7 @@
     {
       "script": "test_improvement_store.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_store.py",
         "-v"
       ],
@@ -72,7 +72,7 @@
     {
       "script": "test_improvement_operations.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_operations.py",
         "-v"
       ],
@@ -85,7 +85,7 @@
     {
       "script": "test_improvement_experiments.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_experiments.py",
         "-v"
       ],
@@ -98,7 +98,7 @@
     {
       "script": "test_improvement_operation_execution.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_operation_execution.py",
         "-v"
       ],

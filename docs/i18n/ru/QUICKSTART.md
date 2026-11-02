@@ -18,9 +18,9 @@
    ```
 3. (Необязательно, для HTTPS + домена) задайте в поле **Environment**:
    ```
-   DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud
+   DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud
    ```
-   (Hostname смотрите в hPanel → VPS, например `javis.srv1782015.hstgr.cloud`.)
+   (Hostname смотрите в hPanel → VPS, например `thansa.srv1782015.hstgr.cloud`.)
 4. **Deploy**. Подождите 1-3 минуты. Откройте приложение кнопкой **Open** (или по адресу `https://<DOMAIN_NAME>`).
 5. При первом запуске экран попросит создать аккаунт администратора. После этого один раз войдите в Claude Code в терминале контейнера: `claude auth login --claudeai`.
 

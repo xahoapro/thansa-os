@@ -1,4 +1,4 @@
-"""What Javis remembers, and the person's control over it (0.188.0, Javis Core spec sections 10, 12 and 13).
+"""What Thansa remembers, and the person's control over it (0.188.0, Thansa Core spec sections 10, 12 and 13).
 
 The brain's memory stays where it always was: `memory/MEMORY.md` (the index loaded before every turn) and one file
 per memory in `memory/facts/`. This module adds the controls the spec asks for, nothing parallel:

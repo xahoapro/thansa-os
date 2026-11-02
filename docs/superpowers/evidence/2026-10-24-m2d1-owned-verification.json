@@ -4,7 +4,7 @@
   "evidence_class": "technical",
   "source_parent_commit": "4ba9624a76cd4bfb54d3d229263baa223944383b",
   "source_hashes": {
-    "tests/python/test_improvement_operation_runner.py": "bfbdb4c4758b5c7aac49c066ed7c05ee62c2ff10577493fc2e970b2f14b0e5e2",
+    "tests/python/test_improvement_operation_runner.py": "620a7e6a171200364c64f37d016f808cce2730d185c08c6357b567b7bae8b238",
     "tests/python/test_improvement_trial_runner.py": "0e38c079f1dde4e58413dff192185209208fbc74b6bcdac04406c928b1994937",
     "server/improvement_operation_runner.py": "590dde67bd5eecdc92c8cc672dc9ace803213000ce113d5126840783b2ba4587",
     "server/improvement_trial_runner.py": "11d5ea5d9110fa0d128408d68c47f3032077056f86cf4c652f6c92e67f917b43",
@@ -13,12 +13,12 @@
     "server/improvement_operation_adapter.py": "3be10b51ab3182b8f21269320530c03e1d2c39e03ee62c1603806f5ebecec18a"
   },
   "test_commands": [
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_owned_verification.py -v",
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_trial_runner.py TrialRunnerTests.test_cancelled_verification_retains_execution_until_thread_settles -v",
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_operation_runner.py OperationRunnerTests.test_cancelled_verification_retains_execution_until_thread_settles -v",
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_trial_runner.py -v",
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_operation_runner.py -v",
-    "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_claude.py -v"
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_owned_verification.py -v",
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_trial_runner.py TrialRunnerTests.test_cancelled_verification_retains_execution_until_thread_settles -v",
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_operation_runner.py OperationRunnerTests.test_cancelled_verification_retains_execution_until_thread_settles -v",
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_trial_runner.py -v",
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_operation_runner.py -v",
+    "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe -B tests/python/test_improvement_claude.py -v"
   ],
   "author_runs": [
     {

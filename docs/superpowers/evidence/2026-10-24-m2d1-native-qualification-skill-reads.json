@@ -54,7 +54,7 @@
     "improvement_trial_sql_context.py": "1079187f392478ead14ebf05c45c1681415c7d6317eea9d04a055629bb88e4ca",
     "improvement_trial_dashboard.py": "2b227a5cc08949c7fa613116dd785d68ac7ae09571a4c0bff504a323801dabaa",
     "improvement_trial_file_sources.py": "df07158a0c97a789ef1f5f2dee064fcba276c3179ddb9a5264d6cc28735e755e",
-    "improvement_trial_selection.py": "660963f25b83f1f1c352096433b53fd9a59b9f06d57d36ed61d9a72d88c76126",
+    "improvement_trial_selection.py": "f27d00be10c9791244b50fa93224d650df5acd840fd519d0634a8acd62e249a2",
     "improvement_trial_service.py": "ab92d939cc9453a5de6b9b5ad423d2c6d5bd6dc27d913ee9f13a73d78aa9125c",
     "improvement_trial_associations.py": "c3d59f5d0b4edd4b965e026bb221238f6dc55ca7111ea30bc2fe39a064fdbfcc",
     "improvement_trial_runner.py": "6c708940902be8ddbb6d811dc33a6a5d37810e5b6e16090b4b0d66dfba75a983",
@@ -112,7 +112,7 @@
   "results": [
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_view_native_qualification.py",
         "-v"
       ],
@@ -126,7 +126,7 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_runtime_qualification.py",
         "-v"
       ],
@@ -140,7 +140,7 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_role_qualification.py",
         "-v"
       ],
@@ -154,7 +154,7 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_worker_quiescence.py",
         "-v"
       ],
@@ -172,10 +172,10 @@
     "native-skill-reads-record.json": "b6494a8184a999607ca2aa176326ed168eae27bc8eb3b86792e795f3659130c8"
   },
   "qualification_test_hashes": {
-    "tests/python/test_improvement_view_native_qualification.py": "af4fb3a0ad7486def4a806ead6172a46aa47d692f7f439cae0b2189dd93cc47f",
+    "tests/python/test_improvement_view_native_qualification.py": "dcd53fb87c77d09b84fa6ec3eebb0cd3458e61818ce4f501b3e6c64963e088ff",
     "tests/python/test_improvement_runtime_qualification.py": "44cf41ff607e1491571a6765e9d986c06d4941d9e9b28be6faba748ab437837f",
-    "tests/python/test_improvement_role_qualification.py": "8e3e5362fa7571589324a4c67098ee07ecbeef00100997cfc55df7d1da3d8832",
-    "tests/python/test_improvement_native.py": "b7741e4719ad606e5c72faf5f0b0809860ce7bbd450d12042183d334f7f6aac9",
+    "tests/python/test_improvement_role_qualification.py": "72f72cb79b144f1b893f55bd25b58f60db1631aebc735c8dc58800b356e25345",
+    "tests/python/test_improvement_native.py": "c6936a003617b5e461ef85a6bfcd4a3cc525c2e2d75ad1508c6864f6955c756d",
     "tests/python/test_improvement_worker_quiescence.py": "a4326bedc6893749281145465f34d2ace628c222e0e4f81d59af99d262653e8d",
     "tests/python/test_improvement_native_skill_reads.py": "a664a6c6bd431ea5fd7a63b9516be6e2d4027b004f29441138a04088bd96c515"
   },

@@ -13,12 +13,12 @@ Thansa can run on many different "engines" (AI providers). You pick 1 as **Main 
 - **Background job model**: cheaper model for tasks Thansa runs when you're not around - loop, Kanban job, reminder, self-teach, source ingest.
 - **Thinking (reasoning)**: how much the model thinks before answering.
 
-Most important thing to understand: **changing model does NOT break Thansa's features.** Every provider gets the same toolkit via Thansa's connection hub (MCP Hub): call hooked sources, read/write brain files, run skills, assign Kanban tasks (tool `javis_task`), create agent/workflow/loop/reminder (tool `javis_schedule`).
+Most important thing to understand: **changing model does NOT break Thansa's features.** Every provider gets the same toolkit via Thansa's connection hub (MCP Hub): call hooked sources, read/write brain files, run skills, assign Kanban tasks (tool `thansa_task`), create agent/workflow/loop/reminder (tool `thansa_schedule`).
 
 | How to call | Provider | MCP Thansa · tool file brain · skill | Run machine commands (Bash) |
 |---|---|---|---|
 | Via **Claude** | Anthropic OAuth (Claude) | Yes - MCP native + skill native | **Yes** |
-| Via **Codex** | OpenAI OAuth (ChatGPT) | Yes - MCP via hub (includes local connectors like Zalo/Webcake) + Codex's native MCP stock (server you register via `codex mcp add`) + skill via router (`javis_use_skill` / read file `skills/`) | **Yes** |
+| Via **Codex** | OpenAI OAuth (ChatGPT) | Yes - MCP via hub (includes local connectors like Zalo/Webcake) + Codex's native MCP stock (server you register via `codex mcp add`) + skill via router (`thansa_use_skill` / read file `skills/`) | **Yes** |
 | Via **Antigravity CLI** | Google Antigravity CLI (`agy`) | Yes - MCP via hub (write to `.antigravity/` in the brain you're in) + skill via router | **Yes** |
 | Via **Gemini CLI** ⛔ | Google Gemini CLI (personal accounts cut off by Google 18/06/2026) | Yes - MCP via hub (write to `.gemini/settings.json` in the brain you're in) + skill via router | **Yes** |
 | **Call API direct** | OpenRouter | Yes - MCP via hub + tool file vault + skill via router | No |
@@ -41,7 +41,7 @@ Plus two practical API engine limits: each turn max **8 tool call rounds** (more
 
 Besides those, everything else is identical. Specifically: call any hooked MCP, read and write brain files, run skills, assign Kanban tasks, create loop and reminders, create agent/workflow/skill (they're just `.md` files in vault), make images, use plugin tools.
 
-> **Assigning Kanban task from API engine since 0.17.1.** Before then only way was `POST /kanban/task`, which needed Bash and curl - only Claude and Codex could do, though docs promised all brains could. Now with tool `javis_task` going via hub that promise is real.
+> **Assigning Kanban task from API engine since 0.17.1.** Before then only way was `POST /kanban/task`, which needed Bash and curl - only Claude and Codex could do, though docs promised all brains could. Now with tool `thansa_task` going via hub that promise is real.
 
 Short: **features lie in Thansa, not the model.** Three CLI engines (**Claude** with Claude plan, **Codex** with ChatGPT plan, **Antigravity CLI** with Google plan) use your own subscription and run extra machine commands; six API providers only need one API key and do everything else - even orchestrate jobs, create loops, run skills. Agent in Workflow also picks model per provider - see [Agents & Workflows](07-agents-va-workflows.md).
 
@@ -141,7 +141,7 @@ A few things different from Gemini CLI, forewarning to avoid confusion:
 
 - **Vietnamese diacritics don't break mid-line** (from 0.33.6). Old symptom: word "gồm" becomes `g<?><?>m`, each Vietnamese char 3 bytes turns into 3 `<?>`. That's the signature of something reading in mouthfuls, cutting mid-char then decoding piecemeal. Measured and ruled out Thansa (its reader uses incremental decode, cuts mid-char still joins back right), so break lives in `agy`'s reader. Thansa can't patch CLI, but fixes where Thansa sets break: now pumps prompt by chunks ending exactly on char boundary, so whatever `agy` reads won't break. Mangled char comes back, Thansa switches to file route and asks again; still mangled means error is in CLI. Tell us with CLI's error message.
 
-**If still error on Windows**, set env var `JAVIS_AGY_PROMPT_DAI=file` to force file route, then report back with `agy` error line.
+**If still error on Windows**, set env var `THANSA_AGY_PROMPT_DAI=file` to force file route, then report back with `agy` error line.
 
 ### B2. Gemini CLI - Google cut personal accounts (18/06/2026)
 
@@ -169,7 +169,7 @@ Click **Disconnect** to drop Google account from Thansa. This button only shows 
 
 Still can log in via terminal if you like: run `gemini` then pick **Login with Google**. Thansa recognizes that account type too.
 
-If you install elsewhere and Thansa can't find binary, set env var `JAVIS_GEMINI_BIN` pointing to it then restart.
+If you install elsewhere and Thansa can't find binary, set env var `THANSA_GEMINI_BIN` pointing to it then restart.
 
 **Why not hook direct to Antigravity:** that app is pure Electron, no command-line port to call silently, and token lives in encrypted Keychain. Even if pried out, that's Google's internal API not promised to third parties, can break anytime. Gemini CLI gives the exact package via Google's public path.
 
@@ -246,8 +246,8 @@ From 0.9.37, Thansa's Claude engine runs **only via Claude Agent SDK** (Anthropi
 This is the trickiest spot, must get it clear:
 
 - **Main Model = Claude**: strongest - native file read/write, run machine commands, call MCP, native skill, auto loop, session resume. Peak Thansa OS exploitation mode.
-- **Main Model = ChatGPT OAuth (Codex)**: call all connection storage (hub auto-pushes to Codex, including local connectors like Zalo), have Codex file tool, and use skill via router (Thansa lists skill in system prompt + tool `javis_use_skill`; Codex runs cwd=brain so reads `skills/<slug>/SKILL.md` straight). Plus Codex loads its own native MCP stock (server you register via `codex mcp add`, see collapsed "◆ Native connections of Claude and Codex" block on Connect page) - like how Claude engine uses Claude's native MCP.
-- **Main Model = OpenRouter / OpenAI (API) / Anthropic (API) / Gemini**: from 0.9 all four can call connection storage via tool round-trips, plus brain file tool and skill activation (`javis_use_skill`). **Background job also runs on these providers** (see section E). Remaining difference vs Claude: no machine command tool (Bash), no WebFetch, can't resume CLI session.
+- **Main Model = ChatGPT OAuth (Codex)**: call all connection storage (hub auto-pushes to Codex, including local connectors like Zalo), have Codex file tool, and use skill via router (Thansa lists skill in system prompt + tool `thansa_use_skill`; Codex runs cwd=brain so reads `skills/<slug>/SKILL.md` straight). Plus Codex loads its own native MCP stock (server you register via `codex mcp add`, see collapsed "◆ Native connections of Claude and Codex" block on Connect page) - like how Claude engine uses Claude's native MCP.
+- **Main Model = OpenRouter / OpenAI (API) / Anthropic (API) / Gemini**: from 0.9 all four can call connection storage via tool round-trips, plus brain file tool and skill activation (`thansa_use_skill`). **Background job also runs on these providers** (see section E). Remaining difference vs Claude: no machine command tool (Bash), no WebFetch, can't resume CLI session.
 
 Practical upshot: keep Main at **Claude** for **most complete** Thansa. Switch to API provider when you want to try one specific model from another maker, or want to push background jobs to cheaper plan.
 

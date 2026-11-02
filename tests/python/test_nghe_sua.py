@@ -2,10 +2,10 @@
 
     python tests/run.py nghe_sua
 
-Vì sao file này tồn tại (0.59.24): người dùng nói lẫn Việt - Anh, máy nghe chép "Javis" thành
-"David", "Jarvis", "Gia vít"... rồi Javis trả lời bám nghĩa đen. Lớp này sửa theo ÂM và NGỮ
+Vì sao file này tồn tại (0.59.24): người dùng nói lẫn Việt - Anh, máy nghe chép "Thansa" thành
+"Thần sa", "Thanh sa", "Tân sa"... rồi Thansa trả lời bám nghĩa đen. Lớp này sửa theo ÂM và NGỮ
 CẢNH trước khi câu đi vào bộ não. Ranh giới quan trọng: không đổi tên người thứ ba ("nhắn cho
-David"), không đổi tên riêng hai chữ ("David Beckham"), không đụng câu không liên quan, và
+Thần sa"), không đổi tên riêng hai chữ ("Thần sa Beckham"), không đụng câu không liên quan, và
 không sửa gì thì trả y nguyên.
 """
 from _paths import ROOT, SERVER  # noqa: E402,F401
@@ -21,39 +21,39 @@ def check(name, cond):
         _fails.append(name)
 
 
-TV = ["Javis"]
+TV = ["Thansa"]
 S = lambda s, tv=TV: nghe_sua.sua(s, tv)   # noqa: E731
 
-# ---- 1. Khoá âm: những cách máy nghe hay chép "Javis" phải về cùng một khoá ----
-for w in ("Javis", "David", "Davis", "Jarvis", "Gia vít", "Ja vịt", "Đa vít", "javist"):
-    check(f"khoá âm của {w!r} trùng Javis", nghe_sua.khoa_am(w) == nghe_sua.khoa_am("Javis"))
-check("Java KHÔNG trùng khoá Javis", nghe_sua.khoa_am("Java") != nghe_sua.khoa_am("Javis"))
+# ---- 1. Khoá âm: những cách máy nghe hay chép "Thansa" phải về cùng một khoá ----
+for w in ("Thansa", "Thần sa", "Than sa", "Thanh sa", "Tân sa", "Thăn sa", "Than xa", "thansa"):
+    check(f"khoá âm của {w!r} trùng Thansa", nghe_sua.khoa_am(w) == nghe_sua.khoa_am("Thansa"))
+check("Java KHÔNG trùng khoá Thansa", nghe_sua.khoa_am("Java") != nghe_sua.khoa_am("Thansa"))
 
 # ---- 2. Gọi tên: sửa ở mọi vị trí khi trùng âm hoàn toàn ----
-check("đầu câu: David -> Javis", S("David mở trang việc giúp anh") == "Javis mở trang việc giúp anh")
-check("hey David", S("hey David, doanh thu hôm nay bao nhiêu") == "hey Javis, doanh thu hôm nay bao nhiêu")
-check("cuối câu: cảm ơn David", S("cảm ơn David") == "cảm ơn Javis")
-check("Jarvis -> Javis", S("Jarvis ơi mở lịch") == "Javis ơi mở lịch")
-check("bị tách hai tiếng: Gia vít ơi", S("Gia vít ơi, tóm tắt email") == "Javis ơi, tóm tắt email")
-check("Ja vịt giữa câu (trùng hoàn toàn)", S("hôm nay ja vịt thấy sao") == "hôm nay Javis thấy sao")
-check("Đa vít", S("Đa vít cho anh xem lịch") == "Javis cho anh xem lịch")
+check("đầu câu: Thần sa -> Thansa", S("Thần sa mở trang việc giúp anh") == "Thansa mở trang việc giúp anh")
+check("hey Thần sa", S("hey Thần sa, doanh thu hôm nay bao nhiêu") == "hey Thansa, doanh thu hôm nay bao nhiêu")
+check("cuối câu: cảm ơn Thần sa", S("cảm ơn Thần sa") == "cảm ơn Thansa")
+check("Thanh sa -> Thansa", S("Thanh sa ơi mở lịch") == "Thansa ơi mở lịch")
+check("bị tách hai tiếng: Tân sa ơi", S("Tân sa ơi, tóm tắt email") == "Thansa ơi, tóm tắt email")
+check("Thăn sa giữa câu (trùng hoàn toàn)", S("hôm nay than sa thấy sao") == "hôm nay Thansa thấy sao")
+check("Than xa", S("Than xa cho anh xem lịch") == "Thansa cho anh xem lịch")
 check("sửa nhiều chỗ trong một câu",
-      S("David ơi, David nghe rõ không") == "Javis ơi, Javis nghe rõ không")
+      S("Thần sa ơi, Thần sa nghe rõ không") == "Thansa ơi, Thansa nghe rõ không")
 check("giữ nguyên xuống dòng và dấu câu quanh chỗ sửa",
-      S("Ok David.\nMở trang cài đặt!") == "Ok Javis.\nMở trang cài đặt!")
+      S("Ok Thần sa.\nMở trang cài đặt!") == "Ok Thansa.\nMở trang cài đặt!")
 
 # ---- 3. Trùng vừa phải: CHỈ sửa ở vị trí gọi tên ----
-check("Gia vị ơi (gọi tên) -> Javis", S("Gia vị ơi, mấy giờ rồi") == "Javis ơi, mấy giờ rồi")
+check("Thần xa ơi (gọi tên) -> Thansa", S("Thần xa ơi, mấy giờ rồi") == "Thansa ơi, mấy giờ rồi")
 check("cho gia vị vào nồi (giữa câu) giữ nguyên",
       S("cho gia vị vào nồi rồi đun") == "cho gia vị vào nồi rồi đun")
-check("Cha vít đầu câu -> Javis", S("Cha vít, đọc tin mới") == "Javis, đọc tin mới")
+check("Chan sa đầu câu -> Thansa", S("Chan sa, đọc tin mới") == "Thansa, đọc tin mới")
 
 # ---- 4. Không sửa bừa ----
 GIU = [
     "nhắn cho David là tôi đến muộn",           # người thứ ba
     "gặp David lúc 3 giờ",
     "David Beckham đá bóng hay",                 # tên riêng hai chữ
-    "học Java với anh Nam",                      # Java không phải Javis
+    "học Java với anh Nam",                      # Java không phải Thansa
     "đọc file README.md và mở https://github.com/x",
     "doanh thu tháng này bao nhiêu",
     "",
@@ -61,37 +61,37 @@ GIU = [
 for s in GIU:
     check(f"giữ nguyên: {s[:40]!r}", S(s) == s)
 check("không có gì sửa thì trả CÙNG đối tượng", S("xin chào") == "xin chào")
-check("đã đúng Javis thì không đổi gì", S("Javis ơi mở lịch") == "Javis ơi mở lịch")
+check("đã đúng Thansa thì không đổi gì", S("Thansa ơi mở lịch") == "Thansa ơi mở lịch")
 check("chạy hai lần ra cùng kết quả (idempotent)",
       S(S("David ơi Gia vít nghe không")) == S("David ơi Gia vít nghe không"))
 check("bộ từ vựng rỗng: trả y nguyên", nghe_sua.sua("David ơi", []) == "David ơi")
 
 # ---- 5. Từ vựng người dùng khai: nhiều từ, cụm hai tiếng ----
-TV2 = ["Javis", "OpenRouter", "Pancake"]
+TV2 = ["Thansa", "OpenRouter", "Pancake"]
 check("Open Router (tách) -> OpenRouter",
       S("đổi bộ não sang open router đi", TV2) == "đổi bộ não sang OpenRouter đi")
 check("Pan cake -> Pancake", S("xem đơn trên pan cake", TV2) == "xem đơn trên Pancake")
 check("Bánh kếp không thành Pancake", S("ăn bánh kếp", TV2) == "ăn bánh kếp")
 
 # ---- 6. Rút bộ từ vựng từ settings + gợi ý cho Whisper ----
-cfg = {"voice": {"hotwords": "OpenRouter, Pancake\n javis ; Zalo,, Pancake"}}
+cfg = {"voice": {"hotwords": "OpenRouter, Pancake\n thansa ; Zalo,, Pancake"}}
 tv = nghe_sua.tu_vung(cfg)
-check("Javis luôn đứng đầu, không nhân đôi dù người dùng gõ 'javis'", tv[0] == "Javis" and tv.count("Javis") == 1
-      and not any(t.lower() == "javis" for t in tv[1:]))
-check("tách bằng phẩy, chấm phẩy, xuống dòng; bỏ trùng", tv == ["Javis", "OpenRouter", "Pancake", "Zalo"])
-check("không có cài đặt vẫn có Javis", nghe_sua.tu_vung({}) == ["Javis"])
+check("Thansa luôn đứng đầu, không nhân đôi dù người dùng gõ 'thansa'", tv[0] == "Thansa" and tv.count("Thansa") == 1
+      and not any(t.lower() == "thansa" for t in tv[1:]))
+check("tách bằng phẩy, chấm phẩy, xuống dòng; bỏ trùng", tv == ["Thansa", "OpenRouter", "Pancake", "Zalo"])
+check("không có cài đặt vẫn có Thansa", nghe_sua.tu_vung({}) == ["Thansa"])
 check("gợi ý Whisper là danh sách ngăn phẩy, khép dấu chấm",
-      nghe_sua.goi_y_whisper(tv, ky_thuat=()) == "Javis, OpenRouter, Pancake, Zalo.")
+      nghe_sua.goi_y_whisper(tv, ky_thuat=()) == "Thansa, OpenRouter, Pancake, Zalo.")
 check("gợi ý rỗng khi không có từ", nghe_sua.goi_y_whisper([], ky_thuat=()) == "")
 
 # ---- 7. Mồi thêm từ tiếng Anh hay nói xen (0.64.67: "GitHub Actions" thành "huyết áp Action") ----
 gy = nghe_sua.goi_y_whisper(tv)
 check("mặc định mồi kèm từ tiếng Anh thông dụng", "GitHub Actions" in gy and "deploy" in gy)
 check("từ người dùng khai đứng CUỐI (Whisper chỉ giữ phần cuối prompt)",
-      gy.endswith("Javis, OpenRouter, Pancake, Zalo."))
-gy2 = nghe_sua.goi_y_whisper(["Javis", "github"])
+      gy.endswith("Thansa, OpenRouter, Pancake, Zalo."))
+gy2 = nghe_sua.goi_y_whisper(["Thansa", "github"])
 check("không nhân đôi từ người dùng đã khai (không phân biệt hoa thường)",
-      [x.strip(" .").lower() for x in gy2.split(",")].count("github") == 1 and gy2.endswith("Javis, github."))
+      [x.strip(" .").lower() for x in gy2.split(",")].count("github") == 1 and gy2.endswith("Thansa, github."))
 dai = ["Tu%02d dai dai dai dai" % i for i in range(20)]      # ~460 ký tự, chừa chỗ cho vài từ mồi
 gy3 = nghe_sua.goi_y_whisper(dai)
 check("quá trần thì bỏ bớt từ mồi chung, giữ nguyên từ người dùng",

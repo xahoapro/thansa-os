@@ -1,10 +1,10 @@
-"""Login vault (0.251.0): the owner's sign-in cookies, kept encrypted, reused by Javis.
+"""Login vault (0.251.0): the owner's sign-in cookies, kept encrypted, reused by Thansa.
 
 The owner signs in on their own browser, exports the cookies of that site and pastes them on the
 "Kho đăng nhập" page. Four shapes are read: a Cookie-Editor JSON export, a Playwright storage state,
-a Netscape cookies.txt and a bare `Cookie:` header. Javis then uses that sign-in to:
+a Netscape cookies.txt and a bare `Cookie:` header. Thansa then uses that sign-in to:
 
-- open a page behind it for every engine (plugin tool `javis_login`, op=fetch), and
+- open a page behind it for every engine (plugin tool `thansa_login`, op=fetch), and
 - check a page behind it on a schedule (web_watch, a watch with `login_id`).
 
 Rules this module keeps:

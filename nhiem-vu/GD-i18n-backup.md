@@ -13,7 +13,7 @@ Bối cảnh: dòng cảnh báo ở `dashboard/console.js:2170` đang **hardcode
 
 ## Ràng buộc
 - Chỉ đụng `dashboard/i18n/vi.json`, `en.json`, `dashboard/console.js` (đúng 1 dòng warn). KHÔNG đụng logic backup, KHÔNG đổi key i18n có sẵn.
-- Giữ nguyên nghĩa; đây là chuỗi HIỂN THỊ (đã theo tinh thần Thansa — không có "Javis").
+- Giữ nguyên nghĩa; đây là chuỗi HIỂN THỊ (đã theo tinh thần Thansa — không có "Thansa").
 
 ## kiem_chung (mapping)
 - Đổi UI sang **English** → dòng cảnh báo hiện tiếng Anh; đổi **Tiếng Việt** → hiện tiếng Việt.

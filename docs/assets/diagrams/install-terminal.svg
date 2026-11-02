@@ -1,6 +1,6 @@
 <svg viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
 <title id="t">Install Thansa OS with one command</title>
-<desc id="d">A terminal clones the javis-os repository, runs install.sh, checks the Python environment, the four subscription CLIs and the .env file, then starts Thansa at http://localhost:7777, and a browser window opens the dashboard.</desc>
+<desc id="d">A terminal clones the thansa-os repository, runs install.sh, checks the Python environment, the four subscription CLIs and the .env file, then starts Thansa at http://localhost:7777, and a browser window opens the dashboard.</desc>
 <defs>
 <radialGradient id="gl" cx="0.78" cy="0.2" r="0.75"><stop offset="0" stop-color="#7c3aed" stop-opacity=".14"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
 <pattern id="gr" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity=".04"/></pattern>
@@ -52,7 +52,7 @@
 <path d="M61,184 V154 a13,13 0 0 1 13,-13 H1126 a13,13 0 0 1 13,13 V184 Z" fill="#1a1a2c"/>
 <line x1="60" y1="184" x2="1140" y2="184" stroke="#2a2a40"/>
 <circle cx="88" cy="162" r="7" fill="#ff5f57"/><circle cx="111" cy="162" r="7" fill="#febc2e"/><circle cx="134" cy="162" r="7" fill="#28c840"/>
-<text x="600" y="168" fill="#9ca3af" font-size="16" text-anchor="middle" font-family="ui-monospace, 'SFMono-Regular', Consolas, 'Courier New', monospace">javis - install.sh</text>
+<text x="600" y="168" fill="#9ca3af" font-size="16" text-anchor="middle" font-family="ui-monospace, 'SFMono-Regular', Consolas, 'Courier New', monospace">thansa - install.sh</text>
 <g class="sc">
 <g clip-path="url(#tc)" font-size="17" font-family="ui-monospace, 'SFMono-Regular', Consolas, 'Courier New', monospace">
 <g class="cl0"><text x="92" y="220" fill="#a78bfa">$</text><text x="116" y="220" fill="#e5e7eb" textLength="539.6" lengthAdjust="spacing">git clone https://github.com/xahoapro/thansa-os.git</text><g class="cv0"><rect x="116" y="200" width="617.8" height="28" fill="#12121f"/><rect class="cu0" x="117" y="204" width="10" height="20" rx="1.5" fill="#e5e7eb"/></g></g>

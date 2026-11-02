@@ -1,8 +1,8 @@
 """Warn the owner when this machine's Node.js misses the latest Node.js security release.
 
-Javis runs Claude Code, Codex and every npx-based MCP server on the machine's own Node.js, so a
+Thansa runs Claude Code, Codex and every npx-based MCP server on the machine's own Node.js, so a
 Node.js vulnerability reaches all of them. The Docker image pins a patched release; a native or
-Windows install uses whatever Node.js the owner installed, and Javis cannot upgrade it for them
+Windows install uses whatever Node.js the owner installed, and Thansa cannot upgrade it for them
 (that needs sudo, Homebrew or winget). So this module compares `node --version` with the first
 patched release of each supported line and builds ONE News item that says what to do.
 

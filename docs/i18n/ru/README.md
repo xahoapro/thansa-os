@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/thansa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -97,7 +97,7 @@ Thansa OS **не** чат-бот. Это **самостоятельно разм
 | **Знания** | папки Wiki и Sources вашего Brain | Markdown, совместимый с Obsidian |
 | **Skills** | `skills/<name>/SKILL.md` | Markdown |
 | **Агенты (agents) и workflows** | `agents/*.md`, `workflows/*.md` | Markdown с front matter |
-| **Loops и напоминания** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+| **Loops и напоминания** | `Thansa/loops/*.md`, `Thansa/reminders.json` | Markdown, JSON |
 
 Что это вам даёт:
 
@@ -255,17 +255,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → вставьте ф
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-В поле **Environment** нужны всего три значения: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, плюс необязательный `JAVIS_AUTO_UPDATE` (поставьте `true`, и Thansa будет обновляться сам раз в день).
+В поле **Environment** нужны всего три значения: `DOMAIN_NAME`, `THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`, плюс необязательный `THANSA_AUTO_UPDATE` (поставьте `true`, и Thansa будет обновляться сам раз в день).
 
 Задайте `DOMAIN_NAME`, чтобы Traefik от Hostinger выпустил HTTPS:
-- **Бесплатная ссылка** (без покупки домена): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (hostname смотрите в hPanel → VPS, например `javis.srv1562015.hstgr.cloud`).
+- **Бесплатная ссылка** (без покупки домена): `DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud` (hostname смотрите в hPanel → VPS, например `thansa.srv1562015.hstgr.cloud`).
 - **Собственный домен:** `DOMAIN_NAME=example.com` и A-запись, указывающая на IP VPS.
 
 Подождите 1-3 минуты, пока выпустится сертификат, затем откройте `https://<DOMAIN_NAME>`.
 
 **Три разовых шага:**
-1. **Сделайте образ GHCR публичным:** GitHub → репозиторий → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **Создайте аккаунт администратора:** заполните `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` (рекомендуется) или откройте приложение сразу после развёртывания и задайте его сами. Пока администратора нет, создать его может тот, кто первым откроет ссылку. Затем **включите 2FA** ([Безопасность и аккаунты](../../../docs/en/14-security-and-accounts.md)).
+1. **Сделайте образ GHCR публичным:** GitHub → репозиторий → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**.
+2. **Создайте аккаунт администратора:** заполните `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` (рекомендуется) или откройте приложение сразу после развёртывания и задайте его сами. Пока администратора нет, создать его может тот, кто первым откроет ссылку. Затем **включите 2FA** ([Безопасность и аккаунты](../../../docs/en/14-security-and-accounts.md)).
 3. **Войдите в мозг** на странице **Models**.
 
 Подробности и решение проблем: [DEPLOY.en.md](../../../DEPLOY.en.md).
@@ -282,11 +282,11 @@ https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hosting
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm thansa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-Откройте `http://<vps-ip>:7777` и сразу задайте имя и пароль администратора (не менее 8 символов) или заранее пропишите `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` в окружении. Затем включите 2FA.
+Откройте `http://<vps-ip>:7777` и сразу задайте имя и пароль администратора (не менее 8 символов) или заранее пропишите `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` в окружении. Затем включите 2FA.
 
 Удалённый доступ без домена: `docker compose --profile tunnel up -d`, после чего `docker compose logs tunnel | grep trycloudflare` выведет HTTPS-ссылку.
 
@@ -330,11 +330,11 @@ Dashboard:                             http://localhost:7777
 <details>
 <summary><b>Несколько экземпляров Thansa на одном VPS</b></summary>
 
-Мозги, настройки и аккаунты у каждого экземпляра полностью раздельные. Отличаются только три значения: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Мозги, настройки и аккаунты у каждого экземпляра полностью раздельные. Отличаются только три значения: `THANSA_NAME`, `THANSA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** разверните `docker-compose.hostinger.yml` ещё раз как второй стек и заполните эти три поля.
 - **Собственный VPS:** один раз на всю машину запустите общий прокси `docker-compose.proxy.yml`, затем дайте каждому экземпляру свою папку с `docker-compose.multi.yml`. Прокси сам находит новые экземпляры и запрашивает SSL.
-- **Без Docker:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
+- **Без Docker:** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`.
 
 Пошагово: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -387,14 +387,14 @@ Dashboard:                             http://localhost:7777
 
 | Переменная | Назначение | По умолчанию |
 |---|---|---|
-| `JAVIS_HOST` | Адрес прослушивания. `127.0.0.1` = только эта машина, `0.0.0.0` = публично | `127.0.0.1` |
-| `JAVIS_PORT` | Порт | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0`, чтобы принудительно включить или выключить вход (по умолчанию включён при публичном адресе) | *(авто)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Создать администратора при развёртывании | - |
-| `JAVIS_ALLOWED_HOSTS` | Дополнительные имена хостов в списке разрешённых (защита от CSRF и DNS rebinding) | localhost + ваш домен |
-| `JAVIS_STATE_DIR` | Где хранятся настройки, сессии и ключ шифрования | `server/` (Docker: `/data/state`) |
+| `THANSA_HOST` | Адрес прослушивания. `127.0.0.1` = только эта машина, `0.0.0.0` = публично | `127.0.0.1` |
+| `THANSA_PORT` | Порт | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0`, чтобы принудительно включить или выключить вход (по умолчанию включён при публичном адресе) | *(авто)* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | Создать администратора при развёртывании | - |
+| `THANSA_ALLOWED_HOSTS` | Дополнительные имена хостов в списке разрешённых (защита от CSRF и DNS rebinding) | localhost + ваш домен |
+| `THANSA_STATE_DIR` | Где хранятся настройки, сессии и ключ шифрования | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Родительская папка со всеми Brain | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` отключает ваши собственные плагины (они запускают настоящий Python внутри сервера) | *(вкл.)* |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` отключает ваши собственные плагины (они запускают настоящий Python внутри сервера) | *(вкл.)* |
 | `TTS_VOICE` / `TTS_RATE` | Голос и скорость для Edge TTS | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Dashboard:                             http://localhost:7777
 - **2FA (TOTP)**, ограничение частоты попыток входа, пароли не короче 8 символов, cookie с флагом `Secure` под HTTPS, сессии истекают через 30 дней.
 - **Защита от CSRF и DNS rebinding**: любой запрос на запись с неизвестного источника отклоняется.
 - **Секреты зашифрованы** в `settings.json` (API-ключи, OAuth-токены, токены ботов) ключом, уникальным для каждой машины.
-- **Ваши собственные плагины загружаются по умолчанию, но каждый остаётся выключенным, пока вы не включите его** в приложении; чтобы отключить все, задайте `JAVIS_ENABLE_USER_PLUGINS=false`.
+- **Ваши собственные плагины загружаются по умолчанию, но каждый остаётся выключенным, пока вы не включите его** в приложении; чтобы отключить все, задайте `THANSA_ENABLE_USER_PLUGINS=false`.
 - **Права подключений обеспечивает** хаб, а не модель: аккаунт только для чтения нельзя использовать для отправки, оплаты или публикации.
 
 Нашли уязвимость? Пожалуйста, следуйте [SECURITY.md](../../../SECURITY.md), а не открывайте публичный issue.
@@ -434,7 +434,7 @@ Dashboard:                             http://localhost:7777
 ## 📂 Структура репозитория
 
 ```
-javis-os/
+thansa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

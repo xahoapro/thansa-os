@@ -21,7 +21,7 @@ The Code group is built to expand: right now it only has **Terminal**, other dev
 2. Left navigation rail, open the **Code** group, click the **Terminal** item.
 3. Terminal opens and connects automatically. Click the black area and type like a normal terminal.
 
-Shell starts in the **HOME directory of the user running Thansa** - just like a normal machine terminal, great for the main job of this tab: installing and logging into CLIs (`agy`, `codex login`...). Need to go to a brain? Type `cd "$JAVIS_BRAIN"` - this variable always points to the current brain.
+Shell starts in the **HOME directory of the user running Thansa** - just like a normal machine terminal, great for the main job of this tab: installing and logging into CLIs (`agy`, `codex login`...). Need to go to a brain? Type `cd "$THANSA_BRAIN"` - this variable always points to the current brain.
 
 ## Top Bar
 
@@ -59,21 +59,21 @@ Terminal is the place to run any command on the server - the highest permission 
 - Only **a logged-in browser** gets in. API tokens (type `jvs_...` for scripts and CLIs) **cannot** open terminal, even with full permission.
 - When Thansa runs public (VPS, Docker), login is required, so terminal sits behind that same gate. See [Security & Account](14-bao-mat-tai-khoan.md).
 - The shell inherits the server's environment variables, including secrets from `.env`. Just like owning the machine, but worth knowing when you loan the screen.
-- Want to turn it off entirely? Set `JAVIS_TERMINAL=0` and restart Thansa. The Code tab will show a message saying it's off instead of an empty frame.
+- Want to turn it off entirely? Set `THANSA_TERMINAL=0` and restart Thansa. The Code tab will show a message saying it's off instead of an empty frame.
 
 ## Environment Variables
 
 | Variable | Meaning | Default |
 |---|---|---|
-| `JAVIS_TERMINAL` | `0`/`off`/`false`/`no` = turn it off entirely | On |
-| `JAVIS_TERMINAL_SHELL` | Path to the shell to run | `$SHELL`, fall back to `bash`/`sh`. Windows: `powershell.exe` then `cmd.exe` |
-| `JAVIS_TERMINAL_CWD` | Directory to open in | HOME of the user running Thansa |
+| `THANSA_TERMINAL` | `0`/`off`/`false`/`no` = turn it off entirely | On |
+| `THANSA_TERMINAL_SHELL` | Path to the shell to run | `$SHELL`, fall back to `bash`/`sh`. Windows: `powershell.exe` then `cmd.exe` |
+| `THANSA_TERMINAL_CWD` | Directory to open in | HOME of the user running Thansa |
 
 See [.env Configuration](16-cau-hinh-env.md) for how to set variables.
 
 ## Common Problems
 
-**Terminal tab shows "Terminal is off on this machine".** Server has `JAVIS_TERMINAL=0`. Remove that line from `.env` and restart Thansa.
+**Terminal tab shows "Terminal is off on this machine".** Server has `THANSA_TERMINAL=0`. Remove that line from `.env` and restart Thansa.
 
 **Says "Already have 4 terminal sessions".** An old session is still alive in another browser tab. Click **New Session** on that tab, or wait 30 minutes for Thansa to clean up.
 
@@ -81,7 +81,7 @@ See [.env Configuration](16-cau-hinh-env.md) for how to set variables.
 
 **Typed Tab, no suggestions.** You're in simplified mode (Windows). That's a system limit, not a config issue.
 
-**Shell quits right when it opens.** Check that `JAVIS_TERMINAL_SHELL` points to a real executable, and the directory at `JAVIS_TERMINAL_CWD` exists.
+**Shell quits right when it opens.** Check that `THANSA_TERMINAL_SHELL` points to a real executable, and the directory at `THANSA_TERMINAL_CWD` exists.
 
 ## Related
 

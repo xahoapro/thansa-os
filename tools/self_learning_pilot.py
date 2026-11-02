@@ -242,7 +242,7 @@ class CliEngine:
 
     def __init__(self, model: str, effort: str, timeout: int = 240):
         self.model, self.effort, self.timeout = model, effort, timeout
-        self.cwd = Path(tempfile.mkdtemp(prefix="javis-pilot-"))
+        self.cwd = Path(tempfile.mkdtemp(prefix="thansa-pilot-"))
         self.usage = {"calls": 0, "cost_usd": 0.0, "models": set(), "errors": 0}
         self.binary = shutil.which("claude") or "claude"  # claude.exe / claude.cmd on Windows
         self.lock = threading.Lock()

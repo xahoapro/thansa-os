@@ -10,8 +10,8 @@ REM  thanh CUA SO RIENG (Edge/Chrome che do --app: khong thanh dia chi, co o
 REM  rieng tren taskbar). Tu khoi dong cung may: thansa-autostart.bat install.
 REM ============================================================
 
-if "%JAVIS_PORT%"=="" set JAVIS_PORT=7777
-set "URL=http://127.0.0.1:%JAVIS_PORT%"
+if "%THANSA_PORT%"=="" set THANSA_PORT=7777
+set "URL=http://127.0.0.1:%THANSA_PORT%"
 
 REM Server dang chay roi thi KHONG khoi dong lai (start-thansa.vbs se kill instance
 REM cu truoc - double-click lan hai ma restart thi mat het viec dang chay do).

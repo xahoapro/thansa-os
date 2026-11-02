@@ -20,9 +20,9 @@ import tempfile
 from contextlib import closing
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-selfrev-")
-os.environ.pop("JAVIS_RESONANCE_CALL_CEILING", None)
-TEMP = Path(tempfile.mkdtemp(prefix="javis-selfrev-w-"))
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-selfrev-")
+os.environ.pop("THANSA_RESONANCE_CALL_CEILING", None)
+TEMP = Path(tempfile.mkdtemp(prefix="thansa-selfrev-w-"))
 
 import agent_budget as AB  # noqa: E402
 import agent_ledger as ALG  # noqa: E402

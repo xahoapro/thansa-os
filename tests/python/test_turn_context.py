@@ -24,8 +24,8 @@ import os
 import sys
 import tempfile
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-turn-")
-os.environ["BRAINS_DIR"] = tempfile.mkdtemp(prefix="javis-turn-brains-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-turn-")
+os.environ["BRAINS_DIR"] = tempfile.mkdtemp(prefix="thansa-turn-brains-")
 
 import turn_context  # noqa: E402
 import plugins_host  # noqa: E402
@@ -232,31 +232,31 @@ async def part_hub_http():
 
 
 async def part_engines():
-    shared = {"javis": {"type": "http", "url": "http://127.0.0.1:7777/hub/mcp",
-                        "headers": {"Authorization": "Bearer T", "X-Javis-Bot": "1"}}}
+    shared = {"thansa": {"type": "http", "url": "http://127.0.0.1:7777/hub/mcp",
+                        "headers": {"Authorization": "Bearer T", "X-Thansa-Bot": "1"}}}
     snapshot = json.dumps(shared, sort_keys=True)
 
     out = claude_sdk_engine.ClaudeSDK._gan_khoa_luot(shared)
-    check("5 Claude: no turn -> no header", turn_context.HEADER not in out["javis"]["headers"])
+    check("5 Claude: no turn -> no header", turn_context.HEADER not in out["thansa"]["headers"])
 
     tok = turn_context.bind(turn_context.make("zalo_personal", "U-an", "private", "U-an", False))
     try:
         out = claude_sdk_engine.ClaudeSDK._gan_khoa_luot(shared)
-        key = out["javis"]["headers"].get(turn_context.HEADER)
+        key = out["thansa"]["headers"].get(turn_context.HEADER)
         check("5 Claude: header carries a key of this turn",
               bool(key) and turn_context.resolve_key(key)["sender_id"] == "U-an", out)
-        check("5 Claude: other headers kept", out["javis"]["headers"]["X-Javis-Bot"] == "1")
+        check("5 Claude: other headers kept", out["thansa"]["headers"]["X-Thansa-Bot"] == "1")
         check("5 Claude: shared config dict not mutated", json.dumps(shared, sort_keys=True) == snapshot)
 
         # The real bot path: config file + allowed_tools (the early-return branch of _mcp_servers).
         cfg = os.path.join(tempfile.mkdtemp(), "hub.json")
         with open(cfg, "w", encoding="utf-8") as f:
             json.dump({"mcpServers": shared}, f)
-        eng = claude_sdk_engine.ClaudeSDK(allowed_tools=["mcp__javis"])
+        eng = claude_sdk_engine.ClaudeSDK(allowed_tools=["mcp__thansa"])
         eng.mcp_config = cfg
         servers, _ = eng._mcp_servers()
         check("5 Claude bot path (_mcp_servers) carries the key",
-              servers["javis"]["headers"].get(turn_context.HEADER) == key, servers)
+              servers["thansa"]["headers"].get(turn_context.HEADER) == key, servers)
         with open(cfg, encoding="utf-8") as f:
             check("5 Claude: config FILE never gets the key", turn_context.HEADER not in f.read())
 

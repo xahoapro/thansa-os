@@ -15,10 +15,10 @@ import re
 import tempfile
 from pathlib import Path
 
-state = tempfile.mkdtemp(prefix="javis-lenh-test-")
-os.environ["JAVIS_STATE_DIR"] = state
+state = tempfile.mkdtemp(prefix="thansa-lenh-test-")
+os.environ["THANSA_STATE_DIR"] = state
 os.environ["BRAINS_DIR"] = str(Path(state) / "brains")
-os.environ["JAVIS_SESSIONS_DB"] = str(Path(state) / "sessions.db")
+os.environ["THANSA_SESSIONS_DB"] = str(Path(state) / "sessions.db")
 
 import lenh_he_thong as L            # noqa: E402
 from sessions import SessionStore, title_from_message  # noqa: E402
@@ -49,29 +49,29 @@ kg = L.khoi_muc_tieu("mọi đơn hôm nay đã đối soát", 2, 5, "còn 8 đ�
 check("goal: mở bằng dấu nhận diện + điều kiện", kg.startswith(L.GOAL_MARK + " mọi đơn hôm nay đã đối soát"))
 check("goal: kết thúc bằng ]\\n\\n", kg.endswith("]\n\n"))
 check("goal: có vòng hiện tại/tối đa", "vòng 2/5" in kg)
-# 0.173.1: trần mặc định 5, vòng tự động mang tình trạng vòng trước và dòng ẩn JAVIS_GOAL_ROUND, dặn báo blocked
+# 0.173.1: trần mặc định 5, vòng tự động mang tình trạng vòng trước và dòng ẩn THANSA_GOAL_ROUND, dặn báo blocked
 check("goal: trần mặc định là 5", L.GOAL_MAX_ROUNDS == 5 and "vòng 1/5" in L.khoi_muc_tieu("x"))
-check("goal: vòng 2+ có tình trạng vòng trước và dòng ẩn JAVIS_GOAL_ROUND",
-      "Vòng trước còn: còn 8 đơn" in kg and '<!-- JAVIS_GOAL_ROUND: {"v": 2, "n": 5, "left": "còn 8 đơn"} -->' in kg)
-check("goal: vòng 1 không có dòng JAVIS_GOAL_ROUND", "JAVIS_GOAL_ROUND" not in L.khoi_muc_tieu("x", 1, 5, "y"))
+check("goal: vòng 2+ có tình trạng vòng trước và dòng ẩn THANSA_GOAL_ROUND",
+      "Vòng trước còn: còn 8 đơn" in kg and '<!-- THANSA_GOAL_ROUND: {"v": 2, "n": 5, "left": "còn 8 đơn"} -->' in kg)
+check("goal: vòng 1 không có dòng THANSA_GOAL_ROUND", "THANSA_GOAL_ROUND" not in L.khoi_muc_tieu("x", 1, 5, "y"))
 check("goal: dặn model báo blocked khi thiếu quyền/công cụ/dữ liệu", '"blocked"' in kg and "thiếu quyền" in kg)
-check("goal: tình trạng có --> hay ] không phá khối", (lambda k: "-->" not in k.split("JAVIS_GOAL_ROUND")[1].split("-->")[0]
+check("goal: tình trạng có --> hay ] không phá khối", (lambda k: "-->" not in k.split("THANSA_GOAL_ROUND")[1].split("-->")[0]
       and k[:-3].count("]") == 0)(L.khoi_muc_tieu("a", 2, 5, "x --> ] y")))
-check("goal: dặn model tự báo qua dòng ẩn JAVIS_GOAL", "JAVIS_GOAL" in kg and '"done":true' in kg and '"done":false' in kg)
+check("goal: dặn model tự báo qua dòng ẩn THANSA_GOAL", "THANSA_GOAL" in kg and '"done":true' in kg and '"done":false' in kg)
 check("goal: điều kiện chứa ] thì bị đổi (không cắt sớm khối)", (lambda k: k[:-3].count("]") == 0 and "(x)" in k)(L.khoi_muc_tieu("đạt [x]", 1, 8)))
 check("goal: điều kiện nhiều dòng gộp về một dòng", "\n" not in L.khoi_muc_tieu("a\n\n  b\tc", 1, 8).split("\n")[0].replace(L.GOAL_MARK, ""))
 check("goal: điều kiện dài bị cắt", len(L.khoi_muc_tieu("x" * 5000, 1, 8)) < 1500)
 
-# ---- 3. Đọc dòng ẩn JAVIS_GOAL (bản Python, khớp bản JS) ----
+# ---- 3. Đọc dòng ẩn THANSA_GOAL (bản Python, khớp bản JS) ----
 D = L.doc_muc_tieu
-check("doc: done true", D('ok <!-- JAVIS_GOAL: {"done":true} -->') == {"done": True, "left": ""})
-check("doc: done false + left", D('<!-- JAVIS_GOAL: {"done":false,"left":"thiếu báo cáo"} -->') == {"done": False, "left": "thiếu báo cáo"})
-check("doc: blocked kèm lý do", D('<!-- JAVIS_GOAL: {"done":false,"blocked":"thiếu quyền POS"} -->') == {"done": False, "left": "", "blocked": "thiếu quyền POS"})
-check("doc: done true bỏ qua blocked", D('<!-- JAVIS_GOAL: {"done":true,"blocked":"x"} -->') == {"done": True, "left": ""})
+check("doc: done true", D('ok <!-- THANSA_GOAL: {"done":true} -->') == {"done": True, "left": ""})
+check("doc: done false + left", D('<!-- THANSA_GOAL: {"done":false,"left":"thiếu báo cáo"} -->') == {"done": False, "left": "thiếu báo cáo"})
+check("doc: blocked kèm lý do", D('<!-- THANSA_GOAL: {"done":false,"blocked":"thiếu quyền POS"} -->') == {"done": False, "left": "", "blocked": "thiếu quyền POS"})
+check("doc: done true bỏ qua blocked", D('<!-- THANSA_GOAL: {"done":true,"blocked":"x"} -->') == {"done": True, "left": ""})
 check("doc: không có -> None", D("không có gì") is None)
-check("doc: JSON hỏng -> None", D("<!-- JAVIS_GOAL: {done -->") is None)
-check("doc: done không phải bool -> None", D('<!-- JAVIS_GOAL: {"done":1} -->') is None)
-check("doc: dòng cuối thắng", D('<!-- JAVIS_GOAL: {"done":false} --> <!-- JAVIS_GOAL: {"done":true} -->')["done"] is True)
+check("doc: JSON hỏng -> None", D("<!-- THANSA_GOAL: {done -->") is None)
+check("doc: done không phải bool -> None", D('<!-- THANSA_GOAL: {"done":1} -->') is None)
+check("doc: dòng cuối thắng", D('<!-- THANSA_GOAL: {"done":false} --> <!-- THANSA_GOAL: {"done":true} -->')["done"] is True)
 
 # ---- 4. Tên hội thoại: bóc khối /plan, /goal ----
 check("tên: /plan dọn kho -> 'dọn kho'", title_from_message(kp + "dọn kho") == "dọn kho", title_from_message(kp + "dọn kho"))
@@ -89,7 +89,7 @@ check("quyền: /plan trong khung chat Coding cũng suggest (siết, không nớ
 check("quyền: lượt /goal KHÔNG bị siết (goal là làm thật)", main._muc_quyen_luot_chat({}, kg + "làm") == "full")
 
 # ---- 6. /compact ----
-tmp = Path(tempfile.mkdtemp(prefix="javis-lenh-nen-"))
+tmp = Path(tempfile.mkdtemp(prefix="thansa-lenh-nen-"))
 
 
 def fake_stream(text, goi=None):

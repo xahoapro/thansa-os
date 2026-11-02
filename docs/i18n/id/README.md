@@ -13,7 +13,7 @@ Jalankan di laptop atau VPS kecil. Ajak bicara dengan suara. Pasang Claude, Chat
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/thansa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -97,7 +97,7 @@ Di Thansa, model adalah komponen yang bisa Anda tukar. Semua yang Anda bangun te
 | **Pengetahuan** | folder Wiki dan Sources di Brain Anda | Markdown, kompatibel dengan Obsidian |
 | **Skills** | `skills/<name>/SKILL.md` | Markdown |
 | **Agent dan workflow** | `agents/*.md`, `workflows/*.md` | Markdown dengan front matter |
-| **Loop dan pengingat** | `Javis/loops/*.md`, `Javis/reminders.json` | Markdown, JSON |
+| **Loop dan pengingat** | `Thansa/loops/*.md`, `Thansa/reminders.json` | Markdown, JSON |
 
 Apa yang Anda dapatkan dari situ:
 
@@ -255,17 +255,17 @@ VPS Hostinger → **Docker Manager → Compose → URL** → tempel file Hosting
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-Kotak **Environment** hanya butuh tiga field: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`, ditambah `JAVIS_AUTO_UPDATE` yang opsional (isi `true` dan Thansa akan memperbarui dirinya setiap hari).
+Kotak **Environment** hanya butuh tiga field: `DOMAIN_NAME`, `THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`, ditambah `THANSA_AUTO_UPDATE` yang opsional (isi `true` dan Thansa akan memperbarui dirinya setiap hari).
 
 Isi `DOMAIN_NAME` agar Traefik milik Hostinger menerbitkan HTTPS:
-- **Link gratis** (tanpa beli domain): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (hostname ada di hPanel → VPS, contoh `javis.srv1562015.hstgr.cloud`).
+- **Link gratis** (tanpa beli domain): `DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud` (hostname ada di hPanel → VPS, contoh `thansa.srv1562015.hstgr.cloud`).
 - **Domain Anda sendiri:** `DOMAIN_NAME=example.com` lalu arahkan A record ke IP VPS.
 
 Tunggu 1-3 menit sampai sertifikat terbit, lalu buka `https://<DOMAIN_NAME>`.
 
 **Tiga langkah yang cukup dilakukan sekali:**
-1. **Jadikan image GHCR Public:** GitHub → repo → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **Buat akun admin:** isi `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` (disarankan), atau buka aplikasi tepat setelah deploy lalu buat sendiri. Selama belum ada admin, siapa pun yang pertama membuka link bisa membuatnya. Setelah itu **aktifkan 2FA** ([Keamanan dan akun](../../../docs/en/14-security-and-accounts.md)).
+1. **Jadikan image GHCR Public:** GitHub → repo → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**.
+2. **Buat akun admin:** isi `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` (disarankan), atau buka aplikasi tepat setelah deploy lalu buat sendiri. Selama belum ada admin, siapa pun yang pertama membuka link bisa membuatnya. Setelah itu **aktifkan 2FA** ([Keamanan dan akun](../../../docs/en/14-security-and-accounts.md)).
 3. **Login ke sebuah otak** di halaman **Models**.
 
 Detail dan pemecahan masalah: [DEPLOY.en.md](../../../DEPLOY.en.md).
@@ -282,11 +282,11 @@ Detail dan pemecahan masalah: [DEPLOY.en.md](../../../DEPLOY.en.md).
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm thansa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-Buka `http://<vps-ip>:7777` dan segera atur username dan password admin (minimal 8 karakter), atau isi lebih dulu `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` di environment. Lalu aktifkan 2FA.
+Buka `http://<vps-ip>:7777` dan segera atur username dan password admin (minimal 8 karakter), atau isi lebih dulu `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` di environment. Lalu aktifkan 2FA.
 
 Akses jarak jauh tanpa domain: `docker compose --profile tunnel up -d`, lalu `docker compose logs tunnel | grep trycloudflare` akan menampilkan link HTTPS.
 
@@ -330,11 +330,11 @@ Dashboard:                             http://localhost:7777
 <details>
 <summary><b>Beberapa instance Thansa di satu VPS</b></summary>
 
-Brain, pengaturan, dan akun tetap terpisah sepenuhnya per instance. Hanya tiga nilai yang berbeda di antara mereka: `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME`.
+Brain, pengaturan, dan akun tetap terpisah sepenuhnya per instance. Hanya tiga nilai yang berbeda di antara mereka: `THANSA_NAME`, `THANSA_HOST_PORT`, `DOMAIN_NAME`.
 
 - **Hostinger:** deploy `docker-compose.hostinger.yml` lagi sebagai stack kedua dan isi ketiga field tersebut.
 - **VPS yang Anda kelola sendiri:** jalankan proxy bersama `docker-compose.proxy.yml` sekali untuk seluruh mesin, lalu beri setiap instance foldernya sendiri dengan `docker-compose.multi.yml`. Proxy akan menemukan instance baru dan meminta SSL dengan sendirinya.
-- **Native:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
+- **Native:** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`.
 
 Langkah demi langkah: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -387,14 +387,14 @@ Setiap baris boleh dibiarkan kosong dan Thansa tetap berjalan. Salin `env.exampl
 
 | Variabel | Arti | Default |
 |---|---|---|
-| `JAVIS_HOST` | Alamat listen. `127.0.0.1` = hanya mesin ini, `0.0.0.0` = publik | `127.0.0.1` |
-| `JAVIS_PORT` | Port | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` untuk memaksa login aktif atau nonaktif (default: aktif saat di-bind secara publik) | *(otomatis)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | Membuat admin saat deploy | - |
-| `JAVIS_ALLOWED_HOSTS` | Hostname tambahan di allow-list (perlindungan CSRF dan DNS rebinding) | localhost + domain Anda |
-| `JAVIS_STATE_DIR` | Tempat pengaturan, sesi, dan kunci enkripsi disimpan | `server/` (Docker: `/data/state`) |
+| `THANSA_HOST` | Alamat listen. `127.0.0.1` = hanya mesin ini, `0.0.0.0` = publik | `127.0.0.1` |
+| `THANSA_PORT` | Port | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0` untuk memaksa login aktif atau nonaktif (default: aktif saat di-bind secara publik) | *(otomatis)* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | Membuat admin saat deploy | - |
+| `THANSA_ALLOWED_HOSTS` | Hostname tambahan di allow-list (perlindungan CSRF dan DNS rebinding) | localhost + domain Anda |
+| `THANSA_STATE_DIR` | Tempat pengaturan, sesi, dan kunci enkripsi disimpan | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | Folder induk yang menampung setiap Brain | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` mematikan plugin buatan Anda sendiri (menjalankan Python sungguhan di dalam server) | *(aktif)* |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` mematikan plugin buatan Anda sendiri (menjalankan Python sungguhan di dalam server) | *(aktif)* |
 | `TTS_VOICE` / `TTS_RATE` | Suara dan kecepatan untuk Edge TTS | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Setiap baris boleh dibiarkan kosong dan Thansa tetap berjalan. Salin `env.exampl
 - **2FA (TOTP)**, pembatasan percobaan login, password minimal 8 karakter, cookie `Secure` di bawah HTTPS, sesi yang kedaluwarsa setelah 30 hari.
 - **Perlindungan CSRF dan DNS rebinding**: setiap request tulis dari origin yang tidak dikenal akan ditolak.
 - **Secret dienkripsi** di `settings.json` (API key, token OAuth, token bot) dengan kunci per mesin.
-- **Plugin buatan Anda dimuat secara default, tetapi tiap plugin tetap mati sampai Anda menyalakannya** di aplikasi; atur `JAVIS_ENABLE_USER_PLUGINS=false` untuk mematikan semuanya.
+- **Plugin buatan Anda dimuat secara default, tetapi tiap plugin tetap mati sampai Anda menyalakannya** di aplikasi; atur `THANSA_ENABLE_USER_PLUGINS=false` untuk mematikan semuanya.
 - **Izin koneksi ditegakkan** oleh hub, bukan oleh model: akun read-only tidak bisa dipakai untuk mengirim, membayar, atau memublikasikan.
 
 Menemukan celah keamanan? Silakan ikuti [SECURITY.md](../../../SECURITY.md), jangan membuka issue publik.
@@ -434,7 +434,7 @@ Selengkapnya di [docs/en/17-troubleshooting.md](../../../docs/en/17-troubleshoot
 ## 📂 Struktur repositori
 
 ```
-javis-os/
+thansa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

@@ -177,5 +177,5 @@
     };
   }
   api.mount = mount;
-  window.JavisEffortSlider = api;
+  window.ThansaEffortSlider = api;
 })();

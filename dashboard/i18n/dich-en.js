@@ -11,15 +11,15 @@
  *   khớp NGUYÊN CHUỖI (sau trim). Không đụng HTML, không innerHTML → không cửa XSS.
  * - Chuỗi không có trong từ điển (upstream mới thêm/đổi) giữ nguyên tiếng Việt —
  *   đúng luật suy biến của i18n gốc; bộ dò hằng ngày sẽ nhắc bổ sung từ điển.
- * - Chỉ chạy khi javis.ui_lang === "en". Đổi ngôn ngữ trên UI là app reload sẵn.
+ * - Chỉ chạy khi thansa.ui_lang === "en". Đổi ngôn ngữ trên UI là app reload sẵn.
  */
 (function () {
   "use strict";
   var lang = "";
-  try { lang = localStorage.getItem("javis.ui_lang") || ""; } catch (e) {}
+  try { lang = localStorage.getItem("thansa.ui_lang") || ""; } catch (e) {}
   // Từ 0.66 máy CHƯA chọn ngôn ngữ thì i18n gốc đoán theo trình duyệt (vi/en đầu tiên trong
   // navigator.languages, không khớp thì en). Đoán y như vậy để lớp phủ khớp phần gốc; nếu sau
-  // đó i18n gốc đổi ngôn ngữ (áp ui_lang của server, ô chọn ở rail) thì nghe "javis:i18n" bên dưới.
+  // đó i18n gốc đổi ngôn ngữ (áp ui_lang của server, ô chọn ở rail) thì nghe "thansa:i18n" bên dưới.
   if (!lang) {
     lang = "en";
     try {
@@ -32,7 +32,7 @@
     } catch (e) {}
   }
   try {
-    window.addEventListener("javis:i18n", function (ev) {
+    window.addEventListener("thansa:i18n", function (ev) {
       // Lớp phủ chỉ có hai trạng thái: tiếng Việt (tắt) hoặc tiếng Anh (bật). Mọi ngôn ngữ khác
       // tiếng Việt (en, de...) đều bật, đúng luật suy biến của i18n gốc: chỗ chưa dịch thì tiếng Anh.
       var moi = (ev && ev.detail && ev.detail.lang) === "vi" ? "vi" : "en";

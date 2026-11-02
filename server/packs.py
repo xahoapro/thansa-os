@@ -14,7 +14,7 @@ trên Docker (`Dockerfile:81,112`) và bị `git pull` ghi đè trên bản nati
 Bố cục trên đĩa
 ---------------
     STATE_DIR/packs/<id>/
-        javis-pack.yaml        manifest, giữ nguyên văn tác giả viết
+        thansa-pack.yaml        manifest, giữ nguyên văn tác giả viết
         connectors/*.yaml      mỗi file một connector, khuôn y hệt một phần tử của
                                `connectors[]` trong system/mcp-catalog.json
         plugins/<slug>/        plugin.yaml + plugin.py - ĐỂ NGUYÊN TẠI CHỖ, không copy đi đâu
@@ -28,16 +28,16 @@ lần đó không phải di trú.
 
 Vì sao thả tay vào đây KHÔNG cần cổng env, còn `<brain>/plugins/` thì cần
 ---------------------------------------------------------------------
-(Since 0.161.0 that gate is open by default and `JAVIS_ENABLE_USER_PLUGINS=false` opts out; the
+(Since 0.161.0 that gate is open by default and `THANSA_ENABLE_USER_PLUGINS=false` opts out; the
 reasoning below explains why packs never needed it.)
-`plugins_host` bắt `JAVIS_ENABLE_USER_PLUGINS` cho plugin trong vault vì **model ghi được vào
-vault**: `javis_write_file` mở đúng cây đó, nên "một thư mục ghi được" ở đấy nghĩa là code chạy
-mà không ai bấm gì. `STATE_DIR/packs/` thì không tool nào của Javis ghi tới; ghi được vào đây
+`plugins_host` bắt `THANSA_ENABLE_USER_PLUGINS` cho plugin trong vault vì **model ghi được vào
+vault**: `thansa_write_file` mở đúng cây đó, nên "một thư mục ghi được" ở đấy nghĩa là code chạy
+mà không ai bấm gì. `STATE_DIR/packs/` thì không tool nào của Thansa ghi tới; ghi được vào đây
 đòi quyền trên hệ tệp của máy chủ, tức đã tương đương quyền sửa mã nguồn - không còn gì để
 cổng đó bảo vệ thêm.
 
 Cổng thật sự cần nằm ở đường TẢI TỪ MẠNG (cài từ zip, URL, kho), và nó là màn hình đồng ý gắn
-digest ở giai đoạn sau, chứ không phải một biến môi trường bật-tắt-tất-cả. `JAVIS_DISABLE_PACKS`
+digest ở giai đoạn sau, chứ không phải một biến môi trường bật-tắt-tất-cả. `THANSA_DISABLE_PACKS`
 là công tắc tắt sạch cho ai cần.
 
 Suy biến: hỏng thì THIẾU, không bao giờ THỪA
@@ -61,14 +61,14 @@ from config import STATE_DIR
 # Gốc CÂY MÃ NGUỒN, để đọc VERSION. Neo vào `__file__` y như `main`, `system_sync`,
 # `plugins_host` và `updater` - KHÔNG suy ra từ STATE_DIR.
 #
-# Bản cũ suy từ STATE_DIR và sai ở mọi bản cài đặt `JAVIS_STATE_DIR`: trên Docker thì
+# Bản cũ suy từ STATE_DIR và sai ở mọi bản cài đặt `THANSA_STATE_DIR`: trên Docker thì
 # `/data/state` ra `/data`, chỗ không có VERSION. Hậu quả không nhẹ chút nào - `_app_version()`
 # trả rỗng, `_hop_compat` so với (0,0,0), nên MỌI gói có khai `compat.app` đều bị từ chối ở
-# bước validate với câu "cần Javis >=x, bản này là " (bỏ trống). Tức là cả kho không cài được
+# bước validate với câu "cần Thansa >=x, bản này là " (bỏ trống). Tức là cả kho không cài được
 # gì, trên đúng những bản cài mà người dùng thật đang chạy.
 PROJECT_ROOT = Path(__file__).parent.parent
 PACKS_DIR = STATE_DIR / "packs"
-MANIFEST_TEN = ("javis-pack.yaml", "javis-pack.yml")
+MANIFEST_TEN = ("thansa-pack.yaml", "thansa-pack.yml")
 # Sổ cài đặt. `pack_install` ghi, ở đây chỉ ĐỌC - và chỉ đọc đúng một trường `enabled`, để
 # module này giữ nguyên luật "chỉ stdlib + config", không kéo theo cả tầng cài đặt vào đường
 # nóng. Gói KHÔNG có trong sổ (thả tay vào thư mục) mặc định là BẬT: đó là cách dùng của người
@@ -76,7 +76,7 @@ MANIFEST_TEN = ("javis-pack.yaml", "javis-pack.yml")
 LEDGER = STATE_DIR / "packs.json"
 
 SPEC_HO_TRO = (1,)
-FORMAT_MAGIC = "javis-pack"
+FORMAT_MAGIC = "thansa-pack"
 
 # Cùng luật với `plugins_host._SLUG_RE`: id đi thẳng vào đường dẫn hệ tệp và vào tên module,
 # nên nó phải hẹp trước khi có ai ghép chuỗi.
@@ -101,7 +101,7 @@ _cache: dict = {"sig": None, "packs": [], "connectors": {}}
 
 def tat_het() -> bool:
     """Công tắc tắt sạch mọi gói, đọc LIVE để dùng được khi không vào nổi dashboard."""
-    return str(os.getenv("JAVIS_DISABLE_PACKS", "")).strip().lower() in ("1", "true", "yes", "on")
+    return str(os.getenv("THANSA_DISABLE_PACKS", "")).strip().lower() in ("1", "true", "yes", "on")
 
 
 def _app_version() -> str:
@@ -131,7 +131,7 @@ def _hop_compat(dai: str) -> tuple[bool, str]:
         return True, ""
     ban = _app_version()
     if not ban:
-        # Không đọc nổi VERSION là lỗi CỦA JAVIS, không phải lỗi của gói. Từ chối mọi gói vì
+        # Không đọc nổi VERSION là lỗi CỦA THANSA, không phải lỗi của gói. Từ chối mọi gói vì
         # một tệp của chính mình không đọc được thì hỏng nặng hơn nhiều so với cho cài một gói
         # có thể hơi mới - người dùng đã đọc màn hình xác nhận và tự bấm đồng ý rồi.
         print("[packs] không đọc được VERSION, bỏ qua chốt tương thích", file=sys.stderr)
@@ -145,7 +145,7 @@ def _hop_compat(dai: str) -> tuple[bool, str]:
         ok = {">=": hien >= moc, "<=": hien <= moc, ">": hien > moc,
               "<": hien < moc, "==": hien == moc, "=": hien == moc}[op]
         if not ok:
-            return False, f"cần Javis {dai}, bản này là {_app_version()}"
+            return False, f"cần Thansa {dai}, bản này là {_app_version()}"
     return True, ""
 
 
@@ -238,7 +238,7 @@ def _nap_mot(thu_muc, id_da_co) -> dict:
 
     manifest = next((thu_muc / t for t in MANIFEST_TEN if (thu_muc / t).is_file()), None)
     if manifest is None:
-        ban["error"] = "thiếu javis-pack.yaml"
+        ban["error"] = "thiếu thansa-pack.yaml"
         return ban
     try:
         m = _doc_file(manifest)

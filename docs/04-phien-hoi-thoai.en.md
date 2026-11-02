@@ -52,10 +52,10 @@ All history lives in a single file called `conversations.db`.
 |---|---|---|
 | Filename | `conversations.db` | SQLite format |
 | Folder | Thansa's `server/` folder | Same place as `settings.json` |
-| Env variable to move file | `JAVIS_SESSIONS_DB` | Point to a different `.db` file |
-| Env variable to move entire state folder | `JAVIS_STATE_DIR` | Move the entire state folder |
+| Env variable to move file | `THANSA_SESSIONS_DB` | Point to a different `.db` file |
+| Env variable to move entire state folder | `THANSA_STATE_DIR` | Move the entire state folder |
 
-If you want to move history elsewhere (like a separate data drive), set the `JAVIS_SESSIONS_DB` variable. See [Configuring .env](16-cau-hinh-env.md) for how to set environment variables.
+If you want to move history elsewhere (like a separate data drive), set the `THANSA_SESSIONS_DB` variable. See [Configuring .env](16-cau-hinh-env.md) for how to set environment variables.
 
 Each conversation saves: name (title), brain, engine in use, model, channel (where it originated), message count, creation time, and last update time. Each question and answer is saved separately for precise searching and resuming.
 

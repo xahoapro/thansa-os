@@ -40,7 +40,7 @@ activation on a real brain.
 ## Checkpoint Claude Opus 5.5, 25/10/2026
 
 Owner re-issued the full M0–M8 Goal in a Claude Code session (Goal section 19); section 18
-narrowing is history. Worktree `D:/Project/Javis-OS/.claude/worktrees/javis-agent-skill-improvement-3dc1ea`,
+narrowing is history. Worktree `D:/Project/Thansa-OS/.claude/worktrees/thansa-agent-skill-improvement-3dc1ea`,
 pushed to `codex/agent-skill-improvement-m2d1` (PR #803, retitled 0.314.0). The Codex worktree
 `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a` is untouched (two untracked WIP files left there).
 
@@ -48,7 +48,7 @@ Done in this session:
 - Merged origin/main 0.312.0 into the M2D1 branch (`44ee0349`): 10 conflicts, branch logic kept for
   task-scope skill reads, i18n and script tags unioned, route table regenerated. Version 0.314.0 reserved (`b9a4fe23`).
 - M2E manual activation (`a3359bff`): schema 11 `improvement_activations`, apply/revert/reconcile,
-  read-time resolver in lazy router, in-process `javis_use_skill` and task scope; CLI hub requests and
+  read-time resolver in lazy router, in-process `thansa_use_skill` and task scope; CLI hub requests and
   non-DM channels keep canonical. API `GET/POST /improvement-activations`, `POST .../{id}/revert`.
   Studio candidate panel: apply block and applied list with Revert. Ops doc `docs/dev/improvement-manual-apply.md`.
 - M2F simulated feasibility (`a3359bff`): `test_improvement_feasibility_simulated.py`, four labelled
@@ -59,7 +59,7 @@ Done in this session:
 | M0, M1, M2A–C | Released 0.287–0.296 (reused) | None claimed | Suggest-only |
 | M2 (D1 integrated, E manual apply, F simulated feasibility) | **Released 0.314.0** (`f3348f04`, #803): full CI green, 2 independent reviews fixed, native profile re-qualified on CLI 2.1.310 (20/20), Docker publish green | None; real feasibility PENDING | Manual, API engines, assistant chat only |
 | M3 (canary, owner verdicts, monitoring, promotion, grants, pilot conclusion) | **Released 0.316.0** (`b7c81dc7`, #822): CI green, review 2 important + 7 minor fixed, native re-qualified (20/20), Docker green | None; live canary and pilot PENDING | Off until the owner applies |
-| M4 (routing evaluator, description overlay for the main chat, telemetry, UI) | **Released 0.320.0** (`e1d57392`, #823): CI green, review fixed, native re-qualified (20/20). Open: API-engine trial adapter (spec 10.3), native CLI routing measurement, hub `javis_use_skill` description still canonical | None; real engine smoke PENDING | Main chat, API engines, off until the owner applies |
+| M4 (routing evaluator, description overlay for the main chat, telemetry, UI) | **Released 0.320.0** (`e1d57392`, #823): CI green, review fixed, native re-qualified (20/20). Open: API-engine trial adapter (spec 10.3), native CLI routing measurement, hub `thansa_use_skill` description still canonical | None; real engine smoke PENDING | Main chat, API engines, off until the owner applies |
 | M5 (agent procedure overlay, surfaces dm/team/kanban/workflow, session pin, owner-rule drift, learn/review staging, lesson linkage, UI) | **Released 0.323.0** (`22ef0375`, #825): CI green, review 4 important + 6 minor fixed, native re-qualified (20/20) | None; agent pilot and agent canary PENDING (owner) | Off until the owner applies |
 | M6 (agent-skill bundle: validator, atomic pointer, all-or-nothing read gate, recovery, attribution labels, UI) | **Released 0.325.0** (`485ad69f`, #828): CI green, review 1 critical + 7 important fixed, native re-qualified (20/20). Not built: executable helpers in the sandbox (owner grant for the executable kind), skill split/merge with alias, real ablation arms and a bundle qualification | None; real agent-only/skill-only arms PENDING | Off until the owner applies |
 | M7 (Team trial pins and comparison T01, scoped reports T02, untested recipe transfer, API) | **Released 0.327.0** (`409219ad`, #830): CI green, review 1 critical + 5 important fixed, native re-qualified (20/20). Not built: a real Team trial runner, per-step artifact handoff, aggregate trial acceptance, plan/source pinning, lesson freezing during arms, UI | None; a Team business comparison PENDING (owner, real runs) | API only |
@@ -178,7 +178,7 @@ three evidence limitations against freeze/log/cleanup/static import-discovery
 and Linux artifacts. Two punycode/one Node action-runtime notices retained
 separately; no test ResourceWarning/task/timing diagnostics or suppression.
 Public2026-10-24-recipe-source-observer.json SHA
-a0ec009bb3eab3e53756cd37e560429f7f7dc8107de99760b4b6045a9fe43cf9.
+94a31106b5829e3ebc972a3f9277d6983f55f1e1c30e7d4913c67cfbb73b873a.
 
 PROFILE99 stays UNQUALIFIED/registriesclosed; static import closure is distinct
 from current installed/runtime qualification. Task1 terminal audit/serial slot
@@ -363,7 +363,7 @@ ADDRESSED/no new findings/9stablev2pins; reviewer executed no tests. Root valida
 terminal logs/pins/CI. Existing Starlette/httpx deprecation warnings remain in main
 test logs; corrected fixture ResourceWarnings are excluded from final evidence.
 Public2026-10-24-compose-owner-controls.json SHA
-de6eda2890334dcaeb7df9d17379cbd1bccaa41c84ad4a978e44251c3836809a (UTF8/LF).
+5c0f3fe6743a4594a5a934a6cf8f4db0c8a784dfee5d9c9ece58de47d9dda494 (UTF8/LF).
 
 All positive native predicates/SDK packets are synthetic storage controls, not
 actual CLI/SDKClient/account/model/business evidence. PROFILE95 raw
@@ -395,7 +395,7 @@ independent15PASS/192.949s/15stablepins/no open P0/P1/P2. Review report SHA
 Early isolated Linux40064018472/job120783344859 SUCCESS145PASS/17scripts,
 snapshota3934037bc0e5442cf2aa4005a60eae1e2a49549/15exactpins. Public proof
 2026-10-24-compose-checked-arms.json SHA
-a4532ac0fef6678e222c64f3c492865aae675d36eca4c9037a6d059c7f026f82 (UTF8/LF).
+a83e62e2cc4106c3df2d34d2943edcb22229723ea3b0085a1e12c181c775b7af (UTF8/LF).
 
 Positive SDK/verifier/format/qualification and shared-source host DI are labelled
 synthetic controls; no actual CLI/SDKClient/account/model/business proof. Actual
@@ -444,7 +444,7 @@ selfapproval. Review3270c767d2859cf541592c0eb0cddd5769cb9e83e6b1c227f8f1d7fb958a
 Early isolated Linux40061864692/job120776919060 SUCCESS69unittest +manual TC,
 10scripts/10exactpins, snapshotb792833d45e53e648d536e52632f22f861ddab4c. Public
 2026-10-24-compose-owned-publication.json SHA
-1129532c0510ec9c7a839a0a4be07a8454308aa5c48e11fd77c117b2f660e3c3 (UTF8/LF).
+294a4ed33b978eec62ce28d93612ccfbaf474b99f46968f56d37714e3dd560a5 (UTF8/LF).
 
 Positive native packets/verifier/format/binding/qualification predicate are
 explicit UNEXECUTED STORAGE CONTROLS, not native image ACK/account/model readiness.
@@ -587,7 +587,7 @@ full new migration/role/view validation stayed enabled. Final independent root5
 PASS21.636s/12stablepins/no findings, original reviewer-authored6 excluded from
 self-approval. Report9416129700e71677164fad7ee9b3c77ccc02031c9a2ddc26ae5b9900bfd72ca9.
 
-Early isolated [Linux40058375830](https://github.com/blogminhquy/javis-os/actions/runs/40058375830)
+Early isolated [Linux40058375830](https://github.com/xahoapro/thansa-os/actions/runs/40058375830)
 SUCCESS46/46: migration6/boundaries5/execution13/profile7/view15, exact12rawpins,
 commit4a2877aedbdd45e7978f65aa7d6d1757a543c631. Earlier40058040941 retained
 future-version exception failure after103PASS/104tested; unchanged candidate12/
@@ -631,7 +631,7 @@ new-output/current-ref preserving fix. Independent rootrace4+historical1 PASS5/5
 14.943s,15pins stable/no findings; own original7 excluded self-approval. Report
 e6c9055afaf75487ebdddb7590cc4bea80332dc13b381e7f5766f1433f774422.
 
-Early isolated [Linux40056590938](https://github.com/blogminhquy/javis-os/actions/runs/40056590938)
+Early isolated [Linux40056590938](https://github.com/xahoapro/thansa-os/actions/runs/40056590938)
 SUCCESS33/33 across protocol11,host7,races4,existing byte validator11. Exact8 raw
 source/test/license pins verified on isolated commit50a73cc28262e4bf1a9b9159c0d38e3df3f47890,
 fresh Ubuntu/Python3.12, serial no-real-engine fixtures. One initial dispatch500
@@ -668,7 +668,7 @@ Goal17's first functioning fixture slice now calls actual compose_round at t=k=1
 from the pinned upstream source. Nine extracted definitions/constants match exact
 source segments AND AST; raw original Git blob9ccacf23b64ac15b06a1939f26224960f56d757c
 and Apache2 LICENSE blobd645695673349e3947e8e5ae42332d0ac3164cd7 independently
-verified. Static narrow Javis body surface and context/notes→JSON mapping exclude
+verified. Static narrow Thansa body surface and context/notes→JSON mapping exclude
 upstream guardrail/plugin surfaces and filesystem access. Existing byte validator
 creates combined UTF8/CRLF bytes, KEEP_BASE or adoption; decisions remain model
 claims, semantics unreviewed, no source authority or inherited pass/activation.
@@ -716,8 +716,8 @@ Owner directive from the same authorized chat is saved in Goal§17. Next safe
 unit after current engineering-product boundaries: inspect exact pinned
 prompts.aggregate/compose_round and recursion compose call/direct dependencies,
 then actually import/vendor functioning independent implementation through a
-narrow Javis adapter. Follow with actual library entry/index/serialization via
-private authorized derived snapshots, retaining Javis immutable encrypted source,
+narrow Thansa adapter. Follow with actual library entry/index/serialization via
+private authorized derived snapshots, retaining Thansa immutable encrypted source,
 brain/scope/revocation/retention/trace authority. Assess whole orchestration only
 after those, counting executor/lease/cancel/restart/replay/ledger/migration/tests/
 qualification costs; do not duplicate authoritative runtimes/ledgers. No scaffold
@@ -765,7 +765,7 @@ and the targeted upstream reuse decision. Remaining M0–M8/Phase2 scope unchang
 ## Owner selective replacement update — Goal§16
 
 Direct owner update from the same authorized chat permits replacing existing
-Javis code/structure with pinned upstream when concrete benefits justify total
+Thansa code/structure with pinned upstream when concrete benefits justify total
 adapter/consumer/migration/backward-compatibility/qualification/test/review cost.
 This supersedes prior blanket no-rewrite restrictions only within that scope;
 database/authority/native lifecycle can also be replaced when justified with a
@@ -776,7 +776,7 @@ Goal§16 SHA-25676e349119bd3f7148204b2e57800d9769aac4f7cb73c271e6f8541ff0a6c5b18
 pre§16 e868339ebd3ad1a73fe9faea13b74e2af959c8b3f8148eb4c2ddbae63ac8fc20,
 all earlier source/evidence lineage preserved. Active code-first plan/reuse map
 carry this rule. Current proposer adaptation already uses real upstream method
-via a small renderer while preserving Javis output/authority validators; no
+via a small renderer while preserving Thansa output/authority validators; no
 additional infrastructure replacement is justified by this unit. Ongoing serial
 fixture regression ownership is preserved; no account/model or activation starts.
 
@@ -802,7 +802,7 @@ consumer11+root-owned cancellation1:12PASS5.141s,14pins stable; report
 fb8a1670e1f0776c1f1bc61c80fe8f9816c65f8af2a5a75e9a882dd70294883f.
 Own author tests/core are explicitly excluded from self-approval.
 
-Early genuine Linux [40053479314](https://github.com/blogminhquy/javis-os/actions/runs/40053479314)
+Early genuine Linux [40053479314](https://github.com/xahoapro/thansa-os/actions/runs/40053479314)
 succeeded10/10scripts17s on isolatedcfdc8cd181a23b51a9585b22802c988ba5469cf5,
 with nine exact selected raw files and fresh remote HOME/DB/filesystem. This is
 not exact-final-task-head full CI. [Public evidence](../evidence/2026-10-24-m2d2-task-skill-snapshots.json)
@@ -849,8 +849,8 @@ pre§14 f683ff6abba61e110ef8034fe1451d80390d6688866c2def5f2f964ec4fcd356 and
 all older original/spec/lineage hashes remain historical, never replaced.
 [The incremental reuse map](../plans/2026-10-24-harness2-reuse-map.md) records
 the first targeted decision: inspected actual upstream substrate protocols and
-context builder are benchmark staging, lack Javis private live-turn ownership,
-and delete/copy mutable destinations. Keep the narrow Javis task lifecycle using
+context builder are benchmark staging, lack Thansa private live-turn ownership,
+and delete/copy mutable destinations. Keep the narrow Thansa task lifecycle using
 its completed M0/runtime/core; no upstream code copied/imported for this unit.
 Upcoming prompt/compose/selection/recipe/bundle units must inspect upstream first.
 
@@ -2085,10 +2085,10 @@ pending. All81 isolated native pins remain unchanged, with no native/model query
   `01a16662-a77c-72e2-9c40-265c5659d5cc`. Applies M2C–M8; original source/hash and
   historical evidence remain intact. Amended Goal SHA-256 (separate identity):
   `558e91848624c2dbc5daf1d5decb64b43b960285ce0416e40099ca63863b2ec8`.
-- Agent/skill spec SHA-256: `fceea3d375388eeb0f0e3eada48cc2c74a611b2bfcad9978441a683052b108bc`.
-- Team dependency spec SHA-256: `e01014f05bf3e090cc63a52e581049833b292dfe5e77a094bd75d8941504f2ff`.
+- Agent/skill spec SHA-256: `2c53d1a8577ed7f6a29bd838a0b32cb1bca39e079d746f31798851f3b052ebbf`.
+- Team dependency spec SHA-256: `ea6449e9f313f8315176f50131ec9209ef620cb3a8dc24c9f273e176f9559ee3`.
 - Authoritative baseline: `a9ee52ff0d3a1ce0eaa61d18c1b9c83081e21b26`, main 0.286.0.
-- Worktree: `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m0/Javis-OS`.
+- Worktree: `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m0/Thansa-OS`.
 - M0 branch: `codex/agent-skill-improvement-m0`; release0.287.0, PR #794 merged
   `0990331574e617fa1a79cd69fcd7b87d465448c5`; publication39797072172 succeeded.
 - Original checkout remains untouched by implementation; only the three relevant source documents were copied.
@@ -2120,7 +2120,7 @@ pending. All81 isolated native pins remain unchanged, with no native/model query
   UNKNOWN and partial usage; it does not establish a business win or live grant.
 - Current engineering continuation is M2D1, branch
   `codex/agent-skill-improvement-m2d1` in the SAME isolated worktree
-  `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Javis-OS`.
+  `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Thansa-OS`.
   DraftPR803 now reserves0.299.0 after rebasing onto main0.298.0; original
   reservation0.297.0 at c4991ec8 remains historical. Plan is
   `../plans/2026-10-23-agent-skill-improvement-m2d1.md`.
@@ -2135,7 +2135,7 @@ pending. All81 isolated native pins remain unchanged, with no native/model query
   comparison rows. Cold metadata neither decrypts nor migrates; canonical skill
   bytes and target pointers stay unchanged. Evidence:
   `../evidence/2026-10-23-m2d1-task1-verification.json`, SHA256
-  b9d7c51fd9725111678365f667b4af2168738b73329e89475ba2d700d52f76f8.
+  403173c0531bd302b881b3766d7cde0767189b14592bed299a918091064fc44b.
   Task1 local foundation is verified; task-done checks committed bytes/logs.
   Checkpoint Linux CI remains pending. WSL is unavailable; the PR workflow now
   fetches actual C2727edcc for its reader test. No real provider/account inference
@@ -2155,7 +2155,7 @@ pending. All81 isolated native pins remain unchanged, with no native/model query
   the new source service still require CI. C semantic/native unknown and A's
   unreviewed status remain unchanged. Evidence:
   `../evidence/2026-10-23-m2d1-task2-verification.json`, SHA256
-  588f7dba351d6d4253039819179207e467306163b14bfb7447d8c700d08fc41e.
+  8ce284de6c692f18ed8229299549250dd52cc178b9ab75d8609f07b18ece08d3.
   All C34-profile and selected Task1 source bytes remain exact; there is no new D
   native qualification, API wiring, actual comparison Trial or real model call.
   Task3/4 retain actual admission/native-preflight/reservation/query fences.
@@ -2196,7 +2196,7 @@ the disabled skill. Five affected scripts passed sequentially in13.392s, includi
 11 Phase8 pytest cases. No model or native query occurred. All81 qualified native
 source hashes remain identical, so exact958527ac/1f3391cf enforcement evidence is
 reused. Artifact `../evidence/2026-10-24-m2d2-routing-state.json`, SHA256
-56246006f3a4dce8cb58762f648c30380c67b0618dd3b5742dec366da04de610.
+ed9c9eec323e57c4d2e01598331d2c987fdd7a7e3d6cf3d986279f42ada894c4.
 
 Scoped routing-delta review and final-head CI remain required. D1 CI39990661065
 on999c207a was running before this new source delta; it cannot prove a later head.
@@ -2217,7 +2217,7 @@ model word `pass` is not an accepted assessment. Canonical bytes stayed exact;
 all plaintext workspaces were removed. No model retry or owner arbitration.
 
 Evidence `../evidence/2026-10-23-m2d1-real-feasibility.json`, SHA256
-90ecc20bfc31c581292e654f8a4ff68192e77e56ec6caba8f3a1600e536321a0.
+6ee7d33fe41e3babc3801920b56f36d049733bb1c55b9ea85c41e89a245dc532.
 Observed usage8569 input/877 output tokens, subscription-equivalent USD0.0707254;
 cash and request counts are unavailable and coverage remains partial. These
 are technical synthetic calls, with no business efficacy or live authority.
@@ -2232,7 +2232,7 @@ the original native result, no receipt and no automatic retry. Parser, prompt,
 assessments, native checks and eligibility are unchanged. Five sequential focused
 and affected scripts passed63 tests in349.720s on one complete source map.
 Artifact `../evidence/2026-10-23-m2d1-semantic-invalid-output.json`, SHA256
-4a8d10e966a7931410093822f8b1261f8ecef7c0d01042c8ba27dc36286d9464.
+0e37ca647c8031ae963b8774f873e9eba88afcbdebc6dcee639a65da1d9ab3a6.
 AST proof preserves all other product code and prior test methods; the scoped
 independent review approved exact330501fa, with no finding. Its actual HTTP
 invalid-output/stop/off/revoke/cold-replay recheck passed1 test in12.336s; log
@@ -2267,7 +2267,7 @@ Actual paired views1 +solver5+roles5+quiescence9 passed20 tests in96.767s on
 identical source maps; adapter guards22 passed1.711s. Actual CLI --version is
 checked within the owned hidden dummy job. Artifact
 `../evidence/2026-10-23-m2d1-native-qualification-final.json`, SHA256
-012d9e37690e8711da75a344dfee0677df8d6c690b90f689ddbb14574c82f295.
+6b48a371a095854a65c73ae349b2a10c52bced005e46354f85eccb3988e831ec.
 
 The exact registration now points to that evidence; historical C remains intact,
 lookup code is unchanged, and altered pin/platform is refused. Metadata RED→GREEN2
@@ -2275,7 +2275,7 @@ passed0.045s. Current source qualification is enforcement-only: all queries used
 dummy auth and local providers, observed reasoning/asset use remain unknown.
 Reuse/source/recheck checkpoint
 `../evidence/2026-10-23-m2d1-source-checkpoint.json`, SHA256
-99c01d1afdc91f2516b57a12cecfb81bec13dd184295cfd934a37fd502661253.
+b740e371b337deca867c560314e75d3a0d03fdf76e93d453cb6b45512320954c.
 The runtime tuple/test-version probe/registration delta was independently
 approved at5421080714f78c653e2ab10c17a5e8ee4a613a55, with no actionable finding.
 The reviewer verified all81 source pins, retained evidence/log hashes and the
@@ -2307,13 +2307,13 @@ reuse are covered, along with owner/main/service controls and actual v4 handoff/
 cancel. AST/source proof shows the only product change is constructor refusal;
 the prior stop/current-source/materialization behavior is preserved. Evidence
 `../evidence/2026-10-23-m2d1-review-lifetime-fix.json`, SHA256
-fb8333f444f84ac85f03d3f0c71402eb30f599e1a025499802b860739e7d94b5.
+51b3bc3c1ca302572bb9d415b99a01bb228dff3235fd158155cc0bf8b0ee91b5.
 Same-reviewer scoped recheck is pending, not another whole review.
 
 Before the fix, profile81/2221a859 also passed full local/dummy solver5, roles5
 and quiescence9 in60.609s on one source map. Its source-bound artifact
 `../evidence/2026-10-23-m2d1-native-qualification.json`, SHA256
-96adabecf47773debc2988098a68cc3a9c592a00ad2ed9b0d8a6e4cab096936b,
+2cda2b3758ca80118910988741f75a3f45b9d20cf361995c168b003868e20994,
 is historical after the constructor change and was never registered. Current
 profile81/d070550687af101c07094e1234c5988fae15af9318eb5f5277c4cb2e413324ba
 remains unregistered; requalify after fix stability. Exact740c LinuxCI39982218130
@@ -2365,7 +2365,7 @@ unmodified code. Existing B/C owner/stop/lifetime workflows and actual v4 paired
 reservation remain green. Operator guide:
 `../../dev/agent-skill-m2d1-views.md`. Evidence
 `../evidence/2026-10-23-m2d1-task5-view-controls.json`, SHA256
-b3a617be7e9eda67398ff166b28ff7ff833908e2f779089bfa670f088b3305a9.
+99024a59c4a5db2e89ec7a5075105a99c3faa16182e75e0650e8e2b0de1b236b.
 The route snapshot was intentionally regenerated with the direct Python script;
 the wrapper does not forward its documented `--update` flag. No product failure
 was hidden by accepting an unrelated route change.
@@ -2400,7 +2400,7 @@ Subsequent Task3 history checkpoint b755699e passed56 scoped tests (portable
 evidence170d0de3). Actual reservation now passes140 tests in nine sequential
 affected checks,231.248s, recorded in
 `../evidence/2026-10-23-m2d1-task3-reservations.json` (SHA256
-bde6b073ae78acbf4e220cd5363fa40fd16e1f4bc5dd3d2ac225cd83a0b8a796).
+0baf6843239197075e922846930434ee6d512ac61a0ab4811d9e4db8739db702).
 Genuine v4 baseline/candidate Trials and existing Calls/links are created; source
 changes roll back actual reservations, and cold replay stays readable after
 off/revoke. No model query/engine marker. Current native footprint is now76
@@ -2415,7 +2415,7 @@ includes actual v4 links under the shared12000 comparison bound, and next refuse
 pending/terminal-no-result slots. Owned next now passes71 scoped+affected checks
 (401.851s recorded, basis per row), evidence
 `../evidence/2026-10-23-m2d1-task3-owned-next.json` SHA256
-4d9df2ba736bf8fc736dc2d8e0e19d10b8f24cf406d7ee0dc99684b1aa944221.
+a36c5b99f6e03194992f79c82b4b711a1a999d01cca86afe457e274c14fecb9f.
 Actual brain barrier covers next/source/native-preflight/Trial+Call reservation;
 concurrent owner keys reserve once and cancelled HTTP stays owned through stop.
 Current native profile is78 sources/058166e7, deliberately unregistered. No real
@@ -2436,7 +2436,7 @@ close futures to complete successfully. A live owner or missing/pending/cancelle
 failed close refuses replacement, without constructor source/native I/O. Current
 32 scoped/affected checks pass276.518s; evidence
 `../evidence/2026-10-23-m2d1-task3-view-lifetime.json` SHA256
-c56e88ee52a9813711021db8d93984f53594d0ee42bdbb519eab8679dcf7c60e.
+68bdc7e7a6eec62ee472d38d0f901df6620fda449749531930bad8104b4d9d47.
 Current78-source profilebfda8912 is UNREGISTERED. No real query/native execution,
 ordinary D2 task/session resume, business or rollout acceptance is claimed.
 
@@ -2447,7 +2447,7 @@ historical report bytes/hash and cold replay remain unchanged, including the
 older metadata-only prototype with no result refs. Full18 integrity checks and
 report v1 envelope remain intact. Evidence
 `../evidence/2026-10-23-m2d1-task3-reports.json`, SHA256
-aabb253c30404d6155ba2bba92981285462da56e9e6439c5218abc363567609d.
+0dc25df8c9cb42f9dbde1f0d5905d5edebc790a3bcfe4f77980e591f0f6c78af.
 Current78-source profile4e3ecee0 is unregistered; final qualification ownership,
 actual view workspace/native execution and public controls remain OPEN.
 Linux39957029202 failed on olderdad605c3, before the fixture correction; current
@@ -2461,7 +2461,7 @@ bytes with common inputs, without modifying canonical or manufacturing a bundle.
 Source edits during solver read roll back the materialization and retain exact
 prior exposure rows. V1 prompt/hash stays unchanged; v2 binds its view descriptor.
 Evidence `../evidence/2026-10-23-m2d1-task4-materialization.json`, SHA256
-87d9d7306dc3226ac3f2a68860bc4277eec699c08535e4ba4892c5aed38d76d3.
+bc9af0f6ccc39196e25feb8de3bcd0e4f2d7acc8231b31e05b25a43322be1077.
 Current79-source profilebeddb902 is unregistered. Native v4 receipt/check/result
 integration, final qualification ownership and public controls remain open.
 No actual native query, successful result, eligibility or business/live proof.
@@ -2474,7 +2474,7 @@ Full18 check IDs and unknown effort/asset use remain; both simulated results
 are non-pass, and comparison selection stays unsupported. Actual histories read
 exactly after off/revoke. Legacy checks/Claude/results/v2 execution pass.
 Evidence `../evidence/2026-10-23-m2d1-task4-view-execution.json`, SHA256
-4d7c1b9f7ea74b27e1b335ae93274561fb8290e2a82915ed61bc66bb54aea721.
+f61ebbc832b9926637557d233c3db709c07b73f7b3aa485e021a4276d243fe26.
 Source79/2192bf86 remains unregistered; no real model call/native qualification.
 Linux39959675109 SUCCESS254a90ca; Linux39965159570 in progressc811b9d6.
 Current result code still requires its own CI/review. Final holdout ownership,
@@ -2487,7 +2487,7 @@ unchanged SQL guard now runs before any current view plaintext; existing frozen
 metadata remains readable.31 checks passed262.843s recorded: new boundary3,
 improver inputs10, view sources16, real paired reservations/native-footprint2.
 Evidence `../evidence/2026-10-23-m2d1-task3-view-holdout.json`, SHA256
-07ef50951c43236be3128be3e9740bed1521e94e1e31c1a0bf178c88517cf6fc.
+c5e88046dfec718111f0202cb5cedefa662d5504bef201142889ce13571d653b.
 Current79-source b46e2cc3 is unregistered. This is a current-authority repair,
 not a final holdout claim/native/business acceptance. Task3 remains OPEN.
 
@@ -2498,7 +2498,7 @@ missing/changed guard blocks new authority before plaintext. Earlier prototype
 metadata stays readable, existing view DDL is AST-identical, and schema2
 downgrade drops the new child first. Evidence
 `../evidence/2026-10-23-m2d1-task3-qualification-schema.json`, SHA256
-c52e682319fafcd9613e125ce3741bc6b27cb9f7bf3ae4a4b94f4b7327e3179a.
+4769af0a10f960d25377476b8cc09318476713caa05d026122ee25a786dede66.
 Current79-source d6b20eb5 is unregistered. Genuine positive selected-final link,
 owned reserve/consume and final native/public controls remain open; runtime
 final requests are still explicitly denied. No final/eligible result is faked.
@@ -2512,7 +2512,7 @@ has a separate SQL/blob reader. Actual tests deny nonfinal/foreign/missing scope
 missing/foreign transaction and consumed qualification relabelled as regression;
 the real tuning pipeline with simulated engine still passes and stays non-pass.
 Evidence `../evidence/2026-10-23-m2d1-task3-owned-qualification.json`, SHA256
-5f54cee420f022709b4ea9278fcc5cda975f85c2b1faf55f9f9b9eea0283697a.
+5a719f56706bdc16bcbb7de9ac8f2ee4b0647887b44158022c5b080da80007b8.
 Source81/759f44ab is UNREGISTERED. Genuine positive selected-final execution is
 unverified; no eligible selection/result was fabricated and full18/unknown was
 preserved. Legacy v2 tuning-family bypass is under separate audit. Task3, native
@@ -2526,7 +2526,7 @@ the new boundary, B lineage/admission/actual execution and actual v4 pair/native
 footprint. Exact old replay/metadata stays cold; qualifier/history source and
 v4/materialization methods retain their earlier qualified scope by AST/hash.
 Evidence `../evidence/2026-10-23-m2d1-task3-legacy-alias.json`, SHA256
-fa40a4baf1887cc1c873be511546b3d45311f3636c48c5e6c7ba18422180ee40.
+24118388785d349cf92240d5dcb55b173fb80f5fc49127e4f2045a7bed152ff8.
 Current81-source c2e7968e is unregistered. Actual positive final/native, public
 controls and independent whole-D1 review/CI remain open; Task3 is not done.
 
@@ -2801,7 +2801,7 @@ controls and independent whole-D1 review/CI remain open; Task3 is not done.
   limits and missing preparation/navigation. Those boundaries are in the plan;
   actual effort/internal semantic use stay unknown where unobservable.
 - Reserved VERSION/both changelogs in a2f1b074 and attached draft PR800 before
-  implementation: https://github.com/blogminhquy/javis-os/pull/800.
+  implementation: https://github.com/xahoapro/thansa-os/pull/800.
   Changed-candidate execution, compose, real activation and live canary remain
   unavailable until their actual prerequisites and owner scope grants exist.
 - Task1 tests preserve actual A encrypted authoring and M1 context/case/contract/
@@ -2905,9 +2905,9 @@ controls and independent whole-D1 review/CI remain open; Task3 is not done.
 
 ## M2A engineering continuation
 
-- Worktree: `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Javis-OS`;
+- Worktree: `C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Thansa-OS`;
   branch `codex/agent-skill-improvement-m2a`, release0.292.0 reservationf6d8d356,
-  attached draft PR799: https://github.com/blogminhquy/javis-os/pull/799.
+  attached draft PR799: https://github.com/xahoapro/thansa-os/pull/799.
 - Dependency M1 is published as0.291.0 on main9dd7a9f9. Replayed only A's six
   own commits onto that actual merged source; the resulting tree is byte-identical
   to the reviewed A checkpoint b01ddf1b. PR799 targets main for final CI/integration;
@@ -2982,7 +2982,7 @@ controls and independent whole-D1 review/CI remain open; Task3 is not done.
 
 ## Baseline verification
 
-- `D:/Project/Javis-OS/.venv/Scripts/python.exe tests/run.py learn_sua_skill -v`: PASS, 1 file.
+- `D:/Project/Thansa-OS/.venv/Scripts/python.exe tests/run.py learn_sua_skill -v`: PASS, 1 file.
 - `... tests/run.py agent_rules -v`: PASS, 1 file.
 - `... tests/run.py resonance_a3_learning -v`: PASS, 1 file in 132 seconds (session 92106 completed).
 - Python env reused by explicit executable, not by copying `.venv` or production config. Main imports in new tests must set scratch state/brain roots first.
@@ -3015,7 +3015,7 @@ Full M0–M8 Goal remains active; no business or live rollout gate is closed by 
 - Implemented immutable revisions/bundles and append-only events in the existing shared SQLite
   store, encrypted exact-byte blobs, owner-only policy/CAS/idempotency, canonical ownership
   capture and six authenticated metadata endpoints. No engine, canonical write or activation.
-- Final focused command: `D:/Project/Javis-OS/.venv/Scripts/python.exe tests/run.py improvement
+- Final focused command: `D:/Project/Thansa-OS/.venv/Scripts/python.exe tests/run.py improvement
   route_table prompt_budget team_quality_contracts team_quality_usage agent_rules learn_sua_skill -v`:
   **PASS 9/9 files, 51 seconds**. The three improvement scripts contain **39 behavioral tests**
   (20 store, 10 assets, 9 API), including actual-main authentication/CSRF and read-only access.
@@ -3102,7 +3102,7 @@ Full M0–M8 Goal remains active; no business or live rollout gate is closed by 
   now checks only that pin. A later timeout was a test-server query-string parsing defect;
   fixed without changing product behavior. Timeout cleanup terminates the owned process tree.
 - Owner delegated pilot selection on22October. Selected first additional pilot: Python bug
-  fixes in Javis-OS, using isolated repository snapshots and independent behavioral/regression
+  fixes in Thansa-OS, using isolated repository snapshots and independent behavioral/regression
   tests as the business criterion. Preserve source-family splits, frozen qualification and
   all attempts. This choice does not close the spec's data-reconciliation Pilot A or document
   Pilot B gates; no historical case or user skill has yet been selected or run.

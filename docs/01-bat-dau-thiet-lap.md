@@ -128,7 +128,7 @@ Chi tiết về đồ thị xem [Đồ thị tri thức](03-do-thi-tri-thuc.md).
 
 **Thẻ Chuẩn hóa brain** gom các thư mục `agents`, `workflows`, `memory`, `skills` của brain đang chọn về cấu trúc phẳng đồng nhất. Bấm **Chuẩn hóa brain đang chọn** để chạy.
 
-Thao tác này an toàn: chỉ di chuyển khi thư mục đích chưa có, không ghi đè, chạy lại nhiều lần cũng vô hại (ví dụ chuyển `Javis/agents` sang `agents`, `Memory` sang `memory`). Sau khi chạy, Thansa báo đã di chuyển gì hoặc "Không có gì cần di chuyển (đã chuẩn)".
+Thao tác này an toàn: chỉ di chuyển khi thư mục đích chưa có, không ghi đè, chạy lại nhiều lần cũng vô hại (ví dụ chuyển `Thansa/agents` sang `agents`, `Memory` sang `memory`). Sau khi chạy, Thansa báo đã di chuyển gì hoặc "Không có gì cần di chuyển (đã chuẩn)".
 
 **Thẻ Dấu nguồn gốc ảnh AI** quyết định ảnh Thansa tạo ra có mang dấu nguồn gốc (Content Credentials, chuẩn C2PA) hay không. Nhãn góc phải là "Đang giữ" hoặc "Đang gỡ".
 
@@ -196,7 +196,7 @@ Hostinger thì vào Docker Manager bấm **Redeploy** (stack đọc lại compos
 
 Tải lại trang là nút hiện ra. Không muốn có Watchtower thì cập nhật tay vẫn được: `docker compose up -d --pull always`.
 
-**Muốn Thansa TỰ cập nhật, khỏi bấm nút**: thêm `JAVIS_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại. Mặc định tắt có chủ ý, vì tự cập nhật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `JAVIS_AUTO_UPDATE_INTERVAL` (giây).
+**Muốn Thansa TỰ cập nhật, khỏi bấm nút**: thêm `THANSA_AUTO_UPDATE=true` vào `.env` (Hostinger: ô Environment) rồi dựng lại. Mặc định tắt có chủ ý, vì tự cập nhật là app tự khởi động lại bất cứ lúc nào có bản mới, cắt ngang việc nền đang chạy. Chu kỳ mặc định 24 giờ, đổi bằng `THANSA_AUTO_UPDATE_INTERVAL` (giây).
 
 Khung Cập nhật tự phân biệt các trường hợp này và ghi đúng cách xử lý cho máy bạn.
 
@@ -222,7 +222,7 @@ Bên dưới khung cập nhật là nhật ký phiên bản: từng bản có g�
 
 Khi Thansa chạy công khai (nghe trên `0.0.0.0`, tức VPS/Docker/Hostinger) mà chưa có tài khoản admin, màn chạy lần đầu chỉ hỏi tên đăng nhập và mật khẩu. Nghĩa là **ai mở link trước khi có admin sẽ tạo được admin**, mà bộ não lại chạy với toàn quyền trên máy. Vì vậy:
 
-- **Cách khuyến nghị:** khi deploy, đặt sẵn hai biến môi trường `JAVIS_ADMIN_USER` và `JAVIS_ADMIN_PASSWORD` (`install.sh` đã hỏi sẵn hai giá trị này). Thansa tự tạo tài khoản admin lúc khởi động, mở app ra là màn đăng nhập luôn, không có khoảng trống nào. Chi tiết biến môi trường xem [Cấu hình .env](16-cau-hinh-env.md).
+- **Cách khuyến nghị:** khi deploy, đặt sẵn hai biến môi trường `THANSA_ADMIN_USER` và `THANSA_ADMIN_PASSWORD` (`install.sh` đã hỏi sẵn hai giá trị này). Thansa tự tạo tài khoản admin lúc khởi động, mở app ra là màn đăng nhập luôn, không có khoảng trống nào. Chi tiết biến môi trường xem [Cấu hình .env](16-cau-hinh-env.md).
 - **Nếu không đặt env:** mở app và tạo tài khoản ngay sau khi deploy, đừng để server public trống admin.
 - **Sau lần đăng nhập đầu:** bật xác thực 2 lớp (2FA) ở trang **Tài khoản**. Xem [Bảo mật & tài khoản](14-bao-mat-tai-khoan.md).
 

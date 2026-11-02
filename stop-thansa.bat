@@ -7,7 +7,7 @@ REM KHONG dung timeout o day: chay an qua VBS se loi "Input redirection is not s
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0stop-thansa.ps1"
 REM Don cua so CMD den "Thansa OS" kieu cu con sot (flow moi chay an, khong tao cua so nay).
 taskkill /F /FI "IMAGENAME eq cmd.exe" /FI "WINDOWTITLE eq Thansa OS*" >nul 2>&1
-REM May cai truoc 1.19: cua so cu mang tieu de "Javis OS".
-taskkill /F /FI "IMAGENAME eq cmd.exe" /FI "WINDOWTITLE eq Javis OS*" >nul 2>&1
+REM May cai truoc 1.19: cua so cu mang tieu de "Thansa OS".
+taskkill /F /FI "IMAGENAME eq cmd.exe" /FI "WINDOWTITLE eq Thansa OS*" >nul 2>&1
 echo Xong.
 exit /b 0

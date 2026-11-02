@@ -2,9 +2,9 @@
 
 ## Ý tưởng cốt lõi (đọc cái này trước hết)
 
-Javis **không gọi thẳng API model**. Javis mượn **CLI dạng agent** của nhà cung cấp (Claude Code, Codex) làm bộ não, để tận dụng chính **gói subscription** người dùng đang trả thay vì bắt họ mua API riêng. Bộ não đó vốn đã biết đọc/ghi file, gọi MCP, chạy lệnh, dùng skill. Javis bọc quanh nó một dashboard, một Second Brain, và một lớp kiểm soát quyền.
+Thansa **không gọi thẳng API model**. Thansa mượn **CLI dạng agent** của nhà cung cấp (Claude Code, Codex) làm bộ não, để tận dụng chính **gói subscription** người dùng đang trả thay vì bắt họ mua API riêng. Bộ não đó vốn đã biết đọc/ghi file, gọi MCP, chạy lệnh, dùng skill. Thansa bọc quanh nó một dashboard, một Second Brain, và một lớp kiểm soát quyền.
 
-Hệ quả kiến trúc quan trọng: **Javis là lớp điều phối, không phải lớp inference.** Khi debug "sao Javis trả lời sai", hãy hỏi trước: prompt bơm vào là gì, tool nào được phép, cwd trỏ vào brain nào. Đừng sửa model.
+Hệ quả kiến trúc quan trọng: **Thansa là lớp điều phối, không phải lớp inference.** Khi debug "sao Thansa trả lời sai", hãy hỏi trước: prompt bơm vào là gì, tool nào được phép, cwd trỏ vào brain nào. Đừng sửa model.
 
 Vẫn có đường API thuần (OpenRouter/OpenAI/Anthropic/Gemini) cho ai không có subscription CLI, nhưng đường đó **chat thuần, không có MCP native của CLI** - bù lại bằng hub in-process (xem [trang 04](04-engine-hub-plugin-skill.md)).
 
@@ -29,7 +29,7 @@ Vẫn có đường API thuần (OpenRouter/OpenAI/Anthropic/Gemini) cho ai khô
 │ 3. ENGINE    │  │ 4. MCP HUB  (mcp_hub.py)            │
 │  bộ não      │◄─┤  cổng tool DUY NHẤT cho mọi engine  │
 │  claude_sdk  │  │  - Claude/Codex thấy hub như 1 MCP  │
-│  codex CLI   │  │    server http tên "javis"          │
+│  codex CLI   │  │    server http tên "thansa"          │
 │  engine.py   │  │  - engine API gọi in-process        │
 │  (API thuần) │  │  Hub enforce 3 mức quyền + audit    │
 └──────────────┘  └──────┬──────────────────────────────┘
@@ -40,7 +40,7 @@ Vẫn có đường API thuần (OpenRouter/OpenAI/Anthropic/Gemini) cho ai khô
         Ads, Calendar...)      (system/plugins) (SKILL.md)
 ```
 
-Và nằm ngang qua tất cả: **BRAIN (vault)** - một thư mục `.md` là toàn bộ trí nhớ + năng lực của Javis. Xem [trang 05](05-brain-vault.md).
+Và nằm ngang qua tất cả: **BRAIN (vault)** - một thư mục `.md` là toàn bộ trí nhớ + năng lực của Thansa. Xem [trang 05](05-brain-vault.md).
 
 ## Một lượt chat đi qua đâu
 
@@ -63,11 +63,11 @@ Có **ba** kho state khác nhau, đừng lẫn:
 
 | Kho | Đường dẫn | Chứa gì | Ai sở hữu |
 |-----|-----------|---------|-----------|
-| **STATE_DIR** | `server/` (mặc định), hoặc `$JAVIS_STATE_DIR` = `/data/state` trên Docker | `settings.json` (có secret, đã mã hoá), branding, token hub, plugin enable-state, `conversations.db` | Javis, gitignored |
+| **STATE_DIR** | `server/` (mặc định), hoặc `$THANSA_STATE_DIR` = `/data/state` trên Docker | `settings.json` (có secret, đã mã hoá), branding, token hub, plugin enable-state, `conversations.db` | Thansa, gitignored |
 | **BRAIN (vault)** | `brains/<tên>/` | Ghi chú, Wiki, Memory, skills, agents, workflows, loops | Người dùng, đẩy được lên GitHub |
 | **Code tree** | `server/`, `dashboard/`, `system/` | Mã nguồn + plugin/loop/catalog bundled | Repo. **Trên Docker là read-only** |
 
-Cái bẫy: trong container, code tree read-only. Mọi thứ Javis tự ghi **phải** đi qua `STATE_DIR`. Đó là lý do logo tuỳ chỉnh nằm ở `STATE_DIR/branding` chứ không phải `dashboard/`, và enable-state của plugin bundled nằm ở `STATE_DIR/plugins.json` chứ không sửa vào `plugin.yaml` của app.
+Cái bẫy: trong container, code tree read-only. Mọi thứ Thansa tự ghi **phải** đi qua `STATE_DIR`. Đó là lý do logo tuỳ chỉnh nằm ở `STATE_DIR/branding` chứ không phải `dashboard/`, và enable-state của plugin bundled nằm ở `STATE_DIR/plugins.json` chứ không sửa vào `plugin.yaml` của app.
 
 ## Vào code từ đâu
 

@@ -1,8 +1,8 @@
-"""Công cụ TUỲ CHỌN: thứ Javis dùng được nhưng không nhét sẵn vào bản cài.
+"""Công cụ TUỲ CHỌN: thứ Thansa dùng được nhưng không nhét sẵn vào bản cài.
 
 Vì sao có tầng này
 ------------------
-Trình duyệt để Javis tự kiểm thử giao diện nặng cả trăm MB, mà phần lớn người dùng Javis không
+Trình duyệt để Thansa tự kiểm thử giao diện nặng cả trăm MB, mà phần lớn người dùng Thansa không
 lập trình và không bao giờ cần tới. Nhét sẵn vào ảnh Docker là bắt tất cả mọi người trả tiền
 băng thông và ổ đĩa cho một tính năng của thiểu số, mỗi lần cập nhật một lần. Bỏ hẳn thì người
 cần lại không có đường nào lấy.
@@ -12,7 +12,7 @@ SÁCH CÓ TÊN các công cụ tuỳ chọn, bỏ qua lúc đầu được, cài
 
 Ranh giới không lách được
 -------------------------
-Trong Docker, Javis chạy bằng user `javis` (uid 10001), mã nguồn để chỉ đọc. Nên phần nào cần
+Trong Docker, Thansa chạy bằng user `thansa` (uid 10001), mã nguồn để chỉ đọc. Nên phần nào cần
 `apt-get` thì PHẢI nằm sẵn trong ảnh (Dockerfile lo, xem lớp WITH_BROWSER_DEPS); ở đây chỉ làm
 được phần tải về thư mục ghi được. Chia đúng như vậy thì ảnh chỉ nặng thêm phần thư viện, còn
 bản thân trình duyệt chỉ tải khi có người bấm.
@@ -26,11 +26,11 @@ Default download on first start (0.375.0)
 The owner decided on 2026-10-28 that a browser is part of the basic experience (mbasic is gone,
 so reading pages and the Facebook plugins need a real one), so the button is no longer the only
 way in: `auto_install_browser()` runs once per server start and downloads the same headless
-shell in the background when the machine has nothing Javis can drive. It still stays out of the
+shell in the background when the machine has nothing Thansa can drive. It still stays out of the
 Docker image: the download must match the Playwright version the MCP runs, and in STATE_DIR it
 survives updates. It skips when a system Chrome/Edge exists, when the user pressed Remove
-(marker file), when JAVIS_SKIP_BROWSER is set, and when the image was built without the system
-libraries (JAVIS_BROWSER_DEPS=0), since the download could not run there anyway.
+(marker file), when THANSA_SKIP_BROWSER is set, and when the image was built without the system
+libraries (THANSA_BROWSER_DEPS=0), since the download could not run there anyway.
 """
 from __future__ import annotations
 
@@ -60,8 +60,8 @@ PYLIBS_DIR = STATE_DIR / "pylibs"
 # Written by `go()`, cleared by a manual install. Lives OUTSIDE BROWSERS_DIR because `go()` deletes
 # that whole folder. Without it, the next start would download again what the user just removed.
 REMOVED_MARKER = STATE_DIR / "browser-removed"
-ENV_SKIP = "JAVIS_SKIP_BROWSER"
-ENV_DEPS = "JAVIS_BROWSER_DEPS"   # set by the Dockerfile from the WITH_BROWSER_DEPS build-arg
+ENV_SKIP = "THANSA_SKIP_BROWSER"
+ENV_DEPS = "THANSA_BROWSER_DEPS"   # set by the Dockerfile from the WITH_BROWSER_DEPS build-arg
 
 # Trần thời gian tải. Mạng VPS chậm vẫn phải xong trong chừng này, còn treo lâu hơn là hỏng
 # thật chứ không phải chậm - và treo im vô hạn là kiểu lỗi tệ nhất (không kết quả, không lỗi).
@@ -138,7 +138,7 @@ def _chrome_he_thong() -> str:
 # Đây là gốc của lỗi chủ repo báo 22/09: `_da_tai()` cũ trả về thư mục ĐẦU TIÊN mà `iterdir()`
 # đưa ra (thứ tự trên đĩa, không đoán trước được), rồi chỗ dò file chạy chỉ tìm mỗi tên
 # `chrome`. Rơi vào thư mục headless_shell là không thấy gì, nên trang Công cụ báo "Sẵn sàng"
-# còn chỗ dùng thật báo "Chưa có trình duyệt nào Javis lái được" - cùng một máy, hai câu trả
+# còn chỗ dùng thật báo "Chưa có trình duyệt nào Thansa lái được" - cùng một máy, hai câu trả
 # lời ngược nhau.
 # Đường dẫn QUEN, thử trước vì nó nhanh (vài lần `is_file`). Bản đầy đủ trước, bản headless
 # rút gọn sau, ba hệ điều hành trong cùng một danh sách - một thư mục build chỉ chứa đúng một
@@ -220,9 +220,9 @@ def _binary_trong(thu_muc: Path) -> str:
 
 
 def chan_doan_trinh_duyet() -> str:
-    """Một câu nói Javis đã tìm Ở ĐÂU và thấy GÌ. Rỗng khi không có gì đáng nói.
+    """Một câu nói Thansa đã tìm Ở ĐÂU và thấy GÌ. Rỗng khi không có gì đáng nói.
 
-    Vì sao đáng có: "Chưa có trình duyệt nào Javis lái được" là câu cụt - người đọc đã bấm tải
+    Vì sao đáng có: "Chưa có trình duyệt nào Thansa lái được" là câu cụt - người đọc đã bấm tải
     và thấy báo xong rồi, nên câu đó chỉ nói họ sai mà không nói sai ở đâu. Chủ repo mắc kẹt ở
     đúng câu này qua hai phiên bản (22/09), và mỗi vòng hỏi lại tốn một lần cập nhật. Câu chẩn
     đoán biến một ảnh chụp màn hình thành đủ dữ kiện để sửa.
@@ -281,7 +281,7 @@ def duong_dan_chrome() -> str:
 
 
 def _da_tai() -> str:
-    """Thư mục bản Chromium Javis đã tải, rỗng nếu chưa có.
+    """Thư mục bản Chromium Thansa đã tải, rỗng nếu chưa có.
 
     CỐ Ý không đòi thư mục phải có file chạy: hàm này còn trả lời câu "có gì để gỡ không" và
     "tính dung lượng ở đâu". Một lần tải hỏng dở dang vẫn phải gỡ được bằng nút, không thì
@@ -356,7 +356,7 @@ def _trang_thai_browser(d: dict, viec: dict) -> dict:
                                                "This machine has no browser Thansa can drive yet.")
     d.update({
         "trang_thai": tt, "ly_do": ly_do,
-        "go_duoc": bool(tai_ve),           # chỉ gỡ được thứ CHÍNH JAVIS tải về
+        "go_duoc": bool(tai_ve),           # chỉ gỡ được thứ CHÍNH THANSA tải về
         "duong_dan": chay_duoc or tai_ve,
         "dung_luong": doc_mb(_dung_luong(BROWSERS_DIR)) if tai_ve else "",
     })
@@ -507,7 +507,7 @@ def bat_dau_cai(cong_cu: str = "browser") -> dict:
 
 
 def go(cong_cu: str = "browser") -> dict:
-    """Xoá bản Javis tự tải. KHÔNG bao giờ đụng tới trình duyệt có sẵn của máy."""
+    """Xoá bản Thansa tự tải. KHÔNG bao giờ đụng tới trình duyệt có sẵn của máy."""
     if cong_cu not in CONG_CU:
         return {"ok": False, "error": localefmt.chu(f"không có công cụ tên {cong_cu!r}", f"no tool named {cong_cu!r}")}
     if cong_cu == "local_ear":
@@ -601,7 +601,7 @@ def trinh_duyet_mac_dinh() -> str:
     """Giá trị `browser` hợp lý cho connector Playwright trên máy này.
 
     Máy cá nhân có Chrome thì dùng luôn Chrome (không phải tải gì). Máy chủ Linux thì phải là
-    `chromium` - bản Javis tải về. Đặt sai chỗ này là connector đi tìm Google Chrome trên một
+    `chromium` - bản Thansa tải về. Đặt sai chỗ này là connector đi tìm Google Chrome trên một
     container Debian và chết với câu lỗi không ai đoán ra.
     """
     if _da_tai():

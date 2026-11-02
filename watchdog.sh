@@ -13,8 +13,8 @@
 #   ./watchdog.sh check       một nhát kiểm tra (launchd gọi định kỳ; chạy tay cũng được)
 #   ./watchdog.sh status      đang cài chưa + đếm hỏng + mấy dòng log cuối
 #
-# Cấu hình qua env hoặc .env cùng thư mục: JAVIS_PORT (7777), JAVIS_LAUNCHD_LABEL
-# (com.thansa.os; máy cũ com.javis.os), JAVIS_STATE_DIR (./server), JAVIS_WATCHDOG_FAILS (3).
+# Cấu hình qua env hoặc .env cùng thư mục: THANSA_PORT (7777), THANSA_LAUNCHD_LABEL
+# (com.thansa.os; máy cũ com.thansa.os), THANSA_STATE_DIR (./server), THANSA_WATCHDOG_FAILS (3).
 # ============================================================================
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -23,29 +23,29 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # Env truyền vào thắng .env (`:=` chỉ gán khi biến chưa đặt).
 if [ -f .env ]; then
   _env() { sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" .env | tail -1; }
-  : "${JAVIS_PORT:=$(_env JAVIS_PORT)}"
-  : "${JAVIS_LAUNCHD_LABEL:=$(_env JAVIS_LAUNCHD_LABEL)}"
-  : "${JAVIS_STATE_DIR:=$(_env JAVIS_STATE_DIR)}"
+  : "${THANSA_PORT:=$(_env THANSA_PORT)}"
+  : "${THANSA_LAUNCHD_LABEL:=$(_env THANSA_LAUNCHD_LABEL)}"
+  : "${THANSA_STATE_DIR:=$(_env THANSA_STATE_DIR)}"
 fi
-PORT="${JAVIS_PORT:-7777}"
-# Nhãn job chính: đặt tường minh, không thì bản mới com.thansa.os, máy cài trước 1.19 com.javis.os.
-LABEL="${THANSA_LAUNCHD_LABEL:-${JAVIS_LAUNCHD_LABEL:-}}"
+PORT="${THANSA_PORT:-7777}"
+# Nhãn job chính: đặt tường minh, không thì bản mới com.thansa.os, máy cài trước 1.19 com.thansa.os.
+LABEL="${THANSA_LAUNCHD_LABEL:-${THANSA_LAUNCHD_LABEL:-}}"
 if [ -z "$LABEL" ]; then
   LABEL="com.thansa.os"
-  [ -f "$HOME/Library/LaunchAgents/com.thansa.os.plist" ] || { [ -f "$HOME/Library/LaunchAgents/com.javis.os.plist" ] && LABEL="com.javis.os"; }
+  [ -f "$HOME/Library/LaunchAgents/com.thansa.os.plist" ] || { [ -f "$HOME/Library/LaunchAgents/com.thansa.os.plist" ] && LABEL="com.thansa.os"; }
 fi
-STATE_DIR="${JAVIS_STATE_DIR:-$PWD/server}"
+STATE_DIR="${THANSA_STATE_DIR:-$PWD/server}"
 TARGET="gui/$(id -u)/$LABEL"
-NGUONG="${JAVIS_WATCHDOG_FAILS:-3}"
+NGUONG="${THANSA_WATCHDOG_FAILS:-3}"
 DEM_FILE="$STATE_DIR/watchdog-fails"
 LOG="$STATE_DIR/watchdog.log"
-# Nhãn của chính watchdog: máy đã cài watchdog cũ (com.javis.watchdog) thì giữ, để install/uninstall
+# Nhãn của chính watchdog: máy đã cài watchdog cũ (com.thansa.watchdog) thì giữ, để install/uninstall
 # lần sau vẫn gỡ đúng job đang chạy.
 WD_LABEL="com.thansa.watchdog"
-[ -f "$HOME/Library/LaunchAgents/com.javis.watchdog.plist" ] && WD_LABEL="com.javis.watchdog"
+[ -f "$HOME/Library/LaunchAgents/com.thansa.watchdog.plist" ] && WD_LABEL="com.thansa.watchdog"
 PLIST="$HOME/Library/LaunchAgents/$WD_LABEL.plist"
 # Lệnh kick tách ra biến để test thay bằng `echo` được - còn lại không ai cần đổi.
-KICK_CMD="${JAVIS_WATCHDOG_KICK_CMD:-launchctl kickstart -k $TARGET}"
+KICK_CMD="${THANSA_WATCHDOG_KICK_CMD:-launchctl kickstart -k $TARGET}"
 
 ghi() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 

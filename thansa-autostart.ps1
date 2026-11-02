@@ -14,11 +14,9 @@ param([string]$Action = "status")
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Startup = [Environment]::GetFolderPath("Startup")
 $Lnk = Join-Path $Startup "Thansa OS.lnk"         # muc cu (truoc 0.306.0), chi de don
-$LnkCu = Join-Path $Startup "JAVIS OS.lnk"        # shortcut cua may cai truoc Thansa 1.19
 $RunKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
 $Approved = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
 $Name = "ThansaOS"                                 # khop _AUTOSTART_NAME trong server/main.py
-$NameCu = "JavisOS"                               # muc cua may cai truoc Thansa 1.19, chi de don
 
 switch ($Action.ToLower()) {
   "install" {
@@ -39,17 +37,12 @@ switch ($Action.ToLower()) {
       }
     } catch { }
     if (Test-Path $Lnk) { Remove-Item $Lnk -Force }
-    if (Test-Path $LnkCu) { Remove-Item $LnkCu -Force }
-    # Hai muc Run cung bat thi luc dang nhap hai ban gianh nhau cong 7777.
-    Remove-ItemProperty -Path $RunKey -Name $NameCu -ErrorAction SilentlyContinue
     Write-Host "Da bat tu khoi dong cung Windows: dang nhap may la Thansa tu chay va tu mo dashboard."
     Write-Host "Tat: thansa-autostart.bat uninstall (hoac nut trong dashboard, trang Cai dat)."
   }
   "uninstall" {
     Remove-ItemProperty -Path $RunKey -Name $Name -ErrorAction SilentlyContinue
-    Remove-ItemProperty -Path $RunKey -Name $NameCu -ErrorAction SilentlyContinue
     if (Test-Path $Lnk) { Remove-Item $Lnk -Force }
-    if (Test-Path $LnkCu) { Remove-Item $LnkCu -Force }
     Write-Host "Da tat tu khoi dong cung Windows."
   }
   default {

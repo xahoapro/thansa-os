@@ -5,8 +5,8 @@
 set -u
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PIDF="${APP_DIR}/server/javis.pid"
-PORT="${JAVIS_PORT:-7777}"
+PIDF="${APP_DIR}/server/thansa.pid"
+PORT="${THANSA_PORT:-7777}"
 
 if [ -f "${PIDF}" ]; then
   kill "$(cat "${PIDF}")" 2>/dev/null

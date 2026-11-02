@@ -12,8 +12,8 @@ Two types of tasks live on the same page:
 
 | Type | Nature | Saved at |
 |---|---|---|
-| 🔁 **Loop** (repeating task) | Every N minutes it wakes up to do exactly one job then stop. Runs indefinitely until you turn it off. | One `.md` file in `Javis/loops/` of the brain |
-| ⏰ **Reminder** | A specific time point ("30 minutes from now", "8:30 AM"), or a cron schedule ("7 AM every day"). | `Javis/reminders.json` of the brain |
+| 🔁 **Loop** (repeating task) | Every N minutes it wakes up to do exactly one job then stop. Runs indefinitely until you turn it off. | One `.md` file in `Thansa/loops/` of the brain |
+| ⏰ **Reminder** | A specific time point ("30 minutes from now", "8:30 AM"), or a cron schedule ("7 AM every day"). | `Thansa/reminders.json` of the brain |
 
 Key difference: repeating task counts by **time interval** between runs, reminder counts by **time point**. "Every 2 hours scan orders" is a loop; "7 AM every morning report revenue" is a reminder using cron.
 
@@ -21,7 +21,7 @@ You can create **many loops in parallel**, each with its own file. But they run 
 
 Loop **reads real data through MCP** (POS, ads, calendar, analytics...) to work. Whether it can write files or perform actions outside depends on **permission level** you choose, see "Three permission levels" below.
 
-Loop is edited directly by opening its `.md` file in Obsidian or [File management](05-quan-ly-tep-tin.md). Run state (last run, today's cycle count, error chain) lives separately in `Javis/loop-state.json`, owned by server, so you edit the definition without worrying about stepping on concurrent writes.
+Loop is edited directly by opening its `.md` file in Obsidian or [File management](05-quan-ly-tep-tin.md). Run state (last run, today's cycle count, error chain) lives separately in `Thansa/loop-state.json`, owned by server, so you edit the definition without worrying about stepping on concurrent writes.
 
 ## Where to open in Thansa
 
@@ -171,7 +171,7 @@ On loop card:
 - **Turn on** / **Turn off**: toggle state. Turning on a **⚠ Full power** task asks confirmation. Turning on also clears auto-pause state.
 - **▶ Run now**: run one loop right now, don't wait for cycle. Button changes to "Running..." and list auto-reloads after about 2.5 seconds. Note: this button **doesn't** save unsaved form, it runs what's already saved in file. Clicking Run now also clears auto-pause since this is your deliberate action.
 - **Edit**: open form again with this task's content.
-- **Delete**: ask confirm then delete file `Javis/loops/<slug>.md`.
+- **Delete**: ask confirm then delete file `Thansa/loops/<slug>.md`.
 - **Move brain…**: dropdown to move task to different brain, keep file and run state. If destination brain already has task with same name, Thansa refuses and errors, no overwrite. Running task can't move, try again later.
 
 On reminder card:
@@ -233,7 +233,7 @@ Send to who:
 - Loop created via chat has the requester's chat_id pinned, so reports to that exact person.
 - Loop created on dashboard doesn't know who you are, so reports to **first Telegram ID** in the allow list.
 
-Want a loop to stop reporting each loop because it's too noisy, open file `Javis/loops/<slug>.md` and set `notify: false` in frontmatter.
+Want a loop to stop reporting each loop because it's too noisy, open file `Thansa/loops/<slug>.md` and set `notify: false` in frontmatter.
 
 Reminders also shoot to Telegram. Reminder created on dashboard doesn't know recipient so sends to **all IDs** in allow list; reminder set by voice in chat sends to the person who set it.
 
@@ -250,7 +250,7 @@ Thansa loads 200 recent items then splits page **10 items** per page, buttons **
 
 Each item starts header line like `## [2026-07-20 14:35] doc-source · loop (custom/auto) - scheduled`, where `scheduled` means ran per schedule, `manual` means you clicked **▶ Run now**. Below is summary of what it did, **Verify** line if any, and warning line if this exact loop triggered auto-pause.
 
-Log also lives as real file in brain: `Javis/loop-log/YYYY-MM-DD.md`, one file per day. Open via [File management](05-quan-ly-tep-tin.md) if you want to see beyond 200 items.
+Log also lives as real file in brain: `Thansa/loop-log/YYYY-MM-DD.md`, one file per day. Open via [File management](05-quan-ly-tep-tin.md) if you want to see beyond 200 items.
 
 ## Create schedule by voice in chat
 
@@ -262,7 +262,7 @@ You don't have to enter this page. Tell Thansa straight in [Chat](02-tro-chuyen-
 - "Any tasks running?"
 - "Cancel order scan task."
 
-Thansa uses tool `javis_schedule` (a bundled plugin) to auto-pick right storage: repeat loop by time interval goes to file in `Javis/loops/`; fixed time point repeating or one-time goes to reminder storage. Tool auto-sets slug to spec and **blocks name collision**: already have same-name task then it errors and tells you to edit old, never creates a copy.
+Thansa uses tool `thansa_schedule` (a bundled plugin) to auto-pick right storage: repeat loop by time interval goes to file in `Thansa/loops/`; fixed time point repeating or one-time goes to reminder storage. Tool auto-sets slug to spec and **blocks name collision**: already have same-name task then it errors and tells you to edit old, never creates a copy.
 
 Two hard safety fences of this path, no parameter changes:
 
@@ -271,7 +271,7 @@ Two hard safety fences of this path, no parameter changes:
 
 ## Advanced fields (edit in `.md` only)
 
-Dashboard form stays compact. Things below must open `Javis/loops/<slug>.md` and edit frontmatter part (via [File management](05-quan-ly-tep-tin.md) or Obsidian). Save done, dashboard reads again, no restart needed.
+Dashboard form stays compact. Things below must open `Thansa/loops/<slug>.md` and edit frontmatter part (via [File management](05-quan-ly-tep-tin.md) or Obsidian). Save done, dashboard reads again, no restart needed.
 
 | Field | Meaning |
 |---|---|
@@ -336,7 +336,7 @@ Dashboard form stays compact. Things below must open `Javis/loops/<slug>.md` and
 
 **Result says "Claude CLI not installed".** Brain not ready on machine. See [Start & setup first](01-bat-dau-thiet-lap.md) and [Troubleshooting & FAQ](17-khac-phuc-su-co.md).
 
-**Run with ChatGPT says `bwrap: Failed to make / slave: Permission denied`.** Codex (ChatGPT) wraps all file read/write by bubblewrap, but bubblewrap won't start in Docker container, so background job can't read any file. Docker image from 0.25.9 pre-disabled that sandbox (`JAVIS_CODEX_SANDBOX=off`) so just **upgrade to newer version** and done. Self-built container set that env var, or switch background job brain to Claude. Details at [Env settings](16-cau-hinh-env.md).
+**Run with ChatGPT says `bwrap: Failed to make / slave: Permission denied`.** Codex (ChatGPT) wraps all file read/write by bubblewrap, but bubblewrap won't start in Docker container, so background job can't read any file. Docker image from 0.25.9 pre-disabled that sandbox (`THANSA_CODEX_SANDBOX=off`) so just **upgrade to newer version** and done. Self-built container set that env var, or switch background job brain to Claude. Details at [Env settings](16-cau-hinh-env.md).
 
 **Loop says no business numbers.** It only reads real numbers when you already set up source. Go to [Connect & business numbers](09-mcp-va-so-lieu.md) to hook POS, ads or sales channel. No source then that loop stops and reports back one line.
 
@@ -357,4 +357,4 @@ Dashboard form stays compact. Things below must open `Javis/loops/<slug>.md` and
 - [Models & engine](10-models-va-engine.md) - pick cheap model for background job.
 - [File management](05-quan-ly-tep-tin.md) - open task definition file and log file.
 - [Chat & voice](02-tro-chuyen-va-giong-noi.md) - create task and reminder by voice.
-- [Plugins](20-plugins.md) - understand `javis_schedule` and bundled tools.
+- [Plugins](20-plugins.md) - understand `thansa_schedule` and bundled tools.

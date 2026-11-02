@@ -37,10 +37,10 @@ Thansa decides whether to force login based on how the server is running:
 | Running public (Docker/VPS/Hostinger), listening to `0.0.0.0`, `::` or LAN IP | Yes, auto-enable |
 | Password already set in Account page | Yes, in all modes |
 
-Can force with environment variable `JAVIS_REQUIRE_LOGIN`:
+Can force with environment variable `THANSA_REQUIRE_LOGIN`:
 
-- `JAVIS_REQUIRE_LOGIN=1` : always force login, even localhost. Use when exposing Thansa over tunnel (Cloudflare Tunnel, ngrok...) on personal machine.
-- `JAVIS_REQUIRE_LOGIN=0` : disable forced login.
+- `THANSA_REQUIRE_LOGIN=1` : always force login, even localhost. Use when exposing Thansa over tunnel (Cloudflare Tunnel, ngrok...) on personal machine.
+- `THANSA_REQUIRE_LOGIN=0` : disable forced login.
 
 Safety principle (fail-closed): if server listens to an address **that is not** pure localhost, Thansa treats it as public by default and enables login. Environment variable details see [Environment Configuration](16-cau-hinh-env.md).
 
@@ -53,8 +53,8 @@ When opening dashboard for the first time on a public server, Thansa shows an **
 **Method 1 - Set admin via environment variable (recommended):**
 
 1. In deployment config (e.g., Hostinger compose), add 2 variables:
-   - `JAVIS_ADMIN_PASSWORD` : your chosen admin password.
-   - `JAVIS_ADMIN_USER` : login name (optional, default is `admin`).
+   - `THANSA_ADMIN_PASSWORD` : your chosen admin password.
+   - `THANSA_ADMIN_USER` : login name (optional, default is `admin`).
 2. Start Thansa. At boot, Thansa auto-creates admin from these 2 variables and **closes** the account creation screen. You open the app and go straight to login.
 3. Login with the user/password you just set.
 
@@ -62,7 +62,7 @@ When opening dashboard for the first time on a public server, Thansa shows an **
 
 1. Open server log/terminal. At startup, if running public but no admin yet, Thansa generates a setup code and saves to `.setup_token` file in state directory.
    - On Hostinger, go inside container (App terminal) run: `cat /data/state/.setup_token`.
-   - On VPS running Docker: see `docker compose logs javis` and find the line with `SETUP TOKEN`.
+   - On VPS running Docker: see `docker compose logs thansa` and find the line with `SETUP TOKEN`.
 2. Open dashboard, on account creation screen enter: username, password (**minimum 8 characters**), and paste the **SETUP CODE**.
 3. Click create account button. If code is correct, Thansa creates admin, logs you in, and the setup code self-destructs (one use only).
 
@@ -99,7 +99,7 @@ Changing only login name keeps other sessions alive, because password didn't cha
 
 1. Stop container (or stop Thansa).
 2. Delete (or empty) the `"auth"` block in `settings.json` in state directory (Docker: `/data/state/settings.json`).
-3. Set `JAVIS_ADMIN_PASSWORD` (and `JAVIS_ADMIN_USER` if desired) then restart. Thansa recreates admin from environment variables at boot.
+3. Set `THANSA_ADMIN_PASSWORD` (and `THANSA_ADMIN_USER` if desired) then restart. Thansa recreates admin from environment variables at boot.
 
 ### D. Logout
 
@@ -118,7 +118,7 @@ Only do this on personal machine, never on VPS.
 3. Confirm in dialog "Disable login? Anyone opening dashboard can use it."
 4. Thansa deletes password and **logs out all open sessions**.
 
-Note: if server still running public (or you set `JAVIS_REQUIRE_LOGIN=1`), disabling password does **not** make dashboard wide open, but returns to the forced account creation screen. Login only truly disables when server listens to pure localhost and doesn't force login.
+Note: if server still running public (or you set `THANSA_REQUIRE_LOGIN=1`), disabling password does **not** make dashboard wide open, but returns to the forced account creation screen. Login only truly disables when server listens to pure localhost and doesn't force login.
 
 ### F. Rename Workspace
 
@@ -142,9 +142,9 @@ Thansa blocks both paths with a gate running before even the login gate:
 | Client not a browser (no `Origin` sent, e.g., CLI, curl, MCP) | Allow |
 | Host is an IP address | Skip Host check |
 
-Allowlist includes: `localhost`, `127.0.0.1`, `::1`, `0.0.0.0`, plus custom domain you set in **Settings → Domain & SSL**, plus any names in `JAVIS_ALLOWED_HOSTS` environment variable (multiple names separated by comma).
+Allowlist includes: `localhost`, `127.0.0.1`, `::1`, `0.0.0.0`, plus custom domain you set in **Settings → Domain & SSL**, plus any names in `THANSA_ALLOWED_HOSTS` environment variable (multiple names separated by comma).
 
-When you need to touch this: running Thansa behind a reverse proxy with a domain not declared in the app, but **no password set yet**. Then Thansa thinks that domain is foreign and returns 403. Fix: set password (enables login gate which then skips Host check), or add domain to `JAVIS_ALLOWED_HOSTS`.
+When you need to touch this: running Thansa behind a reverse proxy with a domain not declared in the app, but **no password set yet**. Then Thansa thinks that domain is foreign and returns 403. Fix: set password (enables login gate which then skips Host check), or add domain to `THANSA_ALLOWED_HOSTS`.
 
 ## API Tokens - Gateway for CLI and Scripts
 
@@ -183,7 +183,7 @@ Fields that are encrypted:
 | `backup.token` | GitHub PAT for brain backup |
 | `voice.elevenlabs_key` | ElevenLabs API key |
 
-Key used for encryption lives in file **`.secret_key`** in state directory (`JAVIS_STATE_DIR`, Docker: `/data/state/.secret_key`). File generates once, never goes to git.
+Key used for encryption lives in file **`.secret_key`** in state directory (`THANSA_STATE_DIR`, Docker: `/data/state/.secret_key`). File generates once, never goes to git.
 
 Operational consequences to remember:
 
@@ -197,7 +197,7 @@ Operational consequences to remember:
 | Mechanism | Implementation |
 |---|---|
 | Password storage | No plain password. Thansa hashes with PBKDF2-HMAC-SHA256 (120,000 rounds) plus random salt. |
-| Login session | Issued via `javis_session` cookie, `httponly` style cookie (JavaScript can't read), `samesite=lax`. |
+| Login session | Issued via `thansa_session` cookie, `httponly` style cookie (JavaScript can't read), `samesite=lax`. |
 | Session timeout | Each session lives maximum **30 days** then auto-expires, must login again. |
 | Session across restart | Sessions saved to file, so **restarting server doesn't log you out**. |
 | Prevent password guessing | Count wrong attempts by IP. Enough consecutive wrong attempts (8) lock temporarily ~5 minutes; each wrong try slowed by half a second. When locked, Thansa says "Too many wrong attempts - try again in a few minutes." |
@@ -206,7 +206,7 @@ Operational consequences to remember:
 | CSRF gate | Block write requests from cross-origin, and block foreign Host when login not yet enabled (see separate section above). |
 | Secrets on disk | API keys and tokens in `settings.json` encrypted with Fernet using `.secret_key` in state directory. |
 
-About `secure` cookie: by default Thansa **does not** force `secure` cookie to work on both HTTP and HTTPS (avoid getting stuck in login loop after HTTP proxy like path-style `http://host/PORT/`). If you're certain running HTTPS end-to-end, enable `JAVIS_SECURE_COOKIE=1` in environment variable (see [Environment Configuration](16-cau-hinh-env.md)). Accessing via correct custom domain returns Thansa auto-enables `secure` without this variable (based on Host matching domain, not inferred from `X-Forwarded-Proto`).
+About `secure` cookie: by default Thansa **does not** force `secure` cookie to work on both HTTP and HTTPS (avoid getting stuck in login loop after HTTP proxy like path-style `http://host/PORT/`). If you're certain running HTTPS end-to-end, enable `THANSA_SECURE_COOKIE=1` in environment variable (see [Environment Configuration](16-cau-hinh-env.md)). Accessing via correct custom domain returns Thansa auto-enables `secure` without this variable (based on Host matching domain, not inferred from `X-Forwarded-Proto`).
 
 ## Quick Reference of Buttons and Status
 
@@ -226,17 +226,17 @@ About `secure` cookie: by default Thansa **does not** force `secure` cookie to w
 
 ## Tips
 
-- **Always set admin before going public.** Safest is to set `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` at deploy, no need to hunt for SETUP CODE.
+- **Always set admin before going public.** Safest is to set `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` at deploy, no need to hunt for SETUP CODE.
 - **Set password long enough.** Minimum 8 characters; use long phrases, hard to guess.
 - **Run over HTTPS when accessing from afar.** Use custom domain (e.g., Hostinger `*.hstgr.cloud`) or Cloudflare Tunnel instead of exposing port 7777 raw to the Internet. How to point domain and enable HTTPS see [Brand & Custom Domain](15-thuong-hieu-ten-mien.md).
-- **Localhost + tunnel then enable `JAVIS_REQUIRE_LOGIN=1`.** When machine only listens to localhost but you expose it outside via tunnel, Thansa doesn't auto-know it's public, so force login manually.
+- **Localhost + tunnel then enable `THANSA_REQUIRE_LOGIN=1`.** When machine only listens to localhost but you expose it outside via tunnel, Thansa doesn't auto-know it's public, so force login manually.
 - **SETUP CODE one use only.** After creating admin, code self-destructs. Need new code then restart server.
 - **Backup `.secret_key` with `settings.json`.** Missing either one means re-entering all API keys.
 
 ## Common Issues
 
 **App asks for SETUP CODE.**
-You're running public and have no admin yet. Get code from state: App terminal (inside container) run `cat /data/state/.setup_token`; on host run `docker compose logs javis` then find line with `SETUP TOKEN`. Or set `JAVIS_ADMIN_PASSWORD` to skip needing code.
+You're running public and have no admin yet. Get code from state: App terminal (inside container) run `cat /data/state/.setup_token`; on host run `docker compose logs thansa` then find line with `SETUP TOKEN`. Or set `THANSA_ADMIN_PASSWORD` to skip needing code.
 
 **Click Change Password says "Account exists - please login."**
 Bug in versions before 0.28.3, fixed. Page still holds old version in browser cache then reload with Ctrl+F5 (Mac: Cmd+Shift+R) then follow step C again.
@@ -245,31 +245,31 @@ Bug in versions before 0.28.3, fixed. Page still holds old version in browser ca
 Designed that way. Change password revokes old sessions so someone borrowing your machine stops working; login again with new password and done.
 
 **Enter correct user/password but keeps returning to login screen (login loop).**
-Usually `secure` cookie enabled while you're accessing via HTTP (many proxies serve HTTP like `http://host/PORT/`). Don't enable `JAVIS_SECURE_COOKIE` unless certain HTTPS end-to-end. If already enabled, remove this variable then restart server.
+Usually `secure` cookie enabled while you're accessing via HTTP (many proxies serve HTTP like `http://host/PORT/`). Don't enable `THANSA_SECURE_COOKIE` unless certain HTTPS end-to-end. If already enabled, remove this variable then restart server.
 
 **Says "Too many wrong attempts - try again in a few minutes."**
 You (or someone on same IP) entered wrong password too many times. Wait ~5 minutes then try again. Restarting server also clears this counter.
 
 **All operations return 403 "host not allowed".**
-You're visiting Thansa with a domain that Thansa doesn't know, while no password set. Add that domain to `JAVIS_ALLOWED_HOSTS`, or enter it in **Settings → Domain & SSL**, or simply set password.
+You're visiting Thansa with a domain that Thansa doesn't know, while no password set. Add that domain to `THANSA_ALLOWED_HOSTS`, or enter it in **Settings → Domain & SSL**, or simply set password.
 
 **Any operation says 403 "cross-origin request blocked".**
-You're calling Thansa API from another page (script, extension, iframe from third party). This is the CSRF gate doing its job. If it's your own tool, add its hostname to `JAVIS_ALLOWED_HOSTS`.
+You're calling Thansa API from another page (script, extension, iframe from third party). This is the CSRF gate doing its job. If it's your own tool, add its hostname to `THANSA_ALLOWED_HOSTS`.
 
 **Forgot password.**
-Windows repo has **`reset-auth.bat`** script in project root: run it to delete account/password in `server/settings.json` and return app to setup state (prints "OK - password deleted." then shows restart instructions). Can't use script: edit/delete the `auth` block in `settings.json` in state directory (Docker: `/data/state`) then restart; or reset admin via `JAVIS_ADMIN_PASSWORD` after deleting old `auth` block.
+Windows repo has **`reset-auth.bat`** script in project root: run it to delete account/password in `server/settings.json` and return app to setup state (prints "OK - password deleted." then shows restart instructions). Can't use script: edit/delete the `auth` block in `settings.json` in state directory (Docker: `/data/state`) then restart; or reset admin via `THANSA_ADMIN_PASSWORD` after deleting old `auth` block.
 
 **Switch machine / restore backup then all API keys empty.**
 You copied `settings.json` but not `.secret_key` with it. No way to recover: re-enter keys on Models, Channels, and Settings pages. Next time remember both files.
 
 **Disabled login but still asked for account.**
-Server still running public (or `JAVIS_REQUIRE_LOGIN=1`). In this mode Thansa won't fully disable login but forces account creation again. To run without password you must make server listen to pure localhost.
+Server still running public (or `THANSA_REQUIRE_LOGIN=1`). In this mode Thansa won't fully disable login but forces account creation again. To run without password you must make server listen to pure localhost.
 
 ## Related
 
 - [Start & First Setup](01-bat-dau-thiet-lap.md) - set up Thansa and create admin first time.
 - [Brand & Custom Domain](15-thuong-hieu-ten-mien.md) - point domain and enable HTTPS auto.
-- [Environment Configuration](16-cau-hinh-env.md) - list security environment variables (`JAVIS_HOST`, `JAVIS_REQUIRE_LOGIN`, `JAVIS_ADMIN_USER/PASSWORD`, `JAVIS_SECURE_COOKIE`, `JAVIS_ALLOWED_HOSTS`, `JAVIS_STATE_DIR`).
+- [Environment Configuration](16-cau-hinh-env.md) - list security environment variables (`THANSA_HOST`, `THANSA_REQUIRE_LOGIN`, `THANSA_ADMIN_USER/PASSWORD`, `THANSA_SECURE_COOKIE`, `THANSA_ALLOWED_HOSTS`, `THANSA_STATE_DIR`).
 - [Plugins](20-plugins.md) - why plugins you install must enable separately via environment variable.
 - [Thansa CLI (terminal)](24-cli-terminal.md) - use API tokens to call Thansa from other machines.
 - [Troubleshoot & FAQ](17-khac-phuc-su-co.md) - other common errors.

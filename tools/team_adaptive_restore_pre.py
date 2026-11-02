@@ -4,7 +4,7 @@
     python tools/team_adaptive_restore_pre.py --to 0.154.0 --yes
     python tools/team_adaptive_restore_pre.py --to 0.154.0 --state-dir /duong/dan/state --yes
 
-CHẠY KHI JAVIS ĐÃ TẮT. `--to X` đưa mọi kho mà mốc X và các mốc SAU X đụng tới về trạng thái ngay trước khi mã X chạy lần
+CHẠY KHI THANSA ĐÃ TẮT. `--to X` đưa mọi kho mà mốc X và các mốc SAU X đụng tới về trạng thái ngay trước khi mã X chạy lần
 đầu. Danh sách kho theo mốc nằm ở bảng `MILESTONES`; thêm mốc mới là thêm dòng, không sửa luồng. Mỗi dòng là một trong
 ba cách:
 - `snapshot`: kho về `<tên>.pre-<mốc>` mà mã mốc đó tạo một lần lúc nâng. Kho đã được nâng (có dấu của mốc) mà thiếu
@@ -279,7 +279,7 @@ def _rename_back(src: Path, aside: Path) -> str:
 
 
 def _hint(ex: Exception) -> str:
-    """File bị tiến trình khác giữ (thường là Javis chưa tắt hẳn): nói thẳng cách sửa."""
+    """File bị tiến trình khác giữ (thường là Thansa chưa tắt hẳn): nói thẳng cách sửa."""
     if isinstance(ex, PermissionError) or getattr(ex, "winerror", None) == 32 or "locked" in str(ex).lower():
         return " (file đang bị tiến trình khác giữ: Thansa còn chạy? Tắt hẳn Thansa rồi chạy lại)"
     return ""
@@ -386,12 +386,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Khôi phục các kho team-adaptive về trước một mốc (chạy khi Thansa đã tắt).")
     ap.add_argument("--to", required=True, choices=sorted(MILESTONES, key=_ver),
                     help="mốc cần về trước (vd 0.154.0)")
-    ap.add_argument("--state-dir", default=os.environ.get("JAVIS_STATE_DIR", ""),
-                    help="thư mục state của Thansa (mặc định JAVIS_STATE_DIR)")
+    ap.add_argument("--state-dir", default=os.environ.get("THANSA_STATE_DIR", ""),
+                    help="thư mục state của Thansa (mặc định THANSA_STATE_DIR)")
     ap.add_argument("--yes", action="store_true", help="xác nhận Thansa đã tắt và chấp nhận mất thay đổi sau lúc nâng")
     a = ap.parse_args(argv)
     if not a.state_dir:
-        print("Thiếu --state-dir (hay biến JAVIS_STATE_DIR).", file=sys.stderr)
+        print("Thiếu --state-dir (hay biến THANSA_STATE_DIR).", file=sys.stderr)
         return 2
     p = plan(a.state_dir, a.to)
     if not p["ok"]:

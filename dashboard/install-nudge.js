@@ -20,8 +20,8 @@
 */
 (function () {
   "use strict";
-  var KEY_LUC = "javis.install.nhac_luc";     // lần nhắc gần nhất (epoch ms)
-  var KEY_TAT = "javis.install.tat_nhac";     // "1" = người dùng bảo đừng nhắc nữa
+  var KEY_LUC = "thansa.install.nhac_luc";     // lần nhắc gần nhất (epoch ms)
+  var KEY_TAT = "thansa.install.tat_nhac";     // "1" = người dùng bảo đừng nhắc nữa
   var MOT_NGAY = 24 * 60 * 60 * 1000;
   var CHO_TRUOC_KHI_HIEN = 12000;             // 12 giây - xem luật 2
 
@@ -58,7 +58,7 @@
 
   function ve() {
     var ios = laIOS();
-    var coNutCai = !!(window.JavisInstall && window.JavisInstall.coHopCai());
+    var coNutCai = !!(window.ThansaInstall && window.ThansaInstall.coHopCai());
     var than = ios
       ? '<ol class="inud-buoc">'
         + '<li>' + window.t("instl.ios1_a") + ' <b>' + window.t("instl.ios1_b") + '</b> ' + window.t("instl.ios1_c") + '</li>'
@@ -105,7 +105,7 @@
     if (tat) tat.onclick = function () { ghi(KEY_TAT, "1"); dong(el); };
     if (cai) cai.onclick = async function () {
       cai.disabled = true;
-      var xong = await window.JavisInstall.moHopCai();
+      var xong = await window.ThansaInstall.moHopCai();
       dong(el);
       // Cài xong thì thôi hẳn; từ chối thì mai nhắc lại như thường.
       if (xong) ghi(KEY_TAT, "1");
@@ -130,5 +130,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", batDau);
   else batDau();
 
-  window.JavisInstallNudge = { thu: thu, denHen: denHen, laIOS: laIOS, laDienThoai: laDienThoai };
+  window.ThansaInstallNudge = { thu: thu, denHen: denHen, laIOS: laIOS, laDienThoai: laDienThoai };
 })();

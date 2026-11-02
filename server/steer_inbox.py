@@ -1,8 +1,8 @@
-"""Send more while Javis is working (0.206.0).
+"""Send more while Thansa is working (0.206.0).
 
 Before this, a message typed while a turn was running was silently dropped by the dashboard (and refused by the
 server). Claude Code folds a message sent mid-turn into the work at its next step; Codex calls it "steer" (Enter) and
-also has "queue" (Tab, runs after). Javis does both, whatever brain is in use:
+also has "queue" (Tab, runs after). Thansa does both, whatever brain is in use:
 
 - A turn that can take input mid-way (Claude Code: after each tool call, through a PostToolUse hook; the API engines:
   before the next model round, appended to the last tool result) reads the pending messages at its next step.
@@ -23,7 +23,7 @@ from typing import Callable, Dict, List, Optional
 MAX_PENDING = 10
 MAX_CHARS = 8000
 
-_CURRENT: contextvars.ContextVar[str] = contextvars.ContextVar("javis_steer_sid", default="")
+_CURRENT: contextvars.ContextVar[str] = contextvars.ContextVar("thansa_steer_sid", default="")
 
 
 def note_for(texts: List[str]) -> str:

@@ -3,7 +3,7 @@
     python tests/run.py autostart      (KHÔNG mạng, không đụng registry thật)
 
 Chủ repo gửi ảnh chụp trình duyệt sau khi mở máy (2026-08-09): `localhost:7777` trả
-ERR_CONNECTION_REFUSED, kèm "hình như chức năng mở Javis cùng máy startup đang không hoạt động".
+ERR_CONNECTION_REFUSED, kèm "hình như chức năng mở Thansa cùng máy startup đang không hoạt động".
 
 Cả tính năng này nằm gọn trong một dòng registry `HKCU\\...\\Run` trỏ `wscript start-thansa.vbs`.
 Dashboard đọc đúng dòng đó rồi kết luận "Bật". Vấn đề: dòng đó CÒN NGUYÊN trong ít nhất ba
@@ -29,7 +29,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-autostart-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-autostart-"))
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -67,7 +67,7 @@ check("cờ hỏng thì không nổ", main._autostart_bi_chan("linh tinh") is Fa
 # ============================================================
 # 2. Thiếu mảnh nào của dây chuyền khởi động
 # ============================================================
-_tmp = Path(tempfile.mkdtemp(prefix="javis-goc-"))
+_tmp = Path(tempfile.mkdtemp(prefix="thansa-goc-"))
 check("thư mục trống -> thiếu cả hai mảnh",
       set(main._autostart_thieu_gi(_tmp)) == {"start-thansa.vbs", r".venv\Scripts\python.exe"})
 

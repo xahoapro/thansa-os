@@ -37,7 +37,7 @@
     {
       "script": "test_improvement_view_sources.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_view_sources.py",
         "-v"
       ],
@@ -50,7 +50,7 @@
     {
       "script": "test_improvement_view_authority.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_view_authority.py",
         "-v"
       ],
@@ -63,7 +63,7 @@
     {
       "script": "test_improvement_views.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_views.py",
         "-v"
       ],
@@ -76,7 +76,7 @@
     {
       "script": "test_improvement_dependency_identity.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_dependency_identity.py",
         "-v"
       ],
@@ -89,7 +89,7 @@
     {
       "script": "test_improvement_comparison_plans.py",
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "tests/python/test_improvement_comparison_plans.py",
         "-v"
       ],
@@ -103,7 +103,7 @@
   "total_tests": 76,
   "total_script_seconds": 392.83,
   "reuse": {
-    "task1_sha256": "b9d7c51fd9725111678365f667b4af2168738b73329e89475ba2d700d52f76f8",
+    "task1_sha256": "403173c0531bd302b881b3766d7cde0767189b14592bed299a918091064fc44b",
     "all_task1_selected_source_bytes_unchanged": true,
     "c_profile_source_hash": "9dcf718470e70957d07454bb8b50fbde79575a3b23d8c06e24cc9b749051116b",
     "all_34_profile_source_bytes_equal_released_c": true,

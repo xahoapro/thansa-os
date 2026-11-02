@@ -85,7 +85,7 @@ write claim). Windows86PASS/13modules, early isolated Linux67PASS/9scripts,
 40066405520/exact9pins. Fresh independent static review P2HTTPjoin reproduced and
 closed in focused fix re-review; no reviewer execution. Root reconciled all
 terminal evidence; publiccompose-owner-controls SHA
-de6eda2890334dcaeb7df9d17379cbd1bccaa41c84ad4a978e44251c3836809a.
+5c0f3fe6743a4594a5a934a6cf8f4db0c8a784dfee5d9c9ece58de47d9dda494.
 PROFILE95raw4042a5083575db4354008675a333b4bdc5fa6022571c6f31334f80f1d7457831
 is UNQUALIFIED/registries closed/actual309 proof intact. Next Task2 cold recorded
 outcomes and actual operator panel, then actual upstream library. Full Goal,
@@ -100,7 +100,7 @@ Actual selection still requires fresh tuning; multiplicity60 applies to all3arms
 KEEP_BASE/cold off replay retained; common legacy baseline gate refuses before
 native verification. Local137PASS, fresh independent15PASS/15stablepins/no findings,
 early isolated Linux145PASS/17scripts40064018472. Publiccompose-checked-arms SHA
-a4532ac0fef6678e222c64f3c492865aae675d36eca4c9037a6d059c7f026f82.
+a83e62e2cc4106c3df2d34d2943edcb22229723ea3b0085a1e12c181c775b7af.
 PROFILE95 raw70f584395f5d91cf9d265c712178dfe420d9db8e9cc41f7808b9afc9075769cb
 remains unqualified, registries closed/actual309 test intact. Positive controls
 are synthetic, not actual native/account/model/business proof. Next actual owned
@@ -147,7 +147,7 @@ changes scheduling, not scope, acceptance thresholds, evidence or live authority
 Goal section14 additionally requires targeted upstream reuse assessment before
 each unwritten component at Harness²1cfe254e8d25b15f37048c3730134686abe60335.
 Use [the incremental reuse map](2026-10-24-harness2-reuse-map.md); inherit both
-addenda in later plans. Preserve Javis baseline policy/authority/ledger and all
+addenda in later plans. Preserve Thansa baseline policy/authority/ledger and all
 gates; no rewrite of completed components for a reuse percentage.
 Goal section15 permits a narrow useful prompt/evidence improvement in existing
 render_proposer_input after preserving the in-progress D2 unit. Inspect pinned

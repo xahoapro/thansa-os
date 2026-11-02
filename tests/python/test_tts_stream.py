@@ -15,7 +15,7 @@ import sys
 import tempfile
 import types
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-tts-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-tts-"))
 
 _fails = []
 

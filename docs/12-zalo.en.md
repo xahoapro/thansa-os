@@ -98,7 +98,7 @@ You change permissions in the account chip menu on the **Connections** page. Eve
 
 ## Difference from Old Zalo Integration
 
-The new flow dropped the sidecar `listen --webhook`, endpoint `/hook/zalo`, panel "Listen for messages", chat-specific rule files, and two plugins `javis_zalo_rule`/`javis_zalo_send`.
+The new flow dropped the sidecar `listen --webhook`, endpoint `/hook/zalo`, panel "Listen for messages", chat-specific rule files, and two plugins `thansa_zalo_rule`/`thansa_zalo_send`.
 No more listener process turning itself on and off while MCP connector runs.
 
 So Thansa no longer forwards Zalo messages to Telegram in the background. When you need to check messages, ask Thansa; MCP can use `zalo_get_messages` for buffered messages or `zalo_get_history` for history.

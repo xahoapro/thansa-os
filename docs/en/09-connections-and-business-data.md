@@ -74,7 +74,7 @@ Requires Node.js 20+ on the machine running Thansa (download from nodejs.org, in
 4. Once scanned, the account appears. Add another Zalo number with **+ Add account**; accounts run isolated and do not interfere.
 
 Zalo defaults to Full power so the send-message tool is usable. You can lower it to Draft or
-Read only on the account chip. The current integration uses the eleven `javis-zalo` tools directly,
+Read only on the account chip. The current integration uses the eleven `thansa-zalo` tools directly,
 with no separate listener, webhook or Telegram forwarding. See
 [the Zalo Agent MCP guide](12-zalo-agent-mcp.md).
 
@@ -151,9 +151,9 @@ Both are identical except for where you open Facebook Login (step 2). If you can
    - **NEW**: left column **Use cases** > open **"Authenticate and request data from users with Facebook Login"** > **Customise** > **Settings**. That use case usually exists as soon as you create the app, so there is nothing to add.
 3. The **Valid OAuth Redirect URIs** field behaves **differently depending on where Thansa is installed**:
    - **On a personal machine** (a `localhost` address): **skip this field, nothing to fill in.** While the app is in Development mode, Meta **automatically allows** redirects to localhost, so the field deliberately rejects localhost. Meta says so right there: in development mode, http://localhost redirects are automatically allowed and need not be added. Being unable to fill it in is **correct**, not a fault, so move on. Just make sure Thansa runs at **localhost** rather than 127.0.0.1.
-   - **On a VPS / custom domain**: **it is required**. Paste your exact https address and Save, for example `https://javis.yourdomain.com/connect/oauth/callback`. Outside localhost, Meta does not auto-allow and requires **https**; skipping this makes sign-in fail.
+   - **On a VPS / custom domain**: **it is required**. Paste your exact https address and Save, for example `https://thansa.yourdomain.com/connect/oauth/callback`. Outside localhost, Meta does not auto-allow and requires **https**; skipping this makes sign-in fail.
    - **Do not type it by hand**: the Thansa connection dialog has an address field with a **Copy** button that generates the EXACT address for your machine's domain; click Copy and paste it verbatim. Facebook matches **character by character** (including a trailing `/`), and one wrong character produces **"URL blocked"**.
-   - **Also for VPS / custom domains**: go to **App settings > Basic**, and in **App Domains** enter the bare domain, for example `javis.yourdomain.com` (NO `https://`, NO `/`), then scroll to the bottom and click **Save changes**. The Thansa connection dialog has a Copy button for this domain too. Without it, Facebook reports **"Cannot load URL: the domain of this URL is not included in the app's domains"**.
+   - **Also for VPS / custom domains**: go to **App settings > Basic**, and in **App Domains** enter the bare domain, for example `thansa.yourdomain.com` (NO `https://`, NO `/`), then scroll to the bottom and click **Save changes**. The Thansa connection dialog has a Copy button for this domain too. Without it, Facebook reports **"Cannot load URL: the domain of this URL is not included in the app's domains"**.
    - Do not go into "App settings > Advanced"; that is somewhere else entirely.
 4. Keep the app in **Development** mode (the toggle at the top stays on "In development"). Make sure you are an **Admin** of the app and of the ad account you want to read; that is what lets `ads_read` be granted without App Review.
 5. **Skip "Business verification" and "App review"** even though the app's "To do" panel suggests them. Those only matter when your app serves OTHER businesses accessing their data; using it for your own account needs neither, and doing it only adds days of waiting.

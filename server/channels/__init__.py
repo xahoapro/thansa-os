@@ -51,7 +51,7 @@ NANG_LUC_MAC_DINH = {
     "nhom": False,            # bot đứng được trong nhóm
     "gui_chu": False,         # gửi được chữ ra ngoài
     "gui_file": False,        # gửi được ảnh/tài liệu ra ngoài
-    "tra_loi_tu_javis": False,   # chủ trả lời khách ngay từ Hộp thư (cần hàm `gui`)
+    "tra_loi_tu_thansa": False,   # chủ trả lời khách ngay từ Hộp thư (cần hàm `gui`)
     "bot": False,             # gắn được một Bot chuyên trách (kind == "bot")
     "ghi_theo_cong_tac": False,  # ghi vào hộp thư khi chủ BẬT (kind == "account")
     "nhap_lich_su": False,    # nhập lại tin cũ vào hộp thư khi chủ bấm (0.174.0, cần hàm `nhap_lich_su`)
@@ -124,7 +124,7 @@ def _nap() -> Dict[str, KenhSpec]:
         nl = dict(NANG_LUC_MAC_DINH)
         nl.update(spec.nang_luc or {})
         # Hai năng lực suy ra từ chính module, không tin lời khai: có hàm mới có năng lực.
-        nl["tra_loi_tu_javis"] = bool(nl.get("gui_chu")) and callable(getattr(m, "gui", None))
+        nl["tra_loi_tu_thansa"] = bool(nl.get("gui_chu")) and callable(getattr(m, "gui", None))
         # Kênh nào có lớp vận chuyển thì gắn được bot. Từ 0.64.80 gồm cả kind "account" (Zalo cá
         # nhân): nó không có token nhưng tin đi vào qua vòng đọc của chính module, và bot trả lời
         # bằng `gui`. Cái khác nhau giữa hai loại là NGUỒN tài khoản (token ở kho tài khoản, hay
@@ -233,7 +233,7 @@ async def gui(kenh: str, tk: dict, chat_id: str, text: str, chat_type: str = "pr
     m = module(kenh)
     if not s or not m:
         return False, f"kênh '{kenh}' không có trong sổ đăng ký"
-    if not s.nl("tra_loi_tu_javis"):
+    if not s.nl("tra_loi_tu_thansa"):
         return False, f"{s.nhan} chưa gửi được tin từ Thansa"
     try:
         return await m.gui(tk, str(chat_id), str(text or ""), chat_type or "private", **extra)

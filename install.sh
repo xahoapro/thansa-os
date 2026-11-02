@@ -14,7 +14,7 @@
 # NHIEU BAN TREN CUNG MOT MAY: clone vao THU MUC KHAC roi dat hai bien truoc khi chay.
 #   THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh
 # THANSA_NAME dat ten dich vu systemd (thansa-shop.service); THANSA_PORT la cong nghe.
-# Bo trong ca hai = thansa.service + cong 7777. (JAVIS_NAME/JAVIS_PORT cu van duoc nhan.)
+# Bo trong ca hai = thansa.service + cong 7777. (THANSA_NAME/THANSA_PORT cu van duoc nhan.)
 # ============================================================================
 set -euo pipefail
 
@@ -29,15 +29,15 @@ cd "$APP_DIR"
 
 # Ten dich vu + cong cua BAN NAY. Truoc day ca hai deu dong cung, nen cai ban thu hai la ghi de
 # /etc/systemd/system/thansa.service cua ban thu nhat va hai ban tranh nhau cong 7777.
-SVC="${THANSA_NAME:-${JAVIS_NAME:-}}"
-PORT="${THANSA_PORT:-${JAVIS_PORT:-7777}}"
+SVC="${THANSA_NAME:-${THANSA_NAME:-}}"
+PORT="${THANSA_PORT:-${THANSA_PORT:-7777}}"
 if [ -z "$SVC" ]; then
-  # Ban cai moi mang ten "thansa". May cai TRUOC 1.19 co dich vu "javis" chay chinh thu muc nay:
+  # Ban cai moi mang ten "thansa". May cai TRUOC 1.19 co dich vu "thansa" chay chinh thu muc nay:
   # cai lai thi GIU ten do, khong thi sinh dich vu THU HAI tranh cong voi dich vu cu.
   SVC="thansa"
-  if [ -f /etc/systemd/system/javis.service ] && [ ! -f /etc/systemd/system/thansa.service ] \
-     && grep -q "WorkingDirectory=$APP_DIR/server" /etc/systemd/system/javis.service 2>/dev/null; then
-    SVC="javis"
+  if [ -f /etc/systemd/system/thansa.service ] && [ ! -f /etc/systemd/system/thansa.service ] \
+     && grep -q "WorkingDirectory=$APP_DIR/server" /etc/systemd/system/thansa.service 2>/dev/null; then
+    SVC="thansa"
   fi
 fi
 case "$SVC" in
@@ -45,16 +45,6 @@ case "$SVC" in
 esac
 
 SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
-
-# --- 0. Giấu file cầu nối của máy cũ ---
-# start-javis.vbs / stop-javis.bat chỉ tồn tại để máy WINDOWS cài trước 1.19 cập nhật qua được (updater
-# cũ gọi đích danh hai tên đó). Máy này không cần chúng: đánh dấu skip-worktree rồi xoá khỏi thư mục,
-# git vẫn coi cây là sạch nên nút Cập nhật không vấp. Không phải git checkout thì bỏ qua êm.
-for _cu in start-javis.vbs stop-javis.bat; do
-  if [ -f "$APP_DIR/$_cu" ] && git -C "$APP_DIR" ls-files --error-unmatch "$_cu" >/dev/null 2>&1; then
-    git -C "$APP_DIR" update-index --skip-worktree "$_cu" 2>/dev/null && rm -f "$APP_DIR/$_cu"
-  fi
-done
 
 # --- 1. python3 >= 3.10 + venv + pip ---
 # HARD FLOOR 3.10: uvicorn pinned in requirements.txt needs >=3.10 (every release from
@@ -278,7 +268,7 @@ if [ -t 0 ]; then
     if grep -q '^OBSIDIAN_VAULT_PATH=' .env; then sed -i.bak "s|^OBSIDIAN_VAULT_PATH=.*|OBSIDIAN_VAULT_PATH=$VP|" .env && rm -f .env.bak; else echo "OBSIDIAN_VAULT_PATH=$VP" >> .env; fi
   fi
 fi
-grep -q '^JAVIS_HOST=' .env || echo "JAVIS_HOST=127.0.0.1" >> .env
+grep -q '^THANSA_HOST=' .env || echo "THANSA_HOST=127.0.0.1" >> .env
 
 # --- 7b. Tài khoản quản trị: ĐẶT SẴN ngay lúc cài ---
 #
@@ -324,7 +314,7 @@ PY
 _env_has() { grep -qE "^[[:space:]]*$1=[\"']?[^\"'[:space:]]" .env 2>/dev/null; }
 
 ADMIN_PW_SINH=""      # chỉ có giá trị khi script TỰ SINH - để in ra đúng một lần ở cuối
-if _env_has JAVIS_ADMIN_PASSWORD; then
+if _env_has THANSA_ADMIN_PASSWORD; then
   ok "Admin account already set in .env - keeping it"
 else
   ADMIN_USER="admin"
@@ -349,8 +339,8 @@ else
     # bỏ trống là đẩy người dùng về đúng cái màn đọc-log mà bước này sinh ra để xoá đi.
     ADMIN_PW="$(_gen_pw)"; ADMIN_PW_SINH="$ADMIN_PW"
   fi
-  _env_set JAVIS_ADMIN_USER "$ADMIN_USER"
-  _env_set JAVIS_ADMIN_PASSWORD "$ADMIN_PW"
+  _env_set THANSA_ADMIN_USER "$ADMIN_USER"
+  _env_set THANSA_ADMIN_PASSWORD "$ADMIN_PW"
   chmod 600 .env
   ok "Admin account saved in .env"
 fi
@@ -365,11 +355,11 @@ fi
 # khoản. Cờ này KHÔNG phải rào bảo mật và không tự bật gì cả: 2FA chỉ thật sự bật sau khi
 # người dùng quét QR và nhập đúng một mã, vì bật trước lúc họ chứng minh app sinh đúng mã là
 # tự khoá họ ra ngoài chính máy vừa cài.
-if ! _env_has JAVIS_SETUP_2FA && [ -t 0 ]; then
+if ! _env_has THANSA_SETUP_2FA && [ -t 0 ]; then
   read -rp "  Turn on two-factor sign-in (Google Authenticator)? [y/N]: " TFA || true
   case "${TFA:-}" in
     [yY]*)
-      _env_set JAVIS_SETUP_2FA 1
+      _env_set THANSA_SETUP_2FA 1
       ok "Noted - the first time you open the dashboard, the Account page will show the QR code to scan"
       ;;
     *) log "Skipped - you can turn it on any time under Dashboard → Account" ;;
@@ -430,13 +420,13 @@ fi
 
 # --- 9. service: systemd if available, else nohup ---
 PY="$APP_DIR/.venv/bin/python"
-# 0.306.0, chủ repo 24/10/2026: "mặc định cài javis trên win hoặc trên mac os thì cài khởi động cùng trình duyệt".
+# 0.306.0, chủ repo 24/10/2026: "mặc định cài thansa trên win hoặc trên mac os thì cài khởi động cùng trình duyệt".
 # macOS: dùng LaunchAgent (bin/thansa-autostart.sh) thay cho nohup: đăng nhập máy là server tự chạy, rồi dashboard tự
-# mở trên trình duyệt; cài xong cũng mở luôn. Không muốn: JAVIS_NO_AUTOSTART=1 (chạy nohup như cũ, không mở gì).
-# Bản thứ hai (JAVIS_NAME) vẫn đi nohup: LaunchAgent dùng một nhãn chung com.javis.os, hai bản sẽ đè nhau.
-if [ "$(uname -s)" = "Darwin" ] && [ "${JAVIS_NO_AUTOSTART:-0}" != "1" ] && [ -z "${JAVIS_NAME:-}" ] && [ -f "$APP_DIR/bin/thansa-autostart.sh" ]; then
+# mở trên trình duyệt; cài xong cũng mở luôn. Không muốn: THANSA_NO_AUTOSTART=1 (chạy nohup như cũ, không mở gì).
+# Bản thứ hai (THANSA_NAME) vẫn đi nohup: LaunchAgent dùng một nhãn chung com.thansa.os, hai bản sẽ đè nhau.
+if [ "$(uname -s)" = "Darwin" ] && [ "${THANSA_NO_AUTOSTART:-0}" != "1" ] && [ -z "${THANSA_NAME:-}" ] && [ -f "$APP_DIR/bin/thansa-autostart.sh" ]; then
   log "Installing login auto-start (LaunchAgent, port $PORT)..."
-  JAVIS_PORT="$PORT" bash "$APP_DIR/bin/thansa-autostart.sh" install
+  THANSA_PORT="$PORT" bash "$APP_DIR/bin/thansa-autostart.sh" install
   ok "Starts at login and opens the dashboard. Turn off: ./bin/thansa-autostart.sh uninstall"
 elif command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
   log "Installing systemd service ($SVC.service, port $PORT)..."
@@ -451,10 +441,10 @@ StartLimitIntervalSec=0
 Type=simple
 User=$(whoami)
 WorkingDirectory=$APP_DIR/server
-Environment="JAVIS_HOST=127.0.0.1"
-Environment="JAVIS_PORT=$PORT"
-Environment="JAVIS_SERVICE_NAME=$SVC"
-Environment="JAVIS_STATE_DIR=$APP_DIR/server"
+Environment="THANSA_HOST=127.0.0.1"
+Environment="THANSA_PORT=$PORT"
+Environment="THANSA_SERVICE_NAME=$SVC"
+Environment="THANSA_STATE_DIR=$APP_DIR/server"
 Environment="PATH=$APP_DIR/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=$PY -m uvicorn main:app --host 127.0.0.1 --port $PORT
 Restart=always
@@ -471,7 +461,7 @@ UNIT
   ok "Service installed. Logs: journalctl -u $SVC -f"
 else
   warn "systemd not available - starting under nohup..."
-  ( cd "$APP_DIR/server" && JAVIS_STATE_DIR="$APP_DIR/server" JAVIS_PORT="$PORT" nohup "$PY" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" > "$APP_DIR/server/thansa.log" 2>&1 & )
+  ( cd "$APP_DIR/server" && THANSA_STATE_DIR="$APP_DIR/server" THANSA_PORT="$PORT" nohup "$PY" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" > "$APP_DIR/server/thansa.log" 2>&1 & )
   ok "Started. Logs: $APP_DIR/server/thansa.log"
 fi
 

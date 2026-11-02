@@ -16,7 +16,7 @@ import sys
 import tempfile
 import time
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-zpcho-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-zpcho-")
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:

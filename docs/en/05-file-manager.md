@@ -24,9 +24,9 @@ The default entry point is always the root of the selected brain. But the **brow
 |---|---|---|
 | Locally, without a login gate (localhost) | **The disk holding the brain** | You can browse and edit files outside the brain, because the machine is yours |
 | Public bind / login required (Docker, VPS) | The brain folder | Locked inside the brain, so the disk is never exposed to the web |
-| `JAVIS_FILES_ROOT=brain` (or `vault`) | The brain folder | Locked inside the brain even when running locally |
-| `JAVIS_FILES_ROOT=drive` (or `root`) | The disk holding the brain | Forces the wider scope |
-| `JAVIS_FILES_ROOT=<path>` | Exactly that folder | A custom ceiling, which must contain the brain |
+| `THANSA_FILES_ROOT=brain` (or `vault`) | The brain folder | Locked inside the brain even when running locally |
+| `THANSA_FILES_ROOT=drive` (or `root`) | The disk holding the brain | Forces the wider scope |
+| `THANSA_FILES_ROOT=<path>` | Exactly that folder | A custom ceiling, which must contain the brain |
 
 So on a personal machine, clicking **↑ Up** repeatedly can take you out of the brain all the way to the disk root. The **⌂ Brain** button takes you home instantly. Once you stand at the ceiling, **↑ Up** hides itself. Thansa always blocks paths trying to escape the ceiling (`../../` style), and the brain is always inside the ceiling.
 
@@ -293,7 +293,7 @@ The practical conclusion: move anything you want to keep long term into the brai
 
 **The ↑ Up button is nowhere to be found.** You are already at the ceiling and it hid itself. Click **⌂ Brain** to return to the brain root.
 
-**You browsed outside the brain and cannot find the way back.** Click **⌂ Brain**. That is the designed behaviour when running locally: the ceiling is the disk, not the brain folder. To lock it inside the brain, set `JAVIS_FILES_ROOT=brain` and restart the server.
+**You browsed outside the brain and cannot find the way back.** Click **⌂ Brain**. That is the designed behaviour when running locally: the ceiling is the disk, not the brain folder. To lock it inside the brain, set `THANSA_FILES_ROOT=brain` and restart the server.
 
 **Search does not find a file you know exists.** Three common causes: the file is outside the brain root (search only scans the brain); it is inside a skipped folder such as `.git`, `node_modules`, `.trash`; or you are on the **Content** chip and the file is not text or is over 1MB. Try the **Name** chip.
 
@@ -324,5 +324,5 @@ The practical conclusion: move anything you want to keep long term into the brai
 - [Second Brain: memory, Wiki, INGEST](13-second-brain.md) - what lives inside a brain.
 - [Backing the brain up to GitHub](18-github-backup.md) - keeping change history and recovering deleted files.
 - [Tasks & Dataview in notes](19-tasks-and-dataview.md) - writing tasks and query tables in .md files.
-- [.env configuration](16-env-configuration.md) - the `JAVIS_FILES_ROOT` variable and the rest.
+- [.env configuration](16-env-configuration.md) - the `THANSA_FILES_ROOT` variable and the rest.
 - [Troubleshooting & FAQ](17-troubleshooting.md)

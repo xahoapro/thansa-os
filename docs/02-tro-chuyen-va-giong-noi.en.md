@@ -207,7 +207,7 @@ Mermaid diagrams need to load the drawing library from the internet; offline mod
 
 Thansa can create images right in chat using your **ChatGPT account** (OAuth, no API key needed). Just describe it, for example "create an image of a fish sauce bottle on a wooden table, dark background, landscape".
 
-Below, Thansa calls tool `javis_generate_image` (bundled plugin `image-chatgpt`) with three parameters:
+Below, Thansa calls tool `thansa_generate_image` (bundled plugin `image-chatgpt`) with three parameters:
 
 | Parameter | Value | Default |
 |---|---|---|

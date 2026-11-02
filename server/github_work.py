@@ -1,4 +1,4 @@
-"""What Javis does with a conversation's GitHub repos (spec docs/dev/2026-10-github-trong-chat-spec.md, sections 8-9).
+"""What Thansa does with a conversation's GitHub repos (spec docs/dev/2026-10-github-trong-chat-spec.md, sections 8-9).
 
 After every saved turn (`after_turn`), for each attached repo whose worktree changed:
 
@@ -190,7 +190,7 @@ def _slug(text: str) -> str:
 
 def _identity_env() -> Dict[str, str]:
     conn = github_repos.status()
-    login = conn.get("login") or "javis"
+    login = conn.get("login") or "thansa"
     uid = github_repos.user_id()
     email = f"{uid}+{login}@users.noreply.github.com" if uid else f"{login}@users.noreply.github.com"
     return {"GIT_AUTHOR_NAME": login, "GIT_AUTHOR_EMAIL": email, "GIT_COMMITTER_NAME": login,
@@ -214,14 +214,14 @@ def commit_all(worktree: str, message: str) -> str:
 
 
 def _final_branch(sid: str, repo: Dict[str, Any], title: str) -> str:
-    """`javis/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes."""
+    """`thansa/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes."""
     wt = repo["worktree"]
     cur = github_repos.git_out(["rev-parse", "--abbrev-ref", "HEAD"], wt)
     short = github_repos.session_branch(sid)
     slug = _slug(title)
     if cur != short or not slug:
         return cur
-    new = f"javis/{slug}-{short.split('/', 1)[1][:6]}"
+    new = f"thansa/{slug}-{short.split('/', 1)[1][:6]}"
     r = github_repos.git(["branch", "-m", new], wt, check=False)
     return new if r.returncode == 0 else cur
 
@@ -567,7 +567,7 @@ async def check_row(row: Dict[str, Any]) -> Dict[str, Any]:
     except (GitHubError, github_repos.RepoError):
         return row      # GitHub unreachable or not connected: try again next tick, change nothing
     pr = snap["pr"] or {}
-    # The PR itself first: merged or closed by a person outside Javis.
+    # The PR itself first: merged or closed by a person outside Thansa.
     if pr.get("merged"):
         return await on_merged(row, pr)
     if pr and pr.get("state") == "closed":
@@ -576,7 +576,7 @@ async def check_row(row: Dict[str, Any]) -> Dict[str, Any]:
         await _say(sid, f"**{fn}**: {reason}{_pr_tail(row)}", False, once=f"closed:{sid}:{fn}:{row['pr_number']}")
         return st().get(sid, fn) or row
     if snap["head"] != row["head_sha"]:
-        # A newer commit replaced the one Javis recorded: its CI result belongs to that commit only (spec 9.3).
+        # A newer commit replaced the one Thansa recorded: its CI result belongs to that commit only (spec 9.3).
         row = st().update(sid, fn, head_sha=snap["head"], ci="pending", pushed_at=time.time(), rerun_used=0,
                           integ="pr_open")
     st().save_checks(fn, row["head_sha"], snap["items"])
@@ -654,7 +654,7 @@ async def on_red(row: Dict[str, Any], snap: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _merge_blockers(row: Dict[str, Any], pr: Dict[str, Any]) -> List[str]:
-    """Why Javis must not merge this PR on its own right now (spec 11.1). Empty list = it may."""
+    """Why Thansa must not merge this PR on its own right now (spec 11.1). Empty list = it may."""
     out = []
     rec = github_repos.find(row.get("brain") or "", row["full_name"]) or {}
     if not github_repos.auto_merge_on(rec):
@@ -814,7 +814,7 @@ async def on_no_ci(row: Dict[str, Any], pr: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def on_merged(row: Dict[str, Any], pr: Dict[str, Any]) -> Dict[str, Any]:
-    """The PR was merged on GitHub (by a person, or by Javis on an earlier tick)."""
+    """The PR was merged on GitHub (by a person, or by Thansa on an earlier tick)."""
     sid, fn = row["sid"], row["full_name"]
     if row.get("integ") == "merged":
         return row
@@ -1041,7 +1041,7 @@ def _is_review_turn(user_message: str) -> bool:
 def lessons_path(brain: str, full_name: str):
     from pathlib import Path
     root = Path(_brain_root(brain) or brain or ".")
-    return root / "Javis" / "learned" / "repos" / (full_name.replace("/", "__") + ".md")
+    return root / "Thansa" / "learned" / "repos" / (full_name.replace("/", "__") + ".md")
 
 
 def read_lessons(brain: str, full_name: str) -> List[str]:

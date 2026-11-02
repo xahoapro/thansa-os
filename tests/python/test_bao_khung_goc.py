@@ -12,9 +12,9 @@ import os
 import tempfile
 from pathlib import Path
 
-_TMP = tempfile.mkdtemp(prefix="javis-goc-")
-os.environ["JAVIS_STATE_DIR"] = _TMP
-os.environ["JAVIS_SESSIONS_DB"] = str(Path(_TMP) / "conv.db")
+_TMP = tempfile.mkdtemp(prefix="thansa-goc-")
+os.environ["THANSA_STATE_DIR"] = _TMP
+os.environ["THANSA_SESSIONS_DB"] = str(Path(_TMP) / "conv.db")
 
 import main  # noqa: E402
 

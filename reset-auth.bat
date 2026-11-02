@@ -3,7 +3,7 @@ chcp 65001 >nul
 title Reset dang nhap Thansa
 cd /d "%~dp0"
 echo ==========================================
-echo   RESET DANG NHAP JAVIS
+echo   RESET DANG NHAP THANSA
 echo   (Xoa tai khoan/mat khau -> ve bo cai dat)
 echo ==========================================
 echo.

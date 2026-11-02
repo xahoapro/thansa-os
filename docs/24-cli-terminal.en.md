@@ -20,7 +20,7 @@ Install a small package on your machine then type `thansa "revenue this week how
 Needs Python 3.9 or newer. Package brings only **one** library (`httpx`), installs on machine never had Thansa.
 
 ```bash
-pip install javis-cli
+pip install thansa-cli
 ```
 
 Install from source (when you cloned Thansa repo):
@@ -29,7 +29,7 @@ Install from source (when you cloned Thansa repo):
 pip install ./cli
 ```
 
-Then you have command `javis`. Check: `javis --help`.
+Then you have command `thansa`. Check: `thansa --help`.
 
 ## Step 1: create token in dashboard
 
@@ -39,7 +39,7 @@ Thansa server doesn't take outside commands without token. **No pre-made token**
 2. Set memorable name, e.g. "my laptop" - later when you revoke you know which one.
 3. Pick scope:
    - **Chat only** - access `/chat`, `/version`, `/health`, `/sessions`. Enough for Q&A and history. Pick this if just asking questions.
-   - **Full** - like logged-in browser. Needed for `javis task add`, `javis brain`, `javis loops`.
+   - **Full** - like logged-in browser. Needed for `thansa task add`, `thansa brain`, `thansa loops`.
 4. Click **Create token**. String appears **one time only**: server hashes it on save, no way to see again. Copy right away.
 
 Lost token? Can't look it up, only create new one then revoke the old. On purpose.
@@ -47,26 +47,26 @@ Lost token? Can't look it up, only create new one then revoke the old. On purpos
 ## Step 2: hook CLI to your Thansa
 
 ```bash
-javis login https://your-thansa.com
+thansa login https://your-thansa.com
 ```
 
 It will ask token, paste in. Or give straight:
 
 ```bash
-javis login https://your-thansa.com --token jvs_xxxxx
+thansa login https://your-thansa.com --token jvs_xxxxx
 ```
 
 CLI **tries real connection** before saving, so wrong address or token you know right here, not when asking first question.
 
-Settings saved at `~/.javis/config.json`, permission `600` (only you read). File has token so don't put in repo or public backup.
+Settings saved at `~/.thansa/config.json`, permission `600` (only you read). File has token so don't put in repo or public backup.
 
 ### Many Thansa at once
 
 ```bash
-javis login http://localhost:7777 --name home
-javis login https://thansa.company.com --name work --brain work-brain
-javis --profile work "how's this week at work"
-javis profiles          # list saved, * is default
+thansa login http://localhost:7777 --name home
+thansa login https://thansa.company.com --name work --brain work-brain
+thansa --profile work "how's this week at work"
+thansa profiles          # list saved, * is default
 ```
 
 ### Set by env var (for CI, Docker, server)
@@ -75,18 +75,18 @@ Three vars override config file, handy when you don't want token on disk:
 
 | Var | Means |
 |---|---|
-| `JAVIS_URL` | Thansa server address |
-| `JAVIS_TOKEN` | API token |
-| `JAVIS_BRAIN` | default brain |
-| `JAVIS_PROFILE` | default profile name |
+| `THANSA_URL` | Thansa server address |
+| `THANSA_TOKEN` | API token |
+| `THANSA_BRAIN` | default brain |
+| `THANSA_PROFILE` | default profile name |
 
 ## Daily use
 
 ### Ask one question
 
 ```bash
-javis "revenue this week how"
-javis "summarize notes this week"
+thansa "revenue this week how"
+thansa "summarize notes this week"
 ```
 
 No subcommand needed - type question straight and run. Sitting at terminal you see progress line running (Thansa calling which MCP, reading which file), then answer shows up.
@@ -94,7 +94,7 @@ No subcommand needed - type question straight and run. Sitting at terminal you s
 ### Ongoing Q&A session
 
 ```bash
-javis chat
+thansa chat
 ```
 
 Type question, Enter, read answer, type next. Whole session shares one conversation code so Thansa tracks context: ask "and last month?" it understands you mean previous number. `Ctrl+D` or `/exit` to stop.
@@ -102,7 +102,7 @@ Type question, Enter, read answer, type next. Whole session shares one conversat
 Want to continue same chat next time:
 
 ```bash
-javis chat --session sales-august
+thansa chat --session sales-august
 ```
 
 ### Pipe into script
@@ -110,8 +110,8 @@ javis chat --session sales-august
 This is the killer feature. Answer goes stdout, progress goes stderr, so redirect is clean:
 
 ```bash
-javis "write sales summary this week" > report.md
-javis -q "status today" | mail -s "Thansa" you@work.com
+thansa "write sales summary this week" > report.md
+thansa -q "status today" | mail -s "Thansa" you@work.com
 ```
 
 Flag `-q` turns off progress line. Fail means CLI exits non-zero and **prints nothing to stdout**, so `&&` in script works right.
@@ -119,7 +119,7 @@ Flag `-q` turns off progress line. Fail means CLI exits non-zero and **prints no
 ### Check status
 
 ```bash
-javis status
+thansa status
 ```
 
 Shows Thansa version, is there new version, which brain running, token saving setting now, and percent saved last 24 hours.
@@ -129,30 +129,30 @@ Shows Thansa version, is there new version, which brain running, token saving se
 Commands need **full** token.
 
 ```bash
-javis task add "write post about new product"     # delegate Kanban task
-javis task add "run monthly report" --mode auto     # suggest (default) | auto | full
-javis tasks                                          # list tasks and status
+thansa task add "write post about new product"     # delegate Kanban task
+thansa task add "run monthly report" --mode auto     # suggest (default) | auto | full
+thansa tasks                                          # list tasks and status
 
-javis brain ls                                       # list brain root
-javis brain ls "05 - Data Cache"
-javis brain cat "Memory/MEMORY.md"
+thansa brain ls                                       # list brain root
+thansa brain ls "05 - Data Cache"
+thansa brain cat "Memory/MEMORY.md"
 
-javis loops                                          # which loop on, what permission
+thansa loops                                          # which loop on, what permission
 ```
 
-Task delegated runs in background on server. Result comes back to where you delegated, check progress on **Tasks** page on dashboard or type `javis tasks` again.
+Task delegated runs in background on server. Result comes back to where you delegated, check progress on **Tasks** page on dashboard or type `thansa tasks` again.
 
 ### Start Thansa on this machine
 
 If machine already has Thansa installed (cloned repo):
 
 ```bash
-javis up
+thansa up
 ```
 
-It finds install (via `JAVIS_HOME` var, current folder, or `~/thansa-os`), starts it, and saves profile `local` for next time `javis "..."` runs. Thansa already running, it notices and doesn't start second copy.
+It finds install (via `THANSA_HOME` var, current folder, or `~/thansa-os`), starts it, and saves profile `local` for next time `thansa "..."` runs. Thansa already running, it notices and doesn't start second copy.
 
-Can't find install it says straight: **`javis up` doesn't have server inside**, and gives three fixes (set `JAVIS_HOME`, run from inside Thansa folder, or `javis login` to Thansa somewhere else).
+Can't find install it says straight: **`thansa up` doesn't have server inside**, and gives three fixes (set `THANSA_HOME`, run from inside Thansa folder, or `thansa login` to Thansa somewhere else).
 
 ## Manage token
 
@@ -169,15 +169,15 @@ Few things to know how Thansa keeps token:
 
 ## When problem hits
 
-**"Haven't connected to any Thansa"** - run `javis login <address>` first.
+**"Haven't connected to any Thansa"** - run `thansa login <address>` first.
 
-**Reports 401 or "token invalid"** - token wrong, or revoked. Create new one at Account > API Token then `javis login` again.
+**Reports 401 or "token invalid"** - token wrong, or revoked. Create new one at Account > API Token then `thansa login` again.
 
-**Reports 403 when typing `javis task add` or `javis brain ls`** - your token is **chat only**. Create **full** token for those commands.
+**Reports 403 when typing `thansa task add` or `thansa brain ls`** - your token is **chat only**. Create **full** token for those commands.
 
 **Temporarily blocked** - tried wrong token too many times. Wait 15 min, or restart Thansa server.
 
-**Can't connect** - check Thansa server still running (`javis status`, or open dashboard in browser). Thansa on VPS, check port and domain.
+**Can't connect** - check Thansa server still running (`thansa status`, or open dashboard in browser). Thansa on VPS, check port and domain.
 
 **Vietnamese chars show wrong on Windows** - run `chcp 65001` in terminal first, or use Windows Terminal instead of old cmd.exe.
 
@@ -198,4 +198,4 @@ Design detail at [CLI spec](dev/2026-08-cli-spec.md).
 - [02 - Conversation & voice](02-tro-chuyen-va-giong-noi.md) - web channel.
 - [11 - Telegram Channel](11-telegram.md) - phone channel.
 - [14 - Security & account](14-bao-mat-tai-khoan.md) - password, login, secret encryption.
-- [21 - Tasks (Kanban)](21-viec-kanban.md) - where `javis task add` tasks land to run.
+- [21 - Tasks (Kanban)](21-viec-kanban.md) - where `thansa task add` tasks land to run.

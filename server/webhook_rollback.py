@@ -69,7 +69,7 @@ def legacy_hook(h: dict, keys: list) -> tuple:
         why.append("rules (filter, mapping, business keys)")
     if (h.get("verify") or {}).get("provider") not in (None, "", "none"):
         why.append(f"signature check {h['verify']['provider']}")
-    if h.get("token_header") and str(h["token_header"]).lower() != "x-javis-token":
+    if h.get("token_header") and str(h["token_header"]).lower() != "x-thansa-token":
         why.append(f"token header {h['token_header']}")
     if h.get("target") not in ("task", "workflow"):
         why.append("no task or workflow of its own")

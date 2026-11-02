@@ -5,16 +5,16 @@ nắm để không hoà trộn sai + theo đúng khi bump/phát hành. Chi tiế
 
 ## 1. Đánh version ĐỔI HẲN — VERSION giờ mang NEO
 
-- File `VERSION` KHÔNG còn là số Javis thuần. Dạng mới: **`<semver-thansa>-javis-<nền-javis>`**
-  (hiện tại `1.2.0-javis-0.40.0`).
-- Semver Thansa (phần đầu) lái nút Update + là thứ HIỂN THỊ. Đuôi `-javis-<nền>` là NEO nội
+- File `VERSION` KHÔNG còn là số Thansa thuần. Dạng mới: **`<semver-thansa>-thansa-<nền-thansa>`**
+  (hiện tại `1.2.0-thansa-0.40.0`).
+- Semver Thansa (phần đầu) lái nút Update + là thứ HIỂN THỊ. Đuôi `-thansa-<nền>` là NEO nội
   bộ, **ẩn khỏi mọi chỗ người dùng thấy** (UI trả `1.2.0`, tag ảnh `1.2.0`).
 - **Khi bump/phát hành:** đổi `VERSION` semver Thansa, và **giữ `moc-goc.json` khớp** —
-  `thansa_version` = semver Thansa, `goc_version` = nền Javis = đúng phần sau `-javis-`.
+  `thansa_version` = semver Thansa, `goc_version` = nền Thansa = đúng phần sau `-thansa-`.
 - **`tu-kiem-chung` có LUẬT 5 mới:** neo trong `VERSION` PHẢI == `goc_version`. Lệch = ĐỎ.
-- Đã thêm `RELEASES.md` (sổ neo Thansa↔Javis) — mỗi lần phát hành thêm một dòng.
-- Hàm `_ver_thansa` (cắt neo, hiển thị/so update) + `_ver_javis` (lấy nền, so trang Nhật ký
-  vì changelog đánh số theo Javis) ở `server/main.py`. Đừng so VERSION thô ở chỗ mới.
+- Đã thêm `RELEASES.md` (sổ neo Thansa↔Thansa) — mỗi lần phát hành thêm một dòng.
+- Hàm `_ver_thansa` (cắt neo, hiển thị/so update) + `_ver_thansa` (lấy nền, so trang Nhật ký
+  vì changelog đánh số theo Thansa) ở `server/main.py`. Đừng so VERSION thô ở chỗ mới.
 
 ## 2. Kênh phát hành trỏ FORK (không upstream)
 
@@ -28,12 +28,12 @@ nắm để không hoà trộn sai + theo đúng khi bump/phát hành. Chi tiế
 ## 3. Rebrand bản quyền/tên (P026–P027) — vùng ĐÃ đụng, tránh hoà trùng
 
 - `LICENSE`: GIỮ copyright Nguyễn Minh Quý (bắt buộc theo MIT) + THÊM Duy Quang (thansa.org).
-- Đổi: javisos.com→thansa.org, minhquy.vn→tradingauto.org, Minh Quý→Duy Quang,
-  blogminhquy/javis-os→xahoapro/thansa-os; tên sản phẩm Javis OS→Thansa OS trong README/docs.
-- `_rebrand_hien_thi` (`server/main.py`) nay đổi cả domain/tác giả/repo (không chỉ Javis→Thansa).
-- **GIỮ NGUYÊN** (đừng rebrand): token kỹ thuật `JAVIS_*`/`javis_*`/`Javis/` path/`javis.service`;
-  dữ liệu ví dụ trong test (`Minh Quý`/`minhquy.vn` ở test_2fa/cred/learn); `CHANGELOG.md`
-  upstream (rebrand lúc hiển thị); class CSS `.bubble.javis`; `ops/`+`bao-cao/`+`nhiem-vu/`+
+- Đổi: thansa.org→thansa.org, tradingauto.org→tradingauto.org, Minh Quý→Duy Quang,
+  xahoapro/thansa-os→xahoapro/thansa-os; tên sản phẩm Thansa OS→Thansa OS trong README/docs.
+- `_rebrand_hien_thi` (`server/main.py`) nay đổi cả domain/tác giả/repo (không chỉ Thansa→Thansa).
+- **GIỮ NGUYÊN** (đừng rebrand): token kỹ thuật `THANSA_*`/`thansa_*`/`Thansa/` path/`thansa.service`;
+  dữ liệu ví dụ trong test (`Minh Quý`/`tradingauto.org` ở test_2fa/cred/learn); `CHANGELOG.md`
+  upstream (rebrand lúc hiển thị); class CSS `.bubble.thansa`; `ops/`+`bao-cao/`+`nhiem-vu/`+
   `docs/superpowers|dev` (lịch sử).
 
 ## 4. ws-disconnect — cần trạm #1

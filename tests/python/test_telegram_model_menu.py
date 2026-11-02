@@ -22,7 +22,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-tgmodel-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-tgmodel-"))
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")

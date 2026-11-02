@@ -15,7 +15,7 @@ một chỗ cùng lỗi pipefail mà nhiệm vụ chưa liệt kê (`bin/thansa-
   bọc lệnh bằng `systemd-run --scope --quiet --collect --unit=thansa-update-<ts>`. Không thỏa thì giữ nguyên lệnh
   cũ (Windows, launchd, nohup, dịch vụ chạy User không phải root).
 - `server/main.py` (`POST /update`, nhánh git không phải Windows): `Popen(_updmod.lenh_tach_cgroup(args), ...)`.
-- Chọn cách (A) của nhiệm vụ. `--scope` giữ nguyên env (JAVIS_STATE_DIR, JAVIS_SERVICE_NAME...) và cwd, nên
+- Chọn cách (A) của nhiệm vụ. `--scope` giữ nguyên env (THANSA_STATE_DIR, THANSA_SERVICE_NAME...) và cwd, nên
   updater chạy y như trước, chỉ khác cgroup. KHÔNG đổi `KillMode` của unit: tiến trình con (Claude CLI...) vẫn
   bị dọn khi dừng dịch vụ như cũ.
 - **Kiểm trên systemd thật (VPS này):** hai dịch vụ tạm `systemd-run` tự `systemctl stop`: con tách bằng
@@ -37,8 +37,8 @@ một chỗ cùng lỗi pipefail mà nhiệm vụ chưa liệt kê (`bin/thansa-
 - `git update-index --chmod=+x update.sh install.sh` → `100755`. Các `*.sh` khác vốn đã 755.
 
 ### Lỗi 4 - npm not found
-- Đầu `update.sh`: đưa `~/.thansa/node/bin`, `~/.javis/node/bin` (máy cũ), `~/.local/bin` vào PATH nếu có.
-  (install.sh hiện cài Node vào `~/.thansa/node`, không phải `~/.javis/node` như nhiệm vụ ghi.)
+- Đầu `update.sh`: đưa `~/.thansa/node/bin`, `~/.thansa/node/bin` (máy cũ), `~/.local/bin` vào PATH nếu có.
+  (install.sh hiện cài Node vào `~/.thansa/node`, không phải `~/.thansa/node` như nhiệm vụ ghi.)
 
 ### Lỗi 5 - thiếu python3.X-venv
 - `install.sh`: kiểm `import ensurepip`; thiếu thì `apt-get install python<X.Y>-venv` (lùi `python3-venv`).
@@ -46,7 +46,7 @@ một chỗ cùng lỗi pipefail mà nhiệm vụ chưa liệt kê (`bin/thansa-
 
 ## Chưa làm
 - PATH unit cũ thiếu `/usr/sbin` (mục "đã vá - ghi nhận"): chưa thêm migration sửa unit có sẵn.
-- Báo upstream javis-os (lỗi 1, 2 có từ gốc): chưa có kênh tự động - để chủ quyết.
+- Báo upstream thansa-os (lỗi 1, 2 có từ gốc): chưa có kênh tự động - để chủ quyết.
 - Tiêu chí 2 (bấm Cập nhật trên máy native/systemd KHÔNG drop-in) cần máy khách thật: VPS này chạy kiểu nohup.
   Cơ chế đã chứng minh bằng dịch vụ tạm như trên.
 

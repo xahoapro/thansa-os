@@ -28,7 +28,7 @@ import os
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-capsule-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-capsule-"))
 
 import context_compiler as cc  # noqa: E402
 

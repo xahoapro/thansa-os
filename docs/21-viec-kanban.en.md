@@ -221,7 +221,7 @@ Remember task created via chat still sits in the queue of the brain where the ch
 
 From 0.25.2 Thansa **says that out loud at delegation time**: delegating to a **Off** or **Observe** board it reports back the task is queued not running, including how to turn it on. Before this it always ended with "Background task running, result coming back" no matter the mode - a false promise Thansa itself had no way of knowing was false. The bar above the chat also turns yellow in exactly this case.
 
-This runs on **every brain** from 0.17.1, via tool `javis_task`. Before that only Claude Code and ChatGPT/Codex could delegate from chat, the only route being HTTP call by command that only those two engines can run. API engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama) heard the request then did nothing, and didn't report errors. If you ever saw "told it to delegate a task but board stayed empty", odds are this was it.
+This runs on **every brain** from 0.17.1, via tool `thansa_task`. Before that only Claude Code and ChatGPT/Codex could delegate from chat, the only route being HTTP call by command that only those two engines can run. API engines (OpenRouter, OpenAI, Anthropic, Gemini, Groq, Ollama) heard the request then did nothing, and didn't report errors. If you ever saw "told it to delegate a task but board stayed empty", odds are this was it.
 
 Two things the tool **doesn't** do, on purpose:
 
@@ -243,7 +243,7 @@ Details in [Self-learning](22-tu-hoc.md).
 
 ## Where board data lives
 
-- **Main source**: file `kanban.sqlite3` in Thansa's state folder (variable `JAVIS_STATE_DIR`, default is `server/` folder). This holds the lifecycle, runs, and event log. Placed outside brain on purpose so running tasks don't get git-synced.
+- **Main source**: file `kanban.sqlite3` in Thansa's state folder (variable `THANSA_STATE_DIR`, default is `server/` folder). This holds the lifecycle, runs, and event log. Placed outside brain on purpose so running tasks don't get git-synced.
 - **Readable copy**: `Thansa/kanban.json` in brain, rewritten each time board changes. This file backs up and lets old Thansa read it; editing it by hand doesn't change the real queue.
 - Old board from earlier Thansa versions gets imported once, and tasks stuck at "running" status from old process move back to queue.
 - Tasks complete or cancelled over **3 days** auto-archive to keep board from swelling.
@@ -252,7 +252,7 @@ Details in [Self-learning](22-tu-hoc.md).
 
 | Spec | Value |
 | --- | --- |
-| Workers running in parallel | 2 (change with environment var `JAVIS_KANBAN_MAX_WORKERS`, clamp to 1-8, shared across all brains) |
+| Workers running in parallel | 2 (change with environment var `THANSA_KANBAN_MAX_WORKERS`, clamp to 1-8, shared across all brains) |
 | Dispatcher scan tick | 5 seconds, woken immediately on new task |
 | Task hold time / heartbeat tick | 90 seconds / 20 seconds |
 | Spec step time ceiling | 3 minutes |
@@ -317,7 +317,7 @@ That's a false promise and got banned from 0.9.289: one chat turn ends the momen
 Three causes, in order of likelihood: you're on a **different brain** (switch at dashboard top), task finished over 3 days ago so auto-archived, or someone called the bulk-clean endpoint.
 
 **Background tasks eating my quota.**
-Each task is a real AI session. Lower parallel workers to `JAVIS_KANBAN_MAX_WORKERS=1`, or set mode to **Off** when not needed. Track spending on [Usage: token & cost](23-muc-dung-token.md), which separates "Thansa auto-runs" from "You typed by hand".
+Each task is a real AI session. Lower parallel workers to `THANSA_KANBAN_MAX_WORKERS=1`, or set mode to **Off** when not needed. Track spending on [Usage: token & cost](23-muc-dung-token.md), which separates "Thansa auto-runs" from "You typed by hand".
 
 ## Related
 
@@ -329,4 +329,4 @@ Each task is a real AI session. Lower parallel workers to `JAVIS_KANBAN_MAX_WORK
 - [Connections & business data](09-mcp-va-so-lieu.md) - real data source for `mcp-read` tasks.
 - [Usage: token & cost](23-muc-dung-token.md) - how much background tasks burn.
 - [Tasks & Dataview in notes](19-task-va-dataview.md) - checkbox tasks in markdown, different from this page.
-- [Configure .env](16-cau-hinh-env.md) - `JAVIS_STATE_DIR`, `JAVIS_KANBAN_MAX_WORKERS`.
+- [Configure .env](16-cau-hinh-env.md) - `THANSA_STATE_DIR`, `THANSA_KANBAN_MAX_WORKERS`.

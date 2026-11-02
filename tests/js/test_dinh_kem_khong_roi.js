@@ -9,7 +9,7 @@
 
    1. Enter SỚM. Dán ảnh (hay một đoạn văn dài, tự thành file .txt) rồi gõ câu hỏi và Enter
       ngay, trong khi /upload còn đang chạy. `sendMessage` lọc `a.path` nên file chưa tải xong
-      bị bỏ lặng lẽ: tin bay đi tay không, bong bóng không có ảnh, Javis cũng không nhận được
+      bị bỏ lặng lẽ: tin bay đi tay không, bong bóng không có ảnh, Thansa cũng không nhận được
       file. Nay phải ĐỢI upload xong rồi mới gửi; file hỏng thì nói ra chứ không nuốt.
 
    2. Mở lại hội thoại từ máy chủ (bấm ở Lịch sử, hồi sức sau khi ngủ nền). Server chỉ lưu
@@ -50,7 +50,7 @@ const fn = new Function(hang + "\n" + catHam("docDinhKem") + "\nreturn { docDinh
 // 1. Mở lại hội thoại: đọc lại đính kèm từ khối ngữ cảnh server đã lưu
 // ============================================================
 const tinAnh =
-  "[File đính kèm để ĐỌC (đường dẫn):\n- /root/.javis/upload/anh-san-pham.png\n"
+  "[File đính kèm để ĐỌC (đường dẫn):\n- /root/.thansa/upload/anh-san-pham.png\n"
   + "Mặc định: chỉ đọc file rồi trả lời, KHÔNG tự lưu đi đâu.\n"
   + "CHỈ khi user yêu cầu rõ thì mới: chuyển thành .md lưu vào Sources=\"/x/Sources\", kèm frontmatter source.]\n\n"
   + "ảnh này là gì?";
@@ -63,8 +63,8 @@ check("url trỏ về /upload/raw?name=<tên> (đúng URL /upload đã trả lú
 check("dòng 'Mặc định:' và 'CHỈ khi...' KHÔNG bị hiểu thành file", a.length === 1);
 
 const tinNhieu =
-  "[File đính kèm để ĐỌC (đường dẫn):\n- C:\\Users\\quy\\.javis\\upload\\van-ban-dan-124933.txt\n"
-  + "- /root/.javis/upload/bao cao.pdf\nMặc định: chỉ đọc.]\n\nlên outline chi tiết cho tôi";
+  "[File đính kèm để ĐỌC (đường dẫn):\n- C:\\Users\\quy\\.thansa\\upload\\van-ban-dan-124933.txt\n"
+  + "- /root/.thansa/upload/bao cao.pdf\nMặc định: chỉ đọc.]\n\nlên outline chi tiết cho tôi";
 a = fn.docDinhKem(tinNhieu);
 check("nhiều file: đọc đủ 2", a.length === 2, JSON.stringify(a));
 check("đường dẫn Windows (dấu \\) vẫn lấy đúng tên", a[0] && a[0].name === "van-ban-dan-124933.txt", JSON.stringify(a));
@@ -82,7 +82,7 @@ check("khối ghim đứng trước không che khối đính kèm phía sau", a.
 check("khối ghim KHÔNG bị đọc thành file", !a.some(x => /a\.md/.test(x.name)), JSON.stringify(a));
 check("biến thể khối của lệnh skill (/notes) cũng đọc được", a[0] && a[0].kind === "image");
 
-check("tin thường không có khối -> rỗng", fn.docDinhKem("chào Javis").length === 0);
+check("tin thường không có khối -> rỗng", fn.docDinhKem("chào Thansa").length === 0);
 check("null/undefined -> rỗng, không nổ", fn.docDinhKem(null).length === 0 && fn.docDinhKem(undefined).length === 0);
 check("khối không có chỗ kết thúc -> rỗng, không đoán",
   fn.docDinhKem("[File đính kèm để ĐỌC:\n- /x/y.png\nkhông có dấu đóng").length === 0);

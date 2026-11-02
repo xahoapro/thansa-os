@@ -14,7 +14,7 @@ Use it when the job is just keeping an eye on a page: a competitor's price, a ne
 
 ## Create it by asking in chat
 
-Tell Thansa something like "watch this page and tell me when the shirt drops below $20", with the link. Thansa uses the `javis_watch` tool and replies with the watch id. Every engine can do this.
+Tell Thansa something like "watch this page and tell me when the shirt drops below $20", with the link. Thansa uses the `thansa_watch` tool and replies with the watch id. Every engine can do this.
 
 ## Create it on the Recurring work page
 
@@ -53,7 +53,7 @@ Tick **Summarize changes with AI** and Thansa calls the background model **once 
 
 ## Where the data lives
 
-`web_watch.sqlite3` in the Thansa state folder (`JAVIS_STATE_DIR`), next to `kanban.sqlite3`.
+`web_watch.sqlite3` in the Thansa state folder (`THANSA_STATE_DIR`), next to `kanban.sqlite3`.
 
 ## Related
 

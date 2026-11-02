@@ -18,10 +18,10 @@
 > Running all three at once is fine, they do not collide.
 
 Thansa connects a personal Zalo account through the MCP of
-[`javis-zalo`](https://github.com/blogminhquy/javis-zalo), Thansa's own Zalo CLI. There is a single
+[`thansa-zalo`](https://github.com/xahoapro/thansa-zalo), Thansa's own Zalo CLI. There is a single
 MCP process: sign in by QR, read or search conversations and send messages through its tools.
 
-> `javis-zalo` uses the unofficial Zalo API via `zca-js`. Zalo does not support this way
+> `thansa-zalo` uses the unofficial Zalo API via `zca-js`. Zalo does not support this way
 > of connecting and the account may be restricted or locked. Use a secondary account, avoid
 > automated bulk sending, and accept the risk yourself.
 
@@ -31,7 +31,7 @@ MCP process: sign in by QR, read or search conversations and send messages throu
 - A phone already signed in to the Zalo account you want to connect.
 - Thansa started and you able to sign in to the dashboard.
 
-Thansa pins `javis-zalo` to a release tag (currently `v1.2.0`) and installs it straight from that
+Thansa pins `thansa-zalo` to a release tag (currently `v1.2.0`) and installs it straight from that
 tag's tarball on GitHub, with no npm account or Git needed. Only the `zca-js` library underneath
 follows its official npm releases. Since 0.83.0 Thansa runs this build instead of the third-party
 `zalo-agent-cli` 1.6.2; connections signed in earlier switch over without a new QR scan.
@@ -53,7 +53,7 @@ The **Guide on GitHub** button in the Zalo card always opens this documentation 
 
 Right after you sign Zalo in to Thansa, the Inbox only holds messages from the moment **Record conversations** was switched on. To bring in older ones, press **Import old messages** on the Zalo account card on the Chatbot page, Bots tab, under Channels without a bot. If Zalo already has a bot, press the Zalo chip on that bot's card.
 
-- Thansa takes the messages javis-zalo pulls in on every connect: about the last **2 weeks**, since Zalo does not allow going further back. At most 5,000 messages per run.
+- Thansa takes the messages thansa-zalo pulls in on every connect: about the last **2 weeks**, since Zalo does not allow going further back. At most 5,000 messages per run.
 - Only chats with **no message yet** in the Inbox are filled. Chats that already have messages are skipped, since old messages added later would show in the wrong order.
 - The bot **does not answer** these messages, they are **not counted as unread**, and groups still keep only their latest 1,000 messages as usual.
 - Right after scanning the QR code, wait a few minutes for Zalo to finish loading old messages before pressing it. Pressing again never duplicates anything.
@@ -70,19 +70,19 @@ Right after you sign Zalo in to Thansa, the Inbox only holds messages from the m
 | `zalo_review_join_requests` | Approve or reject people waiting to join | Dangerous |
 | `zalo_list_threads` | List the chats currently in the buffer | Read |
 | `zalo_search_threads` | Find a group or person by name | Read |
-| `zalo_get_labels` | The tags (labels) the owner set on chats in the Zalo app, for one chat or all (javis-zalo 1.6.0 and later) | Read |
+| `zalo_get_labels` | The tags (labels) the owner set on chats in the Zalo app, for one chat or all (thansa-zalo 1.6.0 and later) | Read |
 | `zalo_view_media` | Download/open an image, audio or video on the server (the brain does not see it, see `zalo_read_images` below) | Read |
 | `zalo_mark_read` | Mark as handled up to a cursor | Write |
 | `zalo_send_message` | Send a message to a person or group | Dangerous |
 | `zalo_send_file` | Send files (Excel, PDF, Word...) with a message, only files in the session outbox (see "Sending images and files") | Dangerous |
 
-The list follows the `javis-zalo` 1.5.0 source. History only covers what arrived since the MCP
+The list follows the `thansa-zalo` 1.5.0 source. History only covers what arrived since the MCP
 connected, plus what Zalo replays on connect (roughly the last two weeks); nothing older is
 available through any API.
 
-### When a message may be missing (since 0.183.0, javis-zalo 1.5.0)
+### When a message may be missing (since 0.183.0, thansa-zalo 1.5.0)
 
-The three read tools only read what javis-zalo captured itself: messages that arrive while it is
+The three read tools only read what thansa-zalo captured itself: messages that arrive while it is
 connected, plus Zalo's replay each time it connects. There is no way to ask Zalo for a DM's history
 later. So a message that arrives during an outage (a Thansa restart or update, a dropped network,
 another Zalo Web session holding the connection) is only seen if the replay brings it back.
@@ -98,7 +98,7 @@ another Zalo Web session holding the connection) is only seen if the replay brin
 
 ## Approving join requests
 
-Since Thansa 0.84.7 (javis-zalo 1.2.0), for groups that require approval:
+Since Thansa 0.84.7 (thansa-zalo 1.2.0), for groups that require approval:
 
 - **Thansa tells you when someone asks to join**, through the inbox bell and your Telegram: one message per group,
   with the applicants' names and the group name.
@@ -110,7 +110,7 @@ Since Thansa 0.84.7 (javis-zalo 1.2.0), for groups that require approval:
 
 ## New members joining a group
 
-Since Thansa 0.84.2 (javis-zalo 1.1.0), Thansa knows who just joined a group and **when**,
+Since Thansa 0.84.2 (thansa-zalo 1.1.0), Thansa knows who just joined a group and **when**,
 including people your own account added:
 
 - **You can ask.** "Who joined Zoom | Thansa OS this week?" makes the brain call
@@ -131,7 +131,7 @@ including people your own account added:
 
 The three groups of tools below (reading images, sending images and files, tagging people plus
 notes, reminders and polls) fill exactly what the standard MCP lacks. Since 0.73.0 they live in
-the **`javis.zalo`** pack on Thansa Store instead of shipping inside the app, so people who do not
+the **`thansa.zalo`** pack on Thansa Store instead of shipping inside the app, so people who do not
 use Zalo do not carry them:
 
 - **Right after you scan the Zalo QR, Thansa offers the pack** through the store's own consent
@@ -146,7 +146,7 @@ use Zalo do not carry them:
 
 The Zalo MCP only returns a **link** to an image, keeps messages for 2 hours, and
 `zalo_view_media` opens the image in the server's own image viewer instead of handing it to the
-brain. So the `javis.zalo` pack has the `zalo_read_images` tool:
+brain. So the `thansa.zalo` pack has the `zalo_read_images` tool:
 
 | Tool | What it does | Action level |
 |---|---|---|
@@ -164,13 +164,13 @@ Just ask in chat, for example "look at the receipt Lan just posted in the Sales 
   in on the Models page the images are still fetched, just without the description.
 
 The part where ChatGPT looks at images lives in the app (the bundled `image-chatgpt` plugin, tool
-`javis_describe_image`), so it can view any other image in the brain too, with or without the
+`thansa_describe_image`), so it can view any other image in the brain too, with or without the
 Zalo pack.
 
 ## Sending images and files
 
 `zalo_send_message` above **only sends text**. To send an image (say one Thansa just generated)
-or a file (a PDF report, a spreadsheet), use the `zalo_send_image` tool from the `javis.zalo`
+or a file (a PDF report, a spreadsheet), use the `zalo_send_image` tool from the `thansa.zalo`
 pack. It uses exactly the Zalo account you scanned the QR with.
 
 | Tool | What it does | Action level |
@@ -211,17 +211,17 @@ connection:
   if the confirmation arrives later. Retrying is safe. A dropped live connection is reported at
   once, without waiting.
 - Images (jpg, png, webp, gif) keep the old path.
-- If the Zalo connection still runs an older `javis-zalo` without this tool, Thansa says to update
+- If the Zalo connection still runs an older `thansa-zalo` without this tool, Thansa says to update
   Thansa and switch the Zalo connection off and on again (no new QR scan).
 
-The command-line `javis-zalo msg send-file` fails at once when no live connection is open.
+The command-line `thansa-zalo msg send-file` fails at once when no live connection is open.
 `--listen` makes it open one for that send, but only use it on a machine NOT running the Zalo
 MCP, since the new connection evicts it.
 
 ## Tagging people, notes, reminders and polls
 
 `zalo_send_message` only sends text, so it cannot tag anyone, and the Zalo MCP has no notes, reminders or polls either. The
-`javis.zalo` pack fills exactly those gaps with five tools that every brain can call:
+`thansa.zalo` pack fills exactly those gaps with five tools that every brain can call:
 
 | Tool | What it does | Action level |
 |---|---|---|
@@ -238,7 +238,7 @@ Four things worth knowing:
 - **You only need to say a name to tag.** "@minhquy" or "Minh Quý" both work, ignoring case and accents. Thansa looks up the real Zalo
   id among the people who already spoke in that group first, then in Zalo's member list. **If a name is ambiguous or not found, Thansa
   asks back with the candidates** instead of guessing, because a wrong tag cannot be undone. `@All` only when you ask for it explicitly.
-- **This reminder is not Thansa's own reminder** (`javis_schedule`): it shows up inside Zalo, so the whole group sees it. Times use Thansa's timezone.
+- **This reminder is not Thansa's own reminder** (`thansa_schedule`): it shows up inside Zalo, so the whole group sees it. Times use Thansa's timezone.
 - **If the group locks note or poll creation for members**, Zalo refuses and Thansa reports that reason as is. If a command times out,
   Thansa says it is **not sure whether it was created** and asks you to check the group before trying again, so you do not get two polls.
 - **With several Zalo accounts attached, Thansa asks** which one to use, same as for sending images.
@@ -248,9 +248,9 @@ Four things worth knowing:
 A bot answering on personal Zalo now writes more like a person:
 
 - **Bold, italic, strikethrough and coloured text.** When the bot writes `**85.000đ**`, the customer sees bold text, not the stars. Colours are written `{red:50% off}`, with `red`, `orange`, `yellow`, `green`, plus `{big:...}` and `{small:...}` for the size. A `- ` line becomes `•`, a heading becomes a bold line. The bot is told to stress only one or two things, as a person texting would.
-- **"Typing...".** In private chats the customer sees the typing indicator while the bot writes its reply. This needs javis-zalo 1.9.0 or later; with an older one the bot answers as usual, only without the indicator. Groups never show it, since the bot chooses to stay silent on many messages there.
+- **"Typing...".** In private chats the customer sees the typing indicator while the bot writes its reply. This needs thansa-zalo 1.9.0 or later; with an older one the bot answers as usual, only without the indicator. Groups never show it, since the bot chooses to stay silent on many messages there.
 
-Formatted messages go through `javis-zalo msg send --style`. If that command fails, the message still goes out as plain text with the symbols removed.
+Formatted messages go through `thansa-zalo msg send --style`. If that command fails, the message still goes out as plain text with the symbols removed.
 
 ## Using it in chat
 
@@ -282,8 +282,8 @@ account is set to Full power.
 ## Differences from the old Zalo integration
 
 The new flow dropped the `listen --webhook` sidecar, the `/hook/zalo` endpoint, the "Listen
-continuously" panel, the per-chat rules file and the two plugins `javis_zalo_rule` and
-`javis_zalo_send`. No listener process turns the MCP connector off and back on any more.
+continuously" panel, the per-chat rules file and the two plugins `thansa_zalo_rule` and
+`thansa_zalo_send`. No listener process turns the MCP connector off and back on any more.
 
 Because of that, Thansa does not forward Zalo messages to Telegram in the background. When you
 want to check messages, ask Thansa; MCP can use `zalo_get_messages` for buffered messages or
@@ -298,13 +298,13 @@ want to check messages, ask Thansa; MCP can use `zalo_get_messages` for buffered
   rather than only `zalo_get_messages`.
 - **The send tool is blocked**: open the account chip menu and switch the level to **Full
   power**.
-- **It reports the session is in use elsewhere**: close Zalo Web or another `javis-zalo`
+- **It reports the session is in use elsewhere**: close Zalo Web or another `thansa-zalo`
   (or old `zalo-agent-cli`) process using the same account, then try again.
 - **You want to sign in from scratch**: delete the connection on the dashboard, then connect and
   scan the QR again. Other connections' session folders are unaffected.
 
 ## References
 
-- [The `javis-zalo` repository](https://github.com/blogminhquy/javis-zalo)
+- [The `thansa-zalo` repository](https://github.com/xahoapro/thansa-zalo)
 - [zca-js](https://github.com/RFS-ADRENO/zca-js), the library that talks to Zalo underneath
 - [Connections and MCP permissions in Thansa](09-connections-and-business-data.md)

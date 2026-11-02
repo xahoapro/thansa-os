@@ -20,7 +20,7 @@ sh.Run "cmd /c cd /d """ & root & """ && call """ & root & "\stop-thansa.bat"" >
 sh.Run "cmd /c cd /d """ & root & """ && .venv\Scripts\python.exe server\main.py > server\thansa.log 2>&1", 0, False
 
 ' 0.306.0: /open = cho server len roi MO dashboard (luc dang nhap may, luc cai xong). Chu repo 24/10/2026:
-' "cai javis tren win hoac mac thi cai khoi dong cung trinh duyet". Khong co /open (nut Cap nhat, start-thansa.bat)
+' "cai thansa tren win hoac mac thi cai khoi dong cung trinh duyet". Khong co /open (nut Cap nhat, start-thansa.bat)
 ' thi van chay ngam nhu cu, khong bat cua so nao. Mo dang cua so app giong Thansa OS.bat; chu trong file nay chi
 ' dung ASCII vi wscript doc file theo ANSI codepage.
 If WScript.Arguments.Count > 0 Then
@@ -29,8 +29,8 @@ End If
 
 Sub MoDashboard()
   Dim port, url, i, http, ok, cands, c
-  port = sh.ExpandEnvironmentStrings("%JAVIS_PORT%")
-  If port = "%JAVIS_PORT%" Or port = "" Then port = "7777"
+  port = sh.ExpandEnvironmentStrings("%THANSA_PORT%")
+  If port = "%THANSA_PORT%" Or port = "" Then port = "7777"
   url = "http://127.0.0.1:" & port
   ok = False
   For i = 1 To 60

@@ -14,7 +14,7 @@ import re
 import sys
 import tempfile
 
-os.environ.setdefault("JAVIS_STATE_DIR", tempfile.mkdtemp(prefix="javis-tgnotes-"))
+os.environ.setdefault("THANSA_STATE_DIR", tempfile.mkdtemp(prefix="thansa-tgnotes-"))
 
 import telegram_bot as tb  # noqa: E402
 

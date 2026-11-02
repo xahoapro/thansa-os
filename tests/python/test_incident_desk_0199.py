@@ -14,8 +14,8 @@ import os
 import tempfile
 from pathlib import Path
 
-STATE = Path(tempfile.mkdtemp(prefix="javis-incidents-"))
-os.environ["JAVIS_STATE_DIR"] = str(STATE)
+STATE = Path(tempfile.mkdtemp(prefix="thansa-incidents-"))
+os.environ["THANSA_STATE_DIR"] = str(STATE)
 
 import incident_desk as idk  # noqa: E402
 

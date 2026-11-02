@@ -17,11 +17,11 @@ unimplemented tasks complete. See docs/handoffs/claude-opus-5-5/HANDOFF.md.
 
 **Tech Stack:** Existing Python/SQLite/Fernet/GoalStore and actual Harness² Library component; no installation, native/provider call, new executor or duplicate ledger.
 
-**Spec:** docs/superpowers/specs/2026-10-24-recipe-destination-authority-design.md; full agent-skill-evidence-improvement-design §15.3 and AGENT-SKILL-IMPROVEMENT-GOAL §§3,12–17. Builder check: nothing important left. Current baseb3e8901a, preceding immutable recipe-archive-views proof d632b12330bce64cdb4537f6963d6c2644a6065d8a2cb928f8d1aeedd7fa4196.
+**Spec:** docs/superpowers/specs/2026-10-24-recipe-destination-authority-design.md; full agent-skill-evidence-improvement-design §15.3 and AGENT-SKILL-IMPROVEMENT-GOAL §§3,12–17. Builder check: nothing important left. Current baseb3e8901a, preceding immutable recipe-archive-views proof 2a5bdfb7e0d587a7d074f8e084ffa3c540c51475f00e1a90cfe48f0d14ddb8b5.
 
 ## Global Constraints
 
-- Managed checkout C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Javis-OS only. Never modify/reset/clean D:/Project/Javis-OS; its .venv Python may execute with -B. English code/comments/commits; VERSION0.299.0 unchanged.
+- Managed checkout C:/Users/admin/.codex/worktrees/agent-skill-improvement-m2a/Thansa-OS only. Never modify/reset/clean D:/Project/Thansa-OS; its .venv Python may execute with -B. English code/comments/commits; VERSION0.299.0 unchanged.
 - Preserve historical SQL1–10 literals, immutable events/rows/ciphertext and old sealed recipes=[] input bytes. Preserve two ordinary candidates, one compose, repair limits and baseline/unknown behavior; no model/reasoning/owner-rule/guardrail change.
 - No actual CLI/SDKClient/provider/account/model query, qualification registration, deploy/restart, real-brain migration, activation or physical erasure. Fixture/DI engineering is not business/native proof. Full M0–M8 Goal stays active.
 - Never modify tests/python/test_improvement_view_reservations.py (rawSHA0577b5181fb090ba897ec8c3d0fce10fe88d2d09d03839497150cdacf6e793e0). New actual native dependencies enter PROFILE_SOURCES; changed footprint stays UNQUALIFIED and both reviewed registries stay closed.
@@ -40,7 +40,7 @@ unimplemented tasks complete. See docs/handoffs/claude-opus-5-5/HANDOFF.md.
 
 Pinned core/library.py is already used directly through RecipeSnapshot9e098a52;
 this unit does not replace its serializer or create another plaintext authority.
-Javis HostContextRecords._decode, actual Dashboard _capture, BrainFileFixtures,
+Thansa HostContextRecords._decode, actual Dashboard _capture, BrainFileFixtures,
 TrialResults.read and archive immutable helpers already own the required source
 and history checks. Reusing those plus one fresh-source contract costs less than
 normalizing catalog/target/directory exceptions or adding a second permission

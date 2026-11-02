@@ -8,6 +8,6 @@ author: Thansa (bundled)
 enabled: true
 min_mode: readonly
 tools:
-  - javis_now
-  - javis_date_add
+  - thansa_now
+  - thansa_date_add
 hooks: []

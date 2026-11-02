@@ -191,7 +191,7 @@ Thansa doesn't call provider API for stats. It **re-reads raw log on your machin
 | Internal log | `usage-events.jsonl` in state folder | API column, and fallback for Claude/ChatGPT |
 | Session store | `conversations.db` in state folder | Tells which turn is real chat, which is background run |
 
-Results merge into SQLite database `usage_index.db` also in state folder (set by `JAVIS_STATE_DIR` var, see [Configure .env](16-cau-hinh-env.md)).
+Results merge into SQLite database `usage_index.db` also in state folder (set by `THANSA_STATE_DIR` var, see [Configure .env](16-cau-hinh-env.md)).
 
 Scan is **incremental**: files unchanged size and mtime get skipped. So first scan slow, later rescans fast, even with thousands of log files.
 
@@ -237,5 +237,5 @@ If install can't read raw logs (typical: Docker on VPS where your `~/.claude` do
 - [Models & engine](10-models-va-engine.md) - switch model, plug OpenRouter key, understand how each engine logs.
 - [Recurring Tasks & Reminders](08-viec-dinh-ky.md) - where to turn off loop when "Background (loop/schedule)" column swells.
 - [Tasks / Kanban](21-viec-kanban.md) - background task also counts in "Thansa (auto-run)".
-- [Configure .env](16-cau-hinh-env.md) - `JAVIS_STATE_DIR` var picks where index sits.
+- [Configure .env](16-cau-hinh-env.md) - `THANSA_STATE_DIR` var picks where index sits.
 - [Troubleshoot & FAQ](17-khac-phuc-su-co.md) - general dashboard errors.

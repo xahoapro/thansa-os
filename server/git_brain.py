@@ -2,7 +2,7 @@
 git_brain.py - Lớp an toàn dữ liệu cho engine tự học (learn.py / self_improve.py).
 
 Vì sao tồn tại: mọi cơ chế rollback của việc học (snapshot / undo / diff-scope) dựa trên
-brain là 1 git repo. NHƯNG mặc định Docker mount `javis-brains:/brains` là named volume
+brain là 1 git repo. NHƯNG mặc định Docker mount `thansa-brains:/brains` là named volume
 KHÔNG có git (backup git chỉ là bước thủ công comment trong docker-compose). Do đó:
 
   - Fail-closed: write-mode học CHỈ chạy khi brain là git checkout (is_git_checkout).
@@ -97,7 +97,7 @@ def is_git_checkout(root: str) -> bool:
 # trăm MB media và thói quen render vài lượt mỗi clip sẽ đẩy repo lên nhiều GB trong ít tháng,
 # clone về máy mới phải tải cả những bản render đã bỏ từ lâu, và cách duy nhất rút xuống là
 # viết lại toàn bộ lịch sử - việc đó đổi mã băm mọi commit nên mọi bản sao ở máy khác thành
-# không tương thích. Với Javis đang đồng bộ hai chiều nhiều máy thì đó là thảm hoạ chứ không
+# không tương thích. Với Thansa đang đồng bộ hai chiều nhiều máy thì đó là thảm hoạ chứ không
 # phải thao tác bảo trì. Nên cách đúng là ngay từ đầu đừng cho media vào git.
 #
 # Media vẫn nằm nguyên trên đĩa và vẫn dùng được bình thường; chỉ là nó không đi vào lịch sử
@@ -115,7 +115,7 @@ TEXT_EXTS = {
     ".xml", ".ini", ".cfg", ".env-example",
     # Obsidian
     ".canvas", ".base",
-    # script trong Javis/scripts + plugin
+    # script trong Thansa/scripts + plugin
     ".py", ".js", ".mjs", ".cjs", ".ts", ".sh", ".bat", ".ps1", ".sql",
     # ảnh vector: là CHỮ, git nén và so sánh được, dung lượng cỡ một trang văn bản
     ".svg",
@@ -135,9 +135,9 @@ ANH_MAX_MB_DEFAULT = 10   # trần MỖI ảnh; GitHub chặn cứng 100MB, 10MB
 
 
 def anh_max_bytes() -> int:
-    """Trần dung lượng một ảnh được sync (byte). Chỉnh qua env JAVIS_SYNC_ANH_MAX_MB."""
+    """Trần dung lượng một ảnh được sync (byte). Chỉnh qua env THANSA_SYNC_ANH_MAX_MB."""
     try:
-        v = int(os.getenv("JAVIS_SYNC_ANH_MAX_MB", "") or 0)
+        v = int(os.getenv("THANSA_SYNC_ANH_MAX_MB", "") or 0)
         if v > 0:
             return v * 1024 * 1024
     except (TypeError, ValueError):
@@ -162,8 +162,8 @@ def la_file_chu(rel_or_name: str) -> bool:
     return i > 0 and name[i:].lower() in TEXT_EXTS
 
 
-_GI_MO = "# >>> javis giữ khối này, đừng sửa bên trong"
-_GI_DONG = "# <<< hết khối của javis - viết luật riêng của bạn ở DƯỚI dòng này"
+_GI_MO = "# >>> thansa giữ khối này, đừng sửa bên trong"
+_GI_DONG = "# <<< hết khối của thansa - viết luật riêng của bạn ở DƯỚI dòng này"
 
 # Thứ tự trong khối là thứ tự CÓ NGHĨA với git: luật đứng sau thắng luật đứng trước. Chặn hết
 # trước, mở lại cho chữ, rồi mới chặn lần nữa mấy thư mục không được vào kể cả khi là chữ.
@@ -183,11 +183,11 @@ _GITIGNORE_BODY = (
     + ["",
        "# 3. Và chặn lần nữa những thứ không được vào kể cả khi là chữ: khoá, log thô (có thể",
        "#    chứa secret), nhật ký nền, hội thoại chưa chưng cất.",
-       ".javis-learn.lock",
-       "Javis/learn-staging/",
-       "Javis/learn-log/",
-       "Javis/loop-log/",
-       "Javis/skill-usage.json",
+       ".thansa-learn.lock",
+       "Thansa/learn-staging/",
+       "Thansa/learn-log/",
+       "Thansa/loop-log/",
+       "Thansa/skill-usage.json",
        "memory/conversations/",
        "Memory/conversations/",
        "# Nhật ký thô từng lượt chạy agent (memory/agents/<slug>/runs/) cùng loại với",
@@ -195,7 +195,7 @@ _GITIGNORE_BODY = (
        "# MEMORY.md của agent (tri thức đã chưng) thì VẪN vào.",
        "memory/agents/*/runs/",
        "Memory/agents/*/runs/",
-       ".javis-agy/",
+       ".thansa-agy/",
        "# Cấu hình MCP của hai engine CLI Google - chứa hub token của Thansa, không phải tri thức.",
        ".agents/mcp_config.json",
        ".antigravity/",
@@ -203,7 +203,7 @@ _GITIGNORE_BODY = (
        ".gemini/",
        "# Learned knowledge that carries customer chat text (owner decision 2026-10-25, see",
        "# server/learned_mirror.py): it stays in the brain folder but never goes to the backup.",
-       "Javis/learned/**/*.private.json",
+       "Thansa/learned/**/*.private.json",
        "*.tmp",
        "# Vùng cache media: ảnh sinh ra + file user gửi lên. Là NGUYÊN LIỆU đi qua, không phải",
        "# tri thức, và media_gc.py tự dọn theo hạn. Bốn dòng attachments vì tên thư mục có thể",
@@ -223,8 +223,8 @@ _GITIGNORE = "\n".join([_GI_MO] + _GITIGNORE_BODY + [_GI_DONG]) + "\n"
 _GITIGNORE_CU = {
     "# Thansa brain - KHÔNG commit: khoá, log thô (có thể chứa secret), nhật ký nền.",
     "# Git chỉ version TRI THỨC ĐÃ CHƯNG CẤT (facts/wiki/skills/MEMORY.md) → undo sạch, an toàn.",
-    ".javis-learn.lock", "Javis/learn-staging/", "Javis/learn-log/", "Javis/loop-log/",
-    "Javis/skill-usage.json", "memory/conversations/", "Memory/conversations/", "*.tmp",
+    ".thansa-learn.lock", "Thansa/learn-staging/", "Thansa/learn-log/", "Thansa/loop-log/",
+    "Thansa/skill-usage.json", "memory/conversations/", "Memory/conversations/", "*.tmp",
     "# Vùng cache media: ảnh sinh ra + file user gửi lên. Là NGUYÊN LIỆU đi qua, không phải",
     "# tri thức, và media_gc.py tự dọn theo hạn. Nếu commit thì mỗi tấm ảnh là một blob nằm",
     "# vĩnh viễn trong lịch sử git - xoá file về sau cũng không lấy lại được dung lượng.",
@@ -235,15 +235,15 @@ _GITIGNORE_CU = {
 
 
 def _ensure_gitignore_lines(root) -> bool:
-    """Ghi lại KHỐI CỦA JAVIS trong <root>/.gitignore, giữ nguyên mọi dòng user tự thêm.
+    """Ghi lại KHỐI CỦA THANSA trong <root>/.gitignore, giữ nguyên mọi dòng user tự thêm.
 
     Vì sao phải ghi cả khối chứ không chỉ thêm dòng thiếu như bản trước: luật allowlist chỉ
     đúng khi ĐÚNG THỨ TỰ (chặn hết → mở cho chữ → chặn lại mấy thư mục cấm). Bản trước nối
     thêm vào cuối file, nên với một brain cũ thì mấy dòng "chặn lại" nằm TRƯỚC dòng "mở cho
-    chữ" và git sẽ hiểu ngược: `Javis/learn-log/*.json` được mở lại. Log thô có thể chứa
+    chữ" và git sẽ hiểu ngược: `Thansa/learn-log/*.json` được mở lại. Log thô có thể chứa
     secret, nên đó không phải lỗi thẩm mỹ.
 
-    Khối của Javis đứng TRƯỚC phần của user để user còn viết ngoại lệ đè lên được.
+    Khối của Thansa đứng TRƯỚC phần của user để user còn viết ngoại lệ đè lên được.
     Trả True nếu file có thay đổi.
     """
     try:
@@ -260,7 +260,7 @@ def _ensure_gitignore_lines(root) -> bool:
                 trong_khoi = False
                 continue
             if trong_khoi or s in _GITIGNORE_CU:
-                continue          # khối cũ của Javis: bỏ đi, lát nữa ghi lại bản mới
+                continue          # khối cũ của Thansa: bỏ đi, lát nữa ghi lại bản mới
             rieng.append(dong)
         # Bỏ dòng trống thừa ở đầu/cuối phần của user cho file khỏi loang ra sau mỗi lần ghi.
         while rieng and not rieng[0].strip():
@@ -372,7 +372,7 @@ def ensure_git_repo(root: str) -> dict:
             return {"ok": False, "created": False,
                     "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
         # Cấu hình identity cục bộ (repo có thể chạy trong container không có global config)
-        _git(root, "config", "user.email", "javis@localhost")
+        _git(root, "config", "user.email", "thansa@localhost")
         _git(root, "config", "user.name", "Thansa Learn")
         _ensure_gitignore_lines(root)   # merge chứ không ghi đè (brain có thể đã có .gitignore)
         _git(root, "add", ".gitignore")
@@ -559,9 +559,9 @@ def remote_reachable(repo_url: str, token: str, timeout: int = 30) -> dict:
 # hội thoại gốc/log/khoá (có thể chứa secret), file tạm.
 _BACKUP_SKIP_DIRS = {".git"}
 _BACKUP_SKIP_SUBSTR = ("/memory/conversations/", "/Memory/conversations/",
-                       "/Javis/loop-log/", "/Javis/learn-log/", "/Javis/learn-staging/",
-                       "/Javis/skill-usage.json/",
-                       # File ngữ cảnh Javis ghi tạm cho Antigravity CLI khi prompt dài hơn trần
+                       "/Thansa/loop-log/", "/Thansa/learn-log/", "/Thansa/learn-staging/",
+                       "/Thansa/skill-usage.json/",
+                       # File ngữ cảnh Thansa ghi tạm cho Antigravity CLI khi prompt dài hơn trần
                        # dòng lệnh. Nó là BẢN SAO của system prompt + MEMORY.md + toàn bộ lịch
                        # sử hội thoại, đuôi .md, nên nếu không chặn ở đây thì nó vừa được chép
                        # sang mirror vừa lọt qua .gitignore (khối 2 mở lại mọi file .md) rồi
@@ -569,8 +569,8 @@ _BACKUP_SKIP_SUBSTR = ("/memory/conversations/", "/Memory/conversations/",
                        # dòng chặn `Memory/conversations/` ngay trên kia sinh ra để ngăn. Bình
                        # thường file bị xoá ngay cuối lượt, nhưng chỉ cần một lượt đồng bộ chạy
                        # trúng lúc `agy` đang chạy là dính, và git thì giữ blob vĩnh viễn.
-                       "/.javis-agy/",
-                       # Cấu hình MCP Javis ghi vào brain cho hai engine CLI của Google. Chúng
+                       "/.thansa-agy/",
+                       # Cấu hình MCP Thansa ghi vào brain cho hai engine CLI của Google. Chúng
                        # chứa `Authorization: Bearer <hub token>` và đuôi .json, mà khối 2 của
                        # .gitignore mở lại mọi .json - nên không chặn ở đây là token đi thẳng
                        # lên remote sao lưu của người dùng, và git giữ blob vĩnh viễn. Chặn
@@ -582,7 +582,7 @@ _BACKUP_SKIP_SUBSTR = ("/memory/conversations/", "/Memory/conversations/",
 
 def _raw_kept_out(rel: str) -> bool:
     """Raw material that never goes to the GitHub backup even though it is text (customer report 0.270, code 14):
-    agent run logs (`memory/agents/<slug>/runs/`) and text files under an attachments folder (the text Javis extracts
+    agent run logs (`memory/agents/<slug>/runs/`) and text files under an attachments folder (the text Thansa extracts
     from a Team attachment, uploaded .txt/.csv files). The brain .gitignore already ignores both, but that file is only
     written when learning is switched on, so a brain without it pushed every run log and extracted text.
 
@@ -604,9 +604,9 @@ def _raw_kept_out(rel: str) -> bool:
 
 # Learned-knowledge mirror files that carry customer chat text (server/learned_mirror.py). Owner decision 2026-10-25
 # ("Tach rieng"): what a bot or agent learned WITHOUT chat text is backed up, but the `*.private.json` files under
-# `Javis/learned/` stay in the brain folder only. A suffix cannot be expressed in `_BACKUP_SKIP_SUBSTR`, so
+# `Thansa/learned/` stay in the brain folder only. A suffix cannot be expressed in `_BACKUP_SKIP_SUBSTR`, so
 # `_backup_skip` checks it right after that list, on every path (push, apply back, self-heal).
-_LEARNED_DIR = "/Javis/learned/"
+_LEARNED_DIR = "/Thansa/learned/"
 _LEARNED_PRIVATE_SUFFIX = ".private.json"
 
 
@@ -622,7 +622,7 @@ def _backup_skip(rel: str, sync_images: bool = False) -> bool:
     if _learned_private(rel):
         return True
     name = rel.replace("\\", "/").rsplit("/", 1)[-1]
-    if name == ".javis-learn.lock" or name.endswith(".tmp"):
+    if name == ".thansa-learn.lock" or name.endswith(".tmp"):
         return True
     if _raw_kept_out(rel):
         return True
@@ -841,7 +841,7 @@ def _integrate_remote(root: str, pre_head: Optional[str]) -> dict:
     if pre_head is None:
         r = _git(root, "reset", "--hard", "FETCH_HEAD")
         if r.returncode != 0:   # nhánh chưa sinh (repo rỗng) trên vài bản git → fallback checkout
-            r = _git(root, "checkout", "-f", "-B", "javis-sync", "FETCH_HEAD")
+            r = _git(root, "checkout", "-f", "-B", "thansa-sync", "FETCH_HEAD")
             if r.returncode != 0:
                 return {"error": _c("nhận bản remote lỗi: ", "taking the remote copy failed: ")
                         + ((r.stderr or "?").strip())[:200]}
@@ -902,7 +902,7 @@ def _apply_back(mirror: str, brains_dir: str, changed: set, sync_start: float,
                         continue   # local vừa sửa trong lúc sync → local thắng vòng này
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     # đuôi .tmp → nằm trong _backup_skip: crash giữa chừng không sinh rác vào backup
-                    tmp = dst.parent / (dst.name + ".javis-sync.tmp")
+                    tmp = dst.parent / (dst.name + ".thansa-sync.tmp")
                     shutil.copy2(src, tmp)
                     os.replace(tmp, dst)
                     rep["applied"] += 1
@@ -1100,7 +1100,7 @@ def _sync_brains_locked(brains_dir: str, mirror_dir: str, repo_url: str, token: 
         r = _git(mirror_dir, "init")
         if r.returncode != 0:
             return {**rep, "error": (r.stderr or _c("git init lỗi", "git init failed"))[:200]}
-    _git(mirror_dir, "config", "user.email", "javis@localhost")
+    _git(mirror_dir, "config", "user.email", "thansa@localhost")
     _git(mirror_dir, "config", "user.name", f"Thansa Sync ({_host_tag()})")
     # Sync truyền BYTE NGUYÊN VĂN giữa các máy: tắt autocrlf để git Windows không tự đổi
     # LF↔CRLF lúc add/checkout (nếu không, cùng 1 file sẽ lệch byte giữa local và VPS mãi mãi).
@@ -1196,10 +1196,10 @@ def _sync_brains_locked(brains_dir: str, mirror_dir: str, repo_url: str, token: 
 
 # ============================================================
 # GIẤY BÁO TỬ (tombstone) - đánh dấu não bị xóa CÓ CHỦ ĐÍCH để lan việc xóa sang mọi máy.
-# Một file cho mỗi não trong <brains_dir>/.javis-tombstones/<tên não>.json. Đồng bộ theo repo
+# Một file cho mỗi não trong <brains_dir>/.thansa-tombstones/<tên não>.json. Đồng bộ theo repo
 # (không nằm trong _backup_skip), KHÔNG hiện thành não (/brains bỏ tên bắt đầu bằng '.').
 # ============================================================
-TOMBSTONE_DIR = ".javis-tombstones"
+TOMBSTONE_DIR = ".thansa-tombstones"
 _TOMBSTONE_TTL = 180 * 86400   # giữ 180 ngày: lâu hơn thùng rác để máy offline lâu quay lại không hồi sinh
 
 
@@ -1230,7 +1230,7 @@ def clear_tombstone(brains_dir: str, name: str) -> None:
 
 
 def _read_tombstones(root: str) -> List[dict]:
-    """Đọc mọi giấy báo tử trong <root>/.javis-tombstones/. Bỏ file hỏng. Gắn _file = tên file."""
+    """Đọc mọi giấy báo tử trong <root>/.thansa-tombstones/. Bỏ file hỏng. Gắn _file = tên file."""
     d = Path(root) / TOMBSTONE_DIR
     out: List[dict] = []
     if not d.is_dir():
@@ -1325,12 +1325,12 @@ def _dir_newer_than(root: str, ts: int) -> bool:
 # BrainLock - khoá cấp file cross-platform (serialize ghi giữa CÁC tiến trình)
 # ============================================================
 class BrainLock:
-    """Khoá độc quyền theo brain, dựa trên file <root>/.javis-learn.lock.
+    """Khoá độc quyền theo brain, dựa trên file <root>/.thansa-learn.lock.
     POSIX: fcntl.flock; Windows: msvcrt.locking. Non-blocking + retry tới timeout.
     Dùng như context manager (chạy trong worker THREAD, không block event loop)."""
 
     def __init__(self, root: str, timeout: float = 30.0):
-        self.path = Path(root) / ".javis-learn.lock"
+        self.path = Path(root) / ".thansa-learn.lock"
         self.timeout = timeout
         self._fh = None
         self._locked = False

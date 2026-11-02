@@ -11,10 +11,10 @@ set -u
 
 # Repo root = parent of this script's directory (bin/)
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PORT="${JAVIS_PORT:-7777}"
+PORT="${THANSA_PORT:-7777}"
 URL="http://127.0.0.1:${PORT}"
 LOG="${APP_DIR}/server/thansa.log"
-PIDF="${APP_DIR}/server/javis.pid"
+PIDF="${APP_DIR}/server/thansa.pid"
 PY="${APP_DIR}/.venv/bin/python"
 
 # A GUI (Finder/LaunchServices) launch starts with a minimal PATH, so add the
@@ -39,7 +39,7 @@ if [ ! -x "${PY}" ]; then
 fi
 
 cd "${APP_DIR}/server" || exit 1
-JAVIS_STATE_DIR="${APP_DIR}/server" nohup "${PY}" \
+THANSA_STATE_DIR="${APP_DIR}/server" nohup "${PY}" \
   -m uvicorn main:app --host 127.0.0.1 --port "${PORT}" > "${LOG}" 2>&1 &
 echo $! > "${PIDF}"
 

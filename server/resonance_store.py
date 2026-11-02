@@ -1,4 +1,4 @@
-"""Kho mục tiêu của Javis Resonance: SQLite riêng `JAVIS_STATE_DIR/resonance.sqlite3`.
+"""Kho mục tiêu của Thansa Resonance: SQLite riêng `THANSA_STATE_DIR/resonance.sqlite3`.
 
 Nguồn chuẩn cho bản ghi ý định, mục tiêu, revision, sự kiện và outbox (spec mục 12). Mọi thao tác
 đi qua một `Principal` và kiểm đúng brain: đường dẫn hay id do model đưa ra không đủ làm quyền đọc.
@@ -32,7 +32,7 @@ import resonance_learning as L
 
 def call_ceiling() -> Optional[int]:
     """Trần TỔNG lượt engine cấp host của Resonance trên cả kho, đặt bằng biến môi trường
-    JAVIS_RESONANCE_CALL_CEILING. Không đặt (mặc định) thì không có trần chung, chỉ có hạn mức từng mục tiêu.
+    THANSA_RESONANCE_CALL_CEILING. Không đặt (mặc định) thì không có trần chung, chỉ có hạn mức từng mục tiêu.
 
     Tính MỌI đường Resonance gọi engine: lượt việc nền và phép thử (goals.calls_used) cùng bộ lập mục tiêu chưa có
     mục tiêu nào (call_ledger, review e2e P1-1). Đơn vị là lượt engine ở cấp host: một lượt có thể gồm nhiều request
@@ -42,7 +42,7 @@ def call_ceiling() -> Optional[int]:
     vượt trần không bao giờ được gọi; số đã dùng nằm trong SQLite nên trần giữ qua mọi lần khởi động lại, MIỄN là
     mỗi tiến trình được truyền biến này (tiến trình không có biến thì không có trần chung). Giá trị hỏng thì coi là 0
     (chặn hết), không phải bỏ trần."""
-    raw = os.environ.get("JAVIS_RESONANCE_CALL_CEILING", "").strip()
+    raw = os.environ.get("THANSA_RESONANCE_CALL_CEILING", "").strip()
     if not raw:
         return None
     try:
@@ -1733,7 +1733,7 @@ class GoalStore:
 
     def observe_source(self, p: Principal, goal_id: str, path: str, sha256: str, verdict: str,
                        now: Optional[float] = None) -> bool:
-        """Mốc QUAN SÁT file sản phẩm bị sửa ngoài Javis (thiết kế mục 5), tách khỏi mốc được phép thay file
+        """Mốc QUAN SÁT file sản phẩm bị sửa ngoài Thansa (thiết kế mục 5), tách khỏi mốc được phép thay file
         (`published`, không đụng tới ở đây). Trả True khi đây là hash chưa từng thấy."""
         now = time.time() if now is None else float(now)
         with self._Tx(self) as c:

@@ -44,7 +44,7 @@ them AES-256-GCM encrypted in `STATE_DIR/webhook_secrets.json`, with the secret'
 keeps `{"$secret": "<hook>/a/<action>/<header>"}` or `{"$secret": "<hook>/verify"}`.
 
 - Keys live in `STATE_DIR/webhook_keys.json`. Both files are mode 600, written atomically (temp file, fsync, rename).
-- `JAVIS_WH_MASTER_KEY` (base64 of 32 bytes) replaces the key file.
+- `THANSA_WH_MASTER_KEY` (base64 of 32 bytes) replaces the key file.
 - Rotation: `POST /webhooks/secrets/rotate` runs in three steps, (1) both keys in the key file, (2) every secret
   re-encrypted under the new key, (3) the old key dropped. A crash after any step leaves every secret readable. If
   one secret cannot be read, nothing is changed (409).
@@ -66,7 +66,7 @@ app that must use a secret unattended. **Back up `webhook_keys.json` together wi
  "args": {"phone": "{phone}", "note": "Webhook {name}", "ref": "{_delivery_id}", "qty": 1}, "approve": true}
 ```
 
-- The call goes through the hub dispatcher (`mcp_hub.discover_all(level)` route, or `javis_run_tool` when the lazy
+- The call goes through the hub dispatcher (`mcp_hub.discover_all(level)` route, or `thansa_run_tool` when the lazy
   menu is on). That route applies the same permission guard as any background run at the hook's level: a `danger`
   tool needs `full`, and the connection's own limit, the rate limit and the audit log all apply. `server/main.py`
   `_webhook_call_tool`.
@@ -130,7 +130,7 @@ The review of bdbd33f3, read at e6c0165b, found 2 P1 and 6 P2 issues, all fixed.
 | P2 a tool of a hook whose brain folder is gone ran in the default brain | refused ("brain folder no longer exists") |
 | P2 a captured delivery replayed with a fresh Idempotency-Key was a new event | the provider's id wins over the client's key (Stripe's id is inside the signed body) |
 | P3 (fixed) | vault errors are `SecretError` (no 500); a cross-process file lock around the vault; simulate uses a logged event's `_event`; hex signatures compared case-insensitively; a renamed masked header asks for its value; meta-tools refused as actions |
-| P3 (kept, noted) | approval is still offered for a tool the hook's level will refuse: the hub refuses it after approval, and nothing runs. GitHub and Shopify have no replay window and their delivery id is an unsigned header, so a replay with a changed id is a new event. Use a business key (M2) on those hooks. Switching between `JAVIS_WH_MASTER_KEY` and the key file makes existing secrets unreadable: re-enter them after a switch |
+| P3 (kept, noted) | approval is still offered for a tool the hook's level will refuse: the hub refuses it after approval, and nothing runs. GitHub and Shopify have no replay window and their delivery id is an unsigned header, so a replay with a changed id is a new event. Use a business key (M2) on those hooks. Switching between `THANSA_WH_MASTER_KEY` and the key file makes existing secrets unreadable: re-enter them after a switch |
 
 ## Rollback
 

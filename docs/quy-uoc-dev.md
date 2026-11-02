@@ -71,8 +71,8 @@ chứ không để xổ hết ra bên ngoài". Luật cứng cho MỌI màn hìn
 - **Ngoài mặt chỉ để thứ cần nhìn và cần bấm:** tiêu đề, nhãn, trạng thái, số liệu, ô nhập, nút. Một dòng phụ ngắn
   (tới khoảng 100 ký tự, một câu) được đứng ngoài nếu thiếu nó người ta không biết bấm gì.
 - **Câu giải thích dài hơn thế** (vì sao, lưu ý, cách làm từng bước, rủi ro, khác nhau giữa hai lựa chọn) **nằm trong
-  nút (i)**: `JavisInfo.btn(t("info.more"))` cạnh tiêu đề hoặc nhãn, `JavisInfo.body(...)` ngay sau, hoặc
-  `JavisInfo.pair(html, nhãn)` khi không có tiêu đề để đứng cạnh (`dashboard/info-tip.js`). HTML tĩnh dùng cùng hai lớp
+  nút (i)**: `ThansaInfo.btn(t("info.more"))` cạnh tiêu đề hoặc nhãn, `ThansaInfo.body(...)` ngay sau, hoặc
+  `ThansaInfo.pair(html, nhãn)` khi không có tiêu đề để đứng cạnh (`dashboard/info-tip.js`). HTML tĩnh dùng cùng hai lớp
   `info-i` / `info-body`, mẫu ở đầu file đó. Bấm mới mở, trong một popup cạnh nút (điện thoại: bảng từ dưới lên), không xổ ra trong trang (chủ repo 29/10/2026). Khối `info-body` chỉ là nguồn chữ cho popup và luôn ẩn.
 - **Không gập:** lỗi và câu xác nhận hiện ra sau khi người dùng bấm (họ đang chờ đúng câu đó), placeholder, nội dung
   người dùng mở ra để đọc (nhật ký cập nhật, nội dung chat, ghi chú). Cảnh báo về tiền hay mất dữ liệu: để ngoài một câu
@@ -90,7 +90,7 @@ biết tiết kiệm không gian". Đầu mỗi trang đã có thanh tiêu đề
 
 - **Thân trang không vẽ lại tên trang**, kể cả khi kèm một câu khẩu hiệu ("Webhook: sự kiện bên ngoài gọi Thansa làm
   việc" ngay dưới tiêu đề "Webhook" là sai). Mở trang là vào thẳng thứ cần nhìn: số liệu, danh sách, nút bấm.
-- Nút (i) từng đứng cạnh cái tiêu đề thừa thì dời sang cạnh nút hành động chính, hoặc dùng `JavisInfo.pair(html, nhãn)`
+- Nút (i) từng đứng cạnh cái tiêu đề thừa thì dời sang cạnh nút hành động chính, hoặc dùng `ThansaInfo.pair(html, nhãn)`
   với một nhãn nói đúng nội dung bên trong ("Cách lấy cookie").
 - Tiêu đề thẻ bên trong trang phải mang thông tin mới (một con số, một trạng thái), không nhắc lại tên trang hay tên tab.
 - Trang tự ẩn `.cview-head` (Nhiệm vụ, Hội thoại, Nhóm, Chat) thì được có tiêu đề riêng, vì không còn gì để lặp.

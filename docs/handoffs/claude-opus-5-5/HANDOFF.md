@@ -34,7 +34,7 @@ pattern;1PID reuse là conhost khác được giữ nguyên.13workspacewitness p
 release; không còn owner không rõ do unit này. Ignored history/helpers/raw
 diagnostics tại `.superpowers/sdd/2026-10-24-m2-owned-baseline-query/` giữ private,
 không force-add/copy blobs/key. ProofSHA
-`1bc070983ab57e4c3b39394bf058c7a7c6f6376d894619fc41b2637cd4f2727b`.
+`6ae10582d6a6773d4e962136fdab370bb97838a1a7b505cd11beccf615a7c0f0`.
 
 Tiếp theo: lập Q2view4/operation2 plan từ interface622332 đã review; thêm hai
 ordinary marker fences trước positive paths. Không làm lại Q1/P0/P1. Chỉ owned
@@ -75,8 +75,8 @@ quả hiệu quả. M2 chỉ dùng mô phỏng; pilot thật vẫn PENDING ngoà
 
 | Mục | Trạng thái xác minh lúc khởi tạo |
 |---|---|
-| Worktree được phép | `C:\Users\admin\.codex\worktrees\agent-skill-improvement-m2a\Javis-OS` |
-| Checkout chính cần bảo toàn | `D:\Project\Javis-OS`, có thể bẩn; không reset/clean/checkout/ghi đè |
+| Worktree được phép | `C:\Users\admin\.codex\worktrees\agent-skill-improvement-m2a\Thansa-OS` |
+| Checkout chính cần bảo toàn | `D:\Project\Thansa-OS`, có thể bẩn; không reset/clean/checkout/ghi đè |
 | Nhánh | `codex/agent-skill-improvement-m2d1` |
 | HEAD docs trước scope override | `f2c8f3fe` (xác minh full SHA bằng Git) |
 | PR | [draft803](https://github.com/xahoapro/thansa-os/pull/803) |
@@ -132,7 +132,7 @@ Further owned Library/native/downstream consumers và orchestration comparison
   26PASS/37platformskip. Review phát hiện I1 final-thread-handoff race;3case
   RED thật rồi focusedWindows8PASS, Linux fix-source3PASS/5Windows skip tại
   [40086473971](https://github.com/xahoapro/thansa-os/actions/runs/40086473971).
-  Scoped re-review I1 ADDRESSED,0new breakage. ProofSHA `52b482e0a894e75d4fdc29486abbae3d4a830344552bd9935dda0f4fad2f8827`.
+  Scoped re-review I1 ADDRESSED,0new breakage. ProofSHA `24baf49605b3955dfa1ce8d2ed8c6d49fedce64b128d8dcade6b30f5c48dd14a`.
   Retain2Minor: raw slowcallbacks và disclosed interim serialization violation;
   final/fixchecks serial, không suppress/rerun nguyên63bài. Root đã kiểm93+15+25
   indexedreceipts và12committedpins; slotreleased/0ownedprocess/2Oct23dirs untouched.
@@ -146,7 +146,7 @@ Further owned Library/native/downstream consumers và orchestration comparison
   cleanRED12marker failures, Windows13PASS/Linux13PASS,0skip.
   Early Linux [40083817343](https://github.com/xahoapro/thansa-os/actions/runs/40083817343)
   exact5pins, scoped specPASS/qualityApproved0Critical/0Important/1MinorM1.
-  ProofSHA `ac258798bd7cf5221bbf9c80fbd0d218cea3e3225120c0ef811122562d2d23b7`.
+  ProofSHA `e7ee7f090798ea1f891e295c896e9e213de5d5f8f755370211aa56f574a146ce`.
   M1: slow-task noise17Windows09/14Linux, thêm1ở Windows operation selector;
   count trong report đã sửa đúng bằng chứng, không rerun/suppress. Giữ Minor
   để finalwholebranch triage. Root kiểm87artifacts/committedbytes/current0owned;
@@ -156,7 +156,7 @@ Further owned Library/native/downstream consumers và orchestration comparison
   source `269d3892`, review snapshot `429d9334`; Windows42pass+1skip và
   early Linux [40081705134](https://github.com/xahoapro/thansa-os/actions/runs/40081705134)
   exact6pins/43PASS. ProofSHA
-  `a0ec009bb3eab3e53756cd37e560429f7f7dc8107de99760b4b6045a9fe43cf9`.
+  `94a31106b5829e3ebc972a3f9277d6983f55f1e1c30e7d4913c67cfbb73b873a`.
   Root verified69raw artifacts/frozen bytes/cleanup; no final M2/native claim.
 - [Archive view proof](../../superpowers/evidence/2026-10-24-recipe-archive-views.json):
   implementation `bc1a3a68`, docs checkpoint `b3e8901a`; local64PASS,
@@ -187,7 +187,7 @@ Further owned Library/native/downstream consumers và orchestration comparison
   đã sửa bằng raw logs; chưa thay fixture để xử lý timing, không suppress.
   Hai future9 fixtures đã sửa tại `21a5c0b1` theo current+1, giữ nguyên asserts;
   actual2GREEN/scoped qualityApproved. [Proof](../../superpowers/evidence/2026-10-24-m2-future-schema-controls.json)
-  SHA `74a92878248c7a22f3d49e13b06a7c57c88f88688406daf1760a5d02569cf6fa`.
+  SHA `ec4ef83dc095989592eb5b45b4f12d7541f4038670d8f1b7b709f941b52f26e9`.
 - Fresh final exact-head full required CI và một whole-branch review mạnh nhất
   còn mở. Scoped reviews/early CI chỉ chứng minh đúng phạm vi/bytes đã ghi.
 
@@ -271,9 +271,9 @@ code-first; direct compose/Library reuse; **scope M2 mới ưu tiên trên lịc
   config: Claude CLI2.1.309/SDK0.2.116/opus5.5/medium/fastfalse/subscription;
   đây là snapshot cần xác minh metadata cục bộ, không chạy model/auth query.
 - PowerShell trong worktree trên. Dùng Python hiện có
-  `D:\Project\Javis-OS\.venv\Scripts\python.exe -B` với cwd worktree;
+  `D:\Project\Thansa-OS\.venv\Scripts\python.exe -B` với cwd worktree;
   không ghi/cài vào checkout chính. `tests/run.py` là runner isolation thật.
-  No-real flags: JAVIS_NO_REAL_JUDGE_ENGINE/REVIEW_ENGINE/TEAM_ENGINE=1.
+  No-real flags: THANSA_NO_REAL_JUDGE_ENGINE/REVIEW_ENGINE/TEAM_ENGINE=1.
 - `.superpowers/` ignored trong worktree giữ logs/briefs/reports/review packages/
   source freezes/CI raw logs và checkpoint khôi phục. Giữ nguyên tại chỗ;
   không `git clean -fdx`, mass-copy blobs, xóa/move worktree/key.

@@ -31,8 +31,8 @@ import improvement_store as IM
 
 SURFACES = ("dm", "team", "kanban", "workflow")
 MIN_CHARS, MAX_CHARS = 10, 2000
-# Any host marker token (JAVIS_RULE, JAVIS_LESSON, JAVIS_ASK...) or an HTML comment that could hide one.
-_MARKERS = re.compile(r"JAVIS_[A-Z]|<!--|-->", re.IGNORECASE)
+# Any host marker token (THANSA_RULE, THANSA_LESSON, THANSA_ASK...) or an HTML comment that could hide one.
+_MARKERS = re.compile(r"THANSA_[A-Z]|<!--|-->", re.IGNORECASE)
 # A line that tries to set a protected field, with or without a bullet or list number.
 _SETTINGS = re.compile(r"^\s*(?:[-*+]|\d+[.)])?\s*(model|model_provider|provider|reasoning|effort|skills|"
                        r"permissions?|quyền|mức quyền|enabled)\s*[:=]", re.IGNORECASE | re.MULTILINE)
@@ -84,7 +84,7 @@ def surfaces(value) -> list:
 
 
 def owner_rules_hash(agent_text: str, memory_text: str) -> str:
-    """Everything the owner wrote for this assistant: agent file lines outside Javis-managed sections
+    """Everything the owner wrote for this assistant: agent file lines outside Thansa-managed sections
     (frontmatter included) and the `## Luật chủ dặn` bullets of its memory."""
     import agent_rules
     managed = ("## Lịch sử (tự học)", agent_rules.LEARNED_ADDITIONS_HEADER)

@@ -37,7 +37,7 @@ While disabled, Thansa does not build the graph and opens the **Chat** page dire
 
 ## Choosing a brain
 
-The brain picker sits in the top bar next to the JAVIS OS wordmark. Switching brains updates the graph, the memory, the agent/skill/workflow counts, the file tree and the conversation panel together.
+The brain picker sits in the top bar next to the THANSA OS wordmark. Switching brains updates the graph, the memory, the agent/skill/workflow counts, the file tree and the conversation panel together.
 
 Three small buttons sit next to the picker:
 

@@ -29,7 +29,7 @@ Ba ranh giới có chủ ý
 ---------------------
 - **Xoá thư mục khỏi sổ KHÔNG đụng đĩa.** Người dùng bấm xoá là muốn Thansa quên nó đi, không
   phải muốn mất mã nguồn. Nhầm hai thứ này một lần là mất việc thật.
-- **Worktree luôn mở NHÁNH MỚI** `javis/<phiên>` tách từ nhánh gốc, chứ không checkout thẳng
+- **Worktree luôn mở NHÁNH MỚI** `thansa/<phiên>` tách từ nhánh gốc, chứ không checkout thẳng
   nhánh gốc. Git từ chối checkout cùng một nhánh ở hai worktree, mà nhánh gốc thì gần như
   luôn đang được checkout ở cây chính, nên cách kia hỏng ngay lần đầu dùng.
 - **Không tự tạo commit.** Điểm hồi là TAG trên HEAD hiện tại. Tự commit hộ là ghi vào lịch sử
@@ -498,7 +498,7 @@ def _can_git(sid: str, viec: str) -> str:
 # Worktree
 # ============================================================
 def tao_worktree(sid: str) -> Dict[str, Any]:
-    """Mở một worktree riêng cho phiên, trên nhánh mới `javis/<phiên>` tách từ nhánh đã chọn.
+    """Mở một worktree riêng cho phiên, trên nhánh mới `thansa/<phiên>` tách từ nhánh đã chọn.
 
     Nhánh MỚI chứ không phải nhánh gốc: git từ chối checkout một nhánh ở hai worktree cùng
     lúc, mà nhánh gốc thì gần như luôn đang được checkout ở cây chính.
@@ -513,7 +513,7 @@ def tao_worktree(sid: str) -> Dict[str, Any]:
     if not la_git(r["duong_dan"]):
         raise LoiCoding(_loi_can_git("worktree"))
     goc = (rb.get("nhanh") or nhanh_hien_tai(r["duong_dan"]) or "HEAD")
-    ten_nhanh = f"javis/{_sid_ngan(sid)}"
+    ten_nhanh = f"thansa/{_sid_ngan(sid)}"
     dich = WORKTREE_DIR / f"{r['id']}-{_sid_ngan(sid)}"
     WORKTREE_DIR.mkdir(parents=True, exist_ok=True)
     # Nhánh của phiên có thể ĐÃ TỒN TẠI: gỡ worktree không xoá nhánh, nên bật lại lần hai là
@@ -555,7 +555,7 @@ def go_worktree(sid: str, ep: bool = False) -> Dict[str, Any]:
 # Điểm hồi
 # ============================================================
 def _tag_moi(sid: str, cwd: str) -> str:
-    tien_to = f"javis/{_sid_ngan(sid)}/"
+    tien_to = f"thansa/{_sid_ngan(sid)}/"
     try:
         da_co = _git(["tag", "--list", tien_to + "*"], cwd).splitlines()
     except Exception:

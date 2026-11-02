@@ -6350,10 +6350,10 @@
  },
  "0.5.1": {
   "vi": [
-   "Đổi tên repo/image GitHub sang thansa-os (image ghcr.io/blogminhquy/thansa-os, GITHUB_REPO, link cài đặt trong README/DEPLOY)."
+   "Đổi tên repo/image GitHub sang thansa-os (image ghcr.io/xahoapro/thansa-os, GITHUB_REPO, link cài đặt trong README/DEPLOY)."
   ],
   "en": [
-   "**Renamed repo/image on GitHub to thansa-os** (image ghcr.io/blogminhquy/thansa-os, GITHUB_REPO, link in README/DEPLOY)."
+   "**Renamed repo/image on GitHub to thansa-os** (image ghcr.io/xahoapro/thansa-os, GITHUB_REPO, link in README/DEPLOY)."
   ]
  },
  "0.5.0": {

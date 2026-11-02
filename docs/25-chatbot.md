@@ -193,7 +193,7 @@ Chế độ này cũng chạy với nhóm Telegram nếu bạn đã tắt chế 
 
 **Tóm lại luật nhắn tay** (từ 0.172.0): bạn không nhắn tay thì bot trả lời liên tục như thường. Bạn vừa nhắn tay vào một cuộc chat thì tính từ **tin nhắn tay đó**: hết số phút nhường mà bạn không nhắn thêm, bot chủ động trả lời tiếp các tin khách đang chờ. Chat riêng gộp thành một lượt; nhóm (chỉ khi bot đã ghi số phút nhường) thì mỗi người một lượt (tối đa 5 người nhắn sau cùng) và vẫn theo luật nhóm của bot, nên nhóm đặt "luôn trả lời" có thể nhận tới 5 câu trả lời liền nhau lúc hết quãng. Bạn nhắn tay thêm thì mốc tính lại từ tin mới nhất.
 
-**Tự nhận lời mời kết bạn và đọc lời giới thiệu** (từ 0.172.0, chỉ Zalo cá nhân, mặc định tắt). Bật ô **Tự nhận lời mời kết bạn và đọc lời giới thiệu** trong mục Giờ trực của form bot. Cứ 1 giờ Thansa hỏi Zalo một lần các lời mời kết bạn đang chờ của nick (mỗi nick tối đa 24 lần gọi Zalo một ngày, nên người gửi lời mời có thể chờ tới khoảng 1 giờ mới được nhận), nhận từng lời mời (tối đa 10 lời mời một lượt, cách nhau vài giây), lưu lời nhắn kèm lời mời vào Hộp thư như tin đầu tiên của người đó và đưa cho bot như tin họ vừa nhắn. Lời giới thiệu đủ (tên phụ huynh, tên con, lớp) thì bot không hỏi lại; thiếu hoặc không có lời nhắn thì bot hỏi phần còn thiếu. Lý do cần bật: lời nhắn kèm lời mời chỉ còn lúc lời mời đang chờ, nhận xong (kể cả nhận trên điện thoại) là Zalo bỏ đi. Ngoài giờ trực, hoặc khi bot chỉ trả lời người được chọn, Thansa không nhận lời mời nào: lời mời cứ chờ đó, vào giờ trực thì nhận. Lời mời Zalo từ chối nhận thì lượt đó dừng, người đó được để yên một lúc (lâu dần), hỏng 3 lần thì bỏ qua tới lần Thansa khởi động lại, nên không chặn những lời mời mới hơn. Việc này chạy riêng, Zalo chậm cũng không làm chậm việc đọc tin. Cần javis-zalo 1.0.0 trở lên (Thansa đang ghim 1.4.0).
+**Tự nhận lời mời kết bạn và đọc lời giới thiệu** (từ 0.172.0, chỉ Zalo cá nhân, mặc định tắt). Bật ô **Tự nhận lời mời kết bạn và đọc lời giới thiệu** trong mục Giờ trực của form bot. Cứ 1 giờ Thansa hỏi Zalo một lần các lời mời kết bạn đang chờ của nick (mỗi nick tối đa 24 lần gọi Zalo một ngày, nên người gửi lời mời có thể chờ tới khoảng 1 giờ mới được nhận), nhận từng lời mời (tối đa 10 lời mời một lượt, cách nhau vài giây), lưu lời nhắn kèm lời mời vào Hộp thư như tin đầu tiên của người đó và đưa cho bot như tin họ vừa nhắn. Lời giới thiệu đủ (tên phụ huynh, tên con, lớp) thì bot không hỏi lại; thiếu hoặc không có lời nhắn thì bot hỏi phần còn thiếu. Lý do cần bật: lời nhắn kèm lời mời chỉ còn lúc lời mời đang chờ, nhận xong (kể cả nhận trên điện thoại) là Zalo bỏ đi. Ngoài giờ trực, hoặc khi bot chỉ trả lời người được chọn, Thansa không nhận lời mời nào: lời mời cứ chờ đó, vào giờ trực thì nhận. Lời mời Zalo từ chối nhận thì lượt đó dừng, người đó được để yên một lúc (lâu dần), hỏng 3 lần thì bỏ qua tới lần Thansa khởi động lại, nên không chặn những lời mời mới hơn. Việc này chạy riêng, Zalo chậm cũng không làm chậm việc đọc tin. Cần thansa-zalo 1.0.0 trở lên (Thansa đang ghim 1.4.0).
 
 Câu báo của engine như "You've hit your session limit", "API Error" hay "Credit balance is too low" không bao giờ được gửi cho khách, kể cả khi engine trả nó về như một câu trả lời bình thường (từ 0.108.0). Lượt đó tính là lượt hỏng: người hỏi bot nhận câu xin lỗi chung, lượt Tự đánh giá thì bot im, và lý do thật vẫn nằm trong nhật ký bot.
 
@@ -234,7 +234,7 @@ Học chỉ đổi việc **nói hay im**, không bao giờ đổi điều bot k
 
 **Ai chạy và tốn gì.** Mỗi tin đáng cân nhắc tốn một lượt model rẻ theo model "việc nền" bạn chọn ở trang **Models** (gói thuê bao hay API rẻ đều được), thêm khoảng vài giây; model chạy trong thư mục trống, không công cụ ghi hay chạy lệnh. Tin hiển nhiên không đáng (rỗng, chỉ có link, nhắn người khác khi chưa học được gì khác) và tin gọi tên rõ ràng không tốn lượt nào. Bộ phán xử dùng đủ trên **Zalo cá nhân** (cửa sổ tin, tin nối tiếp). Trên **Telegram** nó cũng quyết trong nhóm nhưng không có cửa sổ tin nối tiếp.
 
-**Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `JAVIS_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
+**Cho người vận hành.** Muốn quan sát trước khi tin tưởng, đặt biến môi trường `THANSA_REPLY_POLICY_SHADOW=1` rồi khởi động lại: mọi bot chạy thử, luật cũ vẫn quyết còn bộ phán xử chỉ ghi quyết định của nó để so sánh. Đây là công tắc của người vận hành, không có trong giao diện.
 
 ### Bộ phán xử tự soát, và nhờ Thansa chỉnh (từ 0.77.0)
 
@@ -248,7 +248,7 @@ Ca học tức thì ở trên sửa từng tin một. Từ 0.77.0 còn có một
 
 Mỗi thay đổi phải dẫn đúng những tin của chính bot đó làm bằng chứng, nên chữ khách gõ trong nhóm không biến thành lệnh được. Hạn mức, việc nhường khi bạn gõ tay, quyền và nội dung câu trả lời vẫn nằm ngoài tầm.
 
-**Tự đo, tự hoàn.** Sau mỗi lần soát, máy so tỉ lệ bot bị chấm sai trước và sau. Sai nhiều hơn rõ rệt thì cả lần soát đó tự hoàn lại, và bạn nhận một tin báo. Chỗ nào nằm cứng trong mã (vòng soát không chỉnh được) thì nó ghi góp ý vào `Javis/gop-y-bo-phan-xu.md` trong brain của bot.
+**Tự đo, tự hoàn.** Sau mỗi lần soát, máy so tỉ lệ bot bị chấm sai trước và sau. Sai nhiều hơn rõ rệt thì cả lần soát đó tự hoàn lại, và bạn nhận một tin báo. Chỗ nào nằm cứng trong mã (vòng soát không chỉnh được) thì nó ghi góp ý vào `Thansa/gop-y-bo-phan-xu.md` trong brain của bot.
 
 **Bạn biết bằng cách nào.** Lần soát nào có chỉnh hay có góp ý thì gửi đúng một tin vào **hộp thư** (cái chuông) và Telegram của bạn, liệt kê từng thay đổi và mã lần soát.
 
@@ -261,7 +261,7 @@ Thansa đọc đúng số liệu của bộ phán xử (cùng báo cáo mà vòn
 
 **Bot chăm khách không bao giờ thấy hai công cụ này.** Kho của bộ phán xử chứa chữ chat của mọi khách, nên chỉ phiên của chính bạn đọc và chỉnh được. Bot ở mức Được ghi hay Toàn quyền cũng không thấy.
 
-**Lưu ý gói thuê bao.** Vòng tự soát là việc chạy nền trên bộ não chính. Nếu đó là gói Claude Pro/Max thì đây thuộc loại dùng mà Anthropic không tính là cá nhân thông thường. Tần suất rất thấp (tối đa một lần mỗi ngày mỗi bot, chỉ khi có bằng chứng), nhưng an toàn nhất là để bộ não chính chạy bằng gói ChatGPT, Grok hoặc một API key. Người vận hành tắt hẳn vòng soát bằng biến môi trường `JAVIS_REPLY_POLICY_REVIEW=0`.
+**Lưu ý gói thuê bao.** Vòng tự soát là việc chạy nền trên bộ não chính. Nếu đó là gói Claude Pro/Max thì đây thuộc loại dùng mà Anthropic không tính là cá nhân thông thường. Tần suất rất thấp (tối đa một lần mỗi ngày mỗi bot, chỉ khi có bằng chứng), nhưng an toàn nhất là để bộ não chính chạy bằng gói ChatGPT, Grok hoặc một API key. Người vận hành tắt hẳn vòng soát bằng biến môi trường `THANSA_REPLY_POLICY_REVIEW=0`.
 
 ### Chế độ riêng tư của Telegram (đọc mục này nếu bot im trong nhóm)
 

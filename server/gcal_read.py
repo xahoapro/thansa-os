@@ -1,7 +1,7 @@
 """Read-only Google Calendar events for the Tasks page, tab "Mine" (0.427.0). Spec: docs/dev/2026-10-nhiem-vu-spec.md 6.
 
 The events come from a calendar MCP the owner connected on the Connections page: the Google Calendar connector
-(`google-calendar`), Google Workspace (`google-workspace`), or a custom connection whose name says calendar. Javis never
+(`google-calendar`), Google Workspace (`google-workspace`), or a custom connection whose name says calendar. Thansa never
 writes to the calendar from here; the page shows the events next to the owner's appointments and links to Google to edit.
 
 Tool names and argument names differ per server, so the list tool and its time-window arguments are found from the

@@ -14,7 +14,7 @@ Catalog khai trong `auth`:
     }
 
 Đã dán sẵn `output` thì BỎ QUA đổi. Đây là đường lui quan trọng: Google hay chặn đăng nhập từ IP
-trung tâm dữ liệu, nên người chạy Javis trên VPS vẫn phải tự lấy token ở máy nhà rồi dán vào.
+trung tâm dữ liệu, nên người chạy Thansa trên VPS vẫn phải tự lấy token ở máy nhà rồi dán vào.
 
 BẢO MẬT:
 - Field trong `drop` bị xoá dù đổi THÀNH CÔNG hay THẤT BẠI.
@@ -173,7 +173,7 @@ def run(connector, fields):
     thứ đáng ra phải vứt."""
     fields = dict(fields or {})
     ex = ((connector or {}).get("auth") or {}).get("exchange") or {}
-    # Older javis.facebook-monitor packs have only the apify_token field. Their virtual
+    # Older thansa.facebook-monitor packs have only the apify_token field. Their virtual
     # connector cannot be dialed by validate_connection, so verify it here as well.
     if not ex and (connector or {}).get("id") == "facebook-monitor":
         ex = _FACEBOOK_MONITOR_EXCHANGE

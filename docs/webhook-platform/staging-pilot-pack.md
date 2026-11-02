@@ -120,8 +120,8 @@ Nothing above deletes the log. Export it first (Events, Export CSV) if a stop is
 3. **Approvals**: approve or reject what waits. A rejection cancels only that delivery.
 4. **Breakers**: a card saying sending is paused means repeated failures at one target. Fix the receiver, or point
    the action elsewhere.
-5. **Double effects**: search the receiver for repeated delivery ids (`X-Javis-Event-Id`, `javis_delivery`,
-   `_javis.delivery_id`). Any repeat is a defect: stop that action (step 1 above) and report it with the export.
+5. **Double effects**: search the receiver for repeated delivery ids (`X-Thansa-Event-Id`, `thansa_delivery`,
+   `_thansa.delivery_id`). Any repeat is a defect: stop that action (step 1 above) and report it with the export.
 
 ## 1. Durability and recovery (M1), staging, 15 min
 
@@ -150,7 +150,7 @@ Nothing above deletes the log. Export it first (Events, Export CSV) if a stop is
 | POSCake | a test shop | capture deliveries; confirm what it signs and whether it sends a header | `poscake-migration.md` |
 | Apps Script | the receipt template, access "Anyone" | delivery succeeded with the row number; a resend gives `duplicate: true` from the script; access "Only myself" gives blocked with the sign-in hint | |
 | Plugin `poscake-zalo` | a test thread | accepted with a job id; the same delivery id twice gives the same job id; no second message | |
-| HTTP forward | a request bin you control | raw bytes unchanged; the same `X-Javis-Event-Id` on the owner's retry | |
+| HTTP forward | a request bin you control | raw bytes unchanged; the same `X-Thansa-Event-Id` on the owner's retry | |
 | Tool | a read-only tool, then one write tool with approval | approval asked; tool called once at the hook's level | |
 
 ## 4. Operations (M5), staging, 1 day

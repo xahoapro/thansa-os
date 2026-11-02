@@ -66,7 +66,7 @@ def kiem_tra_moc_goc(mapping) -> list[str]:
     loi = []
     moc = json.loads((OPS / "moc-goc.json").read_text(encoding="utf-8"))
     nen = git("merge-base", ME_REF, MAIN_REF)
-    if moc["goc_commit"] != nen:
+    if moc.get("dich_commit", moc["goc_commit"]) != nen:          # 01/11: Thansa đứng trên nguồn ĐÃ DỊCH
         loi.append(f"luật 3: mốc gốc ghi {moc['goc_commit'][:12]} nhưng me đứng trên {nen[:12]}")
     return loi
 
@@ -79,7 +79,7 @@ def kiem_tra_so_patch(mapping) -> list[str]:
 
 
 def kiem_tra_neo_version(mapping) -> list[str]:
-    """Luật 5: file VERSION mang neo '<semver>-javis-<nền>' và phần nền PHẢI khớp goc_version.
+    """Luật 5: file VERSION mang neo '<semver>-nen-<nền>' và phần nền PHẢI khớp goc_version.
     Lệch neo = tag ảnh/so-changelog trỏ sai nền → bản phát hành nói dối về gốc của nó."""
     vf = REPO / "VERSION"
     if not vf.is_file():
@@ -87,9 +87,9 @@ def kiem_tra_neo_version(mapping) -> list[str]:
     v = vf.read_text(encoding="utf-8").strip()
     moc = json.loads((OPS / "moc-goc.json").read_text(encoding="utf-8"))
     goc = str(moc.get("goc_version", "")).strip()
-    if "-javis-" not in v:
-        return [f"luật 5: VERSION {v!r} chưa mang neo '-javis-<nền>' (cần dạng <semver>-javis-{goc})"]
-    neo = v.split("-javis-", 1)[1].strip()
+    if "-nen-" not in v:
+        return [f"luật 5: VERSION {v!r} chưa mang neo '-nen-<nền>' (cần dạng <semver>-nen-{goc})"]
+    neo = v.split("-nen-", 1)[1].strip()
     if neo != goc:
         return [f"luật 5: neo trong VERSION là '{neo}' nhưng goc_version là '{goc}' — lệch nền"]
     return []

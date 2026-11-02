@@ -1,4 +1,4 @@
-"""Connector tự giữ token NGOÀI Javis phải có kho riêng, và xoá kết nối là xoá token theo.
+"""Connector tự giữ token NGOÀI Thansa phải có kho riêng, và xoá kết nối là xoá token theo.
 
     python tests/run.py cred_dir_rieng
 
@@ -7,9 +7,9 @@ Không cần pytest, không chạm mạng.
 Bối cảnh (báo từ người dùng thật, 2026-07-30): "xoá đi cài lại rất nhiều lần" mà Lịch Google
 vẫn báo thiếu quyền. Hoá ra người dùng đang đi qua connector `google-workspace`, chứ không phải
 thẻ Lịch rời - mà connector đó chạy `workspace-mcp`, một server TỰ chạy luồng OAuth của nó và
-cache token ra `~/.google_workspace_mcp/credentials`, nằm ngoài tầm với của Javis.
+cache token ra `~/.google_workspace_mcp/credentials`, nằm ngoài tầm với của Thansa.
 
-Hệ quả: xoá kết nối trong Javis không dọn gì cả. Thêm lại là tiến trình con đọc đúng file token
+Hệ quả: xoá kết nối trong Thansa không dọn gì cả. Thêm lại là tiến trình con đọc đúng file token
 cũ, không mở lại màn đăng nhập, nên token cấp thiếu quyền thì thiếu vĩnh viễn - đúng vòng lặp
 người dùng mắc kẹt. Kèm theo đó, mọi tài khoản dùng chung một kho nên hai connection giẫm nhau.
 
@@ -50,7 +50,7 @@ check("connector có khai -> trả về đường dẫn", d1 is not None)
 check("env đúng tên workspace-mcp đọc", (d1 or {}).get("env") == "WORKSPACE_MCP_CREDENTIALS_DIR")
 check("hai tài khoản -> hai thư mục KHÁC nhau (không giẫm token của nhau)",
       d1 and d2 and d1["path"] != d2["path"])
-check("thư mục nằm trong STATE_DIR của Javis, không phải home của user",
+check("thư mục nằm trong STATE_DIR của Thansa, không phải home của user",
       d1 and "connector-cred" in str(d1["path"]))
 check("CANARY: connector KHÔNG khai cred_dir thì trả None (không đẻ thư mục thừa)",
       mcp_store._cred_dir({"id": "x", "connector_id": "google-calendar", "slug": "s"}) is None)
@@ -76,7 +76,7 @@ check("delete_connection có dọn kho token riêng", "forget_cred_dir" in than_
 check("resolved() có bơm env kho token xuống tiến trình con", "_cred_dir(c, con)" in src)
 
 # ---- 4b. Đổi ô đăng nhập (email/Client ID) cũng phải vứt token của tài khoản cũ ----
-# Vụ thật: user xoá đi đăng nhập lại bằng hi@minhquy.vn mà mọi tool vẫn trả về
+# Vụ thật: user xoá đi đăng nhập lại bằng hi@tradingauto.org mà mọi tool vẫn trả về
 # blogminhquy@gmail.com. Vì token cũ nằm nguyên trên đĩa, và USER_GOOGLE_EMAIL chỉ chọn
 # credential nào để DÙNG chứ không ép đăng nhập lại. Đổi ô đăng nhập mà giữ token cũ là
 # bảo đảm chạy nhầm tài khoản.
@@ -111,7 +111,7 @@ try:
     mcp_store.update_connection("cid-ws", {"label": "tên mới"})
     check("chỉ đổi tên -> giữ token", kho_token.is_dir())
 
-    mcp_store.update_connection("cid-ws", {"fields": {"user_email": "hi@minhquy.vn"}})
+    mcp_store.update_connection("cid-ws", {"fields": {"user_email": "hi@tradingauto.org"}})
     check("ĐỔI email sang tài khoản khác -> token cũ bị vứt (hết cảnh vẫn ra tài khoản cũ)",
           not kho_token.exists())
 

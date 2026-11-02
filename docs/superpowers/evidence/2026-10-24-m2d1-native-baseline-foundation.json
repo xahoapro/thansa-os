@@ -2,7 +2,7 @@
   "version": 1,
   "status": "scoped_readonly_foundation_independently_approved",
   "pins": {
-    "server/improvement_sandbox.py": "e7e8b6263b7eb4e4410b5eeb237a5ff3a3541bf6b285a0d5a2b5411640a66dc6",
+    "server/improvement_sandbox.py": "331d225c902296fe54da366df61ca42ce48c1d8f221339cf8a84364a868b4352",
     "tests/python/test_improvement_manifest5.py": "63824f3f677c9a80522124d1f24fa73f76d562b8f5e0c5752e7cd22ae6b52df7"
   },
   "red": {

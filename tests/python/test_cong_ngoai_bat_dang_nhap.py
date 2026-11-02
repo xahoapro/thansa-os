@@ -12,9 +12,9 @@ import os
 import sys
 import tempfile
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-congngoai-")
-os.environ.pop("JAVIS_REQUIRE_LOGIN", None)
-os.environ["JAVIS_HOST"] = "127.0.0.1"
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-congngoai-")
+os.environ.pop("THANSA_REQUIRE_LOGIN", None)
+os.environ["THANSA_HOST"] = "127.0.0.1"
 
 import config as cfg                           # noqa: E402
 import main                                    # noqa: E402
@@ -43,10 +43,10 @@ check("client IP LAN/Internet → ngoài", cfg.den_tu_ngoai(_Conn(client="203.0.
 check("không có conn → giữ hành vi cũ", not cfg.den_tu_ngoai(None))
 check("chưa mật khẩu + cục bộ → không chặn (UX cá nhân giữ nguyên)", cfg.gate_active(_Conn()) is False)
 check("chưa mật khẩu + qua nginx → chặn", cfg.gate_active(_Conn(x_forwarded_for="1.2.3.4")) is True)
-os.environ["JAVIS_REQUIRE_LOGIN"] = "0"
-check("JAVIS_REQUIRE_LOGIN=0 KHÔNG mở cửa cho request từ ngoài",
+os.environ["THANSA_REQUIRE_LOGIN"] = "0"
+check("THANSA_REQUIRE_LOGIN=0 KHÔNG mở cửa cho request từ ngoài",
       cfg.require_login(_Conn(x_real_ip="1.2.3.4")) is True)
-os.environ.pop("JAVIS_REQUIRE_LOGIN", None)
+os.environ.pop("THANSA_REQUIRE_LOGIN", None)
 
 # ---- 2. Qua app thật ----
 c = TestClient(main.app)   # client.host = "testclient" ≈ cục bộ

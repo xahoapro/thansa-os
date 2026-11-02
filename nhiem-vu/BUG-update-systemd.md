@@ -2,7 +2,7 @@
 
 Trạm #1 soạn · 2026-10-09 · cho trạm #2 (VPS). Nền kiểm: **1.26.0** (`origin/main` c8c809c, `origin/me` 76aef09) — CHƯA có bản vá nào cho các lỗi dưới đây.
 
-Máy dính sự cố: VPS khách `180.93.126.6` (Ubuntu 22.04, cài native bằng `install.sh`, dịch vụ `javis.service`, User=root,
+Máy dính sự cố: VPS khách `180.93.126.6` (Ubuntu 22.04, cài native bằng `install.sh`, dịch vụ `thansa.service`, User=root,
 nginx + certbot cho `longtrader.tradingauto.org`). Máy đó đã được vá TẠI CHỖ để chạy tạm (xem cuối file) — repo vẫn lỗi
 nên mọi máy native/systemd khác đều dính.
 
@@ -17,7 +17,7 @@ nên mọi máy native/systemd khác đều dính.
   [03:01:38] Chế độ restart: systemd
   [03:01:38] Dừng server cũ…
   ```
-- `systemctl status javis` → `inactive (dead)`, `code=killed, signal=TERM`.
+- `systemctl status thansa` → `inactive (dead)`, `code=killed, signal=TERM`.
 
 ### Nguyên nhân
 - `server/main.py` (1.26.0 ~dòng 12243–12247) spawn updater bằng
@@ -49,18 +49,18 @@ Thêm drop-in `KillMode=process` → login + `POST /update` → web tắt ~5s, l
 
 ### Triệu chứng (09/10 00:13–00:18)
 - `./update.sh` → dịch vụ quay vòng ~30 lần: `[Errno 98] ... ('0.0.0.0', 7777): address already in use`.
-- `server/javis.log` mới xuất hiện: `Uvicorn running on http://127.0.0.1:7777` (bản nohup thả nổi).
+- `server/thansa.log` mới xuất hiện: `Uvicorn running on http://127.0.0.1:7777` (bản nohup thả nổi).
 - Truy cập IP:7777 chết; phiên SSH chạy `update.sh` TREO (tiến trình nohup giữ pty). Chỉ hết khi reboot.
 
 ### Nguyên nhân
 - `update.sh` có `set -euo pipefail`. Mọi điều kiện dạng `lệnh | grep -q ...`: grep -q khớp xong thoát ngay → lệnh bên trái
   chết SIGPIPE (141) → với pipefail CẢ ỐNG = SAI dù đã khớp.
 - Tái hiện trên máy thật:
-  `bash -c 'set -o pipefail; systemctl list-unit-files | grep -q "^javis\.service"; echo $?'` → **141** dù `javis.service` tồn tại.
-- Chỗ dính trong `update.sh` (1.26.0): dòng **24–25** (docker javis/thansa), **27–28** (systemd javis/thansa — có thể chọn
+  `bash -c 'set -o pipefail; systemctl list-unit-files | grep -q "^thansa\.service"; echo $?'` → **141** dù `thansa.service` tồn tại.
+- Chỗ dính trong `update.sh` (1.26.0): dòng **24–25** (docker thansa/thansa), **27–28** (systemd thansa/thansa — có thể chọn
   sai tên dịch vụ), **47** (`is_docker`), **54** (caddy), **57** (`ss | grep -q .`), **83** (chọn nhánh restart systemd →
-  rơi xuống nhánh nohup: kill PID cổng 7777 + chạy uvicorn `--host ${JAVIS_HOST:-127.0.0.1}`).
-- Lỗi có từ upstream javis-os (`goc/update.sh:56`) → mỗi vòng trộn sẽ kéo lại nếu chỉ sửa tay.
+  rơi xuống nhánh nohup: kill PID cổng 7777 + chạy uvicorn `--host ${THANSA_HOST:-127.0.0.1}`).
+- Lỗi có từ upstream thansa-os (`goc/update.sh:56`) → mỗi vòng trộn sẽ kéo lại nếu chỉ sửa tay.
 
 ### Cách sửa (đã chạy đúng trên 180.93.126.6)
 Thêm ngay sau dòng `SUDO=...`:
@@ -71,8 +71,8 @@ _ds_container() { command -v docker >/dev/null 2>&1 && docker ps -a --format '{{
 _co_container() { local ds; ds="$(_ds_container)"; [ -n "$ds" ] && grep -qx "$1" <<<"$ds"; }
 ```
 Thay:
-- dòng 24–25 → `if _co_container javis && ! _co_container thansa; then`
-- dòng 27–28 → `elif _co_unit javis && ! _co_unit thansa; then`
+- dòng 24–25 → `if _co_container thansa && ! _co_container thansa; then`
+- dòng 27–28 → `elif _co_unit thansa && ! _co_unit thansa; then`
 - dòng 47 → `_co_container "$NAME"`
 - dòng 54 → `if _co_container "$NAME-caddy"; then`
 - dòng 57 → `elif command -v ss >/dev/null 2>&1 && [ -n "$(ss -tlnH '( sport = :80 or sport = :443 )' 2>/dev/null)" ]; then`
@@ -96,9 +96,9 @@ Ghi vào `mapping.yaml` mục `vung_theo_doi` cho `update.sh` để vòng trộn
 - Sửa: `git update-index --chmod=+x update.sh install.sh` (và các `*.sh` khác người dùng chạy trực tiếp).
 
 ## LỖI 4 (nhỏ) — `update.sh` báo "npm not found" trên máy cài bằng install.sh
-- `install.sh` cài Node vào `~/.javis/node/bin` nhưng `update.sh` không đưa thư mục đó vào PATH → Codex không bao giờ được
+- `install.sh` cài Node vào `~/.thansa/node/bin` nhưng `update.sh` không đưa thư mục đó vào PATH → Codex không bao giờ được
   cập nhật (`[!] npm not found; update Codex by hand...`).
-- Sửa: đầu `update.sh` thêm `[ -d "$HOME/.javis/node/bin" ] && PATH="$HOME/.javis/node/bin:$PATH"`
+- Sửa: đầu `update.sh` thêm `[ -d "$HOME/.thansa/node/bin" ] && PATH="$HOME/.thansa/node/bin:$PATH"`
   (và đường tương ứng nếu bản mới đổi sang `~/.thansa/node`).
 
 ## LỖI 5 (nhỏ) — `install.sh` không phát hiện thiếu `python3.X-venv` (Ubuntu 22.04)
@@ -118,17 +118,17 @@ cân nhắc để `update.sh` / migration tự thêm `/usr/sbin:/sbin` vào PATH
 - Lỗi 1–2 là vùng LOGIC (không phải rebrand) → mô tả rõ thay đổi hành vi trong báo cáo, để trạm #1/chủ soát.
 - Lấy mã patch mới tiếp theo (P060/P061 đã dùng) — gợi ý `[me] P062: update an toan tren systemd (cgroup + pipefail)`.
 - Cập nhật `mapping.yaml` + `so_patch`; giữ `tu-kiem-chung.py` XANH. KHÔNG force push.
-- Báo cho upstream javis-os nếu có kênh (lỗi 1 và 2 có từ gốc).
+- Báo cho upstream thansa-os nếu có kênh (lỗi 1 và 2 có từ gốc).
 
 ## Tiêu chí ĐẠT
 1. `tests/run.py` full XANH, gồm các kiểm tra mới cho `update.sh`.
 2. Trên một máy native/systemd thật (unit KHÔNG có drop-in KillMode):
    - bấm "Cập nhật ngay" → app tự lên lại, `update.log` kết thúc `→ success`;
-   - `./update.sh` → restart qua systemd, `ps` chỉ có MỘT uvicorn, nghe đúng `JAVIS_HOST` của unit, lệnh SSH kết thúc bình thường.
+   - `./update.sh` → restart qua systemd, `ps` chỉ có MỘT uvicorn, nghe đúng `THANSA_HOST` của unit, lệnh SSH kết thúc bình thường.
 3. `git ls-tree origin/main update.sh install.sh` → `100755`.
 4. Ghi `bao-cao/` + `so-tron.md`. Push `me`. Báo trạm #1 nghiệm thu → chủ duyệt phát hành.
 
 ## Sau khi phát hành bản vá — dọn máy 180.93.126.6 (trạm #1 làm)
-- Gỡ drop-in: `rm /etc/systemd/system/javis.service.d/killmode.conf && systemctl daemon-reload`
-- Bỏ bản vá tại chỗ trước khi cập nhật: `cd /root/javis && git checkout -- update.sh install.sh`
+- Gỡ drop-in: `rm /etc/systemd/system/thansa.service.d/killmode.conf && systemctl daemon-reload`
+- Bỏ bản vá tại chỗ trước khi cập nhật: `cd /root/thansa && git checkout -- update.sh install.sh`
   (bản gốc lưu ở `/root/update.sh.goc`).

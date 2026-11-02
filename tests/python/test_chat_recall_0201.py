@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-recall-")
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-recall-")
 
 import chat_recall as cr  # noqa: E402
 import sessions  # noqa: E402

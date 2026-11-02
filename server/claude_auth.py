@@ -2,14 +2,14 @@
 
 Vì sao có module này
 --------------------
-Trước 0.26.17, Javis TỰ ĐỌC access token OAuth mà Claude Code lưu trong
+Trước 0.26.17, Thansa TỰ ĐỌC access token OAuth mà Claude Code lưu trong
 `~/.claude/.credentials.json` rồi gửi thẳng `Authorization: Bearer <token>` tới
 `api.anthropic.com/v1/messages`. Anthropic cấm đúng việc đó: token của gói Free/Pro/Max chỉ
 được dùng trong Claude Code và Claude.ai, và họ chặn hẳn các harness bên thứ ba từ 04/04/2026.
 Cách phát hiện của họ dựa vào dấu vân tay request (thiếu telemetry/heartbeat mà CLI chính chủ
-mới phát) - mà request Javis tự dựng thì không có gì trong số đó. Đường ấy đã được gỡ.
+mới phát) - mà request Thansa tự dựng thì không có gì trong số đó. Đường ấy đã được gỡ.
 
-Nay Javis KHÔNG bao giờ đọc token của ai. Nó chạy binary `claude` (qua claude-agent-sdk) và
+Nay Thansa KHÔNG bao giờ đọc token của ai. Nó chạy binary `claude` (qua claude-agent-sdk) và
 để chính sản phẩm của Anthropic lo phần đăng nhập. Còn lại đúng hai lựa chọn, người dùng tự
 chọn ở trang Models, và CẢ HAI giữ nguyên vẹn năng lực (Bash, WebFetch, MCP, nối phiên cũ):
 
@@ -20,7 +20,7 @@ chọn ở trang Models, và CẢ HAI giữ nguyên vẹn năng lực (Bash, Web
 - `api_key`: đưa `anthropic_api_key` xuống cho binary `claude` qua biến môi trường. Trả tiền
   theo lượt dùng qua Claude Console. Đây là đường Anthropic chỉ định cho sản phẩm bên thứ ba.
 
-Javis cố ý KHÔNG tắt cứng đường subscription: chủ máy được quyền tự cân rủi ro. Việc của
+Thansa cố ý KHÔNG tắt cứng đường subscription: chủ máy được quyền tự cân rủi ro. Việc của
 module này là bảo đảm họ cân nó khi đã BIẾT, chứ không phải vì không ai nói.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ API_KEY = "api_key"
 
 # Nguyên văn dán ở trang Models và trả kèm khi đặt việc nền chạy bằng gói subscription.
 # Đừng rút gọn: người đọc cần đủ ba thứ - phạm vi gói, cái gì có thể làm mình giống bot, và lối ra.
-# 0.352.0 (chủ repo): giọng nhẹ nhàng, nói đúng mức rủi ro. Có nguy cơ, nhưng Javis chưa ghi nhận
+# 0.352.0 (chủ repo): giọng nhẹ nhàng, nói đúng mức rủi ro. Có nguy cơ, nhưng Thansa chưa ghi nhận
 # trường hợp nào bị khoá; gặp thì báo nhà phát triển để mọi người cùng biết.
 CANH_BAO_SUBSCRIPTION = (
     "Gói Claude Pro/Max được Anthropic tính cho việc dùng cá nhân thông thường của Claude Code. "

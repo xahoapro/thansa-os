@@ -25,8 +25,8 @@ import time
 import zlib
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-anhchat-")
-os.environ["JAVIS_ALLOWED_HOSTS"] = "testserver"
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-anhchat-")
+os.environ["THANSA_ALLOWED_HOSTS"] = "testserver"
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except Exception:
@@ -34,7 +34,7 @@ except Exception:
 
 try:
     from PIL import Image  # noqa: E402
-except Exception:      # noqa: BLE001 - Pillow is NOT a dependency of Javis (CI and the Docker image run without it)
+except Exception:      # noqa: BLE001 - Pillow is NOT a dependency of Thansa (CI and the Docker image run without it)
     Image = None
 
 import vision_input as vi  # noqa: E402

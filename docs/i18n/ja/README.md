@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/thansa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -97,7 +97,7 @@ Thansa では、モデルは交換できる部品にすぎません。あなた�
 | **知識** | Brain の Wiki フォルダと Sources フォルダ | Markdown、Obsidian 互換 |
 | **Skill** | `skills/<name>/SKILL.md` | Markdown |
 | **Agent と Workflow** | `agents/*.md`、`workflows/*.md` | フロントマター付きの Markdown |
-| **Loop とリマインダー** | `Javis/loops/*.md`、`Javis/reminders.json` | Markdown、JSON |
+| **Loop とリマインダー** | `Thansa/loops/*.md`、`Thansa/reminders.json` | Markdown、JSON |
 
 これで手に入るもの：
 
@@ -255,17 +255,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → Hostinger 用のフ
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-**Environment** 欄に必要なのは `DOMAIN_NAME`、`JAVIS_ADMIN_USER`、`JAVIS_ADMIN_PASSWORD` の 3 項目だけです。任意で `JAVIS_AUTO_UPDATE` も指定できます（`true` にすると Thansa が毎日自動でアップデートします）。
+**Environment** 欄に必要なのは `DOMAIN_NAME`、`THANSA_ADMIN_USER`、`THANSA_ADMIN_PASSWORD` の 3 項目だけです。任意で `THANSA_AUTO_UPDATE` も指定できます（`true` にすると Thansa が毎日自動でアップデートします）。
 
 Hostinger の Traefik が HTTPS 証明書を発行できるよう、`DOMAIN_NAME` を設定します。
-- **無料のリンク**（ドメイン購入不要）：`DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud`（ホスト名は hPanel → VPS で確認できます。例：`javis.srv1562015.hstgr.cloud`）。
+- **無料のリンク**（ドメイン購入不要）：`DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud`（ホスト名は hPanel → VPS で確認できます。例：`thansa.srv1562015.hstgr.cloud`）。
 - **独自ドメイン：** `DOMAIN_NAME=example.com` とし、A レコードを VPS の IP に向けます。
 
 証明書の発行を 1-3 分待ってから、`https://<DOMAIN_NAME>` を開きます。
 
 **最初に一度だけ行う 3 つの手順：**
-1. **GHCR イメージを Public にする：** GitHub → リポジトリ → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**。
-2. **管理者アカウントを作成する：** `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` を入力するか（推奨）、デプロイ直後にアプリを開いて自分で設定します。管理者が存在しない間は、最初にリンクを開いた人が作成できてしまいます。そのあと **2FA を有効にしてください**（[セキュリティとアカウント](../../../docs/en/14-security-and-accounts.md)）。
+1. **GHCR イメージを Public にする：** GitHub → リポジトリ → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**。
+2. **管理者アカウントを作成する：** `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` を入力するか（推奨）、デプロイ直後にアプリを開いて自分で設定します。管理者が存在しない間は、最初にリンクを開いた人が作成できてしまいます。そのあと **2FA を有効にしてください**（[セキュリティとアカウント](../../../docs/en/14-security-and-accounts.md)）。
 3. **Models** ページで **頭脳にサインインします**。
 
 詳細とトラブルシューティング：[DEPLOY.en.md](../../../DEPLOY.en.md)。
@@ -282,11 +282,11 @@ Hostinger の Traefik が HTTPS 証明書を発行できるよう、`DOMAIN_NAME
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm thansa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-`http://<vps-ip>:7777` を開き、すぐに管理者のユーザー名とパスワード（8 文字以上）を設定します。または、環境変数に `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` をあらかじめ設定しておきます。そのあと 2FA を有効にしてください。
+`http://<vps-ip>:7777` を開き、すぐに管理者のユーザー名とパスワード（8 文字以上）を設定します。または、環境変数に `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` をあらかじめ設定しておきます。そのあと 2FA を有効にしてください。
 
 ドメインなしでリモートアクセスするには：`docker compose --profile tunnel up -d` を実行し、`docker compose logs tunnel | grep trycloudflare` で HTTPS のリンクが表示されます。
 
@@ -330,11 +330,11 @@ Dashboard:                             http://localhost:7777
 <details>
 <summary><b>1 台の VPS で複数の Thansa を動かす</b></summary>
 
-Brain、設定、アカウントはインスタンスごとに完全に分離されます。インスタンス間で異なるのは `JAVIS_NAME`、`JAVIS_HOST_PORT`、`DOMAIN_NAME` の 3 つの値だけです。
+Brain、設定、アカウントはインスタンスごとに完全に分離されます。インスタンス間で異なるのは `THANSA_NAME`、`THANSA_HOST_PORT`、`DOMAIN_NAME` の 3 つの値だけです。
 
 - **Hostinger：** `docker-compose.hostinger.yml` を 2 つ目のスタックとしてもう一度デプロイし、この 3 項目を入力します。
 - **自前で管理する VPS：** マシン全体で共有するプロキシ `docker-compose.proxy.yml` を一度だけ起動し、各インスタンスには `docker-compose.multi.yml` で専用のフォルダを用意します。プロキシが新しいインスタンスを検出し、SSL 証明書も自動で取得します。
-- **ネイティブ：** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`。
+- **ネイティブ：** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`。
 
 手順の詳細：[DEPLOY.en.md](../../../DEPLOY.en.md)。
 
@@ -387,14 +387,14 @@ Thansa を開くと、セットアップウィザードがブラウザの言語�
 
 | 変数 | 意味 | デフォルト |
 |---|---|---|
-| `JAVIS_HOST` | 待ち受けアドレス。`127.0.0.1` = このマシンのみ、`0.0.0.0` = 公開 | `127.0.0.1` |
-| `JAVIS_PORT` | ポート | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` でログイン必須を強制的にオン／オフ（デフォルト：公開アドレスにバインドしたときはオン） | *（自動）* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | デプロイ時に管理者を作成 | - |
-| `JAVIS_ALLOWED_HOSTS` | 許可リストに追加するホスト名（CSRF と DNS リバインディング対策） | localhost + あなたのドメイン |
-| `JAVIS_STATE_DIR` | 設定、セッション、暗号化キーの保存先 | `server/`（Docker：`/data/state`） |
+| `THANSA_HOST` | 待ち受けアドレス。`127.0.0.1` = このマシンのみ、`0.0.0.0` = 公開 | `127.0.0.1` |
+| `THANSA_PORT` | ポート | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0` でログイン必須を強制的にオン／オフ（デフォルト：公開アドレスにバインドしたときはオン） | *（自動）* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | デプロイ時に管理者を作成 | - |
+| `THANSA_ALLOWED_HOSTS` | 許可リストに追加するホスト名（CSRF と DNS リバインディング対策） | localhost + あなたのドメイン |
+| `THANSA_STATE_DIR` | 設定、セッション、暗号化キーの保存先 | `server/`（Docker：`/data/state`） |
 | `BRAINS_DIR` | すべての Brain を収める親フォルダ | `brains/`（Docker：`/brains`） |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` で自作 Plugin をオフにします（サーバー内で本物の Python が動きます） | *（オン）* |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` で自作 Plugin をオフにします（サーバー内で本物の Python が動きます） | *（オン）* |
 | `TTS_VOICE` / `TTS_RATE` | Edge TTS の声と速度 | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Thansa を開くと、セットアップウィザードがブラウザの言語�
 - **2FA（TOTP）**、ログイン試行回数の制限、8 文字以上のパスワード、HTTPS 下での `Secure` Cookie、30 日で期限切れになるセッション。
 - **CSRF と DNS リバインディング対策**：不明なオリジンからの書き込みリクエストはすべて拒否されます。
 - **シークレットは暗号化** して `settings.json` に保存されます（API キー、OAuth トークン、ボットトークン）。暗号化キーはマシンごとに異なります。
-- **自作 Plugin はデフォルトで読み込まれますが、アプリでオンにするまで各 Plugin はオフのまま** です。すべて止めるには `JAVIS_ENABLE_USER_PLUGINS=false` を設定します。
+- **自作 Plugin はデフォルトで読み込まれますが、アプリでオンにするまで各 Plugin はオフのまま** です。すべて止めるには `THANSA_ENABLE_USER_PLUGINS=false` を設定します。
 - **接続の権限はモデルではなくハブが強制します**：読み取り専用のアカウントを使って送信、支払い、公開を行うことはできません。
 
 脆弱性を見つけた場合は、公開の Issue を立てるのではなく [SECURITY.md](../../../SECURITY.md) の手順に従ってください。
@@ -434,7 +434,7 @@ Thansa を開くと、セットアップウィザードがブラウザの言語�
 ## 📂 リポジトリ構成
 
 ```
-javis-os/
+thansa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

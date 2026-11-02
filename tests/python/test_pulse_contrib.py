@@ -14,9 +14,9 @@ import random
 import tempfile
 from pathlib import Path
 
-os.environ["JAVIS_STATE_DIR"] = tempfile.mkdtemp(prefix="javis-contrib-")
-os.environ.pop("JAVIS_RESONANCE_CALL_CEILING", None)
-TEMP = Path(tempfile.mkdtemp(prefix="javis-contrib-w-"))
+os.environ["THANSA_STATE_DIR"] = tempfile.mkdtemp(prefix="thansa-contrib-")
+os.environ.pop("THANSA_RESONANCE_CALL_CEILING", None)
+TEMP = Path(tempfile.mkdtemp(prefix="thansa-contrib-w-"))
 
 import agent_pulse as AP  # noqa: E402
 import feedback_projector as FP  # noqa: E402

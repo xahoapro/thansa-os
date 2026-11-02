@@ -1,6 +1,6 @@
 """The owner's control channels on Slack, WhatsApp (0.71.0), Discord and Lark/Feishu (0.85.0).
 
-"Control channel" = the owner talks to Javis itself (full brain, tools, background work), the
+"Control channel" = the owner talks to Thansa itself (full brain, tools, background work), the
 way the Telegram and Zalo control bots work. Customer-facing bots live elsewhere
 (`chatbot_runtime` + `channels/`).
 

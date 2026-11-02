@@ -128,7 +128,7 @@ See [Knowledge graph](03-do-thi-tri-thuc.md) for details on the graph.
 
 **Brain normalization card** consolidates the `agents`, `workflows`, `memory`, `skills` directories of the selected brain into a uniform flat structure. Click **Normalize selected brain** to run.
 
-This operation is safe: it only moves when the destination directory doesn't exist yet, doesn't overwrite, and running multiple times is harmless (e.g., moving `Javis/agents` to `agents`, `Memory` to `memory`). After running, Thansa reports what it moved or "Nothing to move (already normalized)".
+This operation is safe: it only moves when the destination directory doesn't exist yet, doesn't overwrite, and running multiple times is harmless (e.g., moving `Thansa/agents` to `agents`, `Memory` to `memory`). After running, Thansa reports what it moved or "Nothing to move (already normalized)".
 
 **AI-generated image source marking card** decides whether images Thansa creates carry a source origin mark (Content Credentials, C2PA standard) or not. The label on the right is "Keeping" or "Removing".
 
@@ -223,12 +223,12 @@ How to get the code:
 
 | Scenario | Command to run |
 |---|---|
-| Hostinger, go to App terminal (inside `javis` container) | `cat /data/state/.setup_token` |
-| SSH to the host running Docker | `docker compose logs javis` then find the line with `SETUP TOKEN` |
+| Hostinger, go to App terminal (inside `thansa` container) | `cat /data/state/.setup_token` |
+| SSH to the host running Docker | `docker compose logs thansa` then find the line with `SETUP TOKEN` |
 
 Once you have the code, paste it into the **Setup code** field in the wizard then click **Start using Thansa →**. The code is one-time use; after account creation succeeds, Thansa deletes it.
 
-**To avoid needing the code:** when deploying, pre-set two environment variables `JAVIS_ADMIN_USER` and `JAVIS_ADMIN_PASSWORD`. Thansa creates the admin account at startup, opening the app goes straight to login, no SETUP CODE asked. See [.env config](16-cau-hinh-env.md) for details on environment variables.
+**To avoid needing the code:** when deploying, pre-set two environment variables `THANSA_ADMIN_USER` and `THANSA_ADMIN_PASSWORD`. Thansa creates the admin account at startup, opening the app goes straight to login, no SETUP CODE asked. See [.env config](16-cau-hinh-env.md) for details on environment variables.
 
 ## Quick reference table of buttons and status
 
@@ -259,7 +259,7 @@ Once you have the code, paste it into the **Setup code** field in the wizard the
 
 ## Common issues
 
-- **App asks for SETUP CODE but you don't know where to get it:** go to App terminal (Hostinger) and run `cat /data/state/.setup_token`, or on the host running Docker run `docker compose logs javis` and find the line with `SETUP TOKEN`. Or pre-set env `JAVIS_ADMIN_PASSWORD` to skip needing the code.
+- **App asks for SETUP CODE but you don't know where to get it:** go to App terminal (Hostinger) and run `cat /data/state/.setup_token`, or on the host running Docker run `docker compose logs thansa` and find the line with `SETUP TOKEN`. Or pre-set env `THANSA_ADMIN_PASSWORD` to skip needing the code.
 - **Says "Setup code wrong or missing":** code was pasted wrong or incomplete. Get the right code from server log again and re-paste, being careful not to pick up extra spaces.
 - **Says "Password minimum 8 characters":** set password 8 characters or longer.
 - **Says "Account exists - please login":** admin was created before (e.g. via env). Use the login screen with the account/password you set.

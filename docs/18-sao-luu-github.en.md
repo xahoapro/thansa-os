@@ -25,16 +25,16 @@ Brain is all the knowledge Thansa has accumulated about you and your work. It li
 ### Step 1 - Create a private GitHub repo
 
 1. Go to https://github.com/new
-2. Name it, for example `javis-brain-backup`.
+2. Name it, for example `thansa-brain-backup`.
 3. Select **Private** (REQUIRED - brain contains personal/business data, must never be Public).
 4. **DON'T** check "Add a README file" (keep repo empty to avoid push conflicts on first sync).
-5. Click **Create repository**. Copy the URL like `https://github.com/<your-name>/javis-brain-backup`.
+5. Click **Create repository**. Copy the URL like `https://github.com/<your-name>/thansa-brain-backup`.
 
 ### Step 2 - Create a token (fine-grained)
 
 1. Go to https://github.com/settings/tokens?type=beta (Settings → Developer settings → **Fine-grained tokens** → Generate new token).
 2. Name the token, choose expiry.
-3. **Repository access** → Only select repositories → select your `javis-brain-backup` repo exactly.
+3. **Repository access** → Only select repositories → select your `thansa-brain-backup` repo exactly.
 4. **Permissions** → Repository permissions → **Contents** → select **Read and write**.
 5. Click Generate, **copy the token** (format `github_pat_...`). Token only shows once - copy now.
 
@@ -75,7 +75,7 @@ Safety notes of the mechanism:
 
 - Token is **never** stored in brain or pushed to repo. It lives in `settings.json` internally (git-ignored). Error messages auto-hide the token too.
 - **Only text files sync.** Images, videos, audio, PDF and all binary files don't go to the repo - see [Sync TEXT only, not media](#sync-text-only-not-media) section right below.
-- Sensitive files also excluded from sync even if text: original chats (`memory/conversations`), loop/learn logs (`Javis/loop-log`, `Javis/learn-log`, `Javis/learn-staging`), skill usage stats (`Javis/skill-usage.json`), lock files, `.tmp`, and each brain's `.git`. These only exist on the machine that created them.
+- Sensitive files also excluded from sync even if text: original chats (`memory/conversations`), loop/learn logs (`Thansa/loop-log`, `Thansa/learn-log`, `Thansa/learn-staging`), skill usage stats (`Thansa/skill-usage.json`), lock files, `.tmp`, and each brain's `.git`. These only exist on the machine that created them.
 - Brain trash (`brain-trash` in state folder) lives OUTSIDE sync scope so doesn't go to repo.
 - A machine with **empty brains folder** (new machine, fresh volume) is treated as RECOVERING: only receives data, never pushes "empty state" up to overwrite backup.
 - Deleting a file/brain on one machine means all other machines delete it at the next sync (that's what sync means). Thanks to git being the store, everything stays in history - recover when needed.

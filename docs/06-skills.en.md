@@ -22,7 +22,7 @@ The canonical version lives at `skills/<slug>/SKILL.md` - exactly what the dashb
 
 This is where users often get stuck without understanding why. When you click **💾 Save**, the server checks `description` and **refuses to save** if it breaks one of two rules:
 
-**1. Maximum 150 characters.** Not a style thing. Thansa trims the description to exactly 150 characters when putting it into system prompt and into the `javis_use_skill` tool description, so overflow vanishes silently and the skill won't route. Rejection message explains: "description is N characters, over the 150 cap. Router trims exactly at 150 so the rest VANISHES and skill won't route. Move trigger examples to the '## When to use' section in the file body."
+**1. Maximum 150 characters.** Not a style thing. Thansa trims the description to exactly 150 characters when putting it into system prompt and into the `thansa_use_skill` tool description, so overflow vanishes silently and the skill won't route. Rejection message explains: "description is N characters, over the 150 cap. Router trims exactly at 150 so the rest VANISHES and skill won't route. Move trigger examples to the '## When to use' section in the file body."
 
 **2. Don't start with empty boilerplate.** Blocked phrases: "Activate when...", "Use this skill when...", "Use skill this when...", "This skill uses / This skill is used when...", "Use this skill when...", "Activate when...". Every skill starts the same way so these eat up your character budget without distinguishing skills. Rejection explains: name the ability directly, e.g. "Summarize meeting notes into action items."
 
@@ -32,11 +32,11 @@ This rule applies to both the dashboard form and skills the **Self-learning** pa
 
 ## How triggers work
 
-Skills auto-activate based on the `description` field (you also call manually, next section). When you type or speak a request, Thansa matches it against the `description` of enabled skills; if it matches, it loads that guide. On Claude Code it loads native; on other engines Thansa puts the skill list in system prompt and loads via the `javis_use_skill` tool.
+Skills auto-activate based on the `description` field (you also call manually, next section). When you type or speak a request, Thansa matches it against the `description` of enabled skills; if it matches, it loads that guide. On Claude Code it loads native; on other engines Thansa puts the skill list in system prompt and loads via the `thansa_use_skill` tool.
 
 So skill quality depends heavily on how you write `description`. Good description names the ability and includes keywords, the skill triggers right. Vague description means it never fires, or fires wrong.
 
-Note: skills work on **every engine**. Claude Code loads native; ChatGPT/Codex, OpenRouter, OpenAI/Anthropic/Google Gemini API use skills via router (Thansa puts skill list in system prompt) and tool `javis_use_skill`. See [Models & Engines](10-models-va-engine.md) for each engine's details.
+Note: skills work on **every engine**. Claude Code loads native; ChatGPT/Codex, OpenRouter, OpenAI/Anthropic/Google Gemini API use skills via router (Thansa puts skill list in system prompt) and tool `thansa_use_skill`. See [Models & Engines](10-models-va-engine.md) for each engine's details.
 
 ## Call skills manually: "/" command menu
 
@@ -53,9 +53,9 @@ On Telegram, send `/<slug>` (with content after if needed) for the same effect. 
 
 ## Router's 20-skill cap
 
-The skill list that Thansa puts into system prompt and into the `javis_use_skill` tool description is **capped at 20 skills**. Overflow shows one line "+ (N more skills - see `Javis/index.md`)".
+The skill list that Thansa puts into system prompt and into the `thansa_use_skill` tool description is **capped at 20 skills**. Overflow shows one line "+ (N more skills - see `Thansa/index.md`)".
 
-What matters: if your brain has over 20 enabled skills, skills ranked 21+ **don't fit the router**, so on engines using router (ChatGPT/Codex, OpenRouter, OpenAI/Anthropic/Google Gemini API) they won't auto-trigger. They're still there and still callable: call manually via `/slug` and they run fine, because the `javis_use_skill` tool takes all enabled slugs, not just the 20 listed.
+What matters: if your brain has over 20 enabled skills, skills ranked 21+ **don't fit the router**, so on engines using router (ChatGPT/Codex, OpenRouter, OpenAI/Anthropic/Google Gemini API) they won't auto-trigger. They're still there and still callable: call manually via `/slug` and they run fine, because the `thansa_use_skill` tool takes all enabled slugs, not just the 20 listed.
 
 How to fix: disable skills you don't actively use, keeping the router's 20 slots for skills you want Thansa to catch automatically.
 
@@ -67,7 +67,7 @@ Thansa splits skills into 2 types:
 
   | Slug | What it does |
   |---|---|
-  | `javis-builder` | Create or edit Thansa capabilities: agents, skills, workflows, loops, plugins |
+  | `thansa-builder` | Create or edit Thansa capabilities: agents, skills, workflows, loops, plugins |
   | `ingest-source` | Digest raw source into Second Brain, curate into wiki knowledge |
   | `query-wiki` | Search Second Brain knowledge, return cited answers |
   | `lint-wiki` | Audit wiki health, return issues list |
@@ -89,7 +89,7 @@ Two separate things in the **Capabilities** group on the sidebar.
 | Essence | Knowledge **HOW-TO**: a guide file AI reads then follows | **Real Python code** running in the server process |
 | Output | A process, template, rulebook | A new **tool** all engines can call, and/or **hook** firing around each tool call |
 | Location | `skills/<slug>/SKILL.md` in the brain | Folder `plugins/<slug>/` (with `plugin.yaml` + `plugin.py`) |
-| Activation | Check box on the card | Plugin you installed still needs `JAVIS_ENABLE_USER_PLUGINS=true` env var then restart |
+| Activation | Check box on the card | Plugin you installed still needs `THANSA_ENABLE_USER_PLUGINS=true` env var then restart |
 
 Pick: need **guidance** for doing something with existing tools? Write Skill. Need a **specific Python action** not yet covered (calculate, transform data, call one simple API)? Write Plugin. Or it's an outside data source with a ready MCP? Use MCP on Connections page, don't write plugin. Full details at [Plugins](20-plugins.md) and [Connections & Business Data](09-mcp-va-so-lieu.md).
 
@@ -126,9 +126,9 @@ At the end of the group · slug line, Thansa shows one of two:
 - **"used N times, last <date>"** if the skill was loaded at least once.
 - **"never seen using"** (faded, italic) if it's been over 30 days without a use signal.
 
-This is **one-way signal**, understand it right: Thansa only counts loads through the `javis_use_skill` tool. Claude Code loads native via `.claude/skills` and **doesn't** go through the counter. So "used N times" is definitely right, "never seen using" just means no evidence, **not** that the skill is useless. Hover over the label and you see this explanation. Nothing auto-disables or auto-deletes based on this label - you decide.
+This is **one-way signal**, understand it right: Thansa only counts loads through the `thansa_use_skill` tool. Claude Code loads native via `.claude/skills` and **doesn't** go through the counter. So "used N times" is definitely right, "never seen using" just means no evidence, **not** that the skill is useless. Hover over the label and you see this explanation. Nothing auto-disables or auto-deletes based on this label - you decide.
 
-This data is stored in `Javis/skill-usage.json` in the brain, separate from `SKILL.md` so each skill use doesn't create noise in your brain's git.
+This data is stored in `Thansa/skill-usage.json` in the brain, separate from `SKILL.md` so each skill use doesn't create noise in your brain's git.
 
 ## Find skills
 
@@ -215,7 +215,7 @@ On the **Agents** page, creating or editing an agent shows a **Skills** section 
 | **system** badge | Skill comes with app, exists in all brains, only disable not delete |
 | Card appears dimmed | Skill is disabled |
 | Line "x/y enabled" | x skills on out of y total |
-| "used N times, last …" | Skill was loaded via `javis_use_skill` tool N times |
+| "used N times, last …" | Skill was loaded via `thansa_use_skill` tool N times |
 | "never seen using" | Over 30 days no use signal; just info, not a judgment |
 
 ## Tips
@@ -234,7 +234,7 @@ On the **Agents** page, creating or editing an agent shows a **Skills** section 
 - **Created skill but Thansa doesn't use it automatically:** check three things in order. One, is the skill **enabled** (card not dimmed, checkbox ticked)? Two, does `description` state the ability right? Three, is your brain over 20 enabled skills - if so, yours might be outside the router; disable others or call manually with `/slug`.
 - **Skill list empty even though created some:** make sure you're on the right brain. Skills source is `skills/` of the current brain; switch brain and list changes.
 - **Enabling/disabling says error "Can't toggle status":** usually a permissions issue on the folder or it's locked. See [Troubleshooting & FAQ](17-khac-phuc-su-co.md).
-- **Skill says "never seen using" but you know it ran:** normal. Thansa only counts via `javis_use_skill` tool; Claude Code loads native and doesn't go through the counter. Don't delete just because of this label.
+- **Skill says "never seen using" but you know it ran:** normal. Thansa only counts via `thansa_use_skill` tool; Claude Code loads native and doesn't go through the counter. Don't delete just because of this label.
 - **Card missing Delete button:** that's a system skill. To stop using, disable it.
 - **Accidentally deleted:** delete is final, no recovery from the dashboard. Future prevention: save `conversations.db` backups regularly (see "Sync when changing machines").
 - **Group fell into "General":** group field was empty on save. Click **Edit** and fill in a group name.
@@ -243,7 +243,7 @@ On the **Agents** page, creating or editing an agent shows a **Skills** section 
 
 - [Agents & Workflows](07-agents-va-workflows.md) - assign skills to agents, build task chains, export/import packages with dependencies.
 - [Plugins](20-plugins.md) - when you need a tool running real code instead of a how-to guide.
-- [Models & Engines](10-models-va-engine.md) - skills work on all engines; see differences between native (Claude Code) vs router (`javis_use_skill`).
+- [Models & Engines](10-models-va-engine.md) - skills work on all engines; see differences between native (Claude Code) vs router (`thansa_use_skill`).
 - [Chat & Voice](02-tro-chuyen-va-giong-noi.md) - ask Thansa to create skills by talking, and "/" command menu in chat.
 - [Self-learning](22-tu-hoc.md) - where Thansa suggests new skills from past chats.
 - [Second Brain: Memory, Wiki, INGEST](13-second-brain-bo-nho-wiki.md) - understand what a brain is where skills live.

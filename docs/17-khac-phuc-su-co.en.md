@@ -22,16 +22,16 @@ Many errors disappear after one of these, so try them before worrying:
 |---|---|
 | Changed code (or just updated) but **don't see the change** | If you changed `.py` files: **restart the server** (Windows: `stop-thansa.bat` then `start-thansa.vbs`; Docker: `docker compose restart`). If only interface changed: press **Ctrl+Shift+R**. |
 | **Port 7777 is held**, new version won't start | Shut down the old process FIRST before starting again. Windows: run `stop-thansa.bat`, or `taskkill /F /PID <pid>` with the PID holding the port. Docker: `docker compose down` then `docker compose up -d`. |
-| **Hostinger can't pull the image** | Set the package GHCR to **Public** (GitHub, repo, Packages section, select `javis-os`, Package settings, Visibility = Public). Then wait for GitHub Action build to complete (check repo Actions tab) then Deploy again. |
-| App **asks for SETUP CODE** | Get the code from the container's App terminal: `cat /data/state/.setup_token`. If running on host: `docker compose logs javis` and look for the line with `SETUP TOKEN`. To skip the code: set `JAVIS_ADMIN_USER` and `JAVIS_ADMIN_PASSWORD` env vars at deploy time to auto-login. |
+| **Hostinger can't pull the image** | Set the package GHCR to **Public** (GitHub, repo, Packages section, select `thansa-os`, Package settings, Visibility = Public). Then wait for GitHub Action build to complete (check repo Actions tab) then Deploy again. |
+| App **asks for SETUP CODE** | Get the code from the container's App terminal: `cat /data/state/.setup_token`. If running on host: `docker compose logs thansa` and look for the line with `SETUP TOKEN`. To skip the code: set `THANSA_ADMIN_USER` and `THANSA_ADMIN_PASSWORD` env vars at deploy time to auto-login. |
 | **Claude reports not logged in** (Thansa can't respond) | Log in "the brain" Claude Code once. In the app: open **Models**, on the Claude Code tab click **Login Claude**, open the link, paste the code if requested. Via command: `claude auth login --claudeai` (Docker: run in App terminal). |
 | **Files page reports error at "Loading..."** | Server doesn't have the Files endpoint yet (404 error). **Restart the server** to load the new endpoint, then press **Ctrl+Shift+R**. |
 | Old chat images show gray square **Image Expired** | By design: `attachments/` and `inbox/` are cache zones, files older than 30 days (or exceeding 300MB) are cleaned. See "Images and old files disappear" below to learn how to keep them or disable cleanup. |
 | Voice / microphone won't enable | Browsers only grant microphone access over **HTTPS** (or localhost). Opening via `http://<ip>:7777` will always be blocked. Use `https://` URL (Hostinger `*.hstgr.cloud`, Cloudflare Tunnel, or custom domain with SSL). See [Branding & Custom Domain](15-thuong-hieu-ten-mien.md). |
 | Finished updating in app but **version didn't change** | Wait longer; if it still shows old version, check update log: `update.log` in state folder (`server/update.log` locally, `/data/state/update.log` on Docker), or `docker compose logs`. |
-| **`javis` reports 401** or "token invalid" | Token is wrong or revoked. Create a new one in **Account > API Tokens** then `javis login <address>` again. See [Thansa CLI](24-cli-terminal.md). |
-| **`javis task add` / `javis brain ls` report 403** | Your token is **chat-only** type. These commands need **full-access** token - create another one in Account > API Tokens. |
-| **`javis up` reports can't find Thansa installation** | That's correct: the CLI package doesn't include the server inside. Set `JAVIS_HOME` pointing to the Thansa folder, run commands from inside that folder, or `javis login <address>` to connect to a running Thansa elsewhere. |
+| **`thansa` reports 401** or "token invalid" | Token is wrong or revoked. Create a new one in **Account > API Tokens** then `thansa login <address>` again. See [Thansa CLI](24-cli-terminal.md). |
+| **`thansa task add` / `thansa brain ls` report 403** | Your token is **chat-only** type. These commands need **full-access** token - create another one in Account > API Tokens. |
+| **`thansa up` reports can't find Thansa installation** | That's correct: the CLI package doesn't include the server inside. Set `THANSA_HOME` pointing to the Thansa folder, run commands from inside that folder, or `thansa login <address>` to connect to a running Thansa elsewhere. |
 
 Details for each row are explained below.
 
@@ -54,13 +54,13 @@ Thansa's default port is **7777**. When an old process hasn't fully shut down an
 1. Shut down the old process first. Windows: run `stop-thansa.bat`. If it still exists, find the PID holding the port then `taskkill /F /PID <pid>`. Docker: `docker compose down`.
 2. Start again. Windows: `start-thansa.vbs`. Docker: `docker compose up -d`.
 
-To use a different port (when 7777 conflicts with other software), set the `JAVIS_PORT` variable in `.env` file; see [.env Configuration](16-cau-hinh-env.md).
+To use a different port (when 7777 conflicts with other software), set the `THANSA_PORT` variable in `.env` file; see [.env Configuration](16-cau-hinh-env.md).
 
 ## Hostinger can't pull the image
 
 When deploying via Hostinger Docker Manager and it can't fetch the image, usually two reasons:
 
-1. **Image is set to Private.** Go to GitHub, open repo, select **Packages**, select `javis-os`, go to **Package settings**, set **Visibility = Public**. Then Hostinger can pull it without needing to log into the registry.
+1. **Image is set to Private.** Go to GitHub, open repo, select **Packages**, select `thansa-os`, go to **Package settings**, set **Visibility = Public**. Then Hostinger can pull it without needing to log into the registry.
 2. **Image hasn't finished building.** Each time you push new code to the `main` branch, GitHub Action starts building. Open the repo's **Actions** tab, wait for the latest build to finish (green checkmark), then click Deploy again on Hostinger.
 
 ## App asks for SETUP CODE
@@ -68,8 +68,8 @@ When deploying via Hostinger Docker Manager and it can't fetch the image, usuall
 When Thansa runs public (Docker/VPS/Hostinger), first time you open the app it creates an admin account and may ask for **SETUP CODE**. This is a security measure - the engine runs with full permissions on the machine, so we prevent strangers from creating accounts with just the URL. Get the code like this:
 
 1. **From the container's App terminal** (this terminal is INSIDE the container so no `docker` commands): run `cat /data/state/.setup_token`, copy the string, paste it into the SETUP CODE field.
-2. **From the host (outside container)**: run `docker compose logs javis` and look for the line with `SETUP TOKEN`.
-3. **Skip the code**: set admin at deploy time using two env vars `JAVIS_ADMIN_USER` and `JAVIS_ADMIN_PASSWORD` in compose. Then opening the app auto-logs in, no code asked.
+2. **From the host (outside container)**: run `docker compose logs thansa` and look for the line with `SETUP TOKEN`.
+3. **Skip the code**: set admin at deploy time using two env vars `THANSA_ADMIN_USER` and `THANSA_ADMIN_PASSWORD` in compose. Then opening the app auto-logs in, no code asked.
 
 For full security and password setup details see [Security & Accounts](14-bao-mat-tai-khoan.md).
 
@@ -147,15 +147,15 @@ Several places depending on log type:
 3. **Updates page** (under **System**, page title is **Update Log**): view current version and feature history by version. No separate "Logs" or "Activity" page anymore; the `logs` entry on left rail is this page.
 4. **Server technical logs** (for deep debugging):
    - Windows running backgrounded via `start-thansa.vbs`: log in `server\thansa.log`.
-   - Docker / VPS: `docker compose logs javis` (add `-f` to watch live: `docker compose logs -f`).
+   - Docker / VPS: `docker compose logs thansa` (add `-f` to watch live: `docker compose logs -f`).
    - Linux systemd: `journalctl -u thansa -f`.
-5. **Update log** when clicking update button in app: file `update.log` in state folder, meaning `server/update.log` locally and `/data/state/update.log` on Docker (path per `JAVIS_STATE_DIR` var). Usually you don't open it: if update fails, the interface already shows notification and app reads the last 50 lines of this file to report status.
+5. **Update log** when clicking update button in app: file `update.log` in state folder, meaning `server/update.log` locally and `/data/state/update.log` on Docker (path per `THANSA_STATE_DIR` var). Usually you don't open it: if update fails, the interface already shows notification and app reads the last 50 lines of this file to report status.
 
 ## FAQ (Frequently Asked Questions)
 
 ### Does data get lost when updating?
 
-No, if running Docker. All notes, brains, settings and Claude login tokens live in **Docker volumes** (`javis-data`, `claude-auth`), separate from the image. When you update (click **⬆ Update now** in Updates, Redeploy on Hostinger, or run `./update.sh` on VPS), the image gets replaced but volumes stay, so data is **safe**. With native install, data lives in the repo's `brains/` folder, also not affected by `git pull`.
+No, if running Docker. All notes, brains, settings and Claude login tokens live in **Docker volumes** (`thansa-data`, `claude-auth`), separate from the image. When you update (click **⬆ Update now** in Updates, Redeploy on Hostinger, or run `./update.sh` on VPS), the image gets replaced but volumes stay, so data is **safe**. With native install, data lives in the repo's `brains/` folder, also not affected by `git pull`.
 
 ### How does in-app updating work?
 
@@ -169,7 +169,7 @@ Watchtower is in `profiles: ["update"]`, so `docker compose up -d` does NOT star
 
 | Error | Cause | Fix |
 |---|---|---|
-| `no configuration file provided: not found` | Wrong directory. Folder name varies on clone: `javis` if following DEPLOY.md exactly, `javis-os` if cloning without renaming | `cd` into the folder with `docker-compose.yml`. Don't remember? Ask Docker: `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'` |
+| `no configuration file provided: not found` | Wrong directory. Folder name varies on clone: `thansa` if following DEPLOY.md exactly, `thansa-os` if cloning without renaming | `cd` into the folder with `docker-compose.yml`. Don't remember? Ask Docker: `docker ps --format '{{.Names}}\t{{.Label "com.docker.compose.project.working_dir"}}'` |
 | `docker: command not found` | You're typing INSIDE the Thansa container (the app's terminal), not on the server machine | SSH into VPS then type |
 | `docker: 'compose' is not a docker command` | Old Compose version (v1) | Write with hyphen: `docker-compose --profile update up -d` |
 

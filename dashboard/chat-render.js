@@ -245,7 +245,7 @@
       ? vaultDownload(rawpath, extraCls, brainOverride)
       : vaultLoc(rawpath, extraCls);
   }
-  // Inline code chua DUONG DAN FILE vault (vd `Javis/loops/x.md`)? Tra ve path da chuan hoa, "" neu khong phai.
+  // Inline code chua DUONG DAN FILE vault (vd `Thansa/loops/x.md`)? Tra ve path da chuan hoa, "" neu khong phai.
   // Chi nhan khi trong giong path that: co duoi file + (co thu muc / la .md tran), khong ky tu cam cua ten file
   // Windows (":" loai luon URL va lenh co cong cu), khong leo thang "..".
   function codeFilePath(c) {
@@ -614,15 +614,15 @@
   }
   function visibleMarkdown(raw) {
     raw = String(raw == null ? "" : raw);
-    // Bo HTML comment (khoi dieu khien JAVIS_* luon vo hinh), ke ca comment chua dong luc stream
+    // Bo HTML comment (khoi dieu khien THANSA_* luon vo hinh), ke ca comment chua dong luc stream
     return raw.replace(/<!--[\s\S]*?-->/g, "").replace(/<!--[\s\S]*$/, "");
   }
 
   function _mdToHtmlThan(raw) {
     var ph = [];
     function put(html) { ph.push(html); return OPEN + (ph.length - 1) + CLOSE; }
-    // 0.201.0: JAVIS_CARD blocks (charts, number tiles, buttons) are drawn in place before hidden comments go (chat-card.js).
-    if (typeof window !== "undefined" && window.JavisCard) raw = window.JavisCard.replaceIn(raw, put);
+    // 0.201.0: THANSA_CARD blocks (charts, number tiles, buttons) are drawn in place before hidden comments go (chat-card.js).
+    if (typeof window !== "undefined" && window.ThansaCard) raw = window.ThansaCard.replaceIn(raw, put);
     raw = visibleMarkdown(raw);
 
     // 0) frontmatter YAML o DAU file .md -> khoi rieng, KHONG cho sua, giu nguyen van de luu lai
@@ -637,7 +637,7 @@
       return "\n" + put(renderFence(info, code, true)) + "\n";
     });
     // 2) inline code (truoc bang/anh/link va truoc nhan manh). Code chua duong dan file vault
-    //    (vd `Javis/loops/x.md`) -> boc link bam mo khung doc/sua luon.
+    //    (vd `Thansa/loops/x.md`) -> boc link bam mo khung doc/sua luon.
     raw = raw.replace(/`([^`\n]+)`/g, function (_m, c) {
       var code = "<code>" + esc(c) + "</code>";
       var p = codeFilePath(c);
@@ -867,7 +867,7 @@
       elBody.innerHTML = '<div class="jv-ap-mermaid">' + esc(tw("crender.mm_drawing")) + "</div>";
       renderMermaid(art.code, elBody.querySelector(".jv-ap-mermaid"), function (host) {
         var svg = host.querySelector("svg");
-        if (svg && curArt === art && window.JavisPanZoom) zoomOn(host, svg, window.JavisPanZoom.svgSize(svg));
+        if (svg && curArt === art && window.ThansaPanZoom) zoomOn(host, svg, window.ThansaPanZoom.svgSize(svg));
       });
       return;
     }
@@ -876,7 +876,7 @@
   var curPz = null;
   function zoomOn(box, content, nat) {
     dropZoom();
-    if (window.JavisPanZoom) curPz = window.JavisPanZoom.attach(box, content, nat);
+    if (window.ThansaPanZoom) curPz = window.ThansaPanZoom.attach(box, content, nat);
   }
   function dropZoom() { if (curPz) { try { curPz.destroy(); } catch (e) {} curPz = null; } }
   // Natural size from the svg text (viewBox, else width/height), or null to read it off the loaded <img>.
@@ -913,7 +913,7 @@
   // Copy plain text through the shared helper (chat-acts.js, clipboard API with a textarea fallback on plain HTTP).
   // chat-acts.js loads after this file but before any click can happen; the inline copy is for pages without it.
   function copyPlain(text) {
-    if (typeof window !== "undefined" && window.JavisActs && window.JavisActs.copy) return window.JavisActs.copy(text);
+    if (typeof window !== "undefined" && window.ThansaActs && window.ThansaActs.copy) return window.ThansaActs.copy(text);
     var ta = document.createElement("textarea");
     ta.value = text; ta.style.cssText = "position:fixed;opacity:0";
     document.body.appendChild(ta); ta.select();
@@ -1065,7 +1065,7 @@
 
   // Mo mot FILE cua vault tu link (trong chat hoac trong ban render cua trinh sua).
   //
-  // Uu tien TRINH SUA DINH - window.JavisOpenNote, wrapper SAN CO cua console.js (cung cai
+  // Uu tien TRINH SUA DINH - window.ThansaOpenNote, wrapper SAN CO cua console.js (cung cai
   // click node do thi dung): nhan MOT chuoi path tuong doi GOC BRAIN, tu ghep tien to tran +
   // suy ten/duoi, tu so cay toi dung nhanh. O trang Tro chuyen no CHIEM CHO khung chat
   // (#chatPageEdit tu 0.15.2), o man chinh no noi len tren visual nao - cho do rong nen de la
@@ -1086,13 +1086,13 @@
     // Duong CHINH: console.js quyet dinh (file sua duoc -> trinh sua, con lai -> trang Tep tin).
     // Gom ve mot cho vi deep-link `#open=` cung goi dung ham do; hai ban sao luat se lech nhau,
     // ma trieu chung cua lech la "cung mot file luc thi sua duoc luc thi ve thu muc".
-    if (typeof window.JavisOpenVaultPath === "function") { window.JavisOpenVaultPath(rel); return; }
+    if (typeof window.ThansaOpenVaultPath === "function") { window.ThansaOpenVaultPath(rel); return; }
     // Duoi day la duong lui cho ban console.js cu chua co ham do.
     var hep = false;
     try { hep = window.matchMedia("(max-width: 860px)").matches; } catch (e) {}
-    if (!hep && typeof window.JavisOpenNote === "function") { window.JavisOpenNote(rel); return; }
-    if (typeof window.JavisEditFile === "function") { window.JavisEditFile(rel); return; }
-    if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(rel);
+    if (!hep && typeof window.ThansaOpenNote === "function") { window.ThansaOpenNote(rel); return; }
+    if (typeof window.ThansaEditFile === "function") { window.ThansaEditFile(rel); return; }
+    if (typeof window.ThansaOpenFiles === "function") window.ThansaOpenFiles(rel);
   }
 
   // ---------------------------------------------------------------- tai file tren iPhone
@@ -1245,7 +1245,7 @@
     var img = a.querySelector ? a.querySelector("img") : null;
     var href = a.getAttribute("href") || (img && img.src) || "";
     if (a.classList && a.classList.contains("ht-anh")) {
-      return { url: href, ten: window.JavisHtMedia && window.JavisHtMedia.tenAnh ? window.JavisHtMedia.tenAnh(href) : "" };
+      return { url: href, ten: window.ThansaHtMedia && window.ThansaHtMedia.tenAnh ? window.ThansaHtMedia.tenAnh(href) : "" };
     }
     var vp = a.getAttribute("data-vault-path") || "";
     // `data-img-ten` la ten do NGUOI GUI dat, dung cho anh khong nam trong vault (vd file vua
@@ -1485,7 +1485,7 @@
   if (typeof document !== "undefined") {
     // Gan o TRONG khoi nay: file con duoc require duoi node de test ham thuan, ma duoi node
     // khong co `window` - gan o ngoai la module nem ngay luc nap.
-    window.JavisLightbox = { open: moLightbox, close: dongLightbox, openFrom: moTuLink };
+    window.ThansaLightbox = { open: moLightbox, close: dongLightbox, openFrom: moTuLink };
     document.addEventListener("keydown", function (e) {
       if (_lb && e.key === "Escape") { e.preventDefault(); dongLightbox(); }
       else if (_lb && _lbChuyen && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
@@ -1566,7 +1566,7 @@
       if (cs && cs.getAttribute("data-cs")) {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
         e.preventDefault();
-        if (typeof window.JavisOpenCongSu === "function") window.JavisOpenCongSu(cs.getAttribute("data-cs"));
+        if (typeof window.ThansaOpenCongSu === "function") window.ThansaOpenCongSu(cs.getAttribute("data-cs"));
         return;
       }
       // Wikilink [[..]]: bam la DI CHUYEN toi note dich - chay CA trong ban render dang sua (ne-wys/.jvfe-modal),
@@ -1599,7 +1599,7 @@
           var isDir = /\/$/.test(vp) || base === "" || base.indexOf(".") < 0;   // co duoi -> FILE (nhu openFilesAt)
           // FILE co duoi -> mo trong trinh sua; THU MUC / anh inline -> mo trang Tep tin dung vi tri.
           if (!isImg && !isDir) { moFileVault(trimmed); return; }
-          if (typeof window.JavisOpenFiles === "function") window.JavisOpenFiles(vp);
+          if (typeof window.ThansaOpenFiles === "function") window.ThansaOpenFiles(vp);
           else window.open(loc.href, "_blank");   // du phong: mo tab moi neu console.js chua san sang
           return;
         }
@@ -1652,17 +1652,17 @@
 
   if (typeof window !== "undefined") {
     window.mdToHtml = mdToHtml;
-    window.JavisVisibleMarkdown = visibleMarkdown;
+    window.ThansaVisibleMarkdown = visibleMarkdown;
     // Bo to mau chung: code-hl.js goi lai cho cac ngon ngu kieu C (js/py/sh...) de mot luat
     // chi nam o mot cho. Markup/CSS/JSON thi code-hl tu doc lay (xem chu thich ben do).
-    window.JavisHighlight = highlight;
+    window.ThansaHighlight = highlight;
     window.jvImgGone = imgGone;   // goi tu thuoc tinh onerror noi tuyen cua the <img>
     // get(id): cho turndown (console.js) tra artifact card ve lai dung fence ``` khi luu note WYSIWYG
-    window.JavisArtifacts = { open: openArtifact, close: closePanel,
+    window.ThansaArtifacts = { open: openArtifact, close: closePanel,
       get: function (id) { return registry[id] || null; } };
-    // console.js goi lai khi mot duong dan file:// lot toi openVaultPath/JavisOpenNote (deep-link,
+    // console.js goi lai khi mot duong dan file:// lot toi openVaultPath/ThansaOpenNote (deep-link,
     // chip file dang mo...) - mot luat go giao thuc, nam o mot cho.
-    window.JavisFileRef = appFileRef;
+    window.ThansaFileRef = appFileRef;
   }
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { mdToHtml: mdToHtml, visibleMarkdown: visibleMarkdown,

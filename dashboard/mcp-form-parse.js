@@ -257,6 +257,6 @@
     docCauHinh: docCauHinh, tachLenh: tachLenh, ghepLenh: ghepLenh, doanTransport: doanTransport,
     nhaCungCap: nhaCungCap, tenTuUrl: tenTuUrl, thieuBearer: thieuBearer, HEADER_GOI_Y: HEADER_GOI_Y,
   };
-  if (typeof window !== "undefined") window.JavisMcpParse = api;
+  if (typeof window !== "undefined") window.ThansaMcpParse = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })();

@@ -8,6 +8,6 @@ author: Thansa (bundled)
 enabled: false
 min_mode: readonly
 tools:
-  - javis_tool_stats
+  - thansa_tool_stats
 hooks:
   - post_tool_call

@@ -5,7 +5,7 @@
   "test_author": "m2d1_whole_review",
   "independent_reviewer_executor": "root",
   "verdict": "approved_scoped_actual_operation_records_proof",
-  "command": "D:/Project/Javis-OS/.venv/Scripts/python.exe tests/python/test_improvement_qualification_operation_binding.py -v",
+  "command": "D:/Project/Thansa-OS/.venv/Scripts/python.exe tests/python/test_improvement_qualification_operation_binding.py -v",
   "tests": 3,
   "seconds": 9.359,
   "exit": 0,
@@ -17,9 +17,9 @@
     "server/improvement_operation_results.py": "b115f3ed746c3b8d903e01a5dd5f1ef801ca294eed4492e3c5c5735a5ee30230",
     "server/improvement_operation_execution.py": "d39a679b7d3aa1c75432cb833f62e332a89aa38640b68fe01cf9f9ae76cc7f99",
     "server/improvement_operation_records.py": "57d755666f93278551aa2b655b383e2aa58bdc5b2aa600f5c0f92a1137aa3e3d",
-    "tests/python/test_improvement_qualification_session.py": "bbf7291dc9283b7e0ab4453302db3a35248c599a41bb9a81c51a3a679e6da315",
-    "tests/python/test_improvement_trial_associations.py": "892235d8a29240f210595cda20181d1d51ec2c8e58fca2ef87377dbf9b12fc5c",
-    "tests/python/test_improvement_host_snapshots.py": "989a4a18e3ad8383d82545e832953a5f16f9e017980bb3cf4cdf06ca641c0fba"
+    "tests/python/test_improvement_qualification_session.py": "89eadce94a242f45387c588f7a60005850e39e080e7440cafe2119779568f096",
+    "tests/python/test_improvement_trial_associations.py": "22fc6d0587a7829827109113d32f2a73558b38861c35ad2d486a92ec05f5d9ba",
+    "tests/python/test_improvement_host_snapshots.py": "9df962f48f25a7529ce15e1a49b8436c3ba17d90d4dce01d05332d00d37ac162"
   },
   "log_sha256": "f2dc05683d8920decda2850830a81bf12801d5f4e4b446b7641de035597fbdd8",
   "source_changes": "None; existing production implementation reused, new test only. Root performed independent static review before running; caught nonexistent fixture cleanup method and author corrected it before execution.",

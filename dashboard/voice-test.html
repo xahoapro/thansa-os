@@ -95,7 +95,7 @@
     const rate = document.getElementById("rate");
     const rateVal = document.getElementById("rateVal");
 
-    const voice = new JavisVoice({
+    const voice = new ThansaVoice({
       lang: "vi-VN",
       onStart: () => { micBtn.classList.add("recording"); interimText.textContent = "đang nghe..."; },
       onInterim: t => interimText.textContent = t,

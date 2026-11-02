@@ -4,7 +4,7 @@ route.
 
 The account secret is four credentials in one string, "<App ID> <App secret key> <OA secret key>
 <Refresh token>", because the channel-account store keeps one encrypted secret per account. After
-the first refresh Javis rewrites it as JSON with the rotated tokens (`zalo_oa_bot.TokenKeeper`).
+the first refresh Thansa rewrites it as JSON with the rotated tokens (`zalo_oa_bot.TokenKeeper`).
 Different from the `zalo` channel, which is the separate Zalo Bot API (bot accounts made in
 "Zalo Bot Manager"): an OA is the business page customers follow.
 """

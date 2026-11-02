@@ -19,13 +19,13 @@ if exist "brain" if not exist "Brain Default" (
 )
 
 REM 2. Lam phang cau truc ben trong (chi move khi dich chua ton tai)
-if exist "Brain Default\Javis\agents" if not exist "Brain Default\agents" (
-  echo   - Move: Javis\agents  ->  agents
-  move "Brain Default\Javis\agents" "Brain Default\agents" >nul
+if exist "Brain Default\Thansa\agents" if not exist "Brain Default\agents" (
+  echo   - Move: Thansa\agents  ->  agents
+  move "Brain Default\Thansa\agents" "Brain Default\agents" >nul
 )
-if exist "Brain Default\Javis\workflows" if not exist "Brain Default\workflows" (
-  echo   - Move: Javis\workflows  ->  workflows
-  move "Brain Default\Javis\workflows" "Brain Default\workflows" >nul
+if exist "Brain Default\Thansa\workflows" if not exist "Brain Default\workflows" (
+  echo   - Move: Thansa\workflows  ->  workflows
+  move "Brain Default\Thansa\workflows" "Brain Default\workflows" >nul
 )
 if exist "Brain Default\Memory" if not exist "Brain Default\memory" (
   echo   - Move: Memory  ->  memory

@@ -6,8 +6,8 @@
    duoc. Luc giao viec bang giong thi chi co mot dong chu nghieng mo, F5 la mat.
 
    Server nay gan kem mot khoi an o dau noi dung:
-       <!-- JAVIS_VIEC: {"kind":"task","status":"done","title":"...","id":"..."} -->
-   (cung khuon voi JAVIS_ASK). File nay boc khoi do ra va ve:
+       <!-- THANSA_VIEC: {"kind":"task","status":"done","title":"...","id":"..."} -->
+   (cung khuon voi THANSA_ASK). File nay boc khoi do ra va ve:
      - the KET QUA: dong dau co icon trang thai, nhan ("Viec nen xong", "bi chan"...), ten viec
        va nut mo trang Viec; than la markdown nhu moi cau tra loi.
      - dong DA GIAO (status "giao"): mot dong gon duoi cau xac nhan cua giong noi.
@@ -17,7 +17,7 @@
 (function () {
   "use strict";
 
-  var RE = /<!--\s*JAVIS_VIEC:\s*([\s\S]*?)\s*-->\s*/;
+  var RE = /<!--\s*THANSA_VIEC:\s*([\s\S]*?)\s*-->\s*/;
 
   function tw(khoa, bien) {
     if (typeof window !== "undefined" && window.t) return window.t(khoa, bien);
@@ -38,7 +38,7 @@
   var TRANG_THAI = {
     done: { ic: "circle-check", nhan: "viec.st_done" },
     review: { ic: "clipboard-check", nhan: "viec.st_review" },
-    // 0.411.0: an hourglass, not a warning sign: a paused job is Javis's to handle, not the owner's to fix.
+    // 0.411.0: an hourglass, not a warning sign: a paused job is Thansa's to handle, not the owner's to fix.
     blocked: { ic: "hourglass", nhan: "viec.st_blocked" },
     hoi: { ic: "circle-help", nhan: "viec.st_hoi" },
     failed: { ic: "circle-x", nhan: "viec.st_failed" },
@@ -47,7 +47,7 @@
     giao: { ic: "loader", nhan: "viec.st_giao" }
   };
 
-  /* Boc khoi JAVIS_VIEC. LUON tra `clean` da bo khoi, ke ca khi JSON hong: mot khoi hong
+  /* Boc khoi THANSA_VIEC. LUON tra `clean` da bo khoi, ke ca khi JSON hong: mot khoi hong
      khong duoc phep lot ra man hinh hay bi doc thanh tieng. */
   function tach(text) {
     var s = String(text == null ? "" : text);
@@ -155,7 +155,7 @@
     });
   }
 
-  /* Trang tri mot bong bong .msg-javis da ve xong theo khoi viec. */
+  /* Trang tri mot bong bong .msg-thansa da ve xong theo khoi viec. */
   function ve(msgEl, viec) {
     if (!msgEl || !viec) return msgEl;
     if (viec.status === "giao") {
@@ -182,6 +182,6 @@
   }
 
   var API = { tach: tach, ve: ve, dauThe: dauThe, dongGiao: dongGiao, oTraLoi: oTraLoi, TRANG_THAI: TRANG_THAI };
-  if (typeof window !== "undefined") window.JavisViec = API;
+  if (typeof window !== "undefined") window.ThansaViec = API;
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })();

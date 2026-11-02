@@ -1,4 +1,4 @@
-"""Lệnh "/" hệ thống của Javis: phần LÕI dùng chung cho khung chat web và Telegram.
+"""Lệnh "/" hệ thống của Thansa: phần LÕI dùng chung cho khung chat web và Telegram.
 
 Vì sao có file này: web chat từng chỉ có ba lệnh (/new /reset /stop), còn Telegram có hẳn một
 bộ riêng nằm trong `main.py::_tg_command`. Hai kênh nói hai thứ khác nhau về cùng một khái
@@ -6,9 +6,9 @@ niệm, và mọi lệnh kiểu Claude Code (nén ngữ cảnh, chế độ kế
 viết lại hai lần. File này giữ những gì KHÔNG phụ thuộc kênh: khối chỉ dẫn của `/plan`, việc
 nén hội thoại của `/compact`, và cách định dạng số liệu cho kênh chỉ có chữ.
 
-Nguyên tắc: lệnh do JAVIS tự xử lý chứ không mượn lệnh có sẵn của Claude Code. Engine API,
+Nguyên tắc: lệnh do THANSA tự xử lý chứ không mượn lệnh có sẵn của Claude Code. Engine API,
 Codex, Grok, Antigravity đều không có `/compact` hay `/plan` của Claude Code, nên nếu dựa vào
-đó thì năng lực đổi theo bộ não - trái với nguyên tắc "năng lực của Javis không đổi theo model".
+đó thì năng lực đổi theo bộ não - trái với nguyên tắc "năng lực của Thansa không đổi theo model".
 
 Hai khối chỉ dẫn (`/plan`, `/goal`) đi cùng dạng "khối ngoặc vuông đứng TRƯỚC câu người dùng,
 kết thúc bằng ]\\n\\n" như `[SKILL: ...]`, để bong bóng chat, tên hội thoại và nút "gửi lại" đều
@@ -25,10 +25,10 @@ import localefmt
 # Dấu hiệu nhận diện. PHẢI khớp từng chữ với dashboard/chat-lenh.js (có test khoá hai bên).
 PLAN_MARK = "[CHẾ ĐỘ KẾ HOẠCH:"
 GOAL_MARK = "[MỤC TIÊU:"
-GOAL_TAG = "JAVIS_GOAL"
+GOAL_TAG = "THANSA_GOAL"
 # 0.173.1: hidden line inside the /goal block of an automatic round (v >= 2), so the dashboard can draw that
 # round as a collapsible "nudged to continue" line with a Stop goal button, also after a reload.
-GOAL_ROUND_TAG = "JAVIS_GOAL_ROUND"
+GOAL_ROUND_TAG = "THANSA_GOAL_ROUND"
 GOAL_MAX_ROUNDS = 5
 
 # Neo đầu DÒNG chứ không phải đầu tin: trước khối này dashboard còn chèn khối "file đang ghim" và
@@ -36,11 +36,11 @@ GOAL_MAX_ROUNDS = 5
 # mà tình cờ nhắc chữ này giữa câu không bị coi là lệnh.
 _PLAN_RE = re.compile(r"(?m)^\[CHẾ ĐỘ KẾ HOẠCH:")
 
-# Phải có ít nhất chừng này tin (user + Javis) mới đáng nén: dưới đó là chưa có gì để gấp.
+# Phải có ít nhất chừng này tin (user + Thansa) mới đáng nén: dưới đó là chưa có gì để gấp.
 MIN_TIN_NEN = 4
 # Số tin GẦN NHẤT giữ nguyên vẹn khi nén bằng tóm tắt (2 lượt hỏi-đáp).
 GIU_NGUYEN = 4
-# Nhà API mà bộ nén nền của Javis đã chạy được (cùng danh sách với móc nén nền sau mỗi lượt
+# Nhà API mà bộ nén nền của Thansa đã chạy được (cùng danh sách với móc nén nền sau mỗi lượt
 # trong main.py). Nhà khác (Ollama, OpenAI-compat) chưa được kiểm chứng đường tóm tắt nên
 # không đoán mò: báo thẳng là chưa hỗ trợ thay vì nén hỏng.
 NHA_API_NEN_DUOC = ("openrouter", "openai", "anthropic-api", "gemini", "groq", "deepseek")
@@ -83,8 +83,8 @@ def _don_dieu_kien(dieu_kien: str, toi_da: int = 400) -> str:
 def khoi_muc_tieu(dieu_kien: str, vong: int = 1, toi_da: int = GOAL_MAX_ROUNDS, left: str = "") -> str:
     """Khối chỉ dẫn `/goal`: làm tiếp cho tới khi điều kiện đúng, tự báo trạng thái ở cuối.
 
-    Trình duyệt đọc dòng ẩn `<!-- JAVIS_GOAL: {...} -->` để quyết định có tự gửi vòng tiếp
-    không. Cách này giống JAVIS_ASK/JAVIS_LESSON: MODEL đề xuất, CODE quyết định (trần vòng,
+    Trình duyệt đọc dòng ẩn `<!-- THANSA_GOAL: {...} -->` để quyết định có tự gửi vòng tiếp
+    không. Cách này giống THANSA_ASK/THANSA_LESSON: MODEL đề xuất, CODE quyết định (trần vòng,
     dừng khi không tiến triển, dừng khi người dùng chen vào).
     """
     import json
@@ -115,7 +115,7 @@ _GOAL_RE = re.compile(r"<!--\s*" + GOAL_TAG + r":\s*([\s\S]*?)\s*-->")
 
 
 def doc_muc_tieu(text: str):
-    """Đọc dòng ẩn JAVIS_GOAL CUỐI CÙNG trong câu trả lời -> {'done': bool, 'left': str} hoặc None.
+    """Đọc dòng ẩn THANSA_GOAL CUỐI CÙNG trong câu trả lời -> {'done': bool, 'left': str} hoặc None.
 
     None = model không báo (hoặc báo hỏng). Bên gọi coi đó là "không rõ" và DỪNG, không đoán
     là chưa xong: đoán sai chiều đó là tự chạy vòng lặp đốt token.
@@ -149,7 +149,7 @@ async def nen_phien(store, sid, *, kind, prov, api_key, model, api_stream, giu=G
       tóm tắt + đuôi thay vì cả lịch sử.
     - **Engine gói thuê bao** (Claude Code, Codex, Grok, Antigravity): các engine này tự giữ mạch
       native, và phần phình to nằm trong mạch đó (kết quả công cụ, vòng lặp agentic) chứ không
-      trong transcript của Javis. Nén = vứt mạch native đi; lượt sau Javis mở mạch mới và mồi
+      trong transcript của Thansa. Nén = vứt mạch native đi; lượt sau Thansa mở mạch mới và mồi
       lại bằng transcript đã lưu (`compaction.bootstrap_prompt`). Không có bước tóm tắt vì gói
       thuê bao không có API key để gọi một request tóm tắt riêng.
 

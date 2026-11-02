@@ -6,7 +6,7 @@
     "server/improvement_compose_permissions.py": "5bbb0441916f4d28c06316e929359c9a3e13501d2683af01d4cb5f525384efd6",
     "server/improvement_operation_records.py": "0f1cdd4ef35cc4b365323c9b3172f94c2aff30f6b482dde18a691ef3f5ec7af5",
     "server/improvement_operation_execution.py": "2abe4eb918e60990713b0093ebcb200d67aa0270f62d83a356227a9b3ab4fdfd",
-    "server/improvement_native_protocol.py": "655caf3a44920fbdf89b6b9c58174914e041f8259133e62a283a7e8d53822f6f",
+    "server/improvement_native_protocol.py": "dcbb97585dc290d0a81d4287c5704ca46fd89b07c39f239110ca81ad44f65ad2",
     "server/improvement_claude.py": "e1e7da2fdcf812090a0493a40fd422248ce1d06cbc8826212803540b36e6969b",
     "tests/python/test_improvement_operation_worker.py": "660fe6fbce0030d2cd70ccd013761419046b2eb53e70a13fa331b78bda8dd535",
     "tests/python/test_improvement_compose_admission.py": "d86cf36e720a157c0d4108d5198988ff0c19da73246b4ac42f37d9a5f10c4c42",
@@ -14,7 +14,7 @@
     "server/improvement_compose_inputs.py": "4bfcd69c96696fc8dad6d4478a8edbc319ce9313114f1aff3b85f5417a40046b",
     "server/improvement_compose_schema.py": "a33edf30ba19d73918d8e48138ca62c56dcfc67fa01b2b44e386e95fd192096f",
     "server/improvement_operation_protocol.py": "f9dd577cf66c23df4839b3c39ed68375241a0818e9f49796a77beeca8a2f03e7",
-    "server/improvement_harness2_compose.py": "a8192f15f226348f3485883a80b7ebe3cb215caa2d3084845f4a050b0def71b9",
+    "server/improvement_harness2_compose.py": "c1bf54b951e56a656a19abd2690b92c95acb33630a98e766f9a2bd4829c0c0b6",
     "third_party/harness2/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
   },
   "behavior": [
@@ -116,7 +116,7 @@
         "server/improvement_compose_permissions.py": "5bbb0441916f4d28c06316e929359c9a3e13501d2683af01d4cb5f525384efd6",
         "server/improvement_operation_records.py": "0f1cdd4ef35cc4b365323c9b3172f94c2aff30f6b482dde18a691ef3f5ec7af5",
         "server/improvement_operation_execution.py": "2abe4eb918e60990713b0093ebcb200d67aa0270f62d83a356227a9b3ab4fdfd",
-        "server/improvement_native_protocol.py": "655caf3a44920fbdf89b6b9c58174914e041f8259133e62a283a7e8d53822f6f",
+        "server/improvement_native_protocol.py": "dcbb97585dc290d0a81d4287c5704ca46fd89b07c39f239110ca81ad44f65ad2",
         "server/improvement_claude.py": "e1e7da2fdcf812090a0493a40fd422248ce1d06cbc8826212803540b36e6969b",
         "tests/python/test_improvement_compose_admission.py": "d86cf36e720a157c0d4108d5198988ff0c19da73246b4ac42f37d9a5f10c4c42",
         "tests/python/test_improvement_compose_admission_races.py": "7bd3c537dc57cc81bb39887021a81e6cdf12fab98e8f759aa75e0be52fa99671",

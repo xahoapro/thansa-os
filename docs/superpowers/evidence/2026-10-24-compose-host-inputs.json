@@ -4,19 +4,19 @@
   "goal_sections": "12-17",
   "source_and_test_sha256": {
     "third_party/harness2/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
-    "tests/python/test_improvement_compose_protocol.py": "1b94a495ebcb55e85fa5f1146d3d341db7ee5fd35b3ef49ac42472098cb41a47",
+    "tests/python/test_improvement_compose_protocol.py": "bcb9f3749ab81b4419eb3d0cf04565b052bbcd55cacfd431ea41bc9149c1c012",
     "server/improvement_comparison_results.py": "575d476181320fa17b8ba6f4b1a3edea4e007c1e58e66be8034df6d991774d7b",
     "server/improvement_cases.py": "561d848331eca7ce6b4e84d6b68b1cac031a62f8dc0e4ce14250bda7f80d2b9d",
     "server/improvement_compose_inputs.py": "4bfcd69c96696fc8dad6d4478a8edbc319ce9313114f1aff3b85f5417a40046b",
     "server/improvement_improver_inputs.py": "cb1f6798af6e44f8801334231eb7113383ebbb6faff6a6586e9ab1e7ec1fb458",
     "server/improvement_experiment_lineage.py": "4678869147da763bfc000af4079064b19d8fac41b002453fb7029ba0a1c7ec41",
-    "server/improvement_compose_protocol.py": "7c829bfeec4ad38a45b980db09e75d8e3f778fc880ecd1767f86d5559c9be326",
+    "server/improvement_compose_protocol.py": "a6f07c49cd7c13d4c7ce4a8f901a1e371a9d0b3ddc14f79560506c984654fd79",
     "server/improvement_comparison_plans.py": "b81c1c0b93a17ac59d85d2bfb462fa5ee7f6e717a9ea8d6eee747862e5055ae4",
     "third_party/harness2/COMPOSE-PROVENANCE.json": "ce7839f1a378502caeb5c06af54a66727761f0223bdc336f549cbf0b003fb11c",
     "server/improvement_skill_candidates.py": "881d402a3df0629aacfecac590b25f667043b1e7d6e0ef5cd7b6ba09c4886c9e",
     "tests/run.py": "59756fe950a50a85ba761f5aba132566656022718dd91b936c1f2266bb9fb92a",
     "tests/python/test_improvement_compose_input_races.py": "ed6870152786d590bd79b13fb71caa3ab59db3eeb2ccd8f099e9711b5c3ac4a2",
-    "server/improvement_harness2_compose.py": "a8192f15f226348f3485883a80b7ebe3cb215caa2d3084845f4a050b0def71b9",
+    "server/improvement_harness2_compose.py": "c1bf54b951e56a656a19abd2690b92c95acb33630a98e766f9a2bd4829c0c0b6",
     "tests/python/test_improvement_compose_inputs.py": "d0831be1eb7c024715a2e1e66697b218535a82fb3bd9921aae06591151709f65"
   },
   "behavior": [
@@ -100,7 +100,7 @@
     "head_sha": "50a73cc28262e4bf1a9b9159c0d38e3df3f47890",
     "status": "completed",
     "conclusion": "success",
-    "url": "https://github.com/blogminhquy/javis-os/actions/runs/40056590938",
+    "url": "https://github.com/xahoapro/thansa-os/actions/runs/40056590938",
     "selected_raw_pins_verified": 8,
     "scripts": [
       {
@@ -131,10 +131,10 @@
     "initial_dispatch": "HTTP500; run list empty before one successful retry",
     "scope": "Fresh isolated Ubuntu/Python3.12 fixture check with explicit no-real-engine flags; not final-task-head full required CI or native/model/business qualification.",
     "selected_raw_sha256": {
-      "server/improvement_harness2_compose.py": "a8192f15f226348f3485883a80b7ebe3cb215caa2d3084845f4a050b0def71b9",
-      "server/improvement_compose_protocol.py": "7c829bfeec4ad38a45b980db09e75d8e3f778fc880ecd1767f86d5559c9be326",
+      "server/improvement_harness2_compose.py": "c1bf54b951e56a656a19abd2690b92c95acb33630a98e766f9a2bd4829c0c0b6",
+      "server/improvement_compose_protocol.py": "a6f07c49cd7c13d4c7ce4a8f901a1e371a9d0b3ddc14f79560506c984654fd79",
       "server/improvement_compose_inputs.py": "4bfcd69c96696fc8dad6d4478a8edbc319ce9313114f1aff3b85f5417a40046b",
-      "tests/python/test_improvement_compose_protocol.py": "1b94a495ebcb55e85fa5f1146d3d341db7ee5fd35b3ef49ac42472098cb41a47",
+      "tests/python/test_improvement_compose_protocol.py": "bcb9f3749ab81b4419eb3d0cf04565b052bbcd55cacfd431ea41bc9149c1c012",
       "tests/python/test_improvement_compose_inputs.py": "d0831be1eb7c024715a2e1e66697b218535a82fb3bd9921aae06591151709f65",
       "tests/python/test_improvement_compose_input_races.py": "ed6870152786d590bd79b13fb71caa3ab59db3eeb2ccd8f099e9711b5c3ac4a2",
       "third_party/harness2/COMPOSE-PROVENANCE.json": "ce7839f1a378502caeb5c06af54a66727761f0223bdc336f549cbf0b003fb11c",

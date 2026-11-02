@@ -6,7 +6,7 @@ stuck on was everything AROUND it, all of it done by hand on developers.facebook
   - pasting a USER token where a PAGE token is needed (Graph error 100 on check, error 210 when
     the bot subscribes the Page or sends a reply);
   - a short-lived token that dies within the hour;
-  - an app webhook saved without the `messages` field ticked, so Meta never calls Javis and
+  - an app webhook saved without the `messages` field ticked, so Meta never calls Thansa and
     the bot looks healthy while hearing nothing;
   - a token without `pages_read_engagement` / `pages_manage_metadata`.
 
@@ -150,7 +150,7 @@ async def app_webhook(client, app_id: str, app_secret: str) -> dict:
 
 async def set_app_webhook(client, app_id: str, app_secret: str, callback_url: str, verify_token: str) -> dict:
     """Register (or overwrite) the app's `page` webhook with the fields the bot needs. Meta calls
-    `callback_url` with the verify token while this request is open, so Javis must be reachable
+    `callback_url` with the verify token while this request is open, so Thansa must be reachable
     at that address for it to succeed."""
     params = {"object": "page", "callback_url": callback_url, "fields": SUBSCRIBED_FIELDS + "," + FEED_FIELD,
               "include_values": "true", "verify_token": verify_token,

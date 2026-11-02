@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/xahoapro/thansa-os?color=f97316)](https://github.com/xahoapro/thansa-os/commits/main)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)](../../../requirements.txt)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/javis-os)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed?logo=docker&logoColor=white)](https://github.com/xahoapro/thansa-os/pkgs/container/thansa-os)
 [![MCP](https://img.shields.io/badge/tools-Model%20Context%20Protocol-8b5cf6)](https://modelcontextprotocol.io)
 
 <!-- flags:start -->
@@ -97,7 +97,7 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 | **지식** | Brain의 Wiki 폴더와 Sources 폴더 | 마크다운, Obsidian 호환 |
 | **Skill** | `skills/<name>/SKILL.md` | 마크다운 |
 | **Agent와 Workflow** | `agents/*.md`, `workflows/*.md` | 프런트매터가 있는 마크다운 |
-| **Loop와 리마인더** | `Javis/loops/*.md`, `Javis/reminders.json` | 마크다운, JSON |
+| **Loop와 리마인더** | `Thansa/loops/*.md`, `Thansa/reminders.json` | 마크다운, JSON |
 
 이것이 가져다주는 것:
 
@@ -149,7 +149,7 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 모든 브레인은 연결된 MCP 서버를 호출하고, Brain을 읽고 쓰고, Skill을 실행하고, Kanban 작업을 대기열에 넣고, Agent, Workflow, Loop, 리마인더를 만들 수 있습니다. CLI 엔진은 여기에 더해 **셸 명령 실행**, **웹 가져오기와 검색**, **병렬 서브 에이전트 생성** 도 할 수 있습니다.
 
 > [!WARNING]
-> **구독 요금제로 백그라운드 작업을 돌리기 전에 참고하세요.** Anthropic은 Claude Pro/Max를 Claude Code의 **일반적인 개인 사용** 으로 한정합니다. 지속적인 백그라운드 실행(Loop, 리마인더, Kanban 작업, 챗봇), VPS에서의 실행, 여러 사람이 한 계정을 함께 쓰는 경우는 모두 이 범위를 벗어나므로 **계정이 잠길** 위험이 있습니다. 다만 지금까지 Javis에서 확인된 사례는 없습니다. 혹시 겪으신다면 [Issues](https://github.com/xahoapro/thansa-os/issues/new/choose)로 개발자에게 알려 주세요. Javis는 로그인 토큰을 절대 읽지 않고 실제 `claude` 바이너리를 실행하지만, 그렇다고 24시간 백그라운드 사용이 정당해지는 것은 아닙니다. 안전하게 쓰려면 Models 페이지에서 Claude Code를 **API 키** 로 실행하도록 설정하거나, **백그라운드 작업용 모델** 을 다른 제공자로 지정하세요. xAI 요금제에도 같은 주의가 적용됩니다. `server/claude_auth.py` 를 참고하세요.
+> **구독 요금제로 백그라운드 작업을 돌리기 전에 참고하세요.** Anthropic은 Claude Pro/Max를 Claude Code의 **일반적인 개인 사용** 으로 한정합니다. 지속적인 백그라운드 실행(Loop, 리마인더, Kanban 작업, 챗봇), VPS에서의 실행, 여러 사람이 한 계정을 함께 쓰는 경우는 모두 이 범위를 벗어나므로 **계정이 잠길** 위험이 있습니다. 다만 지금까지 Thansa에서 확인된 사례는 없습니다. 혹시 겪으신다면 [Issues](https://github.com/xahoapro/thansa-os/issues/new/choose)로 개발자에게 알려 주세요. Thansa는 로그인 토큰을 절대 읽지 않고 실제 `claude` 바이너리를 실행하지만, 그렇다고 24시간 백그라운드 사용이 정당해지는 것은 아닙니다. 안전하게 쓰려면 Models 페이지에서 Claude Code를 **API 키** 로 실행하도록 설정하거나, **백그라운드 작업용 모델** 을 다른 제공자로 지정하세요. xAI 요금제에도 같은 주의가 적용됩니다. `server/claude_auth.py` 를 참고하세요.
 
 ---
 
@@ -166,8 +166,8 @@ Thansa에서 모델은 교체할 수 있는 부품입니다. 쌓아 온 모든 �
 ### 🗣️ 말로 대화하기
 - **핸즈프리 음성**: 말하면 Thansa가 듣고 소리 내어 답합니다(기본은 무료 Edge TTS, 또는 OpenAI와 ElevenLabs).
 - **채팅 세션** 을 저장하고 다시 열고 전문 검색할 수 있습니다. 긴 세션은 잘라 내지 않고 요약으로 압축합니다.
-- **Telegram, Slack, WhatsApp, Zalo, CLI, 웹 대시보드** 가 모두 같은 Javis와 대화합니다 ([Slack 및 WhatsApp 설정](../../../docs/en/29-slack-whatsapp.md)).
-- **모든 언어**: Javis는 사용자가 쓰는 언어로 답합니다. 인터페이스는 영어와 베트남어로 제공됩니다.
+- **Telegram, Slack, WhatsApp, Zalo, CLI, 웹 대시보드** 가 모두 같은 Thansa와 대화합니다 ([Slack 및 WhatsApp 설정](../../../docs/en/29-slack-whatsapp.md)).
+- **모든 언어**: Thansa는 사용자가 쓰는 언어로 답합니다. 인터페이스는 영어와 베트남어로 제공됩니다.
 
 ### 🧠 모든 것을 기억하기
 - **Second Brain**: 장기 메모리, Wiki, 원본 Sources를 담은 마크다운 볼트(Obsidian 호환)입니다.
@@ -247,7 +247,7 @@ flowchart LR
 <details open>
 <summary><b>방법 1: Hostinger Docker Manager (도메인 + HTTPS, 원클릭)</b></summary>
 
-> 🛒 **아직 VPS가 없나요?** [여기서 Hostinger VPS 신청하기](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager가 기본 탑재되어 있어 Javis를 원클릭으로 설치합니다. 준비되면 아래 단계로 돌아오세요.
+> 🛒 **아직 VPS가 없나요?** [여기서 Hostinger VPS 신청하기](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager가 기본 탑재되어 있어 Thansa를 원클릭으로 설치합니다. 준비되면 아래 단계로 돌아오세요.
 
 Hostinger VPS → **Docker Manager → Compose → URL** → Hostinger용 파일을 붙여 넣고 **Deploy** 를 누릅니다.
 
@@ -255,17 +255,17 @@ Hostinger VPS → **Docker Manager → Compose → URL** → Hostinger용 파일
 https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.hostinger.yml
 ```
 
-**Environment** 상자에는 세 가지 항목만 있으면 됩니다: `DOMAIN_NAME`, `JAVIS_ADMIN_USER`, `JAVIS_ADMIN_PASSWORD`. 선택 항목으로 `JAVIS_AUTO_UPDATE` 가 있습니다(`true` 로 설정하면 Thansa가 매일 스스로 업데이트합니다).
+**Environment** 상자에는 세 가지 항목만 있으면 됩니다: `DOMAIN_NAME`, `THANSA_ADMIN_USER`, `THANSA_ADMIN_PASSWORD`. 선택 항목으로 `THANSA_AUTO_UPDATE` 가 있습니다(`true` 로 설정하면 Thansa가 매일 스스로 업데이트합니다).
 
 Hostinger의 Traefik이 HTTPS 인증서를 발급하도록 `DOMAIN_NAME` 을 설정합니다.
-- **무료 링크**(도메인 구매 불필요): `DOMAIN_NAME=javis.<vps-hostname>.hstgr.cloud` (호스트 이름은 hPanel → VPS에서 확인, 예: `javis.srv1562015.hstgr.cloud`).
+- **무료 링크**(도메인 구매 불필요): `DOMAIN_NAME=thansa.<vps-hostname>.hstgr.cloud` (호스트 이름은 hPanel → VPS에서 확인, 예: `thansa.srv1562015.hstgr.cloud`).
 - **보유한 도메인:** `DOMAIN_NAME=example.com` 으로 설정하고 A 레코드를 VPS IP로 지정합니다.
 
 인증서 발급까지 1-3분 기다린 다음 `https://<DOMAIN_NAME>` 을 엽니다.
 
 **한 번만 하면 되는 세 단계:**
-1. **GHCR 이미지를 Public으로 설정:** GitHub → 저장소 → **Packages** → `javis-os` → *Package settings* → Visibility = **Public**.
-2. **관리자 계정 생성:** `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` 를 채우거나(권장), 배포 직후 앱을 열어 직접 만듭니다. 관리자가 없는 동안에는 링크를 먼저 연 사람이 관리자를 만들 수 있습니다. 그다음 **2FA를 켜세요**([보안과 계정](../../../docs/en/14-security-and-accounts.md)).
+1. **GHCR 이미지를 Public으로 설정:** GitHub → 저장소 → **Packages** → `thansa-os` → *Package settings* → Visibility = **Public**.
+2. **관리자 계정 생성:** `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` 를 채우거나(권장), 배포 직후 앱을 열어 직접 만듭니다. 관리자가 없는 동안에는 링크를 먼저 연 사람이 관리자를 만들 수 있습니다. 그다음 **2FA를 켜세요**([보안과 계정](../../../docs/en/14-security-and-accounts.md)).
 3. **Models** 페이지에서 **브레인에 로그인** 합니다.
 
 자세한 내용과 문제 해결: [DEPLOY.en.md](../../../DEPLOY.en.md).
@@ -282,11 +282,11 @@ Hostinger의 Traefik이 HTTPS 인증서를 발급하도록 `DOMAIN_NAME` 을 설
 mkdir thansa && cd thansa
 curl -fsSLO https://raw.githubusercontent.com/xahoapro/thansa-os/main/docker-compose.yml
 
-docker compose run --rm javis claude auth login --claudeai   # sign in to Claude once (optional)
+docker compose run --rm thansa claude auth login --claudeai   # sign in to Claude once (optional)
 docker compose up -d                                          # pull the image and run
 ```
 
-`http://<vps-ip>:7777` 을 열고 곧바로 관리자 사용자 이름과 비밀번호(8자 이상)를 설정하거나, 환경 변수에 `JAVIS_ADMIN_USER` + `JAVIS_ADMIN_PASSWORD` 를 미리 지정해 둡니다. 그다음 2FA를 켜세요.
+`http://<vps-ip>:7777` 을 열고 곧바로 관리자 사용자 이름과 비밀번호(8자 이상)를 설정하거나, 환경 변수에 `THANSA_ADMIN_USER` + `THANSA_ADMIN_PASSWORD` 를 미리 지정해 둡니다. 그다음 2FA를 켜세요.
 
 도메인 없이 원격 접속하려면: `docker compose --profile tunnel up -d` 를 실행한 뒤 `docker compose logs tunnel | grep trycloudflare` 를 실행하면 HTTPS 링크가 출력됩니다.
 
@@ -330,11 +330,11 @@ Dashboard:                             http://localhost:7777
 <details>
 <summary><b>VPS 하나에 Thansa 여러 개 실행하기</b></summary>
 
-Brain, 설정, 계정은 인스턴스마다 완전히 분리됩니다. 인스턴스끼리 다른 값은 `JAVIS_NAME`, `JAVIS_HOST_PORT`, `DOMAIN_NAME` 세 가지뿐입니다.
+Brain, 설정, 계정은 인스턴스마다 완전히 분리됩니다. 인스턴스끼리 다른 값은 `THANSA_NAME`, `THANSA_HOST_PORT`, `DOMAIN_NAME` 세 가지뿐입니다.
 
 - **Hostinger:** `docker-compose.hostinger.yml` 을 두 번째 스택으로 다시 배포하고 이 세 항목을 채웁니다.
 - **직접 관리하는 VPS:** 공유 프록시 `docker-compose.proxy.yml` 을 컴퓨터 전체에서 한 번만 실행한 뒤, 인스턴스마다 `docker-compose.multi.yml` 로 별도 폴더를 만듭니다. 프록시가 새 인스턴스를 찾아 SSL을 스스로 요청합니다.
-- **네이티브:** `JAVIS_NAME=thansa-shop JAVIS_PORT=7778 ./install.sh`.
+- **네이티브:** `THANSA_NAME=thansa-shop THANSA_PORT=7778 ./install.sh`.
 
 단계별 안내: [DEPLOY.en.md](../../../DEPLOY.en.md).
 
@@ -387,14 +387,14 @@ Thansa를 열면 설정 마법사가 브라우저 언어로 차근차근 안내�
 
 | 변수 | 의미 | 기본값 |
 |---|---|---|
-| `JAVIS_HOST` | 수신 주소. `127.0.0.1` = 이 컴퓨터만, `0.0.0.0` = 공개 | `127.0.0.1` |
-| `JAVIS_PORT` | 포트 | `7777` |
-| `JAVIS_REQUIRE_LOGIN` | `1`/`0` 으로 로그인 강제를 켜거나 끔(기본: 공개 주소에 바인딩하면 켜짐) | *(자동)* |
-| `JAVIS_ADMIN_USER` / `JAVIS_ADMIN_PASSWORD` | 배포 시 관리자 생성 | - |
-| `JAVIS_ALLOWED_HOSTS` | 허용 목록에 추가할 호스트 이름(CSRF 및 DNS 리바인딩 방어) | localhost + 내 도메인 |
-| `JAVIS_STATE_DIR` | 설정, 세션, 암호화 키가 저장되는 위치 | `server/` (Docker: `/data/state`) |
+| `THANSA_HOST` | 수신 주소. `127.0.0.1` = 이 컴퓨터만, `0.0.0.0` = 공개 | `127.0.0.1` |
+| `THANSA_PORT` | 포트 | `7777` |
+| `THANSA_REQUIRE_LOGIN` | `1`/`0` 으로 로그인 강제를 켜거나 끔(기본: 공개 주소에 바인딩하면 켜짐) | *(자동)* |
+| `THANSA_ADMIN_USER` / `THANSA_ADMIN_PASSWORD` | 배포 시 관리자 생성 | - |
+| `THANSA_ALLOWED_HOSTS` | 허용 목록에 추가할 호스트 이름(CSRF 및 DNS 리바인딩 방어) | localhost + 내 도메인 |
+| `THANSA_STATE_DIR` | 설정, 세션, 암호화 키가 저장되는 위치 | `server/` (Docker: `/data/state`) |
 | `BRAINS_DIR` | 모든 Brain을 담는 상위 폴더 | `brains/` (Docker: `/brains`) |
-| `JAVIS_ENABLE_USER_PLUGINS` | `false` 면 직접 만든 Plugin을 끕니다(서버 안에서 실제 Python이 실행됨) | *(켜짐)* |
+| `THANSA_ENABLE_USER_PLUGINS` | `false` 면 직접 만든 Plugin을 끕니다(서버 안에서 실제 Python이 실행됨) | *(켜짐)* |
 | `TTS_VOICE` / `TTS_RATE` | Edge TTS의 음성과 속도 | `en-US-EmmaMultilingualNeural` / `+5%` |
 
 ---
@@ -405,7 +405,7 @@ Thansa를 열면 설정 마법사가 브라우저 언어로 차근차근 안내�
 - **2FA (TOTP)**, 로그인 시도 횟수 제한, 8자 이상 비밀번호, HTTPS에서 `Secure` 쿠키, 30일 후 만료되는 세션.
 - **CSRF 및 DNS 리바인딩 방어**: 알 수 없는 출처에서 온 쓰기 요청은 모두 거부됩니다.
 - **비밀 정보는 암호화** 되어 `settings.json` 에 저장됩니다(API 키, OAuth 토큰, 봇 토큰). 암호화 키는 컴퓨터마다 다릅니다.
-- **직접 만든 Plugin은 기본적으로 로드되지만, 앱에서 켜기 전까지 각 Plugin은 꺼져 있습니다**. 모두 끄려면 `JAVIS_ENABLE_USER_PLUGINS=false` 를 설정하세요.
+- **직접 만든 Plugin은 기본적으로 로드되지만, 앱에서 켜기 전까지 각 Plugin은 꺼져 있습니다**. 모두 끄려면 `THANSA_ENABLE_USER_PLUGINS=false` 를 설정하세요.
 - **연결 권한은 모델이 아니라 허브가 강제합니다**: 읽기 전용 계정으로는 전송, 결제, 게시를 할 수 없습니다.
 
 취약점을 발견하셨나요? 공개 이슈를 열지 말고 [SECURITY.md](../../../SECURITY.md) 의 절차를 따라 주세요.
@@ -434,7 +434,7 @@ Thansa를 열면 설정 마법사가 브라우저 언어로 차근차근 안내�
 ## 📂 저장소 구조
 
 ```
-javis-os/
+thansa-os/
 ├── server/          # FastAPI backend: engines, connections, background work, channels, memory
 ├── dashboard/       # Frontend (plain JS, no build step)
 │   └── i18n/        # Interface strings, one JSON file per language

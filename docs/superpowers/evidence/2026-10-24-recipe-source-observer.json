@@ -26,7 +26,7 @@
     },
     {
       "path": "server/improvement_trial_dashboard.py",
-      "sha256": "494c16cc63dfd1073df5cd38fbb7d834ddf2b937b5eb4b51a72230e89e277047",
+      "sha256": "c1d053954dc900dc842022cc3c7ea0325635d48eb3ef33bf294852eaa1ee224c",
       "bytes": 47272,
       "git_blob": "77b8e9de6164bc7a92008d9596c4e7fb1fc7d6ad",
       "cr_bytes": 0,
@@ -79,12 +79,12 @@
   "local_final": [
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "-B",
         ".superpowers/sdd/2026-10-24-recipe-destination-authority/root-check.py",
         "test_improvement_recipe_sources.py"
       ],
-      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Javis-OS",
+      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Thansa-OS",
       "start_utc": "2026-10-24T09:15:05.767062+00:00",
       "logger_pid": 7676,
       "pid": 26408,
@@ -109,14 +109,14 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "-B",
         ".superpowers/sdd/2026-10-24-recipe-destination-authority/root-check.py",
         "test_improvement_trial_dashboard.py",
         "DashboardTests.test_revalidate_freezes_only_clock_and_usage",
         "DashboardTests.test_sql_permissions_membership_and_target_changes_reject_revalidation"
       ],
-      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Javis-OS",
+      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Thansa-OS",
       "start_utc": "2026-10-24T09:17:55.310187+00:00",
       "logger_pid": 9540,
       "pid": 3096,
@@ -141,7 +141,7 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "-B",
         ".superpowers/sdd/2026-10-24-recipe-destination-authority/root-check.py",
         "test_improvement_trial_service.py",
@@ -149,7 +149,7 @@
         "DashboardServiceTests.test_source_replacement_during_observation_rejects_result",
         "DashboardServiceTests.test_changed_native_source_members_or_modules_fail_before_capture"
       ],
-      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Javis-OS",
+      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Thansa-OS",
       "start_utc": "2026-10-24T09:18:30.342886+00:00",
       "logger_pid": 16100,
       "pid": 4644,
@@ -174,13 +174,13 @@
     },
     {
       "command": [
-        "D:\\Project\\Javis-OS\\.venv\\Scripts\\python.exe",
+        "D:\\Project\\Thansa-OS\\.venv\\Scripts\\python.exe",
         "-B",
         ".superpowers/sdd/2026-10-24-recipe-destination-authority/root-check.py",
         "test_improvement_recipe_archive.py",
         "RecipeArchiveTests.test_actual_encrypted_manifest_uses_original_source_pins_and_unverified_grade"
       ],
-      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Javis-OS",
+      "cwd": "C:\\Users\\admin\\.codex\\worktrees\\agent-skill-improvement-m2a\\Thansa-OS",
       "start_utc": "2026-10-24T09:19:10.579828+00:00",
       "logger_pid": 2112,
       "pid": 9904,
@@ -225,12 +225,12 @@
     "run_id": 40081705134,
     "job_id": 120836433669,
     "conclusion": "success",
-    "url": "https://github.com/blogminhquy/javis-os/actions/runs/40081705134",
+    "url": "https://github.com/xahoapro/thansa-os/actions/runs/40081705134",
     "source_head": "429d9334afa792116ad80e02f0f3bf2fd11e46af",
     "sha256": {
       "server/improvement_recipe_sources.py": "fea6886fc6fbcfa56f50f79aefb90c07d4222d1c7b3cc82e589d680a51f0d986",
       "tests/python/test_improvement_recipe_sources.py": "4bdea1cdb0735a4228c47e67c90bc44bf2889593569178d121ed2bb3b68b4161",
-      "server/improvement_trial_dashboard.py": "494c16cc63dfd1073df5cd38fbb7d834ddf2b937b5eb4b51a72230e89e277047",
+      "server/improvement_trial_dashboard.py": "c1d053954dc900dc842022cc3c7ea0325635d48eb3ef33bf294852eaa1ee224c",
       "server/improvement_trial_service.py": "a60c0682b901d564dfb78a932a3ee83cceddf4b0f64c35780051f26697c6bbf8",
       "server/improvement_recipe_archive.py": "b7967c754d4e79bee9ee677b8ee0e7906f9c13d2d4bdb8d1fee6b1c6c7369647",
       "server/improvement_claude.py": "fc6c58edf126d6f9acfc635d2f0f858c948e18ae70fc1a8a89e9e74a10b3395c"

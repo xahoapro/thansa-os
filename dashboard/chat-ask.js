@@ -1,11 +1,11 @@
 /* chat-ask.js - khoi hoi-lai co lua chon cho khung chat Thansa.
 
    Thansa ket thuc cau tra loi bang mot khoi an:
-     <!-- JAVIS_ASK: {"question":"...","header":"...","options":[{"label":"..","desc":".."}]} -->
+     <!-- THANSA_ASK: {"question":"...","header":"...","options":[{"label":"..","desc":".."}]} -->
    File nay boc khoi do ra, ve thanh hang chip duoi bong bong tra loi, va bat su kien bam.
    Bam mot chip = gui dung nhan do di nhu mot tin nhan nguoi dung binh thuong.
 
-   Di theo dung vet khoi JAVIS_METRICS da chay san (app.js). KHONG dung MCP hub, khong
+   Di theo dung vet khoi THANSA_METRICS da chay san (app.js). KHONG dung MCP hub, khong
    dung engine -> chay tren moi bo nao chi nho system prompt.
 
    An toan: moi text trong khoi la do model sinh ra -> escape het truoc khi nhet vao HTML.
@@ -27,7 +27,7 @@
     } catch (e) { return khoa; }
   }
 
-  var ASK_RE = /<!--\s*JAVIS_ASK:\s*([\s\S]*?)\s*-->/;
+  var ASK_RE = /<!--\s*THANSA_ASK:\s*([\s\S]*?)\s*-->/;
   var MAX_OPTS = 4;
   var MAX_LABEL = 40;
 
@@ -44,7 +44,7 @@
     return s.length > MAX_LABEL ? s.slice(0, MAX_LABEL - 1) + "…" : s;
   }
 
-  // Boc khoi JAVIS_ASK khoi text. LUON tra clean da bo khoi (ke ca khi JSON hong) -
+  // Boc khoi THANSA_ASK khoi text. LUON tra clean da bo khoi (ke ca khi JSON hong) -
   // mot khoi sai cu phap KHONG duoc phep nuot mat cau tra loi cua Thansa.
   //
   // Cat nhan (cut) NGAY O DAY - tang du lieu - chu khong cat luc ve (render). Ly do:
@@ -127,13 +127,13 @@
       var ask = box._ask;
       var opt = ask && ask.options[+chip.dataset.i];
       if (!opt) return;
-      chip.classList.add("jv-ask-picked");   // danh dau TRUOC khi gui: JavisSend se freeze ca hang
-      if (typeof window.JavisSend === "function") window.JavisSend(opt.label);
+      chip.classList.add("jv-ask-picked");   // danh dau TRUOC khi gui: ThansaSend se freeze ca hang
+      if (typeof window.ThansaSend === "function") window.ThansaSend(opt.label);
     });
   }
 
   if (typeof window !== "undefined") {
-    window.JavisAsk = { extract: extract, render: render, freezeAll: freezeAll };
+    window.ThansaAsk = { extract: extract, render: render, freezeAll: freezeAll };
   }
   if (typeof module !== "undefined" && module.exports) {
     module.exports = { extract: extract, render: render };
