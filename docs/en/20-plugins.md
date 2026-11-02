@@ -328,7 +328,7 @@ def register(ctx):
 ## Thansa Gate: an outside AI posts into a chat (since 0.440.0)
 
 The **Thansa Gate** package (`thansa.gate`) opens an MCP door with OAuth for ChatGPT, Claude and other AIs. Besides the
-tools Thansa already has, that door carries four tools only the outside AI sees (`server/chat_bridge.py`):
+tools Thansa already has, that door carries five tools only the outside AI sees (`server/chat_bridge.py`):
 
 | Tool | What it does | Access level |
 |---|---|---|
@@ -336,13 +336,19 @@ tools Thansa already has, that door carries four tools only the outside AI sees 
 | `thansa_chat_read` | Read the last messages of a chat | Any |
 | `thansa_chat_send` | Post into a chat as if the owner typed it, wait for the answer | Full only |
 | `thansa_chat_result` | Read the answer when Thansa takes long | Any |
+| `thansa_chat_note` | Save a note of the outside chat: what the owner said and decided (since 0.441.0) | Draft, Full |
 
 - **A posted message runs exactly like a typed one:** it goes through the dashboard's own chat loop, so the answer
   streams on every open tab, has a Stop button, is saved to History, written to `memory/conversations` and fed to
   self-learning. Its bubble is labelled **via ChatGPT** or **via Claude**.
 - **A chat that is answering** takes the message as a follow-up, as when the owner types while Thansa works.
 - **Only the owner's chats** (main chat, partner chats). Customer chats and team chats can't be read or posted to.
-- The four tools are **never** in Thansa's own toolset: they appear only when the package's door calls
+- **A note does not run Thansa:** `thansa_chat_note` only saves, so it costs Thansa's brain nothing, yet it goes
+  through the same path as a chat turn: History, conversation log and self-learning. Each outside chat gets its own
+  conversation **From ChatGPT: <title>** (in the interface language); with an `id` the note goes into that
+  Thansa chat instead. Thansa can't read ChatGPT's or Claude's history, so this is how the outside AI sends over
+  what is worth keeping.
+- The five tools are **never** in Thansa's own toolset: they appear only when the package's door calls
   `mcp_hub.tra_loi_jsonrpc(..., gate={"source": "<AI name>"})`.
 
 ## Quick reference of buttons and states

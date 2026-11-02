@@ -8,6 +8,12 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.441.0] - 2026-11-02
+### Added
+- **Chat in ChatGPT or Claude, and Thansa still has the context.** Through Thansa Gate, that AI saves into Thansa what you asked and what you decided, with the reason. Each chat over there gets its own conversation in Thansa's History, such as "From ChatGPT: Tet plan" or "From Claude: Web build".
+- A note **costs Thansa's brain nothing** since Thansa does not answer it, yet it goes into memory and self-learning like any chat. Next time you ask Thansa, it remembers what you decided in ChatGPT.
+- Notes work at the Draft and Full levels. At Read only, the outside AI only reads and writes nothing into Thansa.
+
 ## [0.440.0] - 2026-11-02
 ### Added
 - **ChatGPT and Claude post straight into your Thansa chat.** Install **Thansa Gate** from the Thansa Store and connect it to ChatGPT or Claude. Ask it to "read the Viet Web chat on Thansa and tell me what to do next": it reads and advises. Agree right there and it posts into that very chat so Thansa carries on.

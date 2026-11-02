@@ -330,7 +330,7 @@ def register(ctx):
 ## Thansa Gate: AI bên ngoài nhắn vào khung chat (từ 0.440.0)
 
 Gói **Thansa Gate** (`thansa.gate`) mở cửa MCP có OAuth cho ChatGPT, Claude và AI khác. Ngoài bộ công
-cụ Thansa đã có, cửa này có thêm bốn công cụ chỉ AI bên ngoài thấy (`server/chat_bridge.py`):
+cụ Thansa đã có, cửa này có thêm năm công cụ chỉ AI bên ngoài thấy (`server/chat_bridge.py`):
 
 | Công cụ | Việc | Mức quyền |
 |---|---|---|
@@ -338,6 +338,7 @@ cụ Thansa đã có, cửa này có thêm bốn công cụ chỉ AI bên ngoài
 | `thansa_chat_read` | Đọc các tin cuối của một hội thoại | Mọi mức |
 | `thansa_chat_send` | Nhắn vào hội thoại như chủ gõ, chờ câu trả lời | Chỉ Toàn quyền |
 | `thansa_chat_result` | Đọc câu trả lời khi Thansa làm lâu | Mọi mức |
+| `thansa_chat_note` | Ghi lại cuộc chat bên ngoài: chủ nói gì, đã chốt gì (từ 0.441.0) | Ghi nháp, Toàn quyền |
 
 - **Tin nhắn chạy đúng như chủ gõ:** đi qua chính vòng chat của dashboard, nên chữ chạy trên mọi tab
   đang mở, có nút Dừng, lưu vào Lịch sử, ghi `memory/conversations` và vào vòng tự học. Bong bóng
@@ -345,7 +346,12 @@ cụ Thansa đã có, cửa này có thêm bốn công cụ chỉ AI bên ngoài
 - **Hội thoại đang trả lời** thì tin thành tin gõ thêm, như khi chủ gõ thêm lúc Thansa đang làm.
 - **Chỉ hội thoại của chủ** (khung Trò chuyện, chat với Cộng sự). Hội thoại của khách và nhóm chat thì
   không đọc, không nhắn được.
-- Bốn công cụ **không bao giờ** có trong bộ công cụ của chính Thansa: chúng chỉ hiện khi cửa của gói gọi
+- **Ghi chép không chạy Thansa:** `thansa_chat_note` chỉ lưu, không tốn hạn mức bộ não của Thansa, nhưng đi
+  qua đúng đường lưu lượt chat nên vẫn vào Lịch sử, nhật ký và vòng tự học. Mỗi cuộc chat bên ngoài có một
+  hội thoại riêng **Từ ChatGPT: <tên>** (hay **Từ Claude: ...**); đưa `id` thì ghi thẳng vào hội thoại đó
+  của Thansa. Thansa không đọc được lịch sử chat của ChatGPT hay Claude, nên đây là cách AI bên ngoài tự gửi
+  sang phần đáng giữ.
+- Năm công cụ **không bao giờ** có trong bộ công cụ của chính Thansa: chúng chỉ hiện khi cửa của gói gọi
   `mcp_hub.tra_loi_jsonrpc(..., gate={"source": "<tên AI>"})`.
 
 ## Bảng tra nhanh nút và trạng thái
