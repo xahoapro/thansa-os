@@ -1,15 +1,15 @@
 """Sửa chữ NGHE NHẦM theo ngữ cảnh, trước khi câu nói đi vào bộ não.
 
 Vì sao có lớp này (0.59.24): người dùng nói lẫn tiếng Việt và tiếng Anh, và máy nghe (Web
-Speech của trình duyệt lẫn Whisper) chép từ tiếng Anh thành từ gần âm: "Thansa" thành "David",
-"Jarvis", "Gia vít", "Ja vịt"; tên công cụ, tên dự án cũng cùng số phận. Câu đến bộ não mang
-từ sai đó, Thansa trả lời bám nghĩa đen ("David là ai?") nghe rất buồn cười. Sửa ở tầng máy
+Speech của trình duyệt lẫn Whisper) chép thành từ gần âm: "Thansa" thành "Thần sa",
+"Than sa", "Thanh sa", "Tân sa"; tên công cụ, tên dự án cũng cùng số phận. Câu đến bộ não mang
+từ sai đó, Thansa trả lời bám nghĩa đen ("Thần sa là gì?") nghe rất buồn cười. Sửa ở tầng máy
 nghe thì không được: Web Speech không nhận từ điển riêng, còn Whisper chỉ nhận một gợi ý.
 
 Cách làm, ba lớp bổ trợ nhau:
   1. `goi_y_whisper` - đưa bộ từ vựng vào tham số `prompt` của Whisper để nó ưu tiên viết
      đúng những tên này (hotwords). Chỉ Groq Whisper có, Web Speech không.
-  2. `sua` - so khớp MỜ THEO ÂM: mỗi từ (hoặc cặp từ, vì "Thansa" hay bị tách thành "Gia vít")
+  2. `sua` - so khớp MỜ THEO ÂM: mỗi từ (hoặc cặp từ, vì "Thansa" hay bị tách thành "Than sa")
      được rút về một khoá âm (bỏ dấu, gộp những âm máy nghe hay lẫn: j/gi/d/z, v/w, đuôi
      s/t/d) rồi so với khoá âm của từng từ trong bộ từ vựng. Trùng gần như hoàn toàn thì sửa ở
      mọi vị trí; trùng vừa phải thì CHỈ sửa khi từ đứng ở vị trí GỌI TÊN (đầu câu, trước "ơi",
@@ -123,7 +123,7 @@ def bo_dau(s: str) -> str:
 def khoa_am(tu: str) -> str:
     """Rút một từ (hay cụm đã ghép liền) về khoá âm để so mờ.
 
-    Ví dụ: Thansa, David, Davis, Jarvis, Gia vít, Ja vịt, Đa vít -> đều là "davit".
+    Ví dụ: Thansa, Thần sa, Than sa, Thanh sa, Tân sa, Than xa -> đều là "tansa".
     """
     s = re.sub(r"[^a-z]", "", bo_dau(tu))
     if not s:

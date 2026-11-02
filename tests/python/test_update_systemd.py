@@ -86,13 +86,13 @@ if shutil.which("bash"):
         os.chmod(tmp / x, 0o755)
     helpers = "\n".join(ln for ln in UPD.splitlines() if ln.startswith(("_co_unit()", "_ds_container()", "_co_container()")))
     kich = ("set -euo pipefail\n" + helpers + "\n"
-            "_co_unit thansa && echo UNIT_THANSA\n_co_unit thansa || echo KHONG_THANSA\n"
-            "_co_container thansa && echo CT_THANSA\n_co_container thansa || echo KHONG_CT_THANSA\n")
+            "_co_unit thansa && echo UNIT_THANSA\n_co_unit khac || echo KHONG_KHAC\n"
+            "_co_container thansa && echo CT_THANSA\n_co_container khac || echo KHONG_CT_KHAC\n")
     r = subprocess.run(["bash", "-c", kich], capture_output=True, text=True,
                        env={**os.environ, "PATH": f"{tmp}:{os.environ.get('PATH', '')}"})
     out = r.stdout.split()
-    check("chạy thật: _co_unit thấy thansa.service, không thấy thansa", "UNIT_THANSA" in out and "KHONG_THANSA" in out)
-    check("chạy thật: _co_container thấy thansa giữa 200k dòng", "CT_THANSA" in out and "KHONG_CT_THANSA" in out)
+    check("chạy thật: _co_unit thấy thansa.service, không thấy unit khác", "UNIT_THANSA" in out and "KHONG_KHAC" in out)
+    check("chạy thật: _co_container thấy thansa giữa 200k dòng", "CT_THANSA" in out and "KHONG_CT_KHAC" in out)
 
 # ---- 3. bit thực thi trong git ----
 if shutil.which("git") and (ROOT / ".git").exists() or (ROOT / ".git").is_file():

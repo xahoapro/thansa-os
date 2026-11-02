@@ -46,16 +46,6 @@ esac
 
 SUDO=""; [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1 && SUDO="sudo"
 
-# --- 0. Giấu file cầu nối của máy cũ ---
-# start-thansa.vbs / stop-thansa.bat chỉ tồn tại để máy WINDOWS cài trước 1.19 cập nhật qua được (updater
-# cũ gọi đích danh hai tên đó). Máy này không cần chúng: đánh dấu skip-worktree rồi xoá khỏi thư mục,
-# git vẫn coi cây là sạch nên nút Cập nhật không vấp. Không phải git checkout thì bỏ qua êm.
-for _cu in start-thansa.vbs stop-thansa.bat; do
-  if [ -f "$APP_DIR/$_cu" ] && git -C "$APP_DIR" ls-files --error-unmatch "$_cu" >/dev/null 2>&1; then
-    git -C "$APP_DIR" update-index --skip-worktree "$_cu" 2>/dev/null && rm -f "$APP_DIR/$_cu"
-  fi
-done
-
 # --- 1. python3 >= 3.10 + venv + pip ---
 # HARD FLOOR 3.10: uvicorn pinned in requirements.txt needs >=3.10 (every release from
 # 0.40 up dropped 3.9). Do NOT trust a bare `python3` here - macOS ships /usr/bin/python3

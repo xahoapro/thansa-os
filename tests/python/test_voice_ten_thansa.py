@@ -1,8 +1,8 @@
-"""Nói "Thansa" mà máy nghe chép "David" thì Thansa vẫn hiểu là gọi mình (0.64.38).
+"""Nói "Thansa" mà máy nghe chép "Thần sa" thì Thansa vẫn hiểu là gọi mình (0.64.38).
 
 0.64.32 gỡ lớp sửa tên ở cửa WebSocket cùng lúc với việc chặn AI viết lại câu, và dặn bộ não
-giọng "không tự đoán tên người". Kết quả (chủ dự án 24/09): Thansa đáp "anh nói là David" và
-bong bóng giữ nguyên "David". Test này giữ cả ba mắt xích: lớp sửa tất định, chỗ gọi nó trước
+giọng "không tự đoán tên người". Kết quả (chủ dự án 24/09): Thansa đáp "anh nói là Thần sa" và
+bong bóng giữ nguyên "Thần sa". Test này giữ cả ba mắt xích: lớp sửa tất định, chỗ gọi nó trước
 khi lưu tin, và lời dặn bộ não giọng.
 """
 import os
@@ -19,11 +19,11 @@ import voice_brain  # noqa: E402
 class TenThansa(unittest.TestCase):
     def test_cau_that_cua_nguoi_dung(self):
         tv = nghe_sua.tu_vung({})
-        self.assertEqual(nghe_sua.sua("Ok bây giờ giọng nói chắc là tốt rồi đúng không David", tv),
+        self.assertEqual(nghe_sua.sua("Ok bây giờ giọng nói chắc là tốt rồi đúng không Thần sa", tv),
                          "Ok bây giờ giọng nói chắc là tốt rồi đúng không Thansa")
-        self.assertEqual(nghe_sua.sua("David ơi", tv), "Thansa ơi")
+        self.assertEqual(nghe_sua.sua("Thần sa ơi", tv), "Thansa ơi")
         # Người thứ ba và câu không có tên thì để yên.
-        self.assertEqual(nghe_sua.sua("nhắn cho David là mai họp", tv), "nhắn cho David là mai họp")
+        self.assertEqual(nghe_sua.sua("nhắn cho Thần sa là mai họp", tv), "nhắn cho Thần sa là mai họp")
         self.assertEqual(nghe_sua.sua("Em phải trả lời vâng", tv), "Em phải trả lời vâng")
 
     def test_websocket_sua_ten_truoc_khi_luu(self):

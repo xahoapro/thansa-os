@@ -3,9 +3,9 @@
     python tests/run.py nghe_sua
 
 Vì sao file này tồn tại (0.59.24): người dùng nói lẫn Việt - Anh, máy nghe chép "Thansa" thành
-"David", "Jarvis", "Gia vít"... rồi Thansa trả lời bám nghĩa đen. Lớp này sửa theo ÂM và NGỮ
+"Thần sa", "Thanh sa", "Tân sa"... rồi Thansa trả lời bám nghĩa đen. Lớp này sửa theo ÂM và NGỮ
 CẢNH trước khi câu đi vào bộ não. Ranh giới quan trọng: không đổi tên người thứ ba ("nhắn cho
-David"), không đổi tên riêng hai chữ ("David Beckham"), không đụng câu không liên quan, và
+Thần sa"), không đổi tên riêng hai chữ ("Thần sa Beckham"), không đụng câu không liên quan, và
 không sửa gì thì trả y nguyên.
 """
 from _paths import ROOT, SERVER  # noqa: E402,F401
@@ -25,28 +25,28 @@ TV = ["Thansa"]
 S = lambda s, tv=TV: nghe_sua.sua(s, tv)   # noqa: E731
 
 # ---- 1. Khoá âm: những cách máy nghe hay chép "Thansa" phải về cùng một khoá ----
-for w in ("Thansa", "David", "Davis", "Jarvis", "Gia vít", "Ja vịt", "Đa vít", "thansat"):
+for w in ("Thansa", "Thần sa", "Than sa", "Thanh sa", "Tân sa", "Thăn sa", "Than xa", "thansa"):
     check(f"khoá âm của {w!r} trùng Thansa", nghe_sua.khoa_am(w) == nghe_sua.khoa_am("Thansa"))
 check("Java KHÔNG trùng khoá Thansa", nghe_sua.khoa_am("Java") != nghe_sua.khoa_am("Thansa"))
 
 # ---- 2. Gọi tên: sửa ở mọi vị trí khi trùng âm hoàn toàn ----
-check("đầu câu: David -> Thansa", S("David mở trang việc giúp anh") == "Thansa mở trang việc giúp anh")
-check("hey David", S("hey David, doanh thu hôm nay bao nhiêu") == "hey Thansa, doanh thu hôm nay bao nhiêu")
-check("cuối câu: cảm ơn David", S("cảm ơn David") == "cảm ơn Thansa")
-check("Jarvis -> Thansa", S("Jarvis ơi mở lịch") == "Thansa ơi mở lịch")
-check("bị tách hai tiếng: Gia vít ơi", S("Gia vít ơi, tóm tắt email") == "Thansa ơi, tóm tắt email")
-check("Ja vịt giữa câu (trùng hoàn toàn)", S("hôm nay ja vịt thấy sao") == "hôm nay Thansa thấy sao")
-check("Đa vít", S("Đa vít cho anh xem lịch") == "Thansa cho anh xem lịch")
+check("đầu câu: Thần sa -> Thansa", S("Thần sa mở trang việc giúp anh") == "Thansa mở trang việc giúp anh")
+check("hey Thần sa", S("hey Thần sa, doanh thu hôm nay bao nhiêu") == "hey Thansa, doanh thu hôm nay bao nhiêu")
+check("cuối câu: cảm ơn Thần sa", S("cảm ơn Thần sa") == "cảm ơn Thansa")
+check("Thanh sa -> Thansa", S("Thanh sa ơi mở lịch") == "Thansa ơi mở lịch")
+check("bị tách hai tiếng: Tân sa ơi", S("Tân sa ơi, tóm tắt email") == "Thansa ơi, tóm tắt email")
+check("Thăn sa giữa câu (trùng hoàn toàn)", S("hôm nay than sa thấy sao") == "hôm nay Thansa thấy sao")
+check("Than xa", S("Than xa cho anh xem lịch") == "Thansa cho anh xem lịch")
 check("sửa nhiều chỗ trong một câu",
-      S("David ơi, David nghe rõ không") == "Thansa ơi, Thansa nghe rõ không")
+      S("Thần sa ơi, Thần sa nghe rõ không") == "Thansa ơi, Thansa nghe rõ không")
 check("giữ nguyên xuống dòng và dấu câu quanh chỗ sửa",
-      S("Ok David.\nMở trang cài đặt!") == "Ok Thansa.\nMở trang cài đặt!")
+      S("Ok Thần sa.\nMở trang cài đặt!") == "Ok Thansa.\nMở trang cài đặt!")
 
 # ---- 3. Trùng vừa phải: CHỈ sửa ở vị trí gọi tên ----
-check("Gia vị ơi (gọi tên) -> Thansa", S("Gia vị ơi, mấy giờ rồi") == "Thansa ơi, mấy giờ rồi")
+check("Thần xa ơi (gọi tên) -> Thansa", S("Thần xa ơi, mấy giờ rồi") == "Thansa ơi, mấy giờ rồi")
 check("cho gia vị vào nồi (giữa câu) giữ nguyên",
       S("cho gia vị vào nồi rồi đun") == "cho gia vị vào nồi rồi đun")
-check("Cha vít đầu câu -> Thansa", S("Cha vít, đọc tin mới") == "Thansa, đọc tin mới")
+check("Chan sa đầu câu -> Thansa", S("Chan sa, đọc tin mới") == "Thansa, đọc tin mới")
 
 # ---- 4. Không sửa bừa ----
 GIU = [

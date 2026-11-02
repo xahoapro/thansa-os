@@ -55,27 +55,6 @@ Line "  Thansa OS - cai dat tren Windows"
 Line " =========================================="
 
 # ---------------------------------------------------------------- [1] Python
-# --- Chuyen may cu sang ten Thansa + giau file cau noi ---
-# start-thansa.vbs / stop-thansa.bat chi de may cai TRUOC 1.19 cap nhat qua duoc (updater cu goi dich
-# danh). Shortcut Startup cu "THANSA OS.lnk" tro vao start-thansa.vbs, nen PHAI doi sang shortcut moi
-# truoc khi giau file cau noi, khong thi may khong tu chay khi dang nhap.
-$StartupDir = [Environment]::GetFolderPath("Startup")
-if (Test-Path (Join-Path $StartupDir "THANSA OS.lnk")) {
-  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root "thansa-autostart.ps1") install | Out-Null
-}
-if (Get-Command git -ErrorAction SilentlyContinue) {
-  foreach ($cu in @("start-thansa.vbs", "stop-thansa.bat")) {
-    $f = Join-Path $Root $cu
-    if (Test-Path $f) {
-      git -C $Root ls-files --error-unmatch $cu 2>$null | Out-Null
-      if ($LASTEXITCODE -eq 0) {
-        git -C $Root update-index --skip-worktree $cu 2>$null
-        if ($LASTEXITCODE -eq 0) { Remove-Item $f -Force }
-      }
-    }
-  }
-}
-
 Step 1 "Kiem tra Python"
 if (-not (Have "python")) {
   if (Have "winget") {

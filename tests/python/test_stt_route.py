@@ -34,8 +34,8 @@ async def fake_nghe(data, ten, key, model="", ngon_ngu=None, hotwords=""):
     calls.append({"data": data, "ten": ten, "key": key, "model": model, "lang": ngon_ngu, "hotwords": hotwords})
     if not key:
         return {"ok": False, "ly_do": "thieu_key"}
-    # Whisper chép "Thansa" thành "David": route phải sửa lại theo ngữ cảnh (nghe_sua) trước khi trả.
-    return {"ok": True, "text": "xin chào David", "model": model or "whisper-large-v3-turbo"}
+    # Whisper chép "Thansa" thành "Thần sa": route phải sửa lại theo ngữ cảnh (nghe_sua) trước khi trả.
+    return {"ok": True, "text": "xin chào Thần sa", "model": model or "whisper-large-v3-turbo"}
 
 
 _goc_nghe, _goc_cfg, _goc_models = stt.groq_nghe, main.cfgmod.read_settings, antigravity_cli.list_models
@@ -52,9 +52,9 @@ check("/stt: vi-VN rút thành vi", calls[-1]["lang"] == "vi")
 check("/stt: key lấy từ model.groq_api_key", calls[-1]["key"] == "gk")
 
 # ---- 0.64.74: đối chiếu với bản nháp Web Speech ----
-# Bản nháp gần đúng về âm ("xin chào Gia vít") -> dùng chữ Groq.
+# Bản nháp gần đúng về âm ("xin chào Tân sa") -> dùng chữ Groq.
 r = client.post("/stt", files={"file": ("voice.webm", b"OggS-fake", "audio/webm")},
-                data={"lang": "vi-VN", "draft": "xin chào Gia vít"})
+                data={"lang": "vi-VN", "draft": "xin chào Tân sa"})
 check("/stt: bản nháp gần âm -> dùng chữ Groq", r.json()["ok"] is True and r.json()["text"] == "xin chào Thansa")
 
 

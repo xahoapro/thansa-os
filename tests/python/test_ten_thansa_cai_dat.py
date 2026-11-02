@@ -1,114 +1,66 @@
-"""Bộ cài mang tên Thansa: máy cài MỚI không còn tên thansa, máy ĐANG CHẠY không gãy (P051).
+"""Thansa OS 2.0.0 tách hẳn khỏi nguồn gốc: source KHÔNG còn tên gốc cũ nào (chủ chốt 01/11/2026).
 
-Chạy: python tests/run.py ten_thansa_cai_dat
+Đổi tên bằng ops/doi_ten.py, và mỗi bản nguồn mới cũng đi qua đúng bộ đổi tên đó trước khi merge. Test này canh
+lại kết quả: không file nào (trừ LICENSE - MIT bắt buộc ghi công tác giả gốc - và ops/, công cụ theo dõi nguồn)
+mang tên gốc cũ trong tên file hay nội dung; và các bước "chuyển tên cũ" ngày trước không còn tự xoá nhầm file thật.
 """
-from _paths import ROOT, SERVER  # noqa: E402,F401
-import os
 import re
 import subprocess
+from pathlib import Path
 
-FAIL = []
+ROOT = Path(__file__).resolve().parents[2]
+_fails = []
 
 
-def check(label, ok):
-    print(("PASS" if ok else "FAIL") + ": " + label)
+def check(name, ok):
+    print(("ok   " if ok else "FAIL: ") + name)
     if not ok:
-        FAIL.append(label)
+        _fails.append(name)
 
 
-def doc(p):
-    return (ROOT / p).read_text(encoding="utf-8")
+def doc(f):
+    return (ROOT / f).read_text(encoding="utf-8", errors="replace")
 
 
-tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.splitlines()
-goc = {t.split("/")[0] for t in tracked}
+TEN_CU = "ja" + "vis"          # ghép lúc chạy để chính file này không chứa tên cũ
+MIEN = re.compile(r"^(LICENSE|ops/)")
+tracked = [f for f in subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True, text=True)
+           .stdout.split("\0") if f and not MIEN.match(f)]
 
-# ---- 1. File cài đặt / khởi động mang tên Thansa ----
-for ten in ("start-thansa.bat", "start-thansa.vbs", "stop-thansa.bat", "stop-thansa.ps1",
-            "thansa-autostart.bat", "thansa-autostart.ps1", "Thansa OS.bat", "Thansa OS.app",
-            "Start Thansa OS.command", "Stop Thansa OS.command", "thansa.service"):
-    check(f"có {ten}", ten in goc)
-for ten in ("bin/thansa-start.sh", "bin/thansa-stop.sh", "bin/thansa-autostart.sh",
-            "Thansa OS.app/Contents/MacOS/thansa"):
-    check(f"có {ten}", ten in tracked)
-# Chỉ HAI file cầu nối được phép mang tên thansa ở gốc repo.
-con_thansa = sorted(t for t in goc if "thansa" in t.lower())
-check(f"gốc repo chỉ còn đúng 2 file cầu nối tên thansa ({con_thansa})",
-      con_thansa == ["start-thansa.vbs", "stop-thansa.bat"])
-check("bin/ không còn script tên thansa", not any(t.startswith("bin/") and "thansa" in t for t in tracked))
-plist = doc("Thansa OS.app/Contents/Info.plist")
-check("app Mac: CFBundleExecutable khớp file chạy thật (thansa)",
-      re.search(r"<key>CFBundleExecutable</key>\s*<string>thansa</string>", plist) is not None)
+# ---- 1. Không còn tên cũ ----
+ten = [f for f in tracked if TEN_CU in f.lower()]
+check(f"không file/thư mục nào mang tên cũ ({ten[:5]})", not ten)
+noi_dung = []
+for f in tracked:
+    p = ROOT / f
+    if not p.is_file() or p.is_symlink():
+        continue
+    try:
+        if re.search(TEN_CU, p.read_text(encoding="utf-8"), re.I):
+            noi_dung.append(f)
+    except (UnicodeDecodeError, OSError):
+        continue
+check(f"không file nào còn tên cũ trong nội dung ({noi_dung[:5]})", not noi_dung)
+check("LICENSE vẫn ghi công tác giả gốc (MIT)", "Copyright" in doc("LICENSE") and doc("LICENSE").count("Copyright") >= 2)
 
-# ---- 2. Cầu nối cho máy Windows cài trước 1.19 ----
-vbs = doc("start-thansa.vbs")
-check("start-thansa.vbs chuyển tiếp sang start-thansa.vbs", "start-thansa.vbs" in vbs and "wscript" in vbs.lower())
-bat = doc("stop-thansa.bat")
-check("stop-thansa.bat chuyển tiếp sang stop-thansa.bat", 'call "%~dp0stop-thansa.bat"' in bat)
-check("stop-thansa.bat vẫn dọn cửa sổ cũ tiêu đề 'Thansa OS'", "WINDOWTITLE eq Thansa OS*" in doc("stop-thansa.bat"))
-
-# ---- 3. Máy cài mới không thấy file cầu nối ----
-ins = doc("install.sh")
-check("install.sh giấu file cầu nối bằng skip-worktree", "update-index --skip-worktree" in ins
-      and "start-thansa.vbs stop-thansa.bat" in ins)
-check("install.sh giấu cầu nối TRƯỚC mọi bước khác", ins.index("skip-worktree") < ins.index("# --- 1. python3"))
-ps1 = doc("install.ps1")
-check("install.ps1 đổi shortcut Startup cũ TRƯỚC khi giấu cầu nối",
-      0 < ps1.index('"THANSA OS.lnk"') < ps1.index("--skip-worktree"))
-check("install.sh: unit mang tên Thansa + ghi THANSA_SERVICE_NAME cho updater",
-      "Description=Thansa OS ($SVC)" in ins and 'Environment="THANSA_SERVICE_NAME=$SVC"' in ins)
-check("install.sh: không còn chữ 'Thansa OS is up'", "Thansa OS is up" not in ins and "Thansa OS is up" in ins)
-
-# ---- 4. Updater dò đúng dịch vụ/nhãn của máy cũ lẫn máy mới ----
-import updater  # noqa: E402
-_goc_run = updater.subprocess.run
-
-
-class _R:
-    def __init__(self, out):
-        self.returncode, self.stdout = 0, out
-
-
-def _gia(out):
-    updater.subprocess.run = lambda *a, **k: _R(out)
-
-
-os.environ.pop("THANSA_SERVICE_NAME", None)
-_gia("thansa.service enabled enabled\nssh.service enabled enabled\n")
-check("updater: máy cũ chỉ có thansa.service -> thansa", updater.systemd_unit() == "thansa")
-_gia("thansa.service enabled enabled\nthansa.service disabled enabled\n")
-check("updater: có thansa.service -> ưu tiên thansa", updater.systemd_unit() == "thansa")
-_gia("thansa-shop.service enabled enabled\nthansa.service enabled enabled\n")
-os.environ["THANSA_SERVICE_NAME"] = "thansa-shop"
-check("updater: unit ghi THANSA_SERVICE_NAME -> đúng bản của mình", updater.systemd_unit() == "thansa-shop")
-os.environ.pop("THANSA_SERVICE_NAME", None)
-_gia("ssh.service enabled enabled\n")
-check("updater: không có dịch vụ Thansa -> chế độ khác (nohup)", updater.systemd_unit() == "" and not updater.has_systemd())
-updater.subprocess.run = _goc_run
-check("updater: không còn gọi cứng systemctl ... thansa",
-      '"systemctl", "stop", "thansa"' not in doc("server/updater.py")
-      and '"systemctl", "start", "thansa"' not in doc("server/updater.py"))
-check("updater gọi file Windows tên mới", "stop-thansa.bat" in doc("server/updater.py")
+# ---- 2. File khởi động Windows là file THẬT, bộ cài không được giấu/xoá ----
+for f in ("start-thansa.vbs", "stop-thansa.bat", "thansa-autostart.ps1"):
+    check(f"{f} có trong repo", f in tracked)
+for f in ("install.sh", "install.ps1"):
+    check(f"{f} không skip-worktree/xoá start-thansa.vbs, stop-thansa.bat", "skip-worktree" not in doc(f))
+check("thansa-autostart.ps1 không còn xoá 'mục cũ' (sau đổi tên chính là mục mới)", "$NameCu" not in doc("thansa-autostart.ps1"))
+main_src = doc("server/main.py")
+check("autostart Windows: tên mục ThansaOS", '_AUTOSTART_NAME = "ThansaOS"' in main_src)
+check("không còn bước chuyển mục tự khởi động tên cũ", "_autostart_chuyen_ten_cu" not in main_src)
+check("updater gọi file Windows tên Thansa", "stop-thansa.bat" in doc("server/updater.py")
       and "start-thansa.vbs" in doc("server/updater.py"))
 
-# ---- 5. Tự khởi động Windows: mục ThansaOS, máy cũ ThansaOS được chuyển ----
-main_src = doc("server/main.py")
-check("autostart Windows: tên mục mới ThansaOS", '_AUTOSTART_NAME = "ThansaOS"' in main_src)
-check("autostart Windows: chuyển mục ThansaOS cũ (kèm cờ Task Manager) trước khi đọc/ghi",
-      "def _autostart_chuyen_ten_cu" in main_src and main_src.count("_autostart_chuyen_ten_cu()") >= 2)
+# ---- 3. Repo của Thansa, không trỏ về repo nguồn ----
+for f in ("system/mcp-catalog.json", "server/packs_store.py", "server/zalo_cli.py", "server/updater.py"):
+    check(f"{f}: không trỏ repo blogminhquy", "blogminhquy" not in doc(f))
+check("Store mặc định là xahoapro/thansa-store", "xahoapro/thansa-store" in doc("server/packs_store.py"))
+check("Zalo tải từ xahoapro/thansa-zalo", "xahoapro/thansa-zalo" in doc("server/zalo_cli.py"))
 
-# ---- 6. Lệnh cài trong tài liệu ----
-for f in ("README.md", "DEPLOY.md", "DEPLOY.en.md", "QUICKSTART.md"):
-    t = doc(f)
-    check(f"{f}: không còn clone vào thư mục thansa", not re.search(r"\.git thansa\b|cd thansa\b|xahoapro/thansa-os\.git", t))
-check("README: lệnh cài clone vào thansa-os", "thansa-os.git && cd thansa-os" in doc("README.md"))
-
-# ---- 7. Link trong app không trỏ về repo Thansa gốc ----
-# guide_url Zalo trong catalog bị rebase lấy bản upstream làm quay về xahoapro/thansa-os HAI vòng
-# liền (0.84.2, 0.84.8) - canh ở đây để vòng sau đỏ ngay thay vì lọt tới người dùng.
-for f in ("system/mcp-catalog.json", "system/mcp-catalog.en.json", "dashboard/console.js", "server/updater.py"):
-    check(f"{f}: không còn link repo Thansa gốc", "xahoapro/thansa-os" not in doc(f))
-
-if FAIL:
-    raise SystemExit(f"\nFAIL - test_ten_thansa_cai_dat: {len(FAIL)} lỗi")
-print("\nOK - test_ten_thansa_cai_dat: tất cả pass")
+if _fails:
+    raise SystemExit(f"\nFAIL - test_ten_thansa_cai_dat: {len(_fails)} lỗi: {_fails}")
+print("\nOK - test_ten_thansa_cai_dat")

@@ -24,8 +24,8 @@ class LocalCorrections(unittest.TestCase):
                 self.assertEqual(nghe_sua.sua(text, ["Thansa"]), text)
 
     def test_ui_context_is_not_speech(self):
-        context = '[NGỮ CẢNH GIAO DIỆN: chọn="David ơi"; kênh=giọng]\n\n'
-        self.assertEqual(nghe_sua.sua(context + "David ơi", ["Thansa"]), context + "Thansa ơi")
+        context = '[NGỮ CẢNH GIAO DIỆN: chọn="Thần sa ơi"; kênh=giọng]\n\n'
+        self.assertEqual(nghe_sua.sua(context + "Thần sa ơi", ["Thansa"]), context + "Thansa ơi")
 
 
 class ModelCorrections(unittest.TestCase):
@@ -87,7 +87,7 @@ class ModelCorrections(unittest.TestCase):
                 self.assertEqual((head, speech), (prefix, "nghe anh nói chưa"))
                 self.assertEqual(voice_brain.safe_transcript_rewrite(original, "Nghe anh nói chưa?"),
                                  prefix + "Nghe anh nói chưa?")
-                self.assertEqual(nghe_sua.sua(prefix + "David ơi", ["Thansa"]), prefix + "Thansa ơi")
+                self.assertEqual(nghe_sua.sua(prefix + "Thần sa ơi", ["Thansa"]), prefix + "Thansa ơi")
 
     def test_model_cannot_rewrite_literal_identifiers(self):
         for original, proposed in [
