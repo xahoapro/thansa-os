@@ -5,16 +5,16 @@
   "scope": "pure dummy qualification environment helper and five tests only",
   "verdict": "approved_scoped_pure_foundation",
   "before_pins": {
-    "tests/python/test_improvement_native_protocol.py": "f2147beed13e2f3736130c6f14ff4085ffa2d5ecd5805aba25c3c3130aa2c7cb",
-    "server/improvement_qualification_environment.py": "b0c36fe2a44f7982ea1c1046a411516d5f37e81f6c9c32e64de2b0935471cad2",
+    "tests/python/test_improvement_native_protocol.py": "c58fefed53f5fd802e300a28ab485159847bc498923a5f9cb5a1c8708634ae49",
+    "server/improvement_qualification_environment.py": "802c7ace73eab73880ca3d62609e3b0944edc1b7038462b81c2ba138b145be60",
     "server/improvement_native_protocol.py": "9ddcd57cd81378e814a96f5d3f2a29278e967a45e4a1c581e22ac45999ad3744",
-    "tests/python/test_improvement_qualification_environment.py": "917e3607b8abe9665f3c594d2ecb3edccc70e21bad15e4c9da1617be2b9b3489"
+    "tests/python/test_improvement_qualification_environment.py": "c8457f7d61e21bcc0ea3f7a725b676af082b76b40b31857fdeef0683695d49ff"
   },
   "after_pins": {
-    "tests/python/test_improvement_native_protocol.py": "f2147beed13e2f3736130c6f14ff4085ffa2d5ecd5805aba25c3c3130aa2c7cb",
-    "server/improvement_qualification_environment.py": "b0c36fe2a44f7982ea1c1046a411516d5f37e81f6c9c32e64de2b0935471cad2",
+    "tests/python/test_improvement_native_protocol.py": "c58fefed53f5fd802e300a28ab485159847bc498923a5f9cb5a1c8708634ae49",
+    "server/improvement_qualification_environment.py": "802c7ace73eab73880ca3d62609e3b0944edc1b7038462b81c2ba138b145be60",
     "server/improvement_native_protocol.py": "9ddcd57cd81378e814a96f5d3f2a29278e967a45e4a1c581e22ac45999ad3744",
-    "tests/python/test_improvement_qualification_environment.py": "917e3607b8abe9665f3c594d2ecb3edccc70e21bad15e4c9da1617be2b9b3489"
+    "tests/python/test_improvement_qualification_environment.py": "c8457f7d61e21bcc0ea3f7a725b676af082b76b40b31857fdeef0683695d49ff"
   },
   "tests": {
     "seconds": 0.007,

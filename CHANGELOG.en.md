@@ -8,6 +8,31 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.438.7] - 2026-11-02
+### Fixed
+- **Claude sign-in finishes on its own when the browser says it worked.** On a machine with a browser, Claude opens the sign-in page itself and the page only says "You're all set up", with no code to paste. The Models card used to keep waiting for a code until the page was reloaded. It now switches to Signed in within a few seconds, or as soon as you come back to the Thansa tab.
+- If Claude reports the sign-in failed, the card says why instead of waiting forever.
+
+## [0.438.6] - 2026-11-02
+### Improved
+- **Grok Build and Antigravity CLI type out their answer too.** The reply flows in piece by piece while the model writes, instead of appearing only when the whole turn is done. Every Thansa brain now shows text the same way.
+
+## [0.438.5] - 2026-11-01
+### Improved
+- **API key brains type out their answer too.** OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek, Ollama and OpenAI/Anthropic Compatible now show the reply piece by piece while the model writes, including turns that use tools. Before, a turn with tools waited for the whole answer and showed it at once.
+
+## [0.438.4] - 2026-11-01
+### Improved
+- **Claude Code types out its answer like ChatGPT.** The reply now flows in piece by piece while Claude is writing, instead of appearing all at once when a whole paragraph is done.
+
+## [0.438.3] - 2026-11-01
+### Improved
+- **Adding a Messenger channel in Chatbot is simpler.** Picking Messenger now shows one line and a button that opens the Messenger card on Connections. The token field, webhook address and Save button are gone here, since a Page connected on Connections is already in the channel list. Pasting a token still works inside the Messenger card.
+
+## [0.438.2] - 2026-11-01
+### Improved
+- **The official Meta logo.** The Facebook Messenger card on Connections now shows the real Meta mark in its blue gradient instead of the old hand-drawn one, on a transparent background that works in light and dark themes.
+
 ## [0.438.1] - 2026-11-01
 ### Improved
 - **The GitHub card on Connections matches the other cards.** A green dot shows it is connected, and the logo is the same size as the rest.

@@ -6,6 +6,31 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.438.7] - 2026-11-02
+### Sửa lỗi
+- **Đăng nhập Claude tự xong khi trình duyệt báo thành công.** Trên máy có trình duyệt, Claude tự mở trang đăng nhập và trang chỉ báo "You're all set up", không hiện mã nào để dán. Trước đây thẻ ở trang Models vẫn đứng chờ mã, phải tải lại trang mới thấy đã đăng nhập. Giờ thẻ tự chuyển sang Đã đăng nhập sau vài giây, hoặc ngay lúc quay lại tab Thansa.
+- Nếu Claude báo đăng nhập hỏng, thẻ nói luôn lý do thay vì chờ mãi.
+
+## [0.438.6] - 2026-11-02
+### Cải thiện
+- **Grok Build và Antigravity CLI cũng hiện chữ lần lượt.** Câu trả lời chảy ra từng mẩu ngay khi model đang viết, không còn chờ xong cả lượt mới hiện một lần. Giờ mọi bộ não của Thansa đều hiện chữ như nhau.
+
+## [0.438.5] - 2026-11-01
+### Cải thiện
+- **Các bộ não API key cũng hiện chữ lần lượt.** OpenRouter, OpenAI, Anthropic API, Gemini, Groq, DeepSeek, Ollama và OpenAI/Anthropic Compatible giờ hiện câu trả lời từng mẩu ngay khi model đang viết, kể cả lượt có dùng công cụ. Trước đây lượt có công cụ phải chờ xong cả câu trả lời mới hiện một lần.
+
+## [0.438.4] - 2026-11-01
+### Cải thiện
+- **Claude Code hiện chữ lần lượt như ChatGPT.** Câu trả lời chảy ra từng mẩu ngay khi Claude đang viết, không còn phải chờ xong cả đoạn mới hiện một lần.
+
+## [0.438.3] - 2026-11-01
+### Cải thiện
+- **Thêm kênh Messenger ở Chatbot gọn lại.** Chọn Messenger giờ chỉ còn một dòng nhắc và nút mở thẳng thẻ Messenger ở trang Kết nối. Bỏ ô dán token, địa chỉ webhook và nút Lưu ở đây, vì Fanpage nối bên Kết nối đã tự có trong danh sách kênh. Ai cần dán token vẫn dán được ngay trong thẻ Messenger.
+
+## [0.438.2] - 2026-11-01
+### Cải thiện
+- **Logo Meta chính thức.** Thẻ Facebook Messenger ở trang Kết nối dùng đúng logo Meta màu xanh chuyển sắc, thay cho nét vẽ tay cũ. Nền trong suốt nên giao diện sáng hay tối đều hiện đẹp.
+
 ## [0.438.1] - 2026-11-01
 ### Cải thiện
 - **Thẻ GitHub ở trang Kết nối gọn như các thẻ khác.** Có chấm xanh báo đang kết nối, logo to bằng các thẻ còn lại.

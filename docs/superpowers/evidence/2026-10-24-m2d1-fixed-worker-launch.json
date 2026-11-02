@@ -9,7 +9,7 @@
     "tests/python/test_improvement_fixed_worker_launch.py": "0624ea4dcfc210a0f53bbc8375e3623fac112d8e8d400529489ec5eee555845f"
   },
   "dependency_hashes": {
-    "server/improvement_native_bootstrap.py": "7d1a69f0f950d8080fe30b89f1be9b3403b4781a31ba73100c0318111d8142ef",
+    "server/improvement_native_bootstrap.py": "012b013bae9f70b07faff629a83a860f5859e19aa8f3f1e404b1ab2c5e3c4e6f",
     "server/improvement_native_image.py": "4fc9654ac7ad255fcf65f37823380d64c4199b567189453f30b95333d4d0640f",
     "server/improvement_native_capture_win32.py": "54dd2ed75e6406c93d2765ff1f72716194382199863e71dbbdc183319984f793"
   },

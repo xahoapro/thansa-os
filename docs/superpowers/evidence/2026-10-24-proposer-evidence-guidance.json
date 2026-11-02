@@ -21,7 +21,7 @@
     "provenance": "third_party/harness2/PROVENANCE.md"
   },
   "source_test_pins": {
-    "server/improvement_generation_protocol.py": "1f0eae722a727d095e84a7d0bf7e99fe23441d0ffa96367e47688ede895b637d",
+    "server/improvement_generation_protocol.py": "1d20072cf1a8c0ce97c147c70c0cc49728945983f51122b707fe2bf171f010b4",
     "server/improvement_operation_profile.py": "a1b931e51899d612d18a444401bf898f8f1b963ff73e2766b4067d4ecd673fdd",
     "server/improvement_skill_patch.py": "c06eb301c2c8d9ab7d68368f42256b9cb55108780c3782e3cf06aa0cdcbd87d3",
     "tests/python/test_improvement_generation_guidance.py": "8ed63c8fa6b7a1d30840d8b52d663c3d576ac4b2c3906df93a1331e70ba0d9cb",
@@ -38,7 +38,7 @@
     "profile_version": "claude-isolated-roles-v2",
     "profile_hash": "6e32d3fb91d8ec4b5b596bd3d68f1165a3921fa7fcf3049b5b0c6872549d355e",
     "source_count": 85,
-    "generation_source_sha256": "1f0eae722a727d095e84a7d0bf7e99fe23441d0ffa96367e47688ede895b637d"
+    "generation_source_sha256": "1d20072cf1a8c0ce97c147c70c0cc49728945983f51122b707fe2bf171f010b4"
   },
   "qualification": "generation_protocol is already in85PROFILE_SOURCES; exact-source identity changed, old qualification is not reusable. No native/profile registration or query performed.",
   "root_author_verification": {

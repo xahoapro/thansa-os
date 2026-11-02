@@ -229,7 +229,7 @@
   },
   "native_qualification": {
     "path": "docs/superpowers/evidence/2026-10-24-m2d1-native-qualification-skill-reads.json",
-    "sha256": "bf793edf18abf0cbeecf83983ee619ae4a4c96415b844cc488b2ed1ed9c09a4a",
+    "sha256": "8feb58acc6112a292b2b5c1b575d53bee384e51d8177b35761107904eea27c63",
     "tests": 20,
     "seconds": 93.952,
     "selected_account_calls": 0

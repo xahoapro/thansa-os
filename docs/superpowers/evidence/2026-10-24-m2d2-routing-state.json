@@ -5,7 +5,7 @@
   "scope": "M2D2 routing-state foundation only; no production overlays/task pin integration",
   "source_hashes": {
     "server/skill_router.py": "1a141e295d3daf6c1b9604ef31286d794bd4f73fb730ca8752eba0cc4c8155f9",
-    "tests/python/test_skill_resolution_state.py": "d5001b12b79d180c180ce49fffeccfabb10d53885df09e879d21efea1d620269"
+    "tests/python/test_skill_resolution_state.py": "a64e0461d6b2891f07c280b538ffa838fce0efc7e9ed2cd0813af2699c9b5645"
   },
   "red": {
     "tests": 7,
@@ -73,7 +73,7 @@
   "full_source_record_sha256": "4d06f07fd22f746835527fe8318973021c18968acd60420db16e9b18157e5304",
   "other_router_ast_unchanged": true,
   "native81_pins_identical": true,
-  "native_reused_evidence_sha256": "1f3391cf9c1bf621d3ef2de44dd181acf17dd7d922fed4a80ae66bef36c8fab4",
+  "native_reused_evidence_sha256": "3ecdaa284b5adba1a3a5664d6b879bfb42b8d8644e998f90ae8e2eccb16b1199",
   "native_profile_hash": "958527ac69c3b5728044b22cf6d3bdebb920da7cbe46a9da261e899568ced1ef",
   "model_calls": 0,
   "activation": false,

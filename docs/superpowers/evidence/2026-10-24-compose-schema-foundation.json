@@ -4,7 +4,7 @@
   "goal_sections": "12-17",
   "source_and_test_sha256": {
     "server/improvement_operation_schema.py": "91768c8bbfa6a69e8b0c1451dcbffaa8fd596f19b506d8de0ed08354c60e8937",
-    "tests/python/test_improvement_cases.py": "f7cce9535d67fb367abb5f5ffe1f5bb81b29ee80cfa32e5c91d4118987763f35",
+    "tests/python/test_improvement_cases.py": "91315391b1036f73904e96e9802e0e3bcad178f8294f33f39a5c1eac9c5e3390",
     "tests/python/test_improvement_operation_execution.py": "af68df55d8e8e8c11832b8731ee7ea655ee82df59c131ec96c2f91233f0e59e7",
     "server/improvement_compose_schema.py": "a33edf30ba19d73918d8e48138ca62c56dcfc67fa01b2b44e386e95fd192096f",
     "tests/python/test_improvement_compose_schema.py": "55b7b7d0d5088f729b83de66b9eb0faf0c1e8b72b3c47156a8499aebf0f477da",

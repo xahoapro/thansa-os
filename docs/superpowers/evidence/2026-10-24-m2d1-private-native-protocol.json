@@ -5,7 +5,7 @@
   "source_parent_commit": "f6ecb7b81f7b3a7f25e097fb7fd29188a9b7d58c",
   "source_hashes": {
     "server/improvement_native_protocol.py": "9ddcd57cd81378e814a96f5d3f2a29278e967a45e4a1c581e22ac45999ad3744",
-    "tests/python/test_improvement_native_protocol.py": "f2147beed13e2f3736130c6f14ff4085ffa2d5ecd5805aba25c3c3130aa2c7cb"
+    "tests/python/test_improvement_native_protocol.py": "c58fefed53f5fd802e300a28ab485159847bc498923a5f9cb5a1c8708634ae49"
   },
   "test_command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe -I -S -B tests/python/test_improvement_native_protocol.py -v",
   "runs": [

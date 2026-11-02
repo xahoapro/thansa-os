@@ -38,7 +38,7 @@ _RESERVED = {"thansa_connections", "thansa_read_file", "thansa_list_dir", "thans
 _GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "thansa-goal" / "plugin.py"
 # Pin the audited data-only branch; a coherent edited source+cache is still not
 # authority to reinterpret an arbitrary predicate as the ordinary-owner result.
-_GOAL_SOURCE_HASH = "4f68b2d4229506ae74598d8bb73db801ed0e465d8dd15605ab248586bbdf760d"
+_GOAL_SOURCE_HASH = "87b06b6c3d06bba684fee8a6965790b0b816a47180dda4846b3c92ad12728475"
 
 
 def _plain(value):

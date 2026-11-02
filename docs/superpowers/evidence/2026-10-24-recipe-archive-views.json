@@ -764,7 +764,7 @@
     },
     "url": "https://github.com/xahoapro/thansa-os/actions/runs/40078670232"
   },
-  "prior_immutable_authoring_proof_sha256": "b19e63eb1f6a5401c7386ad265c89744ad64d7ae80bc4023d70b2f4dd0fa0745",
+  "prior_immutable_authoring_proof_sha256": "cfc81e8d03c10f0f13b82e93a3102c5e4b073cf68a522624011d6e461798c347",
   "protected_test_sha256": "0577b5181fb090ba897ec8c3d0fce10fe88d2d09d03839497150cdacf6e793e0",
   "deferred_preexisting_fixtures": [
     "tests/python/test_improvement_operations.py:143 hardcodes schema9 as future",

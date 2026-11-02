@@ -1,8 +1,8 @@
 {
   "version": 1,
   "status": "scoped_engine_integration_fix_approved",
-  "source_sha256": "eb989026088b4344c09c520b961cdcac168d76b5df010a786be233b4cf735ff9",
-  "test_sha256": "c20342acb7806880c0549c786c21055e0ec56b889e8c43fe90ff44ab47364134",
+  "source_sha256": "0e61d5de6c2e2b79fc18d0383fd10ba0d2daa42968e92bea5e44cb4cd9cc7ade",
+  "test_sha256": "1604175aaeaf1207a423fd2469fc383173e195ec1250d6e50efde9f7d1e52396",
   "red": {"tests": 2, "failed_subtests": 2, "seconds": 0.961, "log_sha256": "eb10b6271adc1916e1c61bcdf2f320f2ece3fa2e9908fb71d701fd788a3265fd", "cause": "Engine injected CLAUDE_CODE_STREAM_CLOSE_TIMEOUT before explicit owned factory, violating exact startup environment"},
   "author": {"tests": 2, "seconds": 0.876, "exit": 0, "log_sha256": "60b15a27c771a655b1de32a9c165a38970e8d0488cd2d05c07a8768631d10e48"},
   "independent": {"tests": 2, "seconds": 0.849, "exit": 0, "log_sha256": "a4525f71e9f9505e0f6ef4200b00a0d9c1ab6d031c96d4c3832a6f4c0a8a65f0"},

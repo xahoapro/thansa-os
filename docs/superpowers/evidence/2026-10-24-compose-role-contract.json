@@ -16,7 +16,7 @@
     "server/improvement_operation_profile.py": "b18c1e9483dffd76309559d30eea7b2a33020f70419d70fbc8fa784db2bd2dde",
     "server/improvement_operation_worker.py": "5c2f698f4f786680901253181dae62f4b326536d68f30cb19f4e79ab2ba94417",
     "tests/run.py": "59756fe950a50a85ba761f5aba132566656022718dd91b936c1f2266bb9fb92a",
-    "server/improvement_harness2_compose.py": "a8192f15f226348f3485883a80b7ebe3cb215caa2d3084845f4a050b0def71b9"
+    "server/improvement_harness2_compose.py": "c1bf54b951e56a656a19abd2690b92c95acb33630a98e766f9a2bd4829c0c0b6"
   },
   "behavior": [
     "Compose-only closed request v2 requires explicit authorization ID and composer/improve_compose, null candidate/parent. Historical propose/repair/semantic remain exact closed v1; no extra metadata grants consent.",

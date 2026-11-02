@@ -158,13 +158,13 @@
   "complete_source_log_record_sha256": "0c21fef7fd0a568c014ebf01ce7bc5581d13e9383e7ebb33ebf1a71d8cee5a8c",
   "qualification_test_hashes": {
     "tests/python/test_improvement_native.py": "869d1cb826d8396e684bccaa04fde3103921c596ecb1e75bb35351a93348a929",
-    "tests/python/test_improvement_role_qualification.py": "8e3e5362fa7571589324a4c67098ee07ecbeef00100997cfc55df7d1da3d8832",
+    "tests/python/test_improvement_role_qualification.py": "72f72cb79b144f1b893f55bd25b58f60db1631aebc735c8dc58800b356e25345",
     "tests/python/test_improvement_runtime_qualification.py": "e511473f291177e4c22de246ec4c5176b437a5534a2714ce95a5b4f4c61864a1",
     "tests/python/test_improvement_worker_quiescence.py": "a4326bedc6893749281145465f34d2ace628c222e0e4f81d59af99d262653e8d"
   },
   "paired_view_evidence": {
     "path": "2026-10-23-m2d1-native-view-enforcement.json",
-    "sha256": "0691a727db9dd81b91e814ccfaa4278f04d9c90c5a325cc789b282de31f6a10c",
+    "sha256": "d56942147e8a8da43149af14f5224d64f0c117582af398cdb97d64096fb1a9c3",
     "tests": 1,
     "paired_native_queries": 2,
     "seconds": 39.172
