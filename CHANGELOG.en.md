@@ -8,6 +8,32 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.440.0] - 2026-11-02
+### Added
+- **ChatGPT and Claude post straight into your Thansa chat.** Install **Thansa Gate** from the Thansa Store and connect it to ChatGPT or Claude. Ask it to "read the Viet Web chat on Thansa and tell me what to do next": it reads and advises. Agree right there and it posts into that very chat so Thansa carries on.
+- That message runs just as if you typed it: the answer streams on every open tab, has a Stop button, is saved to History, and **Thansa learns from it** for next time. The bubble says **via ChatGPT** or **via Claude**.
+- No more handing work to Kanban where it ran unseen. If the chat is still answering, the message waits its turn, as when you type while Thansa works.
+- Only at **Full access** can an outside AI post into a chat. Lower levels can only read chats. Customer chats and team chats can't be read or posted to.
+### Improved
+- **Store packs can switch to English ids** without installed copies losing anything. Update as usual: the on/off state, the pack's data and the skills it put into your brain stay, and the old pack removes itself.
+- **Thansa in ChatGPT** becomes **Thansa Gate**. Connectors already set up in ChatGPT keep working, no reconnecting needed.
+
+## [0.439.1] - 2026-11-02
+### Improved
+- **Install without the red "Windows protected your PC" screen.** Paste one line into PowerShell (Windows) or Terminal (Mac) and the installer downloads and opens on its own, without being blocked. The line is in the quick start guide. A browser download still asks once until the installer is code-signed.
+- **The installers carry the Thansa logo.** The Windows wizard shows the Thansa star on its first and last pages and in the corner of the pages between, sharp on scaled-up screens too. The disk that appears when you open the Mac `.dmg` has the Thansa icon as well.
+- Releases are ready to sign the Windows installer: once the project owner adds a certificate on GitHub, later builds are signed automatically.
+
+## [0.439.0] - 2026-11-02
+### Added
+- **Install Thansa like an app on your computer.** On Windows, download `ThansaOS-Setup.exe`, double-click it and press Next to the end. On a Mac, download `ThansaOS-macOS.dmg` and drag THANSA OS into Applications. The installer checks which of Git, Python, Node and the AI brains are missing and installs them, no commands to type. Download links are in the quick start guide.
+- **A THANSA OS icon on the Desktop, Start menu and Launchpad.** Clicking it opens Thansa in its own window, with no address bar. Clicking again while Thansa runs only reopens the window and never stops background work.
+- The in-app Update button works just like on a manual install. Uninstalling keeps your brain (notes, memory, settings) in the `ThansaOS` folder.
+### Fixed
+- Installing on a brand-new Windows no longer dies at the Python environment step, and a PC without winget still downloads Python and Node by itself. A Mac without Homebrew now gets the Mac build of Node.
+- On Windows, an Antigravity or Grok installer that exits early no longer stops the whole install, so the later steps (libraries, settings, auto-start) still run.
+- On Windows, the Models page sees a freshly installed Antigravity and Grok right away, instead of saying "not installed" until the computer restarts.
+
 ## [0.438.7] - 2026-11-02
 ### Fixed
 - **Claude sign-in finishes on its own when the browser says it worked.** On a machine with a browser, Claude opens the sign-in page itself and the page only says "You're all set up", with no code to paste. The Models card used to keep waiting for a code until the page was reloaded. It now switches to Signed in within a few seconds, or as soon as you come back to the Thansa tab.

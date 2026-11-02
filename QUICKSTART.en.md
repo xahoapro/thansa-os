@@ -4,6 +4,29 @@
 
 Get Thansa OS running in a few minutes. Full guides: [docs/en/](docs/en/README.md).
 
+## Personal computer (Windows, macOS) - download the installer
+
+Install Thansa like any other app: download one file, open it, and you get a THANSA OS icon to click every day. The installer checks what the computer is missing (Git, Python, Node, the AI brains) and installs only that.
+
+- **Windows 10/11:** download [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe), double-click it and press Next to the end. A black window shows the install progress (a few minutes). When it is done there is a THANSA OS icon on the Desktop and in the Start menu.
+- **macOS 11 or newer:** download [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg), open it, drag **THANSA OS** into **Applications**, then open it from Launchpad. The first time, Terminal opens to install (it may ask you to set a Thansa admin account and for your Mac password once).
+
+Clicking the icon opens Thansa in its own window (no address bar), Thansa starts with the computer, and the in-app **Update** button works as usual. Your data lives in the `ThansaOS` folder in your user folder; uninstalling the app keeps that folder.
+
+**Install without the warning screen (recommended).** Both installers are not code-signed yet, so a browser download gets blocked the first time. Paste one line instead and you get the same installer with the Thansa logo, unblocked:
+- **Windows:** press Start, type `PowerShell`, open it, paste this line and press Enter:
+  ```
+  irm https://raw.githubusercontent.com/xahoapro/thansa-os/main/packaging/windows/get-thansa.ps1 | iex
+  ```
+- **macOS:** open **Terminal** (Launchpad, type Terminal), paste this line and press Enter:
+  ```
+  curl -fsSL https://raw.githubusercontent.com/xahoapro/thansa-os/main/packaging/macos/get-thansa.sh | bash
+  ```
+
+If you already downloaded the file with the browser and it was blocked:
+- Windows shows "Windows protected your PC": click **More info**, then **Run anyway**.
+- macOS says it cannot open the app: go to **System Settings → Privacy & Security**, scroll down, click **Open Anyway**, then open THANSA OS again.
+
 ## Option 1 - Hostinger VPS (Docker Manager, one click)
 
 > 🛒 **No VPS yet?** [Get a Hostinger VPS here](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager comes built in, so Thansa installs in one click. Once it is ready, come back to the steps below.

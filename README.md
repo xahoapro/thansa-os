@@ -241,6 +241,8 @@ flowchart LR
 > [!IMPORTANT]
 > Thansa runs an AI brain with **full rights** on the machine. When it runs publicly (Docker, VPS, Hostinger), Thansa **forces login by itself**: opening the app shows a create-account or sign-in screen, and nobody can drive it without a password.
 
+> 💻 **On your own Windows or Mac computer?** Download the installer and open it like any app: [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe) (Windows 10/11) or [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg) (macOS 11+). It checks what is missing (Git, Python, Node, AI brains), installs it, and leaves a THANSA OS icon to click. Steps: [QUICKSTART.en.md](QUICKSTART.en.md).
+
 <details open>
 <summary><b>Option 1: Hostinger Docker Manager (domain + HTTPS, one click)</b></summary>
 

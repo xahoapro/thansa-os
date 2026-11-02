@@ -6,6 +6,32 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.440.0] - 2026-11-02
+### Thêm mới
+- **ChatGPT và Claude nhắn thẳng vào khung chat của Thansa.** Cài gói **Thansa Gate** ở Thansa Store, nối với ChatGPT hoặc Claude. Bảo nó "đọc hội thoại Viết Web trên Thansa rồi tư vấn mình nên làm gì tiếp", nó đọc và tư vấn. Bạn đồng ý ngay bên đó là nó nhắn vào đúng hội thoại để Thansa làm tiếp.
+- Tin đó chạy y như bạn tự gõ: chữ trả lời chạy dần trên mọi tab đang mở, có nút Dừng, lưu vào Lịch sử, và **Thansa học được** cho lần sau. Bong bóng tin ghi rõ **từ ChatGPT** hay **từ Claude**.
+- Không còn giao việc qua Kanban rồi chạy ngầm không ai biết. Hội thoại đang trả lời thì tin xếp sau, như khi bạn gõ thêm lúc Thansa đang làm.
+- Chỉ ở mức **Toàn quyền** AI bên ngoài mới được nhắn vào khung chat. Mức thấp hơn chỉ đọc được hội thoại. Hội thoại của khách và nhóm chat thì không đọc, không nhắn được.
+### Cải thiện
+- **Gói trong Store đổi mã sang tiếng Anh** mà máy đã cài không mất gì. Bấm cập nhật như mọi bản mới: trạng thái bật, dữ liệu của gói và các kỹ năng đã cài vào brain được giữ nguyên, gói cũ tự gỡ.
+- Gói **Thansa trong ChatGPT** thành **Thansa Gate**. Connector đã dán vào ChatGPT vẫn chạy, không phải kết nối lại.
+
+## [0.439.1] - 2026-11-02
+### Cải thiện
+- **Cài không còn màn hình đỏ "Windows protected your PC".** Dán một dòng lệnh vào PowerShell (Windows) hoặc Terminal (Mac) là bộ cài tự tải và mở ra, máy không chặn. Dòng lệnh có trong hướng dẫn cài nhanh. Tải file bằng trình duyệt thì vẫn bị hỏi một lần cho tới khi bộ cài được ký số.
+- **Bộ cài mang logo Thansa.** Trình cài Windows có ngôi sao Thansa ở trang đầu, trang cuối và góc trên các trang giữa, sắc nét cả trên màn hình phóng to. Ổ đĩa hiện ra khi mở file `.dmg` trên Mac cũng mang biểu tượng Thansa.
+- Bản phát hành đã sẵn chỗ ký số bộ cài Windows: chủ dự án chỉ cần thêm chứng chỉ vào GitHub là các bản sau tự được ký.
+
+## [0.439.0] - 2026-11-02
+### Thêm mới
+- **Cài Thansa như một ứng dụng trên máy tính.** Windows tải `ThansaOS-Setup.exe`, bấm đúp rồi Next tới hết. Mac tải `ThansaOS-macOS.dmg`, kéo THANSA OS vào Applications. Bộ cài tự kiểm tra máy còn thiếu Git, Python, Node hay bộ não AI nào và tự cài phần thiếu, không cần gõ lệnh. Link tải ở hướng dẫn cài nhanh.
+- **Có biểu tượng THANSA OS trên Desktop, Start menu và Launchpad.** Bấm vào là Thansa mở thành cửa sổ riêng, không thanh địa chỉ. Bấm lần nữa khi Thansa đang chạy chỉ mở lại cửa sổ, không làm dừng việc đang chạy nền.
+- Nút Cập nhật trong app dùng được như bản cài tay. Gỡ app vẫn giữ nguyên bộ não (ghi chú, trí nhớ, cài đặt) trong thư mục `ThansaOS`.
+### Sửa lỗi
+- Cài trên Windows mới tinh không còn chết ở bước tạo môi trường Python, và máy không có winget vẫn tự tải được Python và Node. Mac không có Homebrew cũng cài được Node đúng bản cho Mac.
+- Trên Windows, trình cài của Antigravity hoặc Grok tự thoát giữa chừng không còn kéo theo cả bộ cài dừng lại, nên các bước sau (thư viện, cấu hình, tự khởi động) vẫn chạy đủ.
+- Trên Windows, trang Models thấy ngay Antigravity và Grok vừa cài, không còn báo "chưa cài" cho tới khi khởi động lại máy.
+
 ## [0.438.7] - 2026-11-02
 ### Sửa lỗi
 - **Đăng nhập Claude tự xong khi trình duyệt báo thành công.** Trên máy có trình duyệt, Claude tự mở trang đăng nhập và trang chỉ báo "You're all set up", không hiện mã nào để dán. Trước đây thẻ ở trang Models vẫn đứng chờ mã, phải tải lại trang mới thấy đã đăng nhập. Giờ thẻ tự chuyển sang Đã đăng nhập sau vài giây, hoặc ngay lúc quay lại tab Thansa.
