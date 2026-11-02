@@ -914,3 +914,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/app.js, dashboard/i18n/en.json, dashboard/i18n/vi.json, docs/02-tro-chuyen-va-giong-noi.md, docs/09-mcp-va-so-lieu.md, docs/13-second-brain-bo-nho-wiki.md, docs/31-messenger.md, docs/en/02-chat-and-voice.md, docs/en/09-connections-and-business-data.md, docs/en/13-second-brain.md, docs/en/31-messenger.md, server/stt.py, system/plugins/meta-pages-graph/plugin.yaml. Claude gỡ: không. Xoá: không.
 - Rebrand: P076 (154 chỗ / 21 file). moc-goc 1b3ab32/0.438.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-01** khi chủ bấm duyệt trên Telegram (origin/main a3c07a4, tag + Release thansa-v1.37.0; backup me-backup-1.37.0).
+- **ĐÃ PHÁT HÀNH 2026-11-02** khi chủ bấm duyệt trên Telegram (origin/main 0640778, tag + Release thansa-v2.0.0; backup me-backup-2.0.0).

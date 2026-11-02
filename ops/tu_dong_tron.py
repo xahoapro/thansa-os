@@ -304,6 +304,24 @@ def ban_dich(up: str, base_moi: str, goc: bool = False) -> str:
         sh(["git", "worktree", "remove", "--force", str(WTD)], cwd=ME, check=False)
 
 
+ZALO_GHIM = re.compile(r"codeload\.github\.com/xahoapro/thansa-zalo/tar\.gz/refs/tags/(v\d+\.\d+\.\d+)")
+
+
+def kiem_zalo_ghim() -> None:
+    """Bản Thansa mới ghim tag thansa-zalo nào (zalo_cli.py/zalo_login.py) thì tag đó PHẢI có sẵn trên GitHub, không
+    thì máy cập nhật xong không tải được Zalo. Chưa có → dừng, chờ chủ duyệt bản Zalo (ops/theo_doi_phu.py)."""
+    tags = set()
+    for f in ("server/zalo_cli.py", "server/zalo_login.py"):
+        p = WT / f
+        if p.exists():
+            tags |= set(ZALO_GHIM.findall(p.read_text(encoding="utf-8")))
+    co = sh(["git", "ls-remote", "--tags", "https://github.com/xahoapro/thansa-zalo.git"], check=False).stdout
+    thieu = sorted(t for t in tags if f"refs/tags/{t}" not in co)
+    if thieu:
+        raise Loi(f"thansa-zalo chưa có tag {', '.join(thieu)} mà bản mới ghim - duyệt bản thansa-zalo trên Telegram "
+                  f"trước, lượt sau tự trộn lại")
+
+
 def dang_merge() -> bool:
     return (Path(git("rev-parse", "--absolute-git-dir")) / "MERGE_HEAD").exists()
 
@@ -772,6 +790,10 @@ def _xu_ly_cap_nhat(cap_nhat: list, chu: str) -> None:
             hanh_dong, ver, ma = data.split("|")
         except ValueError:
             continue
+        if hanh_dong in ("pp", "bp"):                     # 02/11: duyệt bản tách thansa-store / thansa-zalo
+            import theo_doi_phu
+            theo_doi_phu.xu_ly_nut(hanh_dong, ver, ma, cb, chu)
+            continue
         if ver != st.get("san_sang_ver") or ma != st.get("san_sang_ma"):
             tg_api("answerCallbackQuery", callback_query_id=cb["id"], text="Nút này đã hết hạn (bản cũ hoặc đã xử lý).")
             continue
@@ -931,6 +953,7 @@ def main() -> int:
         dich = ban_dich(up, base_moi)
         log(f"đã dịch nguồn {base_moi} → {NHANH_DICH} {dich[:9]}")
         ttin = tron_merge(dich, ver_moi, base_moi, moc["goc_version"])
+        kiem_zalo_ghim()
         log(f"merge xong; tự gỡ {len(ttin['tu_go'])} file, Claude gỡ {len(ttin['claude'])}, xoá {len(ttin['xoa'])}")
         doi = {}                                   # 01/11: nguồn đã dịch trước khi merge, không còn rebrand theo chuỗi
         n_stub = va_stub_gate_active()

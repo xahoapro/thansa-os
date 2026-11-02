@@ -58,6 +58,10 @@ check("updater gọi file Windows tên Thansa", "stop-thansa.bat" in doc("server
 # ---- 3. Repo của Thansa, không trỏ về repo nguồn ----
 for f in ("system/mcp-catalog.json", "server/packs_store.py", "server/zalo_cli.py", "server/updater.py"):
     check(f"{f}: không trỏ repo blogminhquy", "blogminhquy" not in doc(f))
+CHU_CU = "blog" + "minhquy"
+lo = [f for f in tracked if f.startswith(("dashboard/", "server/", "system/")) and (ROOT / f).is_file()
+      and re.search(CHU_CU + r"\s*/|@" + CHU_CU + r"\b|github\.com/" + CHU_CU, (ROOT / f).read_text(encoding="utf-8", errors="replace"))]
+check(f"giao diện/máy chủ không lộ tài khoản GitHub nguồn ({lo[:5]})", not lo)
 check("Store mặc định là xahoapro/thansa-store", "xahoapro/thansa-store" in doc("server/packs_store.py"))
 check("Zalo tải từ xahoapro/thansa-zalo", "xahoapro/thansa-zalo" in doc("server/zalo_cli.py"))
 
