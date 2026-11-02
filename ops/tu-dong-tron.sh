@@ -15,5 +15,9 @@ if [ "${1:-}" = "--nghe" ]; then
   exec /usr/bin/python3 "$OPS/tu_dong_tron.py" --nghe >> "$OPS/ban-tin/tu-dong-nghe.log" 2>&1
 fi
 exec 9>"$OPS/ban-tin/.tu-dong.lock"
+if [ "${1:-}" = "--phu" ]; then      # 02/11: theo dõi thansa-store / thansa-zalo (ops/theo_doi_phu.py), chung khoá trộn
+  flock -n 9 || { echo "$(date -Is) [phụ] đang có lượt khác chạy - bỏ qua" >> "$OPS/ban-tin/tu-dong.log"; exit 0; }
+  exec /usr/bin/python3 "$OPS/theo_doi_phu.py" >> "$OPS/ban-tin/tu-dong-cron.log" 2>&1
+fi
 flock -n 9 || { echo "$(date -Is) đang có lượt khác chạy - bỏ qua" >> "$OPS/ban-tin/tu-dong.log"; exit 0; }
 /usr/bin/python3 "$OPS/tu_dong_tron.py" "$@" >> "$OPS/ban-tin/tu-dong-cron.log" 2>&1
