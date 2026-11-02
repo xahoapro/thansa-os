@@ -915,3 +915,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebrand: P076 (154 chỗ / 21 file). moc-goc 1b3ab32/0.438.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-01** khi chủ bấm duyệt trên Telegram (origin/main a3c07a4, tag + Release thansa-v1.37.0; backup me-backup-1.37.0).
 - **ĐÃ PHÁT HÀNH 2026-11-02** khi chủ bấm duyệt trên Telegram (origin/main 0640778, tag + Release thansa-v2.0.0; backup me-backup-2.0.0).
+- **ĐÃ PHÁT HÀNH 2026-11-02** khi chủ bấm duyệt trên Telegram (origin/main 07655cb, tag + Release thansa-v2.0.1; backup me-backup-2.0.1).
