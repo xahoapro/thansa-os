@@ -11,8 +11,8 @@
     "server/mcp_hub.py": "34d705418ef9f9c13657a6963d29328c765b3e8f3397286fc2d74a7f7cab304b",
     "server/skill_router.py": "b9d719894c3a31c4a23ebaefc943ac92716215736cc96394394c38d7b8665781",
     "tests/python/test_improvement_task_skill_scope.py": "64502c488d418bc9287b29238b5d2e7a4690e1b832344683fe9e6cf36e388ecb",
-    "tests/python/test_improvement_task_skill_turn.py": "e5fa58f557e16f7635ff49ee1fb4753b70f43c00a2aaac05d52b7bb1ce598491",
-    "tests/python/test_improvement_task_skill_consumers.py": "32db8b17524b5490dafcee88f0e900ce2952f446fde35ade24476ae82dfadd3d"
+    "tests/python/test_improvement_task_skill_turn.py": "a4f79d541471d2228758ed7d6f0c98e1cd68667c25d177a618cd1d32fbaa994c",
+    "tests/python/test_improvement_task_skill_consumers.py": "e77fa4ef46686423677e93ed07446b945f5264a48acf7da041056877f8c4966e"
   },
   "core_author": "m2d1_whole_review",
   "core_independent_reviewer_executor": "root",

@@ -77,7 +77,7 @@
   "total_tests": 74,
   "total_unittest_seconds": 34.537,
   "source_reuse": {
-    "task2_evidence_sha256": "588f7dba351d6d4253039819179207e467306163b14bfb7447d8c700d08fc41e",
+    "task2_evidence_sha256": "8ce284de6c692f18ed8229299549250dd52cc178b9ab75d8609f07b18ece08d3",
     "all_task2_selected_source_bytes_unchanged": true,
     "qualified_scope": "Prior five scripts ran on the named commit; only these three unselected test methods changed, with every other AST/helper unchanged.",
     "current_head_full_ci_still_required": true

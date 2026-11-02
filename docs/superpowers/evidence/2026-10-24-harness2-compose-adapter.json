@@ -14,10 +14,10 @@
   },
   "implementation": "Actual unchanged compose_round(_tidy/_work/_lens/_st/_SurfaceText/boundaries) runs once at t=k=1; static Thansa body surface and closed JSON adapter validate two original patch projections and new combined bytes through existing validate_body_patch.",
   "source_and_test_sha256": {
-    "server/improvement_harness2_compose.py": "a8192f15f226348f3485883a80b7ebe3cb215caa2d3084845f4a050b0def71b9",
+    "server/improvement_harness2_compose.py": "c1bf54b951e56a656a19abd2690b92c95acb33630a98e766f9a2bd4829c0c0b6",
     "third_party/harness2/COMPOSE-PROVENANCE.json": "ce7839f1a378502caeb5c06af54a66727761f0223bdc336f549cbf0b003fb11c",
     "tests/python/test_improvement_compose_protocol.py": "3dee17faaa3516ec3390e010eac18c9e281b7a6f24ac4f2e687084d8dbc374ba",
-    "server/improvement_generation_protocol.py": "1f0eae722a727d095e84a7d0bf7e99fe23441d0ffa96367e47688ede895b637d",
+    "server/improvement_generation_protocol.py": "1d20072cf1a8c0ce97c147c70c0cc49728945983f51122b707fe2bf171f010b4",
     "server/improvement_cases.py": "561d848331eca7ce6b4e84d6b68b1cac031a62f8dc0e4ce14250bda7f80d2b9d",
     "server/improvement_compose_protocol.py": "6df01c2d268586003cb1f2b79ebf28fd3fa1857aa89d63c3d2427c98406c7bcc",
     "server/improvement_skill_patch.py": "c06eb301c2c8d9ab7d68368f42256b9cb55108780c3782e3cf06aa0cdcbd87d3",

@@ -3,7 +3,7 @@
   "label": "synthetic/real-selected-model-format-feasibility-only",
   "source_commit": "29f5bdd52d5e8d88d6b4a90ba777d14bacc0c4b3",
   "source_profile": "e7aaa5bd9902860e440349f0654f2a6ec92271770030f8bfaf6a0d584efb2a60",
-  "qualification_artifact_sha256": "c5e0acc9150c8a4c392a4ae644761b71495dc7d70a8a6663580e0ff78e9800d0",
+  "qualification_artifact_sha256": "fe554b9c61888815fce5d2f75b9b2d9e8b86549be0d055778517e051db173ac7",
   "business_proof": false,
   "live_activation_granted": false,
   "manual_candidate": true,
@@ -142,7 +142,7 @@
       "auth_mode": "subscription"
     },
     "profile_hash": "e7aaa5bd9902860e440349f0654f2a6ec92271770030f8bfaf6a0d584efb2a60",
-    "qualification": "c5e0acc9150c8a4c392a4ae644761b71495dc7d70a8a6663580e0ff78e9800d0",
+    "qualification": "fe554b9c61888815fce5d2f75b9b2d9e8b86549be0d055778517e051db173ac7",
     "trial_results": [
       {
         "artifact_hash": "12d0417005658c97d809f974084fbdc740bc37c27a4fda628c5b1d3cacfee227",

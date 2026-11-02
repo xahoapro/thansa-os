@@ -26,7 +26,7 @@
     },
     {
       "path": "server/improvement_trial_dashboard.py",
-      "sha256": "494c16cc63dfd1073df5cd38fbb7d834ddf2b937b5eb4b51a72230e89e277047",
+      "sha256": "c1d053954dc900dc842022cc3c7ea0325635d48eb3ef33bf294852eaa1ee224c",
       "bytes": 47272,
       "git_blob": "77b8e9de6164bc7a92008d9596c4e7fb1fc7d6ad",
       "cr_bytes": 0,
@@ -230,7 +230,7 @@
     "sha256": {
       "server/improvement_recipe_sources.py": "fea6886fc6fbcfa56f50f79aefb90c07d4222d1c7b3cc82e589d680a51f0d986",
       "tests/python/test_improvement_recipe_sources.py": "4bdea1cdb0735a4228c47e67c90bc44bf2889593569178d121ed2bb3b68b4161",
-      "server/improvement_trial_dashboard.py": "494c16cc63dfd1073df5cd38fbb7d834ddf2b937b5eb4b51a72230e89e277047",
+      "server/improvement_trial_dashboard.py": "c1d053954dc900dc842022cc3c7ea0325635d48eb3ef33bf294852eaa1ee224c",
       "server/improvement_trial_service.py": "a60c0682b901d564dfb78a932a3ee83cceddf4b0f64c35780051f26697c6bbf8",
       "server/improvement_recipe_archive.py": "b7967c754d4e79bee9ee677b8ee0e7906f9c13d2d4bdb8d1fee6b1c6c7369647",
       "server/improvement_claude.py": "fc6c58edf126d6f9acfc635d2f0f858c948e18ae70fc1a8a89e9e74a10b3395c"

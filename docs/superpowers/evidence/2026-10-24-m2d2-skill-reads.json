@@ -11,7 +11,7 @@
     "server/lazy_skill_runtime.py": "678030ef4f08a07141a400b21e798b52c834eff2b2785d433045a689c3b9c672",
     "server/mcp_hub.py": "65449d7e22f4a7f302f55c80fa1aa52bfc6bac5519b54728945dee12fa54d416",
     "tests/python/test_skill_asset_reads.py": "c24af2b4bd1e2dd062a7720aca3b728e3748c46a527d32462229b39b3e6bed40",
-    "tests/python/test_skill_resolution_state.py": "d5001b12b79d180c180ce49fffeccfabb10d53885df09e879d21efea1d620269"
+    "tests/python/test_skill_resolution_state.py": "a64e0461d6b2891f07c280b538ffa838fce0efc7e9ed2cd0813af2699c9b5645"
   },
   "red": {
     "source_basis": "3afed521 production; new test file added before edits",

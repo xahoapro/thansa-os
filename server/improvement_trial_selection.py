@@ -35,11 +35,11 @@ _DISCOVERY_CODE = {
     "tim_binary": "3a106ae21c4cfa126d8c36e732dffe9045226239038bff13cdb70db2860b1c2b",
     "_duong_dan_tim_binary": "4b54e92c6b5b078adcf123159c37341bf99d304eb8195dae82431b71622d3ba2",
     "_thu_muc_bin_windows": "84ec5dc0a1c0ec7c977e6b80383f57497509b6cd5ef6547b7b5f1a0da618254c",
-    "_home_dir": "5c70cc1085f020104f4b72bc08a323bda413aa69bdd83ed32d8dd8caa6b97781",
-    "_state_dir": "e97b40c8983e0795acb59b2c8a1ef726ff4e44acb07c9c6699dbf442c2e2fbd8",
+    "_home_dir": "83d37f7f8cdd3ad95eb275a65ce079191182ded68ad3b1179ab350d7a5a778a8",
+    "_state_dir": "9ea46509e0bcabc47fe4158a7b55bd24bb07aa80acd3157147bf209acfbbb364",
     "_doc_bin_nho": "df04b8ed0929d15f74cbce87f7a9c803c071a1f7447d53f542874e1dbbb24979",
     "_binary_da_nho": "0a70eeed3ebe4623019425b374f3ce20acec9d539f36c882dbd8d38e50b9dcbc",
-    "ClaudeSDK._options": "278718fd845cc87cd8c1c7a10285349fbb5fad1fbefea770f3be910f678c380a",
+    "ClaudeSDK._options": "1290cf724f4a1f39541616112a305fe4cd0afa3f62a503448560edc650655d90",
 }
 
 

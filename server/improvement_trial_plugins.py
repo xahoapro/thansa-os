@@ -39,7 +39,7 @@ _GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "th
 # Pin the audited data-only branch; a coherent edited source+cache is still not
 # authority to reinterpret an arbitrary predicate as the ordinary-owner result.
 # Thansa: băm theo nguồn thansa-goal ĐÃ rebrand (P048/P07x); vòng trộn nào đổi plugin.py thì băm lại.
-_GOAL_SOURCE_HASH = "44d800206d2167483af087c3edc3e125ccf610395dcdd61dd25714f053a05391"
+_GOAL_SOURCE_HASH = "87b06b6c3d06bba684fee8a6965790b0b816a47180dda4846b3c92ad12728475"
 
 
 def _plain(value):
