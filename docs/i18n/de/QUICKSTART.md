@@ -7,6 +7,19 @@
 
 Bring Thansa OS in wenigen Minuten zum Laufen. Vollständige Anleitungen: [docs/en/](../../../docs/en/README.md).
 
+## Eigener Computer (Windows, macOS) - Installer herunterladen
+
+Installiere Thansa wie jede andere App: eine Datei herunterladen, öffnen, und du hast ein THANSA OS-Symbol für jeden Tag. Der Installer prüft, was dem Computer fehlt (Git, Python, Node, die KI-Gehirne), und installiert nur das.
+
+- **Windows 10/11:** Lade [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe) herunter, doppelklicke und drücke bis zum Ende auf Next. Ein schwarzes Fenster zeigt den Fortschritt (einige Minuten). Danach liegt ein THANSA OS-Symbol auf dem Desktop und im Startmenü.
+- **macOS 11 oder neuer:** Lade [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg) herunter, öffne es, ziehe **THANSA OS** in **Applications** und öffne es über das Launchpad. Beim ersten Mal öffnet sich das Terminal zur Installation (es fragt eventuell einmal nach einem Thansa-Admin-Konto und deinem Mac-Passwort).
+
+Ein Klick auf das Symbol öffnet Thansa in einem eigenen Fenster (ohne Adressleiste), Thansa startet mit dem Computer, und der **Update**-Knopf in der App funktioniert wie gewohnt. Deine Daten liegen im Ordner `ThansaOS` in deinem Benutzerordner; beim Deinstallieren bleibt dieser Ordner erhalten.
+
+Beide Installer sind noch nicht signiert, daher fragt der Computer einmal nach:
+- Windows zeigt "Windows protected your PC": klicke auf **More info** und dann auf **Run anyway**.
+- macOS meldet, dass die App nicht geöffnet werden kann: Gehe zu **System Settings → Privacy & Security**, scrolle nach unten, klicke auf **Open Anyway** und öffne THANSA OS erneut.
+
 ## Option 1 - Hostinger VPS (Docker Manager, ein Klick)
 
 > 🛒 **Noch keinen VPS?** [Hol dir hier einen Hostinger VPS](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager ist eingebaut, Thansa installiert sich also mit einem Klick. Sobald er bereit ist, mach mit den Schritten unten weiter.

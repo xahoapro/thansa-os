@@ -6642,7 +6642,7 @@
   "settings.pet_state_on": "Pet đang hiện ở mép màn hình",
   "settings.pet_state_off": "Pet đang tắt",
   "share.live_links": "link đang sống",
-  "ht.the_ket_noi": "Nối {kenh} ở trang Kết nối nhanh hơn. Trang đã nối ở đó tự có ở đây, không cần thêm lại.",
+  "ht.the_ket_noi": "{kenh} nối ở trang Kết nối. Trang đã nối ở đó tự có trong danh sách kênh, không cần thêm ở đây.",
   "ht.huong_dan": "Hướng dẫn từng bước",
   "wh.wf_search_ph": "Tìm quy trình theo tên",
   "wh.wf_no_match": "Không có quy trình nào khớp",
@@ -6732,5 +6732,8 @@
   "gh.done": "Xong",
   "gh.uses_app": "đăng nhập bằng GitHub",
   "gh.change_account": "Đăng nhập lại",
-  "gh.add_on_github": "Thêm repo trên GitHub"
+  "gh.add_on_github": "Thêm repo trên GitHub",
+  "models.cli_s2_nocode": "Trang chỉ báo đăng nhập thành công, không có mã? Quay lại đây, thẻ tự chuyển sau vài giây.",
+  "ht.mo_the": "Mở thẻ {kenh}",
+  "chat.via_gate": "từ {src}"
 }

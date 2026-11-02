@@ -7,6 +7,19 @@
 
 Запустите Thansa OS за несколько минут. Полные руководства: [docs/en/](../../../docs/en/README.md).
 
+## Личный компьютер (Windows, macOS) - скачайте установщик
+
+Установите Thansa как обычное приложение: скачайте один файл, откройте его, и у вас появится значок THANSA OS для ежедневного запуска. Установщик проверяет, чего не хватает на компьютере (Git, Python, Node, ИИ-движки), и ставит только это.
+
+- **Windows 10/11:** скачайте [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe), дважды щёлкните и нажимайте Next до конца. Чёрное окно показывает ход установки (несколько минут). После этого на рабочем столе и в меню «Пуск» появится значок THANSA OS.
+- **macOS 11 и новее:** скачайте [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg), откройте, перетащите **THANSA OS** в **Applications** и запустите из Launchpad. В первый раз откроется Терминал для установки (он может один раз попросить создать учётную запись администратора Thansa и ввести пароль Mac).
+
+По щелчку на значке Thansa открывается в отдельном окне (без адресной строки), запускается вместе с компьютером, а кнопка **Update** в приложении работает как обычно. Данные хранятся в папке `ThansaOS` в папке пользователя; удаление приложения эту папку не трогает.
+
+Оба установщика пока не подписаны, поэтому компьютер один раз переспросит:
+- Windows пишет "Windows protected your PC": нажмите **More info**, затем **Run anyway**.
+- macOS сообщает, что не может открыть приложение: откройте **System Settings → Privacy & Security**, прокрутите вниз, нажмите **Open Anyway** и снова откройте THANSA OS.
+
 ## Вариант 1 - VPS на Hostinger (Docker Manager, в один клик)
 
 > 🛒 **Ещё нет VPS?** [Возьмите VPS на Hostinger здесь](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN). Docker Manager там встроен, поэтому Thansa ставится в один клик. Когда VPS будет готов, вернитесь к шагам ниже.

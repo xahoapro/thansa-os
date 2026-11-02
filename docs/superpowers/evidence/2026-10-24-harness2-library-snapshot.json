@@ -11,7 +11,7 @@
     "server/improvement_recipe_snapshot.py": "b59330fe3a7929825c41ebf17c7f094af9c03868b728f5c83b59eccafa845546",
     "tests/python/test_improvement_recipe_snapshot.py": "987bc92ad8101951b41f27ef428a47f61e2b1e60d2b7382d09c7f9acbe95a88a",
     "third_party/harness2/LIBRARY-PROVENANCE.json": "f12366cd3cf62c7860103cc2a20d3ac1814937375b0b7a8d308c48abf76821b1",
-    "third_party/harness2/PROVENANCE.md": "f85cd054f7efdd8047fcf039c7849cdf3722dc57ededfe82b357ec7a372b1e62"
+    "third_party/harness2/PROVENANCE.md": "8e7033174d2614d75560ca0aca15b38bd4b14db481a61d99faff26e4dac1fc48"
   },
   "upstream_commit": "1cfe254e8d25b15f37048c3730134686abe60335",
   "provenance": {
