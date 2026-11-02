@@ -408,21 +408,54 @@ Chỉ sửa đúng các file trên, xoá hết dấu xung đột, không commit,
         raise Loi(f"Claude chưa gỡ hết xung đột: {con}")
 
 
+ROUTE = "tests/python/route_table.json"
+
+
+def _khoa_route(raw: str | None) -> set:
+    try:
+        ds = json.loads(raw or "[]")
+    except ValueError:
+        return set()
+    return {(e.get("type"), e.get("path"), tuple(sorted(e.get("methods") or [])), e.get("name")) for e in ds}
+
+
+def chup_route(base_rev: str, up: str) -> str:
+    """route_table.json là ẢNH CHỤP (có số thứ tự): trộn theo dòng không bao giờ ra đúng thứ tự khi nguồn chèn route.
+    Chụp lại từ code đã trộn, nhưng CHỈ nhận khi tập route (bỏ thứ tự) đúng bằng tập mong đợi = route Thansa
+    + route nguồn thêm - route nguồn bỏ. Lệch tập → giữ bản trộn để test đỏ và người xem (đây là chốt bảo mật P060)."""
+    def ban(rev):
+        r = sh(["git", "show", f"{rev}:{ROUTE}"], check=False)
+        return r.stdout if r.returncode == 0 else None
+    b, o, t = _khoa_route(ban(base_rev)), _khoa_route(ban("HEAD")), _khoa_route(ban(up))
+    mong = (o - (b - t)) | (t - b)
+    giu = (WT / ROUTE).read_text(encoding="utf-8") if (WT / ROUTE).exists() else ""
+    sh([str(PY), "tests/python/test_route_table.py", "--update"], check=False)
+    moi = _khoa_route((WT / ROUTE).read_text(encoding="utf-8") if (WT / ROUTE).exists() else "")
+    if moi == mong:
+        git("add", ROUTE)
+        return "chụp lại (chỉ lệch thứ tự)"
+    (WT / ROUTE).write_text(giu, encoding="utf-8")
+    git("add", ROUTE)
+    la = sorted(x[1] or "" for x in (moi - mong))[:5]
+    mat = sorted(x[1] or "" for x in (mong - moi))[:5]
+    return f"GIỮ bản trộn - route ngoài dự kiến: thêm {la}, mất {mat}"
+
+
 def tron_merge(up: str, ver_moi: str, base_moi: str, ver_cu: str) -> dict:
     ttin = {"tu_go": [], "xoa": [], "claude": []}
     base_rev = git("merge-base", "HEAD", up)
     r = sh(["git", "-c", "merge.conflictStyle=diff3", "merge", "--no-ff", "--no-commit", up], check=False)
     if r.returncode != 0 and not dang_merge():
         raise Loi(f"git merge hỏng: {(r.stdout + r.stderr)[-400:]}")
-    can_claude, can_chup_route = [], False
+    can_claude = []
     for l in git("status", "--porcelain").splitlines():
         kieu, f = l[:2], l[3:]
         if kieu not in ("UU", "AA", "DU", "UD", "AU", "UA", "DD"):
             continue
         if f == "VERSION":
             (WT / "VERSION").write_text(f"{ver_moi}-nen-{base_moi}\n", encoding="utf-8")
-        elif f == "tests/python/route_table.json":
-            sh(["git", "checkout", "--ours", "--", f]); can_chup_route = True
+        elif f == ROUTE:
+            sh(["git", "checkout", "--ours", "--", f])
         elif f in FILE_BAO_VE and f != "RELEASES.md" and kieu == "UU":
             sh(["git", "checkout", "--theirs", "--", f])          # giữ đúng byte Javis
         elif f == "RELEASES.md":
@@ -444,9 +477,7 @@ def tron_merge(up: str, ver_moi: str, base_moi: str, ver_cu: str) -> dict:
     for f in can_claude:
         sh(["git", "add", "-A", "--", f])
     ttin["claude"] = can_claude
-    if can_chup_route:
-        sh([str(PY), "tests/python/test_route_table.py", "--update"], check=False)
-        git("add", "tests/python/route_table.json")
+    ttin["route"] = chup_route(base_rev, up)
     if (WT / "VERSION").read_text().strip() != f"{ver_moi}-nen-{base_moi}":
         (WT / "VERSION").write_text(f"{ver_moi}-nen-{base_moi}\n", encoding="utf-8")
         git("add", "VERSION")
@@ -457,7 +488,7 @@ def tron_merge(up: str, ver_moi: str, base_moi: str, ver_cu: str) -> dict:
     if nhiem:
         raise Loi(f"sau trộn còn dấu xung đột: {nhiem}")
     git("commit", "-q", "-m", f"merge: nguon {ver_cu} -> {base_moi} vao Thansa {ver_moi}\n\n"
-        f"Tu go: {', '.join(ttin['tu_go']) or 'khong'}. Claude go: {', '.join(can_claude) or 'khong'}. "
+        f"Route: {ttin.get('route', '')}. Tu go: {', '.join(ttin['tu_go']) or 'khong'}. Claude go: {', '.join(can_claude) or 'khong'}. "
         f"Xoa: {', '.join(ttin['xoa']) or 'khong'}.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
     return ttin
 
