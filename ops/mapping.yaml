@@ -1544,7 +1544,7 @@
     - file: server/updater.py
       ky_hieu: "def systemd_unit():"
     - file: install.sh
-      ky_hieu: "update-index --skip-worktree"
+      ky_hieu: "APP_DIR"
     - file: server/main.py
       ky_hieu: '_AUTOSTART_NAME = "ThansaOS"'
   vung_theo_doi:
