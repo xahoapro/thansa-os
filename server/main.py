@@ -5220,11 +5220,30 @@ def claude_login_code(code: str = Form("")):
     """Nhận code user dán sau khi mở link đăng nhập."""
     d = auth_login_ui_code(code)
     if d.get("ok"):
-        warm_pool.POOL.drop_kind("claude")   # 0.387.0: a warm `claude` keeps the login it started with
-        # Vừa đăng nhập xong: đèn báo não phải xanh NGAY, không chờ vòng probe 10 phút
-        # (banner 'chưa kết nối Model AI' treo sau khi đã kết nối là lỗi khách báo 27/08).
-        connect_health.engine_reconnected("claude")
-        _plan_main_signed_in("anthropic-cli")
+        _claude_main_signed_in()
+    return d
+
+
+def _claude_main_signed_in():
+    """The main Claude account just signed in, by a pasted code or in the browser on its own."""
+    claude_cli._LOGIN["finalized"] = True
+    warm_pool.POOL.drop_kind("claude")   # 0.387.0: a warm `claude` keeps the login it started with
+    # Vừa đăng nhập xong: đèn báo não phải xanh NGAY, không chờ vòng probe 10 phút
+    # (banner 'chưa kết nối Model AI' treo sau khi đã kết nối là lỗi khách báo 27/08).
+    connect_health.engine_reconnected("claude")
+    _plan_main_signed_in("anthropic-cli")
+
+
+@app.get("/claude/login-poll")
+def claude_login_poll():
+    """Has the sign-in from /claude/login-start finished without a code? On a machine with a browser the CLI opens
+    the sign-in itself and gets the answer over localhost; the web page then only says "You're all set up" and shows
+    no code to paste (owner report 02/11/2026). The card asks here every few seconds while it shows the code box."""
+    if (claude_cli._LOGIN.get("env") or {}).get("CLAUDE_CONFIG_DIR"):
+        return {"ok": True, "waiting": False, "connected": False}   # an extra account's sign-in, polled elsewhere
+    d = claude_cli.auth_login_ui_poll()
+    if d.get("connected") and not claude_cli._LOGIN.get("finalized"):
+        _claude_main_signed_in()
     return d
 
 
@@ -5404,7 +5423,7 @@ tools_routes.register(app, tools_routes.ToolsDeps(
 # ---- Đường HTTP của plugin (0.64.26) ----
 #
 # Lõi chỉ CHUYỂN request; luật nằm ở plugins_host (ai được mở đường, đường nào công khai, đường
-# nào không cookie). Sinh ra để "Thansa trong ChatGPT" rời lõi thành một gói trong kho, nhưng cố
+# nào không cookie). Sinh ra để "Thansa trong ChatGPT" (nay là Thansa Gate) rời lõi thành một gói trong kho, nhưng cố
 # ý làm chung: webhook của dịch vụ ngoài là cùng một nhu cầu.
 _EXT_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 
@@ -16322,10 +16341,10 @@ async def voice_options(brains: int = 1):
                 item["models"] = _models_items(grok_cli.list_models() or []) if item["available"] else []
             except Exception:
                 item["models"] = []
-            item["hint"] = (localefmt.chu("Mỗi câu một lượt grok headless, nối lại mạch cũ nên có ký ức. Trả lời về "
-                                          "một cục chứ không stream từng chữ.",
+            item["hint"] = (localefmt.chu("Mỗi câu một lượt grok headless, nối lại mạch cũ nên có ký ức. Chữ về "
+                                          "từng mẩu nên đọc được ngay khi Grok đang viết.",
                                           "One headless grok turn per sentence, resuming the thread so it remembers. "
-                                          "Replies arrive in one block rather than streaming word by word.")
+                                          "Text arrives piece by piece, so speech starts while Grok writes.")
                             if item["available"]
                             else localefmt.chu("Chưa cài Grok Build (grok). Xem trang Models.",
                                                "Grok Build (grok) is not installed. See the Models page."))
@@ -17139,6 +17158,15 @@ async def websocket_endpoint(ws: WebSocket):
         await ws.close(code=1008)
         return
     await ws.accept()
+    await _chat_socket(ws)
+
+
+async def _chat_socket(ws):
+    """Vòng nhận tin của khung chat, tách khỏi `websocket_endpoint` (0.440.0) chỉ để server
+    tự gọi được nó: Thansa Gate (`chat_bridge`) đưa tin của ChatGPT/Claude vào hội thoại bằng
+    một kết nối ẢO đi đúng con đường này, nên lượt đó chạy y hệt khi chủ gõ tay (chữ chạy trên
+    mọi tab, nút Dừng, lưu kho, ghi nhật ký tự học). Cổng đăng nhập vẫn nằm ở endpoint: chỉ mã
+    trong tiến trình mới gọi thẳng được hàm này."""
     # WebSocket chỉ là subscriber. Job chat sống trong _CHAT_RUNTIME nên đóng/F5 tab
     # không huỷ job; kết nối mới nhận snapshot để xem hoặc Stop tiếp.
     conn_tag = f"chat:{uuid.uuid4().hex[:8]}"
@@ -17609,6 +17637,11 @@ async def websocket_endpoint(ws: WebSocket):
                                 "detail": tool_label.chi_tiet(ev),
                                 "content": localefmt.chu(f"⚙ Đang gọi: {ev.get('name', '')}",
                                                          f"⚙ Calling: {ev.get('name', '')}")}))
+                        elif et == "delta":
+                            # 0.438.6: chữ xem trước, hiện ngay từng mẩu; `final` mới là câu trả lời.
+                            if ev.get("content"):
+                                await ws.send_text(json.dumps({
+                                    "type": "stream", "content": ev["content"], "tts": False}))
                         elif et == "final":
                             final_text = ev.get("content") or ""
                         elif et == "usage":
@@ -17685,6 +17718,11 @@ async def websocket_endpoint(ws: WebSocket):
                                 "detail": tool_label.chi_tiet(ev),
                                 "content": localefmt.chu(f"⚙ Đang gọi: {ev.get('name', '')}",
                                                          f"⚙ Calling: {ev.get('name', '')}")}))
+                        elif et == "delta":
+                            # 0.438.6: chữ xem trước, hiện ngay từng mẩu; `final` mới là câu trả lời.
+                            if ev.get("content"):
+                                await ws.send_text(json.dumps({
+                                    "type": "stream", "content": ev["content"], "tts": False}))
                         elif et == "final":
                             final_text = ev.get("content") or ""
                         elif et == "usage":
@@ -18157,11 +18195,19 @@ async def websocket_endpoint(ws: WebSocket):
                                         "detail": tool_label.chi_tiet(ev),
                                         "content": f"⚙ MCP: {ev.get('name', '')}",
                                     }))
+                                elif ev["type"] == "delta":
+                                    # 0.438.5: chữ xem trước của vòng tool, hiện ngay từng mẩu. Không cộng
+                                    # vào final_text: câu trả lời thật đến ở sự kiện `text` cuối vòng.
+                                    if ev.get("content"):
+                                        await ws.send_text(json.dumps({
+                                            "type": "stream", "content": ev["content"], "tts": False,
+                                        }))
                                 elif ev["type"] == "text":
                                     final_text += ev["content"]
-                                    await ws.send_text(json.dumps({
-                                        "type": "stream", "content": ev["content"], "tts": False,
-                                    }))
+                                    if not ev.get("streamed"):   # đã hiện qua `delta` thì đừng in lại
+                                        await ws.send_text(json.dumps({
+                                            "type": "stream", "content": ev["content"], "tts": False,
+                                        }))
                                 elif ev["type"] == "error":
                                     if not _limit_hit:
                                         await ws.send_text(json.dumps({
@@ -19530,6 +19576,21 @@ async def websocket_endpoint(ws: WebSocket):
     finally:
         # Chỉ bỏ subscriber; job server tiếp tục chạy và tự lưu kết quả.
         _CHAT_RUNTIME.remove_client(client_id)
+
+
+# Thansa Gate (0.440.0): AI bên ngoài nhắn vào hội thoại qua đúng vòng chat ở trên. Lambda để test
+# thay `_CHAT_RUNTIME` sau khi nạp vẫn trúng.
+import chat_bridge  # noqa: E402
+
+async def _gate_luu_luot(sid, brain, tin, tra_loi):
+    """Ghi chép của Thansa Gate (0.441.0): lưu tin của chủ rồi đi ĐÚNG đường lưu một lượt chat (`_persist_turn`:
+    Lịch sử, nhật ký hội thoại, vòng tự học), mà không chạy engine nào."""
+    st = get_store()
+    st.append_message(sid, "user", tin)
+    return await _persist_turn(st, sid, brain, tin, tra_loi)
+
+
+chat_bridge.gan(lambda ws: _chat_socket(ws), lambda: _CHAT_RUNTIME, _gate_luu_luot)
 
 
 # ============================================================

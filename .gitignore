@@ -214,3 +214,7 @@ ops/.telegram
 # Secret kenh bao (ngoai git)
 .thansa-alert*
 *.thansa-alert*
+
+# Desktop installers built by packaging/ (CI publishes them on the "desktop" release)
+/dist/
+packaging/windows/Vietnamese.isl

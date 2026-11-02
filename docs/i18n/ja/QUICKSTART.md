@@ -7,6 +7,19 @@
 
 数分で Thansa OS を動かせます。詳しいガイド：[docs/en/](../../../docs/en/README.md)。
 
+## パソコン（Windows、macOS）- インストーラーをダウンロード
+
+Thansa を普通のアプリのようにインストールできます。ファイルを 1 つダウンロードして開けば、毎日クリックする THANSA OS アイコンができます。インストーラーはパソコンに足りないもの（Git、Python、Node、AI ブレイン）を確認し、足りない分だけをインストールします。
+
+- **Windows 10/11:** [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe) をダウンロードし、ダブルクリックして最後まで Next を押します。黒いウィンドウに進行状況が表示されます（数分）。完了するとデスクトップとスタートメニューに THANSA OS アイコンができます。
+- **macOS 11 以降:** [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg) をダウンロードして開き、**THANSA OS** を **Applications** にドラッグしてから Launchpad で開きます。初回はターミナルが開いてインストールします（Thansa の管理者アカウントの設定と、Mac のパスワードを一度求められることがあります）。
+
+アイコンをクリックすると Thansa は専用ウィンドウ（アドレスバーなし）で開き、パソコンの起動時に自動で動き、アプリ内の **Update** ボタンも通常どおり使えます。データはユーザーフォルダ内の `ThansaOS` フォルダにあり、アプリをアンインストールしてもこのフォルダは残ります。
+
+どちらのインストーラーもまだコード署名されていないため、初回に確認が表示されます:
+- Windows で「Windows protected your PC」と出たら、**More info** を押してから **Run anyway** を押します。
+- macOS で開けないと表示されたら、**System Settings → Privacy & Security** を開き、下にスクロールして **Open Anyway** を押し、もう一度 THANSA OS を開きます。
+
 ## 方法 1 - Hostinger VPS（Docker Manager、ワンクリック）
 
 > 🛒 **VPS をまだお持ちでない方へ：** [Hostinger VPS はこちら](https://www.hostinger.com?REFERRALCODE=UTRBLOGMIDSN)。Docker Manager が標準搭載なので、Thansa はワンクリックで入ります。準備ができたら下の手順に戻ってください。

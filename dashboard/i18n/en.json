@@ -6642,7 +6642,7 @@
   "settings.pet_state_on": "The pet is showing at the screen edge",
   "settings.pet_state_off": "The pet is off",
   "share.live_links": "live links",
-  "ht.the_ket_noi": "Connect {kenh} faster on the Connections page. A Page connected there already shows here.",
+  "ht.the_ket_noi": "{kenh} is connected on the Connections page. A Page connected there is already in the channel list, nothing to add here.",
   "ht.huong_dan": "Step-by-step guide",
   "wh.wf_search_ph": "Search workflows by name",
   "wh.wf_no_match": "No workflow matches",
@@ -6732,5 +6732,8 @@
   "gh.done": "Done",
   "gh.uses_app": "signed in with GitHub",
   "gh.change_account": "Sign in again",
-  "gh.add_on_github": "Add repos on GitHub"
+  "gh.add_on_github": "Add repos on GitHub",
+  "models.cli_s2_nocode": "Page only says you're signed in, with no code? Come back here, the card updates in a few seconds.",
+  "ht.mo_the": "Open the {kenh} card",
+  "chat.via_gate": "via {src}"
 }
