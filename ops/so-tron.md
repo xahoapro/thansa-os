@@ -916,3 +916,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - **ĐÃ PHÁT HÀNH 2026-11-01** khi chủ bấm duyệt trên Telegram (origin/main a3c07a4, tag + Release thansa-v1.37.0; backup me-backup-1.37.0).
 - **ĐÃ PHÁT HÀNH 2026-11-02** khi chủ bấm duyệt trên Telegram (origin/main 0640778, tag + Release thansa-v2.0.0; backup me-backup-2.0.0).
 - **ĐÃ PHÁT HÀNH 2026-11-02** khi chủ bấm duyệt trên Telegram (origin/main 07655cb, tag + Release thansa-v2.0.1; backup me-backup-2.0.1).
+
+## Vòng TỰ ĐỘNG 2026-11-02 (goc 1b3ab32 → 398d715, nền 0.438.1 → 0.441.0, thansa 2.0.1→2.1.0)
+- 10 commit upstream: 0.441.0: Javis Gate chat notes (ChatGPT and Claude keep a log in Javis) (#972); 0.440.0: Javis Gate core (external AI chats into Javis) + pack id rename (#970); 0.439.1: Javis logo in the installers, one-line installs, optional signing (#969); 0.439.0: Desktop installers for Windows (.exe) and macOS (.dmg) (#968); 0.438.7: Claude sign-in finishes on its own when the browser completes it (#964); 0.438.6: Grok Build and Antigravity CLI stream their answer text piece by piece (#965); 0.438.5: API key brains stream their answer text piece by piece (#963); 0.438.4: Claude Code streams its answer te
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: .github/CODEOWNERS, .gitignore, dashboard/i18n/en.json, dashboard/i18n/vi.json, server/improvement_trial_plugins.py. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 398d715/0.441.0/so_patch 72.
