@@ -104,7 +104,7 @@ Nếu tool bị chặn vì mức quyền, câu trả lời sẽ chứa nguyên v
 
 | Tên trên thẻ | slug | Tool cung cấp | Quyền tối thiểu | Mặc định |
 |---|---|---|---|---|
-| Thời gian & ngày (VN) | `datetime-vn` | `thansa_now`, `thansa_date_add` | chỉ đọc | Bật |
+| Thời gian & ngày (múi giờ chọn ở Cài đặt) | `datetime-vn` | `thansa_now`, `thansa_date_add` | chỉ đọc | Bật |
 | Đặt việc định kỳ & nhắc hẹn | `thansa-schedule` | `thansa_schedule` | ghi (safe) | Bật |
 | Giao việc Kanban | `thansa-task` | `thansa_task` | ghi (safe) | Bật |
 | Quản lý nhóm chat | `thansa-team` | `thansa_team` | ghi (safe), chỉ chủ | Bật |

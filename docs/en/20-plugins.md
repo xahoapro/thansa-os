@@ -104,7 +104,7 @@ These ship with the app (the **Bundled** label). All are on by default except `t
 
 | Name on the card | slug | Tools provided | Minimum level | Default |
 |---|---|---|---|---|
-| Time and date (VN) | `datetime-vn` | `thansa_now`, `thansa_date_add` | read only | On |
+| Time and date (timezone picked in Settings) | `datetime-vn` | `thansa_now`, `thansa_date_add` | read only | On |
 | Recurring jobs and reminders | `thansa-schedule` | `thansa_schedule` | write (safe) | On |
 | Queue Kanban work | `thansa-task` | `thansa_task` | write (safe) | On |
 | Attach another MCP | `thansa-connect` | `thansa_add_mcp` | write (safe) | On |
