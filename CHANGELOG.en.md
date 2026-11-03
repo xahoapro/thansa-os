@@ -8,6 +8,27 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.447.0] - 2026-11-03
+### Added
+- **Instagram joins the Meta connection.** When you log in with Facebook on the Meta connection card, tick **Also connect the Page's Instagram**: messages and comments of the Instagram account linked to the Page land in the same inbox, served by the Page's bot. Public replies under comments and private messages to commenters both work.
+- **Each chat's "..." menu gains View profile, Block and Delete chat.** Facebook Pages: name and picture, block the person. Instagram: profile with a link to open it. Zalo personal account: profile (with the phone number when the person shares it), block, and delete on Zalo too.
+- Deleting a comment thread deletes that comment on Facebook or Instagram. Messenger and Instagram messages can only be removed from Thansa, since Meta lets no app delete messages.
+### Improved
+- Instagram chats show the Instagram mark and Instagram comments a pink square, so they read apart from Facebook at a glance.
+
+## [0.446.0] - 2026-11-03
+### Added
+- **Message a commenter privately.** Open a Facebook comment in the inbox and pick **Message privately** above the reply box: the message goes straight to that person's Messenger from your Page, even if they never wrote to it. Once they answer, it is an ordinary Messenger chat in the inbox. Meta allows one private message per comment, within 7 days.
+- **Disconnect a Page.** Every connected Page has a **Disconnect** button: Thansa takes it off its bot, tells Meta to stop sending its messages, and keeps past conversations.
+### Improved
+- **The "Facebook Messenger" card is now "Meta connection"**, with Facebook, Messenger, Instagram and Threads icons (the last two coming soon). WhatsApp is still connected on its own, since it uses its own phone number and token.
+- **Comments get their own icon** (an orange square with lines), so they no longer look like Messenger messages (the round blue bubble).
+
+## [0.445.1] - 2026-11-03
+### Fixed
+- **Windows: `npx` connectors no longer break when a path has a space** (for example `C:\My Thansa\...` or a user name with a space). Thansa runs Node directly instead of going through `cmd.exe`, which dropped the quotes when Node lives in `Program Files`. Thanks @ethan1nguyen1 (#898).
+- **Windows: `/C:/Users/...` links in answers open**, instead of being reported as missing files.
+
 ## [0.445.0] - 2026-11-03
 ### Improved
 - **New Claude Code chats use far less of your plan.** Each new chat used to reload about 40,000 tokens of Thansa's instructions, because they held the time, usage and session id, which change all the time. That part is now identical across chats, so it is read back from the prompt cache. Thanks @sunstaysg-oss for measuring and reporting it (#975).
