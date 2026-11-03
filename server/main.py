@@ -16103,6 +16103,16 @@ async def _tts_edge(text: str, voice: str, rate: str) -> bytes:
     return bytes(buf)
 
 
+_EDGE_NAM = ("NamMinh", "Andrew", "Brian", "Guy", "Christopher", "Eric", "Roger", "Steffan", "Davis", "Tony", "Jason")
+
+
+def _edge_du_phong(voice: str) -> list:
+    """Giọng Edge đa ngôn ngữ cùng giới với `voice` (đọc được tiếng Việt), dùng khi giọng gốc không trả audio."""
+    if any(k in (voice or "") for k in _EDGE_NAM):
+        return ["en-US-AndrewMultilingualNeural", "en-US-BrianMultilingualNeural"]
+    return ["en-US-EmmaMultilingualNeural", "en-US-AvaMultilingualNeural"]
+
+
 async def _tts_edge_stream(text: str, voice: str, rate: str):
     """Edge TTS STREAMING: trả (khúc đầu, generator các khúc sau).
 
@@ -16113,15 +16123,25 @@ async def _tts_edge_stream(text: str, voice: str, rate: str):
     trước khi trả response, lỗi thì nổ ở đây, còn các khúc sau mới stream.
     """
     import edge_tts   # lazy - xem ghi chú ở đầu file
-    communicate = edge_tts.Communicate(text, voice, rate=rate)
-    it = communicate.stream()
-    first = b""
-    async for chunk in it:
-        if chunk["type"] == "audio" and chunk["data"]:
-            first = chunk["data"]
+    first, it, loi = b"", None, None
+    # Thansa 2.1.1 (03/11/2026): dịch vụ Edge lúc này hay trả "kết thúc lượt" KHÔNG kèm âm thanh với giọng vi-VN
+    # (NoAudioReceived), người dùng chỉ thấy lỗi "cài đặt giọng nói". Giọng gốc hỏng thì thử lần lượt 2 giọng đa
+    # ngôn ngữ cùng giới (đọc được tiếng Việt), hỏng hết mới báo lỗi để client rơi về đường dự phòng của nó.
+    for v in [voice] + [x for x in _edge_du_phong(voice) if x != voice]:
+        try:
+            it = edge_tts.Communicate(text, v, rate=rate).stream()
+            async for chunk in it:
+                if chunk["type"] == "audio" and chunk["data"]:
+                    first = chunk["data"]
+                    break
+        except Exception as e:   # noqa: BLE001 - NoAudioReceived / bắt tay WS 403: thử giọng kế
+            loi = e
+        if first:
+            if v != voice:
+                print(f"[TTS edge] {voice} không trả audio ({type(loi).__name__ if loi else 'rỗng'}) - dùng {v}", file=sys.stderr)
             break
     if not first:
-        raise RuntimeError("Edge TTS không trả audio.")
+        raise RuntimeError(f"Edge TTS không trả audio ({type(loi).__name__ if loi else 'rỗng'}).")
 
     async def _rest():
         yield first
