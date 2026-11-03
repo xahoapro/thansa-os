@@ -5980,6 +5980,9 @@ def settings_get():
     safe.setdefault("voice", {})
     safe["voice"]["elevenlabs_key"] = ("••••" + vk[-4:]) if vk else ""
     safe["voice"]["elevenlabs_key_set"] = bool(vk)
+    ak = (cfg.get("voice", {}) or {}).get("azure_speech_key", "")
+    safe["voice"]["azure_speech_key"] = ("••••" + ak[-4:]) if ak else ""
+    safe["voice"]["azure_speech_key_set"] = bool(ak)
     # The tunnel token never leaves the server; Settings reads /remote-access/status instead.
     safe.pop("remote_tunnel", None)
     bt = (cfg.get("backup", {}) or {}).get("token", "")
@@ -6334,6 +6337,13 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # /settings rồi POST nguyên object về) mà lưu thì đè mất key thật.
         if patch.get("elevenlabs_key") and not patch["elevenlabs_key"].strip().startswith("••••"):
             v["elevenlabs_key"] = patch["elevenlabs_key"].strip()
+        # Azure Speech: key chỉ ghi khi là key mới thật (như ElevenLabs); region là mã vùng Azure (vd southeastasia).
+        if patch.get("azure_speech_key") and not patch["azure_speech_key"].strip().startswith("••••"):
+            v["azure_speech_key"] = patch["azure_speech_key"].strip()
+        if "azure_speech_region" in patch and re.fullmatch(r"[a-z0-9]{0,40}", str(patch["azure_speech_region"] or "").strip().lower()):
+            v["azure_speech_region"] = str(patch["azure_speech_region"] or "").strip().lower()
+        if patch.get("azure_speech_xoa"):
+            v["azure_speech_key"] = ""
         # Voice V2 (chế độ nói chuyện, bộ não giọng, nghe bằng gì, nhà cung cấp Live). Ô CHỌN chỉ
         # nhận giá trị có trong danh sách gốc (voice_brain / voice_live) để giá trị lạ không âm
         # thầm làm hỏng lượt nói; ô GÕ nhận cả chuỗi rỗng vì "để trống" là lựa chọn THẬT (bỏ bộ
@@ -16259,9 +16269,58 @@ async def _tts_openai(text: str, rate: str, cfg: dict) -> bytes:
         return r.content
 
 
+def _azure_cau_hinh(cfg: dict) -> tuple:
+    v = (cfg or {}).get("voice", {}) or {}
+    return str(v.get("azure_speech_key") or "").strip(), str(v.get("azure_speech_region") or "").strip().lower()
+
+
+async def _tts_azure(text: str, voice: str, rate: str, cfg: dict) -> bytes:
+    """Azure Speech (dịch vụ chính thức của Microsoft): CÙNG tên giọng với Edge, có cam kết, không chập chờn
+    như Edge miễn phí (03/11/2026 Edge bỏ âm thanh ngẫu nhiên với giọng vi-VN). Lỗi thì nổ để /tts lùi về Edge."""
+    import html
+    import httpx
+    key, region = _azure_cau_hinh(cfg)
+    if not key or not region:
+        raise RuntimeError("Chưa có khoá/vùng Azure Speech.")
+    lang = "-".join(voice.split("-")[:2]) or "vi-VN"
+    ssml = (f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{lang}'>"
+            f"<voice name='{html.escape(voice, quote=True)}'><prosody rate='{html.escape(rate or '+0%', quote=True)}'>"
+            f"{html.escape(text)}</prosody></voice></speak>")
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.post(f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",
+                              headers={"Ocp-Apim-Subscription-Key": key, "Content-Type": "application/ssml+xml",
+                                       "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+                                       "User-Agent": "thansa-os"},
+                              content=ssml.encode("utf-8"))
+        r.raise_for_status()
+        if not r.content:
+            raise RuntimeError("Azure Speech không trả audio.")
+        return r.content
+
+
 async def _tts_elevenlabs(text: str, cfg: dict) -> bytes:
     import tts_eleven   # 0.255.0: model that speaks Vietnamese, shared with voice notes
     return await tts_eleven.synth(text, cfg)
+
+
+@app.get("/voice/azure/check")
+async def voice_azure_check():
+    """Thử đọc một câu ngắn qua Azure Speech để trang Cài đặt báo key/vùng đúng hay sai."""
+    cfg = cfgmod.read_settings()
+    key, region = _azure_cau_hinh(cfg)
+    if not key or not region:
+        return {"ok": False, "error": localefmt.chu("Chưa nhập đủ khoá và vùng.", "Key and region are both needed.")}
+    voice = ((cfg.get("voice", {}) or {}).get("edge_voice") or "vi-VN-HoaiMyNeural")
+    try:
+        await _tts_azure("Xin chào", voice if voice.endswith("Neural") else "vi-VN-HoaiMyNeural", "+0%", cfg)
+        return {"ok": True}
+    except Exception as e:   # noqa: BLE001
+        ma = getattr(getattr(e, "response", None), "status_code", 0)
+        ly_do = {401: localefmt.chu("Khoá sai hoặc không khớp vùng.", "Wrong key, or it does not match the region."),
+                 403: localefmt.chu("Khoá bị từ chối (gói hết hạn mức?).", "Key refused (quota used up?)."),
+                 429: localefmt.chu("Vượt hạn mức tạm thời, thử lại sau.", "Rate limited, try again later.")}.get(
+                     ma, localefmt.chu("Không gọi được Azure (sai tên vùng?).", "Could not reach Azure (wrong region?)."))
+        return {"ok": False, "error": ly_do}
 
 
 @app.get("/tts")
@@ -16300,6 +16359,13 @@ async def tts(
         elif provider == "elevenlabs":
             audio = await _tts_elevenlabs(text, cfg)
         else:
+            # Có khoá Azure Speech: giọng Edge đọc qua Azure (cùng giọng, ổn định); Azure lỗi thì Edge như cũ.
+            if all(_azure_cau_hinh(cfg)) and voice.endswith("Neural"):
+                try:
+                    audio = await _tts_azure(phien_am.doc_viet(text), voice, rate, cfg)
+                    return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-cache"})
+                except Exception as e:   # noqa: BLE001 - hết hạn mức / sai khoá / mạng: lùi về Edge
+                    print(f"[TTS azure] {type(e).__name__}: {str(e)[:160]} - dùng Edge", file=sys.stderr)
             return await _edge_streaming()
     except Exception as e:
         print(f"[TTS {provider}] {type(e).__name__}", file=sys.stderr)
@@ -16515,7 +16581,9 @@ async def voice_options(brains: int = 1):
                 "elevenlabs_voice": v.get("elevenlabs_voice") or "",
                 "elevenlabs_model": v.get("elevenlabs_model") or "",
                 "elevenlabs_models": _eleven_models(),
-                "elevenlabs_key_set": bool(str(v.get("elevenlabs_key") or "").strip())},
+                "elevenlabs_key_set": bool(str(v.get("elevenlabs_key") or "").strip()),
+                "azure_key_set": bool(str(v.get("azure_speech_key") or "").strip()),
+                "azure_region": v.get("azure_speech_region") or ""},
     }
 
 
