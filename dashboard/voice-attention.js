@@ -7,7 +7,7 @@
    tên là đúng khâu từng làm cuộc gọi không nối lại được. */
 (function (root) {
   "use strict";
-  const wake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:thansa|than\s+sa|thần\s+sa|jarvis)(?=$|[\s,.!?:;])/iu;
+  const wake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:thansa|than\s+sa|th\u1ea7n\s+sa|jarvis)(?=$|[\s,.!?:;])/iu;
   // Câu mở đầu GẦN GIỐNG tên gọi mà Web Speech hay chép lệch ("Thanh sa", "Tân sa"). KHÔNG mở
   // rào: chỉ cho phép đưa âm thanh cho tai nghe lại, rồi rào xét lại trên chữ của tai (0.65.15).
   const IDLE_MS = 30000;      // chủ dự án 01/10: 20 giây hơi ít
