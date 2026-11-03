@@ -929,3 +929,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 5 commit upstream: 0.445.0: Keep the Claude Code chat prompt identical across new chats (#979); 0.444.4: slow server work no longer stalls the whole app on a small VPS (#978); 0.444.3: Local reset time for subscription limits, wide tables in chat (#976); 0.444.1: streaming answers no longer freeze the browser or loop on "Reconnecting" (#977); 0.443.0: Timezone setting in Settings and first-run setup (#974)
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: server/main.py. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 998fa2f/0.445.0/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main 818e65f, tag + Release thansa-v2.2.0; backup me-backup-2.2.0).
