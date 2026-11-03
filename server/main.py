@@ -13581,6 +13581,16 @@ _BACKTICK_RE = re.compile(r"`([^`\n]+)`")
 _FILE_URI_RE = re.compile(r"^file:(?://[^/\\]*)?(?=[/\\])", re.IGNORECASE)
 
 
+# `/C:/Users/x` (or `\C:\x`): models often write a Windows path with a leading slash, URL style. Neither
+# Windows nor POSIX pathlib reads that as drive C, so the link was reported as missing (#898, item 3).
+_GACH_TRUOC_O_DIA_RE = re.compile(r"^[/\\](?=[A-Za-z]:[/\\])")
+
+
+def _bo_gach_truoc_o_dia(t: str) -> str:
+    """`/C:/x` -> `C:/x`; anything else unchanged."""
+    return _GACH_TRUOC_O_DIA_RE.sub("", t, count=1)
+
+
 def _go_file_uri(t: str):
     """`file:///a/b` → `/a/b` (đã giải mã %xx, `/C:/x` → `C:/x`). Không phải file URI → None."""
     t = str(t or "").strip()
@@ -13642,6 +13652,7 @@ def _link_muc_tieu_moi(brain_root: str, raw: str, files_written=None):
             t = urllib.parse.unquote(t)
         except Exception:
             pass
+    t = _bo_gach_truoc_o_dia(t)
     try:
         broot = Path(brain_root).resolve()
     except Exception:
@@ -13718,9 +13729,22 @@ def _chuan_hoa_link_file(brain_root: str, text: str, files_written=None) -> str:
             return m.group(0)
         return m.group(0)[:m.start(1) - m.start(0)] + f"`{rel}`" + duoi
 
+    def _tran_gach(m):
+        # `/C:/Users/...` written bare: same as `_tran`, but the leading slash goes too (#898).
+        raw = m.group(1).rstrip(".,;:!?…")
+        duoi = m.group(1)[len(raw):]
+        try:
+            rel = Path(raw.replace("\\", "/")).resolve().relative_to(broot).as_posix()
+        except Exception:
+            return m.group(0)
+        if not (broot / rel).exists():
+            return m.group(0)
+        return f"`{rel}`" + duoi
+
     # Windows: `C:\...` và `C:/...`. Chạy TRƯỚC mẫu `/...`, và mẫu đó không nhận dấu `/` đứng
     # sau `:`, kẻo nó cắt `/Users/...` ra khỏi `C:/Users/...` rồi resolve theo ổ của thư mục
     # hiện hành (đúng ổ thì còn chèn link vào giữa, thành `C:` + `bai-1.txt`).
+    ra = re.sub(r"(?<![`\[(/\\\w:])[/\\]([A-Za-z]:[\\/][^\s`\"'()\[\]<>|*?:]+)", _tran_gach, ra)
     ra = re.sub(r"(?<![`\[(/\\\w])([A-Za-z]:[\\/][^\s`\"'()\[\]<>|*?:]+)", _tran, ra)
     ra = re.sub(r"(?<![`\[(/\w:])(/[^\s`\"'()\[\]<>|*?:]+)", _tran, ra)
 
@@ -13761,6 +13785,7 @@ def _link_file_khong_thay(brain_root: str, text: str) -> list:
                 t = urllib.parse.unquote(t)
             except Exception:
                 pass
+        t = _bo_gach_truoc_o_dia(t)
         try:
             if t.startswith("/") or t.startswith("~") or re.match(r"^[A-Za-z]:[\\/]", t):
                 cand = Path(t.replace("\\", "/")).expanduser().resolve()
@@ -25155,6 +25180,7 @@ def _ms_account_view(a: dict) -> dict:
     return {"id": a.get("id"), "label": a.get("label"), "page_id": a.get("external_id"),
             "page_name": meta.get("bot_name", ""), "app_id": meta.get("app_id", ""),
             "brain": a.get("brain", ""), "comments": messenger_bot.comment_mode(a.get("id", "")),
+            "instagram": messenger_bot.instagram_of(a.get("id", "")),
             "bots": [{"id": b["id"], "name": b.get("name"), "enabled": bool(b.get("enabled"))} for b in bots]}
 
 
@@ -25258,7 +25284,8 @@ async def messenger_oauth_start(request: Request):
         body = {}
     res = await messenger_oauth.start(body.get("app_id"), body.get("app_secret"),
                                       _ms_base(request) + messenger_oauth.CALLBACK_PATH,
-                                      str(body.get("brain") or ""), str(body.get("label") or ""))
+                                      str(body.get("brain") or ""), str(body.get("label") or ""),
+                                      instagram=bool(body.get("instagram")))
     if not res.get("ok"):
         return JSONResponse(res, status_code=400)
     return res
@@ -25322,18 +25349,60 @@ async def messenger_oauth_finish(request: Request):
                 out.append({"page_id": pid, "page_name": known[pid]["name"], "ok": False,
                             "error": res.get("error", "")})
                 continue
+            extra = {"comments": mode, "login": "facebook"}
+            ig_note = ""
+            if p.get("instagram"):
+                ig, ig_note = await _ms_link_instagram(c, pid, res["page_token"], p["app_id"], p["app_secret"], url)
+                if ig.get("id"):
+                    extra.update({"ig_id": ig["id"], "ig_username": ig.get("username", ""), "instagram": "on"})
             aid, loi, updated = _ms_save_account(request, pid, p["app_id"], p["app_secret"], res,
                                                  known[pid]["name"] if not p.get("label") else p["label"],
-                                                 p.get("brain", ""), {"comments": mode, "login": "facebook"})
+                                                 p.get("brain", ""), extra)
             if loi:
                 out.append({"page_id": pid, "page_name": known[pid]["name"], "ok": False, "error": loi})
                 continue
             out.append({"page_id": pid, "page_name": res.get("page_name") or known[pid]["name"], "ok": True,
                         "updated": updated, "account": _ms_account_view(channel_accounts.get_account(aid) or {}),
-                        "check": _ms_with_bot_row(res, aid, pid), "repair_errors": res.get("repair_errors", [])})
+                        "check": _ms_with_bot_row(res, aid, pid),
+                        "repair_errors": res.get("repair_errors", []) + ([ig_note] if ig_note else [])})
     if all(r["ok"] for r in out):
         messenger_oauth.forget(state)
     return {"ok": any(r["ok"] for r in out), "results": out}
+
+
+async def _ms_link_instagram(c, page_id: str, page_token: str, app_id: str, app_secret: str, url: str) -> tuple:
+    """Find the Instagram account linked to a Page and register the app's `instagram` webhook (0.447.0).
+    Returns (account {"id", "username"}, a note for the owner or "")."""
+    ig = await messenger_setup.instagram_account(c, page_id, page_token)
+    if not ig.get("ok"):
+        return {}, localefmt.chu("Instagram: ", "Instagram: ") + ig.get("error", "")
+    if not ig.get("id"):
+        return {}, localefmt.chu("Trang này chưa gắn tài khoản Instagram chuyên nghiệp nào.",
+                                 "This Page has no Instagram professional account linked.")
+    wh = await messenger_setup.set_instagram_webhook(c, app_id, app_secret, url, _ms_verify_token())
+    return ig, "" if wh.get("ok") else localefmt.chu("Webhook Instagram: ", "Instagram webhook: ") + wh.get("error", "")
+
+
+@app.post("/messenger/instagram")
+async def messenger_instagram_toggle(request: Request):
+    """Turn a Page's Instagram on or off in Thansa (0.447.0). Off: its messages and comments are dropped."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    aid = str(body.get("account_id") or "").strip()
+    a = channel_accounts.get_account(aid)
+    if not a or a.get("channel") != "messenger":
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có tài khoản Messenger này",
+                                                                 "No such Messenger account")}, status_code=404)
+    if not (a.get("meta") or {}).get("ig_id"):
+        return JSONResponse({"ok": False, "error": localefmt.chu("Trang này chưa nối Instagram",
+                                                                 "This Page has no Instagram connected")}, status_code=400)
+    ok, loi = channel_accounts.update_account(aid, {"meta": {**(a.get("meta") or {}),
+                                                             "instagram": "on" if body.get("on") else "off"}})
+    if not ok:
+        return JSONResponse({"ok": False, "error": loi}, status_code=400)
+    return {"ok": True, "account": _ms_account_view(channel_accounts.get_account(aid) or a)}
 
 
 @app.post("/messenger/comments")
@@ -25406,6 +25475,16 @@ async def messenger_check(request: Request):
             errs = rep.get("errors", [])
         chk = await messenger_setup.run_checks(c, cr["page_id"], cr["access_token"], cr["app_secret"],
                                                app_id, url, _ms_bot_running(aid, cr["page_id"]))
+        if meta.get("ig_id") and app_id:
+            # Instagram (0.447.0): Repair registers its webhook again; the row says what is missing.
+            if body.get("repair") and url.startswith("https://"):
+                r = await messenger_setup.set_instagram_webhook(c, app_id, cr["app_secret"], url, _ms_verify_token())
+                if not r.get("ok"):
+                    errs.append(r.get("error", ""))
+            ig = await messenger_setup.instagram_account(c, cr["page_id"], cr["access_token"])
+            info = await messenger_setup.debug_token(c, cr["access_token"], app_id, cr["app_secret"])
+            wh = await messenger_setup.instagram_webhook(c, app_id, cr["app_secret"])
+            chk.setdefault("items", []).append(messenger_setup.instagram_item(ig, info.get("scopes", []), wh))
     return {"ok": True, "account": _ms_account_view(channel_accounts.get_account(aid) or a),
             "check": chk, "repair_errors": errs}
 
