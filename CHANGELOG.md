@@ -6,6 +6,43 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.445.0] - 2026-11-03
+### Cải thiện
+- **Mở chat mới bằng Claude Code đỡ tốn hạn mức gói hơn nhiều.** Trước đây mỗi phiên chat mới phải nạp lại khoảng 40.000 token phần hướng dẫn của Thansa, vì trong đó có giờ, mức dùng và mã phiên đổi liên tục. Giờ phần này giữ y hệt nhau giữa các phiên nên được đọc lại từ bộ nhớ đệm. Cảm ơn @sunstaysg-oss đã đo và báo (#975).
+- Giờ hiện tại, mã phiên chat, mức dùng hôm nay và lần chạy quy trình gần nhất chuyển sang dòng đầu mỗi tin nhắn gửi cho Claude Code, nên Thansa vẫn biết đủ như cũ, và lượt nối tiếp luôn thấy giờ mới.
+
+## [0.444.4] - 2026-11-03
+### Sửa lỗi
+- **Thansa trên VPS nhỏ không còn đứng hình vì vài việc chậm chạy chặn cả máy chủ.** Năm chỗ trước đây làm việc nặng ngay trên luồng chính, nên trong lúc đó mọi trang khác và cả bước kiểm tra sức khoẻ đều phải chờ (ba lần lỡ kiểm tra là Traefik báo "404 page not found"). Giờ cả năm chỗ chạy ở luồng phụ:
+  - trang Việc khi xem việc của từng bot,
+  - số liệu thống kê của trang Việc (trước đây dò file nhật ký từng ngày một từ năm 1970),
+  - thẻ GitHub ở trang Kết nối (gọi sang GitHub, có lúc chờ tới 20 giây),
+  - lần đầu tải giao diện sau mỗi lần khởi động lại (thu gọn file mất vài giây trên VPS 1 nhân),
+  - trang Công cụ khi đang cài bộ nghe offline.
+- **Bộ nghe tin thoại offline (Whisper) chừa lại một nhân cho Thansa** và chạy ở mức ưu tiên thấp hơn, nên nghe một tin thoại dài không làm treo app trên máy 1-2 nhân.
+- Khi máy chủ chậm, các lần trình duyệt thử lại được rải ngẫu nhiên, không dồn vào cùng một lúc.
+
+## [0.444.3] - 2026-11-03
+### Sửa lỗi
+- **Câu báo "You've hit your 5-hour limit" giờ được nhận ra.** Trước đây chat hiện nguyên giờ UTC và không có thẻ tự chạy lại. Giờ thẻ báo giờ mở lại theo giờ của bạn, kèm ngày nếu sang hôm sau. Cảm ơn @hwangrin (#961).
+- **Giờ mở lại hạn mức tính theo múi giờ trong Cài đặt**, không còn theo đồng hồ của VPS (thường là UTC).
+### Cải thiện
+- **Bảng từ 4 cột trở lên trong trang Trò chuyện được rộng ra** trên máy tính (tới 1200px), đỡ phải kéo ngang. Chữ thường vẫn giữ độ dài dòng cũ cho dễ đọc. Ý tưởng từ @hwangrin (#958).
+
+## [0.444.1] - 2026-11-03
+### Sửa lỗi
+- **Thansa không còn làm đơ máy lúc đang trả lời.** Từ 0.438.4 chữ trả lời về từng mẩu vài ký tự, và mỗi mẩu trang lại vẽ lại toàn bộ câu trả lời: một bài dài là vài nghìn lần vẽ, máy yếu đứng hình, có lúc trình duyệt treo luôn. Giờ chữ vẫn chảy đều nhưng trang chỉ vẽ vài lần mỗi giây.
+- **Hết cảnh "Đang kết nối lại" lặp đi lặp lại trên máy chậm.** Máy nào theo không kịp chữ đang chảy về thì server xếp hàng từng mẩu, quá 500 mẩu là cắt kết nối, trang nối lại rồi lại tụt. Giờ các mẩu đang chờ của cùng một câu trả lời được gộp thành một, máy chậm nhận ít gói hơn và không bị cắt nữa.
+
+## [0.443.0] - 2026-11-02
+### Thêm mới
+- **Chọn múi giờ ngay trong Cài đặt** (khối Ngôn ngữ và múi giờ) và ở **bước 4 của bộ cài đặt lần đầu**, tự chọn sẵn theo máy bạn đang mở. Trước đây múi giờ chỉ lộ ra qua plugin Thời gian, không có chỗ nào để đổi.
+### Cải thiện
+- Thansa hiểu **hôm nay, hôm qua, ngày mai** và chốt khoảng ngày khi kéo số liệu báo cáo theo đúng múi giờ bạn chọn, không theo giờ máy chủ (VPS thường chạy UTC).
+- Các nguồn số liệu (MCP) chạy trên máy Thansa cũng nhận múi giờ này, nên "đơn hôm nay" lúc 6 giờ sáng không còn trả về đơn của hôm qua.
+### Sửa lỗi
+- Đổi ô **Thansa trả lời bằng** giờ hiện lời báo "Đã đổi" như mong đợi, thay vì lỗi ngầm không báo gì.
+
 ## [0.441.0] - 2026-11-02
 ### Thêm mới
 - **Chat bên ChatGPT hay Claude, Thansa vẫn nắm ngữ cảnh.** Qua Thansa Gate, AI đó tự ghi lại vào Thansa những gì bạn hỏi và đã chốt, kèm lý do. Mỗi cuộc chat bên đó có một hội thoại riêng trong Lịch sử của Thansa, ví dụ "Từ ChatGPT: Kế hoạch Tết" hay "Từ Claude: Viết Web".

@@ -31,7 +31,7 @@
   <!-- Biến --ic-* cho icon dùng trong content: của CSS. Phải đứng TRƯỚC style.css
        vì style.css tham chiếu các biến này. -->
   <link rel="stylesheet" href="/static/vendor/lucide-icons.css?v=1">
-  <link rel="stylesheet" href="/static/style.css?v=156">
+  <link rel="stylesheet" href="/static/style.css?v=157">
   <link rel="stylesheet" href="/static/console.css?v=130">
   <!-- Áp tông đã lưu TRƯỚC khi vẽ để không nháy tối rồi mới đổi sang sáng.
        Giá trị cũ "dim" (tông tối-nhạt, gỡ ở 0.9.250) quy về tối; theme.js sẽ ghi đè lại.
@@ -824,6 +824,12 @@
           </div>
           <div id="wzProvHint"></div>
         </div>
+        <div class="set-sec">
+          <h4 data-i18n="wz.s4">4. Múi giờ</h4>
+          <div class="set-note" data-i18n="wz.tz_note">Thansa dùng múi giờ này cho hôm nay, hôm qua, ngày mai, nhắc hẹn và kỳ báo cáo.</div>
+          <select id="wzTz" aria-label="Múi giờ" data-i18n-aria="wz.s4"></select>
+          <div class="set-note" id="wzTzNow"></div>
+        </div>
         <div class="set-actions"><button class="s-btn" id="wzFinish" data-i18n="wz.start">Bắt đầu dùng Thansa →</button></div>
         <div class="auth-err" id="wzErr"></div>
       </div>
@@ -1003,6 +1009,8 @@
   <script src="/static/vendor/lucide-icons.js?v=17"></script>
   <script src="/static/icons.js?v=2"></script>
   <script src="/static/info-tip.js?v=2"></script>
+  <!-- Timezone picker shared by the first-run setup and Settings (tz-picker.js, 0.443.0). -->
+  <script src="/static/tz-picker.js?v=1"></script>
 
   <!-- theme.js phải nạp TRƯỚC mọi file khác: graph.js / app.js đăng ký
        hàm vẽ lại theo tông ngay lúc parse, nếu window.thansaTheme chưa có thì chúng
@@ -1080,7 +1088,7 @@
   <script src="/static/screen-awake.js?v=1"></script>
   <script src="/static/incoming-call.js?v=1"></script>
   <script src="/static/call-bar.js?v=1"></script>
-  <script src="/static/app.js?v=157"></script>
+  <script src="/static/app.js?v=158"></script>
   <!-- Sau app.js: dải việc nền đọc window.ThansaSessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=3"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -1143,7 +1151,7 @@
   <script src="/static/login-vault.js?v=2"></script>
   <script src="/static/messenger-connect.js?v=3"></script>
   <script src="/static/voice-catalog.js?v=1"></script>
-  <script src="/static/console.js?v=206"></script>
+  <script src="/static/console.js?v=207"></script>
   <script src="/static/mobile-chat.js?v=16"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=3"></script>
