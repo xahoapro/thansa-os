@@ -16189,14 +16189,16 @@ async def _tts_edge_stream(text: str, voice: str, rate: str):
     # Thansa 2.1.1 (03/11/2026): dịch vụ Edge lúc này hay trả "kết thúc lượt" KHÔNG kèm âm thanh với giọng vi-VN
     # (NoAudioReceived), người dùng chỉ thấy lỗi "cài đặt giọng nói". Giọng gốc hỏng thì thử lần lượt 2 giọng đa
     # ngôn ngữ cùng giới (đọc được tiếng Việt), hỏng hết mới báo lỗi để client rơi về đường dự phòng của nó.
-    for v in [voice] + [x for x in _edge_du_phong(voice) if x != voice]:
+    # 03/11: giọng vi-VN hỏng NGẪU NHIÊN (NamMinh ~3/10 lần đọc được) nên thử lại chính nó 1 lần trước khi đổi giọng;
+    # thêm nữa thì chậm (mỗi lần hỏng ~2-3 giây).
+    for v in [voice, voice] + [x for x in _edge_du_phong(voice) if x != voice]:
         try:
             it = edge_tts.Communicate(text, v, rate=rate).stream()
             async for chunk in it:
                 if chunk["type"] == "audio" and chunk["data"]:
                     first = chunk["data"]
                     break
-        except Exception as e:   # noqa: BLE001 - NoAudioReceived / bắt tay WS 403: thử giọng kế
+        except Exception as e:   # noqa: BLE001 - NoAudioReceived / bắt tay WS 403: thử lại / giọng kế
             loi = e
         if first:
             if v != voice:
