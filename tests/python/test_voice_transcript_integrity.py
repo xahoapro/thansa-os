@@ -51,8 +51,8 @@ class ModelCorrections(unittest.TestCase):
 
     def test_local_spelling_corrections_may_be_shorter(self):
         for original, proposed in [
-            ("David mở lịch", "Thansa mở lịch"),
-            ("Gia vít ơi mở lịch", "Thansa ơi mở lịch"),
+            ("Thần sa mở lịch", "Thansa mở lịch"),
+            ("Than sa ơi mở lịch", "Thansa ơi mở lịch"),
             ("mở Open Router", "mở OpenRouter"),
             ("Thansa mở lịch", "Thansa, mở lịch."),
         ]:
@@ -61,7 +61,7 @@ class ModelCorrections(unittest.TestCase):
 
     def test_preserves_ui_context_while_correcting_only_speech(self):
         prefix = '[NGỮ CẢNH GIAO DIỆN: trang=models; chọn="bản 200"; kênh=giọng]\n\n'
-        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "David mở lịch", "Thansa mở lịch"),
+        self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "Thần sa mở lịch", "Thansa mở lịch"),
                          prefix + "Thansa mở lịch")
         self.assertEqual(voice_brain.safe_transcript_rewrite(prefix + "Thansa mở lịch", "Thansa"),
                          prefix + "Thansa mở lịch")

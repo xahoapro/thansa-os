@@ -41,7 +41,7 @@ assert.equal(gate.waiting(), false);
 
 // 0.65.22: nối lại phiên Live đã ngắt bằng CÂU NÓI THẬT, không bắt buộc gọi tên.
 const w = new Attention({ now: () => 0 });
-for (const text of ['Thansa', 'mở lịch', 'David ơi mở trang kết nối', 'Gia vít ơi', 'tiếng TV đang nói', 'ok Thansa']) {
+for (const text of ['Thansa', 'mở lịch', 'Thanh sa ơi mở trang kết nối', 'Tân sa ơi', 'tiếng TV đang nói', 'ok Thansa']) {
   assert.equal(w.wakes(text), true, text);
 }
 for (const text of ['', '  ', 'ừ', 'ok.', '!!', '123 456']) {
@@ -52,10 +52,10 @@ for (const text of ['', '  ', 'ừ', 'ok.', '!!', '123 456']) {
 const near = new Attention({ now: () => 0 });
 assert.equal(near.wakeCandidate('David ơi mở trang kết nối'), false, 'stopped gate offers nothing');
 near.start();
-for (const text of ['David ơi mở trang kết nối', 'hey Davis', 'Gia vít ơi', 'Javix, mở Telegram']) {
+for (const text of ['Thanh sa ơi mở trang kết nối', 'hey Tân sa', 'Than xa ơi', 'Thăn sa, mở Telegram', 'David ơi mở trang kết nối']) {
   assert.equal(near.wakeCandidate(text), true, text);
 }
-for (const text of ['mua ngay hôm nay', 'anh vừa gặp David', 'Davidson', 'Thansa ơi']) {
+for (const text of ['mua ngay hôm nay', 'anh vừa gặp David', 'Davidson', 'Thansa ơi', 'Than sa ơi']) {
   assert.equal(near.wakeCandidate(text), false, text);
 }
 

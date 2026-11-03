@@ -37,7 +37,7 @@ class TenThansa(unittest.TestCase):
     def test_bo_nao_giong_hieu_theo_ngu_canh(self):
         p = voice_brain.SYSTEM_PROMPT
         self.assertIn("HIỂU CÂU THEO NGỮ CẢNH", p)
-        self.assertIn("không nói người dùng đã nói 'David'", p)
+        self.assertIn("không nói người dùng đã nói 'Thần sa'", p)
         self.assertNotIn("NGUYÊN VĂN", voice_brain.GHI_CHU_TAT_LOC)
 
     def test_bo_nao_chinh_duoc_dan_hieu_theo_ngu_canh(self):
