@@ -871,6 +871,9 @@ def phat_hanh_san_sang(ver: str) -> None:
     try:
         if st.get("san_sang") != nhanh:
             raise Loi(f"không có bản {ver} đang chờ duyệt")
+        if st.get("ban_cuoi") == ver or sh(["git", "ls-remote", "--tags", "origin", f"refs/tags/thansa-v{ver}"],
+                                           cwd=ME, check=False).stdout.strip():
+            raise Loi(f"bản {ver} ĐÃ phát hành rồi (có tag thansa-v{ver}) - không phát hành lại")   # 03/11: bấm 2 nút cùng bản
         def g(*a, cwd=ME, check=True):
             return git(*a, cwd=cwd, check=check)
         if g("rev-parse", "--abbrev-ref", "HEAD") != "me" or g("status", "--porcelain", "--untracked-files=no"):
