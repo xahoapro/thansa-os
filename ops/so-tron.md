@@ -931,3 +931,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 998fa2f/0.445.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main 818e65f, tag + Release thansa-v2.2.0; backup me-backup-2.2.0).
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main c4773fd, tag + Release thansa-v2.2.1; backup me-backup-2.2.1).
+
+## Vòng TỰ ĐỘNG 2026-11-03 (goc 998fa2f → a61aeae, nền 0.445.0 → 0.447.0, thansa 2.2.1→2.3.0)
+- 3 commit upstream: 0.447.0: Instagram through the Meta connection; inbox View profile, Block, Delete (#982); 0.446.0: Meta connection card, disconnect a Page, private message to commenters (#981); 0.445.1: Windows fixes from #898 (npx args with spaces, /C:/ links) (#980)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc a61aeae/0.447.0/so_patch 72.
