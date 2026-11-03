@@ -7022,6 +7022,9 @@
     $("vcRateRow").hidden = !basic;          // tốc độ đọc chỉ áp cho giọng đọc của đường Cơ bản
     $("vcOpenaiNote").hidden = !!tts.openai_key_set;
     $("vcEleven").hidden = readSel.value !== "elevenlabs";
+    $("vcAzure").hidden = !String(readSel.value || "").startsWith("edge:");
+    $("vcAzKeySet").hidden = !tts.azure_key_set;
+    $("vcAzRegion").value = tts.azure_region || "";
     $("vcElKeySet").hidden = !tts.elevenlabs_key_set;
     $("vcElVoice").value = tts.elevenlabs_voice || "";
 
@@ -7060,6 +7063,7 @@
     const pickReading = async (val) => {
       $("vcVoiceNote").hidden = !(basic && val.startsWith("edge:"));
       $("vcEleven").hidden = val !== "elevenlabs";
+      $("vcAzure").hidden = !String(val || "").startsWith("edge:");
       let r = { ok: true };
       if (val.startsWith("edge:")) {
         // Giọng Edge sống ở máy này (localStorage, app.js nghe sự kiện change của #voiceSel), và từ 0.298.0
@@ -7180,6 +7184,27 @@
       if (r && r.ok) { $("vcElKey").value = ""; tts.elevenlabs_key_set = true; $("vcElKeySet").hidden = false; loadElevenVoices(); }
     };
     $("vcElVoice").onchange = () => luuGiong({ elevenlabs_voice: $("vcElVoice").value.trim() });
+    // Azure Speech (2.3.0): lưu khoá/vùng rồi thử ngay một câu ngắn để báo đúng hay sai.
+    async function thuAzure() {
+      const msg = $("vcAzMsg");
+      if (!tts.azure_key_set || !tts.azure_region) { msg.textContent = t("settings.vc_az_need"); return; }
+      msg.textContent = t("settings.vc_az_checking");
+      const d = await fetch("/voice/azure/check", { cache: "no-store" }).then(r => r.json()).catch(() => null);
+      if (gen !== _renderGen) return;
+      msg.textContent = d && d.ok ? t("settings.vc_az_ok") : ((d && d.error) || t("settings.vc_az_need"));
+    }
+    $("vcAzKey").onchange = async () => {
+      const key = $("vcAzKey").value.trim();
+      if (!key) return;
+      const r = await luuGiong({ azure_speech_key: key });
+      if (r && r.ok) { $("vcAzKey").value = ""; tts.azure_key_set = true; $("vcAzKeySet").hidden = false; thuAzure(); }
+    };
+    $("vcAzRegion").onchange = async () => {
+      const region = $("vcAzRegion").value.trim().toLowerCase();
+      const r = await luuGiong({ azure_speech_region: region });
+      if (r && r.ok) { tts.azure_region = region; thuAzure(); }
+    };
+    if (tts.azure_key_set && tts.azure_region) thuAzure();
     // 0.255.0: the account's voices by name, the raw Voice ID box only when the list cannot load.
     const elSel = $("vcElVoiceSel"), elMsg = $("vcElVoiceMsg");
     function loadElevenVoices() {

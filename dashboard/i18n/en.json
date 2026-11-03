@@ -6780,5 +6780,14 @@
   "ht.priv_private": "Message privately",
   "ht.priv_ph": "Private message to the commenter...",
   "ht.priv_how": "A public reply shows right under the comment, for everyone to read. A private message sends one message from the Page (on Messenger, or an Instagram message for an Instagram comment) to the person who commented, even if they never wrote to the Page. Meta allows one private message per comment, within 7 days; once they answer, it is an ordinary chat, shown on its own in the inbox.",
-  "ht.priv_sent": "Sent privately on Messenger"
+  "ht.priv_sent": "Sent privately on Messenger",
+  "settings.vc_az_lbl": "Azure Speech (stable voice)",
+  "settings.vc_az_key_set": "(saved - leave empty to keep the current key)",
+  "settings.vc_az_info": "Reads the voice you picked (HoaiMy, NamMinh...) through Microsoft's official Azure Speech service, more stable than free Edge. Create a Speech resource on the free F0 tier at portal.azure.com (500,000 characters a month); Keys and Endpoint shows the key and region. If Azure fails or runs out, Thansa falls back to Edge as before.",
+  "settings.vc_az_key_ph": "Paste the Azure Speech key (KEY 1)",
+  "settings.vc_az_region": "Region (Location)",
+  "settings.vc_az_region_ph": "For example: southeastasia",
+  "settings.vc_az_checking": "Testing the key...",
+  "settings.vc_az_ok": "Azure Speech works. Replies are now read through Azure.",
+  "settings.vc_az_need": "Enter both the key and the region to turn it on."
 }

@@ -401,6 +401,20 @@
                   <span class="vc-saved" id="vcReadSaved" aria-live="polite"></span>
                 </div>
               </div>
+              <!-- Azure Speech (Thansa 2.3.0, 03/11/2026): cùng giọng Edge (HoaiMy/NamMinh) qua dịch vụ chính thức của
+                   Microsoft, không chập chờn như Edge miễn phí. Chỉ hiện khi giọng đọc đang là giọng Edge. -->
+              <div id="vcAzure" hidden>
+                <div class="qs-field">
+                  <label class="qs-lbl" for="vcAzKey"><span data-i18n="settings.vc_az_lbl">Azure Speech (giọng ổn định)</span> <button type="button" class="info-i" aria-expanded="false" aria-label="Xem giải thích" title="Xem giải thích" data-i18n-aria="info.more" data-i18n-title="info.more"><i data-ic="info"></i></button> <span class="dim" id="vcAzKeySet" hidden data-i18n="settings.vc_az_key_set">(đã có - để trống là giữ khoá cũ)</span></label>
+                  <div class="info-body" hidden data-i18n="settings.vc_az_info">Đọc đúng giọng đang chọn (HoaiMy, NamMinh...) qua dịch vụ Azure Speech chính thức của Microsoft, ổn định hơn Edge miễn phí. Tạo tài nguyên Speech gói miễn phí F0 trên portal.azure.com (500.000 ký tự mỗi tháng), mục Keys and Endpoint có khoá và vùng. Azure lỗi hay hết hạn mức thì Thansa tự đọc bằng Edge như cũ.</div>
+                  <input class="js-input" id="vcAzKey" type="password" autocomplete="off" data-i18n-ph="settings.vc_az_key_ph" placeholder="Dán khoá Azure Speech (KEY 1)">
+                </div>
+                <div class="qs-field">
+                  <label class="qs-lbl" for="vcAzRegion" data-i18n="settings.vc_az_region">Vùng (Location/Region)</label>
+                  <input class="js-input" id="vcAzRegion" autocomplete="off" data-i18n-ph="settings.vc_az_region_ph" placeholder="Ví dụ: southeastasia">
+                  <div class="qs-hint" id="vcAzMsg" role="status"></div>
+                </div>
+              </div>
               <!-- ElevenLabs (0.255.0): out of Advanced, right under the list where it was picked. The voice comes
                    from the account by name (/voice/elevenlabs/voices); the raw Voice ID box only shows when the
                    list cannot load. -->

@@ -6780,5 +6780,14 @@
   "ht.priv_private": "Nhắn riêng",
   "ht.priv_ph": "Tin nhắn riêng gửi tới người bình luận...",
   "ht.priv_how": "Trả lời công khai hiện ngay dưới bình luận, ai cũng đọc được. Nhắn riêng gửi một tin từ Trang (Messenger, hoặc tin nhắn Instagram nếu là bình luận Instagram) tới đúng người đã bình luận, dù họ chưa từng nhắn cho Trang. Meta chỉ cho nhắn riêng một lần mỗi bình luận và trong vòng 7 ngày; khách trả lời là thành cuộc chat bình thường, hiện riêng trong Hộp thư.",
-  "ht.priv_sent": "Đã nhắn riêng qua Messenger"
+  "ht.priv_sent": "Đã nhắn riêng qua Messenger",
+  "settings.vc_az_lbl": "Azure Speech (giọng ổn định)",
+  "settings.vc_az_key_set": "(đã có - để trống là giữ khoá cũ)",
+  "settings.vc_az_info": "Đọc đúng giọng đang chọn (HoaiMy, NamMinh...) qua dịch vụ Azure Speech chính thức của Microsoft, ổn định hơn Edge miễn phí. Tạo tài nguyên Speech gói miễn phí F0 trên portal.azure.com (500.000 ký tự mỗi tháng), mục Keys and Endpoint có khoá và vùng. Azure lỗi hay hết hạn mức thì Thansa tự đọc bằng Edge như cũ.",
+  "settings.vc_az_key_ph": "Dán khoá Azure Speech (KEY 1)",
+  "settings.vc_az_region": "Vùng (Location/Region)",
+  "settings.vc_az_region_ph": "Ví dụ: southeastasia",
+  "settings.vc_az_checking": "Đang thử khoá...",
+  "settings.vc_az_ok": "Azure Speech hoạt động. Giọng đọc giờ đi qua Azure.",
+  "settings.vc_az_need": "Nhập cả khoá và vùng để bật."
 }

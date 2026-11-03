@@ -58,6 +58,10 @@ _DEFAULT = {
         "openai_tts_voice": "alloy",                  # alloy|echo|fable|onyx|nova|shimmer|ash|sage|coral
         "openai_tts_model": "gpt-4o-mini-tts",        # hoặc tts-1 / tts-1-hd
         "elevenlabs_key": "",
+        # Azure Speech (03/11/2026): CÙNG giọng Edge (vi-VN-HoaiMyNeural...) qua dịch vụ chính thức có cam kết.
+        # Có key + region thì các giọng Edge đọc qua Azure, lỗi thì lùi về Edge miễn phí.
+        "azure_speech_key": "",
+        "azure_speech_region": "",
         "elevenlabs_voice": "21m00Tcm4TlvDq8ikWAM",   # Rachel (premade, đa ngôn ngữ) - đổi được
         "elevenlabs_model": "eleven_flash_v2_5",      # speaks Vietnamese (multilingual_v2 does not), tts_eleven.py
         # --- Voice V2 (docs/dev/2026-10-voice-call-spec.md mục 3.1 và 5) ---
@@ -537,7 +541,7 @@ _SECRET_PATHS = (
     "model.openai_oauth.access_token", "model.openai_oauth.refresh_token", "model.openai_oauth.id_token",
     # Gemini CLI (đăng nhập Google ngay trên dashboard). Refresh token ở đây mở được cả gói
     # Code Assist của tài khoản Google, nên nó ngang hàng mọi secret khác trong danh sách.
-    "telegram.token", "zalo_bot.token", "backup.token", "voice.elevenlabs_key",
+    "telegram.token", "zalo_bot.token", "backup.token", "voice.elevenlabs_key", "voice.azure_speech_key",
     "slack.bot_token", "slack.app_token", "whatsapp.access_token", "whatsapp.app_secret",
     "discord.bot_token", "lark.app_secret",
     # Secret TOTP là thứ SINH RA mã đăng nhập, nên nó ngang hàng mật khẩu chứ không phải một
