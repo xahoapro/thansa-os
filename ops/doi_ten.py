@@ -22,6 +22,7 @@ from pathlib import Path
 BO_QUA_FILE = re.compile(r"^(LICENSE|ops/)")
 # Repo/tên miền của Javis → của Thansa (01/11: fork javis-store → thansa-store, javis-zalo → thansa-zalo).
 THAY_TRUOC = [("blogminhquy/javis-", "xahoapro/thansa-"), ("blogminhquy/thansa-", "xahoapro/thansa-"),
+              ("\"javis\": \"gia vít\"", "\"thansa\": \"than sa\""),   # phiên âm TTS tên sản phẩm (03/11)
               ("blogminhquy / ", "xahoapro / "), ("@blogminhquy", "@xahoapro"),     # nhãn "chủ / repo" kiểu GitHub (02/11)
               ("javisos.com", "thansa.org"), ("minhquy.vn", "tradingauto.org")]
 JV = re.compile(r"javis", re.I)

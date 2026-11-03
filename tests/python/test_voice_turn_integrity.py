@@ -109,11 +109,11 @@ class VoiceTurnIntegrity(unittest.IsolatedAsyncioTestCase):
     async def test_grounded_context_repair_updates_bubble_with_raw(self):
         # 0.64.38: sửa từ nghe nhầm có căn cứ về âm được nhận, và không âm thầm.
         prefix = '[NGỮ CẢNH GIAO DIỆN: trang=chat]\n\n'
-        messages, frames, fallbacks, _ = await self.run_turn(prefix + 'David ơi', ['THANSA_NGHE: Thansa ơi\n', 'Em đây anh.'])
+        messages, frames, fallbacks, _ = await self.run_turn(prefix + 'Thần sa ơi', ['THANSA_NGHE: Thansa ơi\n', 'Em đây anh.'])
         self.assertEqual(messages, [prefix + 'Thansa ơi'])
         corrected = [f for f in frames if f['type'] == 'user_text']
         self.assertEqual(corrected[0]['text'], 'Thansa ơi')
-        self.assertEqual(corrected[0]['raw'], 'David ơi')
+        self.assertEqual(corrected[0]['raw'], 'Thần sa ơi')
         self.assertFalse(fallbacks)
 
     async def test_meaning_change_is_rejected(self):

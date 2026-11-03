@@ -709,8 +709,8 @@ def ghi_ho_so(moc: dict, up: str, ver_moi: str, base_moi: str, cac_commit: list,
              so_patch=len(re.findall(r"^- id: P\d+", mp, re.M)))
     (WT / "ops/mapping.yaml").write_text(mp, encoding="utf-8")
     (WT / "ops/moc-goc.json").write_text(json.dumps(m, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    goc_tom = "; ".join(c.split(" ", 1)[1] for c in cac_commit)
-    tom = tom_tat_viet(cac_commit, base_moi)
+    goc_tom = doi_ten.doi_chu("; ".join(c.split(" ", 1)[1] for c in cac_commit))
+    tom = doi_ten.doi_chu(tom_tat_viet(cac_commit, base_moi))   # 03/11: tiêu đề commit nguồn mang tên cũ vào RELEASES.md
     rel = (WT / "RELEASES.md").read_text(encoding="utf-8")
     i = rel.index("\n| ", rel.index("|--------"))
     rel = rel[:i + 1] + (f"| {ver_moi} | {base_moi:<9} | `{up[:7]}`  | {hom_nay} (chờ duyệt) | Trộn nguồn "

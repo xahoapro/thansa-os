@@ -7,12 +7,12 @@
    tên là đúng khâu từng làm cuộc gọi không nối lại được. */
 (function (root) {
   "use strict";
-  const wake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:thansa|jarvis)(?=$|[\s,.!?:;])/iu;
-  // Câu mở đầu GẦN GIỐNG tên gọi mà Web Speech hay chép lệch ("David ơi", "Gia vít"). KHÔNG mở
+  const wake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:thansa|than\s+sa|th\u1ea7n\s+sa|jarvis)(?=$|[\s,.!?:;])/iu;
+  // Câu mở đầu GẦN GIỐNG tên gọi mà Web Speech hay chép lệch ("Thanh sa", "Tân sa"). KHÔNG mở
   // rào: chỉ cho phép đưa âm thanh cho tai nghe lại, rồi rào xét lại trên chữ của tai (0.65.15).
   const IDLE_MS = 30000;      // chủ dự án 01/10: 20 giây hơi ít
   const WAKE_MIN_WORDS = 2;   // "ừ", tiếng ho không đủ; "mở lịch" là đủ
-  const nearWake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:david|davis|javix|jarvix|đa\s*vít|gia\s*vít|ja\s*vít|ja\s*vịt|giá\s*vít|chavis)(?=$|[\s,.!?:;])/iu;
+  const nearWake = /^(?:(?:hey|hi|hello|ê|này|alo|chào)\s+)?(?:thanh\s*sa|tân\s*sa|thăn\s*sa|than\s*xa|tan\s*sa|thần\s*xa|thansa[a-z]|david|gia\s*vít)(?=$|[\s,.!?:;])/iu;
   class Attention {
     constructor({ now = Date.now, idleMs = IDLE_MS, candidateMs = 120000 } = {}) {
       this.now = now; this.idleMs = idleMs; this.candidateMs = candidateMs;
