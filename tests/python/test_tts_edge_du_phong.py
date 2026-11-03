@@ -57,11 +57,25 @@ goi.clear(); HONG.clear()
 out = asyncio.run(doc("vi-VN-HoaiMyNeural"))
 check("giọng gốc chạy được thì dùng đúng nó", goi == ["vi-VN-HoaiMyNeural"] and out.startswith(b"mp3-vi-VN-HoaiMy"))
 
-# giọng nữ hỏng -> giọng nữ đa ngôn ngữ
+# giọng nữ hỏng -> thử lại chính nó 1 lần (Edge hỏng ngẫu nhiên) -> giọng nữ đa ngôn ngữ
 goi.clear(); HONG.clear(); HONG.add("vi-VN-HoaiMyNeural")
 out = asyncio.run(doc("vi-VN-HoaiMyNeural"))
-check("HoaiMy hỏng -> Emma đa ngôn ngữ", goi == ["vi-VN-HoaiMyNeural", "en-US-EmmaMultilingualNeural"]
+check("HoaiMy hỏng -> thử lại 1 lần -> Emma đa ngôn ngữ", goi == ["vi-VN-HoaiMyNeural", "vi-VN-HoaiMyNeural", "en-US-EmmaMultilingualNeural"]
       and out == b"mp3-en-US-EmmaMultilingualNeural-tiep")
+
+# hỏng lần đầu, thử lại thì được: vẫn là giọng tiếng Việt đã chọn
+class _MotLanHong(Communicate):
+    dem = 0
+    async def stream(self):
+        _MotLanHong.dem += 1
+        if _MotLanHong.dem == 1:
+            raise NoAudioReceived("No audio was received.")
+        yield {"type": "audio", "data": b"mp3-" + self.voice.encode()}
+sys.modules["edge_tts"].Communicate = _MotLanHong
+goi.clear(); HONG.clear()
+out = asyncio.run(doc("vi-VN-NamMinhNeural"))
+check("NamMinh hỏng 1 lần, thử lại được -> vẫn NamMinh", goi == ["vi-VN-NamMinhNeural", "vi-VN-NamMinhNeural"] and b"NamMinh" in out)
+sys.modules["edge_tts"].Communicate = Communicate
 
 # giọng nam hỏng -> giọng nam đa ngôn ngữ, hỏng tiếp -> giọng nam thứ hai
 goi.clear(); HONG.clear(); HONG.update({"vi-VN-NamMinhNeural", "en-US-AndrewMultilingualNeural"})
@@ -74,7 +88,7 @@ try:
     asyncio.run(doc("vi-VN-HoaiMyNeural"))
     check("hỏng hết thì báo lỗi", False)
 except RuntimeError as e:
-    check("hỏng hết thì báo lỗi (nêu lý do)", "NoAudioReceived" in str(e) and len(goi) == 3)
+    check("hỏng hết thì báo lỗi (nêu lý do)", "NoAudioReceived" in str(e) and len(goi) == 4)
 
 check("requirements đòi edge-tts >= 7.3.1 (7.2.x bị 403)", "edge-tts>=7.3.1" in (ROOT / "requirements.txt").read_text())
 
