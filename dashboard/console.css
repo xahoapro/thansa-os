@@ -3677,6 +3677,14 @@ span.tmp-lead { cursor: default; }
 .ws-core-head h3 { margin: 0; font-size: 16px; }
 .ws-core-card p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; }
 .ws-core-card .ws-core-note { color: var(--text2); font-size: 13.5px; }
+/* 0.461.0: the Core card's model row. It reuses the assistant editor's model button and list (.agent-editor rules). */
+.ws-core-model { margin-top: 16px; }
+.ws-core-model > label { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 13.5px; font-weight: 600; }
+.ws-core-model .ag-model-btn { font-size: 14px; }
+.ws-core-model-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; color: var(--text2);
+  font-size: 13.5px; line-height: 1.5; }
+.ws-core-model-sub[hidden] { display: none; }
+.ws-core-model-sub > span:empty { display: none; }
 .ws-item-time { flex: none; font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
 
 /* 0.148.0: tay kéo đổi bề rộng cột (col-resize.js) ở trang đồ thị (cột Vault, cột hội thoại) và trang Trò chuyện (cột
@@ -4223,3 +4231,24 @@ button.tm-quote-ref:hover, button.tm-quote-ref:focus-visible { border-color: var
 .kho-goc svg { width: 14px; height: 14px; flex: none; }
 .kho-goc a { color: var(--accent); text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
 .kho-goc a:hover { text-decoration: underline; }
+
+/* 0.454.0: the Reorder box (reorder-dialog.js) for projects, pinned chats and tags. Rows reuse the brain picker's. */
+.ro-box { width: min(440px, calc(100vw - 24px)); max-height: min(80vh, 640px); display: flex; flex-direction: column; }
+.ro-hint { padding: 0 16px 8px; font-size: 16px; color: var(--text2); }
+.ro-list { flex: 1 1 auto; overflow-y: auto; padding: 0 8px; }
+.ro-ic { flex: none; display: inline-flex; color: var(--text2); }
+.ro-ic svg { width: 16px; height: 16px; }
+.ro-err { padding: 6px 16px 0; font-size: 16px; color: var(--red, #d64545); }
+.ro-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 16px; }
+.cside-group { display: flex; align-items: center; }
+.cside-reorder { margin-left: auto; border: 0; background: none; color: var(--text3); width: 26px; height: 22px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.cside-reorder:hover { color: var(--text); background: var(--bg3); }
+.cside-reorder svg { width: 14px; height: 14px; }
+@media (hover: none), (pointer: coarse) {
+  .ro-box .bp-row { min-height: 58px; }
+  .ro-box .bp-arrow { width: 42px; height: 42px; }
+  .ro-box .bp-grip { width: 38px; height: 44px; }
+  .ro-hint { font-size: 17px; }
+  .cside-reorder { width: 34px; height: 30px; }
+}

@@ -6,6 +6,47 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.463.0] - 2026-11-04
+### Thêm mới
+- **Việc của tôi đổi Dự án thành Tags.** Một việc gắn được nhiều tag, hiện thành nhãn màu ngay dưới tên việc với nút **+ Tags**. Bấm vào một tag ở cột bên để xem mọi việc gắn tag đó. Dự án cũ tự thành tag, không mất gì.
+- **Việc con cho từng việc của anh.** Mở một việc là thấy danh sách việc con kèm thanh tiến độ: tích vòng tròn, sửa tên ngay tại chỗ, xoá bằng dấu x. Việc con xong thì gạch ngang và tự chìm xuống cuối. Ngoài danh sách, việc nào có việc con hiện số `1/3`, bấm vào là xổ ra tích luôn. Việc lặp lại thì mỗi lần mới bắt đầu với việc con chưa tích. Việc của Thansa vẫn giữ phẳng như cũ.
+- **Sắp xếp thứ tự Tags.** Kéo thả tag ở cột bên trên máy tính, hoặc chọn **Chuyển lên trên / xuống dưới** trong menu của tag trên điện thoại.
+- **Ghi chú gắn được link, note và file.** Dán link web hoặc gõ `[[tên note]]`, bên dưới hiện nút bấm mở thẳng. **Nối note** tìm note, file trong brain để chèn. **Tải file lên** (hoặc dán, kéo file vào ô ghi chú như khung chat) lưu file vào thư mục `task-files` của brain, giữ lâu dài.
+
+## [0.461.0] - 2026-11-04
+### Cải thiện
+- **Thẻ Thansa Core ở trang Cộng sự giờ nói rõ đang chạy model nào.** Chưa ghim thì ghi "Theo model chính" kèm tên model đó, nên không còn trông như Thansa Core không có model.
+- **Chọn model cho Thansa Core ngay trên thẻ đó.** Chọn một model là ghim cho mọi chat của Thansa Core, đúng cái ghim mà thanh model trong chat Core vẫn dùng: đổi ở đâu thì chỗ kia cũng thấy ngay.
+- **Gỡ ghim một chạm** bằng nút "Theo model của khung chat chính". Ghim tạm không chạy được (mất key, hết hạn mức) thì thẻ nói thẳng model nào đang chạy thay.
+
+## [0.459.0] - 2026-11-04
+### Thêm mới
+- **Kênh API nội bộ cho Chatbot (thử nghiệm).** Một máy chủ của bạn, ví dụ web nội bộ cho nhân viên, hỏi một Chatbot qua HTTP rồi hiện câu trả lời ngay trong web đó. Thêm ở trang Chatbot, tab Kênh, chọn **API nội bộ**: Thansa tự sinh khoá và chỉ hiện một lần, có nút xoay khoá.
+- **Rào sẵn trong mã.** Bot trên kênh này chỉ chạy ở Chỉ đọc hoặc Đọc tài liệu, chỉ thấy brain của nó, không gửi tin ra ngoài. Mặc định chỉ chính máy chạy Thansa gọi được; máy khác phải được thêm vào danh sách cho phép.
+- Tài liệu riêng cho kênh này đặt trong `rieng-theo-nhom/api-<tên>/` hoặc ghi `chat_scope: api:<tên>`, tách hẳn khỏi tài liệu riêng của nhóm Zalo, Telegram. Cảm ơn @nuskmonkey-cmyk (#987).
+
+## [0.455.0] - 2026-11-04
+### Sửa lỗi
+- **Câu trả lời cho tin nhồi thêm giờ hiện ngay dưới tin đó.** Trước đây, khi anh gửi thêm một tin lúc Thansa đang làm và Thansa đã đọc tin ấy, câu trả lời vẫn nằm ở bong bóng phía trên, nhìn như yêu cầu mới chưa được làm. Giờ bong bóng trả lời và khối các bước tự dời xuống dưới tin anh vừa gửi, đúng thứ tự như khi tải lại trang.
+
+## [0.454.0] - 2026-11-04
+### Thêm mới
+- **Kéo thả sắp xếp project, đoạn chat đã ghim và tag.** Cùng một hộp Sắp xếp như bảng chọn Brain: kéo tay cầm hoặc bấm mũi tên lên xuống, bấm Xong. Thứ tự lưu trên máy chủ nên điện thoại và máy tính thấy giống nhau.
+- **Project:** mở menu Project, chọn **Sắp xếp project**. Thứ tự anh kéo đứng trước; project chưa từng sắp vẫn để mục ghim lên đầu như cũ.
+- **Đoạn chat đã ghim:** bấm nút mũi tên ở đầu nhóm **Đã ghim**. Chat chưa ghim vẫn tự xếp theo thời gian; muốn giữ chỗ cố định cho một cuộc thì ghim rồi kéo.
+- **Tag:** cuối menu lọc tag ở trang Cộng sự và trang Nhóm có thêm **Sắp xếp tag**, mỗi trang giữ thứ tự riêng.
+
+## [0.453.0] - 2026-11-04
+### Sửa lỗi
+- **Claude Code chờ việc chạy nền xong rồi làm tiếp.** Trước đây, lượt nào Claude Code bật lệnh chạy nền hay tác tử phụ thì kết thúc ngay ở câu trả lời đầu, kết quả không bao giờ quay về (người dùng trên Windows Server báo ở #898). Giờ lượt mở tới khi việc nền xong, Claude Code đọc kết quả và trả lời tiếp ngay trong khung chat. Chờ tối đa 30 phút, đổi bằng `THANSA_CLAUDE_BG_WAIT`.
+- **Antigravity hết báo nhầm "không đọc được file ngữ cảnh".** `agy` bản mới thật ra đã đọc trọn file, nhưng Thansa không nhận ra kiểu báo cáo của nó. Antigravity cũng gửi prompt qua stdin trở lại thay vì đi đường vòng qua file. Cảm ơn @nxbgda1-ship-it (#983).
+
+## [0.452.0] - 2026-11-04
+### Thêm mới
+- **Nhóm tự vận hành trọn vòng từ khung chat.** Anh nhắn một yêu cầu làm việc là thành viên trả lời tự mở việc luôn, không phải bấm Giao việc hay Tạo việc. Trưởng nhóm lập kế hoạch, giao người, các thành viên làm và nhờ nhau, rồi kết quả quay về khung chat.
+- Việc nào cũng do trưởng nhóm điều phối, thành viên không giao thẳng cho nhau, nên kết quả cuối luôn có người gom và chịu trách nhiệm. Câu hỏi hay trò chuyện thì chỉ trả lời, không mở việc.
+- Mặc định mỗi nhóm tự mở tối đa 5 việc mỗi ngày, mỗi tin của anh chỉ mở một việc. Chỉnh ở **Giới hạn của team**, đặt 0 để quay lại cách cũ (chỉ đề xuất, anh bấm mới chạy).
+
 ## [0.450.0] - 2026-11-04
 ### Thêm mới
 - **Nút "Cài lên điện thoại" trong menu trên điện thoại.** Mở menu bên trái là thấy, bấm vào là hiện hướng dẫn cài Thansa ra màn hình chính đúng theo máy đang dùng (iPhone: Chia sẻ rồi Thêm vào MH chính; Android: một nút Cài). Đã cài, mở Thansa từ màn hình chính, thì nút không hiện nữa.

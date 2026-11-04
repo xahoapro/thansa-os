@@ -293,7 +293,11 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/auth/status", "/auth/login", "/auth
                       "/threads/webhook", "/threads/oauth/callback", "/threads/uninstall", "/threads/delete",
                       # /zalo-oa/webhook (0.412.0): Zalo calls it with no cookie; the route checks
                       # X-ZEvent-Signature under the OA secret keys of the Zalo OA accounts.
-                      "/zalo-oa/webhook")
+                      "/zalo-oa/webhook",
+                      # /chatbot-api/v1/turn (0.459.0): a server of the owner asks one Chatbot. No cookie; the route
+                      # checks the source address and the key of an internal API channel account itself
+                      # (channels/api.py). That key opens this path only, and an API token does not open it.
+                      "/chatbot-api/v1/turn")
 # Endpoint CHỈ-LOCALHOST: agent (Claude CLI chạy cùng máy/container) curl được mà không cần
 # cookie đăng nhập; request từ ngoài (qua Traefik/Caddy/LAN) đến từ IP khác loopback → vẫn bị chặn.
 # /reminders/cancel đi cùng nhóm với /reminders (TẠO nhắc): huỷ là thao tác YẾU HƠN tạo, nên
@@ -2987,6 +2991,44 @@ def _core_pin(mcfg) -> dict:
     bar of any Thansa Core chat (`POST /sessions/{id}/model`); "Follow the main model" clears it."""
     prov = str((mcfg or {}).get("core_provider") or "").strip()
     return {"provider": prov, "model": str((mcfg or {}).get("core_model") or "").strip()} if prov else {}
+
+
+def _pin_health(mcfg, prov: str) -> tuple:
+    """(usable, limited_until) of a model pin on `prov`, judged the way `_chat_provider_for_session` routes it: the
+    provider must exist, an API provider needs its key, and a plan out of quota runs the main model for now (0.285.0).
+    Shared by the chat model bar (`/sessions/{id}/meta`) and the Thansa Core card (`/thansa-core/model`, 0.461.0)."""
+    d = _provider_def(prov)
+    # Same key reading as routing (`_provider_key`): a home Ollama with no key must not read as a broken pin.
+    ok = bool(d) and (d.get("kind") != "api" or bool(_provider_key(mcfg, d)))
+    lim_until = _pin_limited_until(prov) if ok else 0
+    if lim_until and _chat_provider(mcfg)[0] != prov:
+        return False, lim_until
+    return ok, 0
+
+
+async def _set_core_pin(provider: str, model: str) -> dict:
+    """Pin Thansa Core as a whole (empty provider = follow the main model). The one writer of `model.core_provider` /
+    `core_model`, used by the model bar of a Core chat and by the Thansa Core card on the Agents page (0.461.0)."""
+    prov = (provider or "").strip()
+    mdl = (model or "").strip() if prov else ""
+    await asyncio.to_thread(cfgmod.update_settings, {"model": {"core_provider": prov, "core_model": mdl}})
+    return {"provider": prov, "model": mdl}
+
+
+def _core_model_view(mcfg) -> dict:
+    """What the Thansa Core card shows (0.461.0): the pin (or none), whether it can run, the main model it otherwise
+    follows, and the provider/model the next Core turn really runs on (`run_*`, after every fallback)."""
+    pin = _core_pin(mcfg)
+    em = _effective_main({"model": mcfg})
+    run = _chat_provider_for_session(mcfg, {"channel": thansa_core.CHANNEL})
+    out = {"pinned": bool(pin), "pinned_provider": pin.get("provider") or None, "pinned_model": pin.get("model") or None,
+           "pin_ok": True, "main_provider": em["provider"], "main_model": em["model"] or "",
+           "run_provider": run[0], "run_model": run[3] or ""}
+    if pin:
+        out["pin_ok"], lim = _pin_health(mcfg, pin["provider"])
+        if lim:
+            out["pin_limited_until"] = lim
+    return out
 
 
 def _tg_ghim(mcfg, chat_key="") -> dict:
@@ -7643,6 +7685,58 @@ async def brain_set_order(order: str = Form("[]")):
     return {"ok": True, "order": ten}
 
 
+def _order_list(order: str):
+    """A JSON list from a form field, or None when it is not one."""
+    try:
+        raw = json.loads(order or "[]")
+    except json.JSONDecodeError:
+        return None
+    return raw if isinstance(raw, list) else None
+
+
+def _bad_order():
+    return JSONResponse({"ok": False, "error": localefmt.chu("Thứ tự không hợp lệ", "Invalid order")}, status_code=400)
+
+
+@app.get("/ui/order")
+async def ui_order_get():
+    """0.454.0: the owner's order of the tag lists (ui_order.py), one list of tag keys per page."""
+    import ui_order
+    return {"ok": True, "orders": ui_order.read(cfgmod.read_settings() or {})}
+
+
+@app.post("/ui/order")
+async def ui_order_set(scope: str = Form(...), order: str = Form("[]")):
+    """0.454.0: save the order of one tag list (`scope` tags_agents or tags_teams), first on top."""
+    import ui_order
+    raw = _order_list(order)
+    if raw is None or scope not in ui_order.SCOPES:
+        return _bad_order()
+    val = ui_order.updated(cfgmod.read_settings() or {}, scope, raw)
+    await asyncio.to_thread(cfgmod.update_settings, {ui_order.SETTINGS_KEY: val})
+    return {"ok": True, "order": val[scope]}
+
+
+@app.post("/projects/order")
+async def projects_set_order(brain: str = Form(...), order: str = Form("[]")):
+    """0.454.0: the owner's order of the projects of one brain (JSON list of project ids, first on top)."""
+    raw = _order_list(order)
+    if raw is None:
+        return _bad_order()
+    n = await asyncio.to_thread(get_store().set_project_order, brain, [str(x) for x in raw][:500])
+    return {"ok": True, "ordered": n}
+
+
+@app.post("/sessions/pin-order")
+async def sessions_set_pin_order(order: str = Form("[]")):
+    """0.454.0: the owner's order of the pinned chats (JSON list of session ids, first on top)."""
+    raw = _order_list(order)
+    if raw is None:
+        return _bad_order()
+    n = await asyncio.to_thread(get_store().set_pin_order, [str(x) for x in raw][:500])
+    return {"ok": True, "ordered": n}
+
+
 @app.post("/brains/new")
 async def new_brain(name: str = Form(...)):
     """Tạo brain mới = folder con trong BRAINS_DIR + seed cấu trúc chuẩn."""
@@ -8050,6 +8144,24 @@ def thansa_core_session(brain: str = Form("brain")):
     """This brain's default Thansa Core chat, made when missing (deleted or archived ones are not revived)."""
     sid = thansa_core.default_session(get_store(), _brain_key(brain), same_brain=_cung_brain)
     return {"id": sid, "channel": thansa_core.CHANNEL}
+
+
+@app.get("/thansa-core/model")
+def thansa_core_model_get():
+    """The Thansa Core card's model row (0.461.0): its pin, or the main model it follows, and what really runs."""
+    return _core_model_view(cfgmod.read_settings().get("model", {}))
+
+
+@app.post("/thansa-core/model")
+async def thansa_core_model_set(provider: str = Form(""), model: str = Form("")):
+    """Pin Thansa Core to a model from the Agents page (empty provider = follow the main model). Same pin as the model
+    bar of a Core chat, so the two places can never disagree."""
+    prov = (provider or "").strip()
+    if prov and not _provider_def(prov):
+        return JSONResponse({"ok": False, "error": localefmt.chu(f"provider không tồn tại: {prov}",
+                                                                 f"provider does not exist: {prov}")}, status_code=400)
+    await _set_core_pin(prov, model)
+    return {"ok": True, **_core_model_view(cfgmod.read_settings().get("model", {}))}
 
 
 def _brain_ui_value(brain_key: str) -> str:
@@ -20253,17 +20365,11 @@ async def sessions_meta(session_id: str):
         sess["pinned_provider"], sess["pinned_model"] = _cp.get("provider") or None, _cp.get("model") or None
     pp = (sess.get("pinned_provider") or "").strip()
     if pp:
-        d = _provider_def(pp)
-        mcfg = cfgmod.read_settings().get("model", {})
         # Cùng cách giải nghĩa khoá với đường định tuyến (`_provider_key`), nếu không thì
         # thanh model và server nói hai chuyện khác nhau: Ollama máy nhà chạy ngon mà nhãn
         # vẫn kêu "ghim hỏng", đúng thứ trong ảnh chủ repo gửi 02/09.
-        key = _provider_key(mcfg, d) if d else ""
-        sess["pin_ok"] = bool(d) and (d.get("kind") != "api" or bool(key))
-        # 0.285.0: out of quota, the chat runs on the main model for now (see `_chat_provider_for_session`).
-        lim_until = _pin_limited_until(pp)
-        if sess["pin_ok"] and lim_until and _chat_provider(mcfg)[0] != pp:
-            sess["pin_ok"] = False
+        sess["pin_ok"], lim_until = _pin_health(cfgmod.read_settings().get("model", {}), pp)
+        if lim_until:
             sess["pin_limited_until"] = lim_until
     # 0.193.0: an assistant's chat tells the model bar whose reasoning level it shows and changes.
     _p = workflow_chat.persona_cua_phien(sess)
@@ -20328,11 +20434,10 @@ async def sessions_set_model(session_id: str, provider: str = Form(""),
                                                     f"provider does not exist: {prov}")}, status_code=400)
     _row = get_store().get_session(session_id)
     if _row and thansa_core.is_core_channel(_row.get("channel")):
-        _mdl = (model or "").strip() if prov else ""
-        await asyncio.to_thread(cfgmod.update_settings, {"model": {"core_provider": prov, "core_model": _mdl}})
+        _cp = await _set_core_pin(prov, model)
         if (_row.get("pinned_provider") or "").strip():
             get_store().set_pinned_model(session_id, "", "")   # an older stamp of this chat must not show as a pin
-        return {"ok": True, "pinned_provider": prov or None, "pinned_model": _mdl or None, "scope": "core"}
+        return {"ok": True, "pinned_provider": _cp["provider"] or None, "pinned_model": _cp["model"] or None, "scope": "core"}
     ok = get_store().set_pinned_model(session_id, prov, model,
                                       brain=_brain_key(brain) if (brain or "").strip() else None)
     if not ok:
@@ -22474,6 +22579,10 @@ async def _tg_answer(text, meta=None, progress=None, channel="telegram", bot=Non
         # shows them under the bot's assistant instead of Thansa Core.
         # A plain string, so a hook reading the turn (a shallow copy) cannot edit it for the next reader.
         _luot["bot_id"] = str(bot["id"])
+        # 0.459.0: an internal API turn opens private documents by the caller's scope list, never by its chat id. The
+        # doc tools read it from the turn (chatbot_doc_tools.turn_chat_id).
+        import chatbot_grounding
+        chatbot_grounding.add_turn_scopes(_luot, meta)
     # ĐA PHIÊN: định tuyến theo chat_id → ngữ cảnh của mỗi tài khoản tách biệt.
     chat_id = str((meta or {}).get("chat_id") or "default")
     if bot:
@@ -24943,6 +25052,32 @@ async def whatsapp_webhook(request: Request):
     # Answer 200 right away (Meta retries anything slower); the messages run as tasks.
     n = await whatsapp_bot.handle_webhook(payload)
     return {"ok": True, "messages": n}
+
+
+@app.post("/chatbot-api/v1/turn")
+async def chatbot_api_turn(request: Request):
+    """Internal API channel (0.459.0): one turn of the Chatbot the key belongs to. Every check (source, key, ceiling,
+    limits) and the answer live in channels/api.py; this route only hands it the raw request."""
+    import channels.api as api_channel
+    auth = request.headers.get("authorization", "")
+    ip = request.client.host if request.client else ""
+    hdrs = dict(request.headers)
+
+    def _out(status, body):
+        headers = {"Retry-After": "900"} if body.get("code") == "banned" else None
+        return JSONResponse(body, status_code=status, headers=headers)
+
+    # Source and key first, body after (0.459.0): nobody outside, or without the key, makes Thansa buffer a body, and a
+    # body is read only up to the channel's cap.
+    account, bad = api_channel.gate(auth, ip, hdrs)
+    if bad:
+        return _out(*bad)
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw.extend(chunk)
+        if len(raw) > api_channel.BODY_MAX:
+            return _out(*api_channel.too_large())
+    return _out(*await api_channel.handle_http(auth, ip, hdrs, bytes(raw), account=account))
 
 
 # ============================================================
