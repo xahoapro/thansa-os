@@ -43,8 +43,8 @@ assert.ok(/<option value="local"[^>]*>[^<]*<\/option>\s*<option value="browser"/
 assert.ok(/engine: "local"/.test(wl), "cách dò mặc định là Trên máy");
 assert.ok(/localStorage\.getItem\(LS\) === "1"/.test(wl), "công tắc ở từng máy, mặc định TẮT");
 assert.ok(/on: \(\) => \{ if \(handsFree\) return false; voiceBtn\.click\(\); return true; \}/.test(app), "ThansaMic.on gọi như bấm nút");
-assert.ok(app.includes("window.ThansaWake.xetCauTat(_cauNguoiCuoi)"), "cúp máy theo lệnh: xét 'Thần Sa tắt mic'");
+assert.ok(app.includes('window.ThansaWake.xetCauTat(voice._lastFinal || "")'), "cúp máy theo lệnh: xét 'Thần Sa tắt mic'");
 assert.ok(/if \(!st\.chay \|\| dangGoi\(\) \|\| dangNoi\(\)/.test(wl), "không dò khi đang gọi hay Thansa đang đọc");
-assert.ok(fs.existsSync(path.join(ROOT, "dashboard/vendor/vosk-browser/vosk.js")), "thư viện Vosk có sẵn trong app");
+assert.ok(fs.existsSync(path.join(ROOT, "dashboard/vendor/vosk-browser/vosk-0.0.8.min.js")), "thư viện Vosk có sẵn trong app");
 
 console.log("OK - test_wake_listen");

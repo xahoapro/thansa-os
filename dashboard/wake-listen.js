@@ -83,7 +83,7 @@
       if (window.Vosk) return Promise.resolve();
       if (!this.napThuVien) this.napThuVien = new Promise((ok, loi) => {
         const s = document.createElement("script");
-        s.src = "/static/vendor/vosk-browser/vosk.js?v=0.0.8"; s.onload = ok; s.onerror = () => loi(new Error(t("wake.err_lib")));
+        s.src = "/static/vendor/vosk-browser/vosk-0.0.8.min.js"; s.onload = ok; s.onerror = () => loi(new Error(t("wake.err_lib")));
         document.head.appendChild(s);
       });
       return this.napThuVien;
