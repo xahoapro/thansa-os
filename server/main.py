@@ -6397,6 +6397,15 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # xoá hết từ người dùng khai (tên trợ lý vẫn luôn có, không cần lưu).
         if "hotwords" in patch:
             v["hotwords"] = ", ".join(nghe_sua.tach_tu_vung(patch.get("hotwords")))
+        # Tự tắt mic sau N giây im lặng (0 = không tự tắt). Trần 1 giờ: lâu hơn thì coi như tắt
+        # tính năng, chứ không phải một con số người ta thật sự muốn đợi.
+        if "mic_idle_off_s" in patch:
+            try:
+                n = int(patch.get("mic_idle_off_s") or 0)
+            except (TypeError, ValueError):
+                n = -1
+            if 0 <= n <= 3600:
+                v["mic_idle_off_s"] = n
     elif section == "password":
         # Đổi mật khẩu KHÔNG đi qua đây nữa - xem /auth/password. Đường này không đòi mật khẩu
         # hiện tại VÀ nhận cả token API scope `full`, nghĩa là một token rò ra là đổi được mật
@@ -16443,6 +16452,15 @@ def _voice_brain_models(pid: str, cfg: dict) -> list:
     return []
 
 
+def _mic_idle_off_s(v: dict) -> int:
+    """Số giây im lặng thì dashboard tự tắt mic; 0 = không tự tắt (mặc định)."""
+    try:
+        n = int((v or {}).get("mic_idle_off_s") or 0)
+    except (TypeError, ValueError):
+        return 0
+    return n if 0 <= n <= 3600 else 0
+
+
 @app.get("/voice/options")
 async def voice_options(brains: int = 1):
     """Cho thẻ Giọng nói ở trang Cài đặt: cái gì đang sẵn, key nào đã có, đường gọi đang dùng.
@@ -16541,6 +16559,7 @@ async def voice_options(brains: int = 1):
             ear=voice_ear.setting(cfg),
             live_proactive=v.get("live_proactive") is not False,
             live_turn=voice_live.turn_preset(v.get("live_turn")),
+            mic_idle_off_s=_mic_idle_off_s(v),
         ),
         # Tai nghe lại đang dùng và vì sao (trang Cài đặt hiện "Đang dùng: ..."), cùng các tai
         # chọn được. Vẽ từ voice_ear để trang và đường LƯU soi cùng một danh sách.
@@ -19164,6 +19183,8 @@ async def _chat_socket(ws):
                 dung = ui_targets.normalize_target(act, tgt)
                 if act in ("open_page", "open_group") and not dung:
                     res = {"ok": False, "detail": f"không có {'trang' if act == 'open_page' else 'nhóm'} '{tgt}'"}
+                elif act == "mic" and not dung:
+                    res = {"ok": False, "detail": f"lệnh mic chỉ có 'off', không có '{tgt}'"}
                 else:
                     try:
                         res = await ui_bridge.request(act, dung or tgt, session_id=conv_sid)

@@ -446,6 +446,24 @@
               </div>
               <div class="mic-meter" aria-hidden="true"><div class="mic-meter-bar" id="vcMicBar"></div></div>
               <div class="mic-result" id="vcMicResult" role="status"></div>
+              <!-- Tự tắt mic khi im lặng (2.5.0): app.js đọc voice.mic_idle_off_s từ /settings, 0 = không tự tắt. -->
+              <div class="qs-field vc-field">
+                <div class="vc-lblcol">
+                  <label class="qs-lbl" for="vcIdleOff" data-i18n="settings.vc_idle_lbl">Tự tắt mic khi im lặng</label>
+                  <div class="vc-sub" data-i18n="settings.vc_idle_sub">Không ai nói và Thansa cũng không nói trong khoảng này thì tự cúp máy.</div>
+                </div>
+                <div class="v2-voice-row">
+                  <select class="js-input" id="vcIdleOff">
+                    <option value="0" data-i18n="settings.vc_idle_0">Không tự tắt</option>
+                    <option value="30" data-i18n="settings.vc_idle_30">30 giây</option>
+                    <option value="60" data-i18n="settings.vc_idle_60">1 phút</option>
+                    <option value="120" data-i18n="settings.vc_idle_120">2 phút</option>
+                    <option value="300" data-i18n="settings.vc_idle_300">5 phút</option>
+                    <option value="600" data-i18n="settings.vc_idle_600">10 phút</option>
+                  </select>
+                  <span class="vc-saved" id="vcIdleSaved" aria-live="polite"></span>
+                </div>
+              </div>
               <details class="qs-advanced" id="vcAdvanced">
                 <summary data-i18n="settings.vc_advanced">Nâng cao</summary>
                 <div class="qs-field">
@@ -1096,13 +1114,13 @@
   <!-- Kéo đổi bề rộng cột ở trang đồ thị và trang Trò chuyện (0.148.0): nạp TRƯỚC app.js và console.js. -->
   <script src="/static/col-resize.js?v=2"></script>
   <script src="/static/ui-context.js?v=1"></script>
-  <script src="/static/ui-actions.js?v=3"></script>
+  <script src="/static/ui-actions.js?v=4"></script>
   <!-- Voice V2: nghe nói thẳng (Live), app.js gọi lười khi bấm mic ở chế độ Live. -->
   <script src="/static/voice-live.js?v=7"></script>
   <script src="/static/screen-awake.js?v=1"></script>
   <script src="/static/incoming-call.js?v=1"></script>
   <script src="/static/call-bar.js?v=1"></script>
-  <script src="/static/app.js?v=158"></script>
+  <script src="/static/app.js?v=159"></script>
   <!-- Sau app.js: dải việc nền đọc window.ThansaSessions (app.js dựng) để biết phiên + brain. -->
   <script src="/static/background-strip.js?v=3"></script>
   <!-- Thân bảng chọn model dùng chung: phải đứng TRƯỚC model-picker.js (thanh chat) và
@@ -1165,7 +1183,7 @@
   <script src="/static/login-vault.js?v=2"></script>
   <script src="/static/messenger-connect.js?v=3"></script>
   <script src="/static/voice-catalog.js?v=1"></script>
-  <script src="/static/console.js?v=207"></script>
+  <script src="/static/console.js?v=208"></script>
   <script src="/static/mobile-chat.js?v=16"></script>
   <script src="/static/brain-view.js?v=1"></script>
   <script src="/static/push.js?v=3"></script>

@@ -7133,6 +7133,18 @@
       $("vcLiveTurn").onchange = () => luuGiong({ live_turn: $("vcLiveTurn").value });
     }
 
+    // Tự tắt mic khi im lặng (2.5.0). Giá trị lạ ở bản cũ (một số giây không có trong danh sách) vẫn
+    // hiện đúng: thêm một ô tạm mang đúng số đó thay vì lặng lẽ nhảy về "Không tự tắt".
+    const idleSel = $("vcIdleOff");
+    if (idleSel) {
+      const cur = String(Number(v.mic_idle_off_s) || 0);
+      if (!Array.from(idleSel.options).some(x => x.value === cur)) {
+        idleSel.insertAdjacentHTML("beforeend", opt(cur, cur + " s", cur));
+      }
+      idleSel.value = cur;
+      idleSel.onchange = async () => daLuu($("vcIdleSaved"), await luuGiong({ mic_idle_off_s: Number(idleSel.value) || 0 }));
+    }
+
     $("vcEngine").value = call.setting || "auto";
     $("vcEngine").onchange = async () => {
       await luuGiong({ call_engine: $("vcEngine").value });

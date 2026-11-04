@@ -84,6 +84,7 @@ class El {
     this.value = sel ? sel.value : "";
   }
   get innerHTML() { return this._html; }
+  insertAdjacentHTML(_pos, v) { this.innerHTML = this._html + v; }
   focus() { this.focused = true; }
   dispatchEvent(e) { this.events.push(e.type); }
 }

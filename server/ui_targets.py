@@ -206,6 +206,17 @@ def resolve_scroll(target: str) -> str:
     return huong
 
 
+# Lệnh mic chỉ có chiều TẮT: bật mic cần một cú bấm thật của người dùng (trình duyệt đòi cử chỉ
+# để mở micro), và khi mic đã tắt thì cũng không còn ai nghe câu "bật mic" bằng giọng.
+MIC_TARGETS = ("off",)
+
+
+def mic_hop_le(target: str) -> bool:
+    """`off` hay cách nói tiếng Việt của nó ('tắt', 'tắt mic'). Rỗng cũng là tắt."""
+    t = khong_dau(str(target or "")).strip()
+    return t in ("", "off", "tat", "tat mic", "mic off", "stop", "dung", "cup may", "hangup", "hang up")
+
+
 def normalize_target(action: str, target: str) -> str:
     """Đưa target về đúng thứ dashboard nhận (ui-actions.js chỉ chấp nhận id chuẩn)."""
     t = str(target or "").strip()
@@ -219,4 +230,6 @@ def normalize_target(action: str, target: str) -> str:
         return resolve_group(t)
     if action == "sidebar":
         return "close" if khong_dau(t) in ("close", "dong", "thu", "thu gon", "gap") else "open"
+    if action == "mic":
+        return "off" if mic_hop_le(t) else ""
     return t

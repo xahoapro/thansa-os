@@ -34,7 +34,7 @@ MARKER = "THANSA_ASK_MAIN:"
 # Đường TẮT cho việc chỉ đụng tới giao diện: bộ não giọng tự phát, server gọi thẳng dashboard,
 # không phải đánh thức bộ não chính (xem parse_ui).
 UI_MARKER = "THANSA_UI:"
-UI_ACTIONS = ("open_page", "open_group", "sidebar", "scroll")
+UI_ACTIONS = ("open_page", "open_group", "sidebar", "scroll", "mic")
 # Dòng ĐẦU của mọi câu trả lời: câu người dùng đã DIỄN GIẢI (máy nghe chép sai từ tiếng Anh,
 # bộ não giọng viết lại đúng ý). Server bóc dòng này ra: thay tin người dùng trong kho phiên
 # và trong khung chat, không bao giờ đọc ra loa (xem parse_nghe, split_speakable).
@@ -114,6 +114,10 @@ SYSTEM_PROMPT = (
     "  " + UI_MARKER + " sidebar open | close    (bung hay thu gọn cả thanh bên)\n"
     "  " + UI_MARKER + " scroll top | bottom     (cuộn THỨ NGƯỜI DÙNG ĐANG XEM: có trang nội dung mở thì cuộn trang đó, không thì cuộn khung chat. Chỉ khi họ nói RÕ mới đổi thành "
     "page_top | page_bottom (ép cuộn trang) hay chat_top | chat_bottom (ép cuộn khung chat))\n"
+    "  " + UI_MARKER + " mic off                  (TẮT MIC, thôi nghe: khi người dùng bảo 'tắt mic', "
+    "'tắt lắng nghe', 'thôi không nghe nữa', 'cúp máy', 'dừng nói chuyện'. Câu xác nhận thật ngắn, "
+    "ví dụ 'Vâng, em tắt mic nhé.'; mic tắt sau khi đọc xong câu đó. Không có lệnh bật mic: muốn nói "
+    "tiếp thì người dùng bấm nút mic. Chỉ nói tới mic mà không bảo tắt thì KHÔNG dùng lệnh này)\n"
     "Chỉ dùng khuôn này cho việc thuần giao diện. Muốn biết NỘI DUNG bên trong trang thì vẫn phải "
     "nhờ bộ não chính.\n"
     "NGOẠI LỆ THỨ HAI, tuyệt đối: khi người dùng bảo DỪNG hay HUỶ việc nền đang chạy (dừng việc "

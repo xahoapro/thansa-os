@@ -396,6 +396,17 @@ check("ui: không có câu nói kèm thì câu nói rỗng", vb.parse_ui("THANSA
 check("ui: action model tự bịa thì BỎ QUA, không nuốt câu và không chạy gì",
       vb.parse_ui("THANSA_UI: rm -rf /") == ("THANSA_UI: rm -rf /", None))
 check("ui: câu thường không dính", vb.parse_ui("Doanh thu hôm nay bao nhiêu?") == ("Doanh thu hôm nay bao nhiêu?", None))
+# ---- Tắt mic bằng lời (2.5.0) ----
+_src_main_ui = (ROOT / "server" / "main.py").read_text(encoding="utf-8", errors="replace")
+check("ui: tắt mic -> (câu nói, mic, off)",
+      vb.parse_ui("Vâng, em tắt mic nhé.\nTHANSA_UI: mic off") == ("Vâng, em tắt mic nhé.", ("mic", "off")))
+check("ui: prompt dạy lệnh mic off", "THANSA_UI: mic off" in vb.SYSTEM_PROMPT and "tắt lắng nghe" in vb.SYSTEM_PROMPT)
+import ui_targets as _ut  # noqa: E402
+check("ui_targets: mic off / tắt / rỗng -> off",
+      _ut.normalize_target("mic", "off") == "off" and _ut.normalize_target("mic", "tắt") == "off"
+      and _ut.normalize_target("mic", "") == "off")
+check("ui_targets: không có lệnh bật mic", _ut.normalize_target("mic", "on") == "")
+check("main: đường tắt chặn target mic lạ", 'elif act == "mic" and not dung:' in _src_main_ui)
 check("ui: dòng THANSA_UI không bao giờ ra loa",
       _ss("Mở ngay.\nTHANSA_UI: open_page models", final=True)[0] == ["Mở ngay.\n"])
 check("ui: đang stream dở chữ đầu trùng marker thì giữ lại, chưa phát",
