@@ -401,12 +401,12 @@
                   <span class="vc-saved" id="vcReadSaved" aria-live="polite"></span>
                 </div>
               </div>
-              <!-- Azure Speech (Thansa 2.3.0, 03/11/2026): cùng giọng Edge (HoaiMy/NamMinh) qua dịch vụ chính thức của
-                   Microsoft, không chập chờn như Edge miễn phí. Chỉ hiện khi giọng đọc đang là giọng Edge. -->
+              <!-- Azure Speech (Thansa 2.4.x, chủ chốt 04/11): TUỲ CHỌN - mặc định vẫn Edge miễn phí. Chỉ hiện khi chọn một
+                   giọng trong nhóm "Azure Speech" của danh sách giọng; cùng giọng HoaiMy/NamMinh qua dịch vụ chính thức. -->
               <div id="vcAzure" hidden>
                 <div class="qs-field">
                   <label class="qs-lbl" for="vcAzKey"><span data-i18n="settings.vc_az_lbl">Azure Speech (giọng ổn định)</span> <button type="button" class="info-i" aria-expanded="false" aria-label="Xem giải thích" title="Xem giải thích" data-i18n-aria="info.more" data-i18n-title="info.more"><i data-ic="info"></i></button> <span class="dim" id="vcAzKeySet" hidden data-i18n="settings.vc_az_key_set">(đã có - để trống là giữ khoá cũ)</span></label>
-                  <div class="info-body" hidden data-i18n="settings.vc_az_info">Đọc đúng giọng đang chọn (HoaiMy, NamMinh...) qua dịch vụ Azure Speech chính thức của Microsoft, ổn định hơn Edge miễn phí. Tạo tài nguyên Speech gói miễn phí F0 trên portal.azure.com (500.000 ký tự mỗi tháng), mục Keys and Endpoint có khoá và vùng. Azure lỗi hay hết hạn mức thì Thansa tự đọc bằng Edge như cũ.</div>
+                  <div class="info-body" hidden data-i18n="settings.vc_az_info">Tuỳ chọn, mặc định Thansa vẫn đọc bằng Edge miễn phí. Chọn một giọng trong nhóm Azure Speech ở danh sách giọng để đọc đúng giọng đó (HoaiMy, NamMinh) qua dịch vụ Azure Speech chính thức của Microsoft, ổn định hơn Edge miễn phí. Tạo tài nguyên Speech gói miễn phí F0 trên portal.azure.com (500.000 ký tự mỗi tháng), mục Keys and Endpoint có khoá và vùng. Azure lỗi hay hết hạn mức thì Thansa tự đọc bằng Edge.</div>
                   <input class="js-input" id="vcAzKey" type="password" autocomplete="off" data-i18n-ph="settings.vc_az_key_ph" placeholder="Dán khoá Azure Speech (KEY 1)">
                 </div>
                 <div class="qs-field">
