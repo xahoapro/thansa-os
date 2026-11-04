@@ -5716,6 +5716,9 @@
     el.querySelectorAll("#catGrid [data-msc-open]").forEach(b => b.onclick = () => {
       if (window.ThansaMessenger && window.ThansaMessenger.openForm) window.ThansaMessenger.openForm(null);
     });
+    el.querySelectorAll("#catGrid [data-th-open]").forEach(b => b.onclick = () => {
+      if (window.ThansaMessenger && window.ThansaMessenger.openThreadsForm) window.ThansaMessenger.openThreadsForm();
+    });
     const nutSanCo = document.getElementById("mcpDiSanCo");
     if (nutSanCo) nutSanCo.onclick = () => doiTab("sanco");
     // Từ banner mồ côi sang thẳng gói cần cài, ô tìm điền sẵn id connector. Thả người dùng vào

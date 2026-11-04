@@ -8,6 +8,26 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.450.0] - 2026-11-04
+### Added
+- **"Install on phone" button in the phone menu.** Open the left menu and tap it to see how to add Thansa to the home screen on the device you are using (iPhone: Share, then Add to Home Screen; Android: one Install button). Once Thansa runs from the home screen, the button no longer shows.
+### Improved
+- If you tapped "Don't remind me again" on the daily reminder, you can still open the install guide any time from this button.
+
+## [0.449.0] - 2026-11-04
+### Added
+- **Teams can push code to GitHub.** In a team chat, tap the plus button, pick **GitHub repo** and tick a repo. When you assign a job, members edit code on the team's own branch; once the job is done, Thansa checks, commits, pushes, opens the PR and watches CI, like a private chat.
+- If CI fails, Thansa hands the team a fix job with the logs (up to 3 rounds). GitHub news shows right in the team chat; tap the repo chip to see the PR status.
+- **`/skill` commands work in Teams.** Type `/` to list the brain's skills. Every member who answers or works on that message reads the skill, even in a chat turn without tools.
+
+## [0.448.0] - 2026-11-04
+### Added
+- **Threads joins the Meta connection card.** Click **Connect Threads**, paste the Threads App ID and App secret, log in, done. Replies under your Threads posts reach the inbox as they happen, through a webhook (nothing polls), and the bot answers publicly right under them.
+- Each Threads account picks how replies are handled: off, shown in the inbox only, or answered by the bot. **Check** tells whether the token is valid and whether Threads has sent replies yet.
+- Thansa renews the Threads token (60 days) by itself while a bot is on duty, so you do not log in again.
+### Improved
+- Threads replies get their own black square in the inbox. The "..." menu has View profile (opens threads.net) and Delete (hides the reply under your post, since Threads lets only the author delete it).
+
 ## [0.447.0] - 2026-11-03
 ### Added
 - **Instagram joins the Meta connection.** When you log in with Facebook on the Meta connection card, tick **Also connect the Page's Instagram**: messages and comments of the Instagram account linked to the Page land in the same inbox, served by the Page's bot. Public replies under comments and private messages to commenters both work.
