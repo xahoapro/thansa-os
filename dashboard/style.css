@@ -1697,6 +1697,9 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 /* The voice chat button sits where send appears, so it wears the same filled circle: one spot, two jobs. In a call
    it turns red (.in-call) as before. */
 #voiceBtn:not(.in-call):not(.handsfree) { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
+/* Lắng nghe ngầm (2.5.0): chấm xanh trên nút mic = mic đang mở chờ từ khoá. */
+#voiceBtn.wake-on { position: relative; }
+#voiceBtn.wake-on::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #2fb67c; box-shadow: 0 0 0 2px var(--bg, #fff); }
 #voiceBtn:not(.in-call):not(.handsfree):hover { opacity: .85; color: var(--on-accent); border-color: transparent; }
 .dict-cancel, .dict-stop {
   flex: none; width: 34px; height: 34px; border-radius: 50%; padding: 0; cursor: pointer;

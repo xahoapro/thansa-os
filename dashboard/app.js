@@ -208,6 +208,7 @@ const voice = new ThansaVoice({
     runActions(turn.interim(text));
   },
   onTranscript: (text) => {
+    if (text) _cauNguoiCuoi = String(text);   // Lắng nghe ngầm (2.5.0): "Thần Sa tắt mic" thì thôi nghe ngầm hẳn
     voiceBtn.classList.remove("recording");
     if (adaptive.manual(text)) return;
     nhapGiong("");
@@ -4326,6 +4327,7 @@ setInterval(() => {
 //    Chỉ tính là im khi không ai nói VÀ Thansa không bận (đang nghĩ, đang đọc, đang chạy tool):
 //    hỏi một việc dài rồi ngồi chờ không bị cúp giữa chừng.
 var _micTatSauMs = 0;           // napCaiDatGiong đổ từ /settings
+var _cauNguoiCuoi = "";         // câu cuối người dùng nói trong cuộc gọi (Lắng nghe ngầm xét lệnh tắt hẳn)
 var _micHoatDongLuc = 0;        // lần cuối có tiếng người hoặc Thansa còn bận
 var _micTatHen = null;          // {luc}: đã nhận lệnh tắt, chờ đọc xong câu xác nhận
 const MIC_TAT_CHO_MIN_MS = 2500;   // câu xác nhận về sau lệnh: chờ ít nhất chừng này để nó kịp bắt đầu đọc
@@ -4356,9 +4358,14 @@ setInterval(() => {
 }, 1000);
 window.ThansaMic = {
   isOn: () => handsFree,
+  // Lắng nghe ngầm (wake-listen.js, 2.5.0): nghe thấy từ khoá thì gọi như bấm nút mic.
+  on: () => { if (handsFree) return false; voiceBtn.click(); return true; },
+  speaking: () => !!(voice.isSpeaking() || voice._awaitingFirstAudio),
+  note: (s) => ghiChuThoang(s),
   // sauKhiNoi: đợi Thansa đọc xong câu đang/sắp nói rồi mới cúp. Trả false khi mic vốn đã tắt.
   off: (o) => {
     if (!handsFree) return false;
+    try { if (window.ThansaWake) window.ThansaWake.xetCauTat(_cauNguoiCuoi); } catch (e) {}
     if (o && o.sauKhiNoi) _micTatHen = { luc: Date.now() };
     else cupMay();
     return true;

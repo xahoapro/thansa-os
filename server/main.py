@@ -6399,6 +6399,14 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             v["hotwords"] = ", ".join(nghe_sua.tach_tu_vung(patch.get("hotwords")))
         # Tự tắt mic sau N giây im lặng (0 = không tự tắt). Trần 1 giờ: lâu hơn thì coi như tắt
         # tính năng, chứ không phải một con số người ta thật sự muốn đợi.
+        # Lắng nghe ngầm (2.5.0): cách dò (trên máy / trình duyệt) + từ khoá bật / tắt hẳn. Công tắc bật thì ở
+        # TỪNG MÁY (localStorage), vì mở Thansa trên cả laptop lẫn điện thoại thì không phải máy nào cũng nên nghe.
+        import wake_model
+        if patch.get("wake_engine") in ("local", "browser"):
+            v["wake_engine"] = patch["wake_engine"]
+        for k, md in (("wake_words_on", wake_model.TU_BAT_MAC_DINH), ("wake_words_off", wake_model.TU_TAT_MAC_DINH)):
+            if k in patch:
+                v[k] = wake_model.lam_sach_ds(patch.get(k), md)
         if "mic_idle_off_s" in patch:
             try:
                 n = int(patch.get("mic_idle_off_s") or 0)
@@ -16312,6 +16320,31 @@ async def _tts_elevenlabs(text: str, cfg: dict) -> bytes:
     return await tts_eleven.synth(text, cfg)
 
 
+@app.get("/voice/wake/status")
+async def voice_wake_status(start: int = 0):
+    """Mô hình nghe ngầm trên máy: sẵn chưa, đang tải bao nhiêu %. start=1 thì bắt đầu tải nếu chưa có."""
+    import wake_model
+    return wake_model.dam_bao_tai() if start else wake_model.trang_thai()
+
+
+@app.get("/voice/wake/model")
+async def voice_wake_model():
+    """Gói mô hình Vosk (.tar.gz) cho vosk-browser trong trình duyệt. Chưa tải xong thì 503 kèm tiến độ."""
+    import wake_model
+    from fastapi.responses import FileResponse, JSONResponse
+    if not wake_model.GOI.is_file():
+        return JSONResponse(wake_model.dam_bao_tai(), status_code=503)
+    return FileResponse(str(wake_model.GOI), media_type="application/gzip",
+                        headers={"Cache-Control": "private, max-age=604800"})
+
+
+@app.get("/voice/wake/grammar")
+async def voice_wake_grammar():
+    """Cụm từ khoá cho bộ nhận trên máy + từ mô hình không biết (Cài đặt báo để người dùng đổi cách viết)."""
+    import wake_model
+    return wake_model.ngu_phap((cfgmod.read_settings().get("voice", {}) or {}))
+
+
 @app.get("/voice/azure/check")
 async def voice_azure_check():
     """Thử đọc một câu ngắn qua Azure Speech để trang Cài đặt báo key/vùng đúng hay sai."""
@@ -16452,6 +16485,11 @@ def _voice_brain_models(pid: str, cfg: dict) -> list:
     return []
 
 
+def _wake_cai_dat(v: dict) -> dict:
+    import wake_model
+    return wake_model.tu_cai_dat(v)
+
+
 def _mic_idle_off_s(v: dict) -> int:
     """Số giây im lặng thì dashboard tự tắt mic; 0 = không tự tắt (mặc định)."""
     try:
@@ -16560,6 +16598,7 @@ async def voice_options(brains: int = 1):
             live_proactive=v.get("live_proactive") is not False,
             live_turn=voice_live.turn_preset(v.get("live_turn")),
             mic_idle_off_s=_mic_idle_off_s(v),
+            **_wake_cai_dat(v),
         ),
         # Tai nghe lại đang dùng và vì sao (trang Cài đặt hiện "Đang dùng: ..."), cùng các tai
         # chọn được. Vẽ từ voice_ear để trang và đường LƯU soi cùng một danh sách.

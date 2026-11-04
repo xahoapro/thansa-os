@@ -7144,6 +7144,44 @@
       idleSel.value = cur;
       idleSel.onchange = async () => daLuu($("vcIdleSaved"), await luuGiong({ mic_idle_off_s: Number(idleSel.value) || 0 }));
     }
+    // Lắng nghe ngầm (2.5.0): công tắc ở TỪNG MÁY (wake-listen.js giữ trong localStorage), cách dò + từ khoá
+    // lưu trên máy chủ để máy nào bật cũng dùng chung một bộ từ khoá.
+    const wk = window.ThansaWake;
+    if ($("vcWake") && wk) {
+      $("vcWakeEngine").value = v.wake_engine || "local";
+      $("vcWakeWordsOn").value = (v.wake_words_on || []).join("\n");
+      $("vcWakeWordsOff").value = (v.wake_words_off || []).join("\n");
+      $("vcWakeOn").checked = !!wk.trangThai().bat;
+      let tuLa = "";
+      const WAKE_ST = { tat: "settings.vc_wake_st_tat", cho: "settings.vc_wake_st_cho", mo: "settings.vc_wake_st_mo",
+                        tai: "settings.vc_wake_st_tai", nap: "settings.vc_wake_st_nap", nghe: "settings.vc_wake_st_nghe" };
+      const veWake = (s) => {
+        if (gen !== _renderGen) return;
+        const tu = (v.wake_words_on || [])[0] || "";
+        $("vcWakeMsg").textContent = (s.loi || t(WAKE_ST[s.trang] || WAKE_ST.tat, { pct: s.tienDo || 0, tu }))
+          + (tuLa ? " " + tuLa : "");
+      };
+      const soatTu = () => fetch("/voice/wake/grammar", { cache: "no-store" }).then(r => r.json()).catch(() => null).then(g => {
+        tuLa = g && (g.unknown_words || []).length ? t("settings.vc_wake_unknown", { tu: g.unknown_words.join(", ") }) : "";
+        veWake(wk.trangThai());
+      });
+      const luuWake = async (data) => {
+        const r = await luuGiong(data);
+        daLuu($("vcWakeSaved"), r);
+        if (r && r.ok) {
+          const o2 = await fetch("/voice/options?brains=0", { cache: "no-store" }).then(x => x.json()).catch(() => null);
+          if (o2 && o2.voice) { Object.assign(v, o2.voice); wk.cauHinh(o2.voice);
+            $("vcWakeWordsOn").value = (v.wake_words_on || []).join("\n"); $("vcWakeWordsOff").value = (v.wake_words_off || []).join("\n"); }
+          soatTu();
+        }
+      };
+      $("vcWakeOn").onchange = () => wk.batTat($("vcWakeOn").checked);
+      $("vcWakeEngine").onchange = () => luuWake({ wake_engine: $("vcWakeEngine").value });
+      $("vcWakeWordsOn").onchange = () => luuWake({ wake_words_on: $("vcWakeWordsOn").value });
+      $("vcWakeWordsOff").onchange = () => luuWake({ wake_words_off: $("vcWakeWordsOff").value });
+      wk.onChange(veWake);
+      soatTu();
+    }
 
     $("vcEngine").value = call.setting || "auto";
     $("vcEngine").onchange = async () => {

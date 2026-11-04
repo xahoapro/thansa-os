@@ -464,6 +464,27 @@
                   <span class="vc-saved" id="vcIdleSaved" aria-live="polite"></span>
                 </div>
               </div>
+              <!-- Lắng nghe ngầm (2.5.0, chủ chốt 04/11): công tắc ở TỪNG MÁY, mặc định tắt; cách dò mặc định Trên máy. -->
+              <div class="qs-field" id="vcWake">
+                <label class="qs-lbl"><span data-i18n="settings.vc_wake_lbl">Lắng nghe ngầm</span> <button type="button" class="info-i" aria-expanded="false" aria-label="Xem giải thích" title="Xem giải thích" data-i18n-aria="info.more" data-i18n-title="info.more"><i data-ic="info"></i></button></label>
+                <div class="info-body" hidden data-i18n="settings.vc_wake_info">Nói một từ khoá gọi (Thần Sa, bật mic, mở mic...) là Thansa bắt đầu nghe như khi bấm nút mic. Nói từ khoá thôi nghe (tắt mic, thôi nghe...) là tắt hẳn nghe ngầm. Trong cuộc gọi, bảo "tắt mic" hoặc im lặng lâu thì quay về nghe ngầm; "Thần Sa tắt mic" thì tắt hẳn. Trên máy: nhận giọng ngay trong trình duyệt, âm thanh không rời máy, lần đầu tải mô hình khoảng 34 MB. Trình duyệt: dùng nhận giọng của Chrome/Edge, âm thanh gửi lên máy chủ của hãng.</div>
+                <div class="vc-sub" data-i18n="settings.vc_wake_sub">Mic mở sẵn, chỉ chờ từ khoá để gọi Thansa. Chỉ nghe khi trang đang mở.</div>
+                <div class="v2-voice-row">
+                  <label class="toggle"><input type="checkbox" id="vcWakeOn"><span></span></label>
+                  <span data-i18n="settings.vc_wake_on">Bật trên máy này</span>
+                </div>
+                <label class="qs-lbl" for="vcWakeEngine" data-i18n="settings.vc_wake_engine">Cách dò từ khoá</label>
+                <select class="js-input" id="vcWakeEngine">
+                  <option value="local" data-i18n="settings.vc_wake_local">Trên máy (riêng tư, mặc định)</option>
+                  <option value="browser" data-i18n="settings.vc_wake_browser">Trình duyệt (âm thanh gửi lên máy chủ nhận giọng)</option>
+                </select>
+                <label class="qs-lbl" for="vcWakeWordsOn" data-i18n="settings.vc_wake_words_on">Từ khoá gọi (mỗi dòng một cụm)</label>
+                <textarea class="js-input" id="vcWakeWordsOn" rows="4"></textarea>
+                <label class="qs-lbl" for="vcWakeWordsOff" data-i18n="settings.vc_wake_words_off">Từ khoá thôi nghe ngầm (mỗi dòng một cụm)</label>
+                <textarea class="js-input" id="vcWakeWordsOff" rows="3"></textarea>
+                <div class="qs-hint" id="vcWakeMsg" role="status"></div>
+                <span class="vc-saved" id="vcWakeSaved" aria-live="polite"></span>
+              </div>
               <details class="qs-advanced" id="vcAdvanced">
                 <summary data-i18n="settings.vc_advanced">Nâng cao</summary>
                 <div class="qs-field">
@@ -1054,6 +1075,9 @@
   <script src="/static/voice-adaptive.js?v=1"></script>
   <script src="/static/voice-adaptive-ui.js?v=2"></script>
   <script src="/static/voice-attention.js?v=2"></script>
+  <!-- Lắng nghe ngầm (2.5.0): dò từ khoá "Thần Sa / bật mic" để gọi; Vosk trên máy nạp lười khi bật. -->
+  <script src="/static/wake-match.js?v=1"></script>
+  <script src="/static/wake-listen.js?v=1"></script>
   <script src="/static/mic-test.js?v=1" defer></script>
   <script src="/static/voice-chunker.js?v=2"></script>
   <script src="/static/voice-lang.js?v=1"></script>
