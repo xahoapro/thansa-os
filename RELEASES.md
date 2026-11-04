@@ -12,6 +12,7 @@ nguồn cũ; mỗi bản vẫn theo dõi một bản nguồn cụ thể (cột "
 
 | Thansa | Bản nguồn | Commit nguồn | Ngày | Ghi chú |
 |--------|-----------|------------|------|---------|
+| 2.4.1  | 0.447.0   | `a61aeae`  | 2026-11-04 (chờ duyệt) | Azure Speech thành **lựa chọn riêng**: mặc định vẫn đọc bằng Edge miễn phí; muốn dùng Azure thì chọn một giọng trong nhóm "Azure Speech" ở danh sách giọng rồi nhập khoá + vùng (ô nhập chỉ hiện khi đã chọn). Có khoá mà vẫn chọn Edge thì không tự sang Azure. |
 | 2.4.0  | 0.447.0   | `a61aeae`  | 2026-11-03 (chờ duyệt) | **Giọng đọc ổn định qua Azure Speech**: nhập khoá + vùng Azure (gói miễn phí 500.000 ký tự/tháng) ở Cài đặt › Giọng nói là giọng HoaiMy/NamMinh đọc qua dịch vụ chính thức của Microsoft, không còn lúc giọng Việt lúc giọng nước ngoài. Azure lỗi hay hết hạn mức thì tự đọc bằng Edge như cũ. |
 | 2.3.0 | 0.447.0   | `a61aeae`  | 2026-11-03 (đã phát hành, origin/main e3c2db5) | Trộn nguồn 0.445.0→0.447.0 (3 commit, tự động): Thansa giờ kết nối được Instagram qua tài khoản Meta, cho phép xem trang cá nhân, chặn hoặc xóa người nhắn ngay trong hộp thư, ngắt từng Fanpage và nhắn riêng cho người bình luận. Người dùng Windows cũng chạy ổn định hơn khi đường dẫn có dấu cách hoặc nằm ở ổ C. Giữ mọi tuỳ biến Thansa. |
 | 2.2.1  | 0.445.0   | `998fa2f`  | 2026-11-03 (chờ duyệt) | Bản vá giọng đọc: câu trả lời trong chat **giữ được giọng NamMinh/HoaiMy** - dịch vụ đọc giọng tiếng Việt đang hỏng ngẫu nhiên, nay thử lại giọng đã chọn 1 lần trước khi đổi sang giọng dự phòng. |

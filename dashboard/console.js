@@ -6991,14 +6991,22 @@
     // 0.298.0: the Edge voice saved on the server first; this browser's copy only when there is none.
     const edgeNow = tts.edge_voice || (edgeSel ? edgeSel.value : "");
     const basicVoice = tts.provider === "openai" ? "openai:" + (tts.openai_voice || "alloy")
-      : tts.provider === "elevenlabs" ? "elevenlabs" : "edge:" + edgeNow;
+      : tts.provider === "elevenlabs" ? "elevenlabs"
+      : tts.provider === "azure" ? "azure:" + (edgeNow || "vi-VN-HoaiMyNeural") : "edge:" + edgeNow;
     const basicList = () => {
       const edgeOpts = edgeSel ? Array.from(edgeSel.options).map(x => opt("edge:" + x.value, x.textContent, basicVoice)).join("") : "";
       const oaOn = tts.openai_key_set || tts.provider === "openai";
       return `<optgroup label="${esc(t("settings.vc_group_edge"))}">${edgeOpts}</optgroup>`
         + (oaOn ? `<optgroup label="OpenAI">${OPENAI_TTS_VOICES.map(x => opt("openai:" + x, nhanGiong(x), basicVoice)).join("")}</optgroup>` : "")
-        + `<optgroup label="ElevenLabs">${opt("elevenlabs", t("settings.vc_eleven_opt"), basicVoice)}</optgroup>`;
+        + `<optgroup label="ElevenLabs">${opt("elevenlabs", t("settings.vc_eleven_opt"), basicVoice)}</optgroup>`
+        + `<optgroup label="${esc(t("settings.vc_group_azure"))}">${azureOpts()}</optgroup>`;
     };
+    // Azure Speech (2.4.x): lựa chọn TUỲ CHỌN, cùng các giọng tiếng Việt của Edge qua dịch vụ chính thức (cần khoá).
+    function azureOpts() {
+      const vi = edgeSel ? Array.from(edgeSel.options).filter(x => /^vi-VN-/.test(x.value)) : [];
+      const ds = vi.length ? vi.map(x => [x.value, x.textContent]) : [["vi-VN-HoaiMyNeural", "HoaiMy"], ["vi-VN-NamMinhNeural", "NamMinh"]];
+      return ds.map(([v, nhan]) => opt("azure:" + v, nhan, basicVoice)).join("");
+    }
     let liveVoices = [];
     if (call.engine === "chatgpt") {
       const p = (o.live_providers || []).find(x => x.id === "chatgpt") || {};
@@ -7022,7 +7030,7 @@
     $("vcRateRow").hidden = !basic;          // tốc độ đọc chỉ áp cho giọng đọc của đường Cơ bản
     $("vcOpenaiNote").hidden = !!tts.openai_key_set;
     $("vcEleven").hidden = readSel.value !== "elevenlabs";
-    $("vcAzure").hidden = !String(readSel.value || "").startsWith("edge:");
+    $("vcAzure").hidden = !String(readSel.value || "").startsWith("azure:");
     $("vcAzKeySet").hidden = !tts.azure_key_set;
     $("vcAzRegion").value = tts.azure_region || "";
     $("vcElKeySet").hidden = !tts.elevenlabs_key_set;
@@ -7063,7 +7071,7 @@
     const pickReading = async (val) => {
       $("vcVoiceNote").hidden = !(basic && val.startsWith("edge:"));
       $("vcEleven").hidden = val !== "elevenlabs";
-      $("vcAzure").hidden = !String(val || "").startsWith("edge:");
+      $("vcAzure").hidden = !String(val || "").startsWith("azure:");
       let r = { ok: true };
       if (val.startsWith("edge:")) {
         // Giọng Edge sống ở máy này (localStorage, app.js nghe sự kiện change của #voiceSel), và từ 0.298.0
@@ -7071,6 +7079,11 @@
         if (edgeSel) { edgeSel.value = val.slice(5); edgeSel.dispatchEvent(new Event("change")); }
         r = await luuGiong({ tts_provider: "edge", edge_voice: val.slice(5) });
         tts.provider = "edge"; tts.edge_voice = val.slice(5);
+      } else if (val.startsWith("azure:")) {
+        if (edgeSel) { edgeSel.value = val.slice(6); edgeSel.dispatchEvent(new Event("change")); }
+        r = await luuGiong({ tts_provider: "azure", edge_voice: val.slice(6) });
+        tts.provider = "azure"; tts.edge_voice = val.slice(6);
+        if (!tts.azure_key_set) $("vcAzKey").focus(); else thuAzure();
       } else if (val.startsWith("openai:")) {
         r = await luuGiong({ tts_provider: "openai", openai_tts_voice: val.slice(7) });
         tts.provider = "openai";

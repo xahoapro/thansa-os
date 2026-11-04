@@ -6321,7 +6321,7 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             cfg["image"]["strip_c2pa"] = bool(patch["strip_c2pa"])
     elif section == "voice":
         v = cfg.setdefault("voice", {})
-        if patch.get("tts_provider") in ("edge", "openai", "elevenlabs"):
+        if patch.get("tts_provider") in ("edge", "openai", "elevenlabs", "azure"):
             v["tts_provider"] = patch["tts_provider"]
         for k in ("openai_tts_voice", "openai_tts_model", "elevenlabs_voice"):
             if patch.get(k):
@@ -16358,14 +16358,16 @@ async def tts(
             audio = await _tts_openai(text, rate, cfg)
         elif provider == "elevenlabs":
             audio = await _tts_elevenlabs(text, cfg)
+        elif provider == "azure":
+            # Người dùng TỰ CHỌN nhóm "Azure Speech" ở Cài đặt (mặc định vẫn là Edge miễn phí). Cùng tên giọng
+            # với Edge; Azure lỗi (chưa có khoá, hết hạn mức, mạng) thì đọc bằng Edge, không im lặng.
+            try:
+                audio = await _tts_azure(phien_am.doc_viet(text), voice, rate, cfg)
+                return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-cache"})
+            except Exception as e:   # noqa: BLE001
+                print(f"[TTS azure] {type(e).__name__}: {str(e)[:160]} - dùng Edge", file=sys.stderr)
+                return await _edge_streaming()
         else:
-            # Có khoá Azure Speech: giọng Edge đọc qua Azure (cùng giọng, ổn định); Azure lỗi thì Edge như cũ.
-            if all(_azure_cau_hinh(cfg)) and voice.endswith("Neural"):
-                try:
-                    audio = await _tts_azure(phien_am.doc_viet(text), voice, rate, cfg)
-                    return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-cache"})
-                except Exception as e:   # noqa: BLE001 - hết hạn mức / sai khoá / mạng: lùi về Edge
-                    print(f"[TTS azure] {type(e).__name__}: {str(e)[:160]} - dùng Edge", file=sys.stderr)
             return await _edge_streaming()
     except Exception as e:
         print(f"[TTS {provider}] {type(e).__name__}", file=sys.stderr)

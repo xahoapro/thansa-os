@@ -1,4 +1,6 @@
-"""Azure Speech (Thansa 2.3.0, 03/11/2026): cùng giọng Edge qua dịch vụ chính thức, lỗi thì lùi về Edge.
+"""Azure Speech (Thansa 2.4.x): TUỲ CHỌN cùng giọng Edge qua dịch vụ chính thức, lỗi thì lùi về Edge.
+
+Chủ chốt 04/11: mặc định vẫn Edge miễn phí; Azure chỉ chạy khi người dùng chọn nhóm "Azure Speech" (tts_provider=azure).
 
 Edge miễn phí bỏ âm thanh ngẫu nhiên với giọng vi-VN, nên câu trả lời lúc HoaiMy lúc giọng dự phòng. Có khoá +
 vùng Azure Speech thì /tts đọc giọng Edge đã chọn qua Azure; Azure lỗi (hết hạn mức, sai khoá, mạng) thì vẫn đọc
@@ -27,7 +29,7 @@ import config as cfgmod  # noqa: E402
 import main  # noqa: E402
 
 goi = {"azure": [], "edge": []}
-CFG = {"voice": {"tts_provider": "edge", "azure_speech_key": "k-thu", "azure_speech_region": "southeastasia"}}
+CFG = {"voice": {"tts_provider": "azure", "azure_speech_key": "k-thu", "azure_speech_region": "southeastasia"}}
 AZ_HONG = {"on": False}
 
 
@@ -59,7 +61,7 @@ def doc(cfg, voice="vi-VN-HoaiMyNeural"):
 
 
 r = doc(CFG)
-check("có khoá + vùng: giọng Edge đọc qua Azure", goi["azure"] and not goi["edge"] and r.body == b"mp3-azure")
+check("chọn Azure + có khoá: giọng đọc qua Azure", goi["azure"] and not goi["edge"] and r.body == b"mp3-azure")
 check("Azure nhận đúng giọng đã chọn và chữ đã phiên âm", goi["azure"][0][1] == "vi-VN-HoaiMyNeural"
       and "than sa" in goi["azure"][0][0].lower())
 
@@ -69,10 +71,16 @@ check("Azure lỗi: lùi về Edge, không im lặng", goi["azure"] and goi["edg
 AZ_HONG["on"] = False
 
 r = doc({"voice": {"tts_provider": "edge"}})
-check("không có khoá: đi thẳng Edge, không gọi Azure", not goi["azure"] and goi["edge"])
+check("mặc định Edge: đi thẳng Edge, không gọi Azure", not goi["azure"] and goi["edge"])
 
-r = doc({"voice": {"tts_provider": "edge", "azure_speech_key": "k-thu"}})
-check("thiếu vùng: không gọi Azure", not goi["azure"] and goi["edge"])
+r = doc({"voice": {"tts_provider": "edge", "azure_speech_key": "k-thu", "azure_speech_region": "southeastasia"}})
+check("CÓ khoá Azure nhưng vẫn chọn Edge: KHÔNG tự sang Azure (Azure là tuỳ chọn)", not goi["azure"] and goi["edge"])
+
+AZ_HONG["on"] = True
+r = doc({"voice": {"tts_provider": "azure"}})
+check("chọn Azure mà chưa có khoá: vẫn đọc bằng Edge", goi["edge"] and type(r).__name__ == "StreamingResponse")
+AZ_HONG["on"] = False
+check("mặc định của cài đặt mới là Edge", cfgmod.DEFAULTS["voice"]["tts_provider"] == "edge" if hasattr(cfgmod, "DEFAULTS") else '"tts_provider": "edge"' in (ROOT / "server/config.py").read_text())
 
 check("khoá Azure là secret (mã hoá khi lưu)", "voice.azure_speech_key" in cfgmod.SECRET_FIELDS
       if hasattr(cfgmod, "SECRET_FIELDS") else "voice.azure_speech_key" in (ROOT / "server/config.py").read_text())

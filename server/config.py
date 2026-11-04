@@ -54,12 +54,12 @@ _DEFAULT = {
     # Nhà cung cấp giọng đọc (TTS). edge = Edge TTS miễn phí (mặc định, dự phòng).
     # openai = OpenAI TTS (dùng model.openai_api_key). elevenlabs = ElevenLabs (key riêng).
     "voice": {
-        "tts_provider": "edge",                       # edge | openai | elevenlabs
+        "tts_provider": "edge",                       # edge (mặc định, miễn phí) | openai | elevenlabs | azure
         "openai_tts_voice": "alloy",                  # alloy|echo|fable|onyx|nova|shimmer|ash|sage|coral
         "openai_tts_model": "gpt-4o-mini-tts",        # hoặc tts-1 / tts-1-hd
         "elevenlabs_key": "",
         # Azure Speech (03/11/2026): CÙNG giọng Edge (vi-VN-HoaiMyNeural...) qua dịch vụ chính thức có cam kết.
-        # Có key + region thì các giọng Edge đọc qua Azure, lỗi thì lùi về Edge miễn phí.
+        # Chỉ dùng khi người dùng chọn nhóm "Azure Speech" (tts_provider=azure); lỗi thì lùi về Edge miễn phí.
         "azure_speech_key": "",
         "azure_speech_region": "",
         "elevenlabs_voice": "21m00Tcm4TlvDq8ikWAM",   # Rachel (premade, đa ngôn ngữ) - đổi được
