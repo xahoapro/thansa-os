@@ -1,3 +1,5 @@
+# Thansa (P030): KHÔNG tự chạy khi đẩy main (chủ tắt build/phát hành tự động 26/08); chỉ chạy tay ở
+# tab Actions. Lượt trộn nguồn tự gỡ lại khối `push:` (ops/tu_dong_tron.py chot_ci).
 name: Release
 
 # Every push to main: turn the changelog.d/ fragments into version numbers, then publish the image.
@@ -23,14 +25,6 @@ name: Release
 #   flight from before this change keep their number.
 # - A push without fragments (old-style PR that bumped VERSION by hand, docs) just publishes.
 on:
-  push:
-    branches: [main]
-    # Pure docs never change the image. CLAUDE.md is the system prompt baked into the image, so it
-    # is NOT ignored.
-    paths-ignore:
-      - "README.md"
-      - "DEPLOY.md"
-      - ".learn/**"
   workflow_dispatch:
 
 jobs:
