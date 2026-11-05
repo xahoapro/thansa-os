@@ -903,7 +903,7 @@
   commit: "[me] P030: tam tat build docker tu dong (chua dung docker)"
   diem_neo:
     - file: .github/workflows/docker-publish.yml
-      ky_hieu: "TẠM TẮT build tự động"
+      ky_hieu: "workflow_dispatch:"
   vung_theo_doi:
     - .github/workflows/docker-publish.yml
   anh_goc:
