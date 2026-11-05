@@ -189,8 +189,12 @@ check("gate: broken fragment fails", gate({"server/a.py": "x=5\n", "changelog.d/
 wf = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
 dp = (ROOT / ".github/workflows/docker-publish.yml").read_text(encoding="utf-8")
 ci = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-check("release runs on push to main, one numbering run at a time",
-      "branches: [main]" in wf and "group: release-version" in wf and "cancel-in-progress: false" in wf)
+# Thansa (P030, chủ chốt 26/08): release.yml KHÔNG tự chạy khi đẩy main - chỉ chạy tay (ops/tu_dong_tron.py chot_ci).
+import re as _re
+_on = _re.search(r"^on:\n((?:[ \t].*\n|\n)*)", wf, _re.M)
+check("Thansa: release chỉ chạy tay, không tự chạy khi push main; vẫn một lượt đánh số mỗi lần",
+      _on and "push:" not in _on.group(1) and "workflow_dispatch" in _on.group(1)
+      and "group: release-version" in wf and "cancel-in-progress: false" in wf)
 check("release lands through a PR merged with the owner token (ruleset on main)",
       "secrets.RELEASE_TOKEN" in wf and "gh pr merge" in wf and "--admin" in wf and "--rebase" in wf)
 check("release skips numbers claimed in open PR titles", "gh pr list" in wf and "--reserved" in wf)

@@ -33,31 +33,15 @@ def check(name, cond):
         _fails.append(name)
 
 
-# ---- 1. updater ra khỏi cgroup của dịch vụ ----
-CG_DV = "0::/system.slice/thansa.service\n"
-CG_SSH = "0::/user.slice/user-1000.slice/user@1000.service/app.slice/tmux-spawn-1.scope\n"
-CG_PHIEN = "0::/user.slice/user-1000.slice/session-5.scope\n"
-check("nhận ra đang trong dịch vụ thansa.service", updater._cgroup_dich_vu(CG_DV) == "thansa.service")
-check("phiên SSH/tmux (user@.service) KHÔNG tính là dịch vụ", updater._cgroup_dich_vu(CG_SSH) == "")
-check("phiên đăng nhập thường không phải dịch vụ", updater._cgroup_dich_vu(CG_PHIEN) == "")
-check("cgroup v1 nhiều dòng vẫn nhận ra",
-      updater._cgroup_dich_vu("12:pids:/system.slice/thansa.service\n1:name=systemd:/system.slice/thansa.service\n")
-      == "thansa.service")
-
-args = ["/venv/bin/python", "updater.py", "--port", "7777"]
-l = updater.lenh_tach_cgroup(args, cgroup_text=CG_DV, euid=0, systemd_run="/usr/bin/systemd-run", now=123)
-check("root trong dịch vụ: bọc systemd-run --scope", l[:3] == ["/usr/bin/systemd-run", "--scope", "--quiet"]
-      and "--collect" in l and "--unit=thansa-update-123" in l and l[-len(args):] == args)
-check("không nằm trong dịch vụ: giữ lệnh cũ",
-      updater.lenh_tach_cgroup(args, cgroup_text=CG_PHIEN, euid=0, systemd_run="/usr/bin/systemd-run") == args)
-check("không có systemd-run: giữ lệnh cũ",
-      updater.lenh_tach_cgroup(args, cgroup_text=CG_DV, euid=0, systemd_run="") == args)
-check("không phải root: giữ lệnh cũ (systemd-run --scope cần quyền)",
-      updater.lenh_tach_cgroup(args, cgroup_text=CG_DV, euid=1000, systemd_run="/usr/bin/systemd-run") == args)
+# ---- 1. updater không chết theo `systemctl stop` ----
+# Từ nguồn 0.483.0 updater tự giao việc cho một unit systemd-run riêng (_systemd_worker_command), nên
+# Thansa bỏ lối bọc `systemd-run --scope` của P062; main.py spawn updater thẳng như nguồn.
+UPD_PY = (SERVER / "updater.py").read_text(encoding="utf-8")
+check("updater giao việc cho worker systemd-run riêng", "def _systemd_worker_command(" in UPD_PY)
+check("không còn lối bọc cgroup cũ", "lenh_tach_cgroup" not in UPD_PY)
 MAIN = (SERVER / "main.py").read_text(encoding="utf-8")
-check("main.py spawn updater qua lenh_tach_cgroup",
-      "subprocess.Popen(_updmod.lenh_tach_cgroup(args), cwd=root, start_new_session=True)" in MAIN)
-
+check("main.py spawn updater thẳng", "subprocess.Popen(args, cwd=root, start_new_session=True)" in MAIN
+      and "lenh_tach_cgroup" not in MAIN)
 
 def bo_comment(text):
     return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
