@@ -91,8 +91,8 @@
     try { await fetch(`/sessions/${encodeURIComponent(sid)}/model`, { method: "POST", body: fd }); } catch (e) {}
   }
 
-  // 0.461.0: a Thansa Core chat's pin is Thansa Core's pin, also shown and set on the Core card of the Agents page
-  // (core-model.js). Each side tells the other through one event, so the chip and the card never disagree.
+  // 0.461.0: a Thansa Core chat's pin is Thansa Core's pin, also shown and set as the Model of its card on the Partners
+  // page (the agent editor). The chip tells the page through one event.
   const CORE_EVENT = "thansa:core-model";
   function coreChanged() {
     if (!(agentEff && agentEff.slug === "thansa-core")) return;
@@ -448,6 +448,10 @@
     // vẽ lại, kẻo trong lúc đó đổi mặc định chung ở trang Models là bar nói sai.
     noteStamped: function (sid) {
       if (!sid || (sessionPin && pinSid === sid)) return;
+      // A Thansa Core chat has no stamp of its own: it runs on Thansa Core's pin, or on the main model while there is none
+      // (server `_chat_provider_for_session`). Showing the main model as pinned here made an unpinned Core chat look
+      // pinned, and then "change" when the main model changed (owner, 04/11/2026).
+      if (agentEff && agentEff.slug === "thansa-core" && pinSid === sid) return;
       sessionPin = { provider: state.main.provider, model: state.main.model };
       pinBroken = false; pinSid = sid;
       renderBar();
@@ -456,6 +460,8 @@
 
   // Đổi phiên (mở phiên cũ, chat mới, xoá phiên) → hỏi lại ghim của phiên rồi vẽ lại.
   window.addEventListener("thansa:sessions-changed", async () => { await loadSessionPin(); renderBar(); });
+  // The Models page turned Fast mode on or off from a card's Effort sheet: the composer's bolt follows at once.
+  window.addEventListener("thansa:fast-changed", (e) => { state.fast = !!(e.detail && e.detail.on); renderFast(); });
   // The Core card pinned or unpinned Thansa Core: an open Core chat redraws its chip.
   window.addEventListener(CORE_EVENT, async (e) => {
     if ((e.detail || {}).from === "chat" || !(agentEff && agentEff.slug === "thansa-core")) return;
