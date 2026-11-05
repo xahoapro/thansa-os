@@ -155,6 +155,11 @@
   // Auto is on right now. Same leading-space trick as TAG_NONE, so it never clashes with a real tag.
   var TAG_AUTO = " auto";
   function autoBat(rs, slug) { var r = rs && rs[slug]; return !!(r && r.enabled && r.status === "active"); }
+  // Thansa Core's Auto is always on (owner, 05/11/2026): its row shows the switch on even before the server's list is in.
+  function coreAutoRow(x) {
+    var r = S.rs[x.slug] || {};
+    return { slug: x.slug, name: x.name, enabled: true, status: "active", goals_open: r.goals_open || 0 };
+  }
   // A pseudo filter (not a real tag): "untagged" or "Auto on". Real tags go through the tag-key path.
   function laLocGia(v) { return v === TAG_NONE || v === TAG_AUTO; }
   function tagsCua(x) {
@@ -193,9 +198,14 @@
         m.get(p.key).n++;
       });
     });
-    var ra = Array.from(m.values());
-    ra.sort(function (a, b) { return a.ten.localeCompare(b.ten, "vi"); });
+    var ra = thuTuTag(Array.from(m.values()));
     return { tags: ra, khong: khong };
+  }
+  // 0.454.0: the owner's own tag order (reorder-dialog.js, saved for this page), else by name.
+  function thuTuTag(ds) {
+    var R = typeof window !== "undefined" && window.ThansaReorder;
+    return R ? R.sortTags(ds, "tags_agents", function (g) { return g.key; }, function (g) { return g.ten; })
+      : ds.sort(function (a, b) { return a.ten.localeCompare(b.ten, "vi"); });
   }
 
   // `laTag`: lọc theo TAG của agent (nhom = khoá hay tên tag, TAG_NONE = chưa gắn tag). Không truyền: lọc theo nhóm.
@@ -312,6 +322,12 @@
             hien: TRANG, lanChay: {},
             menu: null };   // tienDo[session_id] = tiến độ lần chạy đang xem
 
+  // 2026-11-05: the last chat each partner opened in, by brain and channel. It lives outside S (S is rebuilt on every
+  // visit), so coming back to a partner opens its chat at once, from app.js's chat cache, while the server confirms
+  // it is still the newest one. It is a hint only: the server's answer always wins.
+  var _phienGanNhat = {};
+  function khoaGanNhat(item) { return brain() + "|" + kenh(item); }
+
   function danhSach() { return S.loai === "agent" ? S.agents : S.workflows; }
   function kenh(item) { return (S.loai === "agent" ? "agent:" : "workflow:") + item.slug; }
   function dangChon() { var slug = S.chon[S.loai]; return danhSach().find(function (x) { return x.slug === slug; }) || null; }
@@ -397,6 +413,7 @@
     if (_unLai) { _unLai = false; setTimeout(henUnread, 0); }
     if (round !== lanDung || b0 !== brain() || !d || !d.ok) return false;
     S.un = d.agents || {};
+    S.unBrain = b0;
     S.agents.forEach(function (a) {
       var u = S.un[a.slug];
       if (u && Number(u.last_at) > Number(a.last_chat_at || 0)) a.last_chat_at = Number(u.last_at);
@@ -418,6 +435,13 @@
   function dangXemCongSu(slug) {
     var c = S.loai === "agent" ? dangChon() : null;
     return active && !!c && c.slug === slug && !(typeof document !== "undefined" && document.hidden);
+  }
+  // Performance (2026-11-05): opening a partner whose count is known to be zero skips the POST, and with it the
+  // agent_read broadcast that made every open tab, this one included, fetch the unread counts again.
+  function coTinChuaDoc(slug) {
+    if (S.unBrain !== brain()) return true;   // counts not loaded for this brain yet: mark it read to be safe
+    var u = S.un[slug];
+    return !!(u && Number(u.n) > 0);
   }
   function daDoc(slug) {
     if (S.un[slug]) S.un[slug].n = 0;
@@ -900,6 +924,15 @@
                   run: function () { chonNhom(g.key); },
                   acts: [{ icon: "ellipsis-vertical", title: t("ws.tag_acts"), run: function () { moChucNangTag(neo, g); } }] });
     });
+    // 0.454.0: drag the tags into the owner's own order.
+    if (dem.tags.length > 1 && window.ThansaReorder) {
+      rows.push({ sep: true });
+      rows.push({ label: t("reorder.menu_tags"), icon: "arrow-up-down", run: function () {
+        var R = window.ThansaReorder;
+        R.open({ title: t("reorder.title_tags"), items: dem.tags.map(function (g) { return { id: g.key, label: g.ten, icon: "tag" }; }),
+          save: function (keys) { return R.saveTags("tags_agents", keys); } });
+      } });
+    }
     cs.menu(neo, rows);
   }
   // `g` = {ten, key}: gửi server TÊN (server tự so theo khoá), giữ trạng thái trang theo KHOÁ.
@@ -1123,8 +1156,10 @@
       // công tắc Auto đứng chung một cụm nhỏ ở góc dưới phải của thẻ. Công tắc có trên MỌI trợ lý, tắt thì màu xám.
       // Cụm nằm ngoài nút chọn mục (không lồng nút trong nút); CSS đặt nó BÊN TRONG thẻ.
       (laAgent ? '<div class="ws-item-end">' + gioNhanHtml(x.last_chat_at) + tinHtml(x) +
-        (!he && window.ThansaResonanceAgent
-          ? window.ThansaResonanceAgent.rowToggleHtml(S.rs[x.slug], { saving: !!S.rsSaving[x.slug] }) : "") + '</div>' : "") +
+        // 2026-11-05 (owner): Thansa Core shows the same switch, always on and locked.
+        (window.ThansaResonanceAgent
+          ? window.ThansaResonanceAgent.rowToggleHtml(he ? coreAutoRow(x) : S.rs[x.slug],
+              { saving: !he && !!S.rsSaving[x.slug], locked: he }) : "") + '</div>' : "") +
       (he ? "" : '<button type="button" class="ws-item-more" data-more="' + esc(x.slug) + '" title="' +
         esc(t("ws.manage")) + '" aria-label="' + esc(t("ws.manage")) + '">' + ic("ellipsis-vertical") + '</button>') +
       '</div>';
@@ -1133,7 +1168,13 @@
   // chết theo node cũ.
   function noiDanhSach(host) {
     host.querySelectorAll("[data-slug]").forEach(function (b) {
-      b.addEventListener("mouseenter", function () { hienTheMini(b); });
+      b.addEventListener("mouseenter", function () {
+        hienTheMini(b);
+        // 2026-11-05: warm the chat this partner last opened in, so the click finds it ready.
+        var x = danhSach().find(function (m) { return m.slug === b.dataset.slug; });
+        var sid = x && _phienGanNhat[khoaGanNhat(x)];
+        try { if (sid && window.ThansaSessions && window.ThansaSessions.prefetch) window.ThansaSessions.prefetch(sid); } catch (e) {}
+      });
       b.addEventListener("mouseleave", anTheMini);
       b.addEventListener("focus", function () { hienTheMini(b); });
       b.addEventListener("blur", anTheMini);
@@ -1380,7 +1421,7 @@
     var tatCa = demTag(ds).tags.map(function (g) { return { ten: g.ten, key: g.key }; });
     var daCo = new Set(tatCa.map(function (g) { return g.key; }));
     cua.forEach(function (p) { if (!daCo.has(p.key)) { daCo.add(p.key); tatCa.push({ ten: p.ten, key: p.key }); } });
-    tatCa.sort(function (a, b) { return a.ten.localeCompare(b.ten, "vi"); });
+    tatCa = thuTuTag(tatCa);
     return tatCa.map(function (g) { return { ten: g.ten, key: g.key, on: coKhoa.has(g.key) }; });
   }
   function veMenuTag(item, m, focusKhoa) {
@@ -1506,7 +1547,12 @@
     if (!item) return false;
     var still = function () { return active && ticket === opening && conDangXem(item); };
     try {
-      vePhai(item);
+      // Performance (2026-11-05): the right column (settings form, Auto block, history list) belongs to the PARTNER, not
+      // to one chat. New conversation and a history click keep the same partner, so it is not rebuilt: rebuilding it
+      // fetched the agent, the history list and its GitHub icons again and redrew the whole form on every click.
+      if (!phaiDaVeCho(item)) vePhai(item);
+      // New conversation: the old chat leaves the screen at once instead of after the server answers.
+      if (moiHan && window.ThansaSessions && window.ThansaSessions.blank) window.ThansaSessions.blank();
       var b = encodeURIComponent(brain()), ch = kenh(item), id = sidChiDinh || null;
       if (!id && !moiHan && item.system) {
         // Thansa Core: open the brain's default chat, the one reports land in (the server makes it when missing).
@@ -1514,11 +1560,20 @@
         if (!still()) return false;
         id = c && c.id;
       }
+      var moSom = null, nho = null;
       if (!id && !moiHan) {
+        // 2026-11-05: open the remembered chat right away, in parallel with asking which chat is newest. Before, the
+        // chat waited for this answer and then for its own messages: two round trips in a row on every click.
+        nho = !item.system ? _phienGanNhat[khoaGanNhat(item)] : null;
+        if (nho && window.ThansaSessions) {
+          S.sessionCuaPhien[nho] = item.slug;
+          moSom = window.ThansaSessions.open(nho, still);
+        }
         var r = await api("/sessions?brain=" + b + "&channel=" + encodeURIComponent(ch) + "&limit=1");
         if (!still()) return false;
         if (r.sessions && r.sessions[0]) id = r.sessions[0].id;
       }
+      var phienMoiTao = !id;
       if (!id) {
         var n = await api("/sessions/new", { method: "POST", body: fd({ brain: brain(), channel: ch }) });
         if (!still()) return false;
@@ -1530,12 +1585,15 @@
         id = n.id;
       }
       S.sessionCuaPhien[id] = item.slug;
-      if (window.ThansaSessions) await window.ThansaSessions.open(id, still);
+      if (moSom && id === nho) await moSom;   // the remembered chat is still the newest: it is already open
+      // A chat made just now is empty: open it without asking the server for its (zero) messages.
+      else if (window.ThansaSessions) await window.ThansaSessions.open(id, still, phienMoiTao ? { empty: true } : undefined);
       if (!still()) return false;
       if (!window.ThansaSessions || window.ThansaSessions.current() !== id) throw new Error(t("ws.err_session"));
+      if (!item.system) _phienGanNhat[khoaGanNhat(item)] = id;
       chatReady(true);
       luuViTri(id);
-      if (S.loai === "agent") daDoc(item.slug);   // 0.205.0: opening the chat reads it
+      if (S.loai === "agent" && coTinChuaDoc(item.slug)) daDoc(item.slug);   // 0.205.0: opening the chat reads it
       if (S.loai === "workflow") veBuoc(item, tienDoHienTai(item));
       else ganCongHuong(item, id);
       return true;
@@ -1776,31 +1834,45 @@
     if (input) input.focus();
   }
 
+  // Thansa Core may have saved a new name in the turn that just ended (`thansa_core_name`): read it back so the list,
+  // the chat header and the card show it without a reload (owner, 04/11/2026).
+  async function docLaiTenCore(ag) {
+    var d = null;
+    try { d = await api("/agents?brain=" + encodeURIComponent(brain()) + "&prompt=0&system=1"); } catch (e) { return; }
+    var moi = d && Array.isArray(d.agents) && d.agents.filter(function (a) { return a.slug === ag.slug; })[0];
+    if (!moi || (moi.name === ag.name && (moi.style || "") === (ag.style || ""))) return;
+    ag.name = moi.name; ag.custom_name = moi.custom_name; ag.style = moi.style;
+    if (!active || S.loai !== "agent") return;
+    veDanhSach();
+    if (dangChon() === ag) { veGiua(ag); vePhai(ag); }
+  }
+
   // ---------- cột phải ----------
   /** Tab cột phải cho LOẠI đang xem: trợ lý và quy trình nhớ riêng (xem S.tabCua). */
   function tabTheoLoai() { return (S.tabCua && S.tabCua[S.loai]) || S.tabPhai; }
+  // Which partner the right column was last drawn for ("agent:slug" / "workflow:slug"), on which page mount.
+  function khoaPhai(item) { return item ? S.loai + ":" + item.slug + "|" + brain() : ""; }
+  function phaiDaVeCho(item) {
+    var host = S.el && S.el.querySelector("#wsRightSet");
+    return !!(item && host && host.firstChild && S.phaiCua === khoaPhai(item) && S.phaiEl === S.el);
+  }
   function vePhai(item) {
     var host = S.el && S.el.querySelector("#wsRightSet"); if (!host) return;
+    S.phaiCua = khoaPhai(item); S.phaiEl = S.el;
     // TRẢ cây thư mục về trước khi vẽ lại cột phải. Vẽ lại chỉ ghi vào khung Cài đặt, nhưng
     // cây là node mượn và chỉ có một bản: trả rồi mượn lại theo tab đang mở là luật gọn nhất,
     // khỏi phải nhớ chỗ nào được phép ghi đè chỗ nào không.
     traCayThuMuc();
     if (!item) { host.innerHTML = ""; veLichSu(null); chonTabPhai(tabTheoLoai()); return; }
-    if (S.loai === "agent" && item.system) {
-      // Thansa Core (0.185.0): no editor, no Delete, no Auto. The definition ships with the app; the model is chosen in
-      // the chat box like any chat.
-      host.innerHTML = '<div class="ws-core-card"><div class="ws-core-head">' + avatar(item, 40) + '<h3>' + esc(item.name) + infoBtn() +
-        '</h3><span class="ws-sys">' + esc(t("ws.system_badge")) + '</span></div><p>' + esc(item.role || "") + '</p>' +
-        infoBody(esc(t("ws.core_note"))) + '</div>';
-      // 0.190.0 (owner, 16/10/2026): no memory list here any more. Thansa already learns from the brain; seeing, editing
-      // or forgetting a memory is a chat message ("quên chuyện đó đi"), done with the thansa_memory tool.
-    } else if (S.loai === "agent") {
+    if (S.loai === "agent") {
       // 0.190.0 (owner, 16/10/2026: "tối giản nhất, người ta không cần hiểu gì về cài đặt cũng dùng được"): the column
       // opens on what every assistant app has (picture, name, role, instructions, documents, skills, model). The Auto
       // block sits below and shows only while Auto is on (veAuto); lessons are handled in chat (thansa_memory).
+      // 2026-11-05 (owner): Thansa Core opens this same form, picture, name, role, instructions, documents, skills,
+      // model. Being the system assistant only drops Export and Delete; its Auto stays on (veAuto).
       host.innerHTML = '<div class="ws-form" id="wsAgentForm"></div><div class="ws-auto-block" id="wsAuto"></div>' +
-        '<div class="ws-acts"><button type="button" class="ws-btn" id="wsExport">' + esc(t("studio.export")) + '</button>' +
-        '<button type="button" class="ws-btn danger" id="wsDel">' + esc(t("common.delete")) + '</button></div>';
+        (item.system ? "" : '<div class="ws-acts"><button type="button" class="ws-btn" id="wsExport">' + esc(t("studio.export")) + '</button>' +
+        '<button type="button" class="ws-btn danger" id="wsDel">' + esc(t("common.delete")) + '</button></div>');
       // MƯỢN chính trình sửa agent của Studio (studio.js), không dựng bản thứ hai: chọn model,
       // chọn skill, nhóm... đã nằm ở đó, chép lại là hai bản trôi lệch nhau ngay lần sửa đầu.
       if (window.ThansaStudio && window.ThansaStudio.editAgent) {
@@ -1808,12 +1880,14 @@
           onSaved: async function () { await sauLuu(item, "agent"); } });
       }
       veAuto(item);
-      host.querySelector("#wsExport").onclick = function () { window.ThansaStudio && window.ThansaStudio.exportItem("agent", item.slug); };
-      host.querySelector("#wsDel").onclick = async function () {
-        if (!confirm(t("studio.del_ag", { ten: item.name }))) return;
-        await api("/agents/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
-        S.chon.agent = null; await taiDanhSach(); veTrai(); chonMacDinh();
-      };
+      if (!item.system) {
+        host.querySelector("#wsExport").onclick = function () { window.ThansaStudio && window.ThansaStudio.exportItem("agent", item.slug); };
+        host.querySelector("#wsDel").onclick = async function () {
+          if (!confirm(t("studio.del_ag", { ten: item.name }))) return;
+          await api("/agents/delete", { method: "POST", body: fd({ slug: item.slug, brain: brain() }) });
+          S.chon.agent = null; await taiDanhSach(); veTrai(); chonMacDinh();
+        };
+      }
     } else {
       var td = tienDoHienTai(item);
       // A long description shows two lines; the full text sits behind the (i) on the title.
@@ -1846,15 +1920,15 @@
   // show, so the column stays the plain settings form.
   function veAuto(item) {
     var box = S.el && S.el.querySelector("#wsAuto");
-    if (!box || !item || item.system) return;
-    if (!window.ThansaResonanceAgent || !autoBat(S.rs, item.slug)) { box.innerHTML = ""; return; }
+    if (!box || !item) return;
+    if (!window.ThansaResonanceAgent || !(item.system || autoBat(S.rs, item.slug))) { box.innerHTML = ""; return; }
     if (box.querySelector("#wsResonance")) return;
     box.innerHTML = '<div class="rsa-panel" id="wsResonance"></div><div class="rsa-panel pulse-panel" id="wsPulse"></div>';
     ganCongHuong(item);
   }
   function ganCongHuong(item, sid) {
     var host = S.el && S.el.querySelector("#wsResonance");
-    if (!host || !window.ThansaResonanceAgent || !item || item.system) return;
+    if (!host || !window.ThansaResonanceAgent || !item) return;
     window.ThansaResonanceAgent.mount(host, { slug: item.slug,
       sessionId: sid || (window.ThansaSessions && window.ThansaSessions.current && window.ThansaSessions.current()) || "",
       onNewSession: function () { var x = dangChon(); return x ? moPhien(x, true) : false; } });
@@ -2014,6 +2088,7 @@
         S.agents = sapXep(S.agents, "last_chat_at");
         if (dangXemCongSu(ag.slug)) daDoc(ag.slug);
         if (active) veDanhSach();
+        if (ag.system) docLaiTenCore(ag);   // a new name saved in chat shows at once
       }
     } else if (sid && S.loai === "agent") henUnread();
     if (!sid || !S.tienDo[sid] || S.tienDo[sid].trang_thai !== "dang") return;
@@ -2078,17 +2153,23 @@
   });
   // T0 nhóm chat team: trạng thái Cộng hưởng vừa đổi (tab này, tab khác qua gói WS resonance_agents, hay trang Cài
   // đặt): đọc lại trạng thái THẬT của host rồi vẽ lại danh sách. Không giữ trạng thái người dùng vừa bấm.
+  // 0.454.0: the tag order changed: the list and its tag bar follow.
+  window.addEventListener("thansa:order-changed", function () { if (active && ready) veDanhSach(); });
   window.addEventListener("thansa:resonance-agents-changed", function () {
     if (!active) return;
     loadResonance().then(function (ok) { if (ok && active && S.loai === "agent") { veDanhSach(); veAuto(dangChon()); } });
     henDemViec();
   });
   // Huy hiệu việc trên thẻ trợ lý theo cùng các sự kiện với tab Công việc (gộp nhịp 800ms).
+  // Performance (2026-11-05): a plain chat switch (reason "open") adds no message and no job, so it does not recount.
+  function laDoiPhien(e) { return !!(e && e.detail && e.detail.reason === "open"); }
   ["thansa:team-event", "thansa:sessions-changed", "thansa:agent-jobs-changed"].forEach(function (ev) {
-    window.addEventListener(ev, henDemViec);
+    window.addEventListener(ev, function (e) { if (!laDoiPhien(e)) henDemViec(); });
   });
   // 0.205.0: a message landed somewhere, or another tab read or muted a partner: read the unread counts again.
-  ["thansa:sessions-changed", "thansa:agent-read"].forEach(function (ev) { window.addEventListener(ev, henUnread); });
+  ["thansa:sessions-changed", "thansa:agent-read"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) { if (!laDoiPhien(e)) henUnread(); });
+  });
   if (typeof document !== "undefined" && document.addEventListener) document.addEventListener("visibilitychange", function () {
     if (document.hidden || !active || S.loai !== "agent") return;
     var c = dangChon();
