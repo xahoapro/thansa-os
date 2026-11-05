@@ -52,7 +52,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 check("14. /health is an exact public path", "/health" in main._AUTH_PUBLIC_EXACT)
 check("14. no public prefix without its trailing slash",
       all(p.endswith("/") for p in main._AUTH_PUBLIC_PREFIX), main._AUTH_PUBLIC_PREFIX)
-main.cfgmod.gate_active = lambda: True
+main.cfgmod.gate_active = lambda *a, **k: True
 main.cfgmod.auth_enabled = lambda: True
 cl = TestClient(main.app, base_url="http://localhost:7777")
 check("14. /health still answers without login", cl.get("/health").status_code == 200)

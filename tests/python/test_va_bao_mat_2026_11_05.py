@@ -144,7 +144,7 @@ finally:
 _up = Path(SERVER, "main.py").read_text(encoding="utf-8").split("async def upload_raw", 1)[1].split("@app.", 1)[0]
 check("3. /upload/raw goes through the same CSP helper", "_csp_neu_chay_script(resp, mt)" in _up)
 
-main.cfgmod.gate_active = lambda: True
+main.cfgmod.gate_active = lambda *a, **k: True
 main.cfgmod.auth_enabled = lambda: True
 local = TestClient(main.app, base_url="http://127.0.0.1:7777", client=("127.0.0.1", 50000))
 BODY = {"text": "x", "delay_min": 5, "mode": "task", "muc_quyen": "full", "brain": "brain"}
