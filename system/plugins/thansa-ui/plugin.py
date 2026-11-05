@@ -32,7 +32,7 @@ resolve_scroll = ui_targets.resolve_scroll
 SCROLL_TARGETS = ui_targets.SCROLL_TARGETS
 _khong_dau = ui_targets.khong_dau
 
-ACTIONS = ("open_page", "open_file", "open_task", "scroll", "open_group", "sidebar")
+ACTIONS = ("open_page", "open_file", "open_task", "scroll", "open_group", "sidebar", "mic")
 
 
 def check_target(action: str, target: str) -> str:
@@ -62,6 +62,9 @@ def check_target(action: str, target: str) -> str:
     elif action == "sidebar":
         if _khong_dau(t) not in ("open", "close", "mo", "dong", "bung", "thu", "thu gon"):
             return "sidebar chỉ nhận target 'open' (bung thanh bên) hoặc 'close' (thu gọn)."
+    elif action == "mic":
+        if not ui_targets.mic_hop_le(t):
+            return "mic chỉ nhận target 'off' (tắt mic, kết thúc nói chuyện bằng giọng). Bật mic phải do người dùng bấm nút."
     return ""
 
 
@@ -87,6 +90,9 @@ async def _ui(args, ctx) -> str:
         return "[done] Đã bung thanh bên." if target == "open" else "[done] Đã thu gọn thanh bên."
     if action == "open_group":
         return f"[done] Đã bung nhóm {target} trên thanh bên."
+    if action == "mic":
+        # `detail` cho biết mic đã tắt sẵn hay sẽ tắt sau khi đọc xong câu đang nói.
+        return "[done] " + (detail or "Đã tắt mic trên dashboard.")
     ten = {"open_page": "trang", "open_file": "file", "open_task": "việc"}[action]
     # [done]: the dashboard tab acknowledged the action (ui_bridge waits for its reply).
     return f"[done] Đã mở {ten} {target} trên dashboard." + (f" {detail}" if detail else "")
@@ -106,7 +112,9 @@ def register(ctx):
             "chat_top | chat_bottom khi họ nói rõ 'cuộn khung chat'); open_group (BUNG một nhóm đang gập trên thanh bên mà "
             "KHÔNG đổi trang, dùng khi người dùng nói 'mở mục Năng lực', 'bung nhóm Kết nối', 'cho xem "
             "phần ẩn trong menu' - target: " + ", ".join(GROUPS) + " hoặc tên tiếng Việt như 'năng lực'); "
-            "sidebar (target: open để bung cả thanh bên, close để thu gọn còn icon). session_id: mã phiên "
+            "sidebar (target: open để bung cả thanh bên, close để thu gọn còn icon); mic (target: off - TẮT MIC, "
+            "kết thúc nói chuyện bằng giọng khi người dùng bảo 'tắt mic', 'tắt lắng nghe', 'thôi không nghe nữa'; "
+            "mic tắt sau khi Thansa đọc xong câu đang nói; không có lệnh bật mic). session_id: mã phiên "
             "web trong khối KÊNH HỘI THOẠI HIỆN TẠI "
             "(để đúng tab thực hiện; bỏ trống thì mọi tab đang mở làm). Tool trả về '[done] Đã mở ...' khi "
             "dashboard xác nhận, hoặc 'ERROR: [failed] ...' khi không có tab nào mở / trang không tồn tại."

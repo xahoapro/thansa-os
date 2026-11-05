@@ -111,7 +111,8 @@ try:
     check("trả giọng đọc của đường Cơ bản",
           {k: x for k, x in (d.get("tts") or {}).items() if k != "elevenlabs_models"}
           == {"provider": "openai", "edge_voice": "", "openai_voice": "nova", "openai_key_set": True,
-              "elevenlabs_voice": "", "elevenlabs_model": "", "elevenlabs_key_set": False}
+              "elevenlabs_voice": "", "elevenlabs_model": "", "elevenlabs_key_set": False,
+              "azure_key_set": False, "azure_region": ""}
           and (d["tts"].get("elevenlabs_models") or [{}])[0].get("id") == "eleven_flash_v2_5")
     check("trả bộ não giọng tự chọn kèm nhãn", (d.get("voice_brain") or {}).get("id") == "claude"
           and "Claude" in d["voice_brain"].get("label", ""))

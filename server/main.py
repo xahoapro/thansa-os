@@ -6397,6 +6397,23 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # xoá hết từ người dùng khai (tên trợ lý vẫn luôn có, không cần lưu).
         if "hotwords" in patch:
             v["hotwords"] = ", ".join(nghe_sua.tach_tu_vung(patch.get("hotwords")))
+        # Tự tắt mic sau N giây im lặng (0 = không tự tắt). Trần 1 giờ: lâu hơn thì coi như tắt
+        # tính năng, chứ không phải một con số người ta thật sự muốn đợi.
+        # Lắng nghe ngầm (2.5.0): cách dò (trên máy / trình duyệt) + từ khoá bật / tắt hẳn. Công tắc bật thì ở
+        # TỪNG MÁY (localStorage), vì mở Thansa trên cả laptop lẫn điện thoại thì không phải máy nào cũng nên nghe.
+        import wake_model
+        if patch.get("wake_engine") in ("local", "browser"):
+            v["wake_engine"] = patch["wake_engine"]
+        for k, md in (("wake_words_on", wake_model.TU_BAT_MAC_DINH), ("wake_words_off", wake_model.TU_TAT_MAC_DINH)):
+            if k in patch:
+                v[k] = wake_model.lam_sach_ds(patch.get(k), md)
+        if "mic_idle_off_s" in patch:
+            try:
+                n = int(patch.get("mic_idle_off_s") or 0)
+            except (TypeError, ValueError):
+                n = -1
+            if 0 <= n <= 3600:
+                v["mic_idle_off_s"] = n
     elif section == "password":
         # Đổi mật khẩu KHÔNG đi qua đây nữa - xem /auth/password. Đường này không đòi mật khẩu
         # hiện tại VÀ nhận cả token API scope `full`, nghĩa là một token rò ra là đổi được mật
@@ -16303,6 +16320,31 @@ async def _tts_elevenlabs(text: str, cfg: dict) -> bytes:
     return await tts_eleven.synth(text, cfg)
 
 
+@app.get("/voice/wake/status")
+async def voice_wake_status(start: int = 0):
+    """Mô hình nghe ngầm trên máy: sẵn chưa, đang tải bao nhiêu %. start=1 thì bắt đầu tải nếu chưa có."""
+    import wake_model
+    return wake_model.dam_bao_tai() if start else wake_model.trang_thai()
+
+
+@app.get("/voice/wake/model")
+async def voice_wake_model():
+    """Gói mô hình Vosk (.tar.gz) cho vosk-browser trong trình duyệt. Chưa tải xong thì 503 kèm tiến độ."""
+    import wake_model
+    from fastapi.responses import FileResponse, JSONResponse
+    if not wake_model.GOI.is_file():
+        return JSONResponse(wake_model.dam_bao_tai(), status_code=503)
+    return FileResponse(str(wake_model.GOI), media_type="application/gzip",
+                        headers={"Cache-Control": "private, max-age=604800"})
+
+
+@app.get("/voice/wake/grammar")
+async def voice_wake_grammar():
+    """Cụm từ khoá cho bộ nhận trên máy + từ mô hình không biết (Cài đặt báo để người dùng đổi cách viết)."""
+    import wake_model
+    return wake_model.ngu_phap((cfgmod.read_settings().get("voice", {}) or {}))
+
+
 @app.get("/voice/azure/check")
 async def voice_azure_check():
     """Thử đọc một câu ngắn qua Azure Speech để trang Cài đặt báo key/vùng đúng hay sai."""
@@ -16443,6 +16485,20 @@ def _voice_brain_models(pid: str, cfg: dict) -> list:
     return []
 
 
+def _wake_cai_dat(v: dict) -> dict:
+    import wake_model
+    return wake_model.tu_cai_dat(v)
+
+
+def _mic_idle_off_s(v: dict) -> int:
+    """Số giây im lặng thì dashboard tự tắt mic; 0 = không tự tắt (mặc định)."""
+    try:
+        n = int((v or {}).get("mic_idle_off_s") or 0)
+    except (TypeError, ValueError):
+        return 0
+    return n if 0 <= n <= 3600 else 0
+
+
 @app.get("/voice/options")
 async def voice_options(brains: int = 1):
     """Cho thẻ Giọng nói ở trang Cài đặt: cái gì đang sẵn, key nào đã có, đường gọi đang dùng.
@@ -16541,6 +16597,8 @@ async def voice_options(brains: int = 1):
             ear=voice_ear.setting(cfg),
             live_proactive=v.get("live_proactive") is not False,
             live_turn=voice_live.turn_preset(v.get("live_turn")),
+            mic_idle_off_s=_mic_idle_off_s(v),
+            **_wake_cai_dat(v),
         ),
         # Tai nghe lại đang dùng và vì sao (trang Cài đặt hiện "Đang dùng: ..."), cùng các tai
         # chọn được. Vẽ từ voice_ear để trang và đường LƯU soi cùng một danh sách.
@@ -19164,6 +19222,8 @@ async def _chat_socket(ws):
                 dung = ui_targets.normalize_target(act, tgt)
                 if act in ("open_page", "open_group") and not dung:
                     res = {"ok": False, "detail": f"không có {'trang' if act == 'open_page' else 'nhóm'} '{tgt}'"}
+                elif act == "mic" and not dung:
+                    res = {"ok": False, "detail": f"lệnh mic chỉ có 'off', không có '{tgt}'"}
                 else:
                     try:
                         res = await ui_bridge.request(act, dung or tgt, session_id=conv_sid)

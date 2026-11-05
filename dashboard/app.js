@@ -198,6 +198,7 @@ const voice = new ThansaVoice({
   },
   onInterim: (text) => {
     if (handsFree && !attention.preview(text)) { nhapGiong(""); return; }
+    if (text) _micHoatDongLuc = Date.now();   // đang nói: đồng hồ tự tắt mic đếm lại từ đầu
     if (adaptive.input(text)) return;
     nhapGiong(text);
     if (text) petReact("nghe");   // mỗi lần bắt thêm chữ, linh vật gật nhẹ một cái
@@ -602,6 +603,7 @@ async function napCaiDatGiong() {
       vs.dispatchEvent(new Event("change"));
     }
     const upload = !!(ear && ear.kind === "upload");
+    _micTatSauMs = Math.max(0, Number(v.mic_idle_off_s) || 0) * 1000;
     if (call && call.voice_mode) _callInfo = call;
     const mode = (call && call.voice_mode) || v.mode || "standard";
     if (voiceMode !== mode || voice.sttUpload !== upload) tatRanhTay();
@@ -873,7 +875,7 @@ async function batLive(wakeText = "", { som = false, lanThu = 0 } = {}) {
     onTranscript: (role, text, final) => {
       const trenManHinh = cuocGoiTrenManHinh();
       if (role === "user") {
-        if (text.trim()) { attention.keepActive(); _liveBusyUntil = Date.now() + 120000; }
+        if (text.trim()) { attention.keepActive(); _liveBusyUntil = Date.now() + 120000; _micHoatDongLuc = Date.now(); }
         if (!trenManHinh) return;
         if (final && text.trim()) { nhapGiong(""); appendUserMessage(text.trim(), []); recordTurn("user", text.trim(), []); }
         else nhapGiong(text);
@@ -4245,6 +4247,7 @@ voiceBtn.addEventListener("click", () => {
   if (handsFree) attention.start();
   voiceBtn.classList.toggle("handsfree", handsFree);
   updateStopBtn();
+  _micHoatDongLuc = Date.now(); _micTatHen = null;
   if (handsFree) {
     // Bấm mic là GỌI: hiện thanh gọi, nút mic thành Cúp máy (0.65.18).
     _callMuted = false;
@@ -4312,6 +4315,60 @@ setInterval(() => {
     voice.startListening(true, !!voice._awaitingFirstAudio);   // giữ audio đang tải cho tới khi có chữ mới
   }
 }, 500);
+
+// ---- Tắt mic bằng lời và tự tắt khi im lặng (2.5.0) ----
+// Hai đường cùng đi qua cupMay() (y như bấm Cúp máy), để biến, lớp CSS của nút, thanh gọi và loa
+// không lệch nhau.
+//  - Lệnh: người dùng nói "tắt mic", bộ não giọng phát `THANSA_UI: mic off` (hay bộ não chính gọi
+//    tool thansa_ui action=mic), ui-actions.js gọi ThansaMic.off({sauKhiNoi:true}). KHÔNG cúp ngay:
+//    câu xác nhận "Vâng, em tắt mic nhé" về SAU lệnh, và cúp máy là tắt luôn loa, nên phải đợi đọc xong.
+//  - Im lặng: Cài đặt > Giọng nói > "Tự tắt mic khi im lặng" (voice.mic_idle_off_s, 0 = không tự tắt).
+//    Chỉ tính là im khi không ai nói VÀ Thansa không bận (đang nghĩ, đang đọc, đang chạy tool):
+//    hỏi một việc dài rồi ngồi chờ không bị cúp giữa chừng.
+var _micTatSauMs = 0;           // napCaiDatGiong đổ từ /settings
+var _micHoatDongLuc = 0;        // lần cuối có tiếng người hoặc Thansa còn bận
+var _micTatHen = null;          // {luc}: đã nhận lệnh tắt, chờ đọc xong câu xác nhận
+const MIC_TAT_CHO_MIN_MS = 2500;   // câu xác nhận về sau lệnh: chờ ít nhất chừng này để nó kịp bắt đầu đọc
+const MIC_TAT_CHO_MAX_MS = 20000;  // loa kẹt hay câu dài bất thường: vẫn tắt, đừng treo mic mãi
+function thansaDangBan() {
+  const live = window.ThansaVoiceLive;
+  return !!(isProcessing || voice.isSpeaking() || voice.isTranscribing || voice._awaitingFirstAudio
+    || _liveToolCount > 0 || Date.now() < _liveBusyUntil || turn.userSpeaking
+    || (voiceMode === "live" && live && typeof live.isSpeaking === "function" && live.isSpeaking()));
+}
+function nhanThoiGianIm(ms) {
+  const s = Math.round(ms / 1000), k = "settings.vc_idle_" + s, nhan = window.t(k);
+  return nhan && nhan !== k ? nhan.toLowerCase() : s + " s";
+}
+setInterval(() => {
+  if (!handsFree) { _micTatHen = null; return; }
+  const now = Date.now(), ban = thansaDangBan();
+  if (_micTatHen) {
+    const da = now - _micTatHen.luc;
+    if ((!ban && da >= MIC_TAT_CHO_MIN_MS) || da >= MIC_TAT_CHO_MAX_MS) { _micTatHen = null; cupMay(); }
+    return;
+  }
+  if (ban || !_micHoatDongLuc) { _micHoatDongLuc = now; return; }
+  if (_micTatSauMs > 0 && now - _micHoatDongLuc >= _micTatSauMs) {
+    cupMay();
+    ghiChuThoang(window.t("call.idle_off", { phut: nhanThoiGianIm(_micTatSauMs) }));
+  }
+}, 1000);
+window.ThansaMic = {
+  isOn: () => handsFree,
+  // Lắng nghe ngầm (wake-listen.js, 2.5.0): nghe thấy từ khoá thì gọi như bấm nút mic.
+  on: () => { if (handsFree) return false; voiceBtn.click(); return true; },
+  speaking: () => !!(voice.isSpeaking() || voice._awaitingFirstAudio),
+  note: (s) => ghiChuThoang(s),
+  // sauKhiNoi: đợi Thansa đọc xong câu đang/sắp nói rồi mới cúp. Trả false khi mic vốn đã tắt.
+  off: (o) => {
+    if (!handsFree) return false;
+    try { if (window.ThansaWake) window.ThansaWake.xetCauTat(voice._lastFinal || ""); } catch (e) {}
+    if (o && o.sauKhiNoi) _micTatHen = { luc: Date.now() };
+    else cupMay();
+    return true;
+  },
+};
 
 document.getElementById("voiceFocusResume").addEventListener("click", () => {
   // A press: unlock the Live audio again before the session reopens (0.339.0, voice-live.js unlock).

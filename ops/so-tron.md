@@ -938,3 +938,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc a61aeae/0.447.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main e3c2db5, tag + Release thansa-v2.3.0; backup me-backup-2.3.0).
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main 15ee34d, tag + Release thansa-v2.4.0; backup me-backup-2.4.0).
+- **ĐÃ PHÁT HÀNH 2026-11-04** khi chủ bấm duyệt trên Telegram (origin/main 61426ad, tag + Release thansa-v2.4.1; backup me-backup-2.4.1).

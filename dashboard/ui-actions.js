@@ -22,7 +22,7 @@
   // đang gập lại để nhìn xem có gì, chứ chưa chọn trang nào.
   // "code" left the rail in 0.347.0 (Terminal moved into nang_luc); an old "code" still opens nang_luc.
   var GROUPS = ["bo_nao", "nang_luc", "viec", "ket_noi", "he_thong"];
-  var ACTIONS = ["open_page", "open_file", "open_task", "scroll", "open_group", "sidebar"];
+  var ACTIONS = ["open_page", "open_file", "open_task", "scroll", "open_group", "sidebar", "mic"];
   // Phạm vi cuộn. Cùng danh sách với SCROLL_TARGETS trong server/ui_targets.py. `top`/`bottom` để
   // TRANG NÀY tự chọn (xem khungCuonTrang): người nói "cuộn xuống" muốn cuộn thứ họ đang nhìn, mà chỉ
   // trình duyệt mới biết đang có trang nội dung nào mở và nó có cuộn được không.
@@ -68,6 +68,10 @@
       if (GROUPS.indexOf(target) < 0) return { ok: false, error: tw("ui.err_group", { group: target }) };
     } else if (action === "sidebar") {
       if (target !== "open" && target !== "close") return { ok: false, error: tw("ui.err_sidebar") };
+    } else if (action === "mic") {
+      // Chỉ có chiều tắt: bật mic cần cú bấm thật của người dùng (trình duyệt đòi cử chỉ).
+      if (target === "") target = "off";
+      if (target !== "off") return { ok: false, error: tw("ui.err_mic") };
     }
     return { ok: true, action: action, target: target };
   }
@@ -142,6 +146,14 @@
         return { ok: true, detail: "" };
       }
       return { ok: false, detail: tw("ui.err_nav_not_ready") };
+    }
+    if (v.action === "mic") {
+      // app.js giữ trạng thái gọi (ThansaMic). Mic tắt SAU khi Thansa đọc xong câu xác nhận
+      // ("Vâng, em tắt mic nhé"), vì cúp máy là tắt luôn loa.
+      if (!window.ThansaMic || typeof window.ThansaMic.off !== "function") return { ok: false, detail: tw("ui.err_nav_not_ready") };
+      var daTat = !window.ThansaMic.isOn();
+      if (!daTat) window.ThansaMic.off({ sauKhiNoi: true });
+      return { ok: true, detail: daTat ? tw("ui.mic_already_off") : tw("ui.mic_off_done") };
     }
     if (v.action === "scroll") {
       var len = v.target.indexOf("top") >= 0;

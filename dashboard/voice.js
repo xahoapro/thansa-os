@@ -496,6 +496,7 @@ class ThansaVoice {
       this._committed = "";
       this._duoiTam = "";
       this._batDauLuot = 0;            // lượt này khép lại: trần tính lại từ đầu ở lượt sau
+      this._lastFinal = finalText || this._lastFinal;   // Lắng nghe ngầm xét "Thần Sa tắt mic" (app.js ThansaMic.off)
       if (finalText) this.onTranscript(finalText);
       else this._stopRecorder().catch(() => {});
       this.onEnd();

@@ -63,6 +63,12 @@ check("open_group 'code' (removed group) opens Capabilities", (() => {
 check("sidebar open/close: ok", A.validate({ action: "sidebar", target: "open" }).ok
   && A.validate({ action: "sidebar", target: "close" }).ok);
 check("sidebar target lạ: chặn", !A.validate({ action: "sidebar", target: "half" }).ok);
+// Tắt mic bằng lời (2.5.0): chỉ có chiều tắt, bật mic phải do người dùng bấm.
+check("mic off: ok", A.validate({ action: "mic", target: "off" }).ok);
+check("mic không target: hiểu là off", A.validate({ action: "mic", target: "" }).target === "off");
+check("mic on: chặn", !A.validate({ action: "mic", target: "on" }).ok);
+check("app.js xuất ThansaMic.off/isOn và đi qua cupMay", /window\.ThansaMic = \{/.test(app) && /_micTatHen = null; cupMay\(\)/.test(app));
+check("app.js đọc mic_idle_off_s từ cài đặt", /v\.mic_idle_off_s/.test(app));
 // Ba nơi phải cùng danh sách nhóm, y như PAGES.
 const grM = consoleJs.match(/const RAIL_GROUPS = \[([\s\S]*?)\n  \];/);
 const grail = grM ? (grM[1].match(/id: "([a-z_]+)"/g) || []).map(x => x.replace(/id: "|"/g, "")) : [];
