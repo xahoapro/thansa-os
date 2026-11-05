@@ -2222,7 +2222,7 @@ async function taiTinCu() {
   const nut = _moiTinCu && _moiTinCu.querySelector(".older-btn");
   if (nut) { nut.disabled = true; nut.textContent = window.t("app.older_loading"); }
   try {
-    const u = `/sessions/${encodeURIComponent(st.sid)}/messages?limit=${TIN_MOI_LUOT}` +
+    const u = `/sessions/${encodeURIComponent(st.sid)}/messages?limit=${TIN_MOI_LUOT}&tools=0` +
       `&before_ts=${encodeURIComponent(st.ts)}&before_id=${encodeURIComponent(st.id)}`;
     const d = await (await fetch(u)).json();
     // Đổi phiên giữa chừng thì khúc vừa về là của cuộc khác - vứt đi, đừng chèn nhầm.
@@ -2235,7 +2235,7 @@ async function taiTinCu() {
     _dangChenCu = true;
     _neoChenCu = _moiTinCu ? _moiTinCu.nextSibling : dauKhungChat();
     const them = [];
-    ds.forEach(m => { const t = veTinDaLuu(m, st.brain, st.sid); if (t) them.push(t); });
+    ngoaiAlpine(() => ds.forEach(m => { const t = veTinDaLuu(m, st.brain, st.sid); if (t) them.push(t); }));
     _neoChenCu = null; _dangChenCu = false;
     convo = them.concat(convo);
     st.ts = ds[0].ts; st.id = ds[0].id; st.con = !!d.has_more;
@@ -2269,7 +2269,8 @@ const _phienCache = new Map();               // id -> { sess, at }
 const _phienDangTai = new Map();             // id -> Promise<sess> (gộp các lượt hỏi trùng)
 let _phienMoLuc = null;                      // { id, len } - độ dài convo lúc mở, để biết cuộc đã đổi khi rời đi
 
-function _urlPhien(id) { return `/sessions/${encodeURIComponent(id)}?limit=${TIN_MOI_LUOT}`; }
+// tools=0: the chat view never shows stored tool calls, and they can be most of the payload (see sessions_get).
+function _urlPhien(id) { return `/sessions/${encodeURIComponent(id)}?limit=${TIN_MOI_LUOT}&tools=0`; }
 function _ghiCachePhien(id, sess) {
   if (!id || !sess || sess.error) return;
   _phienCache.delete(id);
@@ -2310,13 +2311,21 @@ function _quenPhienNeuDoi() {
   if (_phienMoLuc && _phienMoLuc.id === savedSessionId && convo.length !== _phienMoLuc.len) _phienCache.delete(_phienMoLuc.id);
 }
 
-async function openStoredSession(id, stillCurrent) {
+async function openStoredSession(id, stillCurrent, opts) {
   // 0.347.0: switching conversation keeps a call (see _callSid). Only the Hang up button, the mascot, Esc or a
   // brain switch end it. Outside a call this still cancels capture, as before.
   if (handsFree) boViecPhienCu(); else tatRanhTay();
   const ticket = ++sessionOpenSeq;
   _quenPhienNeuDoi();
   const conHieuLuc = () => ticket === sessionOpenSeq && (!stillCurrent || stillCurrent());
+  // Performance (2026-11-05): a chat the caller has JUST created (Partners page, New conversation) has no messages,
+  // so asking the server for them was a second round trip in a row for nothing. Draw it empty right away.
+  if (opts && opts.empty) {
+    const rong = { messages: [], has_more: false, brain: currentBrainPath() };
+    _ghiCachePhien(id, rong);
+    _veLaiPhien(id, rong, ticket, false);
+    return;
+  }
   // Có bản trong bộ nhớ: vẽ ngay, rồi so với bản mới.
   const daCo = _docCachePhien(id);
   let veRoi = "";
@@ -2345,7 +2354,7 @@ function _veLaiPhien(id, sess, ticket, capNhat) {
     chatArea.innerHTML = "";
     const ds = sess.messages || [];
     _dangDungLoat = true;
-    try { ds.forEach(m => { const t = veTinDaLuu(m, sess.brain, id); if (t) convo.push(t); }); }
+    try { ngoaiAlpine(() => ds.forEach(m => { const t = veTinDaLuu(m, sess.brain, id); if (t) convo.push(t); })); }
     finally { _dangDungLoat = false; }
     _tinCu = ds.length
       ? { sid: id, brain: sess.brain, ts: ds[0].ts, id: ds[0].id, con: !!sess.has_more, dangTai: false }
@@ -2373,7 +2382,7 @@ function _veLaiPhien(id, sess, ticket, capNhat) {
     ghimDay(ticket);
     syncActiveUI();
     if (capNhat) return;
-    notifySessions();
+    notifySessions("open");
     // Dải việc nền đánh dấu "việc CỦA hội thoại này" theo chat_id, nên đổi phiên là nó sai
     // ngay. Xoá rồi hỏi lại thay vì để chip của phiên trước nằm lại vài giây.
     try { if (window.ThansaBackground) window.ThansaBackground.reset(); } catch (e) {}
@@ -2396,6 +2405,20 @@ function resetChatView() {
   syncActiveUI();
   try { if (window.ThansaBackground) window.ThansaBackground.reset(); } catch (e) {}
 }
+// Performance (2026-11-05): clear the chat view the instant New conversation is clicked on the Partners page, while
+// the server makes the chat. Before, the old chat stayed on screen until the new one came back, which read as lag.
+// Quiet on purpose: nothing is persisted and no one is told, the open that follows does both.
+function blankChat() {
+  sessionOpenSeq++;
+  if (handsFree) boViecPhienCu(); else tatRanhTay();
+  _quenPhienNeuDoi();
+  convo = [];
+  hideActivity();
+  _tinCu = null; goMoiTinCu();
+  chatArea.innerHTML = "";
+  savedSessionId = null;
+  syncActiveUI();
+}
 function newChat() {
   sessionOpenSeq++;
   // KHÔNG reset server, KHÔNG đụng lượt đang chạy của phiên khác - chúng chạy nền + tự lưu; vào
@@ -2403,10 +2426,19 @@ function newChat() {
   resetChatView();
   try { chatInput.focus(); } catch (e) {}
 }
-window.ThansaSessions = { open: openStoredSession, new: newChat, brain: () => currentBrainPath(), current: () => savedSessionId,
-                         prefetch: prefetchSession };
+window.ThansaSessions = { open: openStoredSession, new: newChat, blank: blankChat, brain: () => currentBrainPath(),
+                         current: () => savedSessionId, prefetch: prefetchSession };
 // Báo các UI khác (sidebar Lịch sử trong chat workspace) biết phiên/danh sách vừa đổi
-function notifySessions() { try { window.dispatchEvent(new Event("thansa:sessions-changed")); } catch (e) {} }
+// Performance (2026-11-05): `reason` "open" = only WHICH chat is on screen changed (a switch), no message was added.
+// Listeners that count or list messages (history list, unread and job counts) skip their network round on it.
+function notifySessions(reason) {
+  try {
+    const ev = typeof CustomEvent === "function"
+      ? new CustomEvent("thansa:sessions-changed", { detail: { reason: reason || "" } })
+      : new Event("thansa:sessions-changed");
+    window.dispatchEvent(ev);
+  } catch (e) {}
+}
 
 // Hàng nút dưới bong bóng (giờ + tua lại / trích dẫn / copy). Tách sang chat-acts.js để
 // test được bằng node; ở đây chỉ là lối thoát khi file đó chưa kịp nạp.
@@ -2869,6 +2901,11 @@ newMsgBtn.id = "newMsgBtn"; newMsgBtn.type = "button";
 // tham số là mười chỗ phải nhớ truyền đúng.
 let _neoChenCu = null, _dangChenCu = false, _dangDungLoat = false;
 function chatAppend(el) {
+  // Performance (2026-11-05): a bubble put in while a whole chat is built (opening it from History, F5) or while older
+  // messages load above does not play the fade-in. 30-60 bubbles animating at once each became their own compositor
+  // layer: traced at ~660 ms of layer work per chat switch on a 4x slowed CPU, more than layout and paint together.
+  // A message that arrives live still fades in.
+  if ((_dangDungLoat || _dangChenCu) && el && el.classList) el.classList.add("msg-tinh");
   if (newMsgBtn.parentNode !== chatArea) chatArea.appendChild(newMsgBtn);
   chatArea.insertBefore(el, _neoChenCu || newMsgBtn);
 }
@@ -2878,6 +2915,18 @@ function chatAppend(el) {
 // _dangDungLoat (2026-11-05): a whole chat is being built at once (opening it, F5). Each bubble used to scroll to the
 // bottom as it went in, and each of those scrolls made the browser lay out the whole chat again: 30 messages, 30
 // layouts. Profiled on a 30-message chat that was 90% of the time to open it. The builder scrolls once at the end.
+// Performance (2026-11-05): Alpine watches the whole page and walks every node added anywhere, looking for x- directives.
+// Chat bubbles never carry one (they are built by hand here), yet opening a 30-message chat paid ~80 ms of that walk on a
+// 4x slowed CPU. Alpine skips mutations whose target carries this flag (its own documented escape hatch), so bubbles
+// going in or out of the chat area are no longer walked.
+chatArea._x_ignoreMutationObserver = true;
+// The flag above covers bubbles added to the chat area itself; what is written INTO a bubble after it went in is still
+// walked. Building a whole chat (or a page of older messages) runs inside Alpine.mutateDom, which pauses the watcher for
+// that synchronous call. No x- directive is ever built here, so nothing is missed.
+function ngoaiAlpine(fn) {
+  const A = window.Alpine;
+  return A && typeof A.mutateDom === "function" ? A.mutateDom(fn) : fn();
+}
 const chatScroll = window.ThansaChatScroll.attach(chatArea, {
   button: newMsgBtn, msg: ".msg", hold: ".msg-acts:hover, .jr-chat:hover", near: 90,
   suspended: () => _dangChenCu || _dangDungLoat,

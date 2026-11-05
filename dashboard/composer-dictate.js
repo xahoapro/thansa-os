@@ -14,7 +14,18 @@
    page iOS hit-tests a fixed layer away from where it draws it: a tap on X or stop landed on the box instead (the
    "AutoFill" bubble in the owner's screenshot). On a touch screen the box now gives up focus while recording (and
    cannot take it back), stop no longer pops the keyboard, and mobile-chat.js slides the page back once the keyboard
-   is down even when something is still focused. */
+   is down even when something is still focused.
+
+   Enter while recording (owner 2026-11-05: "bật mic ghi âm thành chữ thì ấn Enter phải gửi luôn, không cần ấn tắt"):
+   it stops and sends in one press, like the send button. Pressing the mic moves the focus to the mic, and the bar then
+   hides that button, so the focus fell back to the page: Enter landed on <body> and the old check (only the text box)
+   ignored it, leaving stop as the only way out. Enter now sends from the text box, the page itself or the composer
+   buttons; X and stop, when reached with Tab, keep their own meaning, and another field elsewhere keeps its Enter.
+
+   2026-11-05: the words appear only after the recording ends, like a voice memo (owner, same day: "no need to copy the
+   text onto the screen as I speak; press it like a recorder, then the text comes out"). While recording the box keeps
+   what was typed before; the heard text is held in S.heard and written once, when the run is idle (stop, send, or the
+   5-minute limit). X still drops everything. */
 (function () {
   "use strict";
 
@@ -36,7 +47,20 @@
     return v < 0 ? 0 : v > 1 ? 1 : v;
   }
 
-  var pure = { fmtTime: fmtTime, levelOf: levelOf, MAX_SECONDS: MAX_SECONDS };
+  // Whether Enter pressed on `target` while recording means "stop and send". `ids` names the composer's own elements
+  // ({ input, cancel, stop }), `card` is the composer card. Pure apart from DOM reads, so node tests can run it.
+  function enterSendsFrom(target, ids, card) {
+    if (!target) return true;
+    var id = target.id || "";
+    if (id && id === ids.input) return true;
+    if (id && (id === ids.cancel || id === ids.stop)) return false;
+    var tag = String(target.tagName || "").toUpperCase();
+    if (tag === "BODY" || tag === "HTML") return true;
+    if (card && card.contains && card.contains(target)) return true;
+    return false;
+  }
+
+  var pure = { fmtTime: fmtTime, levelOf: levelOf, enterSendsFrom: enterSendsFrom, MAX_SECONDS: MAX_SECONDS };
   if (typeof module !== "undefined" && module.exports) module.exports = pure;
   if (typeof document === "undefined") return;
   window.ThansaComposerDictate = pure;
@@ -53,7 +77,7 @@
   function $(id) { return document.getElementById(id); }
 
   // state: "idle" | "listening" | "transcribing"
-  var S = { dict: null, state: "idle", base: "", sendAfter: false, startedAt: 0, clock: null,
+  var S = { dict: null, state: "idle", base: "", heard: "", sendAfter: false, startedAt: 0, clock: null,
     ctx: null, src: null, analyser: null, buf: null, raf: 0, levels: [], lastPush: 0 };
 
   function note(key) {
@@ -181,10 +205,13 @@
   }
 
   function finished() {
-    var inp = $("chatInput"), send = S.sendAfter;
+    var inp = $("chatInput"), send = S.sendAfter, D = window.ThansaDictate;
     S.dict = null;
     S.sendAfter = false;
-    earTip(window.ThansaDictate, inp);
+    // The text lands now, in one piece, not word by word while speaking.
+    if (S.heard && D) writeInput(D.joinText(S.base, S.heard));
+    S.heard = "";
+    earTip(D, inp);
     if (!inp) return;
     inp.readOnly = false;
     if (send && inp.value.trim()) {
@@ -205,12 +232,14 @@
     var inp = $("chatInput");
     letGo(inp);
     S.base = inp ? inp.value : "";
+    S.heard = "";
     S.sendAfter = false;
     S.levels = [];
     S.dict = D.create({
+      // Held, not shown: finished() writes it once the recording ends.
       onText: function (text) {
         if (S.state === "idle") return;
-        writeInput(D.joinText(S.base, text));
+        S.heard = String(text || "");
       },
       onState: function (st) {
         var was = S.state;
@@ -252,6 +281,7 @@
     if (!S.dict) return;
     var base = S.base;
     S.sendAfter = false;
+    S.heard = "";
     writeInput(base);
     S.dict.cancel();
     writeInput(base);
@@ -276,13 +306,15 @@
       e.preventDefault(); e.stopPropagation();
       sendNow();
     }, true);
-    // Enter sends, Esc drops the recording (and does not stop a running answer, which is what Esc does otherwise).
+    // Enter stops and sends at once, Esc drops the recording (and does not stop a running answer, which is what Esc
+    // does otherwise).
     window.addEventListener("keydown", function (e) {
       if (S.state === "idle") return;
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancel(); return; }
       // Enter follows the chat's own rule (ThansaActs.enterSends): a phone's Enter stays a new line here too.
       var sends = window.ThansaActs ? window.ThansaActs.enterSends(e, false) : e.key === "Enter" && !e.shiftKey;
-      if (sends && e.target === $("chatInput")) {
+      // Not only from the text box: the focus usually sits on the page (see the note at the top).
+      if (sends && enterSendsFrom(e.target, { input: "chatInput", cancel: "dictCancel", stop: "dictStop" }, card)) {
         e.preventDefault(); e.stopPropagation(); sendNow();
       }
     }, true);

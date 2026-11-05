@@ -95,6 +95,7 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
   check("pet menu: default six in order", rows.map((r) => r.id).join() === "chat,agent,workflow,mic,pet,teams");
   check("pet menu: the mic row says what a press will do", rows[3].label === vi["pet.menu.mic_on"] && PM.menuEntries({ mic: true })[3].label === vi["pet.menu.mic_off"]);
   check("settings list names the mic as a toggle, not by its current state", PM.entry("mic").label === vi["petmenu.mic_label"]);
+  check("the assistants item is called Cộng sự, like its page", PM.entry("agent").label === "Cộng sự" && vi["page.workspace.label"] === "Cộng sự");
   win.navigator.mediaDevices = undefined;
   check("mic without browser permission is unavailable, with the reason", PM.entry("mic").why === vi["petmenu.why_mic"]);
   win.navigator.mediaDevices = { getUserMedia() {} };
@@ -112,10 +113,14 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
   check("card has the title and the one-line description", h.indexOf(vi["petmenu.title"]) >= 0 && h.indexOf(vi["petmenu.desc"]) >= 0);
   check("card shows every saved item, the unknown one included", order() === 7);
   check("the unknown one is marked unavailable, not dropped", h.indexOf(vi["petmenu.gone_name"]) >= 0 && h.indexOf(vi["petmenu.why_gone"]) >= 0);
-  check("first row's Up and last row's Down are disabled",
-    /data-i="0"[\s\S]*?data-move="-1"[^>]*disabled/.test(h) && /data-i="6"[\s\S]*?data-move="1"[^>]*disabled/.test(h));
+  // Owner: "kéo lên kéo xuống được chứ ko phải mũi tên". Rows move by dragging; no arrow buttons.
+  check("no up/down arrow buttons on the rows", !/data-move=/.test(h) && !/bp-arrow/.test(h));
+  check("every row has a drag handle (a button, so the keyboard reaches it)", (h.match(/data-pm-grip/g) || []).length === 7);
+  // Owner: "bỏ luôn cái nút mắt đi và tất cả đều là nút X, có thể tắt hết sạch được luôn".
+  check("no eye any more", !/data-pm-eye/.test(h) && !/pm-hidden/.test(h));
+  check("every row, the defaults included, has an X", (h.match(/data-pm-remove/g) || []).length === 7);
   check("nothing to save yet: Save and Discard are disabled", /data-pm-save disabled/.test(h) && /data-pm-cancel disabled/.test(h));
-  check("no rename, icon, remove, hide or restore-defaults control", !/data-pm-(rename|icon|remove|delete|hide|reset)/.test(h) && !/type="text"/.test(h));
+  check("no rename, icon or restore-defaults control", !/data-pm-(rename|icon|delete|reset)/.test(h) && !/type="text"/.test(h));
   check("leaving now asks nothing", win.ThansaLeaveGuard.fn && win.ThansaLeaveGuard.fn() === "");
 
   const btn = (attrs, row) => ({
@@ -125,13 +130,29 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
     closest: (sel) => (sel === ".bp-row" ? { dataset: { i: String(row) } } : null),
   });
   const click = (b) => host.onclick({ target: { closest: () => b } });
-  click(btn({ move: "1" }, 0));
+  const key = (k, row) => host.onkeydown({ key: k, preventDefault() {}, target: { closest: (sel) => (sel === "[data-pm-grip]"
+    ? { disabled: false, closest: () => ({ dataset: { i: String(row) } }) } : null) } });
+  key("ArrowDown", 0);
   h = host.innerHTML;
-  check("Down moves the row one place", /data-i="0"[\s\S]*?Trò chuyện/.test(h.slice(0, h.indexOf('data-i="1"'))));
+  check("keyboard: Down arrow on the handle moves the row one place", /data-i="0"[\s\S]*?Trò chuyện/.test(h.slice(0, h.indexOf('data-i="1"'))));
   check("a change enables Save and Discard", !/data-pm-save disabled/.test(h) && !/data-pm-cancel disabled/.test(h));
   check("leaving with unsaved changes asks first", win.ThansaLeaveGuard.fn() === vi["petmenu.leave"]);
   click(btn({ "data-pm-cancel": true }));
   check("Discard returns to the saved order", /data-pm-save disabled/.test(host.innerHTML) && win.ThansaLeaveGuard.fn() === "");
+  key("ArrowUp", 0);
+  check("keyboard: Up on the first row does nothing", /data-pm-save disabled/.test(host.innerHTML));
+
+  // Remove anything (owner: "tắt luôn cả các chức năng mặc định ... có thể tắt hết sạch được luôn")
+  click(btn({ "data-pm-remove": true }, 1));
+  h = host.innerHTML;
+  check("the X removes a DEFAULT item too (row 1 is Chat)", order() === 6 && h.indexOf("Trò chuyện") < 0 && h.indexOf("Cộng sự") >= 0);
+  check("removing is a change to save", !/data-pm-save disabled/.test(h) && win.ThansaLeaveGuard.fn() === vi["petmenu.leave"]);
+  for (let i = 0; i < 6; i++) click(btn({ "data-pm-remove": true }, 0));
+  h = host.innerHTML;
+  check("every item can go: the list is empty and says so", order() === 0 && h.indexOf(vi["petmenu.empty"]) >= 0 && h.indexOf("0 mục") >= 0);
+  check("an emptied list can be saved", !/data-pm-save disabled/.test(h));
+  click(btn({ "data-pm-cancel": true }));
+  check("Discard brings everything back", order() === 7 && host.innerHTML.indexOf(vi["petmenu.empty"]) < 0);
 
   // Add feature
   click(btn({ "data-pm-add": true }));
@@ -157,6 +178,7 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
   await tick(); await tick();
   check("a failed save says so and keeps the draft", host.innerHTML.indexOf(vi["petmenu.save_err"]) >= 0 && order() === 8);
   check("a failed save does not change the menu in use", PM.current().join() === before);
+  check("hidden ids are sent too (none here)", posts[0] && posts[0].hidden === "[]");
   check("it was sent with the revision it was edited from", posts[0] && posts[0].base_rev === "4" && JSON.parse(posts[0].items).slice(-1)[0] === "tasks");
 
   // Save: conflict
@@ -176,6 +198,9 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
   check("the pet is told (it closes an open menu and rebuilds on the next open)", fired.some((e) => e.type === "thansa:pet-menu"));
   check("other windows hear of it through the cache", JSON.parse(ls["thansa.pet.menu"]).rev === 5);
   check("the pet menu leaves the unknown id out", PM.menuEntries({}).every((r) => r.id !== "old-thing") && PM.menuEntries({}).length === 7);
+  // An item an older save hid reads as removed; a custom menu may be empty and stays empty.
+  check("an item an older save hid reads as removed", H.normalize({ state: "custom", rev: 1, items: ["a", "b"], hidden: ["a"] }).items.join() === "b");
+  check("an empty custom menu stays empty (no fallback to the defaults)", H.normalize({ state: "custom", rev: 1, items: [] }).items.length === 0);
 
   // Another window saves while this card is clean: it follows.
   winListeners.storage.forEach((f) => f({ key: "thansa.pet.menu", newValue: JSON.stringify({ state: "custom", rev: 6, items: saved.concat("files") }) }));
@@ -193,8 +218,15 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
 
   // ---- wiring ----
   const pet = read("dashboard/pet.js"), con = read("dashboard/console.js"), html = read("dashboard/index.html");
+  const pmSrc = read("dashboard/pet-menu.js");
+  check("phone: press and hold on a row picks it up, a quick swipe stays a scroll",
+    /var LONG_PRESS = 3\d\d/.test(pmSrc) && /"touchmove"[\s\S]{0,400}e\.preventDefault\(\)/.test(pmSrc) && /\{ passive: false \}/.test(pmSrc)
+    && /clearTimeout\(lp\.timer\); lp = null;/.test(pmSrc));
+  check("a long press does not open the phone's copy menu", /"contextmenu"/.test(pmSrc) && /-webkit-touch-callout: none/.test(read("dashboard/style.css")));
   check("pet.js builds its menu from the saved list", /PM\.menuEntries\(\{ mic: mic \}\)/.test(pet));
   check("pet.js does not run a disabled row", /if \(!b \|\| b\.disabled\) return;/.test(pet));
+  check("pet.js opens no box when the menu is empty, and no longer falls back to the six then",
+    /if \(mo && menu\.children\.length === 0\) mo = false;/.test(pet) && !/if \(tuChon\.length\)/.test(pet));
   check("pet.js closes an open menu when the menu is saved", /"thansa:pet-menu"[\s\S]{0,120}moMenu\(false\)/.test(pet));
   check("Settings > Mascot shows the Mascot menu card", /ThansaPetMenu\.renderSettings\(el\.querySelector\("#petMenuBody"\)\)/.test(con));
   check("leaving a page with unsaved changes asks first", /if \(window\.ThansaLeaveGuard && !window\.ThansaLeaveGuard\.ok\(\)\) return;/.test(con) && /window\.ThansaLeaveGuard = \{/.test(con) && /"beforeunload"/.test(con));
@@ -203,7 +235,8 @@ check("the module exposes ThansaPetMenu", !!(PM && PM.renderSettings && PM.menuE
   ["petmenu.title", "petmenu.desc", "petmenu.count", "petmenu.add", "petmenu.cancel", "petmenu.save", "petmenu.saving",
     "petmenu.saved", "petmenu.save_err", "petmenu.conflict", "petmenu.reload", "petmenu.invalid", "petmenu.load_err",
     "petmenu.search", "petmenu.added", "petmenu.none", "petmenu.close", "petmenu.mic_label", "petmenu.why_mic",
-    "petmenu.why_page", "petmenu.why_gone", "petmenu.gone_name", "petmenu.leave"]
+    "petmenu.why_page", "petmenu.why_gone", "petmenu.gone_name", "petmenu.leave", "petmenu.drag_label",
+    "petmenu.remove", "petmenu.empty"]
     .forEach((k) => check("key " + k + " in vi and en", !!vi[k] && !!en[k]));
   check("no em or en dash in pet-menu.js", !/[\u2013\u2014]/.test(read("dashboard/pet-menu.js")));
   check("no em or en dash in the new strings", !Object.keys(vi).filter((k) => k.startsWith("petmenu.")).some((k) => /[\u2013\u2014]/.test(vi[k] + en[k])));
