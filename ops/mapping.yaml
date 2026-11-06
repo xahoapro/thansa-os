@@ -827,7 +827,7 @@
   commit: "[me] P027: ten san pham Javis OS -> Thansa OS trong README + docs"
   diem_neo:
     - file: docs/i18n/vi/README.md
-      ky_hieu: "# 🧠 Thansa OS"
+      ky_hieu: "Thansa OS"
     - file: docs/16-cau-hinh-env.md
       ky_hieu: "Thansa OS"
   vung_theo_doi:
@@ -1412,7 +1412,7 @@
     - file: server/optional_tools.py
       ky_hieu: "Thansa đã tải sẵn một bản Chromium riêng."
     - file: README.md
-      ky_hieu: "# Thansa OS"
+      ky_hieu: "Thansa OS"
     - file: .github/CODEOWNERS
       ky_hieu: "* @xahoapro"
   vung_theo_doi:

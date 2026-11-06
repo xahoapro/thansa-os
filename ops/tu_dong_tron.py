@@ -212,9 +212,9 @@ def go_file(f: str, la_patch_rebrand: bool) -> bool:
 
 # ---------------------------------------------------------------- các bước
 
-def chuan_bi(up: str) -> None:
+def chuan_bi(up: str, nen: str = "origin/me") -> None:
     don_dep()
-    sh(["git", "worktree", "add", "-q", "--force", "-B", "tu-dong", str(WT), "origin/me"], cwd=ME)
+    sh(["git", "worktree", "add", "-q", "--force", "-B", "tu-dong", str(WT), nen], cwd=ME)
     sh(["git", "worktree", "add", "-q", "--force", "--detach", str(WTG), up], cwd=ME)
 
 
@@ -1033,11 +1033,22 @@ def main() -> int:
     if not EP and up in (st.get("loi_up"), st.get("san_sang_up")):
         log(f"bản {base_moi} đã xử lý/đã nhắn trước đó - bỏ qua (dùng --ep để chạy lại)")
         return 0
+    # 06/11: còn bản chờ duyệt (chưa phát hành) thì trộn TIẾP trên nhánh đó, không về lại origin/me. Trước đây
+    # mỗi lượt mới dựng lại từ origin/me nên các chỗ đã sửa tay trên bản chờ bị mất, lượt nào cũng đỏ lại
+    # đúng các lỗi cũ (05-06/11: test_changelog_fragments + test_prompt_budget đỏ 4 lượt liền). Bản mới
+    # cùng số phiên bản, gồm cả bản chờ, thay nút duyệt cũ.
+    nen, ver_cu = "origin/me", moc["goc_version"]
+    cho = st.get("san_sang", "")
+    if (cho and st.get("san_sang_ma") and st.get("san_sang_base") == sh(["git", "rev-parse", "origin/me"], cwd=ME).stdout.strip()
+            and sh(["git", "rev-parse", "-q", "--verify", f"refs/heads/{cho}"], cwd=ME, check=False).returncode == 0):
+        nen = cho
+        ver_cu = json.loads(sh(["git", "show", f"{cho}:ops/moc-goc.json"], cwd=ME).stdout)["goc_version"]
+        log(f"trộn tiếp trên bản chờ duyệt {cho} (Javis {ver_cu})")
     try:
-        chuan_bi(up)
+        chuan_bi(up, nen)
         dich = ban_dich(up, base_moi)
         log(f"đã dịch nguồn {base_moi} → {NHANH_DICH} {dich[:9]}")
-        ttin = tron_merge(dich, ver_moi, base_moi, moc["goc_version"])
+        ttin = tron_merge(dich, ver_moi, base_moi, ver_cu)
         kiem_zalo_ghim()
         ci = chot_ci()
         if ci:
