@@ -42,7 +42,7 @@ global.window = {
   addEventListener() {},
   matchMedia: () => ({ matches: false }),
   ThansaDictate: {
-    joinText: D.joinText, ear: () => "", isIOS: () => false,
+    joinText: D.joinText, createLiveFix: D.createLiveFix, fixAfter: D.fixAfter, ear: () => "", isIOS: () => false,
     create(opts) {
       engine = { opts, started: 0, stopped: 0, cancelled: 0,
         start() { this.started++; },
@@ -108,20 +108,72 @@ check("send while recording stops first, nothing sent yet", engine.stopped === 1
 engine.opts.onState("idle");
 check("send: the heard text is in the box and sent", inp.value === "gửi luôn nhé" && sent === 1);
 
+// The faded live bubble (2026-11-06): a computer shows the words in it while speaking; a phone shows none.
+const bubble = [];
+global.window.nhapGiong = t => { bubble.push(t); };
+const setUA = ua => Object.defineProperty(global, "navigator", { value: { userAgent: ua }, configurable: true, writable: true });
+
+setUA("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36");
+inp.value = "";
+els.dictBtn.click();
+engine.opts.onState("listening");
+engine.opts.onText("tôi bị", false);
+engine.opts.onText("tôi bị học", false);
+check("computer: the faded bubble shows the words while speaking", bubble[bubble.length - 1] === "tôi bị học");
+check("computer: the box still does not move while speaking", inp.value === "");
+els.dictStop.click();
+engine.opts.onState("idle");
+check("computer: the bubble is cleared when the recording ends", bubble[bubble.length - 1] === "");
+check("computer: the text lands in the box once", inp.value === "tôi bị học");
+
+setUA("Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1");
+inp.value = "";
+let shown = bubble.length;
+els.dictBtn.click();
+engine.opts.onState("listening");
+engine.opts.onText("ipad nói", false);
+check("tablet (iPad) keeps the bubble", bubble[bubble.length - 1] === "ipad nói");
+els.dictStop.click();
+engine.opts.onState("idle");
+
+setUA("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1");
+inp.value = "";
+shown = bubble.length;
+els.dictBtn.click();
+engine.opts.onState("listening");
+engine.opts.onText("tôi bị", false);
+engine.opts.onText("tôi bị học", false);
+check("iPhone: no bubble text while speaking", bubble.slice(shown).every(t => t === ""));
+check("iPhone: the box still gets the text once, at the end", inp.value === "");
+els.dictStop.click();
+engine.opts.onState("idle");
+check("iPhone: the text lands in the box at the end", inp.value === "tôi bị học");
+
+setUA("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36");
+inp.value = "";
+shown = bubble.length;
+els.dictBtn.click();
+engine.opts.onState("listening");
+engine.opts.onText("tôi tôi bị", false);
+check("Android phone: no bubble text while speaking", bubble.slice(shown).every(t => t === ""));
+els.dictCancel.click();
+check("Android phone: X leaves the box as it was", inp.value === "");
+
 // The team chat and Chatbot mics follow the same rule: onText only holds the words, the box is written on idle.
 const fs = require("fs");
 const TEAMS = fs.readFileSync(path.join(ROOT, "dashboard/teams.js"), "utf8");
 const CONV = fs.readFileSync(path.join(ROOT, "dashboard/conversations.js"), "utf8");
-check("team chat mic: onText only holds the words",
-  /onText: function \(text\) \{ heard = String\(text \|\| ""\); \}/.test(TEAMS));
+check("team chat mic: onText only holds the words (and feeds the faded bubble, never the box)",
+  /onText: function \(text\) \{ heard = String\(text \|\| ""\); if \(live\) live\.heard\(heard\); \}/.test(TEAMS));
 check("team chat mic: the words land when the recording is idle",
-  /st === "idle" && heard \? S\.el\.querySelector\("\.tm-input"\)/.test(TEAMS) && /D\.joinText\(S\.dictBase, heard\)/.test(TEAMS));
+  /st === "idle" && heard \? S\.el\.querySelector\("\.tm-input"\)/.test(TEAMS) &&
+  /D\.joinText\(S\.dictBase, \(res && res\.words\) \|\| heard\)/.test(TEAMS));
 const convText = (CONV.match(/onText: function \(text\) \{[\s\S]*?\n      \},/) || [""])[0];
 check("Chatbot mic: onText only holds the words, never writes the box",
   /_dictHeard = String\(text \|\| ""\)/.test(convText) && !/box\.value/.test(convText));
 check("Chatbot mic: the words land on idle, before Send-while-recording sends them",
-  CONV.indexOf("box.value = D.joinText(_dictBase, heard)") !== -1
-  && CONV.indexOf("box.value = D.joinText(_dictBase, heard)") < CONV.indexOf("if (send) { gui(_conv); return; }"));
+  CONV.indexOf("box.value = written = D.joinText(_dictBase, words)") !== -1
+  && CONV.indexOf("box.value = written = D.joinText(_dictBase, words)") < CONV.indexOf("if (send) { gui(_conv); return; }"));
 
 if (fails.length) { console.log("\nFAIL - test_composer_dictate_after_stop: " + fails.length); process.exit(1); }
 console.log("\nOK - test_composer_dictate_after_stop: all pass");
