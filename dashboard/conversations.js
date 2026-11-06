@@ -2128,6 +2128,13 @@
     try { return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches); } catch (e) { return false; }
   }
 
+  // The last messages of the open chat, for the rewrite at the end of a dictation (dictate.js polish).
+  function dictContext() {
+    var D = window.ThansaDictate;
+    var m = _host && _host.querySelector(".ht-thread .ht-msgs");
+    return D && D.recentMessages ? D.recentMessages(m, ".ht-msg:not(.ht-react) .ht-bubble", 4) : [];
+  }
+
   function toggleMic(c) {
     var D = window.ThansaDictate;
     if (!D) { setNote(window.t("dict.unsupported"), true); return; }
@@ -2141,12 +2148,23 @@
     _dictConv = c.id;
     _dictSend = false;
     if (_actNote) setNote("");
-    // Like a voice recorder (owner, 2026-11-05): the words are held while speaking and land in the box once, when the
-    // recording ends (see composer-dictate.js).
+    // A computer shows the words in the box while speaking (owner, 2026-11-06: in the chat box, not a bubble above); a
+    // phone keeps them for the end. When the recording ends the main brain rewrites the sentence in context and that is
+    // what lands, or is sent (see composer-dictate.js).
+    var forConv = c.id;
+    var live = !(D.isPhoneUA && D.isPhoneUA());
     var dict = D.create({
-      onText: function (text) {
+      context: dictContext,
+      onText: function (text, final) {
         if (_dict !== dict) return;
         _dictHeard = String(text || "");
+        if (final || !live || _dictState !== "listening" || _chon !== forConv) return;
+        var box = replyBox();
+        if (box) {
+          box.value = D.joinText(_dictBase, _dictHeard);
+          box.style.height = "auto"; box.style.height = box.scrollHeight + "px";
+          box.scrollTop = box.scrollHeight;
+        }
       },
       onState: function (st) {
         if (_dict !== dict) return;
