@@ -952,3 +952,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: README.md, dashboard/i18n/en.json, dashboard/i18n/vi.json, docs/i18n/de/README.md, docs/i18n/es/README.md, docs/i18n/fr/README.md, docs/i18n/hi/README.md, docs/i18n/id/README.md, docs/i18n/ja/README.md, docs/i18n/ko/README.md, docs/i18n/pt-BR/README.md, docs/i18n/ru/README.md, docs/i18n/vi/README.md, docs/i18n/zh/README.md, server/main.py, tests/python/test_voice_ten_thansa.py. Claude gỡ: dashboard/index.html. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 75422b3/0.490.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-06** khi chủ bấm duyệt trên Telegram (origin/main 3e2d7fd, tag + Release thansa-v2.7.0; backup me-backup-2.7.0).
+
+## Vòng TỰ ĐỘNG 2026-11-06 (goc 75422b3 → adb7765, nền 0.490.1 → 0.491.0, thansa 2.7.0→2.8.0)
+- 2 commit upstream: 0.491.0: A failed GitHub push is retried on its own, right after GitHub is connected again (#1121); Retry a failed GitHub push on its own instead of stalling (#1121)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc adb7765/0.491.0/so_patch 72.
