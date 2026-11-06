@@ -18,6 +18,7 @@ import asyncio
 import dataclasses
 import glob
 import hashlib
+import ipaddress
 # `sys` phải nằm ở ĐẦU file: rải rác trong file có chỗ `import sys` cục bộ, nhưng cũng có chỗ
 # dùng sys.stderr mà quên import - và vì chúng nằm trong nhánh `except` (đường ghi log lỗi),
 # chúng chỉ nổ đúng lúc đã có sự cố khác, biến một lỗi lẽ ra chỉ cần ghi log thành NameError
@@ -106,6 +107,7 @@ import stt            # nghe tin thoại (Whisper qua Groq) -> chữ, cho kênh 
 import luot_dang_chay # sổ lượt chat đang chạy theo brain: tool giao việc tự biết khung chat nào hỏi
 import tool_label     # một dòng mô tả lệnh gọi công cụ (lệnh nào, file nào) cho khối tiến trình
 import nghe_sua       # sửa chữ nghe nhầm theo ngữ cảnh (David -> Thansa) + hotwords cho Whisper
+import transcript_fix  # rewrites what the mic heard at the end of a dictation: the main brain, with the chat as context
 import phien_am       # từ tiếng Anh -> cách đọc kiểu Việt (đọc loa + so âm câu nghe được)
 import voice_privacy
 voice_privacy.install()
@@ -117,6 +119,7 @@ import skill_router   # nguồn chân lý khám phá skill (canonical <brain>/sk
 import skill_usage     # telemetry: đếm skill nào THẬT SỰ được dùng qua thansa_use_skill (tín hiệu DƯƠNG một chiều)
 import share_bundle   # xuất/nhập gói agent/skill/workflow (.zip) để chia sẻ giữa brain/người dùng
 import share_store    # link CHIA SẺ CÔNG KHAI của một file trong brain (/s/<token>)
+import share_stats    # view counter of those public links
 import share_render   # dựng trang xem cho link chia sẻ (markdown -> html, khung trang)
 import usage_store   # đếm token/chi phí Thansa tự đo (đa nhà cung cấp)
 import usage_index   # dashboard token: index log thô Claude+Codex + query summary/insights
@@ -2301,6 +2304,33 @@ async def _reply_policy_review_ask(prompt: str) -> str:
     return final
 
 
+async def _transcript_rewrite_ask(prompt: str) -> str:
+    """One text-only turn on the MAIN brain for the end of a dictation (transcript_fix.rewrite_transcript, 2026-11-06).
+
+    Owner: rewrite what the mic heard with "chính mô hình chính", whether it is a subscription CLI or an API key. Same
+    sandbox as the group chat judge's review: an empty folder, no MCP, every tool refused, so a dictated sentence that
+    sounds like an order is only rewritten, never carried out."""
+    base = _reply_policy_sandbox_engine(transcript_fix.REWRITE_SYSTEM, "transcript-rewrite",
+                                        cwd_name="transcript_rewrite_cwd")
+    cli = aux_engine.swap(base, mode="suggest", tag="transcript-rewrite", spec=aux_engine.main_spec(),
+                          codex_profile=_write_codex_profile)
+    cli = aux_engine.strip_tools(cli, base)
+    if not cli.is_available():
+        raise RuntimeError("main brain not ready")
+    final = ""
+    async for ev in cli.query(prompt):
+        if ev.get("type") == "final":
+            final = ev.get("content", "") or ""
+        elif ev.get("type") == "error":
+            raise RuntimeError(str(ev.get("content") or "engine error")[:200])
+    if aux_engine.final_loi_dang_nhap(final):
+        raise RuntimeError("main brain signed out")
+    return final
+
+
+transcript_fix.wire(ask=_transcript_rewrite_ask)
+
+
 def _reply_policy_write_feedback(bot: dict, text: str) -> None:
     """Góp ý sửa mã từ vòng tự soát: nối vào `Thansa/gop-y-bo-phan-xu.md` trong brain của bot."""
     root = Path(_brain_root((bot or {}).get("brain") or None))
@@ -3177,6 +3207,89 @@ def _chat_provider_for_session(mcfg, row):
     if pprov == "openrouter":
         model = model or mcfg.get("openrouter_model")
     return pprov, kind, key, model
+
+
+def _chat_selected(mcfg, row) -> dict:
+    """{'provider','model'} the owner CHOSE for one chat, before any fallback: the chat's own pin (Thansa Core's pin in
+    a Core chat), else MAIN. `_chat_provider_for_session` says where the turn really runs; the two differ while the
+    chosen card is out of quota or cannot run (owner, 05/11/2026: the composer chip shows both)."""
+    row = row or {}
+    if thansa_core.is_core_channel(row.get("channel")):
+        pin = _core_pin(mcfg)
+    else:
+        pp = str(row.get("pinned_provider") or "").strip()
+        pin = {"provider": pp, "model": str(row.get("pinned_model") or "").strip()} if pp else {}
+    if pin.get("provider"):
+        return {"provider": pin["provider"], "model": pin.get("model") or ""}
+    em = _effective_main({"model": mcfg or {}})
+    return {"provider": em["provider"], "model": em.get("model") or ""}
+
+
+def _route_rest_until(mcfg, prov: str, now: float = None) -> float:
+    """Epoch at which an out-of-quota card can run again, 0 when nothing is resting or the time is unknown. A plan
+    marked out of quota gives its reset time; otherwise the earliest account or key of the card to come back."""
+    now = time.time() if now is None else now
+    try:
+        until = _pin_limited_until(prov, now)
+        if until:
+            return float(until)
+        d = _provider_def(prov) or {}
+        if d.get("kind") == "api":
+            if prov in adv_keys.PROVIDERS:
+                return 0.0
+            ids = [a.get("id") for a in model_routing.accounts(mcfg or {}, prov, d.get("key_field") or "")]
+        elif plan_accounts.supported(prov):
+            ids = [a.get("id") for a in plan_accounts.accounts(mcfg or {}, prov)]
+        else:
+            ids = []
+        times = [t for t in (model_routing.resting_until(prov, i, now) for i in ids if i) if t > now]
+        return float(min(times)) if times else 0.0
+    except Exception:  # noqa: BLE001 - an unknown reset time only shortens the chip's tooltip
+        return 0.0
+
+
+def _route_view(mcfg, row, run=None, now: float = None) -> dict:
+    """What the composer's model chip needs (owner, 05/11/2026): the model the owner chose, the one the next (or this) turn
+    really runs on, whether that is a fallback and why, plus every card of the usage order resting out of quota.
+    Read only: nothing saved changes, so the chosen model comes back by itself once its quota returns.
+
+    `run` is the (prov, kind, key, model) a turn already picked; without it the next turn's route is worked out."""
+    now = time.time() if now is None else now
+    sel = _chat_selected(mcfg, row)
+    run = run or _chat_provider_for_session(mcfg, row)
+    prov, model = str(run[0] or ""), str(run[3] or "")
+    out = {"provider": prov, "model": model, "name": _route_name(prov),
+           "selected_provider": sel["provider"], "selected_model": sel["model"],
+           "selected_name": _route_name(sel["provider"]), "fallback": prov != sel["provider"],
+           # Effort of the card running (owner, 05/11/2026: the Effort chip follows a fallback card too). An assistant's
+           # or Thansa Core's chat thinks at its own level whatever the card; the composer shows that level there.
+           "reasoning": _chat_reasoning(mcfg or {}, prov) if prov else "off"}
+    limited = {}
+    for p in _uniq_ids([sel["provider"], *model_routing.order(mcfg or {})]):
+        until = _route_rest_until(mcfg, p, now)
+        if until and not _route_ready(mcfg, p):
+            limited[p] = until
+    out["limited"] = limited
+    if out["fallback"]:
+        until = limited.get(sel["provider"]) or _pin_limited_until(sel["provider"], now)
+        out["reason"] = "quota" if until else "unavailable"
+        out["until"] = float(until or 0)
+        if until:
+            vi = f"{out['selected_name']} hết lượt → đang dùng {out['name']}."
+            en = f"{out['selected_name']} is out of quota → using {out['name']}."
+        else:
+            vi = f"{out['selected_name']} chưa chạy được → đang dùng {out['name']}."
+            en = f"{out['selected_name']} cannot run right now → using {out['name']}."
+        out["content"] = localefmt.chu(vi, en)
+    return out
+
+
+def _uniq_ids(ids) -> list:
+    out = []
+    for x in ids:
+        if x and x not in out:
+            out.append(x)
+    return out
 
 
 def _core_pin(mcfg) -> dict:
@@ -6689,7 +6802,7 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         # Từ hay nghe nhầm (hotwords): chuỗi tự do, chuẩn hoá qua nghe_sua để lưu gọn; rỗng là
         # xoá hết từ người dùng khai (tên trợ lý vẫn luôn có, không cần lưu).
         if "hotwords" in patch:
-            v["hotwords"] = ", ".join(nghe_sua.tach_tu_vung(patch.get("hotwords")))
+            v["hotwords"] = ", ".join(nghe_sua.split_vocabulary(patch.get("hotwords")))
         # Tự tắt mic sau N giây im lặng (0 = không tự tắt). Trần 1 giờ: lâu hơn thì coi như tắt
         # tính năng, chứ không phải một con số người ta thật sự muốn đợi.
         # Lắng nghe ngầm (2.5.0): cách dò (trên máy / trình duyệt) + từ khoá bật / tắt hẳn. Công tắc bật thì ở
@@ -9772,7 +9885,7 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
 
 def _share_chan(ban) -> str:
     """Dòng chân trang: nói rõ đây là file được chia sẻ, để người xem biết mình đang xem gì."""
-    if share_store.la_hoi_thoai(ban):
+    if share_store.is_conversation(ban):
         return localefmt.chu("Đoạn hội thoại được chia sẻ từ Thansa OS", "A conversation shared from Thansa OS")
     ten = os.path.basename(str(ban.get("path") or "")) or "file"
     return share_render.esc(ten) + localefmt.chu(" · được chia sẻ từ Thansa OS", " · shared from Thansa OS")
@@ -9780,7 +9893,7 @@ def _share_chan(ban) -> str:
 
 def _share_file(ban):
     """File THẬT mà token trỏ tới. None nếu nó đã bị xoá hoặc đổi tên. Link hội thoại không có file."""
-    if share_store.la_hoi_thoai(ban):
+    if share_store.is_conversation(ban):
         return None
     try:
         f = _safe_serve_path(ban.get("brain") or "brain", ban.get("path") or "")
@@ -9891,8 +10004,8 @@ def _share_tin_toi_moc(ban) -> list:
     return tin
 
 
-def _share_trang_hoi_thoai(ban):
-    """Trang xem công khai của một hội thoại (0.171.0)."""
+def _share_trang_hoi_thoai(ban, addr: str = ""):
+    """Trang xem công khai của một hội thoại (0.171.0). `addr`: the address the reader used (slug or token)."""
     sid = str(ban.get("session_id") or "")
     sess = get_store().get_session(sid)
     if not sess:
@@ -9902,7 +10015,7 @@ def _share_trang_hoi_thoai(ban):
     ten = _share_ten(ban)
     meta = localefmt.chu(f"{len(tin)} tin nhắn", f"{len(tin)} messages")
     trang = share_render.trang_hoi_thoai(
-        ten, tin, "/s/" + ban["token"] + "/asset", meta, _share_chan(ban),
+        ten, tin, "/s/" + (addr or ban["token"]) + "/asset", meta, _share_chan(ban),
         nhan_nguoi=localefmt.chu("Người hỏi", "Question"), nhan_thansa="Thansa")
     return HTMLResponse(trang, headers={"Content-Security-Policy": share_render.CSP_TINH,
                                         "X-Content-Type-Options": "nosniff",
@@ -9926,6 +10039,46 @@ def _share_anh_hoi_thoai(ban, p: str):
     return None
 
 
+def _share_visitor_ip(request: Request) -> str:
+    """The reader's address, for the visitor hash only (never stored raw). Behind a tunnel or a reverse proxy on this
+    machine or the private network every request comes from the proxy, so its forwarding header names the reader."""
+    host = request.client.host if request.client else ""
+    try:
+        behind = ipaddress.ip_address(host).is_loopback or ipaddress.ip_address(host).is_private
+    except ValueError:
+        behind = False
+    if behind:
+        cf = (request.headers.get("cf-connecting-ip") or "").strip()
+        if cf:
+            return cf
+        xff = request.headers.get("x-forwarded-for", "")
+        if xff:
+            return xff.split(",")[-1].strip()
+    return host
+
+
+def _share_count_view(request: Request, ban) -> None:
+    """One view of a public share page. What counts and what does not: share_stats."""
+    try:
+        if request.method != "GET":
+            return
+        ua = request.headers.get("user-agent", "")
+        purpose = (request.headers.get("sec-purpose") or request.headers.get("purpose") or "").lower()
+        if "prefetch" in purpose or share_stats.is_bot(ua):
+            return
+        if cfgmod.gate_active() and cfgmod.valid_session(request.cookies.get("thansa_session", "")):
+            return          # the owner checking their own link
+        share_stats.record_view(ban["token"], share_stats.visitor_key(_share_visitor_ip(request), ua))
+    except Exception as e:  # noqa: BLE001 - a counter must never break the page
+        print(f"[share] view count: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def _share_addr(token: str, ban) -> str:
+    """The address the reader used (slug or random token), so redirects and asset links keep it."""
+    t = str(token or "").strip()
+    return t if t and (t == ban.get("token") or t.lower() == ban.get("slug")) else str(ban.get("token") or "")
+
+
 @app.post("/share/create")
 async def share_create(body: dict = Body(...)):
     """Bật chia sẻ cho một file. Gọi lại trên cùng file thì trả đúng link cũ, không đẻ link mới."""
@@ -9935,32 +10088,36 @@ async def share_create(body: dict = Body(...)):
         # thư mục của index.html hoặc tên file. Sửa lại được ở trang Chia sẻ (/share/rename).
         nhan = _share_ten_tu_dong({"brain": body.get("brain") or "brain", "path": body.get("path") or ""})
     try:
-        ban = share_store.tao(body.get("brain") or "brain", body.get("path") or "", nhan)
+        ban = share_store.create(body.get("brain") or "brain", body.get("path") or "", nhan)
     except ValueError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
     # Trả ĐƯỜNG DẪN TƯƠNG ĐỐI, để trình duyệt tự ghép với location.origin. Dựng URL tuyệt đối ở
     # đây nghĩa là tin vào header Host, thứ mà chính repo này đã ghi chú là không được tin.
-    return {"ok": True, "token": ban["token"], "path": "/s/" + ban["token"]}
+    return {"ok": True, "token": ban["token"], "path": share_store.public_path(ban)}
 
 
 @app.post("/share/revoke")
 async def share_revoke(body: dict = Body(...)):
-    """Thu hồi. Sau lệnh này link cũ trả 404 cho tất cả mọi người."""
-    return {"ok": share_store.xoa(body.get("token") or "")}
+    """Thu hồi. Sau lệnh này link cũ trả 404 cho tất cả mọi người (custom address included)."""
+    token = str(body.get("token") or "")
+    ok = share_store.remove(token)
+    if ok:
+        share_stats.forget(token)
+    return {"ok": ok}
 
 
 @app.get("/share/of")
 async def share_of(brain: str = Query("brain"), path: str = Query(...)):
     """File này đã có link chưa? Nút Chia sẻ hỏi câu này để biết mình đang bật hay tắt."""
-    ban = share_store.cua_file(brain, path)
-    return {"ok": True, "share": ({"token": ban["token"], "path": "/s/" + ban["token"]}
+    ban = share_store.for_file(brain, path)
+    return {"ok": True, "share": ({"token": ban["token"], "path": share_store.public_path(ban)}
                                   if ban else None)}
 
 
 def _share_ten_tu_dong(ban) -> str:
     """Tên tự đặt của một link: tiêu đề file, không có thì tên dự phòng (share_render).
     Link hội thoại: tiêu đề của hội thoại."""
-    if share_store.la_hoi_thoai(ban):
+    if share_store.is_conversation(ban):
         sess = get_store().get_session(str(ban.get("session_id") or "")) or {}
         return str(sess.get("title") or "").strip()[:120] or localefmt.chu("Hội thoại", "Conversation")
     f = _share_file(ban)
@@ -9974,30 +10131,37 @@ def _share_ten(ban) -> str:
 
 @app.get("/share/list")
 async def share_list(brain: str = Query("")):
-    ds = share_store.danh_sach(brain)
+    ds = share_store.list_links(brain)
     # Link tạo trước 0.65.30 chưa có tên: đọc đầu file lấy tiêu đề. Luồng phụ vì có thể là vài
     # trăm file; kho không bị ghi đè (tên vẫn theo file cho tới khi người dùng đặt tên).
     ten = await asyncio.to_thread(lambda: [_share_ten(b) for b in ds])
+    # `stats` (2026-11-06): views, unique visitors, last view, the last 7 days and a 14-day chart (share_stats).
     return {"ok": True, "items": [{"token": b["token"], "brain": b.get("brain"),
                                    "path": b.get("path"), "tao_luc": b.get("tao_luc"),
                                    "loai": b.get("loai") or "file", "session_id": b.get("session_id") or "",
-                                   "ten": t, "url": "/s/" + b["token"]} for b, t in zip(ds, ten)]}
+                                   "ten": t, "slug": b.get("slug") or "", "url": share_store.public_path(b),
+                                   "token_url": "/s/" + b["token"], "stats": share_stats.summary(b["token"])}
+                                  for b, t in zip(ds, ten)]}
 
 
 @app.get("/s/{token}")
-async def share_xem(token: str):
-    """TRANG XEM công khai. Không cần đăng nhập - xem chú thích đầu khối."""
-    ban = share_store.doc(token)
+async def share_xem(token: str, request: Request):
+    """TRANG XEM công khai. Không cần đăng nhập - xem chú thích đầu khối. `token` may be the link's custom address."""
+    ban = share_store.get(token)
     if not ban:
         return HTMLResponse(share_render.trang_loi(localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.", "This link does not exist or has been revoked.")),
                             status_code=404)
-    if share_store.la_hoi_thoai(ban):
-        return await asyncio.to_thread(_share_trang_hoi_thoai, ban)
+    addr = _share_addr(token, ban)
+    if share_store.is_conversation(ban):
+        resp = await asyncio.to_thread(_share_trang_hoi_thoai, ban, addr)
+        if resp.status_code == 200:
+            _share_count_view(request, ban)
+        return resp
     f = _share_file(ban)
     if f is None:
         return HTMLResponse(share_render.trang_loi(localefmt.chu("File đã bị xoá hoặc đổi tên.", "The file was deleted or renamed.")), status_code=404)
     duoi = f.suffix.lower()
-    goc_asset = "/s/" + ban["token"] + "/asset"
+    goc_asset = "/s/" + addr + "/asset"
     chan = _share_chan(ban)
     if duoi in share_render.DUOI_HTML:
         # Trang .html sống ở `/s/<token>/` (CÓ dấu gạch cuối) chứ không phải `/s/<token>`.
@@ -10005,8 +10169,9 @@ async def share_xem(token: str):
         # gọi fetch("data.json") thì trình duyệt xin `/s/data.json`, không có gì ở đó; mở ở
         # `/s/abc/` thì xin `/s/abc/data.json`, đúng route `_share_sibling` phục vụ file cạnh
         # trang. Link đã gửi đi vẫn là `/s/<token>` nên chuyển hướng thay vì bắt gửi lại.
-        return RedirectResponse(url="/s/" + ban["token"] + "/", status_code=307)
+        return RedirectResponse(url="/s/" + addr + "/", status_code=307)
     if duoi in share_render.DUOI_XEM_THANG:
+        _share_count_view(request, ban)
         resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0]
                             or "application/octet-stream")
         resp.headers["Content-Disposition"] = "inline"
@@ -10021,6 +10186,7 @@ async def share_xem(token: str):
         trang = share_render.trang_markdown(f.stem, noi, goc_asset, chan)
     else:
         trang = share_render.trang_van_ban(f.name, noi, chan)
+    _share_count_view(request, ban)
     # Trang này do CHÍNH server dựng và không có một dòng script nào, nên cách ly chặt hơn.
     return HTMLResponse(trang, headers={"Content-Security-Policy": share_render.CSP_TINH,
                                         "X-Content-Type-Options": "nosniff",
@@ -10030,7 +10196,7 @@ async def share_xem(token: str):
 @app.get("/s/{token}/raw")
 async def share_raw(token: str, dl: int = Query(0)):
     """File gốc, để tải về hoặc để trang .html nhúng thẳng."""
-    ban = share_store.doc(token)
+    ban = share_store.get(token)
     if not ban:
         return JSONResponse({"error": "not found"}, status_code=404)
     f = _share_file(ban)
@@ -10048,10 +10214,10 @@ async def share_raw(token: str, dl: int = Query(0)):
 @app.get("/s/{token}/asset")
 async def share_asset(token: str, p: str = Query(...)):
     """Ảnh và tài nguyên kèm theo. Phạm vi bó hẹp, xem _share_asset."""
-    ban = share_store.doc(token)
+    ban = share_store.get(token)
     if not ban:
         return JSONResponse({"error": "not found"}, status_code=404)
-    f = _share_anh_hoi_thoai(ban, p) if share_store.la_hoi_thoai(ban) else _share_asset(ban, p)
+    f = _share_anh_hoi_thoai(ban, p) if share_store.is_conversation(ban) else _share_asset(ban, p)
     if f is None:
         return JSONResponse({"error": "not found"}, status_code=404)
     resp = FileResponse(str(f), media_type=mimetypes.guess_type(f.name)[0]
@@ -10114,19 +10280,20 @@ def _share_sibling(ban, p: str):
 
 
 @app.get("/s/{token}/")
-async def share_xem_html(token: str):
+async def share_xem_html(token: str, request: Request):
     """Trang .html chia sẻ, ở địa chỉ có dấu gạch cuối (xem share_xem vì sao)."""
-    ban = share_store.doc(token)
+    ban = share_store.get(token)
     if not ban:
         return HTMLResponse(share_render.trang_loi(localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.", "This link does not exist or has been revoked.")),
                             status_code=404)
-    if share_store.la_hoi_thoai(ban):
-        return RedirectResponse(url="/s/" + ban["token"], status_code=307)
+    addr = _share_addr(token, ban)
+    if share_store.is_conversation(ban):
+        return RedirectResponse(url="/s/" + addr, status_code=307)
     f = _share_file(ban)
     if f is None:
         return HTMLResponse(share_render.trang_loi(localefmt.chu("File đã bị xoá hoặc đổi tên.", "The file was deleted or renamed.")), status_code=404)
     if f.suffix.lower() not in share_render.DUOI_HTML:
-        return RedirectResponse(url="/s/" + ban["token"], status_code=307)
+        return RedirectResponse(url="/s/" + addr, status_code=307)
     # Nội dung của NGƯỜI DÙNG, có script: phục vụ nguyên văn nhưng trong hộp cách ly.
     try:
         noi = f.read_text(encoding="utf-8", errors="replace")
@@ -10136,6 +10303,7 @@ async def share_xem_html(token: str):
     # trang gốc "null", mà gốc null thì localStorage ném SecurityError ngay dòng đầu chạm vào
     # nó và giết cả script - trang trắng dù dữ liệu đã tải xong. Xem share_render.
     noi = share_render.chen_polyfill_luu_tru(noi)
+    _share_count_view(request, ban)
     return HTMLResponse(noi, headers={"Content-Security-Policy": share_render.CSP_HTML,
                                       "X-Content-Type-Options": "nosniff",
                                       "Referrer-Policy": "no-referrer",
@@ -10152,7 +10320,7 @@ async def share_sibling(token: str, p: str):
     nhưng trình duyệt chặn không cho script đọc, app hiện trống trơn mà Network tab lại xanh.
     Không có gì để lộ thêm: cùng file đó ai có link cũng xin được bằng cách gõ thẳng URL.
     """
-    ban = share_store.doc(token)
+    ban = share_store.get(token)
     if not ban:
         return JSONResponse({"error": "not found"}, status_code=404)
     f = _share_sibling(ban, p)
@@ -13536,7 +13704,9 @@ my_tasks_feature = my_tasks_mod.register(app, my_tasks_mod.MyTasksDeps(
     brain_root=_brain_root, atomic_write_text=_atomic_write_text,
     # Habit reminders (0.424.0) go out like a reminder's report: inbox, Telegram, push.
     scheduler_brains=_background_brains,
-    notify=lambda chat_id, text, brain="", dedup="": _notify_owner(chat_id, text, kind="report", source="habit", brain=brain, dedup=dedup),
+    # Owner, 06/11/2026: timed tasks, appointments and the morning list of "Mine" go as source "mytask" (group Reminders).
+    notify=lambda chat_id, text, brain="", dedup="", source="habit": _notify_owner(chat_id, text, kind="report",
+                                                                                   source=source, brain=brain, dedup=dedup),
     tz=reminders_mod.VN_TZ,
     # 0.427.0: habit lines written by Core, and read-only Google Calendar events.
     ask=_habit_coach_ask, calendar=gcal_read.events))
@@ -17012,6 +17182,28 @@ async def stt_route(file: UploadFile = File(...), lang: str = Form(""), draft: s
                                              provider=ear["provider"])
 
 
+@app.post("/stt/fix")
+async def stt_fix_route(request: Request):
+    """Fix what the mic heard (2026-11-06), see transcript_fix.py.
+
+    Body {"text": "...", "final": true, "context": ["recent message", ...]}: the main brain rewrites the whole
+    sentence in context. Without `final` (a page from before): the older word-level fix. Never an error: any trouble
+    gives back the result of the word rules.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return {"ok": False, "text": "", "ly_do": "json_hong"}
+    text = str((body or {}).get("text") or "")[:2000]
+    cfg = cfgmod.read_settings()
+    # `final`: the recording ended, the main brain rewrites the whole sentence with the chat as context.
+    if (body or {}).get("final"):
+        ctx = (body or {}).get("context") or []
+        ctx = [str(c)[:300] for c in ctx[-6:]] if isinstance(ctx, list) else []
+        return {"ok": True, **await transcript_fix.rewrite_transcript(cfg, text, ctx)}
+    return {"ok": True, **await transcript_fix.fix_transcript(cfg, text)}
+
+
 @app.get("/voice/call")
 async def voice_call_route():
     """Đường gọi của nút mic (voice_call.select_call_engine). Nhẹ, không hỏi mạng: dashboard gọi
@@ -17173,7 +17365,7 @@ async def voice_options(brains: int = 1):
                          "available": c in ("auto", "off") or voice_ear.availability(cfg).get(c, False)}
                         for c in voice_ear.CHOICES],
         # Từ luôn có sẵn trong bộ từ vựng nghe (không cần khai): trang Cài đặt hiện cho biết.
-        "hotwords_goc": list(nghe_sua.TU_VUNG_GOC),
+        "hotwords_goc": list(nghe_sua.BASE_VOCABULARY),
         "brain_providers": brain_list,
         # Lỗi gần nhất khiến làn nhanh rơi về bộ não chính (rỗng khi chưa có hoặc đã chạy lại tốt).
         "last_error": voice_brain.loi_lan_nhanh_gan_nhat(),
@@ -17328,6 +17520,27 @@ def _live_call_lang(said: str, recognition_lang: str = "") -> str:
     return lang_mod.call_language(said, recognition_lang) or localefmt.ngon_ngu_tra_loi()
 
 
+def _voice_quota_frame(prov) -> dict:
+    """ChatGPT Live said the plan is out of quota (owner's report 06/11/2026). The account the call ran on rests until the
+    reset time it gave, exactly like a chat turn that runs out (`_note_pin_limit`), so the next call (or the reconnect
+    the dashboard makes at once on this frame) opens on the next ChatGPT account, or on the next path (Live with an API
+    key, then Basic, which answers with the main model) when every account is out. Returns the frame for the page."""
+    lim = getattr(prov, "quota", None)
+    reset = float(getattr(lim, "reset_epoch", 0) or 0)
+    try:
+        _note_pin_limit("codex", reset, account=getattr(prov, "account", None) or plan_accounts.MAIN)
+    except Exception as e:  # noqa: BLE001 - resting an account must never break the call
+        print(f"[chatgpt live] rest: {type(e).__name__}: {e}", file=sys.stderr)
+    when = ""
+    if reset > time.time():
+        when = time.strftime("%H:%M", time.localtime(reset))
+    vi = "ChatGPT Live đã hết lượt của gói ChatGPT" + (f" (mở lại lúc {when})" if when else "") + \
+        ". Thansa chuyển sang tài khoản hoặc đường gọi kế tiếp."
+    en = "ChatGPT Live is out of quota on the ChatGPT plan" + (f" (back at {when})" if when else "") + \
+        ". Thansa moves to the next account or call path."
+    return {"type": "error", "code": "quota", "message": localefmt.chu(vi, en)}
+
+
 @app.websocket("/ws/voice-live")
 async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str = Query("brain"),
                         lang: str = Query("vi-VN")):
@@ -17351,7 +17564,19 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
 
     # Nhà cung cấp theo ĐƯỜNG GỌI đã chọn (voice_call), không theo khoá live_provider cũ: auto
     # với ChatGPT sẵn sàng là ChatGPT Live dù live_provider còn ghi gemini mặc định.
-    cfg = voice_call.live_settings(cfgmod.read_settings())
+    _raw_cfg = cfgmod.read_settings()
+    if voice_call.select_call_engine(_raw_cfg).get("engine") == "basic":
+        # No Live path can run now (e.g. every ChatGPT account is out of quota and no Live API key): a page drawn
+        # earlier still opened Live. Tell it to switch to the Basic path instead of failing on a stale provider.
+        await _j({"type": "error", "code": "use_basic", "message": localefmt.chu(
+            "Đường gọi Live chưa dùng được lúc này, cuộc gọi chuyển sang đường Cơ bản.",
+            "No Live path is available right now, the call switches to the Basic path.")})
+        try:
+            await ws.close()
+        except Exception:
+            pass
+        return
+    cfg = voice_call.live_settings(_raw_cfg)
     memory_index = ""
     if str(((cfg.get("voice") or {}).get("live_provider")) or "") == "chatgpt":
         # ChatGPT Live chạy qua Codex app-server: bắc cầu token đã nối ở trang Models sang
@@ -17487,6 +17712,9 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         try:
             answer = await prov.start_webrtc(sdp)
         except Exception as e:
+            if getattr(prov, "quota", None) is not None:
+                await _j(_voice_quota_frame(prov))
+                return
             await _j({"type": "error", "message": str(e) if isinstance(e, RuntimeError) else f"{type(e).__name__}: {e}"})
             return
         await _j({"type": "webrtc_answer", "sdp": answer})
@@ -17774,6 +18002,8 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
                         pass
                 asst_buf["text"] = ""
                 await _j(ev)
+            elif t == "error" and ev.get("code") == "quota":
+                await _j(_voice_quota_frame(prov))
             elif t in ("error", "ready"):
                 await _j(ev)
             return True
@@ -18216,6 +18446,13 @@ async def _chat_socket(ws):
                         f"Assistant '{_persona[1]}' is no longer in this brain. Open the Partners page to pick another one.")}))
                 return ""
             prov, kind, api_key, api_model = _route or _chat_provider_for_session(mcfg, _row0)
+            # Owner, 05/11/2026: tell the composer which model really answers, so its chip stops showing the chosen
+            # model with a green dot while a fallback card does the work. `rerouted`: run_turn already wrote the line.
+            try:
+                await ws.send_text(json.dumps({"type": "route", "rerouted": bool(_route),
+                                               **_route_view(mcfg, _row0, (prov, kind, api_key, api_model))}))
+            except Exception as _e:  # noqa: BLE001 - a missing chip update never stops a turn
+                print(f"[route frame] {type(_e).__name__}: {_e}", file=sys.stderr)
             reasoning = _chat_reasoning(mcfg, prov)   # 0.350.0: effort of the card this turn runs on
             if _persona and _persona[0] == "agent":
                 # 0.193.0: an assistant's chat thinks at the assistant's own level (default medium).
@@ -20285,6 +20522,16 @@ async def _chat_socket(ws):
             user_message = payload.get("message", "").strip()
             if not user_message:
                 continue
+            # Owner, 06/11/2026: a message typed on the phone, then the app swiped away, vanished from the chat and from
+            # History. It had gone into a socket the phone had already let die, so the server never got it. The page
+            # now keeps each typed message until `chat_ack` comes back and sends it again on the next socket; the id
+            # makes that resend land once (the turn is not run twice), here and after a server restart.
+            _cmid = str(payload.get("client_msg_id") or "").strip()[:64]
+            _cmid_sid = str(payload.get("session_id") or "")
+            if _cmid and _cmid_sid and store.message_by_client_id(_cmid_sid, _cmid):
+                await send_client({"type": "chat_ack", "session_id": _cmid_sid, "client_msg_id": _cmid,
+                                   "dup": True, "running": bool(_CHAT_RUNTIME.get_job(_cmid_sid))})
+                continue
             _voice_raw = str(payload.get("voice_text") or user_message).strip()
             brain = payload.get("brain", "brain")
             _cfg_luot = cfgmod.read_settings()
@@ -20298,7 +20545,7 @@ async def _chat_socket(ws):
             _nghe_tho = ""
             if payload.get("voice_input", payload.get("voice")):
                 try:
-                    _tv = nghe_sua.tu_vung(_cfg_luot)
+                    _tv = nghe_sua.fix_vocabulary(_cfg_luot)
                     _ctx, _speech = nghe_sua.split_ui_context(user_message)
                     _sua = nghe_sua.sua(_speech, _tv)
                     if _sua != _speech:
@@ -20369,6 +20616,10 @@ async def _chat_socket(ws):
                 if payload.get("voice") and payload.get("utterance_id"):
                     await send_client({"type":"voice_busy", "session_id":conv_sid, "utterance_id":str(payload["utterance_id"])})
                 else:
+                    if _cmid:
+                        # Answered with the error below: the page stops holding it for a resend.
+                        await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                           "dup": False, "rejected": True})
                     await send_raw({"type": "error", "content": localefmt.chu(
                         "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
                         "This session is still answering - wait for the current turn to finish."),
@@ -20399,7 +20650,16 @@ async def _chat_socket(ws):
                     continue
                 _user_mid = int(_receipt.get("message_id") or 0)
             else:
-                _user_mid = store.append_message(conv_sid, "user", user_message)
+                if _cmid and store.message_by_client_id(conv_sid, _cmid):
+                    # The same message came in on another socket while this one was getting ready (no await between
+                    # this check and the insert below, so only one copy can pass).
+                    await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                       "dup": True, "running": bool(_CHAT_RUNTIME.get_job(conv_sid))})
+                    continue
+                _user_mid = store.append_message(conv_sid, "user", user_message, client_msg_id=_cmid or None)
+                if _cmid:
+                    await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                       "dup": False})
             # Bong bóng đang hiện chữ thô của máy nghe: báo câu đã sửa tên để người dùng thấy
             # Thansa hiểu câu nào, chữ thô hiện nhỏ bên dưới.
             if _nghe_tho:
@@ -21179,6 +21439,19 @@ async def sessions_pin(session_id: str, pinned: str = Form("1")):
     return {"ok": True}
 
 
+@app.get("/chat/route")
+async def chat_route():
+    """Where the first turn of a new chat would run (owner, 05/11/2026): the model bar of an empty chat asks this, so its
+    chip shows a fallback card while the main one is out of quota. A chat with a session reads `route` from its meta."""
+    def _view():
+        try:
+            return _route_view(cfgmod.read_settings().get("model", {}), {})
+        except Exception as e:  # noqa: BLE001 - the chip then shows the chosen model, as before
+            print(f"[route view] {type(e).__name__}: {e}", file=sys.stderr)
+            return {}
+    return await asyncio.to_thread(_view)
+
+
 @app.get("/sessions/{session_id}/meta")
 async def sessions_meta(session_id: str):
     """Performance (2026-11-05): asked on every chat open; its reads run in a worker thread, off the event loop."""
@@ -21222,6 +21495,12 @@ def _sessions_meta_sync(session_id: str):
         # 0.283.0: a Thansa Core chat is an assistant's chat for the level chip too, with its own level.
         sess["agent_slug"] = thansa_core.SLUG
         sess["agent_reasoning"] = _core_reasoning(cfgmod.read_settings().get("model", {}))
+    # Owner, 05/11/2026: the model the next turn of this chat really runs on, so the chip is right on opening a chat
+    # (a fallback card while the chosen one is out of quota) and goes back by itself once the quota returns.
+    try:
+        sess["route"] = _route_view(cfgmod.read_settings().get("model", {}), sess)
+    except Exception as e:  # noqa: BLE001 - the chip then shows the chosen model, as before
+        print(f"[route view] {type(e).__name__}: {e}", file=sys.stderr)
     return sess
 
 
@@ -25680,7 +25959,7 @@ async def _stt_nghe(data, ten=""):
            or lang_registry.chuan_hoa(_lc2.get("ui_lang") or ""))
     # Cùng bộ từ vựng và lớp sửa nghe nhầm như mic trên dashboard (nghe_sua): tin thoại Telegram
     # hay Zalo nói "David" cũng phải ra "Thansa" trước khi vào bộ não.
-    _tv = nghe_sua.tu_vung(_cfg)
+    _tv = nghe_sua.fix_vocabulary(_cfg)
     # 0.435.0: not Groq only any more. Every ear the owner has is tried in turn (Groq, OpenAI, Gemini, then the
     # offline Whisper from the Tools page); one missing or failing hands over to the next (`stt.listen_any`).
     _m = _cfg.get("model") or {}
@@ -27293,7 +27572,12 @@ async def _github_review_ask(prompt: str, provider: str) -> str:
 
 
 def _github_reviewers() -> list:
-    """Engines usable as a reviewer right now, in the Models page order (API cards with a key, signed-in plans)."""
+    """Engines usable as a reviewer right now, in the Models page order.
+
+    Only engines `_github_review_ask` can really run text-only (owner, 05/11/2026): Claude (sandboxed, its tool gate)
+    and API providers (`no_tools`). Codex, Grok and Antigravity keep native file and shell tools, so
+    `resonance.pick_text_only_link` refuses them on a stranger's diff; listing them made every review of a Claude
+    author fail on ChatGPT and be skipped. A card resting out of quota is left out as well."""
     s = cfgmod.read_settings()
     m = s.get("model", {}) or {}
     order = []
@@ -27310,8 +27594,16 @@ def _github_reviewers() -> list:
             ok, _why = aux_engine.availability({"provider": p}, s)
         except Exception:
             ok = False
-        if ok and (p not in (aux_engine.CLAUDE, aux_engine.CODEX) or aux_engine._co_binary(p)):
-            out.append(p)
+        if not ok or not (p == aux_engine.CLAUDE or p in aux_engine.API_PROVIDERS):
+            continue
+        if p == aux_engine.CLAUDE and not aux_engine._co_binary(p):
+            continue
+        try:
+            if _provider_def(p) and not _route_ready(m, p):
+                continue   # every key or the plan is resting out of quota
+        except Exception:  # noqa: BLE001 - unknown readiness: let the turn report the provider's own error
+            pass
+        out.append(p)
     return out
 
 
@@ -27882,12 +28174,21 @@ async def voice_brain_models_route(provider: str = ""):
 async def share_rename(body: dict = Body(...)):
     """Đổi tên hiển thị của một link ở trang Chia sẻ (0.65.30). Tên rỗng thì quay về tên tự lấy
     theo tiêu đề file. Đặt sau route cuối để bảng route chỉ thêm một dòng."""
-    ban = share_store.doi_ten(body.get("token") or "", body.get("nhan") or "")
+    token = body.get("token") or ""
+    if "slug" in body:
+        # 2026-11-06: the same dialog edits the custom address. Checked first, so a taken address changes nothing.
+        try:
+            if share_store.set_slug(token, body.get("slug") or "") is None:
+                token = ""
+        except ValueError as e:
+            return {"ok": False, "error": str(e), "field": "slug"}
+    ban = share_store.rename(token, body.get("nhan") or "") if ("nhan" in body or "slug" not in body) \
+        else share_store.get(token)
     if not ban:
         return {"ok": False, "error": localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.",
                                                     "The link does not exist or has been revoked.")}
-    return {"ok": True, "token": ban["token"], "nhan": ban.get("nhan") or "",
-            "ten": await asyncio.to_thread(_share_ten, ban)}
+    return {"ok": True, "token": ban["token"], "nhan": ban.get("nhan") or "", "slug": ban.get("slug") or "",
+            "url": share_store.public_path(ban), "ten": await asyncio.to_thread(_share_ten, ban)}
 
 
 @app.post("/chatbots/{bot_id}/try")
@@ -30406,17 +30707,56 @@ async def share_chat(body: dict = Body(...)):
     cuoi = tin[-1]
     moc = [float(cuoi.get("ts") or 0), int(cuoi.get("id") or 0)]
     try:
-        ban = share_store.tao_hoi_thoai(sid, sess.get("brain") or "brain", "", moc)
+        ban = share_store.create_conversation(sid, sess.get("brain") or "brain", "", moc)
     except ValueError as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=400)
-    return {"ok": True, "token": ban["token"], "path": "/s/" + ban["token"]}
+    return {"ok": True, "token": ban["token"], "path": share_store.public_path(ban)}
 
 
 @app.get("/share/chat/of")
 async def share_chat_of(session_id: str = Query(...)):
     """Hội thoại này đã có link chưa? Nút Chia sẻ trong khung chat hỏi câu này."""
-    ban = share_store.cua_hoi_thoai(session_id)
-    return {"ok": True, "share": ({"token": ban["token"], "path": "/s/" + ban["token"]} if ban else None)}
+    ban = share_store.for_conversation(session_id)
+    return {"ok": True, "share": ({"token": ban["token"], "path": share_store.public_path(ban)} if ban else None)}
+
+
+_QR_ORIGIN = re.compile(r"^https?://[A-Za-z0-9.\-]+(?::\d{1,5})?$")
+
+
+@app.get("/share/qr")
+async def share_qr(token: str = Query(...), origin: str = Query(...), fmt: str = Query("svg"), dl: int = Query(0)):
+    """QR code of a share link (owner, 2026-11-06), for the Share links page.
+
+    Drawn here with segno (already a dependency for 2FA, pure Python, PNG without Pillow), so the dashboard ships no
+    QR library. The dashboard sends its own `origin` (location.origin): building the address from the Host header would
+    trust what this repo notes must not be trusted. The QR always encodes the link's CURRENT address (slug if set), so
+    changing the address means printing a new code; the random-token link keeps working for old prints.
+    """
+    ban = share_store.get(token)
+    if not ban or ban.get("token") != str(token or "").strip():
+        return JSONResponse({"ok": False, "error": localefmt.chu("Link không tồn tại hoặc đã bị thu hồi.",
+                                                                 "The link does not exist or has been revoked.")},
+                            status_code=404)
+    o = str(origin or "").strip().rstrip("/")
+    if not _QR_ORIGIN.match(o):
+        return JSONResponse({"ok": False, "error": "bad origin"}, status_code=400)
+    try:
+        import io
+        import segno
+        buf = io.BytesIO()
+        png = fmt == "png"
+        # border=4 is the QR standard quiet zone; white background so it scans on a dark theme too (see totp.qr_svg).
+        segno.make(o + share_store.public_path(ban), error="m").save(
+            buf, kind="png" if png else "svg", scale=12 if png else 8, border=4, dark="#111", light="#fff")
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"ok": False, "error": f"{type(e).__name__}: {e}"}, status_code=500)
+    resp = Response(buf.getvalue(), media_type="image/png" if png else "image/svg+xml")
+    resp.headers["Cache-Control"] = "no-store"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    if dl:
+        name = share_store.slugify(_share_ten(ban)) or ban.get("slug") or "link"
+        resp.headers["Content-Disposition"] = f'attachment; filename="qr-{name}.{"png" if png else "svg"}"'
+    return resp
 
 
 # ── Event loop watchdog (0.194.0, owner 17/10/2026: "Mất kết nối tới máy chủ" more and more often) ──

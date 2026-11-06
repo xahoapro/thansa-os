@@ -1,13 +1,15 @@
 <!-- translated-from: README.md sha256:2e10ad3d2a86 -->
 <div align="center">
 
-<img src="../../../dashboard/logo.svg" width="88" alt="Thansa OS のロゴ">
+<a href="https://thansa.org"><img src="../../assets/social-preview.png" width="100%" alt="Thansa OS: Your AI Workforce. Never miss the best AI."></a>
 
 # Thansa OS
 
-### 頭脳を差し替えられるセルフホスト型 AI エージェントと、毎日賢くなる Second Brain。
+### あなたの AI チーム。最高の AI を逃さない。
 
-ノート PC でも小さな VPS でも動きます。声で話しかけられます。Claude、ChatGPT、Grok、Gemini など 12 のプロバイダーから好きなものをつなぎ、切り替えてもツールはすべてそのまま。あなたが寝ている間もバックグラウンドで働き続けます。
+Thansa OS は **Claude、ChatGPT、Gemini、Grok** やあなたが選んだモデルを、自分のマシンやサーバー上で 24 時間 365 日働くチームに変えます。各メンバーは役割を持ち、同じ記憶とツールを共有し、バックグラウンドで働き続けます。より良いモデルが出たら切り替えるだけ。チームが学んだことはすべて残ります。
+
+**🌐 ウェブサイト: [thansa.org](https://thansa.org)** · オープンソース · セルフホスト · 14 の AI プロバイダー
 
 [![GitHub stars](https://img.shields.io/github/stars/xahoapro/thansa-os?style=flat&logo=github&label=stars)](https://github.com/xahoapro/thansa-os/stargazers)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](../../../LICENSE)
@@ -507,5 +509,6 @@ Thansa OS は無料のオープンソースですが、いまもコードを書�
 
 <div align="center">
 <br>
+<b><a href="https://thansa.org">thansa.org</a></b><br>
 <b><a href="https://tradingauto.org">Duy Quang</a></b> がベトナムで ☕ とともに制作
 </div>

@@ -2344,16 +2344,24 @@
 
   // The "+" menu of the composer: Assign as a job (on/off), Mention an assistant, Search this team. Room for more later
   // without growing the composer row (the old always-visible "Assign job" pill took a third of a phone's width).
+  // The GitHub mark of the main chat (github-connect.js), so a team chat's repo looks the same (owner, 2026-11-06).
+  // The branch icon only when that file is missing.
+  function ghLogo() {
+    var G = typeof window !== "undefined" && window.ThansaGithubRepos;
+    return G && G.logo ? G.logo : ic("git-branch");
+  }
+
   function plusMenuHtml(off) {
     if (!S.plusOpen || off) return "";
+    // `icon` is an icon name, or ready markup when it starts with "<" (the GitHub logo).
     var item = function (attr, icon, label, checked) {
-      return '<button type="button" ' + attr + ">" + ic(icon) + "<span>" + esc(label) + "</span>" +
+      return '<button type="button" ' + attr + ">" + (icon.charAt(0) === "<" ? icon : ic(icon)) + "<span>" + esc(label) + "</span>" +
         (checked ? '<span class="tm-plus-on">' + ic("check") + "</span>" : "") + "</button>";
     };
     return '<div class="tm-plus-menu" role="menu" aria-label="' + esc(tw("teams.plus")) + '">' +
       item('role="menuitem" data-plus-attach="1"', "paperclip", tw("teams.attach")) +
       item('role="menuitem" data-plus-folder="1"', "folder", tw("cp.pin_folder")) +
-      item('role="menuitem" data-plus-github="1"', "git-branch", tw("gh.menu")) +
+      item('role="menuitem" data-plus-github="1"', ghLogo(), tw("gh.menu")) +
       item('role="menuitemcheckbox" aria-checked="' + (S.asJob ? "true" : "false") + '" class="tm-asjob" title="' +
         esc(tw("teams.as_job_title")) + '"', "list-todo", tw("teams.as_job"), S.asJob) +
       item('role="menuitem" data-insert-at="1"', "at-sign", tw("teams.mention_insert")) +
@@ -2372,6 +2380,13 @@
 
   // ───────────── mic: speak, the words land in the input (dictate.js) ─────────────
 
+  // The last messages of the open team, for the rewrite at the end of a dictation (dictate.js polish).
+  function dictContext() {
+    var D = typeof window !== "undefined" && window.ThansaDictate;
+    var box = S.el && S.el.querySelector(".tm-msgs");
+    return D && D.recentMessages ? D.recentMessages(box, ".tm-msg .tm-text", 4) : [];
+  }
+
   function toggleMic() {
     var D = typeof window !== "undefined" && window.ThansaDictate;
     if (!D) { setNote(tw("teams.mic_unsupported")); return; }
@@ -2381,14 +2396,22 @@
     S.dictBase = input ? input.value : "";
     S.dictSend = false;
     var forTeam = S.activeId, heard = "";
-    // Like a voice recorder (owner, 2026-11-05): the words are held while speaking and land in the box once, when the
-    // recording ends (see composer-dictate.js).
+    // A computer shows the words in the box while speaking (owner, 2026-11-06: in the chat box, not a bubble above); a
+    // phone keeps them for the end. When the recording ends the main brain rewrites the sentence in context and that is
+    // what lands, or is sent (see composer-dictate.js).
+    var live = !(D.isPhoneUA && D.isPhoneUA());
     S.dict = D.create({
-      onText: function (text) { heard = String(text || ""); },
+      context: dictContext,
+      onText: function (text, final) {
+        heard = String(text || "");
+        if (final || !live || S.dictState !== "listening" || S.activeId !== forTeam) return;
+        var box = S.el.querySelector(".tm-input");
+        if (box) { box.value = D.joinText(S.dictBase, heard); grow(box); box.scrollTop = box.scrollHeight; }
+      },
       onState: function (st) {
         var was = S.dictState;
         S.dictState = st;
-        // Send pressed while recording (button or Enter): it waited for the last words, now it goes.
+        // Send pressed while recording (button or Enter): it waited for the rewritten words, now it goes.
         var sendNow = st === "idle" && was !== "idle" && S.dictSend;
         if (st === "idle") S.dictSend = false;
         if (S.activeId !== forTeam) return;
@@ -3279,7 +3302,7 @@
       // 0.449.0: the GitHub repos of the team chat. The name opens the picker; the status (once pushed) opens the detail.
       var G = window.ThansaTeamGithub, names = S.repos.map(function (r) { return r.full_name; });
       var stKey = S.ghIcon && S.ghIcon.state ? "gh.st_" + S.ghIcon.state : "";
-      h += '<span class="tm-chip tm-chip-gh" title="' + esc(tw("gh.chip_label", { names: names.join(", ") })) + '">' + ic("git-branch") +
+      h += '<span class="tm-chip tm-chip-gh" title="' + esc(tw("gh.chip_label", { names: names.join(", ") })) + '">' + ghLogo() +
         '<button type="button" class="tm-chip-name" data-gh-open="1">' + esc(G ? G.chipText(names, 18) : names[0]) + "</button>" +
         (stKey ? '<button type="button" class="tm-chip-st tm-gh-st" data-gh-status="1">' + esc(tw(stKey)) + "</button>" : "") + "</span>";
     }
@@ -3473,10 +3496,10 @@
       : '<button type="button" class="ws-btn" data-folder-open="1">' + ic("folder") + " " + esc(tw("cp.pin_folder")) + "</button>") + "</section>";
     h += '<section class="tm-info-sec"><h4>' + esc(tw("gh.menu")) + "</h4>" + (S.repos.length
       ? S.repos.map(function (r) {
-        return '<div class="tm-info-row">' + ic("git-branch") + '<span class="tm-info-grow" title="' + esc(r.worktree || r.full_name) + '">' +
+        return '<div class="tm-info-row">' + ghLogo() + '<span class="tm-info-grow" title="' + esc(r.worktree || r.full_name) + '">' +
           esc(r.full_name) + (r.branch ? ' <span class="tm-sub">' + esc(r.branch) + "</span>" : "") + "</span></div>";
       }).join("") + '<button type="button" class="ws-btn" data-gh-open="1">' + esc(tw("teams.change")) + "</button>"
-      : '<button type="button" class="ws-btn" data-gh-open="1">' + ic("git-branch") + " " + esc(tw("teams.gh_attach")) + "</button>") + "</section>";
+      : '<button type="button" class="ws-btn" data-gh-open="1">' + ghLogo() + " " + esc(tw("teams.gh_attach")) + "</button>") + "</section>";
     if (!I) return h + '<p class="tm-sub">' + esc(tw("common.loading")) + "</p>";
     var imgs = I.files.filter(function (f) { return f.image; });
     var docs = I.files.filter(function (f) { return !f.image; });

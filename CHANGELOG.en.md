@@ -8,6 +8,123 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.490.1] - 2026-11-06
+### Improved
+- **The "Repos downloaded for this brain" dialog looks like the Tasks page.** Each repo is a compact card: its name, chat count and auto-merge state, with a switch to turn auto-merge on or off.
+- **Checks, Numbers and Remove from brain move into a ⋯ button.** It opens a menu like the Tasks page, sliding up from the bottom on a phone, with Remove in red so it is not hit by mistake.
+
+## [0.490.0] - 2026-11-06
+### Added
+- **A QR code for every share link.** The QR icon on each row of the Share links page shows the code, and a phone scan opens that link. A PNG download is there for printing or sending.
+
+## [0.489.1] - 2026-11-06
+### Fixed
+- **Press Merge, close the panel, and the PR still merges.** Closing the GitHub detail panel (or the tab) right after pressing Merge used to cancel the merge halfway. Thansa now finishes it in the background and posts the result in the chat.
+- Reopening the panel during a merge shows "Merging..." instead of the Merge button, so it never merges twice.
+
+## [0.489.0] - 2026-11-06
+### Improved
+- **Dictation shows the words right in the chat box** again while you speak on a computer, like before, with no faded bubble above. Phones still show the text when the recording ends.
+- **What you said is rewritten in context before it is used.** On stop, Enter or Send, a model reads the last few messages and rewrites the whole sentence, fixing every mishearing, not just a few words like "Travis OS" into "Thansa OS". Sending right away sends the rewritten sentence.
+- **The fast path goes first.** A main model on an API key does it itself. With Claude Code or Codex as the main model, an API key on the machine does it (Groq first) and the CLI is only the last resort, so it usually takes about a second.
+- A network error or a model slower than 25 seconds keeps the words as heard, nothing is lost. The Groq or OpenAI ear now always keeps the Thansa name in its hint, even with many connections.
+
+## [0.488.0] - 2026-11-06
+### Added
+- **Change a share link's address.** The pencil edits both the name and the part after `/s/`, like `/s/vibecode-thansa`. The random-code link you already sent keeps working.
+- **View counts per link.** Each row shows views, people, the last 7 days, the last view and a 14-day chart. Link-preview bots and your own opens while signed in are not counted.
+### Improved
+- **A tidier Share links page.** Actions are icons like the Tasks page, with filters (Files, Conversations, Never viewed) and sorting (Newest, Most viewed, Recently viewed), and revoking asks first.
+### Fixed
+- **Buttons on page 2 and later of the link list work again.** Before, only the first page responded.
+
+## [0.487.3] - 2026-11-06
+### Fixed
+- **A message sent right before swiping to another app on a phone no longer vanishes.** The phone sometimes let the connection die silently, so the message never reached the server and the whole exchange was gone on return, History included. The server now confirms every message it receives, Thansa resends any unconfirmed one after reconnecting, and a resend never runs twice.
+
+## [0.487.2] - 2026-11-06
+### Fixed
+- **The chat's GitHub icon no longer stays orange after a merge.** A chat with two repos where only one had work now shows "merged". An untouched repo no longer skews the state.
+- **A repo blocked by the pre-push checks now shows red "needs a person"** with the reason. It used to pulse orange as if Thansa were working on it, mostly after a restart, so the repo looked forgotten.
+
+## [0.487.1] - 2026-11-06
+### Fixed
+- **Thansa pushes to GitHub even when the repo has CI jobs for macOS or Windows.** A Linux machine used to run the Mac install test too, which hung, turned red and stopped the push of an unrelated change. Jobs for another OS are now left to GitHub CI, and Thansa still merges on its own once CI is green.
+
+## [0.487.0] - 2026-11-06
+### Added
+- **The dictation bubble fixes words as you speak (computer), in the main chat, Teams and the Chatbot inbox.** The faded bubble shows what was heard, then the fixed text a moment later: Thansa uses Groq when you have added its key, otherwise the background model. Stop recording and the box gets the fixed text. If the server does not answer, the words stay as heard.
+### Fixed
+- **Thansa hears AI product names more accurately.** "Groq", "Grok", "Claude", "ChatGPT", "Gemini", "OpenRouter"... come out spelled right, and "Groq" is no longer changed into "Grok".
+- **"Jarvis OS" now comes out as "Thansa OS".**
+- **Dictation on Android no longer loses words.** The previous version dropped a short sentence said right after a longer one that began with the same word. The text is now rebuilt from everything the phone heard, still without repeats like "I I am".
+### Improved
+- **A team's GitHub repo shows the GitHub logo, as in the main chat**, on the repo chip, in the "+" menu and in the team info panel.
+
+## [0.486.5] - 2026-11-06
+### Fixed
+- **The iPhone menu no longer overlaps itself.** At the bottom of the menu, the "System" group used to cover the language picker (clearly on Safari). Each now has its own row, and a long menu scrolls as usual.
+- **The home screen app no longer looks frozen.** Sometimes iPhone slid the whole page on launch, so every tap missed its button. Thansa now slides the page back on launch, on return from the background and as you touch.
+
+## [0.486.4] - 2026-11-06
+### Improved
+- **Release checks finish sooner.** The recipe archive tests are split into three files so the CI runners share the load more evenly.
+
+## [0.486.3] - 2026-11-06
+### Improved
+- **Release checks finish sooner.** Python tests now split across 4 runners instead of 2. Nothing changes for users.
+
+## [0.486.2] - 2026-11-06
+### Improved
+- **The dictation mic on computers shows the words in a faded bubble again.** While you speak, the sentence being recognized shows in a faded draft bubble at the foot of the chat, so you can see Thansa is listening. The box stays still until you press stop or send, then the whole text lands in it.
+- Phones get no such bubble: on Android the recognizer resends the whole sentence on every result, so the bubble kept repeating it. On a phone the text still lands in the box only when you stop.
+
+## [0.486.1] - 2026-11-06
+### Fixed
+- **Voice calls no longer stay stuck on ChatGPT Live when the ChatGPT plan runs out.** The call used to reopen the same empty account and show "You've hit your usage limit" again and again, even after the main model was switched to another plan. That account now rests until its reset time and the call moves at once to the second ChatGPT account, then to Live with an API key, then to the Basic path (answered by the main model).
+- **ChatGPT Live can run on a second ChatGPT account.** Voice calls used to run on account 1 only.
+- **The Basic path no longer picks an exhausted ChatGPT** as its quick-reply brain: until the reset, turns go to another brain.
+- **The out-of-quota error shows once**, with the reset time read from "try again at 8:42 AM" (chat reads that time too).
+
+## [0.486.0] - 2026-11-06
+### Added
+- **Ticking a task sounds satisfying.** A crisp click and a bright ding, with a sparkling run for the day's priority. Ticking a habit gives a whoosh of flame and orange embers; thawing one cracks the ice, rings glass chimes and throws blue shards before the fire comes back. A clean day gets a short fanfare. The sounds are made in the browser, no file to load, and stay silent on a hidden tab.
+- **A sound switch beside the light/dark one.** A speaker with waves means on, crossed out means off. Just on or off, no volume. Turning it on answers with a tick. On a phone it sits in the menu foot, just before light/dark.
+### Improved
+- **A cleaner top bar: the History and reset-conversation buttons are gone.** The conversation list stays on the Chat page (first in the menu). The phone's "+" new chat works as before.
+- **One priority star a day.** Pick the single task that matters most that day. Starring another task of the same day moves the star there (with Undo) instead of refusing.
+### Fixed
+- **A missed habit has Skip and Delete.** A missed time of a habit (say "Run 3 times a week") sat in the Overdue box with no buttons. It now offers Skip this time and Delete, like any overdue repeat.
+- **The + button no longer covers the last task.** The Tasks page leaves room at the bottom, so the last task's Move, Delete and star buttons stay reachable.
+
+## [0.485.1] - 2026-11-06
+### Fixed
+- **On a phone, the Tasks page's + button sits down in the corner and no longer covers a loop's "On" switch.** The page ends with room for it, so the last row always scrolls clear of the button.
+
+## [0.485.0] - 2026-11-06
+### Added
+- **Mine now reaches the bell (and Telegram, phone push).** A task with a time is announced at its time. A repeating task is announced on each of its days, except one already done or skipped.
+- **A morning summary at 07:30:** every task and appointment of the day in time order, with the number of overdue tasks.
+### Fixed
+- **An appointment with its reminder left empty is announced 15 minutes before**, as the page always showed. Appointments Thansa made from chat were never announced before. "No reminder" still means none.
+
+## [0.484.2] - 2026-11-06
+### Fixed
+- **GitHub cross review no longer says "did not run" on every job.** Thansa used to pick the ChatGPT plan to review code Claude wrote, but the review only runs engines without file tools, so the ChatGPT plan (like Grok Build and Antigravity) was always refused. Thansa now picks Claude or an API-key provider of another family, skips cards out of quota, and tries the next reviewer when one fails.
+- **A skipped review says why**, with the error, and when no engine can review the chat says how to enable it: add an API key of another family (OpenAI, Gemini, DeepSeek, OpenRouter...).
+
+## [0.484.1] - 2026-11-06
+### Fixed
+- **No empty bubble when coming back to a running chat.** If you left a chat while Thansa was working and came back, an empty answer bubble showed above the progress line. Now you see the steps so far and the progress line, and the bubble appears once Thansa starts writing.
+
+## [0.484.0] - 2026-11-05
+### Added
+- **A chat that falls back switches its model display too.** When the chosen model runs out of quota and Thansa moves to a fallback card, the chip switches to the fallback model's name with an amber dot, and the picker's tick, the Effort chip, the plan usage ring and `/model` follow the model running. Moving the Effort slider then sets the fallback model's own level. Hover (or press) the chip to see the chosen model, when its quota returns, and the model running.
+- **One short line in the chat when the route changes**, for example "Antigravity is out of quota → using Claude Code". It shows on the first turn that moves, not on every message. Once the chosen model has quota again, the chat says so in one line and the chip turns green again.
+- **The model picker tags providers "Out of quota" and "Running"**, so you see at once which one is resting and which one is filling in.
+### Improved
+- Your model choice never changes during a fallback: Thansa goes back to the chosen model when its quota returns, and picking a model by hand tries it right away. The chip updates in place, with no page reload or restart.
+
 ## [0.483.0] - 2026-11-05
 ### Added
 - **Cloudflare is built into Thansa, no Store install needed.** The Connections page, Available tab, has a Cloudflare card with two ways in: paste an API token, or press Connect, sign in to Cloudflare and tick the permissions on Cloudflare's own page. Read-only by default, and the `execute` tool stays in the dangerous group.

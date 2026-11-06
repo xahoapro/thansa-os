@@ -204,8 +204,11 @@ def commit_cay(fork: Path, out: Path, msg: str) -> str:
 
 
 def _ve_cho_duyet(fork: Path) -> None:
-    git("checkout", "-q", "-B", "cho-duyet", "origin/main", cwd=fork)
+    # -f: commit_cay commit bằng GIT_WORK_TREE=out nên cây làm việc của fork lệch HEAD; không ép thì checkout
+    # báo "local changes" và lượt theo dõi kho đỏ mãi (04-06/11). Cây này chỉ script dùng, ép an toàn.
+    git("checkout", "-q", "-f", "-B", "cho-duyet", "origin/main", cwd=fork)
     git("reset", "-q", "--hard", "origin/main", cwd=fork)
+    git("clean", "-qfd", cwd=fork)
 
 
 def _ver(t: str) -> tuple:

@@ -25,7 +25,17 @@
    2026-11-05: the words appear only after the recording ends, like a voice memo (owner, same day: "no need to copy the
    text onto the screen as I speak; press it like a recorder, then the text comes out"). While recording the box keeps
    what was typed before; the heard text is held in S.heard and written once, when the run is idle (stop, send, or the
-   5-minute limit). X still drops everything. */
+   5-minute limit). X still drops everything.
+
+   2026-11-06: a computer gets the faded live bubble back. While the owner speaks, the words show in a faded dashed
+   bubble at the foot of the chat (app.js nhapGiong, the same bubble the voice chat uses), so the owner can see the
+   recognizer is hearing. The box still stays still until the recording ends. A phone gets no bubble: Android phones
+   resend the whole sentence on every result, and the bubble repeated it. Tablets count as computers here.
+
+   2026-11-06 (later): the bubble is gone. Owner: in the old version the words appeared right in the chat box, not up
+   above like an answer. A computer writes them into the box while speaking again; when the recording ends the main
+   brain rewrites the whole sentence in context (dictate.js polish, server/transcript_fix.py) and THAT sentence lands
+   in the box, or is sent when Send or Enter ended the recording. A phone still gets the text only at the end. */
 (function () {
   "use strict";
 
@@ -75,6 +85,12 @@
     if (inp && touch() && document.activeElement === inp) { try { inp.blur(); } catch (e) {} }
   }
   function $(id) { return document.getElementById(id); }
+
+  // The last messages of the main chat, for the rewrite's context.
+  function chatContext() {
+    var D = window.ThansaDictate;
+    return D && D.recentMessages ? D.recentMessages($("chatArea"), ".msg-user:not(.msg-nhap-giong) .utext, .msg-thansa > .bubble", 4) : [];
+  }
 
   // state: "idle" | "listening" | "transcribing"
   var S = { dict: null, state: "idle", base: "", heard: "", sendAfter: false, startedAt: 0, clock: null,
@@ -208,9 +224,10 @@
     var inp = $("chatInput"), send = S.sendAfter, D = window.ThansaDictate;
     S.dict = null;
     S.sendAfter = false;
-    // The text lands now, in one piece, not word by word while speaking.
-    if (S.heard && D) writeInput(D.joinText(S.base, S.heard));
+    // The rewritten sentence (or the words as heard when the rewrite failed) lands now, in one piece.
+    var words = S.heard;
     S.heard = "";
+    if (words && D) writeInput(D.joinText(S.base, words));
     earTip(D, inp);
     if (!inp) return;
     inp.readOnly = false;
@@ -235,12 +252,15 @@
     S.heard = "";
     S.sendAfter = false;
     S.levels = [];
+    var live = !(D.isPhoneUA && D.isPhoneUA());
     S.dict = D.create({
-      // Held, not shown: finished() writes it once the recording ends.
-      onText: function (text) {
+      // A computer shows the words in the box while speaking; the final (rewritten) text is written by finished().
+      onText: function (text, final) {
         if (S.state === "idle") return;
         S.heard = String(text || "");
+        if (!final && live && S.state === "listening") writeInput(D.joinText(S.base, S.heard));
       },
+      context: chatContext,
       onState: function (st) {
         var was = S.state;
         S.state = st;
