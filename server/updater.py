@@ -73,35 +73,20 @@ def venv_python():
     return str(p) if p.exists() else sys.executable
 
 
-def systemd_unit():
-    """Tên dịch vụ systemd của bản này, "" nếu không có.
-
-    install.sh từ 1.19 ghi THANSA_SERVICE_NAME vào unit (bản cài mới mặc định "thansa", nhiều bản
-    trên một máy thì mỗi bản một tên). Máy cài TRƯỚC đó không có biến này và dịch vụ tên "thansa" -
-    dò theo thứ tự thansa rồi thansa."""
-    ten = (os.getenv("THANSA_SERVICE_NAME") or "").strip()
+def has_systemd():
+    unit = f"{systemd_service_name()}.service"
     try:
         r = subprocess.run(["systemctl", "list-unit-files"], capture_output=True, text=True,
                            creationflags=_CAM)
-        if r.returncode != 0:
-            return ""
-        co = set(re.findall(r"^(\S+)\.service\s", r.stdout or "", re.M))
+        return r.returncode == 0 and re.search(
+            rf"^{re.escape(unit)}\s", r.stdout or "", re.MULTILINE) is not None
     except Exception:
-        return ""
-    for t in ([ten] if ten else []) + ["thansa", "thansa"]:
-        if t in co:
-            return t
-    return ""
+        return False
 
 
 def systemd_service_name(env_name=None, cgroup=None):
-    """Resolve this installation's unit, including instances installed under a custom name.
-
-    Thansa: install.sh ghi THANSA_SERVICE_NAME vào unit; updater đã bị lenh_tach_cgroup (P062) đưa sang
-    scope riêng thì cgroup không còn tên dịch vụ, nên lùi về systemd_unit() (thansa rồi thansa) thay vì "thansa"."""
-    if env_name is None:
-        env_name = os.getenv("THANSA_SERVICE_NAME", "") or os.getenv("THANSA_NAME", "")
-    name = env_name
+    """Resolve this installation's unit, including instances installed under a custom name."""
+    name = os.getenv("THANSA_NAME", "") if env_name is None else env_name
     if name and re.fullmatch(r"[A-Za-z0-9._-]+", name):
         return name
     if cgroup is None:
@@ -110,67 +95,10 @@ def systemd_service_name(env_name=None, cgroup=None):
         except OSError:
             cgroup = ""
     match = re.search(r"(?:^|/)([A-Za-z0-9._-]+)\.service(?:/|$)", cgroup or "", re.MULTILINE)
-    return match.group(1) if match else (systemd_unit() or "thansa")
+    return match.group(1) if match else "thansa"
 
 
-def has_systemd():
-    return bool(systemd_unit())
-
-
-def _cgroup_dich_vu(cgroup_text=None):
-    """Tên unit `.service` đang chứa tiến trình này, "" nếu không nằm trong dịch vụ hệ thống nào.
-
-    Bỏ qua `user@<uid>.service` (trình quản lý phiên của người dùng): tiến trình mở từ SSH/tmux
-    nằm dưới đó nhưng không bị `systemctl stop <unit app>` giết."""
-    if cgroup_text is None:
-        try:
-            cgroup_text = Path("/proc/self/cgroup").read_text(encoding="utf-8")
-        except OSError:
-            return ""
-    for dong in (cgroup_text or "").splitlines():
-        for phan in reversed(dong.split(":", 2)[-1].split("/")):
-            if phan.endswith(".service") and not phan.startswith("user@"):
-                return phan
-    return ""
-
-
-def lenh_tach_cgroup(args, cgroup_text=None, euid=None, systemd_run=None, now=None):
-    """Lệnh chạy updater sao cho nó SỐNG SÓT qua `systemctl stop` dịch vụ app.
-
-    Vì sao: server chạy trong dịch vụ systemd thì mọi tiến trình con nằm chung cgroup, và
-    `start_new_session=True` chỉ tách session/process group chứ KHÔNG tách cgroup. KillMode mặc
-    định (control-group) làm `systemctl stop` ở bước dừng server giết luôn updater → không bao giờ
-    tới bước khởi động lại, app chết hẳn (nginx 502) và code vẫn bản cũ (sự cố máy khách 07/10 và
-    09/10). Bọc bằng `systemd-run --scope` đưa updater sang một scope tạm riêng, giữ nguyên env và
-    thư mục làm việc. Không có systemd-run / không phải root / không nằm trong dịch vụ nào thì trả
-    nguyên lệnh cũ."""
-    args = list(args)
-    if os.name == "nt" or not _cgroup_dich_vu(cgroup_text):
-        return args
-    if euid is None:
-        euid = os.geteuid() if hasattr(os, "geteuid") else -1
-    if systemd_run is None:
-        import shutil
-        systemd_run = shutil.which("systemd-run") or ""
-    if euid != 0 or not systemd_run:
-        return args
-    return [systemd_run, "--scope", "--quiet", "--collect",
-            f"--unit=thansa-update-{int(now if now is not None else time.time())}"] + args
-
-
-def _launchd_label():
-    """Nhãn job launchd: đặt tường minh qua env, không thì bản mới com.thansa.os, máy cài trước
-    1.19 com.thansa.os (nhận ra qua file plist đang có trong LaunchAgents)."""
-    for k in ("THANSA_LAUNCHD_LABEL", "THANSA_LAUNCHD_LABEL"):
-        if os.getenv(k):
-            return os.getenv(k)
-    agents = Path.home() / "Library" / "LaunchAgents"
-    if not (agents / "com.thansa.os.plist").exists() and (agents / "com.thansa.os.plist").exists():
-        return "com.thansa.os"
-    return "com.thansa.os"
-
-
-LAUNCHD_LABEL = _launchd_label()
+LAUNCHD_LABEL = os.getenv("THANSA_LAUNCHD_LABEL", "com.thansa.os")
 
 
 def _launchd_target():
@@ -182,7 +110,8 @@ def has_launchd_job():
 
     Bài học 14/08/2026: updater kill PID server -> launchd KeepAlive respawn ngay tức thì,
     trong khi updater cũng Popen một bản uvicorn của riêng nó -> hai tiến trình giành cổng
-    7777, thansa.log đầy "[Errno 48] address already in use". Nhãn job: xem _launchd_label."""
+    7777, thansa.log đầy "[Errno 48] address already in use". Nhãn job đổi được qua env
+    THANSA_LAUNCHD_LABEL (mặc định com.thansa.os)."""
     if sys.platform != "darwin":
         return False
     try:

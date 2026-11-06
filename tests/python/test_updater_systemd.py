@@ -41,11 +41,7 @@ check("unit name: a THANSA_NAME with odd characters is ignored",
       updater.systemd_service_name("bad name;rm", CG_V2) == "thansa-shop")
 check("unit name: read from the cgroup (v2 and v1)", updater.systemd_service_name("", CG_V2) == "thansa-shop"
       and updater.systemd_service_name("", CG_V1) == "thansa")
-with patch.object(updater, "systemd_unit", lambda: ""):
-    check("unit name: a terminal session falls back to thansa", updater.systemd_service_name("", CG_USER) == "thansa")
-with patch.object(updater, "systemd_unit", lambda: "thansa"):
-    check("unit name: an old install (thansa.service only) falls back to thansa",
-          updater.systemd_service_name("", CG_USER) == "thansa")
+check("unit name: a terminal session falls back to thansa", updater.systemd_service_name("", CG_USER) == "thansa")
 
 
 def unit_files(text):

@@ -903,7 +903,7 @@
   commit: "[me] P030: tam tat build docker tu dong (chua dung docker)"
   diem_neo:
     - file: .github/workflows/docker-publish.yml
-      ky_hieu: "TẠM TẮT build tự động"
+      ky_hieu: "workflow_dispatch:"
   vung_theo_doi:
     - .github/workflows/docker-publish.yml
   anh_goc:
@@ -1542,7 +1542,7 @@
     - file: stop-thansa.bat
       ky_hieu: 'title Dung Thansa OS'
     - file: server/updater.py
-      ky_hieu: "def systemd_unit():"
+      ky_hieu: "def systemd_service_name("
     - file: install.sh
       ky_hieu: "APP_DIR"
     - file: server/main.py
@@ -1820,7 +1820,7 @@
   commit: "[me] P062: update an toan tren systemd (cgroup + pipefail) + bit thuc thi, PATH node, venv"
   diem_neo:
     - file: server/updater.py
-      ky_hieu: "def lenh_tach_cgroup(args"
+      ky_hieu: "def _systemd_worker_command("
     - file: update.sh
       ky_hieu: "_co_unit() { command -v systemctl"
   vung_theo_doi:

@@ -639,6 +639,57 @@ def va_test_theo_rebrand() -> int:
     return len(sua)
 
 
+CI_KHONG_TU_CHAY = (".github/workflows/release.yml", ".github/workflows/docker-publish.yml")
+
+
+def bo_kich_hoat_push(yml: str) -> str:
+    """Gỡ khối `push:` khỏi mục `on:` cấp cao nhất của một workflow (giữ workflow_dispatch / workflow_call)."""
+    dong = yml.split("\n")
+    out, i = [], 0
+    while i < len(dong):
+        l = dong[i]
+        if l.rstrip() == "on:":
+            out.append(l)
+            i += 1
+            while i < len(dong) and (not dong[i].strip() or dong[i].startswith(" ")):
+                d = dong[i]
+                if d.rstrip() == "  push:" or d.startswith("  push:"):
+                    i += 1
+                    while i < len(dong) and (not dong[i].strip() or len(dong[i]) - len(dong[i].lstrip()) > 2):
+                        i += 1
+                    continue
+                out.append(d)
+                i += 1
+            continue
+        out.append(l)
+        i += 1
+    return "\n".join(out)
+
+
+def chot_ci() -> list:
+    """P030 (chủ chốt 26/08, giữ từ 05/11): workflow phát hành/Docker của nguồn KHÔNG được tự chạy khi đẩy main
+    Thansa - nguồn 0.48x thêm release.yml (push main -> đánh số changelog.d + build ảnh Docker ghcr). Gỡ `push:`,
+    giữ chạy tay. Trả danh sách file đã sửa (đã commit)."""
+    sua = []
+    for f in CI_KHONG_TU_CHAY:
+        p = WT / f
+        if not p.is_file():
+            continue
+        s = p.read_text(encoding="utf-8")
+        t = bo_kich_hoat_push(s)
+        if t != s:
+            if "# Thansa (P030)" not in t:
+                t = ("# Thansa (P030): KHÔNG tự chạy khi đẩy main (chủ tắt build/phát hành tự động 26/08); chỉ chạy tay ở\n"
+                     "# tab Actions. Lượt trộn nguồn tự gỡ lại khối `push:` (ops/tu_dong_tron.py chot_ci).\n") + t
+            p.write_text(t, encoding="utf-8")
+            sua.append(f)
+    if sua:
+        git("add", "--", *sua)
+        git("commit", "-q", "-m", "ops: chot CI Thansa (P030) - workflow nguon khong tu chay khi push main\n\n"
+            + "\n".join(f"- {f}" for f in sua) + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+    return sua
+
+
 def chot_an_toan() -> str:
     """P038: loop/việc mặc định chỉ đọc + đề xuất."""
     loi = []
@@ -988,6 +1039,9 @@ def main() -> int:
         log(f"đã dịch nguồn {base_moi} → {NHANH_DICH} {dich[:9]}")
         ttin = tron_merge(dich, ver_moi, base_moi, moc["goc_version"])
         kiem_zalo_ghim()
+        ci = chot_ci()
+        if ci:
+            log(f"chốt CI (P030): gỡ kích hoạt push ở {', '.join(ci)}")
         log(f"merge xong; tự gỡ {len(ttin['tu_go'])} file, Claude gỡ {len(ttin['claude'])}, xoá {len(ttin['xoa'])}")
         doi = {}                                   # 01/11: nguồn đã dịch trước khi merge, không còn rebrand theo chuỗi
         n_stub = va_stub_gate_active()

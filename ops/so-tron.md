@@ -939,3 +939,9 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main e3c2db5, tag + Release thansa-v2.3.0; backup me-backup-2.3.0).
 - **ĐÃ PHÁT HÀNH 2026-11-03** khi chủ bấm duyệt trên Telegram (origin/main 15ee34d, tag + Release thansa-v2.4.0; backup me-backup-2.4.0).
 - **ĐÃ PHÁT HÀNH 2026-11-04** khi chủ bấm duyệt trên Telegram (origin/main 61426ad, tag + Release thansa-v2.4.1; backup me-backup-2.4.1).
+- **ĐÃ PHÁT HÀNH 2026-11-05** khi chủ bấm duyệt trên Telegram (origin/main ce1a469, tag + Release thansa-v2.5.0; backup me-backup-2.5.0).
+
+## Vòng TỰ ĐỘNG 2026-11-05 (goc a61aeae → 7671446, nền 0.447.0 → 0.483.0, thansa 2.5.0→2.6.0)
+- 86 commit upstream: 0.483.0: Cloudflare is now a built-in connection, next to GitHub (#1072); Cloudflare is now a built-in connection, next to GitHub (#1072); 0.482.1: Chat label no longer shows as page.chat.label after an update; tidier sidebar language picker (#1064); Fix raw page.chat.label in the sidebar after an update; tidy the language picker (#1064); 0.482.0: Claude Compatible is back, OpenAI Compatible and Claude Compatible take several keys (#1065); Claude Compatible card is back; OpenAI Compatible and Claude Compatible take several keys (#1065); 0.481.9: Dictation mics show the text after recording, no
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: .github/workflows/docker-publish.yml, dashboard/i18n/en.json, dashboard/i18n/vi.json, dashboard/index.html, system/plugins/thansa-schedule/plugin.py, tests/js/test_linh_vat.js. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 7671446/0.483.0/so_patch 72.

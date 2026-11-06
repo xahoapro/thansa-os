@@ -155,11 +155,15 @@ check("ui_targets.py: bí danh 'tro ly' của NHÓM nay trỏ sang bo_nao", /"tr
 
 // ---- 7. Thanh bên gọn một tầng ----
 check("console.js: không còn nhóm tro_ly", !/id: "tro_ly"/.test(console_js));
-check("console.js: home và chat nằm trong nhóm Bộ não",
-  /ids: \["home", "chat", "files", "learn"\]/.test(console_js));
+// 2026-11-05 (owner): Chat stands alone as the first rail row; the Brain group keeps home, files, learn.
+check("console.js: Chat đứng riêng ở đầu thanh bên, Bộ não còn home/files/learn",
+  /const RAIL_TOP = \["chat"\];/.test(console_js) && /ids: \["home", "files", "learn"\]/.test(console_js));
 check("i18n: không còn khoá nhóm tro_ly", vi["nav.group.tro_ly"] === undefined && en["nav.group.tro_ly"] === undefined);
-check("i18n: trang home giữ nhãn thương hiệu Thansa (fork - upstream đổi thành Đồ thị/Graph)",
+// Fork: Thansa keeps its brand label on home (upstream renamed it to Mạng nơ-ron / Neural network).
+check("i18n: trang home giữ nhãn thương hiệu Thansa (fork - upstream đổi thành Mạng nơ-ron/Neural network)",
   vi["page.home.label"] === "Thansa" && en["page.home.label"] === "Thansa");
+check("console.js: Tự học có icon riêng (brain-cog), không trùng bộ não của nhóm", /learn: "brain-cog",/.test(console_js));
+check("console.js: icon trang home là neural-net riêng của Thansa", /home: "neural-net",/.test(console_js) && /"neural-net":/.test(read("dashboard/icons.js")));
 
 // ---- 8. Nạp file và từ điển ----
 const iApp = html.indexOf("/static/app.js"), iPet = html.indexOf("/static/pet.js");

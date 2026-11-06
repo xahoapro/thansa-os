@@ -1,35 +1,45 @@
 name: Build & Publish Docker image (GHCR)
 
-# TẠM TẮT build tự động (26/08 - chủ chưa dùng Docker): KHÔNG chạy khi push main nữa,
-# chỉ chạy TAY khi cần (tab Actions → workflow này → Run workflow). Ảnh không ai kéo thì
-# đừng tốn CI mỗi lần phát hành. BẬT LẠI: bỏ comment khối `push:` dưới đây.
-# on:
-#   push:
-#     branches: [main]
-#     # Chỉ bỏ qua build khi push THUẦN tài liệu (không ảnh hưởng image).
-#     # CLAUDE.md là system prompt nạp vào image → KHÔNG ignore, để sửa nó là build lại.
-#     paths-ignore:
-#       - "README.md"
-#       - "DEPLOY.md"
-#       - ".learn/**"
+# Build image Docker và đẩy lên GitHub Container Registry (ghcr.io/xahoapro/thansa-os).
+# Hostinger Docker Manager / VPS chỉ cần PULL image này.
+#
+# Không còn tự chạy khi push lên main: release.yml đánh số phiên bản từ changelog.d/ trước, rồi gọi
+# workflow này trên ĐÚNG commit phát hành, để image mang VERSION mới. Commit do bot đẩy bằng
+# GITHUB_TOKEN không kích hoạt workflow nào khác, nên nếu vẫn nghe `push` thì image được build từ
+# commit merge, mang số cũ, và máy Docker sẽ báo "có bản mới" mãi.
+# Thansa: vẫn KHÔNG chạy khi push main (đã tắt từ 26/08), chạy tay ở tab Actions hoặc qua release.yml.
 on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Ref to build (release.yml passes main, which then carries the new VERSION)"
+        required: true
+        type: string
   workflow_dispatch:
 
 jobs:
   build-and-push:
+    # Chạy tay (workflow_dispatch) chỉ từ main (vá bảo mật 2026-11-05): job này đẩy tag :latest mà mọi
+    # máy Docker kéo về, nên một nhánh chưa qua review không được tự xuất bản image chỉ vì có người
+    # bấm Run workflow trên nhánh đó.
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set lowercase image name
         run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: Read app version
         # Tag ảnh chỉ dùng semver Thansa; cắt neo "-thansa-<nền>" để KHÔNG lộ Thansa trên registry.
-        run: echo "APP_VERSION=$(cat VERSION | tr -d ' \n\r' | sed 's/-thansa-.*//')" >> "$GITHUB_ENV"
+        run: |
+          echo "APP_VERSION=$(cat VERSION | tr -d ' \n\r' | sed 's/-thansa-.*//')" >> "$GITHUB_ENV"
+          echo "BUILD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -74,7 +84,7 @@ jobs:
             THANSA_IMAGE_SOURCE=${{ env.IMAGE }}
           tags: |
             ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ env.BUILD_SHA }}
             ${{ env.IMAGE }}:${{ env.APP_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
