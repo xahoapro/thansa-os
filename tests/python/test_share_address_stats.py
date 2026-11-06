@@ -131,7 +131,7 @@ check("the page counts, its data file and /raw do not", views(atok) == 1, views(
 
 # owner: a valid dashboard session is not a reader
 real_gate, real_valid = main.cfgmod.gate_active, main.cfgmod.valid_session
-main.cfgmod.gate_active = lambda: True
+main.cfgmod.gate_active = lambda *a, **k: True
 main.cfgmod.valid_session = lambda tok_: tok_ == "owner-session"
 try:
     cl.cookies.set("thansa_session", "owner-session")

@@ -55,7 +55,7 @@ class _ScriptedWebSocket:
 def _stub_turn(monkeypatch, runtime, store, calls):
     monkeypatch.setattr(main, "_CHAT_RUNTIME", runtime)
     monkeypatch.setattr(main, "get_store", lambda: store)
-    monkeypatch.setattr(main.cfgmod, "gate_active", lambda: False)
+    monkeypatch.setattr(main.cfgmod, "gate_active", lambda *a, **k: False)
     monkeypatch.setattr(main.cfgmod, "read_settings", lambda: {"model": {}})
     monkeypatch.setattr(main, "_chat_provider", lambda _cfg: ("openrouter", "api", "test-key", "test-model"))
     monkeypatch.setattr(main, "_reasoning_level", lambda _cfg: "off")
