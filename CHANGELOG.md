@@ -6,6 +6,83 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.500.4] - 2026-11-07
+### Sửa lỗi
+- **Tự chuyển sang tài khoản Claude thứ hai giờ chạy được thật.** Trước đây tài khoản 1 hết lượt thì Thansa có chọn tài khoản 2, nhưng vẫn cố mở lại mạch hội thoại cũ vốn nằm trong thư mục của tài khoản 1. Claude Code không tìm thấy mạch đó nên thoát ngay, và mọi tin nhắn sau đều báo "SDK engine: ProcessError: Command failed with exit code 1". Nay Thansa nhận ra mạch thuộc tài khoản khác, mở mạch mới trên tài khoản đang chạy và mồi lại ngữ cảnh từ lịch sử đã lưu, nên hội thoại chạy tiếp như bình thường.
+- **Mạch cũ bị mất cũng được khôi phục dù Claude Code báo bằng lỗi thoát.** Bản Claude Code mới báo "No conversation found" bằng cách thoát mã 1 thay vì trả kết quả lỗi, nên đường khôi phục ngữ cảnh trước đây không chạy. Nay cả hai cách báo đều được nhận ra.
+
+## [0.500.3] - 2026-11-07
+### Cải thiện
+- **Trang Nhóm gọn hơn.** Mô tả của nhóm nằm trong nút (i) cạnh tên nhóm thay vì một dòng bên dưới. Các dòng giải thích còn sót (mục Nâng cao, sổ lần trả lời, quyền của người điều phối, cách ghi nguồn cho mục tiêu, mục File và Link) cũng gập vào (i).
+- **Mục File và Link không còn bị cắt chữ.** Khi chưa có gì chỉ hiện một câu ngắn, phần giải thích nằm trong (i) cạnh tiêu đề.
+
+## [0.500.2] - 2026-11-07
+### Sửa lỗi
+- **PR đã merge không còn kẹt biểu tượng "đang chờ CI".** Khi PR được merge lúc Thansa mất kết nối GitHub, khung chat từng giữ mãi biểu tượng nhánh đang làm. Giờ nó đổi sang biểu tượng đã merge, và `thansa_github` không còn báo "chờ CI" cho PR đã merge.
+
+## [0.500.1] - 2026-11-07
+### Sửa lỗi
+- **CI không còn đỏ oan vì phép đo tốc độ khởi động.** Test cũ bấm giờ lúc nạp server và đỏ ngẫu nhiên khi máy chạy chậm. Nay nó liệt kê các thư viện được nạp lúc khởi động: không còn phụ thuộc tốc độ máy, và khi có thư viện nặng lọt vào thì nó gọi đúng tên.
+
+## [0.500.0] - 2026-11-07
+### Cải thiện
+- **Thẻ trợ lý gọn hơn.** Dòng mô tả xám bị cắt dưới tên trợ lý đã bỏ. Mô tả đầy đủ nằm trong nút (i) ở góc trên phải thẻ, ngay trên nút Auto, bấm là đọc được hết.
+
+## [0.499.0] - 2026-11-07
+### Thêm mới
+- **Gọi Thansa qua API không cần giữ kết nối chờ.** Gửi `POST /chat/jobs` là nhận ngay mã job, lượt chat chạy nền, lát sau hỏi `GET /chat/jobs/{mã}` để lấy câu trả lời. Hợp cho backend chạy trên serverless, và rớt mạng giữa chừng cũng không mất kết quả.
+- **Job nào của token nấy.** Token khác không đọc được, mỗi token chạy tối đa 4 job cùng lúc, mỗi phiên một job. Kết quả giữ 24 giờ.
+
+## [0.498.0] - 2026-11-07
+### Cải thiện
+- **Gọi thoại với cộng sự giữ được hướng dẫn dài hơn.** Phần hướng dẫn trong file cộng sự đưa vào cuộc gọi tăng từ 4.000 lên 12.000 ký tự, bộ nhớ từ 2.000 lên 6.000, chỉnh được qua `THANSA_VOICE_AGENT_BODY_CHARS` và `THANSA_VOICE_AGENT_MEMORY_CHARS`. Đặt luật quan trọng giữa `<!-- THANSA_VOICE_RULES_START -->` và `<!-- THANSA_VOICE_RULES_END -->` trong file cộng sự thì luật đó luôn được đưa lên đầu, không bị cắt.
+- **Cộng sự không bịa số liệu khi gọi thoại.** Mọi cuộc gọi với cộng sự luôn kèm một luật không bị cắt: thông tin hay thay đổi phải lấy từ công cụ, và chỉ báo việc đã xong khi công cụ trả kết quả thành công.
+
+## [0.497.0] - 2026-11-07
+### Thêm mới
+- **Linh vật có ảnh riêng.** Vào Cài đặt > Linh vật, bấm Tải ảnh lên: ảnh được cắt theo hình dáng đang chọn và hiện ở con pet, logo thanh bên lẫn ô chọn hình. Bấm Dùng lại hình Thansa là về khuôn mặt cũ.
+- **Ảnh đó làm luôn icon trên tab trình duyệt**, nên mở nhiều Thansa cùng lúc vẫn phân biệt được ngay. Có công tắc để tắt nếu muốn giữ logo trên tab.
+
+## [0.496.0] - 2026-11-07
+### Thêm mới
+- **Đặt tên tài khoản ngay lần đăng nhập đầu.** Thẻ ChatGPT, Claude Code, Grok, Antigravity và key API đầu tiên đều hỏi tên trước khi đăng nhập, tên hiện ngay trên dòng trạng thái của thẻ nên không còn lẫn tài khoản nào với tài khoản nào.
+- **Đổi tên tài khoản bất cứ lúc nào.** Nút ⋯ của thẻ có "Đặt tên tài khoản", mỗi tài khoản trong danh sách cũng có "Đổi tên". Thêm tài khoản mới thì bắt buộc đặt tên.
+### Cải thiện
+- **Kết nối thêm nhà cung cấp không còn popup.** Bấm một cái là xổ ra hết các thẻ kết nối ngay bên dưới, bấm lần nữa để gập lại.
+
+## [0.495.1] - 2026-11-07
+### Sửa lỗi
+- **Khung chat không còn kẹt ở "Mất kết nối tới máy chủ" hàng giờ.** Trước đây một tin máy chủ xử lý lỗi làm đứt kết nối, trang nối lại rồi gửi lại đúng tin đó, lại đứt, lặp mãi, khởi động lại máy chủ cũng không hết. Nay máy chủ báo lỗi ngay dưới tin đó và kết nối vẫn chạy.
+- **Một tin gửi 3 lần không được nhận thì trả về ô nhập**, không gửi lại vô hạn nữa.
+- **Phiên đăng nhập hết hạn thì hiện màn đăng nhập**, thay vì báo mất kết nối mãi và mọi danh sách về 0.
+- **Brain đặt trên Google Drive, OneDrive đỡ làm đứng máy chủ:** phần quét thư mục đầu và cuối mỗi lượt chat chạy riêng, không chặn kết nối nữa.
+
+## [0.495.0] - 2026-11-07
+### Thêm mới
+- **Gợi ý câu tiếp theo ngay trong ô chat.** Thansa trả lời xong, ô nhập trống hiện mờ câu anh nhiều khả năng sẽ gõ tiếp (ví dụ "ok làm theo đề xuất cho cả 2 PR đi"). Bấm **Tab** để điền vào, sửa thêm hoặc Enter gửi luôn; trên điện thoại bấm nút **Tab** cạnh ô nhập.
+- Có cả ở chat chính lẫn trang Nhóm. Gợi ý chạy bằng model việc nền, không tốn bộ não chính. Tắt hoặc bật lại ở menu **+** của khung chat, mục "Gợi ý câu tiếp theo".
+
+## [0.494.0] - 2026-11-07
+### Thêm mới
+- **Mỗi cộng sự có thể chọn giọng ChatGPT Live riêng.** Trong trình sửa trợ lý, chọn một trong các giọng mà Codex realtime v3 hỗ trợ. Để Mặc định thì dùng giọng chung ở trang Cài đặt. Giọng được lưu trong file cộng sự và đi cùng Brain Sync.
+- **Không ảnh hưởng cuộc gọi khác.** Giọng được chọn theo phiên cộng sự; cuộc gọi Thansa Core và Live API khác tiếp tục theo cài đặt hiện tại.
+
+## [0.493.2] - 2026-11-07
+### Sửa lỗi
+- **Gọi thoại với cộng sự không còn tự nhận là ChatGPT.** Danh tính của cộng sự giờ đứng đầu lời dặn của cuộc gọi, nên hỏi "bạn là ai" (cả bằng tiếng Anh) là cộng sự trả lời đúng tên mình.
+- **Cuộc gọi với cộng sự không còn kéo theo bộ nhớ chung của brain chính,** chỉ dùng hướng dẫn và trí nhớ riêng của cộng sự đó, nên không lạc sang chuyện không thuộc vai của nó.
+
+## [0.493.1] - 2026-11-07
+### Sửa lỗi
+- **Agent trong quy trình chưa chọn model riêng giờ chạy bằng model chính.** Trước đây bước đó luôn chạy bằng Claude, dù trang Models đang chọn não khác. Agent đã chọn model riêng vẫn giữ nguyên lựa chọn đó.
+
+## [0.493.0] - 2026-11-07
+### Thêm mới
+- **Cuộc trò chuyện chưa đọc có chấm đỏ.** Thansa trả lời xong mà chưa mở xem thì hàng đó trong lịch sử trò chuyện hiện chấm đỏ và tiêu đề in đậm hơn, ở cả trang Trò chuyện lẫn cột lịch sử của trang Cộng sự.
+- **Mở cuộc nào là hết chấm cuộc đó.** Đang xem đúng cuộc nào thì tin mới về cũng không hiện chấm, và đã đọc ở tab này thì tab khác cũng tự tắt chấm.
+- **Số tin chưa đọc ở danh sách Nhóm và Cộng sự đổi sang màu đỏ.** Nhóm hoặc cộng sự đã tắt thông báo vẫn giữ màu xám.
+- Cuộc trò chuyện cũ có từ trước bản này tính là đã đọc, nên lịch sử không sáng đỏ cùng lúc.
+
 ## [0.492.1] - 2026-11-07
 ### Cải thiện
 - **Trang Chatbot mở nhanh hơn hẳn khi hòm thư đã nhiều tin.** Các con số "tin hôm nay" ở Hội thoại và trên thẻ bot trước đây phải đọc lại toàn bộ tin nhắn mỗi 5 giây, nay chỉ đọc đúng khoảng thời gian cần.
