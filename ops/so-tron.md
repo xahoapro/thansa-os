@@ -964,3 +964,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 29d342d/0.492.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-07** khi chủ bấm duyệt trên Telegram (origin/main 49bc4ff, tag + Release thansa-v2.9.0; backup me-backup-2.9.0).
+
+## Vòng TỰ ĐỘNG 2026-11-07 (goc 29d342d → c2d0b20, nền 0.492.1 → 0.500.4, thansa 2.9.0→2.10.0)
+- 31 commit upstream: 0.500.4: A chat that moves to a second Claude account no longer dies with "ProcessError exit code 1" (#1157); Claude: a chat moving to a second plan account no longer dies with exit code 1 (#1157); 0.500.3: Team page folds its explanations and the team description into the (i) (#1153); Team page: fold explanations and the team description into the (i) (#1153); 0.500.2: A merged PR no longer keeps the chat's "waiting for CI" icon (#1152); em sửa xong tự đẩy lên github và merge vào nhé. (#1152); 0.500.1: Startup check lists loaded packages instead of timing them (#1151); Startup check: list load
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc c2d0b20/0.500.4/so_patch 72.
