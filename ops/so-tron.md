@@ -957,3 +957,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 2 commit upstream: 0.491.0: A failed GitHub push is retried on its own, right after GitHub is connected again (#1121); Retry a failed GitHub push on its own instead of stalling (#1121)
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc adb7765/0.491.0/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-07** khi chủ bấm duyệt trên Telegram (origin/main 9292eca, tag + Release thansa-v2.8.0; backup me-backup-2.8.0).
