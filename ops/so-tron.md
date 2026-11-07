@@ -963,3 +963,4 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 4 commit upstream: 0.492.1: Chatbot page loads faster on a big inbox (#1127); Speed up the Chatbot page on a big inbox (#1127); 0.492.0: Turn scheduled jobs off on one machine (#1126); Turn scheduled jobs off on one machine (#1126)
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 29d342d/0.492.1/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-07** khi chủ bấm duyệt trên Telegram (origin/main 49bc4ff, tag + Release thansa-v2.9.0; backup me-backup-2.9.0).
