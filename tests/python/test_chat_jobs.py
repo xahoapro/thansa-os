@@ -92,7 +92,7 @@ for path in ("/chat/jobs", "/chat/jobs/cj_x"):
     check(f"4. a chat token reaches {path}", config.verify_api_token(tok_a, path) is not None)
 
 # Login gate on, like a public server: every call goes through the token branch of the middleware.
-main.cfgmod.gate_active = lambda: True
+main.cfgmod.gate_active = lambda *a, **k: True
 main.cfgmod.auth_enabled = lambda: True
 
 with TestClient(main.app, base_url="http://localhost:7777") as cl:
@@ -168,7 +168,7 @@ with TestClient(main.app, base_url="http://localhost:7777") as cl:
     check("6. a crash reads error with the exception", "RuntimeError: boom" in str(body.get("error")), body)
 
     # ------------------------------------------------------------ 3. the owner's own jobs
-    main.cfgmod.gate_active = lambda: False   # a server with no login: the owner, no token
+    main.cfgmod.gate_active = lambda *a, **k: False   # a server with no login: the owner, no token
     r = cl.post("/chat/jobs", data={"message": "mine", "session": "mine"})
     mine = r.json().get("job_id")
     check("3. the owner starts a job without a token", bool(mine), r.text)
@@ -177,7 +177,7 @@ with TestClient(main.app, base_url="http://localhost:7777") as cl:
     check("3. with no gate the token still reads its own job",
           cl.get(f"/chat/jobs/{job}", headers=A).json().get("status") == "done")
     release(cl, "mine")
-    main.cfgmod.gate_active = lambda: True
+    main.cfgmod.gate_active = lambda *a, **k: True
 
 # ---------------------------------------------------------------- 7. restart and expiry
 store_path = Path(tempfile.mkdtemp(prefix="thansa-chat-jobs-store-")) / "chat_jobs.json"
