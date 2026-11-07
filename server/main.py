@@ -57,6 +57,7 @@ import claude_cli   # binary `claude`: tìm đường, auth, và danh mục mode
 import codex_models   # thang effort mà CHÍNH Codex khai cho từng model (model/list)
 import fast_mode   # composer Fast mode bolt: per-turn choice and per-brain parameters (0.164.0)
 import config as cfgmod
+import chat_jobs   # async /chat turns, POST /chat/jobs (#1021)
 import update_state
 _ver_tuple = update_state.ver_tuple
 _ver_newer = update_state.ver_newer
@@ -108,6 +109,7 @@ import luot_dang_chay # sổ lượt chat đang chạy theo brain: tool giao vi�
 import tool_label     # một dòng mô tả lệnh gọi công cụ (lệnh nào, file nào) cho khối tiến trình
 import nghe_sua       # sửa chữ nghe nhầm theo ngữ cảnh (David -> Thansa) + hotwords cho Whisper
 import transcript_fix  # rewrites what the mic heard at the end of a dictation: the main brain, with the chat as context
+import next_prompt  # suggests the owner's next message after a reply (ghost text, Tab fills it in)
 import phien_am       # từ tiếng Anh -> cách đọc kiểu Việt (đọc loa + so âm câu nghe được)
 import voice_privacy
 voice_privacy.install()
@@ -284,6 +286,8 @@ _AUTH_PUBLIC_PREFIX = ("/static/", "/s/", "/hooks/")
 # /brand-logo: hiện trên màn đăng nhập (trước session). /tls-check: Caddy gọi (không đăng nhập được).
 _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/login", "/auth/setup",
                       "/brand-logo", "/brand-theme.css", "/tls-check",
+                      # /pet-icon: the mascot picture as the tab icon, shown on the login screen too.
+                      "/pet-icon",
                       # /domain/auto, /domain/whoami (0.302.0): the login page opened by IP asks whether a
                       # verified https link exists; neither reveals anything beyond that link and a random id.
                       "/domain/auto", "/domain/whoami",
@@ -421,7 +425,10 @@ def _token_ok(request, path: str) -> bool:
     ip = request.client.host if request.client else ""
     if cfgmod.token_ip_banned(ip):
         return False
-    if cfgmod.verify_api_token(raw, path):
+    entry = cfgmod.verify_api_token(raw, path)
+    if entry:
+        # Who called, for routes that keep per-caller state (POST /chat/jobs, #1021).
+        request.state.api_token_id = str(entry.get("id") or "")
         return True
     cfgmod.note_token_failure(ip, raw[:12])
     return False
@@ -1391,6 +1398,12 @@ async def root(request: Request = None):
     # nó đứng yên ở 5 qua hàng chục bản.
     html = html.replace("/brand-logo?v=5", "/brand-logo?v=" + ver).replace(
         'src="/brand-logo"', 'src="/brand-logo?v=' + ver + '"')
+    # The mascot's own picture as the tab icon (dashboard.pet.image + favicon): set it in the page itself, so the
+    # tab shows it from the first paint and on the login screen too, not only after pet.js has run.
+    pet_icon = _pet_icon_file()
+    if pet_icon is not None:
+        html = re.sub(r'(<link rel="(?:icon|apple-touch-icon)" href=")/brand-logo\?v=[\w.]+',
+                      lambda m: m.group(1) + "/pet-icon?v=" + pet_icon.stem, html)
     # Nhúng phiên bản + vân tay vào chính trang. index.html luôn tải mới (no-store) nên khối
     # này LUÔN đúng, kể cả khi mọi file JS quanh nó đã cũ - đó chính là điểm tựa để
     # freshness.js phát hiện ra chuyện đó.
@@ -2234,9 +2247,11 @@ def _sync_legacy_engine(m) -> None:
         _set_main_model({"model": m}, main["provider"], main.get("model") or "")
 
 
-def _routing_key_saved(m, key_field) -> None:
+def _routing_key_saved(m, key_field, label: str = "") -> None:
     """A key typed into a card's old single key box (connect, change key): it becomes account 1 of that card, and a
-    newly connected card joins the END of the usage order (spec 2.1.5)."""
+    newly connected card joins the END of the usage order (spec 2.1.5). `label` is the name typed next to the key on
+    the first connect (owner 07/11/2026), so the key never reads as a bare "Key 1"."""
+    label = str(label or "").strip()[:60]
     d = next((p for p in PROVIDER_DEFS if p.get("key_field") == key_field), None)
     if not d:
         return
@@ -2246,6 +2261,8 @@ def _routing_key_saved(m, key_field) -> None:
             cur[0] = dict(cur[0], key=m[key_field], enabled=True)
         elif not cur:
             cur = [{"id": model_routing.new_account_id(), "label": "Key 1", "enabled": True, "key": m[key_field]}]
+        if label:
+            cur[0] = dict(cur[0], label=label)
         model_routing.save_accounts(m, d["id"], cur, key_field)
     model_routing.add_to_order(m, d["id"])
 
@@ -2329,6 +2346,29 @@ async def _transcript_rewrite_ask(prompt: str) -> str:
 
 
 transcript_fix.wire(ask=_transcript_rewrite_ask)
+
+
+async def _next_prompt_ask(prompt: str) -> str:
+    """One text-only turn on the BACKGROUND brain for the suggested next message (next_prompt.py, 2026-11-07).
+
+    A suggestion is a side job, so it runs on the background model, not the main brain. Same sandbox as the group chat
+    judge: an empty folder, no MCP, every tool refused, so a chat that reads like an order is only guessed at."""
+    base = _reply_policy_sandbox_engine(next_prompt.SYSTEM, "next-prompt", cwd_name="next_prompt_cwd")
+    cli = aux_engine.strip_tools(_aux_swap(base, mode="suggest", tag="next-prompt"), base)
+    if not cli.is_available():
+        raise RuntimeError("background brain not ready")
+    final = ""
+    async for ev in cli.query(prompt):
+        if ev.get("type") == "final":
+            final = ev.get("content", "") or ""
+        elif ev.get("type") == "error":
+            raise RuntimeError(str(ev.get("content") or "engine error")[:200])
+    if aux_engine.final_loi_dang_nhap(final):
+        raise RuntimeError("background brain signed out")
+    return final
+
+
+next_prompt.wire(ask=_next_prompt_ask)
 
 
 def _reply_policy_write_feedback(bot: dict, text: str) -> None:
@@ -6480,6 +6520,10 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             lc["tz"] = name
         if "currency" in patch:
             lc["currency"] = str(patch["currency"] or "").strip().upper() or "VND"
+    elif section == "chat":
+        # The suggested next message (next_prompt.py): the "+" menu of the composer switches it on and off.
+        if "suggest_next" in patch:
+            cfg.setdefault("chat", {})["suggest_next"] = bool(patch["suggest_next"])
     elif section == "general":
         if "workspace_name" in patch:
             cfg["workspace_name"] = patch["workspace_name"] or "Thansa OS"
@@ -6499,7 +6543,7 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
         for kf in _PROVIDER_KEY_FIELDS:
             if patch.get(kf) and not str(patch[kf]).startswith("••••"):
                 m[kf] = str(patch[kf]).strip()
-                _routing_key_saved(m, kf)
+                _routing_key_saved(m, kf, patch.get("key_label") or "")
         if "openai_compat_base" in patch:
             new_base = str(patch["openai_compat_base"] or "").strip().rstrip("/")
             if new_base != (m.get("openai_compat_base") or "") and not (
@@ -6593,9 +6637,10 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
             pa = patch["accounts"]
             pid = str(pa.get("provider") or "")
             kf = _routing_key_fields().get(pid)
-            if plan_accounts.supported(pid) and isinstance(pa.get("items"), list):
+            if pid in plan_accounts.KIND and isinstance(pa.get("items"), list):
                 # A plan card's accounts carry no key: order, label and on/off only. Removing one deletes its login
-                # folder; account 1 (the machine's own login) stays (0.353.0).
+                # folder; account 1 (the machine's own login) stays (0.353.0). Every plan card takes this, also one
+                # that holds no extra account on this machine (Antigravity off Linux), so account 1 can be named.
                 plan_accounts.save(m, pid, pa["items"], removed=pa.get("removed"))
             if kf and isinstance(pa.get("items"), list):
                 items = []
@@ -6720,6 +6765,17 @@ async def settings_set(section: str = Form(...), data: str = Form("{}")):
                     pet["pos"] = max(0.0, min(1.0, float(pet_moi["pos"])))
                 except (TypeError, ValueError):
                     pass
+            # The mascot's own uploaded picture: a name from the /avatars store (POST /avatars/upload), never a path.
+            # "" removes it. A name the store does not hold is dropped, so settings.json never points at a stray file.
+            if "image" in pet_moi:
+                v = pet_moi.get("image")
+                if v in ("", None):
+                    pet["image"] = ""
+                elif avatar_upload.hop_le(v):
+                    pet["image"] = v
+            # Use that picture as the browser tab icon too, so several Thansa tabs tell apart at a glance.
+            if "favicon" in pet_moi:
+                pet["favicon"] = bool(pet_moi["favicon"])
             cfg["dashboard"]["pet"] = pet
     elif section == "image":
         cfg.setdefault("image", {})
@@ -8569,6 +8625,7 @@ def agents_index(brain: str, *, kem_prompt: bool = True) -> list:
                     "role": meta.get("role", ""), "skills": meta.get("skills", []) or [],
                     "model": meta.get("model", ""), **_agent_tag_fields(meta),
                     "model_provider": meta.get("model_provider", ""),
+                    "chatgpt_voice": meta.get("chatgpt_voice", ""),
                     "pinned": bool(meta.get("pinned")),
                     "avatar": agent_avatar.for_agent(meta, f.stem)})
         if kem_prompt:
@@ -8711,7 +8768,7 @@ def agent_get(slug: str = Query(...), brain: str = Query("brain")):
         _cm, _cb = thansa_core.read_core(_brain_root(brain))
         e = _thansa_core_entry(brain)
         # The editor gets the role as stored (saving it unchanged must not swap in the translated line).
-        return {**e, "role": str(_cm.get("role") or e["role"]), "prompt": _cb}
+        return {**e, "role": str(_cm.get("role") or e["role"]), "chatgpt_voice": str(_cm.get("chatgpt_voice") or ""), "prompt": _cb}
     path = _agent_md_path(brain, slug)
     if not path:
         return JSONResponse({"error": localefmt.chu("Không tìm thấy trợ lý", "Assistant not found")}, status_code=404)
@@ -8719,6 +8776,7 @@ def agent_get(slug: str = Query(...), brain: str = Query("brain")):
     return {"slug": slug, "name": meta.get("name", slug), "role": meta.get("role", ""),
             "skills": meta.get("skills", []) or [], "model": meta.get("model", ""),
             **_agent_tag_fields(meta), "model_provider": meta.get("model_provider", ""),
+            "chatgpt_voice": meta.get("chatgpt_voice", ""),
             "reasoning": _agent_reasoning(meta),
             "prompt": body, "pinned": bool(meta.get("pinned")),
             "avatar": agent_avatar.for_agent(meta, slug)}
@@ -8731,7 +8789,7 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
                      avatar_palette: str = Form(None), avatar_color: str = Form(None),
                      avatar_eye: str = Form(None), avatar_eye_color: str = Form(None),
                      avatar_eye_size: str = Form(None), avatar_image: str = Form(None), tags: str = Form(None),
-                     reasoning: str = Form(None)):
+                     reasoning: str = Form(None), chatgpt_voice: str = Form(None)):
     # Trợ lý MỚI đặt tên file không dấu ("Bống Work" -> bong-work.md), đúng quy ước slug của Thansa. Trước
     # 0.88.1 tên giữ nguyên dấu; các file đó vẫn đọc, sửa, xoá được nhờ skill_router.valid_file_slug.
     # TẠO MỚI = form không gửi slug. Nhóm chat team (spec 2026-10-13 mục 5.1): tạo mới mà slug suy từ tên đã có file thì
@@ -8756,6 +8814,11 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
     # Giá trị lạ (client cũ, gõ tay) bị loại về "" để _agent_model_provider suy như agent cũ,
     # chứ không ghi vào file một nhà mà server không chạy được.
     mp = (model_provider or "").strip()
+    # Empty = inherit the shared voice; absent = preserve existing preference for old clients.
+    if isinstance(chatgpt_voice, str):
+        chatgpt_voice = chatgpt_voice.strip()
+        if chatgpt_voice and chatgpt_voice not in voice_live.CHATGPT_VOICES:
+            return JSONResponse({"ok": False, "error": "Unsupported ChatGPT Live voice"}, status_code=400)
     path = _agents_dir(brain) / f"{slug}.md"
     tags = tags if isinstance(tags, str) else None
     group = group if isinstance(group, str) else None
@@ -8807,6 +8870,8 @@ async def save_agent(name: str = Form(...), role: str = Form(""), skills: str = 
                          "skills": skills_list, "model": model, "avatar": avatar,
                          "model_provider": mp if mp in AGENT_PROVIDERS else "",
                          "updated": _today()})  # "" = mặc định theo CLI
+            if isinstance(chatgpt_voice, str):
+                meta["chatgpt_voice"] = chatgpt_voice
             if core:
                 meta["system"] = True   # still the system assistant after any edit
             agent_tags.write_tags(meta, hien)
@@ -11796,8 +11861,18 @@ def _workflow_agent_helpers(brain, tools, mode=None):
     gated_mode = str(mode or "auto") if str(mode or "auto") in ("suggest", "auto") else "auto"
 
     def _mk(sysprompt, model=None, provider="", extra_tools=()):
+        # An interactive step whose agent pins no model runs on the owner's MAIN model, like a chat turn
+        # (owner report 2026-11-06, PR #1125): before this it always fell back to Claude, whatever brain was picked
+        # on the Models page. A pinned agent keeps its pin; the gated background run (tools is not None) stays on
+        # Claude Code by design, see the comment further down.
+        from_main = False
+        if tools is None and not str(model or "").strip() and not str(provider or "").strip():
+            main_spec = _effective_main(cfgmod.read_settings())
+            model = str(main_spec.get("model") or "")
+            provider = str(main_spec.get("provider") or "")
+            from_main = True
         prov = _agent_model_provider(model, provider)
-        if prov == "openai-oauth" and model and tools is None and find_codex_cli():
+        if prov == "openai-oauth" and (model or from_main) and tools is None and find_codex_cli():
             openai_oauth.write_codex_auth()
             cc = CodexCLI(cwd=vault_root, tag="workflow", model=_codex_safe_model(model),
                           instructions=sysprompt)
@@ -16853,15 +16928,42 @@ async def brand_logo():
     return FileResponse(str(p), headers={"Cache-Control": "public, max-age=60"})
 
 
+_ICON_MEDIA = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+               ".webp": "image/webp", ".gif": "image/gif"}
+
+
+def _pet_icon_file():
+    """The mascot's own uploaded picture when the owner uses it as the tab icon, else None.
+
+    Lets someone with several Thansa open (shop, family, a VPS for a client) tell the tabs apart. On by default once
+    a picture is uploaded; `favicon: false` keeps the logo on the tab. The name goes through avatar_upload, so a
+    hand-edited settings.json cannot point this at any other file."""
+    pet = (cfgmod.read_settings().get("dashboard") or {}).get("pet") or {}
+    if not isinstance(pet, dict) or pet.get("favicon") is False:
+        return None
+    return avatar_upload.duong_dan(pet.get("image"))
+
+
+@app.get("/pet-icon")
+async def pet_icon():
+    """Tab icon from the mascot picture. Public like /brand-logo: the login screen shows it before any session.
+    No picture (or the option is off) falls back to the logo, so a stale link never shows a broken icon."""
+    p = _pet_icon_file() or _current_logo_file() or _DEFAULT_LOGO
+    if not p.exists():
+        return JSONResponse({"error": "no icon"}, status_code=404)
+    return FileResponse(str(p), media_type=_ICON_MEDIA.get(p.suffix.lower(), "image/png"),
+                        headers={"Cache-Control": "public, max-age=60", "X-Content-Type-Options": "nosniff"})
+
+
 @app.get("/favicon.ico")
 async def favicon_ico():
     """Favicon = logo hiện tại. Trình duyệt LUÔN tự gọi /favicon.ico và cache rất lì;
-    trước đây route này trả 404 nên tab giữ icon cũ. Trả thẳng ảnh logo cho khớp app."""
-    p = _current_logo_file() or _DEFAULT_LOGO
+    trước đây route này trả 404 nên tab giữ icon cũ. Trả thẳng ảnh logo cho khớp app.
+    The mascot picture wins when the owner made it the tab icon (see _pet_icon_file)."""
+    p = _pet_icon_file() or _current_logo_file() or _DEFAULT_LOGO
     if not p.exists():
         return JSONResponse({"error": "no favicon"}, status_code=404)
-    media = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-             ".webp": "image/webp", ".gif": "image/gif"}.get(p.suffix.lower(), "image/png")
+    media = _ICON_MEDIA.get(p.suffix.lower(), "image/png")
     return FileResponse(str(p), media_type=media, headers={"Cache-Control": "public, max-age=300"})
 
 
@@ -17224,6 +17326,26 @@ async def stt_fix_route(request: Request):
     return {"ok": True, **await transcript_fix.fix_transcript(cfg, text)}
 
 
+@app.get("/chat/suggest")
+def chat_suggest_state():
+    """Whether the suggested next message is on (the "+" menu of the composer shows the switch)."""
+    return {"enabled": next_prompt.enabled(cfgmod.read_settings())}
+
+
+@app.post("/chat/suggest")
+async def chat_suggest(request: Request):
+    """The owner's likely next message once Thansa has answered (2026-11-07), see next_prompt.py.
+
+    Body {"context": [{"role": "user"|"assistant", "text": "..."}, ...]}, the last messages on screen, oldest first.
+    Never an error: any trouble gives an empty suggestion, and the chat box keeps its usual placeholder."""
+    try:
+        body = await request.json()
+    except Exception:
+        return {"ok": False, "text": ""}
+    ctx = (body or {}).get("context") if isinstance(body, dict) else None
+    return {"ok": True, **await next_prompt.suggest(cfgmod.read_settings(), ctx)}
+
+
 @app.get("/voice/call")
 async def voice_call_route():
     """Đường gọi của nút mic (voice_call.select_call_engine). Nhẹ, không hỏi mạng: dashboard gọi
@@ -17479,6 +17601,27 @@ def _voice_persona(conv_sid: str, brain: str):
         return None
 
 
+def _voice_partner_settings(cfg: dict, conv_sid: str, brain: str) -> dict:
+    """Select a saved ChatGPT Live voice for THIS partner call only, without changing global settings.
+
+    A missing, deleted or unrecognized agent/voice retains the existing system-wide voice.
+    Never derive the voice from chat text or client-supplied agent identifiers.
+    """
+    if str((cfg.get("voice") or {}).get("live_provider") or "") != "chatgpt":
+        return cfg
+    agent = _voice_agent(conv_sid, brain)
+    if not agent:
+        return cfg
+    try:
+        meta, _ = _read_md(_agents_dir(agent["brain"]) / f"{agent['slug']}.md")
+        selected = str(meta.get("chatgpt_voice") or "").strip()
+    except (OSError, ValueError, TypeError):
+        return cfg
+    if selected not in voice_live.CHATGPT_VOICES:
+        return cfg
+    return {**cfg, "voice": {**(cfg.get("voice") or {}), "chatgpt_voice": selected}}
+
+
 def _voice_brain_conf(conf: dict, conv_sid: str, brain: str) -> dict:
     """The fast voice lane's settings for this chat: a partner's chat speaks with the partner's prompt."""
     persona = _voice_persona(conv_sid, brain)
@@ -17597,6 +17740,12 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             pass
         return
     cfg = voice_call.live_settings(_raw_cfg)
+    # A partner's own ChatGPT Live voice, for this call only. Any failure keeps the shared voice and still starts the
+    # call, the same rule as the persona lookup below.
+    try:
+        cfg = _voice_partner_settings(cfg, session_id, brain)
+    except Exception as e:  # noqa: BLE001
+        print(f"[voice partner] {type(e).__name__}: {e}", file=__import__("sys").stderr)
     memory_index = ""
     if str(((cfg.get("voice") or {}).get("live_provider")) or "") == "chatgpt":
         # ChatGPT Live chạy qua Codex app-server: bắc cầu token đã nối ở trang Models sang
@@ -18314,6 +18463,25 @@ async def _chat_socket(ws):
     async def send_raw(obj):
         await _CHAT_RUNTIME.publish(voice_turn_protocol.frame(obj))
 
+    async def _message_failed(payload, exc):
+        """A message from this page raised (see the receive loop). Log it with its stack, then tell the page: a typed
+        message is acked as rejected so the page stops sending it again, and its turn ends with the error shown."""
+        import traceback
+        print(f"[chat socket] action={str(payload.get('action') or 'chat')[:30]!r} failed: "
+              f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}", file=sys.stderr, flush=True)
+        sid = str(payload.get("session_id") or "")
+        cmid = str(payload.get("client_msg_id") or "").strip()[:64]
+        if cmid and sid:
+            await send_client({"type": "chat_ack", "session_id": sid, "client_msg_id": cmid,
+                               "dup": False, "rejected": True})
+        if payload.get("message") and sid and not _CHAT_RUNTIME.get_job(sid):
+            await send_client({"type": "error", "session_id": sid, "content": localefmt.chu(
+                f"Máy chủ gặp lỗi khi nhận tin này ({type(exc).__name__}), Thansa chưa chạy nó. Gửi lại sau ít phút, "
+                "nếu vẫn lỗi thì báo nhà phát triển kèm nhật ký máy chủ.",
+                f"The server hit an error taking this message ({type(exc).__name__}), Thansa did not run it. Send it "
+                "again in a few minutes, and report it with the server log if it keeps failing.")})
+            await send_client({"type": "turn_done", "session_id": sid})
+
     class _SendProxy:
         """Đội lốt ws bên trong 1 lượt: mọi send_text tự gắn session_id của lượt + qua khoá ghi.
         Nhờ vậy toàn bộ code các nhánh engine bên dưới KHÔNG cần sửa mà vẫn định tuyến đúng phiên."""
@@ -18394,13 +18562,15 @@ async def _chat_socket(ws):
                       f"warm={_first_out['warm']}", file=sys.stderr)
             # 0.190.0: what the brain's memory looks like before the turn, for the "Đã nhớ · Hoàn tác" line and the
             # empty-claim check after it (memory_receipt).
+            # Users, 07/11/2026: these walks run in a thread. A brain on a synced drive (Google Drive, OneDrive) can
+            # take seconds per folder, and on the event loop that froze every socket: "Mất kết nối tới máy chủ".
             try:
-                _mem_snap = memory_receipt.snapshot(_brain_memory_dir(brain))
+                _mem_snap = await asyncio.to_thread(memory_receipt.snapshot, _brain_memory_dir(brain))
             except Exception:  # noqa: BLE001 - no snapshot only means no receipt this turn
                 _mem_snap = None
             # 0.200.0: schedules, loops, partners, workflows and skills before the turn, for the "Đã tạo · Hoàn tác" line.
             try:
-                _cap_snap = change_receipt.snapshot(_brain_root(brain))
+                _cap_snap = await asyncio.to_thread(change_receipt.snapshot, _brain_root(brain))
             except Exception:  # noqa: BLE001
                 _cap_snap = None
             _cfg_all = cfgmod.read_settings()
@@ -19713,17 +19883,18 @@ async def _chat_socket(ws):
                 # 0.190.0: the turn saved, changed or forgot a memory -> one small line under the answer with Undo;
                 # it said so but nothing changed -> one line of fact. Stored like every pushed line, so F5 keeps it.
                 try:
-                    _nho = memory_receipt.facts_diff(_mem_snap, _brain_memory_dir(brain))
+                    _nho = await asyncio.to_thread(memory_receipt.facts_diff, _mem_snap, _brain_memory_dir(brain))
                     if _nho:
                         await push_to_chat(conv_sid, memory_receipt.receipt_text(_nho),
                                            nho=memory_receipt.receipt_block(_nho, _brain_key(brain)))
                     elif (memory_receipt.detect_claim(final_text)
-                          and not memory_receipt.changed(_mem_snap, _brain_memory_dir(brain))):
+                          and not await asyncio.to_thread(memory_receipt.changed, _mem_snap,
+                                                         _brain_memory_dir(brain))):
                         await push_to_chat(conv_sid, memory_receipt.claim_note())
                 except Exception as _e:  # noqa: BLE001
                     print(f"[memory receipt] {type(_e).__name__}: {_e}", file=sys.stderr)
                 try:
-                    _doi = change_receipt.diff(_cap_snap, _brain_root(brain))
+                    _doi = await asyncio.to_thread(change_receipt.diff, _cap_snap, _brain_root(brain))
                     if _doi:
                         await push_to_chat(conv_sid, change_receipt.receipt_text(_doi),
                                            nho=change_receipt.receipt_block(_doi, _brain_key(brain)))
@@ -20424,310 +20595,350 @@ async def _chat_socket(ws):
 
         while True:
             raw = await _real_ws.receive_text()
-            payload = json.loads(raw)
-            action = payload.get("action")
-            if action == "reset":
-                continue                        # client tự quản phiên; reset KHÔNG còn giết lượt nào
-            if action == "typing":
-                # 0.382.0: the owner started typing. Reopen this conversation's engine process if it was closed for
-                # being idle, so the message lands on a warm one (warm_pool.prewarm; bounded by the same budget).
-                warm_pool.POOL.prewarm(str(payload.get("session_id") or ""))
+            try:
+                payload = json.loads(raw)
+            except ValueError:
                 continue
-            if action == "ping":
-                # Trang hỏi "còn sống không" sau một quãng im (0.85.11): socket chết mà không đóng thì
-                # không có pong, trang bỏ socket đó và nối lại. Xem _checkSocket trong app.js.
-                await send_client({"type": "pong"})
+            if not isinstance(payload, dict):
                 continue
-            if action == "ui_result":
-                # Dashboard vừa làm xong (hoặc từ chối) một `ui_action` do tool thansa_ui bắn
-                # ra. Giải future đang đợi trong ui_bridge để tool trả lời model ngay trong lượt.
-                ui_bridge.resolve(str(payload.get("id") or ""), bool(payload.get("ok")),
-                                  str(payload.get("detail") or ""), skipped=bool(payload.get("skipped")))
-                continue
-            if action == "stop":
-                _sid = payload.get("session_id") or ""
-                _tag = _CHAT_RUNTIME.cancel_session(_sid)
-                if _tag:
-                    cancel_all(_tag)     # giết subprocess engine của đúng lượt đó
-                continue
-            if action == "steer":
-                # 0.206.0: a message typed while this chat's turn is still running (steer_inbox.py). Stored now as the
-                # owner's message; the running turn reads it at its next step, or it runs right after the turn ends.
-                _sid = str(payload.get("session_id") or "").strip()
-                _txt = str(payload.get("message") or "").strip()[:steer_inbox.MAX_CHARS]
-                _cid = str(payload.get("client_id") or "")[:40]
-                _row = store.get_session(_sid) if _sid else None
-                if not _row or not _txt:
+            # One message that fails must not take the socket down with it (users, 07/11/2026: "Mất kết nối tới
+            # máy chủ" for hours, a restart did not help). An error here used to end this handler, so the socket
+            # closed, the page reconnected and its `hello` sent the unconfirmed message again: the same error, the
+            # same close, every 3 seconds, and the held message survived F5 and restarts in localStorage. Now the
+            # failure is logged, this page is told the message was not taken, and the socket keeps serving the rest.
+            try:
+                action = payload.get("action")
+                if action == "reset":
+                    continue                        # client tự quản phiên; reset KHÔNG còn giết lượt nào
+                if action == "typing":
+                    # 0.382.0: the owner started typing. Reopen this conversation's engine process if it was closed for
+                    # being idle, so the message lands on a warm one (warm_pool.prewarm; bounded by the same budget).
+                    warm_pool.POOL.prewarm(str(payload.get("session_id") or ""))
                     continue
-                store.append_message(_sid, "user", _txt)
-                _it = steer_inbox.INBOX.put(_sid, _txt)
-                if _it:
-                    _mode, _id = ("live" if steer_inbox.INBOX.live(_sid) else "after"), _it["id"]
-                else:
-                    # The turn just ended (or too many are waiting): this message is its own next turn.
-                    _mode, _id = "after", 0
-                    asyncio.create_task(_start_steer_turn(_sid, [_txt], _row.get("brain") or "brain", []))
-                await send_client({"type": "steer_ack", "session_id": _sid, "client_id": _cid,
-                                   "steer_id": _id, "mode": _mode})
-                continue
-            if action == "wf_resume":
-                # Nút Duyệt ở cột phải trang Cộng sự: chạy tiếp lần đang chờ, kết quả về cùng phiên.
-                _sid = str(payload.get("session_id") or "")
-                _row = store.get_session(_sid) or {}
-                _pers = workflow_chat.persona_cua_phien(_row)
-                if not (_pers and _pers[0] == "workflow"):
-                    await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
-                        "Phiên này không phải phiên quy trình.", "This session is not a workflow session.")})
+                if action == "ping":
+                    # Trang hỏi "còn sống không" sau một quãng im (0.85.11): socket chết mà không đóng thì
+                    # không có pong, trang bỏ socket đó và nối lại. Xem _checkSocket trong app.js.
+                    await send_client({"type": "pong"})
                     continue
-                if _CHAT_RUNTIME.get_job(_sid):
-                    await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
-                        "Quy trình đang chạy, đợi xong đã.", "The workflow is running, wait for it to finish.")})
+                if action == "ui_result":
+                    # Dashboard vừa làm xong (hoặc từ chối) một `ui_action` do tool thansa_ui bắn
+                    # ra. Giải future đang đợi trong ui_bridge để tool trả lời model ngay trong lượt.
+                    ui_bridge.resolve(str(payload.get("id") or ""), bool(payload.get("ok")),
+                                      str(payload.get("detail") or ""), skipped=bool(payload.get("skipped")))
                     continue
-                _node = str(payload.get("node") or "")
-                _msg = f"Đã duyệt bước \"{_node}\"."
-                store.append_message(_sid, "user", _msg)
-                _brain_r = _row.get("brain") or payload.get("brain") or "brain"
-                _tag = f"chat:{_sid[:12]}:{uuid.uuid4().hex[:8]}"
-                _trace = _CONTEXT_RUNTIME.start_turn(_sid, _brain_r, "dashboard")
-                task = asyncio.create_task(run_workflow_turn(
-                    _sid, _msg, _brain_r, _tag, _trace, _pers[1],
-                    resume={"task_id": str(payload.get("task_id") or ""), "node": _node,
-                            "code": str(payload.get("code") or "")}))
-                _CHAT_RUNTIME.register_job(_sid, task, _tag,
-                    runtime_task_id=_trace.task_id if _trace else "",
-                    runtime_step_id=_trace.step_id if _trace else "")
-                continue
-            if action == "resume_now":
-                # Nút "Chạy lại ngay" trên thẻ hết lượt: không đợi mốc reset.
-                _sid = payload.get("session_id") or ""
-                if _CHAT_RUNTIME.get_job(_sid):
-                    await send_raw({"type": "error", "session_id": _sid,
-                                    "content": localefmt.chu(
-                                        "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
-                                        "This session is still answering - wait for the current turn to finish.")})
+                if action == "stop":
+                    _sid = payload.get("session_id") or ""
+                    _tag = _CHAT_RUNTIME.cancel_session(_sid)
+                    if _tag:
+                        cancel_all(_tag)     # giết subprocess engine của đúng lượt đó
                     continue
-                if not await limit_resume.REGISTRY.run_now(_sid):
-                    await send_raw({"type": "resume", "session_id": _sid, "state": "gone"})
-                continue
-            if action == "resume_auto":
-                # Ô "Tự tiếp tục khi hạn mức reset": đổi cho mục đang chờ VÀ nhớ làm mặc định
-                # cho những lần sau, giống ô cùng tên của Claude Code.
-                _sid = payload.get("session_id") or ""
-                _bat = bool(payload.get("enabled"))
-                try:
-                    _cfg_r = cfgmod.read_settings()
-                    _cfg_r.setdefault("dashboard", {})["auto_resume"] = _bat
-                    cfgmod.write_settings(_cfg_r)
-                except Exception as _e:
-                    print(f"[resume_auto] {type(_e).__name__}: {_e}", file=sys.stderr)
-                _item = limit_resume.REGISTRY.set_auto(_sid, _bat)
-                if _item:
-                    await send_raw({"type": "resume",
-                                    "state": "scheduled" if _item.auto else "off",
-                                    **_item.payload()})
-                continue
-            _answer_receipt = None
-            if action == "voice_answer":
-                _sid = str(payload.get("session_id") or "")
-                if _CHAT_RUNTIME.get_job(_sid):
-                    await send_client({"type":"voice_busy", "session_id":_sid})
-                    continue
-                _answer_receipt = voice_turn_protocol.request_answer(store, _sid, payload.get("message_id"))
-                if not _answer_receipt:
-                    await send_client({"type":"voice_answer_unavailable", "session_id":_sid})
-                    continue
-                payload["message"] = _answer_receipt["content"]
-                payload["utterance_id"] = _answer_receipt["utterance_id"]
-                payload["voice"] = True
-            user_message = payload.get("message", "").strip()
-            if not user_message:
-                continue
-            # Owner, 06/11/2026: a message typed on the phone, then the app swiped away, vanished from the chat and from
-            # History. It had gone into a socket the phone had already let die, so the server never got it. The page
-            # now keeps each typed message until `chat_ack` comes back and sends it again on the next socket; the id
-            # makes that resend land once (the turn is not run twice), here and after a server restart.
-            _cmid = str(payload.get("client_msg_id") or "").strip()[:64]
-            _cmid_sid = str(payload.get("session_id") or "")
-            if _cmid and _cmid_sid and store.message_by_client_id(_cmid_sid, _cmid):
-                await send_client({"type": "chat_ack", "session_id": _cmid_sid, "client_msg_id": _cmid,
-                                   "dup": True, "running": bool(_CHAT_RUNTIME.get_job(_cmid_sid))})
-                continue
-            _voice_raw = str(payload.get("voice_text") or user_message).strip()
-            brain = payload.get("brain", "brain")
-            _cfg_luot = cfgmod.read_settings()
-            mcfg = _cfg_luot.get("model", {})
-            # Tin từ MIC: sửa TÊN nghe nhầm ("David", "Jarvis", "Gia vít" -> "Thansa" và từ vựng
-            # người dùng khai) TRƯỚC khi lưu, bằng so khớp âm tất định của nghe_sua - không phải
-            # AI hay STT phụ. 0.64.32 gỡ lớp này cùng lúc với việc chặn AI viết lại câu, làm
-            # Thansa đáp "anh nói là David" (chủ dự án 24/09). Lớp này không đụng từ phủ định, số,
-            # lệnh (PROTECTED_WORDS), không sửa tên người thứ ba, và báo lại bong bóng kèm chữ thô
-            # nên không âm thầm. Idempotent nên tin gửi lại cùng utterance_id vẫn khớp receipt.
-            _nghe_tho = ""
-            if payload.get("voice_input", payload.get("voice")):
-                try:
-                    _tv = nghe_sua.fix_vocabulary(_cfg_luot)
-                    _ctx, _speech = nghe_sua.split_ui_context(user_message)
-                    _sua = nghe_sua.sua(_speech, _tv)
-                    if _sua != _speech:
-                        _nghe_tho, user_message = _speech, _ctx + _sua
-                        _voice_raw = nghe_sua.sua(_voice_raw, _tv)
-                except Exception as e:
-                    print(f"[voice nghe_sua] lỗi, giữ nguyên câu: {type(e).__name__}", file=sys.stderr)
-            # Phiên đã ghim model riêng thì engine_label phải suy từ provider HIỆU LỰC
-            # của phiên, không phải từ mặc định chung - nhãn sai là clear_codex_thread_id
-            # dọn nhầm/không dọn mạch native khi đổi engine.
-            _prow = store.get_session(payload.get("session_id") or "") or {}
-            # 0.188.0 (Thansa Core spec 9): a chat belongs to ONE brain. A turn in a chat of brain B sent while brain A
-            # is picked on screen (opened from the bell, a link, another tab) runs on brain B: B's memory, files and
-            # tools. The dashboard is told, so it can say so and switch.
-            if _prow.get("brain") and not _cung_brain(str(_prow["brain"]), _brain_key(brain)):
-                brain = str(_prow["brain"])
-                try:
-                    await send_client({"type": "brain_follow", "session_id": _prow.get("id") or "",
-                                       "brain_ui": _brain_ui_value(brain),
-                                       "brain_name": brain_label.display(_brain_root(brain))})
-                except Exception:
-                    pass
-            prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _prow)
-            engine_label = ("codex" if prov == "openai-oauth"
-                            else "grok-cli" if prov == "grok-cli"
-                            else "antigravity-cli" if prov == "antigravity-cli"
-                            else prov if ((kind == "api" and api_key) or kind == "oauth")
-                            else "cli")
-            conv_sid = store.get_or_create(
-                payload.get("session_id"), brain=_brain_key(brain), engine=engine_label,
-                model=(api_model or mcfg.get("claude_model")))
-            if payload.get("voice") and payload.get("utterance_id") and not _answer_receipt:
-                _old_voice = voice_turn_protocol.lookup(store, conv_sid, str(payload["utterance_id"]))
-                if _old_voice:
-                    if _old_voice['content'] != _voice_raw:
-                        await send_client({"type":"voice_commit_error", "session_id":conv_sid,
-                                           "utterance_id":str(payload['utterance_id']), "content":"Utterance transcript conflict"})
+                if action == "steer":
+                    # 0.206.0: a message typed while this chat's turn is still running (steer_inbox.py). Stored now as the
+                    # owner's message; the running turn reads it at its next step, or it runs right after the turn ends.
+                    _sid = str(payload.get("session_id") or "").strip()
+                    _txt = str(payload.get("message") or "").strip()[:steer_inbox.MAX_CHARS]
+                    _cid = str(payload.get("client_id") or "")[:40]
+                    _row = store.get_session(_sid) if _sid else None
+                    if not _row or not _txt:
+                        continue
+                    store.append_message(_sid, "user", _txt)
+                    _it = steer_inbox.INBOX.put(_sid, _txt)
+                    if _it:
+                        _mode, _id = ("live" if steer_inbox.INBOX.live(_sid) else "after"), _it["id"]
                     else:
-                        await send_client({"type":"voice_receipt", **_old_voice,
-                                           "running":bool(_CHAT_RUNTIME.get_job(conv_sid))})
+                        # The turn just ended (or too many are waiting): this message is its own next turn.
+                        _mode, _id = "after", 0
+                        asyncio.create_task(_start_steer_turn(_sid, [_txt], _row.get("brain") or "brain", []))
+                    await send_client({"type": "steer_ack", "session_id": _sid, "client_id": _cid,
+                                       "steer_id": _id, "mode": _mode})
                     continue
-            # ĐÓNG DẤU model từ tin đầu (chủ chốt 16/08): mỗi lượt bảo đảm ghim của
-            # phiên == model ĐANG CHẠY THẬT của lượt này. Phủ một lúc ba ca:
-            #   - phiên mới / phiên cũ chưa ghim → đóng dấu model hiệu lực, từ đây đổi
-            #     mặc định chung không bao giờ đổi ngược cuộc đang dở;
-            #   - ghim hỏng (provider mất key, đã rơi về mặc định chung) → thay bằng
-            #     model đang chạy thật, thanh model thôi khoe ghim chết;
-            #   - ghim lành → resolved == ghim, không có gì để ghi (no-op).
-            if ((_prow.get("pinned_provider") or "").strip() != prov
-                    or (_prow.get("pinned_model") or "") != (api_model or "")):
-                try:
-                    store.set_pinned_model(conv_sid, prov, api_model or "")
-                except Exception:
-                    pass
-            # Đổi bộ não giữa chừng: mạch native của MỌI engine khác engine đang chạy lượt
-            # này lập tức thành stale, vì nó không chứa lượt sắp diễn ra. Quay lại engine đó
-            # mà cứ nối tiếp mạch cũ là nó mù đúng đoạn ở giữa, rồi trả lời lạc đề - đúng
-            # điều người dùng báo 22/08.
-            #
-            # Bản trước chỉ dọn Codex, bỏ sót Claude Code và Gemini CLI. Nay hỏi thẳng kho
-            # phiên để luật nằm ở MỘT chỗ: thêm engine giữ phiên mới thì sửa bảng trong
-            # sessions.py, không phải nhớ thêm một lệnh clear ở đây.
-            _da_don_mach = store.clear_native_threads(conv_sid, keep=engine_label)
-            if _da_don_mach:
-                print(f"[chat] đổi engine sang {engine_label!r}, dọn mạch stale: "
-                      f"{', '.join(_da_don_mach)}", file=sys.stderr)
-            if _CHAT_RUNTIME.get_job(conv_sid):
-                if payload.get("voice") and payload.get("utterance_id"):
-                    await send_client({"type":"voice_busy", "session_id":conv_sid, "utterance_id":str(payload["utterance_id"])})
-                else:
-                    if _cmid:
-                        # Answered with the error below: the page stops holding it for a resend.
-                        await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
-                                           "dup": False, "rejected": True})
-                    await send_raw({"type": "error", "content": localefmt.chu(
-                        "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
-                        "This session is still answering - wait for the current turn to finish."),
-                        "session_id": conv_sid})
-                continue
-            # Tin mới thay cho câu hỏi đang chờ hạn mức: bỏ lịch chạy lại, kẻo hai lượt chen
-            # nhau trên cùng một phiên. Muốn hỏi lại câu cũ thì bấm "Gửi lại" ở tin đó.
-            if limit_resume.REGISTRY.cancel(conv_sid):
-                await send_raw({"type": "resume", "session_id": conv_sid, "state": "cancelled"})
-            _pending_voice_receipt = None
-            # Id dòng của tin người dùng trong kho phiên (Resonance M2): khoá chống trùng khi lượt này lập mục tiêu.
-            _user_mid = 0
-            _voice_uid = str(payload.get("utterance_id") or "") if payload.get("voice") else ""
-            if _voice_uid:
-                try:
-                    _receipt = _answer_receipt or voice_turn_protocol.commit(
-                        store, conv_sid, _voice_uid, _voice_raw,
-                        str(payload.get("response_policy") or "auto"), payload.get("continuation_of"))
-                except ValueError as exc:
-                    await send_client({"type":"voice_commit_error", "session_id":conv_sid,
-                                       "utterance_id":_voice_uid, "content":str(exc)})
-                    continue
-                _pending_voice_receipt = {"type":"voice_receipt", **_receipt,
-                                   "utterance_id":_voice_uid, "session_id":conv_sid,
-                                   "answer_requested": bool(_answer_receipt) or bool(_receipt.get("answer_requested"))}
-                if not _answer_receipt and (not _receipt["created"] or _receipt["response_policy"] == "ack_only"):
-                    await send_client(_pending_voice_receipt)
-                    continue
-                _user_mid = int(_receipt.get("message_id") or 0)
-            else:
-                if _cmid and store.message_by_client_id(conv_sid, _cmid):
-                    # The same message came in on another socket while this one was getting ready (no await between
-                    # this check and the insert below, so only one copy can pass).
-                    await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
-                                       "dup": True, "running": bool(_CHAT_RUNTIME.get_job(conv_sid))})
-                    continue
-                _user_mid = store.append_message(conv_sid, "user", user_message, client_msg_id=_cmid or None)
-                if _cmid:
-                    await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
-                                       "dup": False})
-            # Bong bóng đang hiện chữ thô của máy nghe: báo câu đã sửa tên để người dùng thấy
-            # Thansa hiểu câu nào, chữ thô hiện nhỏ bên dưới.
-            if _nghe_tho:
-                await send_raw({"type": "user_text", "session_id": conv_sid,
-                                "text": nghe_sua.split_ui_context(user_message)[1],
-                                "raw": _nghe_tho,
-                                "voice_turn_id": str(payload.get("voice_turn_id") or "")})
-            turn_tag = f"chat:{conv_sid[:12]}:{uuid.uuid4().hex[:8]}"
-            runtime_trace = _CONTEXT_RUNTIME.start_turn(conv_sid, brain, "dashboard")
-            # Để lại cách mở lượt nối tiếp cho phiên này: việc chạy nền mà lượt này bỏ lại xong
-            # thì tien_trinh_nen gọi tới đây để làm nốt (ghép tiếng, kiểm tra, gửi file...).
-            _NOI_TIEP_WEB[conv_sid] = (lambda _t, _d, _s=conv_sid, _b=brain:
-                                       _start_followup_turn(_s, _t, _b, _d))
-            # Phiên workflow:<slug>: mỗi tin là một lần chạy quy trình, không phải một lượt
-            # hỏi bộ não chính - rẽ nhánh TRƯỚC cả Voice V2, vì trang Cộng sự không có mic.
-            # Khung Trò chuyện đã GỌI cộng sự này bằng lệnh "/" (dashboard gửi kèm mỗi tin).
-            # Chỉ nhận khi phiên hiện tại là phiên cộng sự, và không tự trỏ về chính nó.
-            _goc = str(payload.get("origin_chat") or "").strip()
-            if _goc == conv_sid:
-                _goc = ""
-            _pers = workflow_chat.persona_cua_phien(store.get_session(conv_sid) or {})
-            if not _pers:
-                _goc = ""
-            if _pers and _pers[0] == "workflow":
-                # Tin nói VỀ chính quy trình ("cập nhật lại workflow...", "gộp bớt bước") đi
-                # BỘ NÃO CHÍNH để đọc/sửa file quy trình, không nhồi vào `{{input}}` của một
-                # lần chạy. Nhồi vào là chuyện đã xảy ra 16/09: câu "đánh giá lại quy trình 7
-                # bước, giảm số bước" thành đề bài, quy trình chạy 640 giây rồi trả về một bản
-                # kiểm duyệt bài viết chẳng liên quan, mà vẫn tiêu hạn mức gói thuê bao.
-                # Nút "Chạy" ở cột phải gửi cờ `wf_run` nên nó luôn chạy, không bị đoán lại.
-                _viec, _msg_wf = workflow_chat.quyet_dinh_luot(
-                    user_message, ep_chay=bool(payload.get("wf_run")))
-                if _viec == "tra_loi":
-                    _ten_wf, _khoi_wf = _khoi_quy_trinh_mo(brain, _pers[1])
-                    # Nói NGAY là lần chạy không khởi động: cột phải vẫn đứng ở tiến độ lần
-                    # chạy trước, nên im lặng thì người dùng ngồi đợi một lần chạy không có.
-                    await send_raw({"type": "system", "session_id": conv_sid,
-                                    "content": workflow_chat.tin_khong_chay(_ten_wf)})
-                    task = asyncio.create_task(run_turn(
-                        conv_sid, _khoi_wf + "\n\n" + _msg_wf,
-                        brain, turn_tag, runtime_trace,
-                        bool(payload.get("attachments") or payload.get("files")),
-                        goc_chat=_goc, user_mid=_user_mid,
-                        user_text=nghe_sua.split_ui_context(user_message)[1]))
-                else:
+                if action == "wf_resume":
+                    # Nút Duyệt ở cột phải trang Cộng sự: chạy tiếp lần đang chờ, kết quả về cùng phiên.
+                    _sid = str(payload.get("session_id") or "")
+                    _row = store.get_session(_sid) or {}
+                    _pers = workflow_chat.persona_cua_phien(_row)
+                    if not (_pers and _pers[0] == "workflow"):
+                        await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
+                            "Phiên này không phải phiên quy trình.", "This session is not a workflow session.")})
+                        continue
+                    if _CHAT_RUNTIME.get_job(_sid):
+                        await send_raw({"type": "error", "session_id": _sid, "content": localefmt.chu(
+                            "Quy trình đang chạy, đợi xong đã.", "The workflow is running, wait for it to finish.")})
+                        continue
+                    _node = str(payload.get("node") or "")
+                    _msg = f"Đã duyệt bước \"{_node}\"."
+                    store.append_message(_sid, "user", _msg)
+                    _brain_r = _row.get("brain") or payload.get("brain") or "brain"
+                    _tag = f"chat:{_sid[:12]}:{uuid.uuid4().hex[:8]}"
+                    _trace = _CONTEXT_RUNTIME.start_turn(_sid, _brain_r, "dashboard")
                     task = asyncio.create_task(run_workflow_turn(
-                        conv_sid, _msg_wf, brain, turn_tag, runtime_trace, _pers[1],
-                        goc_chat=_goc))
+                        _sid, _msg, _brain_r, _tag, _trace, _pers[1],
+                        resume={"task_id": str(payload.get("task_id") or ""), "node": _node,
+                                "code": str(payload.get("code") or "")}))
+                    _CHAT_RUNTIME.register_job(_sid, task, _tag,
+                        runtime_task_id=_trace.task_id if _trace else "",
+                        runtime_step_id=_trace.step_id if _trace else "")
+                    continue
+                if action == "resume_now":
+                    # Nút "Chạy lại ngay" trên thẻ hết lượt: không đợi mốc reset.
+                    _sid = payload.get("session_id") or ""
+                    if _CHAT_RUNTIME.get_job(_sid):
+                        await send_raw({"type": "error", "session_id": _sid,
+                                        "content": localefmt.chu(
+                                            "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
+                                            "This session is still answering - wait for the current turn to finish.")})
+                        continue
+                    if not await limit_resume.REGISTRY.run_now(_sid):
+                        await send_raw({"type": "resume", "session_id": _sid, "state": "gone"})
+                    continue
+                if action == "resume_auto":
+                    # Ô "Tự tiếp tục khi hạn mức reset": đổi cho mục đang chờ VÀ nhớ làm mặc định
+                    # cho những lần sau, giống ô cùng tên của Claude Code.
+                    _sid = payload.get("session_id") or ""
+                    _bat = bool(payload.get("enabled"))
+                    try:
+                        _cfg_r = cfgmod.read_settings()
+                        _cfg_r.setdefault("dashboard", {})["auto_resume"] = _bat
+                        cfgmod.write_settings(_cfg_r)
+                    except Exception as _e:
+                        print(f"[resume_auto] {type(_e).__name__}: {_e}", file=sys.stderr)
+                    _item = limit_resume.REGISTRY.set_auto(_sid, _bat)
+                    if _item:
+                        await send_raw({"type": "resume",
+                                        "state": "scheduled" if _item.auto else "off",
+                                        **_item.payload()})
+                    continue
+                _answer_receipt = None
+                if action == "voice_answer":
+                    _sid = str(payload.get("session_id") or "")
+                    if _CHAT_RUNTIME.get_job(_sid):
+                        await send_client({"type":"voice_busy", "session_id":_sid})
+                        continue
+                    _answer_receipt = voice_turn_protocol.request_answer(store, _sid, payload.get("message_id"))
+                    if not _answer_receipt:
+                        await send_client({"type":"voice_answer_unavailable", "session_id":_sid})
+                        continue
+                    payload["message"] = _answer_receipt["content"]
+                    payload["utterance_id"] = _answer_receipt["utterance_id"]
+                    payload["voice"] = True
+                user_message = payload.get("message", "").strip()
+                if not user_message:
+                    continue
+                # Owner, 06/11/2026: a message typed on the phone, then the app swiped away, vanished from the chat and from
+                # History. It had gone into a socket the phone had already let die, so the server never got it. The page
+                # now keeps each typed message until `chat_ack` comes back and sends it again on the next socket; the id
+                # makes that resend land once (the turn is not run twice), here and after a server restart.
+                _cmid = str(payload.get("client_msg_id") or "").strip()[:64]
+                _cmid_sid = str(payload.get("session_id") or "")
+                if _cmid and _cmid_sid and store.message_by_client_id(_cmid_sid, _cmid):
+                    await send_client({"type": "chat_ack", "session_id": _cmid_sid, "client_msg_id": _cmid,
+                                       "dup": True, "running": bool(_CHAT_RUNTIME.get_job(_cmid_sid))})
+                    continue
+                _voice_raw = str(payload.get("voice_text") or user_message).strip()
+                brain = payload.get("brain", "brain")
+                _cfg_luot = cfgmod.read_settings()
+                mcfg = _cfg_luot.get("model", {})
+                # Tin từ MIC: sửa TÊN nghe nhầm ("David", "Jarvis", "Gia vít" -> "Thansa" và từ vựng
+                # người dùng khai) TRƯỚC khi lưu, bằng so khớp âm tất định của nghe_sua - không phải
+                # AI hay STT phụ. 0.64.32 gỡ lớp này cùng lúc với việc chặn AI viết lại câu, làm
+                # Thansa đáp "anh nói là David" (chủ dự án 24/09). Lớp này không đụng từ phủ định, số,
+                # lệnh (PROTECTED_WORDS), không sửa tên người thứ ba, và báo lại bong bóng kèm chữ thô
+                # nên không âm thầm. Idempotent nên tin gửi lại cùng utterance_id vẫn khớp receipt.
+                _nghe_tho = ""
+                if payload.get("voice_input", payload.get("voice")):
+                    try:
+                        _tv = nghe_sua.fix_vocabulary(_cfg_luot)
+                        _ctx, _speech = nghe_sua.split_ui_context(user_message)
+                        _sua = nghe_sua.sua(_speech, _tv)
+                        if _sua != _speech:
+                            _nghe_tho, user_message = _speech, _ctx + _sua
+                            _voice_raw = nghe_sua.sua(_voice_raw, _tv)
+                    except Exception as e:
+                        print(f"[voice nghe_sua] lỗi, giữ nguyên câu: {type(e).__name__}", file=sys.stderr)
+                # Phiên đã ghim model riêng thì engine_label phải suy từ provider HIỆU LỰC
+                # của phiên, không phải từ mặc định chung - nhãn sai là clear_codex_thread_id
+                # dọn nhầm/không dọn mạch native khi đổi engine.
+                _prow = store.get_session(payload.get("session_id") or "") or {}
+                # 0.188.0 (Thansa Core spec 9): a chat belongs to ONE brain. A turn in a chat of brain B sent while brain A
+                # is picked on screen (opened from the bell, a link, another tab) runs on brain B: B's memory, files and
+                # tools. The dashboard is told, so it can say so and switch.
+                if _prow.get("brain") and not _cung_brain(str(_prow["brain"]), _brain_key(brain)):
+                    brain = str(_prow["brain"])
+                    try:
+                        await send_client({"type": "brain_follow", "session_id": _prow.get("id") or "",
+                                           "brain_ui": _brain_ui_value(brain),
+                                           "brain_name": brain_label.display(_brain_root(brain))})
+                    except Exception:
+                        pass
+                prov, kind, api_key, api_model = _chat_provider_for_session(mcfg, _prow)
+                engine_label = ("codex" if prov == "openai-oauth"
+                                else "grok-cli" if prov == "grok-cli"
+                                else "antigravity-cli" if prov == "antigravity-cli"
+                                else prov if ((kind == "api" and api_key) or kind == "oauth")
+                                else "cli")
+                conv_sid = store.get_or_create(
+                    payload.get("session_id"), brain=_brain_key(brain), engine=engine_label,
+                    model=(api_model or mcfg.get("claude_model")))
+                if payload.get("voice") and payload.get("utterance_id") and not _answer_receipt:
+                    _old_voice = voice_turn_protocol.lookup(store, conv_sid, str(payload["utterance_id"]))
+                    if _old_voice:
+                        if _old_voice['content'] != _voice_raw:
+                            await send_client({"type":"voice_commit_error", "session_id":conv_sid,
+                                               "utterance_id":str(payload['utterance_id']), "content":"Utterance transcript conflict"})
+                        else:
+                            await send_client({"type":"voice_receipt", **_old_voice,
+                                               "running":bool(_CHAT_RUNTIME.get_job(conv_sid))})
+                        continue
+                # ĐÓNG DẤU model từ tin đầu (chủ chốt 16/08): mỗi lượt bảo đảm ghim của
+                # phiên == model ĐANG CHẠY THẬT của lượt này. Phủ một lúc ba ca:
+                #   - phiên mới / phiên cũ chưa ghim → đóng dấu model hiệu lực, từ đây đổi
+                #     mặc định chung không bao giờ đổi ngược cuộc đang dở;
+                #   - ghim hỏng (provider mất key, đã rơi về mặc định chung) → thay bằng
+                #     model đang chạy thật, thanh model thôi khoe ghim chết;
+                #   - ghim lành → resolved == ghim, không có gì để ghi (no-op).
+                if ((_prow.get("pinned_provider") or "").strip() != prov
+                        or (_prow.get("pinned_model") or "") != (api_model or "")):
+                    try:
+                        store.set_pinned_model(conv_sid, prov, api_model or "")
+                    except Exception:
+                        pass
+                # Đổi bộ não giữa chừng: mạch native của MỌI engine khác engine đang chạy lượt
+                # này lập tức thành stale, vì nó không chứa lượt sắp diễn ra. Quay lại engine đó
+                # mà cứ nối tiếp mạch cũ là nó mù đúng đoạn ở giữa, rồi trả lời lạc đề - đúng
+                # điều người dùng báo 22/08.
+                #
+                # Bản trước chỉ dọn Codex, bỏ sót Claude Code và Gemini CLI. Nay hỏi thẳng kho
+                # phiên để luật nằm ở MỘT chỗ: thêm engine giữ phiên mới thì sửa bảng trong
+                # sessions.py, không phải nhớ thêm một lệnh clear ở đây.
+                _da_don_mach = store.clear_native_threads(conv_sid, keep=engine_label)
+                if _da_don_mach:
+                    print(f"[chat] đổi engine sang {engine_label!r}, dọn mạch stale: "
+                          f"{', '.join(_da_don_mach)}", file=sys.stderr)
+                if _CHAT_RUNTIME.get_job(conv_sid):
+                    if payload.get("voice") and payload.get("utterance_id"):
+                        await send_client({"type":"voice_busy", "session_id":conv_sid, "utterance_id":str(payload["utterance_id"])})
+                    else:
+                        if _cmid:
+                            # Answered with the error below: the page stops holding it for a resend.
+                            await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                               "dup": False, "rejected": True})
+                        await send_raw({"type": "error", "content": localefmt.chu(
+                            "Phiên này đang trả lời - đợi lượt hiện tại xong đã.",
+                            "This session is still answering - wait for the current turn to finish."),
+                            "session_id": conv_sid})
+                    continue
+                # Tin mới thay cho câu hỏi đang chờ hạn mức: bỏ lịch chạy lại, kẻo hai lượt chen
+                # nhau trên cùng một phiên. Muốn hỏi lại câu cũ thì bấm "Gửi lại" ở tin đó.
+                if limit_resume.REGISTRY.cancel(conv_sid):
+                    await send_raw({"type": "resume", "session_id": conv_sid, "state": "cancelled"})
+                _pending_voice_receipt = None
+                # Id dòng của tin người dùng trong kho phiên (Resonance M2): khoá chống trùng khi lượt này lập mục tiêu.
+                _user_mid = 0
+                _voice_uid = str(payload.get("utterance_id") or "") if payload.get("voice") else ""
+                if _voice_uid:
+                    try:
+                        _receipt = _answer_receipt or voice_turn_protocol.commit(
+                            store, conv_sid, _voice_uid, _voice_raw,
+                            str(payload.get("response_policy") or "auto"), payload.get("continuation_of"))
+                    except ValueError as exc:
+                        await send_client({"type":"voice_commit_error", "session_id":conv_sid,
+                                           "utterance_id":_voice_uid, "content":str(exc)})
+                        continue
+                    _pending_voice_receipt = {"type":"voice_receipt", **_receipt,
+                                       "utterance_id":_voice_uid, "session_id":conv_sid,
+                                       "answer_requested": bool(_answer_receipt) or bool(_receipt.get("answer_requested"))}
+                    if not _answer_receipt and (not _receipt["created"] or _receipt["response_policy"] == "ack_only"):
+                        await send_client(_pending_voice_receipt)
+                        continue
+                    _user_mid = int(_receipt.get("message_id") or 0)
+                else:
+                    if _cmid and store.message_by_client_id(conv_sid, _cmid):
+                        # The same message came in on another socket while this one was getting ready (no await between
+                        # this check and the insert below, so only one copy can pass).
+                        await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                           "dup": True, "running": bool(_CHAT_RUNTIME.get_job(conv_sid))})
+                        continue
+                    _user_mid = store.append_message(conv_sid, "user", user_message, client_msg_id=_cmid or None)
+                    if _cmid:
+                        await send_client({"type": "chat_ack", "session_id": conv_sid, "client_msg_id": _cmid,
+                                           "dup": False})
+                # Bong bóng đang hiện chữ thô của máy nghe: báo câu đã sửa tên để người dùng thấy
+                # Thansa hiểu câu nào, chữ thô hiện nhỏ bên dưới.
+                if _nghe_tho:
+                    await send_raw({"type": "user_text", "session_id": conv_sid,
+                                    "text": nghe_sua.split_ui_context(user_message)[1],
+                                    "raw": _nghe_tho,
+                                    "voice_turn_id": str(payload.get("voice_turn_id") or "")})
+                turn_tag = f"chat:{conv_sid[:12]}:{uuid.uuid4().hex[:8]}"
+                runtime_trace = _CONTEXT_RUNTIME.start_turn(conv_sid, brain, "dashboard")
+                # Để lại cách mở lượt nối tiếp cho phiên này: việc chạy nền mà lượt này bỏ lại xong
+                # thì tien_trinh_nen gọi tới đây để làm nốt (ghép tiếng, kiểm tra, gửi file...).
+                _NOI_TIEP_WEB[conv_sid] = (lambda _t, _d, _s=conv_sid, _b=brain:
+                                           _start_followup_turn(_s, _t, _b, _d))
+                # Phiên workflow:<slug>: mỗi tin là một lần chạy quy trình, không phải một lượt
+                # hỏi bộ não chính - rẽ nhánh TRƯỚC cả Voice V2, vì trang Cộng sự không có mic.
+                # Khung Trò chuyện đã GỌI cộng sự này bằng lệnh "/" (dashboard gửi kèm mỗi tin).
+                # Chỉ nhận khi phiên hiện tại là phiên cộng sự, và không tự trỏ về chính nó.
+                _goc = str(payload.get("origin_chat") or "").strip()
+                if _goc == conv_sid:
+                    _goc = ""
+                _pers = workflow_chat.persona_cua_phien(store.get_session(conv_sid) or {})
+                if not _pers:
+                    _goc = ""
+                if _pers and _pers[0] == "workflow":
+                    # Tin nói VỀ chính quy trình ("cập nhật lại workflow...", "gộp bớt bước") đi
+                    # BỘ NÃO CHÍNH để đọc/sửa file quy trình, không nhồi vào `{{input}}` của một
+                    # lần chạy. Nhồi vào là chuyện đã xảy ra 16/09: câu "đánh giá lại quy trình 7
+                    # bước, giảm số bước" thành đề bài, quy trình chạy 640 giây rồi trả về một bản
+                    # kiểm duyệt bài viết chẳng liên quan, mà vẫn tiêu hạn mức gói thuê bao.
+                    # Nút "Chạy" ở cột phải gửi cờ `wf_run` nên nó luôn chạy, không bị đoán lại.
+                    _viec, _msg_wf = workflow_chat.quyet_dinh_luot(
+                        user_message, ep_chay=bool(payload.get("wf_run")))
+                    if _viec == "tra_loi":
+                        _ten_wf, _khoi_wf = _khoi_quy_trinh_mo(brain, _pers[1])
+                        # Nói NGAY là lần chạy không khởi động: cột phải vẫn đứng ở tiến độ lần
+                        # chạy trước, nên im lặng thì người dùng ngồi đợi một lần chạy không có.
+                        await send_raw({"type": "system", "session_id": conv_sid,
+                                        "content": workflow_chat.tin_khong_chay(_ten_wf)})
+                        task = asyncio.create_task(run_turn(
+                            conv_sid, _khoi_wf + "\n\n" + _msg_wf,
+                            brain, turn_tag, runtime_trace,
+                            bool(payload.get("attachments") or payload.get("files")),
+                            goc_chat=_goc, user_mid=_user_mid,
+                            user_text=nghe_sua.split_ui_context(user_message)[1]))
+                    else:
+                        task = asyncio.create_task(run_workflow_turn(
+                            conv_sid, _msg_wf, brain, turn_tag, runtime_trace, _pers[1],
+                            goc_chat=_goc))
+                    _CHAT_RUNTIME.register_job(
+                        conv_sid, task, turn_tag,
+                        runtime_task_id=runtime_trace.task_id if runtime_trace else "",
+                        runtime_step_id=runtime_trace.step_id if runtime_trace else "",
+                    )
+                    if _pending_voice_receipt:
+                        await send_client(_pending_voice_receipt)
+                    continue
+                has_attachments = bool(payload.get("attachments") or payload.get("files"))
+                # Voice V2: tin đến từ MIC (`voice: true`) và cài đặt ở chế độ Làn nhanh có bộ não
+                # giọng riêng thì đi run_voice_turn; còn lại đi run_turn như cũ.
+                _vconf = None
+                if payload.get("voice") and not has_attachments:
+                    try:
+                        _vconf = voice_brain.config_from_settings(cfgmod.read_settings())
+                    except Exception:
+                        _vconf = None
+                    _bao_lan_nhanh_bo_qua(_vconf)
+                if _vconf and _vconf.get("mode") == "fast" and _vconf.get("provider"):
+                    _voice_coro = run_voice_turn(
+                        conv_sid, user_message, brain, turn_tag, runtime_trace, _vconf,
+                        voice_turn_id=str(payload.get("voice_turn_id") or ""),
+                        giu_ban_chep=bool(_voice_uid), user_mid=_user_mid)
+                    task = asyncio.create_task(voice_turn_protocol.run(_voice_coro, store, conv_sid, _voice_uid) if _voice_uid else _voice_coro)
+                else:
+                    _voice_coro = run_turn(
+                        conv_sid, user_message, brain, turn_tag, runtime_trace, has_attachments,
+                        goc_chat=_goc, user_mid=_user_mid)
+                    task = asyncio.create_task(voice_turn_protocol.run(_voice_coro, store, conv_sid, _voice_uid) if _voice_uid else _voice_coro)
                 _CHAT_RUNTIME.register_job(
                     conv_sid, task, turn_tag,
                     runtime_task_id=runtime_trace.task_id if runtime_trace else "",
@@ -20735,35 +20946,10 @@ async def _chat_socket(ws):
                 )
                 if _pending_voice_receipt:
                     await send_client(_pending_voice_receipt)
-                continue
-            has_attachments = bool(payload.get("attachments") or payload.get("files"))
-            # Voice V2: tin đến từ MIC (`voice: true`) và cài đặt ở chế độ Làn nhanh có bộ não
-            # giọng riêng thì đi run_voice_turn; còn lại đi run_turn như cũ.
-            _vconf = None
-            if payload.get("voice") and not has_attachments:
-                try:
-                    _vconf = voice_brain.config_from_settings(cfgmod.read_settings())
-                except Exception:
-                    _vconf = None
-                _bao_lan_nhanh_bo_qua(_vconf)
-            if _vconf and _vconf.get("mode") == "fast" and _vconf.get("provider"):
-                _voice_coro = run_voice_turn(
-                    conv_sid, user_message, brain, turn_tag, runtime_trace, _vconf,
-                    voice_turn_id=str(payload.get("voice_turn_id") or ""),
-                    giu_ban_chep=bool(_voice_uid), user_mid=_user_mid)
-                task = asyncio.create_task(voice_turn_protocol.run(_voice_coro, store, conv_sid, _voice_uid) if _voice_uid else _voice_coro)
-            else:
-                _voice_coro = run_turn(
-                    conv_sid, user_message, brain, turn_tag, runtime_trace, has_attachments,
-                    goc_chat=_goc, user_mid=_user_mid)
-                task = asyncio.create_task(voice_turn_protocol.run(_voice_coro, store, conv_sid, _voice_uid) if _voice_uid else _voice_coro)
-            _CHAT_RUNTIME.register_job(
-                conv_sid, task, turn_tag,
-                runtime_task_id=runtime_trace.task_id if runtime_trace else "",
-                runtime_step_id=runtime_trace.step_id if runtime_trace else "",
-            )
-            if _pending_voice_receipt:
-                await send_client(_pending_voice_receipt)
+            except (WebSocketDisconnect, asyncio.CancelledError):
+                raise
+            except Exception as _exc:  # noqa: BLE001 - see the comment above the try
+                await _message_failed(payload, _exc)
     except WebSocketDisconnect:
         pass
     finally:
@@ -21457,6 +21643,25 @@ async def sessions_pin(session_id: str, pinned: str = Form("1")):
     """Ghim hội thoại lên đầu danh sách (hoặc bỏ ghim khi pinned=0)."""
     get_store().set_pinned(session_id, str(pinned).strip() not in ("0", "false", ""))
     return {"ok": True}
+
+
+@app.post("/sessions/{session_id}/read")
+async def sessions_read(session_id: str):
+    """The owner has this chat on screen (2026-11-06): its replies so far are read, so the red dot on its row in every
+    history list goes out. Other open tabs hear `session_read` and clear the same dot."""
+    store = get_store()
+
+    def _do():
+        was = store.is_unread(session_id)
+        store.mark_read(session_id)
+        return was
+    was = await asyncio.to_thread(_do)
+    if was:
+        try:
+            await _CHAT_RUNTIME.publish({"type": "session_read", "session_id": session_id})
+        except Exception as e:  # noqa: BLE001 - the dot then clears on the next list refresh
+            print(f"[sessions] session_read WebSocket: {type(e).__name__}: {e}", file=sys.stderr)
+    return {"ok": True, "was_unread": was}
 
 
 @app.get("/chat/route")
@@ -25112,7 +25317,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
             resume_failed = False
             # A command Claude Code leaves running in a Telegram turn is adopted and reported back (tien_trinh_nen).
             claude_warm.mark_background(cli, getattr(cli, "tag", ""))
-            async for ev in cli.query(prompt):
+            async for ev in claude_warm.cold_query(cli, prompt):   # 07/11/2026: a lost thread by exit code too
                 et = ev["type"]
                 if et == "final":
                     out = ev.get("content") or out
@@ -27813,6 +28018,22 @@ def _cli_payload(out, key: str) -> dict:
     return {"ok": False, "text": str(out or ""), "session": key, "files": [], "ctx_path": ""}
 
 
+def _cli_checks(message: str, brain: str, session: str, agent: str, project: str):
+    """The checks /chat, /chat/stream and /chat/jobs run before a turn starts.
+
+    Returns (agent, project_id, None) when the turn may run, or (None, "", a 400 response)."""
+    if not str(message or "").strip():
+        return None, "", JSONResponse({"ok": False, "error": localefmt.chu("message rỗng", "message is empty")},
+                                      status_code=400)
+    ag, error = _cli_agent(brain, session, agent)
+    if error:
+        return None, "", JSONResponse({"ok": False, "error": error}, status_code=400)
+    pid, error = _cli_project(brain, session, project, agent=ag)
+    if error:
+        return None, "", JSONResponse({"ok": False, "error": error}, status_code=400)
+    return ag, pid, None
+
+
 @app.post("/chat")
 async def chat_once(message: str = Form(...), brain: str = Form(""),
                     session: str = Form(""), host: str = Form(""), agent: str = Form(""),
@@ -27831,14 +28052,9 @@ async def chat_once(message: str = Form(...), brain: str = Form(""),
     attached to it before this turn (and stays there), so its rules apply from the first message.
     A project missing from the brain, or sent together with `agent`, is a 400.
     """
-    if not str(message or "").strip():
-        return JSONResponse({"ok": False, "error": localefmt.chu("message rỗng", "message is empty")}, status_code=400)
-    ag, error = _cli_agent(brain, session, agent)
-    if error:
-        return JSONResponse({"ok": False, "error": error}, status_code=400)
-    pid, error = _cli_project(brain, session, project, agent=ag)
-    if error:
-        return JSONResponse({"ok": False, "error": error}, status_code=400)
+    ag, pid, bad = _cli_checks(message, brain, session, agent, project)
+    if bad is not None:
+        return bad
     out, key = await _cli_turn(message, brain, session, host, agent=ag, project_id=pid)
     return _cli_payload(out, key)
 
@@ -27861,14 +28077,9 @@ async def chat_stream(message: str = Form(...), brain: str = Form(""),
     `agent` and `project` as on /chat. Checked BEFORE the stream opens: once it is open the status
     is already 200.
     """
-    if not str(message or "").strip():
-        return JSONResponse({"ok": False, "error": localefmt.chu("message rỗng", "message is empty")}, status_code=400)
-    ag, error = _cli_agent(brain, session, agent)
-    if error:
-        return JSONResponse({"ok": False, "error": error}, status_code=400)
-    pid, error = _cli_project(brain, session, project, agent=ag)
-    if error:
-        return JSONResponse({"ok": False, "error": error}, status_code=400)
+    ag, pid, bad = _cli_checks(message, brain, session, agent, project)
+    if bad is not None:
+        return bad
 
     hang = asyncio.Queue()
 
@@ -27899,6 +28110,65 @@ async def chat_stream(message: str = Form(...), brain: str = Form(""),
 
     return StreamingResponse(_phat(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+_CHAT_JOBS = chat_jobs.ChatJobs(cfgmod.STATE_DIR / "chat_jobs.json")
+
+
+def _chat_job_owner(request: Request) -> str:
+    """Who owns a job: the API token that called, else the signed-in owner (cookie, or a server with
+    no login gate). Jobs never cross owners, so one token cannot read another token's answers."""
+    tid = str(getattr(request.state, "api_token_id", "") or "")
+    if not tid and _bearer(request):
+        # No gate on this server, so the middleware never checked the token: resolve it here so two
+        # tokens still keep their jobs apart.
+        entry = cfgmod.verify_api_token(_bearer(request), duong_dan_router(request))
+        tid = str((entry or {}).get("id") or "")
+    return ("token:" + tid) if tid else "owner"
+
+
+@app.post("/chat/jobs")
+async def chat_job_start(request: Request, message: str = Form(...), brain: str = Form(""),
+                         session: str = Form(""), host: str = Form(""), agent: str = Form(""),
+                         project: str = Form("")):
+    """Start a /chat turn in the background and answer at once with `{"ok": true, "job_id"}` (#1021).
+
+    Same fields and same 400s as /chat, checked before anything starts. Poll
+    `GET /chat/jobs/{job_id}` for the answer. 429 when this caller already has too many running jobs,
+    409 when this conversation (session plus agent) already has one running.
+    """
+    ag, pid, bad = _cli_checks(message, brain, session, agent, project)
+    if bad is not None:
+        return bad
+    lane = _cli_sess_key(session) + (f"@{ag['slug']}" if ag else "")
+
+    async def _runner():
+        out, key = await _cli_turn(message, brain, session, host, agent=ag, project_id=pid)
+        return _cli_payload(out, key)
+
+    job_id, reason = _CHAT_JOBS.start(_chat_job_owner(request), lane, _runner)
+    if reason == "busy_owner":
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+            f"Đang có {chat_jobs.MAX_RUNNING_PER_OWNER} job chạy, chờ một job xong rồi gửi tiếp",
+            f"{chat_jobs.MAX_RUNNING_PER_OWNER} jobs are already running, wait for one to finish")},
+            status_code=429)
+    if reason == "busy_lane":
+        return JSONResponse({"ok": False, "error": localefmt.chu(
+            "Phiên này đang có một job chạy, chờ nó xong rồi gửi tiếp",
+            "This session already has a running job, wait for it to finish")}, status_code=409)
+    return {"ok": True, "job_id": job_id}
+
+
+@app.get("/chat/jobs/{job_id}")
+async def chat_job_status(job_id: str, request: Request):
+    """`{"ok", "job_id", "status": running|done|error, "created_at", "finished_at"}`, plus the /chat payload
+    (`text`, `session`, `files`, `ctx_path`) when done, or `error` when it failed. 404 for an unknown or
+    expired id, and for a job another caller started."""
+    view = _CHAT_JOBS.get(_chat_job_owner(request), job_id)
+    if view is None:
+        return JSONResponse({"ok": False, "error": localefmt.chu("Không có job này", "No such job")},
+                            status_code=404)
+    return {"ok": True, **view}
 
 
 @app.post("/telegram/send-file")

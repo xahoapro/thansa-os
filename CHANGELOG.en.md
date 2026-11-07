@@ -8,6 +8,83 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.500.4] - 2026-11-07
+### Fixed
+- **Moving to a second Claude account now really works.** Before, when account 1 ran out, Thansa picked account 2 but still tried to resume the old conversation thread, which lives in account 1's folder. Claude Code could not find it and exited at once, so every later message failed with "SDK engine: ProcessError: Command failed with exit code 1". Thansa now sees the thread belongs to another account, opens a new one on the running account and primes it from the saved history, so the chat carries on.
+- **A lost thread is restored even when Claude Code reports it by exiting.** Newer Claude Code releases report "No conversation found" by exiting with code 1 instead of returning an error result, so the old restore path never ran. Both ways are recognised now.
+
+## [0.500.3] - 2026-11-07
+### Improved
+- **A tidier Team page.** The team description sits in the (i) beside the team name instead of a line under it. The remaining explanation lines (Advanced, the reply log, the coordinator's authority, how to write mandate sources, Files and Links) fold into the (i) too.
+- **Files and Links no longer cut their text off.** When empty they show one short line; the explanation is in the (i) by the heading.
+
+## [0.500.2] - 2026-11-07
+### Fixed
+- **A merged PR no longer sticks on "waiting for CI".** When a PR was merged while Thansa had lost its GitHub connection, the chat kept the working-branch icon forever. It now shows as merged, and `thansa_github` no longer reports "waiting for CI" for a merged PR.
+
+## [0.500.1] - 2026-11-07
+### Fixed
+- **CI no longer fails at random on the startup speed check.** The old test timed the server import and went red on slow runners. It now lists the libraries loaded at startup: no clock involved, and a heavy library that slips in is named.
+
+## [0.500.0] - 2026-11-07
+### Improved
+- **Cleaner assistant cards.** The grey, cut-off role line under each assistant's name is gone. The full role now opens from an (i) button in the card's top right corner, right above the Auto switch.
+
+## [0.499.0] - 2026-11-07
+### Added
+- **Call Thansa over the API without holding a connection open.** `POST /chat/jobs` answers at once with a job id, the turn runs in the background, and `GET /chat/jobs/{id}` returns the answer later. Good for serverless backends, and a dropped connection no longer loses the result.
+- **Each job belongs to the token that started it.** Other tokens cannot read it, each token runs at most 4 jobs at once, one per session. Results are kept for 24 hours.
+
+## [0.498.0] - 2026-11-07
+### Improved
+- **Partner voice calls keep longer instructions.** The partner file text sent into a call grows from 4,000 to 12,000 characters and memory from 2,000 to 6,000, adjustable with `THANSA_VOICE_AGENT_BODY_CHARS` and `THANSA_VOICE_AGENT_MEMORY_CHARS`. Rules placed between `<!-- THANSA_VOICE_RULES_START -->` and `<!-- THANSA_VOICE_RULES_END -->` in the partner file always move to the top and are never cut.
+- **Partners do not make up figures on a call.** Every partner call carries a rule that is never cut: changing facts come from tools, and a task is reported done only when a tool returned success.
+
+## [0.497.0] - 2026-11-07
+### Added
+- **Your own mascot picture.** In Settings > Mascot, tap Upload a picture: it is cut to the chosen shape and shows on the pet, the sidebar mark and the shape picker. Use the Thansa face brings the drawn face back.
+- **The same picture becomes the browser tab icon**, so several Thansa open at once tell apart at a glance. A switch keeps the logo on the tab if you prefer.
+
+## [0.496.0] - 2026-11-07
+### Added
+- **Name the account at its first sign-in.** The ChatGPT, Claude Code, Grok and Antigravity cards and an API card's first key ask for a name before signing in, and the name shows on the card's status line, so accounts are never mixed up.
+- **Rename an account any time.** A card's ⋯ has "Name the account", and every account in a card's list has "Rename". A newly added account needs a name.
+### Improved
+- **Connect another provider has no popup any more.** One tap unfolds every provider card right below, a second tap folds them.
+
+## [0.495.1] - 2026-11-07
+### Fixed
+- **The chat no longer sits on "Lost the connection to the server" for hours.** A message the server failed on used to drop the connection, the page reconnected and sent the same message again, which dropped it again, forever, even across server restarts. Now the server shows the error under that message and the connection stays up.
+- **A message sent 3 times without being taken goes back to the input box** instead of being resent forever.
+- **An expired sign-in shows the sign-in screen** instead of "reconnecting" forever with every list at 0.
+- **A brain on Google Drive or OneDrive freezes the server less:** the folder scans at the start and end of each chat turn run on their own and no longer block the connection.
+
+## [0.495.0] - 2026-11-07
+### Added
+- **Your next message, suggested right in the chat box.** Once Thansa answers, the empty box shows in grey what you will most likely type next (for example "ok, go with the proposal for both PRs"). Press **Tab** to fill it in, edit it or press Enter to send; on a phone tap the **Tab** button next to the box.
+- Works in the main chat and on the Teams page. Suggestions run on the background model, not the main brain. Switch it off or on from the chat's **+** menu, "Suggest my next message".
+
+## [0.494.0] - 2026-11-07
+### Added
+- **Per-partner ChatGPT Live voice selection.** Pick a supported realtime v3 voice in the shared partner editor; Default inherits the global voice. The preference is stored with the partner frontmatter and follows Brain Sync.
+- **Session isolation.** Other partners, Thansa Core and non-ChatGPT Live engines keep their existing voice settings.
+
+## [0.493.2] - 2026-11-07
+### Fixed
+- **Partner voice calls no longer call themselves ChatGPT.** The partner's identity now leads the call's instructions, so "who are you?" (in English too) gets the partner's own name.
+- **A partner call no longer pulls in the main brain's shared memory,** only that partner's own instructions and memory, so it stays within its role.
+
+## [0.493.1] - 2026-11-07
+### Fixed
+- **Workflow agents with no model of their own now run on the main model.** Before, such a step always ran on Claude whatever brain was picked on the Models page. An agent with its own model keeps it.
+
+## [0.493.0] - 2026-11-07
+### Added
+- **Unread chats get a red dot.** When Thansa has answered and you have not opened the chat since, its row in the chat history shows a red dot and a heavier title, on the Chat page and in the history column of the Partners page.
+- **Opening a chat clears its dot.** New replies to the chat you are looking at never light it, and a chat read in one tab clears in the others.
+- **Unread counts in the Teams and Partners lists turn red.** A muted team or partner keeps its grey count.
+- Chats from before this version count as read, so the history does not all light up at once.
+
 ## [0.492.1] - 2026-11-07
 ### Improved
 - **The Chatbot page opens much faster on a busy inbox.** The "messages today" counts on Conversations and on each bot card used to read every stored message every 5 seconds; now they read only the time range they need.
