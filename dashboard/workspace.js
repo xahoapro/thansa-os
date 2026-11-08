@@ -765,13 +765,17 @@
           .map(function (a) { return { slug: a.slug, name: a.name || a.slug }; });
       },
       openChat: function (sid) { var x = dangChon(); if (x) moPhien(x, false, sid); },
+      // The chat beside the tab is this assistant's: its running turn shows at the top of the tab.
+      liveTurn: function () { return window.ThansaChatLive ? window.ThansaChatLive.turn() : null; },
       openTeam: function (teamId, taskId) {
         // teams.js nạp chậm (nap-cham.js, 0.417.0): chờ nó rồi mở.
         nhom(["congviec", "teams"], function () {
           if (window.ThansaTeams && window.ThansaTeams.open) window.ThansaTeams.open(teamId, taskId);
         });
       },
-      openWork: function () { if (window.ThansaNav && window.ThansaNav.go) window.ThansaNav.go("kanban"); } });
+      openWork: function () { if (window.ThansaNav && window.ThansaNav.go) window.ThansaNav.go("kanban"); },
+      // A workflow run the assistant took part in: open that workflow on this page, on the run's chat when it has one.
+      openWorkflow: function (wfSlug, sid) { if (wfSlug) openCommand("workflow", wfSlug, sid || ""); } });
   }
 
   // (0.62.0 đã bỏ hàm dongBoNhomForm ở đây. Nó tồn tại chỉ để vá một xung đột tự gây ra:
@@ -1609,6 +1613,10 @@
     chatReady(false); veGiua(item);
     if (!item) return false;
     var still = function () { return active && ticket === opening && conDangXem(item); };
+    // 2026-11-08 (customer report: "chỉ bấm vào chat là không được"): the chat box stays locked until this open ends,
+    // so an open that hangs (a read that never answers) left a locked box with no word on screen. Past OPEN_WAIT_MS the
+    // error and its Retry show; the box still unlocks by itself if the open finishes after all.
+    var slow = setTimeout(function () { if (still() && !ready) veLoi(t("ws.err_session_slow")); }, OPEN_WAIT_MS);
     try {
       // Performance (2026-11-05): the right column (settings form, Auto block, history list) belongs to the PARTNER, not
       // to one chat. New conversation and a history click keep the same partner, so it is not rebuilt: rebuilding it
@@ -1655,15 +1663,23 @@
       if (!window.ThansaSessions || window.ThansaSessions.current() !== id) throw new Error(t("ws.err_session"));
       if (!item.system) _phienGanNhat[khoaGanNhat(item)] = id;
       chatReady(true);
+      clearOpenError();
       luuViTri(id);
       if (S.loai === "agent" && coTinChuaDoc(item.slug)) daDoc(item.slug);   // 0.205.0: opening the chat reads it
       if (S.loai === "workflow") veBuoc(item, tienDoHienTai(item));
       else ganCongHuong(item, id);
       return true;
     } catch (e) {
-      if (still()) { veLoi(t("ws.err_session")); if (window.ThansaSessions) window.ThansaSessions.new(); }
+      if (still()) { clearOpenError(); veLoi(t("ws.err_session")); if (window.ThansaSessions) window.ThansaSessions.new(); }
       return false;
+    } finally {
+      clearTimeout(slow);
     }
+  }
+  var OPEN_WAIT_MS = 12000;
+  function clearOpenError() {
+    var el = S.el && S.el.querySelector("#wsIdentity"); if (!el) return;
+    el.querySelectorAll(".ws-err, #wsRetry").forEach(function (n) { n.remove(); });
   }
   async function chayQuyTrinh() {
     var item = dangChon();

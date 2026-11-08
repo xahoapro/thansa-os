@@ -6,6 +6,41 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.509.0] - 2026-11-08
+### Thêm mới
+- **Khung trò chuyện hiện kế hoạch của bộ não như một danh sách việc.** Khi Claude Code, ChatGPT (Codex) hay Grok Build tự lập kế hoạch cho một việc nhiều bước, thẻ "Kế hoạch 2/5" hiện ngay trên câu trả lời: việc xong có dấu tích và gạch ngang, việc đang làm in đậm, việc còn lại để trống. Dòng trạng thái dưới khung chat cũng ghi đang ở bước nào. Thẻ được giữ lại khi tải lại trang.
+- Không tốn thêm token: Thansa chỉ vẽ danh sách mà bộ não vốn đã lập, không gọi thêm model.
+- **Tab Công việc ở trang Cộng sự hiện việc cộng sự đang làm trong chat.** Trước đây tab chỉ có việc đã xếp hàng, nên lúc cộng sự đang trả lời nhiều bước ngay trong khung chat bên cạnh thì tab vẫn trống. Nay có thẻ "Đang làm trong chat" kèm số bước và kế hoạch, xong lượt là thẻ tự tắt.
+- **Tab Công việc hiện các lần chạy Quy trình mà cộng sự có tham gia.** Mỗi lần chạy là một thẻ: đang chạy thì ghi bước nào và của ai, chờ duyệt thì nằm ở Cần bạn, hỏng thì đánh dấu hỏng, bấm Mở là tới đúng quy trình. Bộ lọc nguồn có thêm "Quy trình". Lần chạy bị cắt giữa chừng (máy chủ tắt khi đang chạy) không còn nằm mãi ở Đang làm.
+### Sửa lỗi
+- **Chấm trạng thái trên thẻ cộng sự khớp với tab Công việc.** Việc anh đã bấm Xong (cất vào lưu trữ) hay đã xoá không còn làm chấm xanh "vừa xong" (hay chấm đỏ khi việc đó hỏng) sáng lên nữa.
+
+## [0.508.1] - 2026-11-08
+### Sửa lỗi
+- **Ô chat ở trang Cộng sự không còn bị khoá.** Từ bản 0.503, bấm vào một cộng sự (hay vừa trả lời xong) đôi khi làm ô chat không nhận con trỏ nữa, Ctrl+Shift+R cũng không đỡ. Nay mở hội thoại lại ngay như cũ.
+- **Mở hội thoại quá lâu thì có báo lỗi kèm nút Thử lại**, thay vì một ô chat khoá im lặng.
+- **Lên bản mới là trình duyệt tự làm mới bộ nhớ đệm của Thansa**, không phải bấm Ctrl+Shift+R.
+
+## [0.508.0] - 2026-11-08
+### Cải thiện
+- **Review chéo trên GitHub giờ do bạn quyết, mặc định tắt.** CI xanh là Thansa merge, không tự gọi thêm model nào để review. Muốn review thì bật cho từng repo (thẻ GitHub, dấu ba chấm, Review chéo), bấm **Review ngay** ở biểu tượng GitHub của cuộc trò chuyện, hoặc nhắn "review PR này".
+- **Mặc định review bằng chính model đang chat**, không bắt buộc phải là model khác hãng. Chọn model khác được, theo repo hay mỗi lần review.
+- **Phát hiện chờ bạn chọn.** Thansa không tự gửi đi sửa nữa: dừng merge, hiện danh sách lỗi kèm hai nút **Sửa các lỗi này** và **Bỏ qua, merge**.
+
+## [0.507.2] - 2026-11-08
+### Sửa lỗi
+- **Review chéo trên GitHub chạy bằng đúng model bạn đã chọn.** Trước đây nó gửi model rỗng, nên thẻ Groq rơi về `llama-3.3-70b-versatile`, model Groq đã tắt từ 16/08/2026, và lần review nào cũng báo 404 rồi bỏ qua. Giờ model việc nền review trước (nếu khác hãng với engine đã viết), các thẻ khác dùng model và mức suy nghĩ chọn trên thẻ. Khung chat ghi rõ tên model đã review.
+- **Model mặc định của Groq đổi sang `openai/gpt-oss-120b`**, model Groq khuyên dùng thay cho `llama-3.3-70b-versatile`.
+
+## [0.507.1] - 2026-11-08
+### Cải thiện
+- **Chọn "chấp nhận" hay "sửa lại" ngay trong chat.** Việc nền trượt lượt tự kiểm hai lần thì tin báo về Telegram, Zalo hay khung chat web giờ cho bạn nhắn thẳng "chấp nhận" hoặc "sửa lại", không cần mở trang Nhiệm vụ. Nhiều việc cùng chờ thì Thansa hỏi lại là việc nào.
+
+## [0.507.0] - 2026-11-08
+### Thêm mới
+- **Zalo OA cấp quyền theo OAuth v4.** Ở form Thêm kênh Zalo OA, dán App ID, App secret key, OA secret key rồi bấm Cấp quyền bằng Zalo: chọn OA, bấm Cho phép là Thansa tự lưu kênh. Không cần lấy refresh token tay ở API Explorer nữa. Form hiện sẵn Callback URL để dán vào app Zalo một lần.
+- **Cấp quyền lại một nút.** Refresh token chết thì mở Sửa kênh, bấm Cấp quyền lại bằng Zalo, Thansa dùng khoá đã lưu và bot đang trực tự chạy lại.
+
 ## [0.506.3] - 2026-11-08
 ### Sửa lỗi
 - **Chép lời không còn dừng khi chuyển tab.** Đang ghi âm thành chữ mà Alt Tab hay chuyển sang trang khác, máy tính vẫn nghe tiếp, quay lại là chữ vẫn đủ.

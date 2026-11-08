@@ -8,6 +8,41 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.509.0] - 2026-11-08
+### Added
+- **The chat shows the engine's task plan as a checklist.** When Claude Code, ChatGPT (Codex) or Grok Build plans a multi-step job, a "Plan 2/5" card appears above the answer: done items ticked and struck through, the running one in bold, the rest open. The activity line under the chat says which step it is on. The card stays after a reload.
+- No extra tokens: Thansa only draws the list the engine already made, with no extra model call.
+- **The Jobs tab on the Partners page shows what the assistant is doing in the chat.** The tab only listed queued jobs, so it looked empty while the assistant worked through several steps in the chat beside it. A "Working in the chat" card now shows the step count and the plan, and goes when the turn ends.
+- **The Jobs tab lists the workflow runs the assistant took part in.** One card per run: while it runs it says which step and whose, a run waiting for review sits under Needs you, a failed one is marked failed, and Open goes to that workflow. The source filter gains "Workflows". A run cut off mid-way (the server stopped during it) no longer stays In progress for ever.
+### Fixed
+- **The status dot on an assistant's card agrees with its Jobs tab.** A finished job you pressed Done on (archived) or deleted no longer lights the green "just finished" dot, or the red one when it failed.
+
+## [0.508.1] - 2026-11-08
+### Fixed
+- **The Partners page chat box no longer locks.** Since 0.503, clicking a partner (or a reply just finishing) could leave the chat box refusing the cursor, even after Ctrl+Shift+R. Conversations open at once again.
+- **A conversation that takes too long to open shows an error with a Retry button**, instead of a silently locked chat box.
+- **A new version refreshes what Thansa keeps in the browser by itself**, no Ctrl+Shift+R needed.
+
+## [0.508.0] - 2026-11-08
+### Improved
+- **GitHub cross review is now your call, off by default.** Green CI merges, with no extra model called to review. To review, turn it on per repo (GitHub card, the "..." menu, Cross review), press **Review now** on the chat's GitHub icon, or say "review this PR".
+- **The review runs on the model you are chatting with by default**; it no longer has to be another vendor. Another model can be picked per repo or per review.
+- **Findings wait for your pick.** Thansa no longer sends them off to be fixed: it holds the merge and lists them with **Fix them** and **Skip and merge**.
+
+## [0.507.2] - 2026-11-08
+### Fixed
+- **GitHub cross review runs on the model you picked.** It used to send an empty model, so a Groq card fell back to `llama-3.3-70b-versatile`, which Groq shut down on 16/08/2026, and every review answered 404 and was skipped. The background model now reviews first (when it is from another vendor than the author), other cards use the model and reasoning level picked on the card, and the chat names the model that reviewed.
+- **Groq's default model is now `openai/gpt-oss-120b`**, the replacement Groq names for `llama-3.3-70b-versatile`.
+
+## [0.507.1] - 2026-11-08
+### Improved
+- **Accept or send back right in chat.** When a background job fails its automatic check twice, the notice on Telegram, Zalo or the web chat now lets you just reply "accept" or "fix it", no need to open the Tasks page. With several jobs waiting, Thansa asks which one.
+
+## [0.507.0] - 2026-11-08
+### Added
+- **Zalo OA grants access with OAuth v4.** On Add channel, Zalo OA, paste the App ID, App secret key and OA secret key and click Grant access with Zalo: pick the OA, click Allow and Thansa saves the channel by itself. No more copying a refresh token from API Explorer. The form shows the Callback URL to paste into the Zalo app once.
+- **Grant again in one click.** When the refresh token dies, open Edit on the channel and click Grant access again with Zalo; Thansa uses the saved keys and the bot on duty restarts.
+
 ## [0.506.3] - 2026-11-08
 ### Fixed
 - **Dictation no longer stops when you switch tab.** Alt Tab or another page while dictating, the computer keeps listening and the words are all there when you come back.
