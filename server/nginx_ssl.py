@@ -111,7 +111,9 @@ async def _run(domain: str, email: str) -> None:
         return
     result = ""
     try:
-        with open(_log_path(), "a", encoding="utf-8") as logf:
+        # Mở file log ở luồng phụ: open() chặn vòng sự kiện (test_loop_blocking_budget của nguồn 0.510).
+        logf = await asyncio.to_thread(open, _log_path(), "a", encoding="utf-8")
+        with logf:
             logf.write(f"\n=== {time.strftime('%Y-%m-%d %H:%M:%S')} {domain}\n")
 
             async def _doc():
