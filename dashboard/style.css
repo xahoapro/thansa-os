@@ -737,7 +737,8 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
   transition: opacity .24s ease, visibility .24s ease, transform .24s ease;
 }
 .hud-center.brain-overlays-hidden .concept-labels,
-.hud-center.brain-overlays-hidden .brain-stats {
+.hud-center.brain-overlays-hidden .brain-stats,
+.hud-center.brain-overlays-hidden .graph-stats {
   opacity: 0; visibility: hidden; pointer-events: none;
 }
 .hud-center.brain-overlays-hidden .brain-eye-on { display: none; }
@@ -772,7 +773,18 @@ body.vault-thu .hud-body > .hud-left > .vault-expand:hover { color: var(--accent
   background: var(--bg3); border: 1px solid var(--border);
   color: var(--text); padding: 5px 8px; border-radius: 6px; font-size: 14px;
 }
-.graph-stats { font-size: 13px; color: var(--text2); font-family: var(--font); white-space: nowrap; transition: color .25s, text-shadow .25s; }
+/* Node and link counts in the graph's top-left corner (2026-11-09, owner: out of the top bar, into the graph). Same
+   glass and height as the eye button opposite; it is a label, so clicks and drags go through to the graph. */
+.graph-stats {
+  position: absolute; top: 14px; left: 14px; z-index: 6; box-sizing: border-box;
+  max-width: calc(100% - 78px); height: 36px; padding: 0 12px; line-height: 34px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none;
+  border: 1px solid var(--brain-glass-brd); border-radius: 10px;
+  background: var(--brain-glass); box-shadow: var(--brain-glass-shadow); backdrop-filter: blur(8px);
+  font-family: var(--font); font-size: 13px; letter-spacing: .3px; font-variant-numeric: tabular-nums;
+  color: var(--brain-ink);
+  transition: color .25s, text-shadow .25s, opacity .24s ease, visibility .24s ease;
+}
 .graph-stats.pulse { color: var(--accent2-ink); text-shadow: 0 0 10px rgba(160,120,255,.8); }
 /* Giấy: nhấp nháy bằng ĐẬM CHỮ thay vì bằng quầng sáng. */
 :root[data-theme="light"] .graph-stats.pulse { text-shadow: none; font-weight: 700; }
@@ -1780,7 +1792,8 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 .send-btn:hover { opacity: 0.85; }
 .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ===== Mobile: same card with tighter padding; the model chip moves to the page header (mobile-chat.js, back there in 0.182.0) ===== */
+/* ===== Mobile: same card with tighter padding. Since 2026-11-09 the model chip stays in it next to the Effort chip, as on
+   a computer (it sat in the page header from 0.182.0); its picker opens above the card and never runs past the screen. ===== */
 @media (max-width: 860px) {
   .hud-voice {
     margin: 6px 10px 8px; padding: 8px 8px 6px; gap: 2px;
@@ -1788,6 +1801,7 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
     align-items: flex-end;
   }
   .hud-voice .voice-input { min-height: 36px; max-height: 40vh; padding: 6px 6px; font-size: 16px; }
+  .hud-voice .mb-pop { width: min(340px, calc(100vw - 32px)); }
 }
 
 .stop-btn {
@@ -2418,7 +2432,6 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
    trong danh sách hội thoại cũng là một cuộc trò chuyện. */
 .cs-menu-ico, .cs-proj-name .ic { display: inline-flex; flex: none; color: var(--text2); }
 .cs-menu-row.on .cs-menu-ico, .cs-proj-name .ic { color: inherit; }
-.ci-meta .act .pin.on { color: var(--accent); }
 .cside-list { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding-right: 2px; }
 .cside-list::-webkit-scrollbar { width: 4px; }
 .cside-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -2428,16 +2441,12 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
   border: 1px solid transparent; margin-bottom: 2px; }
 .cside-item:hover { background: var(--info-wash); border-color: var(--info-line); }
 .cside-item.active { background: var(--accent-wash-2); border-color: var(--accent-line); }
-/* HÀNG ĐÃ GHIM. Nhóm "Đã ghim" trên đầu chỉ nói được thứ tự: cuộn xuống giữa danh sách là
-   không còn thấy cái nhãn ấy, và dấu ghim thì nằm trong .act nên chờ rê chuột mới hiện. Nay
-   mỗi hàng ghim tự mang vạch màu bên trái và một dấu ghim luôn thấy, đúng khuôn danh sách
-   trợ lý / quy trình của trang Cộng sự (chủ dự án chốt 16/09).
-   Không thể để .act trong suốt rồi tô riêng dấu ghim: con không bao giờ rõ hơn cha trong
-   opacity, nên mở .act ra và giấu HAI nút còn lại cho tới lúc rê chuột. */
-.cside-item.ghim { border-left: 3px solid var(--accent); }
-.cside-item.ghim .act { opacity: 1; }
-.cside-item.ghim .act > :not(.pin) { opacity: 0; transition: opacity .15s; }
-.cside-item.ghim:hover .act > :not(.pin) { opacity: 1; }
+/* 2026-11-09 (owner approved the mock-up): a pinned row carries a small pin before its title, always visible, instead
+   of a bar on its left; every other action moved into the row's "..." menu. */
+.ci-pin { display: inline-flex; vertical-align: -1px; margin-right: 5px; color: var(--accent); }
+.ci-pin .ic, .ci-pin svg { width: 13px; height: 13px; }
+.cside-item.menu-on { background: var(--info-wash); border-color: var(--info-line); }
+.cside-item.archived .ci-title { color: var(--text2); font-weight: 500; }
 .ci-title { color: var(--text); font-size: 14px; font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* 0.491.0: a chat Thansa answered after the owner last looked at it: red dot before the title, title in full weight. */
@@ -2446,37 +2455,83 @@ li.task-done > .dv-ttext { text-decoration: line-through; text-decoration-color:
 .cside-item.has-unread .ci-title { font-weight: 800; }
 .ci-meta { display: flex; gap: 8px; align-items: center; font-size: 12px;
   color: var(--text3); margin-top: 3px; }
-.ci-badge { border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; font-size: 11px; }
+.ci-badge { font-size: 12px; color: var(--text3); }
 /* 2026-11-09: small folder tag with the chat's project name. It is the one meta item allowed to shrink, so a long
    project name ends in "..." instead of pushing the time and message count off a narrow column. Empty until
    /projects answers (the row is drawn first), and an empty tag takes no room. */
 .ci-meta > * { flex: none; }
 .ci-meta > .ci-proj { flex: 0 1 auto; min-width: 0; max-width: 55%; display: inline-flex; align-items: center; gap: 3px;
-  padding: 0 6px; border-radius: 8px; border: 1px solid var(--accent-line); color: var(--accent); font-size: 11px;
-  font-weight: 600; line-height: 16px; }
+  color: var(--accent); font-size: 12px; font-weight: 400; line-height: 16px; }
 .ci-proj:empty { display: none; }
-.ci-proj .ic, .ci-proj svg { flex: none; width: 11px; height: 11px; }
+.ci-proj .ic, .ci-proj svg { flex: none; width: 13px; height: 13px; }
 .ci-proj-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.ci-meta .act { margin-left: auto; display: flex; gap: 7px; opacity: 0; transition: opacity 0.15s; }
-.cside-item:hover .act { opacity: 1; }
-.ci-meta .act span { cursor: pointer; }
-/* Màn cảm ứng KHÔNG có rê chuột: ghim/chuyển/đổi tên/xoá của hàng hội thoại và nút chép mã
-   ẩn theo hover là vĩnh viễn không thấy trên điện thoại (vẫn nhận chạm, nên hay bấm nhầm). */
+/* The row's "..." (2026-11-09): right of the meta line. A mouse shows it on hover, on the open chat and while its menu
+   is open; a touch screen always shows it (no hover there). Its icon takes no pointer events, a second guard for the
+   tap-on-the-svg bug the row's click handler already handles by ancestor. */
+.ci-more { margin-left: auto; flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px;
+  height: 24px; margin-top: -3px; margin-bottom: -3px; padding: 0; border: 0; border-radius: 7px; background: none;
+  color: var(--text2); cursor: pointer; opacity: 0; transition: opacity .15s; }
+.ci-more .ic, .ci-more svg { width: 17px; height: 17px; pointer-events: none; }
+.cside-item:hover .ci-more, .cside-item.active .ci-more, .cside-item.menu-on .ci-more, .ci-more:focus-visible { opacity: 1; }
+.ci-more:hover, .cside-item.menu-on .ci-more { background: var(--bg2); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.ci-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Màn cảm ứng KHÔNG có rê chuột: nút "..." của hàng hội thoại và nút chép mã ẩn theo hover là vĩnh viễn không thấy
+   trên điện thoại. */
 @media (hover: none) {
-  .ci-meta .act, .cside-item.ghim .act > :not(.pin), .code-wrap .code-copy { opacity: .75; }
+  .ci-more { opacity: 1; width: 34px; height: 30px; }
+  .code-wrap .code-copy { opacity: .75; }
 }
-.ci-meta .act span:hover { color: var(--text-hi); }
-/* Lớp chắn thứ hai cho cùng lỗi bấm-trượt: icon không nhận chuột thì e.target luôn là cái
-   span, kể cả khi ai đó lỡ viết lại handler theo kiểu so classList. */
-.ci-meta .act span .ic { pointer-events: none; }
+.ci-arch-tag { display: inline-flex; align-items: center; gap: 3px; color: var(--text3); }
+.ci-arch-tag .ic, .ci-arch-tag svg { width: 12px; height: 12px; }
+/* Rename right on the row. */
+.cside-item.renaming { cursor: default; background: var(--info-wash); }
+.ci-ren { display: flex; gap: 6px; align-items: center; }
+.ci-ren-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 9px; border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--bg2); color: var(--text); font: inherit; font-size: 14px; outline: none; }
+.ci-ren-b { flex: none; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.ci-ren-ok { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); font-weight: 600; }
+/* The "delete for good" question inside the row menu. */
+.cs-rm-del { padding: 8px 10px 6px; border-radius: 9px; background: var(--danger-wash, rgba(220,38,38,.08)); }
+.cs-rm-del p { margin: 0 0 8px; font-size: 15px; line-height: 1.45; color: var(--text2); overflow-wrap: anywhere; }
+.cs-rm-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.cs-rmenu .cs-rm-b { width: auto; min-height: 36px; padding: 0 12px; border: 1px solid var(--border); background: var(--bg2); font-size: 15px; }
+.cs-rmenu .cs-rm-red { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+.cs-rmenu .cs-rm-red:hover, .cs-rmenu .cs-rm-red:focus-visible { background: var(--red); filter: brightness(1.08); }
+.cs-rmenu .ht-rm-it.danger, .cs-rmenu .ht-rm-it.danger .ht-rm-ic { color: var(--red); }
+/* Archived chats: the row pinned at the bottom of the column, and the header of their view. */
+.cside-arch { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 8px; border: 0;
+  border-top: 1px solid var(--border); background: none; color: var(--text2); font: inherit; font-size: 14px;
+  text-align: left; cursor: pointer; }
+.cside-arch[hidden] { display: none; }
+.cside-arch:hover { color: var(--text); background: var(--info-wash); }
+.cside-arch .ic, .cside-arch svg { width: 16px; height: 16px; flex: none; }
+.cside-arch .t { flex: 1 1 auto; }
+.cside-arch .n { color: var(--text3); font-size: 13px; font-variant-numeric: tabular-nums; }
+.cside-arch-top { display: flex; align-items: center; gap: 6px; padding: 2px 4px 8px 0; }
+.cside-arch-top b { font-size: 14.5px; }
+.cside-arch-top .n { color: var(--text3); font-size: 13px; }
+.cside-arch-back { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0;
+  border-radius: 8px; background: none; color: var(--text2); cursor: pointer; }
+.cside-arch-back:hover { background: var(--info-wash); color: var(--text); }
+/* The chat on screen is archived: a chip in its title bar, with the way back. */
+.cs-arch-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg2); color: var(--text2); font: inherit; font-size: 12.5px; cursor: pointer; }
+.cs-arch-chip .ic, .cs-arch-chip svg { width: 14px; height: 14px; }
+.cs-arch-chip b { color: var(--accent); font-weight: 600; }
+.cs-arch-chip:hover { border-color: var(--accent-line); }
+@media (max-width: 860px) {
+  .cside-arch { padding: 13px 10px; font-size: 16px; }
+  .cs-arch-chip { font-size: 14px; height: 30px; }
+  .ci-ren-in { height: 40px; font-size: 16px; }
+  .ci-ren-b { height: 40px; font-size: 15px; }
+}
 .ci-snip { font-size: 12.5px; color: var(--text2); margin-top: 2px; }
 .ci-snip b { color: var(--warn-ink); }
 .cside-empty { color: var(--text3); text-align: center; padding: 26px 8px; font-size: 13.5px; }
-.cside-more { display: block; width: 100%; margin: 8px 0 4px; padding: 8px 10px;
-  border: 1px solid var(--border); border-radius: 9px; background: transparent;
-  color: var(--text2); font-size: 13px; cursor: pointer; }
-.cside-more:hover { background: var(--info-wash); border-color: var(--info-line);
-  color: var(--text); }
+/* The loading line at the end of the list (2026-11-09: replaces the "Xem thêm" button; it loads when it scrolls into
+   view). */
+.cside-list .cside-more { display: flex; justify-content: center; padding: 10px 6px; }
 
 /* Nút Lịch sử và nút Reset hội thoại ở thanh trên cùng đã bỏ (06/11/2026, chủ repo: "không cần thiết").
    #resetBtn vẫn nằm trong DOM nhưng ẩn: nút "+" hội thoại mới trên điện thoại (mobile-chat.js) bấm hộ nó. */
@@ -4848,6 +4903,12 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
   font-weight: 700; letter-spacing: 4px; border: 1px dashed var(--border); border-radius: 12px; user-select: all; overflow-wrap: anywhere; }
 .gh-form .lv-form-act a.s-btn, .gh-card a.conn-chip { text-decoration: none; display: inline-flex; align-items: center; }
 @media (max-width: 480px) { .gh-code { font-size: 26px; letter-spacing: 2px; } }
+/* The git step before connecting (09/11/2026): the command to run by hand, and the "git is installed" line. */
+.gh-git-cmd { margin: 8px 0 4px; padding: 10px 12px; font-family: var(--mono, ui-monospace, monospace); font-size: 16px; line-height: 1.45;
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; border: 1px solid var(--border); border-radius: 10px; background: var(--bg2); }
+.gh-git-ok { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--green, #2c7a4b); }
+.gh-git-ok .cp-ic { width: 18px; height: 18px; flex: none; }
+.gh-git .lv-form-act a.s-btn-ghost { text-decoration: none; display: inline-flex; align-items: center; }
 /* GitHub status icon per conversation (0.365.0, spec 12.1): right of the title in the chat list, and in the repo chip. */
 .cside-item.has-gh { position: relative; }
 .cside-item.has-gh .ci-title { padding-right: 36px; }
@@ -4965,11 +5026,11 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
 .bp-row.on .bp-dot { background: var(--accent); border-color: var(--accent); color: var(--on-accent, #fff); }
 .bp-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .bp-label { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bp-sub { font-size: 12.5px; color: var(--text3); font-variant-numeric: tabular-nums; }
+/* "1920 Node · 2480 Link" stays on one line (2026-11-09, owner); a very long count ends in "..." instead of wrapping. */
+.bp-sub { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 2026-11-09: Export, Rename, Delete on each row (shown on the current row, on hover and on focus; always on a phone),
    the forms under a row, the panel footer like the Partners page, and the upload view. */
-.bp-sub { display: flex; flex-wrap: wrap; column-gap: 4px; }
-.bp-sub-part { white-space: nowrap; }
 .bp-acts { flex: none; display: inline-flex; gap: 2px; opacity: 0; transition: opacity .12s; }
 .bp-row:hover .bp-acts, .bp-row.on .bp-acts, .bp-row:focus-within .bp-acts, .bp-row:focus-visible .bp-acts { opacity: 1; }
 @media (hover: none) { .bp-acts { opacity: 1; } }
@@ -4979,11 +5040,15 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
 .bp-act:hover:not(:disabled), .bp-act:focus-visible { background: var(--bg2); color: var(--accent); box-shadow: inset 0 0 0 1px var(--border); outline: none; }
 .bp-act.bp-act-del:hover:not(:disabled) { color: var(--red, #e5484d); }
 .bp-act:disabled { opacity: .3; cursor: not-allowed; }
+/* The default brain's star is a mark, not a button; on other rows the star button makes that brain the default. */
+.bp-act-star.on { color: var(--accent); cursor: default; }
+.bp-act-star.on:hover { background: none; box-shadow: none; }
 .bp-form { margin: 2px 4px 8px 50px; display: flex; flex-direction: column; gap: 8px; }
 .bp-form.danger { margin-left: 4px; padding: 10px 12px; border-radius: 10px; background: var(--danger-wash, rgba(220,38,38,.08)); }
 .bp-form-new { margin: 4px 6px 10px; }
 .bp-form-msg { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text2); overflow-wrap: anywhere; }
 .bp-form-err { font-size: 13.5px; color: var(--red, #e5484d); }
+.bp-form-msg.bp-warn { color: var(--warn-ink, var(--text)); font-weight: 600; }
 .bp-in { width: 100%; box-sizing: border-box; height: 38px; padding: 0 11px; border-radius: 9px; border: 1px solid var(--border);
   background: var(--bg); color: var(--text); font: inherit; font-size: 14.5px; outline: none; }
 .bp-in:focus { border-color: var(--accent); }
@@ -5043,7 +5108,7 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
   .bp-pop.sheet .bp-hint, .bp-pop.sheet .bp-err { font-size: 14px; }
   .bp-pop.sheet .bp-row { min-height: 58px; padding: 8px 12px; }
   .bp-pop.sheet .bp-label { font-size: 17px; }
-  .bp-pop.sheet .bp-sub { font-size: 14px; }
+  .bp-pop.sheet .bp-sub { font-size: 13px; }
   .bp-pop.sheet .bp-dot { width: 36px; height: 36px; font-size: 16px; }
   .bp-pop.sheet .bp-arrow { width: 42px; height: 42px; }
   .bp-pop.sheet .bp-grip { width: 38px; height: 44px; }
@@ -5080,5 +5145,17 @@ a.cp-mi.gh-more-conn { text-decoration: none; color: inherit; }
   font: 600 15px/1.2 var(--font);
 }
 .rail-foot .rf-install .ic { width: 17px; height: 17px; flex: none; }
-.rail-foot .rf-install .rf-install-chu { overflow: hidden; text-overflow: ellipsis; }
+.rail-foot .rf-install .rf-install-chu, .rail-foot .rf-install .rf-install-short { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rail-foot .rf-install .rf-install-short { display: none; }
 @media (min-width: 861px) and (pointer: fine) { .rail-foot .rf-install { display: none; } }
+/* 2026-11-09: a touch tablet or laptop (pointer: coarse) gets the button in the 160px computer rail, where it ran past the
+   edge (164px in a 143px foot) and sat off screen once the rail folded. There it takes the "Give a star" mould below it
+   with a short label, and only the icon in the folded rail. */
+@media (min-width: 861px) {
+  .rail-foot .rf-install { min-width: 0; min-height: 32px; gap: 6px; font-size: 13px; }
+  .rail-foot .rf-install .ic { width: 14px; height: 14px; }
+  .rail-foot .rf-install .rf-install-chu { display: none; }
+  .rail-foot .rf-install .rf-install-short { display: inline; }
+  .rail.collapsed .rail-foot .rf-install { flex: 0 0 auto; width: 32px; padding: 0; }
+  .rail.collapsed .rail-foot .rf-install .rf-install-short { display: none; }
+}
