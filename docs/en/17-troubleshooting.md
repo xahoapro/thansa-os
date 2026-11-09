@@ -31,8 +31,8 @@ A great many errors disappear after one of these, so try them before worrying:
 | Images in old conversations show a grey **Image expired** box | By design: `attachments/` and `inbox/` are a cache, and files over 30 days (or when the 300MB ceiling is passed) are cleared. See "Old images and files disappear" below for how to keep them or turn clearing off. |
 | Voice / microphone will not turn on | Browsers only grant microphone permission over **HTTPS** (or on localhost). Opening `http://<ip>:7777` is always blocked. Use an `https://` URL (Hostinger `*.hstgr.cloud`, Cloudflare Tunnel, or a custom domain with SSL). See [Branding and custom domains](15-branding-and-domains.md). |
 | You updated in the app but **the version did not change** | Wait a little longer; if it still reports the old build, check the update log: `update.log` in the state folder (`server/update.log` locally, `/data/state/update.log` on Docker), or `docker compose logs`. |
-| **`thansa` reports 401** or "invalid token" | The token is wrong or was revoked. Create a new one at **Account > API tokens** then run `thansa login <address>` again. See [The Thansa CLI](24-cli.md). |
-| **`thansa task add` / `thansa brain ls` report 403** | Your token is the **chat only** kind. These commands need a **full power** token, so create one at Account > API tokens. |
+| **`thansa` reports 401** or "invalid token" | The token is wrong or was revoked. Create a new one at **Integrations > API tokens** then run `thansa login <address>` again. See [The Thansa CLI](24-cli.md). |
+| **`thansa task add` / `thansa brain ls` report 403** | Your token is the **chat only** kind. These commands need a **full power** token, so create one at Integrations > API tokens. |
 | **`thansa up` reports it cannot find a Thansa install** | Exactly as it says: the CLI package does NOT contain the server. Point `THANSA_HOME` at the Thansa folder, run the command from inside that folder, or use `thansa login <address>` to connect to a Thansa running elsewhere. |
 
 The sections below explain each row in more detail.

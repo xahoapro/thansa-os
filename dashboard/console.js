@@ -618,13 +618,18 @@
     if (cv) cv.classList.toggle("cview-hoi-thoai", id === "conversations" || id === "chatbots");
     // 0.422.0: the Tasks page carries its own title at the top of its left column (owner's design), no page header.
     if (cv) cv.classList.toggle("cview-nv", id === "tasks");
+    // 2026-11-09 (owner): the Account page's own Account | Security tabs sit at the very top, no page header above them.
+    // The Webhook page does the same with its Webhook | Token API tabs.
+    if (cv) cv.classList.toggle("cview-tk", id === "account" || id === "webhooks");
     _renderGen++;   // đổi trang → vô hiệu mọi render async đang dở (guard bổ sung cho renderer đã có)
     // 0.417.0: code của trang này có thể chưa nạp (nap-cham.js). Chờ ĐỦ nhóm rồi mới vẽ; trong lúc chờ mà người dùng đã
     // sang trang khác thì dừng hẳn, đừng vẽ (renderWorkspace mượn khung chat: vẽ vào trang đã tháo là mất khung chat).
     const nhomCan = NHOM_TRANG[id];
     if (nhomCan && window.ThansaNapCham) {
       const gen = _renderGen;
-      el.innerHTML = placeholder(id, window.t("common.loading"));
+      // 2026-11-09: the page's code is still on its way: the shared "Loading..." look, not the placeholder that read
+      // "<page> - in development".
+      el.innerHTML = `<div class="pg-loading pg-page">${esc(window.t("common.loading"))}</div>`;
       await window.ThansaNapCham.cho(nhomCan);
       if (gen !== _renderGen) return;
       el.innerHTML = "";
@@ -1541,7 +1546,7 @@
       </div>
       <div id="fmFix"></div>
       <div id="fmMiss"></div>
-      <div id="fmList" class="fm-list">${window.t("common.loading")}</div>
+      <div id="fmList" class="fm-list"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div>
       </div>
       <div class="fm-edit" id="fmEdit"></div>
     </div>`;
@@ -1570,7 +1575,7 @@
       // path === undefined → điểm vào mặc định (brain); "" = trần (ổ đĩa); chuỗi = tương đối trần
       resetSearchUi();
       missEl.innerHTML = "";
-      listEl.innerHTML = window.t("common.loading");
+      listEl.innerHTML = `<div class="pg-loading">${esc(window.t("common.loading"))}</div>`;
       const qp = (path === undefined || path === null) ? "" : `&path=${encodeURIComponent(path)}`;
       let resp, d;
       try { resp = await fetch(`/files/list?brain=${encodeURIComponent(fbrain())}${qp}`); d = await resp.json().catch(() => ({})); }
@@ -2079,7 +2084,7 @@
     _injectExtraCss();
     _injectPluginCss();
     const myGen = _renderGen;   // chống race: đổi trang → load dở tự bỏ
-    el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="cview-section"><div class="empty pg-loading">${esc(t("common.loading"))}</div></div>`;
 
     const SRC = { bundled: [window.t("cs.pl_src_bundled"), "var(--green)"], pack: [window.t("cs.pl_src_pack"), "var(--accent, #7c5cff)"], user: [window.t("cs.pl_src_user"), "var(--link-ink)"], vault: [window.t("cs.pl_src_vault"), "var(--warn-ink)"] };
     const MM = { readonly: window.t("cs.pl_mm_readonly"), safe: window.t("cs.pl_mm_safe"), full: window.t("cs.pl_mm_full") };
@@ -2320,6 +2325,7 @@
   // (form, thanh toán), không phải việc chạy theo giờ, nên đứng thành một mục riêng trong nhóm Việc.
   // Phần ruột vẫn là dashboard/webhooks.js (0.198.0).
   // ============================================
+  const WH_TAB_KEY = "thansa.webhooks.tab";
   async function renderWebhooks(el) {
     _injectExtraCss();
     const myGen = _renderGen;
@@ -2327,7 +2333,32 @@
       el.innerHTML = placeholder("webhooks", window.t("cs.mod_not_ready", { ten: "webhooks.js" }));
       return;
     }
-    el.innerHTML = `<div class="cview-section"><div id="whSection"></div></div>`;
+    // 2026-11-09 (owner): one page for every door another app uses to call Thansa: Webhook | Token API.
+    let whTab = "hooks";
+    try { if (localStorage.getItem(WH_TAB_KEY) === "tokens") whTab = "tokens"; } catch (e) {}
+    el.innerHTML = `
+      <div class="wh-tabs-page">
+        <div class="ach-tabs tabs-top" role="tablist" aria-label="${esc(t("page.webhooks.label"))}">
+          <button type="button" role="tab" data-wh-tab="hooks" aria-controls="whPanelHooks" aria-selected="${whTab === "hooks"}" tabindex="${whTab === "hooks" ? 0 : -1}">${ic("webhook")}<span>Webhook</span></button>
+          <button type="button" role="tab" data-wh-tab="tokens" aria-controls="whPanelTokens" aria-selected="${whTab === "tokens"}" tabindex="${whTab === "tokens" ? 0 : -1}">${ic("key-round")}<span>${esc(t("cs.ac_tk_head"))}</span></button>
+        </div>
+        <div id="whPanelHooks" role="tabpanel" ${whTab === "hooks" ? "" : "hidden"}><div class="cview-section"><div id="whSection"></div></div></div>
+        <div id="whPanelTokens" role="tabpanel" ${whTab === "tokens" ? "" : "hidden"}></div>
+      </div>`;
+    let tokensDrawn = false;
+    const showWhTab = (key) => {
+      try { localStorage.setItem(WH_TAB_KEY, key); } catch (e) {}
+      el.querySelectorAll("[data-wh-tab]").forEach(b => {
+        const on = b.dataset.whTab === key;
+        b.setAttribute("aria-selected", String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+      el.querySelector("#whPanelHooks").hidden = key !== "hooks";
+      el.querySelector("#whPanelTokens").hidden = key !== "tokens";
+      if (key === "tokens" && !tokensDrawn) { tokensDrawn = true; renderTokenPanel(el.querySelector("#whPanelTokens")); }
+    };
+    el.querySelectorAll("[data-wh-tab]").forEach(b => { b.onclick = () => showWhTab(b.dataset.whTab); });
+    showWhTab(whTab);
     let brains = [];
     try {
       const d = await (await fetch("/brains")).json();
@@ -2344,7 +2375,7 @@
   // ============================================
   async function renderLearn(el) {
     _injectExtraCss();
-    el.innerHTML = `<div class="cview-section"><div class="empty">${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="cview-section"><div class="empty pg-loading">${esc(t("common.loading"))}</div></div>`;
     let cfg = {};
     try { cfg = await (await fetch("/learn/config")).json(); } catch (e) {}
     const caps = cfg.capabilities || {};
@@ -2413,9 +2444,9 @@
         </div>
       </div>
 
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("improve.auto_title"))}${infoBtn()}</h3>${infoBody(esc(window.t("cs.ln_chat_note")))}<div id="lnChat">${esc(window.t("common.loading"))}</div></div>
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_review_head"))}</h3><div id="lnReview">${esc(window.t("common.loading"))}</div></div>
-      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_log_head"))}</h3><div id="lnLog">${esc(window.t("common.loading"))}</div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("improve.auto_title"))}${infoBtn()}</h3>${infoBody(esc(window.t("cs.ln_chat_note")))}<div id="lnChat"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_review_head"))}</h3><div id="lnReview"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
+      <div class="si-log"><h3 style="font-size:15px;color:var(--text)">${esc(window.t("cs.ln_log_head"))}</h3><div id="lnLog"><div class="pg-loading">${esc(window.t("common.loading"))}</div></div></div>
     </div>`;
 
     let cur = { enabled: !!cfg.enabled, mode: cfg.mode || "dry-run",
@@ -2617,7 +2648,7 @@
 
   // ---- Trang Tổng quan ----
   async function renderOverview(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const m = s.model || {};
     // Đọc từ model.main + model.providers (nguồn thật của trang Models), KHÔNG từ m.engine -
@@ -2976,7 +3007,7 @@
   function olGb(n) { return (Math.round((n || 0) * 10) / 10) + " GB"; }
 
   async function renderModelsLocalTab(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let st = {};
     try { st = await (await fetch("/ollama-local/status")).json(); } catch (e) { st = {}; }
     if (!st.reachable) return olVeChuaNoi(el, st);
@@ -3328,7 +3359,7 @@
   const isGw = (pid) => GW_CARDS.indexOf(pid) >= 0;
 
   async function renderModelsCloudTab(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const m = s.model || {};
     const providers = m.providers || [];
@@ -4686,7 +4717,7 @@
       };
       const draw = () => {
         const box = sh.body.querySelector(".ord-mlist");
-        if (ids == null) { box.innerHTML = `<div class="mb-empty">${esc(t("mpick.loading"))}</div>`; return; }
+        if (ids == null) { box.innerHTML = `<div class="mb-empty pg-loading">${esc(t("mpick.loading"))}</div>`; return; }
         const f = q.trim().toLowerCase();
         const hit = (id) => !f || (id || defName(pid)).toLowerCase().includes(f);
         const now = cur.model || "";
@@ -6113,7 +6144,7 @@
   let _mcpTab = "danoi";
 
   async function renderConnect(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let d;
     try { d = await (await fetch("/connect/catalog")).json(); } catch (e) { el.innerHTML = placeholder("mcp", window.t("cs.cn_load_err")); return; }
     const cat = d.catalog || [];
@@ -6777,7 +6808,7 @@
   }
 
   async function renderChannels(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const [s, ...stats] = await Promise.all([freshSettings(), ...ADMIN_CH.map(achFetch)]);
     const state = {};
     ADMIN_CH.forEach((def, i) => { state[def.key] = achState(def, stats[i]); });
@@ -7046,7 +7077,7 @@
 
   // ---- Trang Tài khoản: workspace + đăng nhập ----
   async function renderAccount(el) {
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     const auth = s.auth || {};
     // 2026-11-09 (owner): Security has its own tab: account state, 2FA, devices signed in, sign-in history.
@@ -7054,7 +7085,7 @@
     try { if (localStorage.getItem(AC_TAB_KEY) === "security") acTab = "security"; } catch (e) {}
     el.innerHTML = `
       <div class="ach ac-page">
-      <div class="ach-tabs" role="tablist" aria-label="${esc(t("page.account.label"))}">
+      <div class="ach-tabs tabs-top" role="tablist" aria-label="${esc(t("page.account.label"))}">
         <button type="button" role="tab" data-ac-tab="account" aria-controls="acPanelAccount" aria-selected="${acTab === "account"}" tabindex="${acTab === "account" ? 0 : -1}">${ic("user")}<span>${esc(t("sec.tab_account"))}</span></button>
         <button type="button" role="tab" data-ac-tab="security" aria-controls="acPanelSecurity" aria-selected="${acTab === "security"}" tabindex="${acTab === "security" ? 0 : -1}">${ic("shield")}<span>${esc(t("sec.tab_security"))}</span><i class="ach-dot" id="secTabDot" aria-hidden="true"></i></button>
       </div>
@@ -7082,31 +7113,10 @@
           <div class="gcard-meta" id="acStatus"></div>
         </div>
       </div>
-      <div class="cview-section">
-        <h3>${esc(window.t("cs.ac_tk_head"))}${infoBtn()}</h3>
-        ${infoBody(`${esc(window.t("cs.ac_tk_intro_a"))} <b>Thansa CLI</b> ${esc(window.t("cs.ac_tk_intro_b"))}`)}
-        <div class="gcard" style="max-width:560px">
-          <label class="js-lbl">${esc(window.t("cs.ac_tk_name"))}</label>
-          <input class="js-input" id="tkName" placeholder="${esc(window.t("cs.ac_tk_name_ph"))}">
-          <label class="js-lbl">${esc(window.t("cs.ac_tk_scope"))}</label>
-          <select class="js-input" id="tkScope">
-            <option value="chat">${esc(window.t("cs.ac_tk_scope_chat"))}</option>
-            <option value="full">${esc(window.t("cs.ac_tk_scope_full"))}</option>
-          </select>
-          <div class="js-actions"><button class="gcard-btn" id="tkCreate">${esc(window.t("cs.ac_tk_create"))}</button></div>
-          <div class="gcard-meta" id="tkStatus"></div>
-          <div id="tkNew"></div>
-          <div id="tkList" class="tk-list"></div>
-          <div class="tk-docs">
-            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_cli"))} ↗</a>
-            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/14-bao-mat-tai-khoan.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_sec"))} ↗</a>
-          </div>
-        </div>
-      </div>
       </div>
       <div id="acPanelSecurity" role="tabpanel" ${acTab === "security" ? "" : "hidden"}>
         <div class="cview-section">
-          <div class="gcard sec-card" style="max-width:560px" id="secOverview"><div class="gcard-meta">${esc(t("common.loading"))}</div></div>
+          <div class="gcard sec-card" style="max-width:560px" id="secOverview"><div class="gcard-meta pg-loading">${esc(t("common.loading"))}</div></div>
         </div>
         ${auth.has_password ? `
         <div class="cview-section">
@@ -7153,40 +7163,6 @@
       };
     });
     renderSecurity();
-    renderTokens();
-    document.getElementById("tkCreate").onclick = async () => {
-      const st = document.getElementById("tkStatus");
-      st.textContent = window.t("cs.ac_creating");
-      const fd = new FormData();
-      fd.append("name", document.getElementById("tkName").value.trim());
-      fd.append("scope", document.getElementById("tkScope").value);
-      let r;
-      try { r = await (await fetch("/auth/tokens", { method: "POST", body: fd })).json(); }
-      catch (e) { st.innerHTML = WARN_ICON + " " + esc(window.t("cs.ch_net_err")); return; }
-      if (!r.ok) { st.innerHTML = Icons.warn(r.error || window.t("cs.ac_tk_fail")); return; }
-      st.textContent = "";
-      document.getElementById("tkName").value = "";
-      // Bản thô hiện ĐÚNG một lần. Trên đĩa chỉ còn bản băm nên không có đường nào xem lại,
-      // và nói thẳng điều đó ra ngay tại đây thay vì để người dùng phát hiện lúc F5.
-      document.getElementById("tkNew").innerHTML = `
-        <div class="tk-new">
-          <div class="tk-new-hd">${OK_ICON} ${esc(window.t("cs.ac_tk_new_hd"))}</div>
-          <code class="tk-code" id="tkRaw">${esc(r.token || "")}</code>
-          <div class="js-actions">
-            <button class="gcard-btn" id="tkCopy">Copy</button>
-            <button class="gcard-btn ghost" id="tkHide">${esc(window.t("cs.ac_tk_hide"))}</button>
-          </div>
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_paste"))} <code>thansa login ${esc(location.origin)} --token &lt;token&gt;</code></div>
-          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install thansa-cli</code> · <a class="tk-doclink" href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
-        </div>`;
-      document.getElementById("tkCopy").onclick = () => {
-        const c = document.getElementById("tkCopy");
-        try { navigator.clipboard.writeText(r.token || ""); c.textContent = window.t("cs.ac_copied"); }
-        catch (e) { c.textContent = window.t("cs.ac_copy_manual"); }
-      };
-      document.getElementById("tkHide").onclick = () => { document.getElementById("tkNew").innerHTML = ""; };
-      renderTokens();
-    };
     const wsStatus = document.getElementById("acWsStatus");
     document.getElementById("acWsSave").onclick = async () => {
       wsStatus.textContent = window.t("settings.saving");
@@ -7511,6 +7487,69 @@
       document.getElementById("tfaCopy").textContent = window.t("cs.ac_copied");
     };
     document.getElementById("tfaDone").onclick = () => location.reload();
+  }
+
+  // ---- Token API (CLI, scripts) ----
+  // 2026-11-09 (owner): moved from the Account page to the Integrations page ("Tích hợp"), tab Token API. A token is a door for
+  // another program (the `thansa` CLI, a script, cron) to call Thansa, like a webhook, not part of the owner's own sign-in.
+  function renderTokenPanel(box) {
+    if (!box) return;
+    box.innerHTML = `
+      <div class="cview-section">
+        <div class="gcard-meta tk-intro">${infoPair(`${esc(window.t("cs.ac_tk_intro_a"))} <b>Thansa CLI</b> ${esc(window.t("cs.ac_tk_intro_b"))}`)}</div>
+        <div class="gcard" style="max-width:560px">
+          <label class="js-lbl">${esc(window.t("cs.ac_tk_name"))}</label>
+          <input class="js-input" id="tkName" placeholder="${esc(window.t("cs.ac_tk_name_ph"))}">
+          <label class="js-lbl">${esc(window.t("cs.ac_tk_scope"))}</label>
+          <select class="js-input" id="tkScope">
+            <option value="chat">${esc(window.t("cs.ac_tk_scope_chat"))}</option>
+            <option value="full">${esc(window.t("cs.ac_tk_scope_full"))}</option>
+          </select>
+          <div class="js-actions"><button class="gcard-btn" id="tkCreate">${esc(window.t("cs.ac_tk_create"))}</button></div>
+          <div class="gcard-meta" id="tkStatus"></div>
+          <div id="tkNew"></div>
+          <div id="tkList" class="tk-list"></div>
+          <div class="tk-docs">
+            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_cli"))} ↗</a>
+            <a href="https://github.com/xahoapro/thansa-os/blob/main/docs/14-bao-mat-tai-khoan.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_doc_sec"))} ↗</a>
+          </div>
+        </div>
+      </div>
+`;
+    renderTokens();
+    document.getElementById("tkCreate").onclick = async () => {
+      const st = document.getElementById("tkStatus");
+      st.textContent = window.t("cs.ac_creating");
+      const fd = new FormData();
+      fd.append("name", document.getElementById("tkName").value.trim());
+      fd.append("scope", document.getElementById("tkScope").value);
+      let r;
+      try { r = await (await fetch("/auth/tokens", { method: "POST", body: fd })).json(); }
+      catch (e) { st.innerHTML = WARN_ICON + " " + esc(window.t("cs.ch_net_err")); return; }
+      if (!r.ok) { st.innerHTML = Icons.warn(r.error || window.t("cs.ac_tk_fail")); return; }
+      st.textContent = "";
+      document.getElementById("tkName").value = "";
+      // Bản thô hiện ĐÚNG một lần. Trên đĩa chỉ còn bản băm nên không có đường nào xem lại,
+      // và nói thẳng điều đó ra ngay tại đây thay vì để người dùng phát hiện lúc F5.
+      document.getElementById("tkNew").innerHTML = `
+        <div class="tk-new">
+          <div class="tk-new-hd">${OK_ICON} ${esc(window.t("cs.ac_tk_new_hd"))}</div>
+          <code class="tk-code" id="tkRaw">${esc(r.token || "")}</code>
+          <div class="js-actions">
+            <button class="gcard-btn" id="tkCopy">Copy</button>
+            <button class="gcard-btn ghost" id="tkHide">${esc(window.t("cs.ac_tk_hide"))}</button>
+          </div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_paste"))} <code>thansa login ${esc(location.origin)} --token &lt;token&gt;</code></div>
+          <div class="gcard-meta">${esc(window.t("cs.ac_tk_nocli"))} <code>pip install thansa-cli</code> · <a class="tk-doclink" href="https://github.com/xahoapro/thansa-os/blob/main/docs/24-cli-terminal.md" target="_blank" rel="noopener">${esc(window.t("cs.ac_tk_seedoc"))} ↗</a></div>
+        </div>`;
+      document.getElementById("tkCopy").onclick = () => {
+        const c = document.getElementById("tkCopy");
+        try { navigator.clipboard.writeText(r.token || ""); c.textContent = window.t("cs.ac_copied"); }
+        catch (e) { c.textContent = window.t("cs.ac_copy_manual"); }
+      };
+      document.getElementById("tkHide").onclick = () => { document.getElementById("tkNew").innerHTML = ""; };
+      renderTokens();
+    };
   }
 
   // Danh sách token. Chỉ có tiền tố + tên: máy chủ không giữ bản thô nên UI cũng không có gì
@@ -7980,7 +8019,7 @@
       if (["all", "file", "chat", "unseen"].indexOf(saved.filter) >= 0) state.filter = saved.filter;
       if (["new", "views", "recent"].indexOf(saved.sort) >= 0) state.sort = saved.sort;
     } catch (e) {}
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     let links = [];
     try {
       const r = await fetch("/share/list");
@@ -8281,7 +8320,7 @@
   async function renderPetPage(el) {
     const gen = _renderGen;
     parkQuickSet();
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     if (gen !== _renderGen) return;
     // MỘT CỘT, không phải lưới hai ô. Chủ dự án chốt 15/09: kiểu hai hàng hai ô trên điện
@@ -8480,7 +8519,7 @@
   async function renderSettings(el, tab = "general") {
     const gen = _renderGen;               // chốt token: nếu user đổi trang trong lúc await → bỏ render này
     parkQuickSet();                       // giữ #quickSet an toàn TRƯỚC khi ghi đè cviewBody
-    el.innerHTML = `<div class="cview-placeholder"><div class="ph-ico">${ic("loader", { cls: "ic-xl ic-spin" })}</div><div>${esc(t("common.loading"))}</div></div>`;
+    el.innerHTML = `<div class="pg-loading pg-page">${esc(t("common.loading"))}</div>`;
     const s = await freshSettings();
     if (gen !== _renderGen) return;       // đã sang trang khác → KHÔNG ghi đè trang mới bằng nội dung cũ
     const model = s.model || {};
@@ -9711,7 +9750,7 @@
     _vtWire();
     tree.hidden = false;
     const results = document.getElementById("vaultResults"); if (results) results.hidden = true;
-    tree.innerHTML = `<div class="vt-info">${esc(window.t("common.loading"))}</div>`;
+    tree.innerHTML = `<div class="vt-info pg-loading">${esc(window.t("common.loading"))}</div>`;
     const items = await _vtList(null);
     tree.innerHTML = "";
     if (!items.length) { tree.innerHTML = `<div class="vt-info">${esc(window.t("cs.vt_vault_empty"))}</div>`; return; }
@@ -10553,6 +10592,8 @@
     // Trang đầu của thiết bị là Trò chuyện; các lần sau quay lại đúng khung đang dùng.
     // Khôi phục ngay, trước các lời gọi mạng ở freshSettings, để tránh nháy màn Thansa.
     khoiPhucTrang();
+    // 2026-11-09: the start-up screen waits from here for the first page's own "Loading..." lines to go (boot-splash.js).
+    try { if (window.ThansaBoot) window.ThansaBoot.pageStarted(); } catch (e) {}
 
     freshSettings().then(async s => {
       // Máy này CHƯA chọn ngôn ngữ (i18n đang đoán theo trình duyệt): ngôn ngữ đã lưu trên

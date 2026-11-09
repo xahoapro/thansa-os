@@ -8,7 +8,7 @@ This page explains how Thansa OS protects itself when you put it on the network,
 
 Thansa runs an AI brain with **full power over your machine or VPS**: it can read files, run commands, call tools. So if the dashboard is exposed to the Internet without a password, anyone who knows the address controls your machine.
 
-Thansa handles this in 6 layers:
+Thansa handles this in 7 layers:
 
 1. **Login is forced automatically when running public.** When the server listens externally (not just this machine), Thansa blocks every function until you sign in. On a personal machine (localhost) nothing is forced and you use it as before.
 2. **Set the admin early, then turn on two-factor.** The first-run screen only asks for a username and password, so on a public server **whoever opens the link before an admin exists can create it**. Preset the admin through environment variables (or create the account right after deploying), then turn on 2FA (TOTP) on the **Account** page.
@@ -16,10 +16,11 @@ Thansa handles this in 6 layers:
 4. **Blocking foreign web pages from commanding Thansa (CSRF) and blocking unknown domains pointed at your machine (DNS rebinding).** See the dedicated section below.
 5. **Encryption of secret keys stored in `settings.json`.** API keys, Telegram tokens, GitHub tokens and the rest are not sitting on disk in plain text.
 6. **API tokens for CLI and scripts, with NONE existing by default.** The login cookie only suits a browser; to call Thansa from a terminal you must create a token by hand, choose its scope, and can revoke it at any time. See the dedicated section below.
+7. **Blocking search engines and AI bots.** If the admin link leaks, Google does not list it and AI bots read nothing, not even the login screen. See the dedicated section below.
 
 ## Where to open it in Thansa
 
-Every account action lives under **Account** in the **System** group of the left nav rail (subtitle "Login, workspace, API tokens"). The **Settings** page has a condensed block covering the three most common actions (change password, sign out, turn login off) plus a two-factor status line; everything else, such as enabling two-factor or API tokens, is only on the **Account** page.
+Every account action lives under **Account** in the **System** group of the left nav rail. The **Settings** page has a condensed block covering the three most common actions (change password, sign out, turn login off) plus a two-factor status line; enabling two-factor and the sign-in history are on the **Security** tab of the **Account** page. API tokens for the CLI and scripts are on the **Integrations** page (**Work** group), tab **API token**.
 
 The **Account** page has 2 tabs.
 
@@ -27,7 +28,6 @@ The **Account** tab:
 
 - **Workspace**: rename the displayed workspace.
 - **Login account**: set a password, sign out, turn login off.
-- **API tokens (for the CLI)**: create and revoke tokens so [the Thansa CLI](24-cli.md) or a script can call Thansa. It sits on the same page because a token is also a way of signing in, only for machines rather than browsers.
 
 The **Security** tab (added after the incident of 2026-11-09):
 
@@ -190,9 +190,33 @@ The allowlist contains: `localhost`, `127.0.0.1`, `::1`, `0.0.0.0`, plus the cus
 
 When you might need to touch this: running Thansa behind a reverse proxy on a domain not declared in the app, while **no** password is set. Thansa then treats that domain as unknown and returns 403. The fix: set a password (turning the login gate on makes the Host check step aside), or add the domain to `THANSA_ALLOWED_HOSTS`.
 
+## Blocking search engines and AI bots
+
+This layer also runs in the background and needs nothing turned on. It is for the day the admin link gets out: pasted into a group chat by mistake, listed in the public SSL certificate logs, or found by an Internet scanner. Google then keeps the page out of its results, and AI bots read nothing, not even the login screen.
+
+| Layer | What it does |
+|---|---|
+| `X-Robots-Tag: noindex` header | Sent with EVERY answer from Thansa (login page, share links, error pages), so any page a search engine does reach is dropped from its results. |
+| `/robots.txt` | Tells AI bots (GPTBot, ClaudeBot, PerplexityBot, CCBot...), SEO tools and every unknown robot to fetch nothing. |
+| 403 answer | A request that calls itself an AI bot, search engine, SEO tool or scanner (Shodan, Censys), or signs as a bot (`Signature-Agent`), gets 403 and sees none of the page. |
+
+Never blocked: real people's browsers (including the ones inside Zalo, Facebook and Coc Coc), link previews when a link is pasted into Zalo, Telegram, Facebook, Slack or Discord, webhooks and OAuth callbacks from outside services, Thansa Gate (ChatGPT and Claude calling into Thansa), the CLI, `curl` and tools running on this machine.
+
+Why `robots.txt` does not block Google: Google can only remove a page it is able to read. Blocked by `robots.txt`, Google never reads it, never sees `noindex`, and can still show the bare link in results when another page points to it. Letting Google in and answering 403 with `noindex` is what removes the link for good.
+
+Quick check against your server (change the domain):
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -A GPTBot https://your-domain/
+```
+
+It must print `403`. A browser still opens the page as usual.
+
+This layer only catches bots that NAME themselves. A bot posing as Chrome still only sees the login screen, so the password and 2FA remain the main protection. If a service you use is blocked by mistake because its name is on the list, set `THANSA_BLOCK_BOTS=0` and restart: only the 403 layer turns off, the `noindex` header and `robots.txt` stay.
+
 ## API tokens, the door for CLI and scripts
 
-The login cookie only suits a browser. When you want [the Thansa CLI](24-cli.md) or a script to call Thansa, you need a different credential: an **API token**, created at **Account > API tokens (for the CLI)** (System group, the same page as the login password).
+The login cookie only suits a browser. When you want [the Thansa CLI](24-cli.md) or a script to call Thansa, you need a different credential: an **API token**, created at **Integrations > API token (for the CLI)** (Work group, the same page as webhooks: both are doors for another program to call Thansa).
 
 The most important point: **no token exists by default**. Until you click create yourself, no token exists and there is no door in except the browser. Opening another door to the Internet has to be a deliberate act.
 
@@ -248,6 +272,7 @@ Operational consequences worth remembering:
 | Secure cookie on HTTPS | When you use a **custom domain** with HTTPS on (Caddy On-Demand TLS), the cookie is marked `secure` (only sent over HTTPS). |
 | CORS | Only open to `localhost` / `127.0.0.1` / `::1` (convenient during development). Other web pages cannot read the API from a browser. |
 | The CSRF gate | Blocks cross-origin write requests, and blocks unknown Hosts while login is off (see the dedicated section above). |
+| Bot blocking | `noindex` on every answer, `/robots.txt`, and 403 for self-declared AI bots, search engines, SEO tools and scanners (see the dedicated section above). |
 | Secrets on disk | API keys and tokens in `settings.json` are Fernet-encrypted with `.secret_key` in the state folder. |
 
 About the `secure` cookie: by default Thansa does **not** force it, so it runs over both HTTP and HTTPS (avoiding a login loop behind an HTTP proxy such as a path-style `http://host/PORT/`). If you are certain you run HTTPS end to end, set `THANSA_SECURE_COOKIE=1` in the environment (see [.env configuration](16-env-configuration.md)). Accessing through the proper custom domain makes Thansa enable `secure` on its own without that variable (based on the Host matching the domain, not inferred from `X-Forwarded-Proto`).

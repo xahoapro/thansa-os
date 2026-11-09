@@ -8,6 +8,62 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.521.1] - 2026-11-09
+### Improved
+- **Opening the neural graph no longer freezes the whole app.** The graph's file watcher is built on its own thread, so a brain with many folders no longer makes everything else wait up to 2 seconds each time the screen opens.
+- **Every outgoing connection shares one set of security certificates**, loaded once on a background thread at start-up. Before, each outgoing call (community news, Telegram, Zalo, models...) loaded the whole set again, once freezing the app for almost 2 seconds.
+- **Reading the personal Zalo history runs in the background.** After each read, looking for missed messages in the history file no longer blocks anything else.
+
+## [0.521.0] - 2026-11-09
+### Improved
+- **Answers stretch across the whole chat instead of leaving a wide gap on the right:** on the Partners page an answer now reaches the right edge of your own messages (on an iPad from about 780px to over 1,000px), so there is much less scrolling. On a very wide monitor it stops at about 120 letters per line so reading stays easy.
+- **The Chat and Teams pages follow the same rule:** answers are as wide as the chat column, and agent replies in a team are no longer held at 680px.
+
+## [0.520.0] - 2026-11-09
+### Added
+- **Export and upload a whole brain as one .zip file:** each row of the brain picker has an Export button. The file carries notes, images, agents, skills, workflows and memory, and leaves out tokens, raw chats and git history. "Upload a brain (.zip)" always makes a new brain and never overwrites one. Plugins, loops and reminders that come with the file arrive switched off; turn them on where they live if you want them. There is no fixed size limit: the server takes what its free disk can hold, up to a million files. Packing and unpacking run in the background with progress, and the upload goes in 32MB pieces, so a large brain still gets through Cloudflare Tunnel.
+- **Rename and delete right on each row of the brain picker**, with New brain, Upload a brain and Open an outside folder at the bottom. The four separate buttons beside the picker in the top bar are gone.
+### Improved
+- **Start-up screen:** opening Thansa shows the logo and "Starting Thansa…" until the first page has its data. Right after an update or a restart it also says the first open can take a little longer.
+- **Every screen that waits for data uses the Partners page's loading look:** a small spinner with "Loading", or a centered one for a whole page. A page still loading no longer says "in development" by mistake.
+- **The node and link counts in the top bar show only on the neural graph screen**, so other pages are tidier.
+- **The brain picker shows each brain's node and link counts**, as its graph counts them. They are counted only when the picker opens, so page load is not slowed.
+
+## [0.519.0] - 2026-11-09
+### Security
+- **A leaked admin link stays out of Google.** Every Thansa page now carries `noindex`, the login screen and share links included.
+- **AI bots cannot read Thansa.** GPTBot, ClaudeBot, PerplexityBot, SEO tools and scanners such as Shodan and Censys get a 403 and see nothing. Thansa also serves a `/robots.txt` that forbids them.
+- Real browsers, link previews in Zalo or Telegram, webhooks and Thansa Gate work as before. To turn the blocking off, set `THANSA_BLOCK_BOTS=0`.
+
+## [0.518.1] - 2026-11-09
+### Security
+- **Account security files stay out of git and Docker images.** The account fingerprint, security log, sign-in networks and session details are now ignored, so `git add -A` or a local `docker build` no longer picks them up.
+
+## [0.518.0] - 2026-11-09
+### Improved
+- **The Partners and Teams pages show "Loading…"** where a list or a conversation has not arrived yet, instead of an empty space that looked frozen.
+- **A team opens with its Info tab showing** in the side panel on a wide screen. Close the panel and Thansa remembers it next time.
+- **Team search, settings and close buttons look cleaner:** square, borderless, in the same style as the tabs beside them.
+- **The team list loads about 2.5 times faster**, and opening a team takes the same time whether it holds a hundred or tens of thousands of messages.
+
+## [0.517.1] - 2026-11-09
+### Fixed
+- **Opening a chat on the Partners page no longer says "taking too long" by mistake.** No error while the page is reconnecting. A Thansa Core open that hangs shows the error with Retry, and Retry really loads again instead of waiting on the stuck load.
+- **Background work on ChatGPT (Codex) that was refused file writes now says it is an environment problem**, with what to change, instead of sitting in "waiting for your answer".
+- **Memories written by background work no longer get the source of a chat** that happened to be open at the same time.
+
+## [0.517.0] - 2026-11-09
+### Improved
+- **A tidier Account page.** The page header is gone, the Account and Security tabs sit right at the top.
+- **CLI API tokens moved to the Integrations page** (Work group, formerly Webhooks), tab API token. Both are doors for another program to call Thansa, so they now live together. Existing tokens keep working.
+
+## [0.516.1] - 2026-11-09
+### Fixed
+- **ChatGPT (Codex) keeps its tools when a chat resumes after a few idle minutes.** Calendar, Zalo and Drive work on the next turn. On Windows, Codex background work at the "Can write" level writes files again.
+- **Memories no longer break or lose their details after a chat turn.** A memory with a colon in its description keeps its type, description and tags. A memory already broken heals when edited in the app.
+- **Ollama Local runs Team jobs and background work.** No more "engine is not ready" when Ollama at home has no key.
+- **Steadier connections:** behind Caddy (Hostinger VPS) the Facebook sign-in button is no longer locked, the CapCut card signs in, and GitHub in chat uses the saved check commands and understands apps in a subfolder.
+
 ## [0.516.0] - 2026-11-09
 ### Security
 - **A bot reads only the documents in its Agent's Documents section**, plus the `rieng-theo-nhom/` folder and the Google files linked from the Agent. Before, every note of the brain counted as a document, so a bot could quote the owner's private notes to customers.
