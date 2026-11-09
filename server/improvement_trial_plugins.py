@@ -38,7 +38,9 @@ _RESERVED = {"thansa_connections", "thansa_read_file", "thansa_list_dir", "thans
 _GOAL_FILE = Path(__file__).resolve().parent.parent / "system" / "plugins" / "thansa-goal" / "plugin.py"
 # Pin the audited data-only branch; a coherent edited source+cache is still not
 # authority to reinterpret an arbitrary predicate as the ordinary-owner result.
-_GOAL_SOURCE_HASH = "87b06b6c3d06bba684fee8a6965790b0b816a47180dda4846b3c92ad12728475"
+# Re-pinned 2026-11-09 after an audit of the diff: the plugin opens the store with `RS.shared()` instead of
+# `RS.GoalStore()` (one opened store per file); `_visible`'s branches and what they return are unchanged.
+_GOAL_SOURCE_HASH = "556e297668fa161278548e39e620732e70062dd934c8cf83671e810d7542cb44"
 
 
 def _plain(value):
