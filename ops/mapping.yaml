@@ -1907,18 +1907,13 @@
     tools/resonance_restore_pre_a4.py, docs 10-models (vi+en). GIỮ comment JS, docs/dev, docs/superpowers, CHANGELOG.
   commit: "[me] P066: rebrand nen 0.99.0 - giao dien tieng Duc, Resonance A4, doc PDF Ollama"
   diem_neo:
-    - file: dashboard/i18n/de.json
-      ky_hieu: "Thansa-Maskottchen"
     - file: server/doc_text.py
       ky_hieu: "máy chủ Thansa thiếu thư viện pypdf"
   vung_theo_doi:
     - "dashboard/i18n/de.json (+ ngôn ngữ mới sau này): chữ Javis hiển thị"
     - "system/plugins/javis-goal/plugin.py: lời nhắc nộp bài"
-  anh_goc:
-    - file: dashboard/i18n/de.json
-      doan: "Javis-Maskottchen"
   kiem_chung: >
-    grep chữ Javis hiển thị trong dashboard/i18n/*.json = 0; string literal server mới chứa Javis = 0;
+    (nguồn 0.510 bỏ giao diện tiếng Đức, de.json không còn) grep chữ Javis hiển thị trong dashboard/i18n/*.json = 0; string literal server mới chứa Javis = 0;
     tu-kiem-chung 5/5; suite xanh trừ đỏ sandbox nền.
   dieu_kien_bo: >
     Nếu upstream đưa tên sản phẩm vào cấu hình branding thì bỏ, đặt qua cấu hình.
