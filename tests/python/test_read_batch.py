@@ -119,7 +119,7 @@ check("nothing allowed: an empty stream", client.post("/batch", json={"paths": [
 
 # ---- 4. the auth guard ----------------------------------------------------------------------------------------------------
 real = cfgmod.gate_active
-cfgmod.gate_active = lambda: True
+cfgmod.gate_active = lambda *a, **k: True
 try:
     r = client.post("/batch", json={"paths": ["/settings"]})
     check("without a session the batch is refused like any route", r.status_code == 401 and "workspace_name" not in r.text, r.status_code)
