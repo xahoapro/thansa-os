@@ -78,6 +78,7 @@ import borrowed_eyes   # mắt mượn: bộ não khác xem hộ ảnh khi model
 import image_vision
 import openai_oauth
 import claude_update   # tự chạy `claude update` hằng ngày để model mới hiện ra
+import sdk_update      # same daily tick: the claude-agent-sdk package moves to newer releases of its series
 import agy_update      # cùng việc đó cho Antigravity CLI: `agy update` hằng ngày (0.137.0)
 import claude_models   # model Claude LIVE cho provider anthropic-cli (hỏi bằng API key, nếu có)
 import winproc         # chạy lệnh con câm lặng trên Windows (không nháy console đen)
@@ -2056,8 +2057,8 @@ PROVIDER_DEFS = [   # thứ tự = thứ tự hiển thị card ở trang Models
     # rồi tới id đầy đủ để `_claude_api_model` dịch được alias sang tên thật.
     {"id": "anthropic-cli", "label": "Claude Code", "kind": "cli", "key_field": None,          "catalog_key": "claude",
      "default_models": ["fable", "opus", "sonnet", "haiku",
-                        "claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-1",
-                        "claude-opus-5", "claude-sonnet-5",
+                        "claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5",
+                        "claude-fable-5-1", "claude-opus-5", "claude-sonnet-5",
                         "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5"]},
     {"id": "openai-oauth",  "label": "OpenAI OAuth (ChatGPT)",  "kind": "oauth", "key_field": None,             "catalog_key": "openai-oauth",
      "default_models": []},  # model/list của Codex app-server là nguồn chân lý; không ghim version ở đây
@@ -2080,8 +2081,8 @@ PROVIDER_DEFS = [   # thứ tự = thứ tự hiển thị card ở trang Models
     {"id": "openrouter",    "label": "OpenRouter",              "kind": "api", "key_field": "openrouter_key",    "catalog_key": "openrouter",
      "default_models": ["openai/gpt-4o-mini"]},
     {"id": "anthropic-api", "label": "Anthropic (API)",         "kind": "api", "key_field": "anthropic_api_key", "catalog_key": "anthropic-api",
-     "default_models": ["claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-1",
-                        "claude-opus-5", "claude-sonnet-5",
+     "default_models": ["claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5",
+                        "claude-fable-5-1", "claude-opus-5", "claude-sonnet-5",
                         "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5"]},
     {"id": "openai",        "label": "OpenAI (ChatGPT API)",    "kind": "api", "key_field": "openai_api_key",    "catalog_key": "openai",
      "default_models": ["gpt-4o", "gpt-4o-mini", "o3-mini"]},
@@ -5350,6 +5351,8 @@ def claude_status(refresh: bool = False):
     # The daily-update switch on the card: its state, and whether the env var forces it off.
     d["auto_update"] = claude_update.bat()
     d["auto_update_env_off"] = claude_update.env_off()
+    # 2026-11-10: the Claude Agent SDK package follows the same switch (sdk_update.py). A file read, no subprocess.
+    d["sdk"] = sdk_update.status()
     return d
 
 
@@ -5376,8 +5379,28 @@ async def _cap_nhat_claude(ly_do: str) -> dict:
 
 @app.post("/claude/update")
 async def claude_update_now():
-    """Nút "Cập nhật Claude Code" trên trang Models: chạy ngay, không chờ vòng hằng ngày."""
-    return await _cap_nhat_claude("tay")
+    """Nút "Cập nhật Claude Code" trên trang Models: chạy ngay, không chờ vòng hằng ngày.
+
+    2026-11-10: the same press also looks for a newer Claude Agent SDK (sdk_update.py); its result rides along under
+    `sdk` and never changes whether the Claude Code update itself counts as done."""
+    kq = await _cap_nhat_claude("tay")
+    kq = dict(kq or {})
+    kq["sdk"] = await _update_sdk("manual")
+    return kq
+
+
+async def _update_sdk(reason: str) -> dict:
+    """One SDK update attempt on a worker thread (pip and a check process: minutes, never on the event loop)."""
+    try:
+        r = await asyncio.to_thread(sdk_update.update, reason)
+    except Exception as e:  # noqa: BLE001 - reported, never a broken request or a dead loop
+        r = {"ok": False, "error": f"{type(e).__name__}: {e}"}
+    if r.get("changed"):
+        print(f"[sdk update] claude-agent-sdk {r.get('from')} -> {r.get('to')} ({reason}); in use after the next restart",
+              file=sys.stderr)
+    elif not r.get("ok") and not r.get("docker"):
+        print(f"[sdk update] not updated ({reason}): {r.get('error')}", file=sys.stderr)
+    return {**r, **{k: v for k, v in sdk_update.status().items() if k in ("installed", "loaded", "restart_needed")}}
 
 
 @app.on_event("startup")
@@ -5442,6 +5465,11 @@ async def _tu_cap_nhat_claude():
             except Exception as e:
                 print(f"[claude update] vòng tự cập nhật lỗi: {type(e).__name__}: {e}",
                       file=sys.stderr)
+            try:
+                if sdk_update.enabled() and sdk_update.due():
+                    await _update_sdk("auto")
+            except Exception as e:  # noqa: BLE001
+                print(f"[sdk update] daily pass failed: {type(e).__name__}: {e}", file=sys.stderr)
             await asyncio.sleep(3600)
     asyncio.create_task(_vong())
 
@@ -6009,7 +6037,14 @@ async def mcp_oauth_auth(request: Request):
 # ============================================================
 @app.post("/hub/mcp")
 async def hub_mcp(request: Request):
-    """Endpoint MCP hub - Claude Code/Codex đấu vào đây (auth bằng Bearer hub_token riêng)."""
+    """Endpoint MCP hub - Claude Code/Codex đấu vào đây (auth bằng Bearer hub_token riêng).
+
+    Security fix (2026-11-10): only a caller on this machine is answered. Every engine reaches the hub at
+    `mcp_hub.hub_url()`, which is always 127.0.0.1, so nothing legitimate arrives through a tunnel, a reverse proxy or
+    the LAN. Before this the bearer alone opened the hub from the Internet, and the bearer is a long-lived value that
+    engine configs keep on disk (some inside a brain). The bearer check in `handle_http` stays as the second lock."""
+    if not _direct_local_request(request):
+        return JSONResponse({"error": "forbidden", "detail": "the hub only answers this machine"}, status_code=403)
     return await mcp_hub.handle_http(request)
 
 
@@ -7403,7 +7438,12 @@ async def _fetch_provider_models(provider, m):
         if ids:
             return ids
         # Chạy ở worker: quét file binary ~200MB, cỡ 0,3 giây lần đầu rồi nhớ theo mtime.
-        return await asyncio.to_thread(claude_cli.list_models)
+        ids = await asyncio.to_thread(claude_cli.list_models)
+        if not ids:
+            return None
+        # The binary's catalog is only as new as the installed Claude Code. Union it with the models this Thansa
+        # release ships, so a new model reaches a machine whose CLI has not updated yet (Fable 5.2, 2026-11-10).
+        return claude_cli.merge_models(ids, (_provider_def(provider) or {}).get("default_models"))
     return None
 
 
@@ -7636,14 +7676,16 @@ async def reflect(brain: str = Form("brain")):
 
 
 @app.get("/health")
-async def health():
+async def health(request: Request):
     cli = find_claude_cli()
-    return {
-        "status": "ok",
-        "claude_cli": cli or "NOT FOUND",
-        "claude_cli_available": cli is not None,
-        "cwd": CLAUDE_CWD,
-    }
+    out = {"status": "ok", "claude_cli_available": cli is not None}
+    # 2026-11-10: the probe is public (watchdog, uptime checks, the CLI). The two absolute paths, which usually give
+    # away the OS user and the install folder, go only to a signed-in session or to this machine itself.
+    if (not cfgmod.gate_active() or _direct_local_request(request)
+            or cfgmod.valid_session(request.cookies.get("thansa_session", ""))):
+        out["claude_cli"] = cli or "NOT FOUND"
+        out["cwd"] = CLAUDE_CWD
+    return out
 
 
 # Đồ thị note (GET /graph + WS /ws/graph) đã bóc sang routes/graph.py ở 0.9.243.
@@ -10358,6 +10400,19 @@ def _ung_vien_tai_nguyen(duong_dan_file: str, p: str):
     return ra
 
 
+def _share_private_zone(x, brain_root) -> bool:
+    """inbox/ (files customers and the owner's Telegram send), memory/, or any dot folder, relative to the brain.
+
+    Vá bảo mật 2026-11-05: a note shared from the brain root made "its folder" the whole brain, so the token served
+    every image or audio file in it, inbox photos named by sequential message id included. 2026-11-10: shared by
+    `_share_asset` and `_share_sibling`; the sibling route of a shared .html page had been left without it."""
+    try:
+        parts = Path(x).resolve().relative_to(brain_root).parts
+    except (ValueError, OSError):
+        return False
+    return bool(parts) and (parts[0].lower() in ("inbox", "memory") or any(s.startswith(".") for s in parts[:-1]))
+
+
 def _share_asset(ban, p: str):
     """File TÀI NGUYÊN kèm theo (ảnh trong .md, css/js cạnh file .html).
 
@@ -10383,15 +10438,7 @@ def _share_asset(ban, p: str):
     goc_brain = Path(_brain_root(brain)).resolve()
 
     def _vung_rieng(x) -> bool:
-        """inbox/ (files customers and the owner's Telegram send), memory/, or any dot folder, relative to the brain.
-
-        Vá bảo mật 2026-11-05: a note shared from the brain root made "its folder" the whole brain, so the token served
-        every image or audio file in it, inbox photos named by sequential message id included."""
-        try:
-            parts = x.resolve().relative_to(goc_brain).parts
-        except (ValueError, OSError):
-            return False
-        return bool(parts) and (parts[0].lower() in ("inbox", "memory") or any(s.startswith(".") for s in parts[:-1]))
+        return _share_private_zone(x, goc_brain)
 
     def _qua_cong(f) -> bool:
         """Đúng hai hàng rào ở trên, hỏi cho MỘT ứng viên (cộng vùng riêng của brain, trừ khi chính file chia sẻ nằm ở đó)."""
@@ -10690,6 +10737,11 @@ def _share_sibling(ban, p: str):
         return None
     thu_muc = goc.parent
     if not (f.parent == thu_muc or thu_muc in f.parents):
+        return None
+    # A page shared from the brain root has the whole brain as "its folder": the private zones stay closed to it, unless
+    # the shared page itself lives in one (same rule as _share_asset).
+    goc_brain_rieng = Path(_brain_root(brain)).resolve()
+    if _share_private_zone(f, goc_brain_rieng) and not _share_private_zone(goc, goc_brain_rieng):
         return None
     duoi = f.suffix.lower()
     if duoi in share_render.DUOI_TAI_NGUYEN:
@@ -12225,7 +12277,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # Fast mode (0.164.0): workflow steps run in the background, so force the normal tier.
             cc.extra_config[:] = [x for x in cc.extra_config if not str(x).startswith("service_tier=")]
             cc.extra_config.append('service_tier="default"')
-            return cc
+            return _step_engine(cc, "openai-oauth")   # the ChatGPT account with quota, the next one when it runs out
         allowed, natives = (_step_grant(extra_tools) if tools is not None else ([], []))
         gated_tools = (list(tools) + allowed) if tools is not None else None
         c = claude_engine(system_prompt=sysprompt, cwd=vault_root, tag="workflow",
@@ -12268,11 +12320,13 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # (nhà đã chọn chết giữa chừng thì lùi về Claude/bộ não chính, không chết lặng).
             # Gọi SAU khi đã gắn thansa_vault/system_prompt vì _build_* đọc lại từ engine này.
             try:
-                c = aux_engine.swap(c, tag="workflow", codex_profile=_write_codex_profile,
-                                    spec={"provider": prov, "model": (model or "")})
+                return aux_engine.swap(c, tag="workflow", codex_profile=_write_codex_profile,
+                                       spec={"provider": prov, "model": (model or "")})   # rotates accounts itself
             except Exception as e:
                 print(f"[agent engine] {prov}: {type(e).__name__}: {e}", file=__import__('sys').stderr)
-        return c
+        # Claude Code runs this step (the agent's own choice, a gated background run, or a card that could not be
+        # built): on the Claude account that has quota. Only the account moves, never the provider.
+        return _step_engine(c, "anthropic-cli")
 
     def _agent_sysprompt(aslug, surface=None, agent_key=None, session_created_at=None, skill_served=False):
         """`surface` (dm, team, kanban, workflow): where this prompt runs, known by the host. Only with it can an
@@ -26857,8 +26911,8 @@ async def whatsapp_webhook_verify(request: Request):
 async def whatsapp_webhook(request: Request):
     """Inbound WhatsApp messages. Public URL, so nothing is trusted before the signature check;
     a request no known app secret signed is dropped with 401 and never parsed further."""
-    raw = await request.body()
-    if len(raw) > 2_000_000:
+    raw = await _read_capped_body(request)
+    if raw is None:
         return PlainTextResponse("too large", status_code=413)
     sig = request.headers.get("x-hub-signature-256", "")
     if not whatsapp_bot.verify_signature(raw, sig, owner_channels.whatsapp_app_secrets(_wa_account_secrets())):
@@ -26902,6 +26956,29 @@ async def chatbot_api_turn(request: Request):
 # Messenger (0.134.0): customer bots on a Facebook Page. Meta calls one webhook for every Page;
 # `messenger_bot.handle_webhook` routes by Page id. No owner control channel here.
 # ============================================================
+WEBHOOK_BODY_MAX = 2_000_000
+
+
+async def _read_capped_body(request: Request, limit: int = WEBHOOK_BODY_MAX):
+    """The request body, or None when it is larger than `limit`. Never holds more than `limit` bytes.
+
+    Security fix (2026-11-10): the channel webhooks are public routes and called `await request.body()` before their
+    size check, so the whole body was already in memory when the check ran. A few multi-gigabyte POSTs from anybody were
+    enough to exhaust a small VPS, with no login and no valid signature. The length the client declares is checked
+    first, then the stream is read up to the cap and dropped the moment it passes it."""
+    try:
+        if int(request.headers.get("content-length") or 0) > limit:
+            return None
+    except ValueError:
+        return None
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw.extend(chunk)
+        if len(raw) > limit:
+            return None
+    return bytes(raw)
+
+
 def _ms_verify_token() -> str:
     """The handshake string Meta echoes when the Messenger webhook is set up. Generated once."""
     m = cfgmod.read_settings().get("messenger", {}) or {}
@@ -26962,8 +27039,8 @@ async def messenger_webhook_verify(request: Request):
 async def messenger_webhook(request: Request):
     """Inbound Messenger events. Public URL, so nothing is trusted before the signature check;
     a request no known app secret signed is dropped with 401 and never parsed further."""
-    raw = await request.body()
-    if len(raw) > 2_000_000:
+    raw = await _read_capped_body(request)
+    if raw is None:
         return PlainTextResponse("too large", status_code=413)
     sig = request.headers.get("x-hub-signature-256", "")
     if not messenger_bot.verify_signature(raw, sig, _ms_account_secrets()):
@@ -27355,8 +27432,8 @@ async def threads_webhook(request: Request):
     """New replies under the owner's Threads posts. Nothing is trusted before the signature check under the
     Threads app secret of a connected account."""
     import threads_bot
-    raw = await request.body()
-    if len(raw) > 2_000_000:
+    raw = await _read_capped_body(request)
+    if raw is None:
         return PlainTextResponse("too large", status_code=413)
     if not threads_bot.verify_signature(raw, request.headers.get("x-hub-signature-256", ""), _th_account_secrets()):
         return PlainTextResponse("bad signature", status_code=401)
@@ -27577,8 +27654,8 @@ def _zo_account_secrets() -> list:
 async def zalo_oa_webhook(request: Request):
     """Inbound Zalo OA events. Public URL, so nothing is trusted before the signature check; a
     request no known OA secret key signed is dropped with 401 and never handed to a bot."""
-    raw = await request.body()
-    if len(raw) > 2_000_000:
+    raw = await _read_capped_body(request)
+    if raw is None:
         return PlainTextResponse("too large", status_code=413)
     sig = request.headers.get("x-zevent-signature", "") or request.headers.get("mac", "")
     if not zalo_oa_bot.verify_signature(raw, sig, _zo_account_secrets()):
@@ -29337,6 +29414,167 @@ def _team_record_usage(provider: str, model: str, outcome, *, execution=None, st
         print(f"[team usage] {type(e).__name__}: {e}", file=sys.stderr)
 
 
+def _step_plan_account(eng, provider: str) -> str:
+    """Point the engine of a team turn or a workflow step at the plan account that should run now, as a chat turn and
+    background work do.
+
+    Team turns built their engine without this step until 10/11/2026, so they always ran on account 1 of the card: once
+    account 1 hit its weekly limit every member answered "You've hit your weekly limit" while the card's other account,
+    the one chat was already running on, still had quota (customer report, 10/11/2026). Workflow steps had the same
+    gap. An API engine or a card with one account is left as it is. Returns the account id; choosing an account never
+    stops a turn."""
+    try:
+        return plan_accounts.apply(eng, provider, cfgmod.read_settings().get("model") or {})
+    except Exception as e:  # noqa: BLE001
+        print(f"[plan accounts] step {provider}: {type(e).__name__}: {e}", file=sys.stderr)
+        return plan_accounts.MAIN
+
+
+def _step_limit_hit(provider: str, text: str):
+    """(True, reset epoch) when an engine's error text says the subscription plan ran out of quota, else (False, 0).
+    Same detector as a chat turn; only the four plan CLIs have a plan to run out of."""
+    hint = _NHA_SANG_ENGINE.get(str(provider or ""), "")
+    if not hint or not str(text or "").strip():
+        return False, 0.0
+    try:
+        hit = limit_learner.parse_subscription_limit(text, engine_hint=hint)
+        if hit is not None:
+            return True, float(getattr(hit, "reset_epoch", 0) or 0)
+        if hint == "grok-cli":   # Grok prints no fixed sentence for it, plain quota words count (as in chat)
+            import plan_limits
+            return bool(plan_limits.la_het_han_muc(text)), 0.0
+    except Exception as e:  # noqa: BLE001 - the detector must never turn one failure into two
+        print(f"[plan accounts] step limit {provider}: {type(e).__name__}: {e}", file=sys.stderr)
+    return False, 0.0
+
+
+def _step_quota_next(provider: str, eng, text: str) -> dict:
+    """The engine of a team turn or a workflow step failed with `text`. When it says the plan account ran out of quota,
+    that account rests (so chat, background work and the next steps skip it too) and the next account of the SAME card
+    that can run comes back as {"id", "status"}; {} when the error is something else or no other account can run.
+    Never another card: these turns run on the model chosen for them, with no fallback chain."""
+    prov = str(provider or "")
+    hit, reset = _step_limit_hit(prov, text)
+    if not hit:
+        return {}
+    ran = getattr(eng, "account_id", None)
+    ran = ran if isinstance(ran, str) and ran else plan_accounts.MAIN
+    _note_pin_limit(_NHA_SANG_ENGINE[prov], reset, account=ran)
+    try:
+        m = cfgmod.read_settings().get("model") or {}
+        if not (plan_accounts.in_use(prov) and plan_accounts.has_extra(m, prov)):
+            return {}
+        nxt = plan_accounts.pick(m, prov)
+        if not nxt or nxt["id"] == ran:
+            return {}
+        old_no, old_lab = _route_account_no(m, prov, ran)
+        new_no, new_lab = _route_account_no(m, prov, nxt["id"])
+        return {"id": nxt["id"], "status": localefmt.chu(
+            f"Đang dùng {_route_name(prov)} ({new_lab or f'tài khoản {new_no}'}) vì "
+            f"{old_lab or f'tài khoản {old_no}'} hết lượt.",
+            f"Using {_route_name(prov)} ({new_lab or f'account {new_no}'}) because "
+            f"{old_lab or f'account {old_no}'} is out of quota.")}
+    except Exception as e:  # noqa: BLE001 - the turn then reports the provider's own error, as before
+        print(f"[plan accounts] step next {prov}: {type(e).__name__}: {e}", file=sys.stderr)
+        return {}
+
+
+def _team_quota_next(provider: str, eng, error) -> dict:
+    """`_step_quota_next` for a failed team turn: only an error the ENGINE reported counts, never a tool call the
+    text-only contract refused or an empty answer."""
+    if not isinstance(error, team_runner.EngineOutcomeError) or error.kind not in ("final_error", "error_event"):
+        return {}
+    return _step_quota_next(provider, eng, error.detail)
+
+
+# Text a workflow step's engine wrote is held back while it is shorter than this, or while it reads as the provider's
+# out-of-quota sentence: Claude Code prints that sentence as text first, then as the answer.
+PLAN_ROTATION_HOLD_CHARS = 80
+
+
+class _PlanRotation:
+    """The engine of ONE workflow step on a plan card that holds several accounts (10/11/2026).
+
+    Before, a step always ran on account 1 of the card and stopped the whole run with "the plan is out of quota" while
+    the card's next account still had quota. Now the account that ran out rests, and when the step had not written or
+    called anything yet it runs again at once on the next account of the same card. A step that already called a tool
+    or wrote real text is never run twice: its error comes out as before and the account still rests, so running the
+    workflow again lands on the next account. The provider never changes, so the limits of a gated run stay in place.
+
+    Reads and writes of attributes go to the wrapped engine, so callers use it as the engine it holds."""
+
+    def __init__(self, engine, provider: str):
+        object.__setattr__(self, "_engine", engine)
+        object.__setattr__(self, "_provider", str(provider or ""))
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, "_engine"), name)
+
+    def __setattr__(self, name, value):
+        setattr(object.__getattribute__(self, "_engine"), name, value)
+
+    def _is_limit(self, text: str, whole: bool = False) -> bool:
+        """`whole`: the text is the engine's own error; otherwise it must be nothing but the sentence."""
+        return (whole or _het_luot_ap_dao(text)) and _step_limit_hit(self._provider, text)[0]
+
+    async def query(self, prompt):
+        eng, prov = object.__getattribute__(self, "_engine"), self._provider
+        hops = 0
+        while True:
+            thread = getattr(eng, "session_id", None)
+            held, written, live, nxt = [], "", False, None
+            stream = eng.query(prompt)
+            async for ev in stream:
+                t = (ev or {}).get("type")
+                if t == "text" and not live:
+                    held.append(ev)
+                    written += str(ev.get("content") or "")
+                    if len(written.strip()) < PLAN_ROTATION_HOLD_CHARS or self._is_limit(written):
+                        continue
+                elif t in ("final", "error") and not ev.get("resume_failed"):
+                    raw = str(ev.get("content") or "")
+                    if self._is_limit(raw, whole=(t == "error" or bool(ev.get("is_error")))):
+                        nxt = await asyncio.to_thread(_step_quota_next, prov, eng, raw)
+                        if nxt and not live and hops < REROUTE_MAX_HOPS:
+                            break
+                        nxt = None
+                if not live:
+                    live = True
+                    for h in held:
+                        if h is not ev:
+                            yield h
+                    held = []
+                yield ev
+            if not nxt:
+                for h in held:      # the engine stopped with no answer: what it wrote is still shown
+                    yield h
+                return
+            try:
+                await stream.aclose()
+            except Exception:  # noqa: BLE001 - the refused run is over either way
+                pass
+            hops += 1
+            if hasattr(eng, "session_id"):
+                eng.session_id = thread      # the refused run's thread belongs to the account that ran out
+            await asyncio.to_thread(plan_accounts.use, eng, prov, nxt["id"])
+            print(f"[plan accounts] workflow step: {prov} account out of quota, running again on {nxt['id']}",
+                  file=sys.stderr)
+
+
+def _step_engine(eng, provider: str):
+    """A workflow step's plan engine, started on the account that should run now. On a card with several accounts it
+    comes back wrapped (`_PlanRotation`); a card with one account, or Claude Code on an API key, gets the engine itself,
+    exactly as before."""
+    _step_plan_account(eng, provider)
+    try:
+        m = cfgmod.read_settings().get("model") or {}
+        if plan_accounts.in_use(provider) and plan_accounts.has_extra(m, provider):
+            return _PlanRotation(eng, provider)
+    except Exception as e:  # noqa: BLE001 - rotation must never cost the step
+        print(f"[plan accounts] step engine {provider}: {type(e).__name__}: {e}", file=sys.stderr)
+    return eng
+
+
 def _team_engine_for(team, agent_key, role):
     """Engine CHỈ CHỮ cho một lượt nhóm (phán quyết R3 của kế hoạch T1): thư mục trống, không MCP, cổng từ chối mọi công
     cụ. Model theo hợp đồng chat tương tác và giao việc (`team_engine`, 0.142.0): model riêng của trợ lý, thiếu hay chưa
@@ -29410,6 +29648,7 @@ def _team_engine_for(team, agent_key, role):
                 openai_oauth.write_codex_auth()
             except Exception:  # noqa: BLE001 - Codex reports its own sign-in error
                 pass
+        _step_plan_account(eng, prov)   # the plan account that should run now (rotation, as in chat)
         avail = getattr(eng, "is_available", None)
         if callable(avail) and not avail():
             raise team_runner.EngineUnavailable(f"engine {tool_spec['provider']} chưa sẵn sàng (kiểm tra trang Models)")
@@ -29425,6 +29664,7 @@ def _team_engine_for(team, agent_key, role):
             eng = team_engine.build(spec, base, tag, settings)
         except team_engine.TeamEngineUnavailable as ex:
             raise team_runner.EngineUnavailable(ex.reason)
+        _step_plan_account(eng, str(spec.get("provider") or aux_engine.CLAUDE))   # as in chat: the account with quota
         avail = getattr(eng, "is_available", None)
         if callable(avail) and not avail():
             raise team_runner.EngineUnavailable(f"engine {spec['provider']} chưa sẵn sàng (kiểm tra trang Models)")
@@ -29437,51 +29677,72 @@ def _team_engine_for(team, agent_key, role):
         tag = f"team-{str(req['team_id'])[-8:]}-{str(req.get('turn_id') or '')[-10:]}"
         tools_on = bool(req.get("tool_turn"))
         used = tool_spec if tools_on else spec
-        if tools_on:
-            eng = await asyncio.to_thread(_build_tools, req["system"], tag, str(req.get("team_gate") or ""))
-        else:
-            eng = await asyncio.to_thread(_build, req["system"], tag)
-        prompt = _team_reasoning(eng, info.get("reasoning") or AGENT_REASONING_DEFAULT, req["prompt"])
-        if tools_on:
-            # The tool spec can differ from the text one (Grok Build, Antigravity run tool turns): mark the real engine.
-            await req["engine_started"](used["provider"], used["model"])
-        else:
-            await req["engine_started"]()
-        outcome = team_runner.ToolTurnOutcome() if tools_on else team_runner.TextOnlyOutcome()
-        execution = dict((turn_context.current() or {}).get("execution") or {})
-        session_before = getattr(eng, "session_id", None)
-        stream = eng.query(prompt)
-        usage_status = "error"
-        try:
-            async for ev in stream:
-                outcome.note(ev)
-            res = outcome.result()
-            usage_status = "completed"
-        except Exception as ex:
-            # 0.436.0 (team_retry): a failed turn tells the runner how many tools it called. Zero is the only count that
-            # lets a Work/Help step run again on its own; a text-only turn has no tools at all.
+        prov = str(used.get("provider") or aux_engine.CLAUDE)
+        # 10/11/2026: a plan account out of quota rests and the turn runs again at once on the card's next account, as
+        # a chat turn does (spec 6.4). `moved` is the line the message carries when that happened.
+        hops, moved = 0, ""
+        while True:
+            if tools_on:
+                eng = await asyncio.to_thread(_build_tools, req["system"], tag, str(req.get("team_gate") or ""))
+            else:
+                eng = await asyncio.to_thread(_build, req["system"], tag)
+            prompt = _team_reasoning(eng, info.get("reasoning") or AGENT_REASONING_DEFAULT, req["prompt"])
+            if tools_on:
+                # The tool spec can differ from the text one (Grok Build, Antigravity run tool turns): mark the real engine.
+                await req["engine_started"](used["provider"], used["model"])
+            else:
+                await req["engine_started"]()
+            outcome = team_runner.ToolTurnOutcome() if tools_on else team_runner.TextOnlyOutcome()
+            execution = dict((turn_context.current() or {}).get("execution") or {})
+            session_before = getattr(eng, "session_id", None)
+            stream = eng.query(prompt)
+            usage_status = "error"
+            failed = None
             try:
-                ex.team_tool_calls = int(getattr(outcome, "tool_calls", 0) or 0)
-            except Exception:  # noqa: BLE001 - some exception types refuse new attributes: then it stays unknown
-                pass
-            raise
-        except asyncio.CancelledError:
-            usage_status = "cancelled"
-            try:
-                await asyncio.to_thread(claude_cli.cancel_all, tag)
-            finally:
+                async for ev in stream:
+                    outcome.note(ev)
+                res = outcome.result()
+                # Claude Code sometimes prints the out-of-quota sentence as the ANSWER, not as an error (see the chat
+                # turn). Left alone it was posted as the member's reply and no other account ever got the turn.
+                if _het_luot_ap_dao(res["text"]) and _step_limit_hit(prov, res["text"])[0]:
+                    raise team_runner.EngineOutcomeError("final_error", res["text"].strip()[:200])
+                usage_status = "completed"
+            except Exception as ex:
+                # 0.436.0 (team_retry): a failed turn tells the runner how many tools it called. Zero is the only count that
+                # lets a Work/Help step run again on its own; a text-only turn has no tools at all.
                 try:
-                    await stream.aclose()
-                except BaseException:  # noqa: BLE001 - generator đang bị huỷ
+                    ex.team_tool_calls = int(getattr(outcome, "tool_calls", 0) or 0)
+                except Exception:  # noqa: BLE001 - some exception types refuse new attributes: then it stays unknown
                     pass
-            raise
-        finally:
-            execution["cli_session_id"] = getattr(eng, "session_id", None)
-            execution["cli_session_new"] = not session_before
-            # Usage survives failure and cancellation; telemetry can never determine execution policy.
-            _team_record_usage(used["provider"], getattr(eng, "model", None) or used.get("model") or "", outcome,
-                               execution=execution, status=usage_status,
-                               expected_requests=getattr(eng, "usage_request_count", None))
+                failed = ex
+            except asyncio.CancelledError:
+                usage_status = "cancelled"
+                try:
+                    await asyncio.to_thread(claude_cli.cancel_all, tag)
+                finally:
+                    try:
+                        await stream.aclose()
+                    except BaseException:  # noqa: BLE001 - generator đang bị huỷ
+                        pass
+                raise
+            finally:
+                execution["cli_session_id"] = getattr(eng, "session_id", None)
+                execution["cli_session_new"] = not session_before
+                # Usage survives failure and cancellation; telemetry can never determine execution policy.
+                _team_record_usage(used["provider"], getattr(eng, "model", None) or used.get("model") or "", outcome,
+                                   execution=execution, status=usage_status,
+                                   expected_requests=getattr(eng, "usage_request_count", None))
+            if failed is None:
+                break
+            # The account that ran out rests whatever happens next. The turn itself runs again only when it called no
+            # tool (a refusal comes before any work; running a step twice could send or post something twice).
+            nxt = await asyncio.to_thread(_team_quota_next, prov, eng, failed)
+            if not nxt or hops >= REROUTE_MAX_HOPS or int(getattr(outcome, "tool_calls", 0) or 0):
+                raise failed
+            hops += 1
+            moved = nxt["status"]
+            print(f"[plan accounts] team {tag}: {prov} account out of quota, running again on {nxt['id']}",
+                  file=sys.stderr)
         slug = info.get("slug") or ""
         # THANSA_RULE trong lượt nhóm không có chủ nói trực tiếp với agent: hạ thành bài học (như bước workflow).
         rules, text = agent_rules.extract_rules(res["text"])
@@ -29507,7 +29768,8 @@ def _team_engine_for(team, agent_key, role):
 
         return {"text": clean, "tokens_in": res["tokens_in"], "tokens_out": res["tokens_out"],
                 "cost_usd": res.get("cost_usd"),
-                "lessons": lessons, "commit": commit, "engine_note": used.get("note") or ""}
+                "lessons": lessons, "commit": commit,
+                "engine_note": " ".join(x for x in (used.get("note") or "", moved) if x)}
 
     async def run(req):
         # Bind before asyncio.to_thread: constructors and CLI correlation inherit the host execution.

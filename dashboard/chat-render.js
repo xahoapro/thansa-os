@@ -32,6 +32,23 @@
   }
 
   var OPEN = String.fromCharCode(0xE000), CLOSE = String.fromCharCode(0xE001);   // sentinel placeholder (private-use, khong xuat hien trong text)
+  // Security (2026-11-10): a placeholder also carries a random tag drawn for each render. The source text, and anything
+  // decoded from it later (%EE%80%80 in a link target, a \uE000 escape in a card's JSON), can hold the two sentinel
+  // characters but can never name the tag, so it cannot make the last pass splice a finished fragment into the middle
+  // of an attribute value. Before this, `[a](x%EE%80%801%EE%80%81) [b](https://e.com/onmouseover=...)` put a working
+  // event handler on the first link. Sentinels found in the source are dropped as well: they are never text.
+  var SENTINEL_RE = new RegExp("[" + OPEN + CLOSE + "]", "g");
+  var _phTag = "", _phSeq = 0;
+  function newPlaceholderTag() {
+    var rnd = "";
+    try {
+      var c = (typeof crypto !== "undefined" && crypto.getRandomValues) ? crypto : null;
+      if (c) { var a = new Uint32Array(2); c.getRandomValues(a); rnd = a[0].toString(36) + a[1].toString(36); }
+    } catch (e) { rnd = ""; }
+    if (!rnd) rnd = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    _phSeq = (_phSeq + 1) % 1679616;
+    return rnd + _phSeq.toString(36) + "z";
+  }
 
   // ---------------------------------------------------------------- helpers
   // File này chạy hai chế độ: trong trình duyệt và dưới node (test require nó).
@@ -570,7 +587,7 @@
   function blockParse(text) {
     var lines = text.split("\n"), out = [], i = 0, n = lines.length, para = [];
     function flushPara() { if (para.length) { out.push("<p>" + inline(para.join("\n")) + "</p>"); para = []; } }
-    var BLOCK_ONLY = new RegExp("^\\s*" + OPEN + "\\d+" + CLOSE + "\\s*$");
+    var BLOCK_ONLY = new RegExp("^\\s*" + OPEN + _phTag + "\\d+" + CLOSE + "\\s*$");
     while (i < n) {
       var line = lines[i];
       if (/^\s*$/.test(line)) { flushPara(); i++; continue; }
@@ -621,6 +638,75 @@
     try { return _mdToHtmlThan(raw); }
     finally { _brainForRender = truoc; _choTrinhSua = truocTS; _thuMucForRender = truocTM; _anhVForRender = truocAV; }
   }
+  // ---------------------------------------------------------------- streaming: how much is settled
+  // While an answer streams, app.js used to render the WHOLE text again on every flush and replace the bubble. For a
+  // 20,000 character answer that is over a hundred full parses, each followed by a layout of the whole bubble
+  // (measured on a throttled phone: 43 long tasks). Most of that text is finished: only the last block is still
+  // growing. streamCut says how much of the text can be rendered once and left alone.
+  //
+  // streamCut(text, from) -> an index >= from. text.slice(from, index) is a run of COMPLETE top-level blocks and
+  // text.slice(index) is what may still change. `from` must be an index returned earlier (or 0). The rule is
+  // conservative, because a wrong cut shows until the final full render replaces the bubble:
+  //   - never inside a code fence (counted the way the renderer finds them: every ``` toggles), an HTML comment
+  //     (THANSA_CARD, THANSA_ASK) or the frontmatter of the first block;
+  //   - only at a blank line, and only when the line before it and the line after it are plain text or headings.
+  //     Lists (numbering continues across blank lines), tables, quotes and indented text stay in the growing part
+  //     until something plain follows them;
+  //   - only before a line that is complete (ends in a newline), so a half-written "- " or "```" is never judged.
+  var _ST_STRUCT = /^(\s*([-*+]|\d+[.)])\s|\s{2,}\S|\t|\s*\||\s*>|\s*-{3,}\s*$|\s*<!--)/;
+  // Fence state after one line, the way the renderer's own pattern reads it: outside a fence the first ``` on a line
+  // opens one and the rest of that line is its info string; inside, the first ``` closes it wherever it stands, and
+  // what follows on the line is ordinary text again (so it may open the next one). Returns [inFence, touched].
+  function _fenceAfter(line, fence) {
+    var pos = 0, touched = false;
+    for (;;) {
+      var at = line.indexOf("```", pos);
+      if (at === -1) return [fence, touched || fence];
+      touched = true;
+      if (!fence) return [true, true];
+      fence = false;
+      pos = at + 3;
+    }
+  }
+  function streamCut(text, from) {
+    text = String(text == null ? "" : text);
+    var n = text.length, i = Math.max(0, from | 0), cut = i;
+    if (i === 0 && /^\uFEFF?---[ \t]*\r?\n/.test(text)) {
+      var fm = FRONTMATTER_RE.exec(text);
+      if (!fm || fm[0].charAt(fm[0].length - 1) !== "\n") return 0;   // frontmatter still open: nothing is settled
+      i = fm[0].length;
+    }
+    var fence = false, comment = false, blank = false, prevPlain = false, seen = false;
+    while (i < n) {
+      var nl = text.indexOf("\n", i);
+      if (nl === -1) break;                    // the last line is still being written
+      var line = text.slice(i, nl), start = i;
+      i = nl + 1;
+      var wasFence = fence;
+      var fa = _fenceAfter(line, fence);
+      fence = fa[0];
+      if (wasFence) {
+        prevPlain = false; blank = false; seen = true;
+        continue;
+      }
+      if (comment) {
+        fence = false;                          // a ``` inside a hidden comment is not a fence
+        if (line.indexOf("-->") !== -1) comment = false;
+        prevPlain = false; blank = false; seen = true;
+        continue;
+      }
+      if (!line.trim()) { blank = true; continue; }
+      var plain = !fa[1] && !_ST_STRUCT.test(line);
+      if (plain && blank && prevPlain && seen) cut = start;
+      if (!fence) {
+        var oc = line.lastIndexOf("<!--");
+        if (oc !== -1 && line.indexOf("-->", oc) === -1) { comment = true; plain = false; }
+      }
+      prevPlain = plain; blank = false; seen = true;
+    }
+    return cut;
+  }
+
   function visibleMarkdown(raw) {
     raw = String(raw == null ? "" : raw);
     // Bo HTML comment (khoi dieu khien THANSA_* luon vo hinh), ke ca comment chua dong luc stream
@@ -629,7 +715,9 @@
 
   function _mdToHtmlThan(raw) {
     var ph = [];
-    function put(html) { ph.push(html); return OPEN + (ph.length - 1) + CLOSE; }
+    var tag = _phTag = newPlaceholderTag();
+    function put(html) { ph.push(html); return OPEN + tag + (ph.length - 1) + CLOSE; }
+    raw = String(raw == null ? "" : raw).replace(SENTINEL_RE, "");
     // 0.201.0: THANSA_CARD blocks (charts, number tiles, buttons) are drawn in place before hidden comments go (chat-card.js).
     if (typeof window !== "undefined" && window.ThansaCard) raw = window.ThansaCard.replaceIn(raw, put);
     raw = visibleMarkdown(raw);
@@ -738,8 +826,8 @@
     var html = blockParse(raw);
 
     // 7) tra lai placeholder (lap vai lan vi co the long: link trong bang, ...)
-    var reIns = new RegExp(OPEN + "(\\d+)" + CLOSE, "g");
-    var reHas = new RegExp(OPEN + "\\d+" + CLOSE);
+    var reIns = new RegExp(OPEN + tag + "(\\d+)" + CLOSE, "g");
+    var reHas = new RegExp(OPEN + tag + "\\d+" + CLOSE);
     for (var pass = 0; pass < 6 && reHas.test(html); pass++) {
       html = html.replace(reIns, function (_m, idx) { return ph[+idx] != null ? ph[+idx] : ""; });
     }
@@ -1682,6 +1770,7 @@
   if (typeof window !== "undefined") {
     window.mdToHtml = mdToHtml;
     window.ThansaVisibleMarkdown = visibleMarkdown;
+    window.ThansaStreamCut = streamCut;
     // Bo to mau chung: code-hl.js goi lai cho cac ngon ngu kieu C (js/py/sh...) de mot luat
     // chi nam o mot cho. Markup/CSS/JSON thi code-hl tu doc lay (xem chu thich ben do).
     window.ThansaHighlight = highlight;
@@ -1694,7 +1783,7 @@
     window.ThansaFileRef = appFileRef;
   }
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { mdToHtml: mdToHtml, visibleMarkdown: visibleMarkdown,
+    module.exports = { mdToHtml: mdToHtml, visibleMarkdown: visibleMarkdown, streamCut: streamCut,
       highlight: highlight, wkResolve: wkResolve,
       appFilePath: appFilePath, appFileRef: appFileRef, fileUriPath: fileUriPath,
       isDownloadFile: isDownloadFile, imageSize: imageSize,

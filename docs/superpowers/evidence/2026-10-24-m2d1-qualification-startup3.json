@@ -96,7 +96,7 @@
     "scope": "requirements direct packaging dependency repair only",
     "verdict": "static_approved",
     "tests_run": 0,
-    "requirements_sha256": "c58335da2a76d03a5750c1ded396e917c0da2fbcdb5eb7dea7ba21a1eb71da18",
+    "requirements_sha256": "295c551d3738ec40e97adf508ed95b9af1d8e149c2b70973553cc933df916bd9",
     "dependency": "packaging==26.2",
     "direct_usage": [
       "server/improvement_native_release.py:253 packaging.requirements Requirement/InvalidRequirement",
@@ -129,7 +129,7 @@
         "tests/python/test_improvement_qualification_session.py": "89eadce94a242f45387c588f7a60005850e39e080e7440cafe2119779568f096",
         "server/improvement_qualification_protocol.py": "c01fc4026593ee306536d34861bb7be5e93de159989f08ad4e0a43d732bea9fa",
         "tests/python/test_improvement_qualification_protocol.py": "5e16faac3505a1ce3502c201036fdb29463d05a8346cd9c5e7b50b4f8268fb79",
-        "requirements.txt": "c58335da2a76d03a5750c1ded396e917c0da2fbcdb5eb7dea7ba21a1eb71da18"
+        "requirements.txt": "295c551d3738ec40e97adf508ed95b9af1d8e149c2b70973553cc933df916bd9"
       },
       "workflow_sha256": "e8b2c1a0d932b75ed180950d2ca721c987e4cdebcb246ee3d539b29d18a66520",
       "scope": "Early genuine Linux preparation only, no native/account/final-head CI qualification. Base Git tree plus five raw selected files including explicit packaging dependency; ordinary Git normalization may differ from other Windows working-tree bytes."
