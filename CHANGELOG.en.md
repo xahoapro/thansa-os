@@ -8,6 +8,50 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.530.1] - 2026-11-10
+### Fixed
+- **A recreated assistant can confirm its Auto again.** The card said "Auto: Needs confirmation", but the right column had neither "Same assistant" nor "This is a new assistant", so Auto could never be turned back on. Both buttons now show right under the assistant's settings.
+
+## [0.530.0] - 2026-11-10
+### Added
+- **Each brain pins the tools it uses most.** When a brain has many sources connected, a tool must be searched for before it is called, one extra round each time. Thansa now counts which tools each brain calls most and pins a few of them (up to 4 by default; Thansa Core widens that up to 8 when needed): a pinned tool is called directly. Background work such as loops gains the most, because it had to search again on every run. Nothing to set up, and a notice in the bell tells you when tools are pinned.
+- **See and switch it off by talking.** Ask Thansa "which tools are pinned" for the list with how many calls went direct and how many still needed a search. Say "stop pinning tools" to turn it off.
+### Improved
+- **The pinned list follows your habits.** A tool you stop using leaves the list and a newly frequent one joins. One brain's list changes at most once a day and has a size bound, so the prompt does not grow and the provider's cache is rarely refreshed.
+- **What you tell Thansa Core stands.** A value you set by talking, for any self-tuning knob, is not changed back by Thansa Core for 30 days, restarts included.
+
+## [0.529.1] - 2026-11-10
+### Fixed
+- **Claude answers again on Windows machines that installed it with npm.** After an update every Claude chat turn failed with "Refusing to execute batch script ...claude.CMD". Thansa now finds the real `claude.exe` next to that file (or the native install, or the one bundled with the SDK), so nothing needs reinstalling. Codex was not affected.
+
+## [0.529.0] - 2026-11-10
+### Added
+- **Thansa Core runs one improvement loop.** Any part of Thansa that wants to tune itself registers a "knob" with Thansa Core. The loop moves every knob the same way: one step at a time, inside its bounds, at most once a day, with its reason logged, a notice in the bell, and a way back by talking. The loop is plain code: it calls no model and does not touch a chat turn.
+- **Self-learning tunes when a batch starts.** When most recent batches learned nothing (common when you ask one or two quick questions), Thansa Core raises the number of turns a batch needs; when batches are useful again it lowers it. Turns below the bar stay queued and are learned with the next ones.
+- **Tell Thansa how to learn, by talking.** Say "do not turn each day's revenue into a memory" or "only remember settled decisions": Thansa Core keeps it as a lesson and every learning batch reads it first. Review and revoke it like any assistant's lessons.
+### Improved
+- **A wrongly learned memory counts.** A memory Thansa learned by itself that you ask it to forget counts as a learning mistake, so the next batch runs one model stronger. Forgetting a memory you wrote yourself changes nothing.
+- **One place to look and to undo.** Ask Thansa "what is background work and learning adjusting": one answer with the model of each background job, the knobs being tuned, the recent changes and the lessons about learning.
+
+## [0.528.1] - 2026-11-10
+### Fixed
+- **Connecting Google Ads no longer demands a developer token.** The box is optional now and the guide follows the Google Cloud path: enable the Google Ads API, apply for Explorer access inside the project, then create the OAuth client. New users are no longer stuck asking for a token Google no longer requires.
+### Security
+- **Google Ads label tools no longer run at Read only.** Google's newer MCP adds tools that create, edit and delete labels and upload a video to YouTube; the two label tools were wrongly classified as read. They now need Full access, creating assets needs Draft writes, and the connection card says what each level can change.
+
+## [0.528.0] - 2026-11-10
+### Added
+- **The background model has an Automatic mode, and it is the default.** Background work used to run on the provider's default model, which on a plan is usually the strongest and costliest. Thansa now uses MAIN's provider and picks two models from that provider's own list: a light one for the work Thansa starts itself (self-learning, next-message suggestions, judging), a middle one for the jobs you hand over (reminders, loops, Kanban). The Models page names both. Thansa picks again only when that provider's model list changes, and leaves a notice in the bell each time.
+- **Each background job finds the model that is just enough for it.** The two models above are only where a job starts. Every reminder, loop, kind of Kanban job and self-learning has its own rung: a failure caused by a model that was too weak climbs one rung for the next run, several good runs in a row try one rung lower, and a failed try goes back up. A spent quota, a lost sign-in or a dropped connection does not change the model. Each change leaves a notice in the bell with its reason.
+- **Adjust background work by talking; there is no setting.** Say "save tokens for me", "the report job must be reliable", "this morning's report was wrong" or "which model is background work running on": Thansa records what you want for everything or for one job, adjusts, and undoes a model change when you ask.
+- **A model you choose yourself is never changed.** Press Change model in the Background model block and choose one: it stays. To go back, choose "Automatic (recommended)" at the top of the list. On existing installs, a background model still on its starting setup moves to Automatic; one you had changed stays as it is.
+- **Thansa's own work waits when the plan is nearly used up.** Once the plan's 5-hour window is 80% used, self-learning and next-message suggestions wait for the reset, and what is left is kept for your chat.
+### Improved
+- **Self-learning learns memories and wiki notes only by default.** Skill learning adds a second verify pass to every batch and switches on the background skill judging, the costliest part while you are not typing. Existing installs were switched off once too; turn the Skill switch on the Self-learning page back on if you need it.
+- **Self-learning runs 15 minutes after the last event, once per conversation.** A batch used to fire every 3 chat turns, so a 12-turn chat opened four batches that each re-read much the same messages. Thansa now waits until the brain has been quiet for 15 minutes (you asking again, a background job finishing or a customer talking to a chatbot all start the wait over) and learns in one batch, reading each message once. A day with no event learns nothing and costs nothing. "Remember this" is still learned after 30 seconds, and a brain that is never quiet (a chatbot with customers all day) still learns after 2 hours at most.
+- **The daily ceilings of self-learning are gone.** 40 batches and 15 million tokens a day fit neither a heavy user nor a light one, and at the ceiling Thansa still ran the batch and only kept its result from being written. The new rhythm already ties the number of batches to the number of conversations.
+- **Next-message suggestions and other text-only turns are much lighter.** These turns (the suggestion after every chat turn, the reply judges, incident triage, habit lines) use no tool, yet still sent Claude Code's own rules and every tool description. The measurement already in the code for the same question: 27,665 tokens with them, 183 without. They are no longer sent.
+
 ## [0.527.2] - 2026-11-10
 ### Improved
 - **Long answers stream without stutter.** While text is arriving, Thansa only redraws the block being written and leaves the finished ones alone. Measured with a 20,000 character answer on a slow phone: render time from 5.4 seconds down to 1 second, and no more freezes.
