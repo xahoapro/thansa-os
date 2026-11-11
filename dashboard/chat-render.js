@@ -233,6 +233,91 @@
     var ref = appFileRef(href);
     return ref ? ref.path : "";
   }
+  // A FULL path on the owner's computer, outside the brain: a deck Thansa built in ~/Documents, a
+  // report in ~/Downloads. These used to render as dead text, because the file server only reaches
+  // the brain (owner request 2026-11-09). A click now asks the server to open the file with the
+  // owner's own app (POST /files/open-local), which only works in a browser on that same machine.
+  //   localTarget("/Users/a/Documents/x.html") -> { local: "/Users/a/Documents/x.html" }
+  //   localTarget("/Users/a/brains/Brain Default/wiki/x.md") -> { vault: "wiki/x.md" } (stays in the app)
+  //   localTarget("wiki/x.md") / ("/files/raw?..") / ("file:///wiki/x.md") -> null (other rules apply)
+  var LOCAL_ABS_RE = /^(?:~\/|\/(?:Users|home|Volumes|mnt|media|private\/tmp|tmp)\/|[A-Za-z]:\/)/;
+  function localTarget(s) {
+    s = String(s == null ? "" : s).trim();
+    var p = fileUriPath(s);
+    if (p == null) p = decodeVaultPath(s);
+    p = p.replace(/\\/g, "/");
+    if (!LOCAL_ABS_RE.test(p)) return null;
+    if (/[\n<>"|?*]/.test(p.replace(/^[A-Za-z]:/, ""))) return null;
+    if (/(^|\/)\.\.(\/|$)/.test(p)) return null;
+    var base = currentBrainBase();
+    var idx = base ? p.toLowerCase().indexOf("/" + base.toLowerCase() + "/") : -1;
+    if (idx >= 0) {
+      var rest = p.slice(idx + base.length + 2).replace(/^\/+/, "");
+      return rest ? { vault: rest } : null;
+    }
+    return { local: p };
+  }
+  // Such a link is drawn ONLY where a click can work: a browser on the machine that runs Thansa. On a VPS, through a
+  // tunnel or a domain, or with Thansa in Docker, the path stays the text it always was (and can still be copied
+  // whole), instead of a link that could only answer "not on this computer".
+  //   - Not at a loopback address: never, and the server is not even asked.
+  //   - At a loopback address: yes, until the server says otherwise (GET /files/open-local: Docker, or a Linux box
+  //     with no desktop). It is asked once per page, the first time such a path is drawn. A "no" is remembered for
+  //     the next visits and turns the links already on screen back into plain paths.
+  var LOCAL_OPEN_KEY = "jv_local_open_off";
+  var _localOpen = null;        // null: not looked at yet. true / false: what is known for this page.
+  function onLoopback() {
+    try { return /^(?:localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname); } catch (e) { return false; }
+  }
+  function canOpenLocal() {
+    if (_localOpen != null) return _localOpen;
+    if (!onLoopback()) { _localOpen = false; return false; }
+    var off = false;
+    try { off = localStorage.getItem(LOCAL_OPEN_KEY) === "1"; } catch (e) {}
+    _localOpen = !off;
+    try {
+      fetch("/files/open-local").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        if (!j || typeof j.available !== "boolean") return;
+        _localOpen = j.available;
+        try { j.available ? localStorage.removeItem(LOCAL_OPEN_KEY) : localStorage.setItem(LOCAL_OPEN_KEY, "1"); } catch (e) {}
+        if (!j.available) plainLocalLinks();
+      }).catch(function () {});
+    } catch (e) {}
+    return _localOpen;
+  }
+  // The server said no after some links were drawn: put the whole path back as text.
+  function plainLocalLinks() {
+    try {
+      var list = document.querySelectorAll("a.jv-flocal");
+      for (var i = 0; i < list.length; i++) {
+        var a = list[i], p = a.getAttribute("data-local-path") || "";
+        if (a.classList.contains("jv-fcode")) {
+          var code = document.createElement("code");
+          code.textContent = p;
+          a.parentNode.replaceChild(code, a);
+        } else {
+          a.removeAttribute("href"); a.removeAttribute("data-local-path"); a.removeAttribute("title");
+          a.classList.remove("jv-flocal");
+        }
+      }
+    } catch (e) {}
+  }
+  // Inline code is stricter than a markdown link: `/Users/a/bin/tool --x` is a command, not a file.
+  // Needs a file extension, or a trailing "/" for a folder.
+  function codeLocalTarget(c) {
+    var t = String(c == null ? "" : c).trim();
+    if (t.length > 400 || !(/\.[A-Za-z0-9]{1,8}\/?$/.test(t) || /\/$/.test(t))) return null;
+    return localTarget(t);
+  }
+  function localName(p) {
+    var parts = String(p || "").replace(/\/+$/, "").split("/");
+    return (parts.pop() || p) + (/\/$/.test(p) ? "/" : "");
+  }
+  function localLinkAttrs(p, extraCls) {
+    var href = /^\//.test(p) ? "file://" + encodeURI(p) : "#";
+    return 'href="' + esc(href) + '" data-local-path="' + esc(p) + '" class="jv-flocal' +
+      (extraCls ? " " + extraCls : "") + '" title="' + esc(tw("crender.open_local") + "\n" + p) + '"';
+  }
   // File thanh pham/media trong brain: click o chat la TAI VE. Note .md va file nguon text
   // van mo editor; URL http(s) duoc xu ly rieng va luon mo tab moi.
   //
@@ -737,6 +822,10 @@
     //    (vd `Thansa/loops/x.md`) -> boc link bam mo khung doc/sua luon.
     raw = raw.replace(/`([^`\n]+)`/g, function (_m, c) {
       var code = "<code>" + esc(c) + "</code>";
+      // Full path outside the brain: show just the name, the whole path sits in the tooltip.
+      var lt = codeLocalTarget(c);
+      if (lt && lt.local && canOpenLocal()) return put("<a " + localLinkAttrs(lt.local, "jv-fcode") + "><code>" + esc(localName(lt.local)) + "</code></a>");
+      if (lt && lt.vault) return put("<a " + vaultLink(lt.vault, "jv-fcode") + ">" + code + "</a>");
       var p = codeFilePath(c);
       if (p) return put("<a " + vaultLink(p, "jv-fcode") + ">" + code + "</a>");
       return put(code);
@@ -778,6 +867,10 @@
     // 4) link []() : URL ngoai -> tab moi; file/thu muc vault -> mo dung vi tri trong Tep tin; con lai giu cu
     raw = raw.replace(/\[([^\]]+)\]\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g, function (_m, t, href) {
       href = href.replace(/\s+(["']).*\1\s*$/, "").trim();
+      if (/^<.*>$/.test(href)) href = href.slice(1, -1).trim();   // [x](</path with spaces/a.html>)
+      var lt = localTarget(href);
+      if (lt && lt.local && canOpenLocal()) return put('<a ' + localLinkAttrs(lt.local) + ">" + chuLink(t) + "</a>");
+      if (lt && lt.vault) return put('<a ' + vaultLink(lt.vault) + ">" + chuLink(t) + "</a>");
       var appRef = appFileRef(href);
       if (appRef) return put('<a ' + vaultLink(appRef.path, "", appRef.brain) + ">" + chuLink(t) + "</a>");
       // file:// tro sang brain khac / khong suy ra duoc: van la link vault de cu bam ra khung
@@ -1210,6 +1303,34 @@
   var DUOI_ANH_RE = /\.(?:png|jpe?g|gif|webp|bmp|svg|heic)$/i;
   var DUOI_PDF_RE = /\.pdf$/i;
   var DUOI_XEM_RE = /\.(?:png|jpe?g|gif|webp|bmp|svg|heic|pdf|mp4|mov|m4v|webm|mp3|m4a|wav|aac|txt)$/i;
+  // Short notice at the bottom of the screen, same look as the Settings toast (.mp-toast).
+  var _localToastTimer = 0;
+  function localToast(text, isError) {
+    if (typeof document === "undefined") return;
+    var old = document.getElementById("jvLocalToast");
+    if (old) old.remove();
+    clearTimeout(_localToastTimer);
+    var n = document.createElement("div");
+    n.id = "jvLocalToast";
+    n.className = "mp-toast";
+    n.setAttribute("role", isError ? "alert" : "status");
+    if (isError) n.style.background = "var(--danger, #b42318)";
+    n.textContent = String(text || "");
+    document.body.appendChild(n);
+    _localToastTimer = setTimeout(function () { n.remove(); }, isError ? 5000 : 2500);
+  }
+  // Ask the server to open a file outside the brain with the owner's own app (see localTarget).
+  function openLocalFile(p) {
+    var fd = new FormData();
+    fd.append("path", p);
+    fd.append("brain", brainPath() || "brain");
+    fetch("/files/open-local", { method: "POST", body: fd }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; });
+    }).then(function (res) {
+      if (!res.ok) { localToast((res.j && res.j.error) || tw("crender.open_local_fail"), true); return; }
+      localToast(tw(res.j.action === "reveal" ? "crender.revealed_local" : "crender.opened_local", { name: localName(p) }));
+    }).catch(function () { localToast(tw("crender.open_local_fail"), true); });
+  }
   // Link nao la TAI FILE: co thuoc tinh download, hoac tro toi duong phuc vu file cua may chu
   // (cung origin). Link #open= (mo trinh sua trong app) va link ngoai http khong dinh o day.
   function laLinkTaiFile(a) {
@@ -1703,6 +1824,12 @@
       // mot file .md deu roi vao hang rao do va bam khong di dau ca - trong khi [[wikilink]]
       // ngay canh no thi di duoc, du hai cai nhin y het nhau. Luat da chon tu truoc cho
       // wikilink: trong ban render, link la de DI, muon sua chu cua link thi bat che do Nguon.
+      var lo = e.target.closest ? e.target.closest("a.jv-flocal") : null;
+      if (lo && lo.getAttribute("data-local-path")) {
+        e.preventDefault();
+        openLocalFile(lo.getAttribute("data-local-path"));
+        return;
+      }
       var loc = e.target.closest ? e.target.closest("a.jv-floc") : null;
       if (loc && loc.getAttribute("data-vault-path") != null) {
         if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button > 0) return;
@@ -1786,6 +1913,9 @@
     module.exports = { mdToHtml: mdToHtml, visibleMarkdown: visibleMarkdown, streamCut: streamCut,
       highlight: highlight, wkResolve: wkResolve,
       appFilePath: appFilePath, appFileRef: appFileRef, fileUriPath: fileUriPath,
+      localTarget: localTarget, codeLocalTarget: codeLocalTarget,
+      // Tests: set what the page knows about opening local files (true, false, or null to look again).
+      setLocalOpen: function (v) { _localOpen = v; },
       isDownloadFile: isDownloadFile, imageSize: imageSize,
       laLinkTaiFile: laLinkTaiFile, laIOS: laIOS,
       // Xuat them de test chay THAT chuoi du phong cua anh (xem ungVienAnh / imgGone).

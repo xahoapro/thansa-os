@@ -8,6 +8,84 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.535.0] - 2026-11-11
+### Added
+- **Click a file Thansa made outside the brain to open it.** For example, a deck in ~/Documents. The chat used to show the file name as plain text. Now the full path is a link that opens the file in its default app on the computer, like a double click in Finder.
+- The link appears only when you use Thansa on the computer that runs it. On a VPS, through a domain or in Docker, the path stays plain text you can copy, as before. Links only open files inside the home folder. Programs and scripts never run; Thansa only shows the folder that holds them. Thanks to mminhthu0304-gif for this contribution.
+
+## [0.534.0] - 2026-11-11
+### Added
+- **The inbox says when a bot reply did not reach the customer on personal Zalo.** A reply used to show in the inbox as sent as soon as the bot had written it, even when Zalo refused it or the send timed out. A reply that went out now shows nothing extra. One that was not sent, one whose outcome is unclear, or one dropped because the customer wrote again gets a small line under it, with the reason. A reply stuck on sending for more than 5 minutes turns into outcome unclear. Thanks to hwangrin for this contribution.
+
+## [0.533.0] - 2026-11-11
+### Added
+- **Large tool results no longer lose their middle.** Thansa stores the full copy, hands the model a compact view with a reference, and the model reads back exactly what it needs. Reports stop missing orders and cost fewer tokens on every brain.
+- **Computed by code, not by eye.** The `thansa_query` tool pages through a source by itself, then sums, counts and ranks with read-only SQL. A large or a small model gets the same number.
+- **A scout on the background model.** A read across several sources can go to the background model (`thansa_scout`); only its findings return to the chat. A scout reads, it never sends or creates.
+- **Recurring jobs remember how to get their numbers.** After the same run on two different days, Thansa fetches the data itself next time. When the dates are not certain, the job runs as before.
+### Improved
+- **Tool search answers are smaller**, and Suggestions on the Usage page says how much of the tool results stayed out of the conversation.
+
+## [0.532.2] - 2026-11-11
+### Fixed
+- **A connector that cannot start is no longer reported as "sign-in expired".** Thansa recognised a sign-in error by looking for 401 in the error text, so when the install path happened to contain 401, a "file not found" error was shown as a prompt to Reconnect. 401 (and 502, 503, 504) now count only when they stand alone as a status code.
+
+## [0.532.1] - 2026-11-11
+### Fixed
+- **Uninstalling a Store pack now says which brain its items are in.** A pack's assistants and skills go into the brain that was open at install time. Uninstalling from another brain removed them there, and the confirmation did not say which brain that was.
+- The pack's card also says when its items are in a brain other than the one open, instead of a bare "Installed".
+
+## [0.532.0] - 2026-11-11
+### Improved
+- **Personal Zalo: a message is read the moment it arrives, no more scan every 20 seconds.** Thansa used to ask Zalo all day even when nothing came in, and a group message waited up to 20 seconds before a bot saw it. A message is now read when it arrives; on a day with no message nothing is read.
+- With no message Thansa runs no timer for Zalo at all. When the Zalo process stops, Thansa restarts it at once and catches up. A machine still on the older Zalo version keeps the timer and loses nothing.
+
+## [0.531.1] - 2026-11-11
+### Fixed
+- **A group bot drops the wrong "missed" labels it learned before 0.530.7.** That version stopped new wrong labels, but the old ones stayed in the store and kept pushing the bot to talk. The first time the store opens after the update, Thansa removes "missed" labels put on reactions, gives the affected groups their threshold back, and stops treating labels it inferred from an owner's message as something the owner taught.
+- What the owner really taught (a thumb, telling the bot to stop, a lesson in chat) is kept.
+
+## [0.531.0] - 2026-11-11
+### Added
+- **A scheduled task now sends the pictures it just made.** A recurring report drawn as an image (ads, sales on a fixed template) used to reach Zalo Bot and Telegram as text only, while the picture stayed in the brain. Images named in the answer and created during that run now come with it, up to 4 per run.
+- Zalo Bot only takes images, so PDFs and spreadsheets are unchanged. A picture that fails to send does not fail the reminder: the text still arrives.
+
+## [0.530.9] - 2026-11-11
+### Fixed
+- Restore Edit configuration for custom MCP connections signed in with OAuth. URL edits retain authentication and prevent forwarding OAuth credentials to another origin.
+
+## [0.530.8] - 2026-11-11
+### Fixed
+- **Codex runs at the chosen reasoning level right after Thansa restarts.** Until someone opened the Models page, bots and background jobs on Codex fell back to Codex's own default (usually high) even when low or medium was set, which was slower and used more of the plan.
+
+## [0.530.7] - 2026-11-11
+### Fixed
+- **A group bot no longer teaches itself to answer reactions.** An owner's heart on a customer's message, or two reactions in a row from one person, used to count as the bot having missed the earlier message, which made it talk more in exactly the groups where staying quiet was right.
+- "up" inside an ordinary sentence and "ask again" inside a long instruction are no longer read as a customer asking again.
+- A label the bot inferred from an owner's message no longer weighs as much as something the owner taught it directly.
+
+## [0.530.6] - 2026-11-11
+### Fixed
+- **A workflow step now runs at its assistant's reasoning level.** The level set on an assistant only applied to its chat and team turns; a workflow step, including a Kanban job routed to a workflow, always ran at the model's default. A step whose assistant set no level runs as before.
+
+## [0.530.5] - 2026-11-11
+### Fixed
+- **A scheduled Codex job is no longer dropped because the tool hub came up late.** A hub that took over 20 seconds used to cost the whole reminder or recurring run until its next slot. Thansa now waits up to 45 seconds and tries once more after 30 seconds. The failure happens before the model is called, so the retry costs no turn and repeats no action.
+
+## [0.530.4] - 2026-11-11
+### Fixed
+- **Chatbots on a ChatGPT plan now move to the next account when one runs out.** A dedicated bot always called with account 1 and ignored the account order on the Models page, so it failed with a 429 while another account still had usage.
+- A bot only switches accounts before it has said anything or called any tool, so customers never get a duplicate message.
+
+## [0.530.3] - 2026-11-11
+### Fixed
+- Lazy Hub tools accept JSON-encoded arguments so compatible gateways can preserve dynamic fields. Invalid arguments are rejected before dispatch, with existing permission checks preserved.
+
+## [0.530.2] - 2026-11-11
+### Fixed
+- **Chat images no longer turn blank after 30 days.** A sign-in used to expire exactly 30 days after login however often it was used; chat kept working while images and lists silently failed. A session in use now renews itself.
+- **A sign-in that expires mid-use brings up the sign-in screen** instead of leaving the page quietly broken.
+
 ## [0.530.1] - 2026-11-10
 ### Fixed
 - **A recreated assistant can confirm its Auto again.** The card said "Auto: Needs confirmation", but the right column had neither "Same assistant" nor "This is a new assistant", so Auto could never be turned back on. Both buttons now show right under the assistant's settings.

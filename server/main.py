@@ -140,6 +140,7 @@ ssl_shared.install()
 import share_store    # link CHIA SẺ CÔNG KHAI của một file trong brain (/s/<token>)
 import share_stats    # view counter of those public links
 import share_render   # dựng trang xem cho link chia sẻ (markdown -> html, khung trang)
+import local_open     # open a file outside the brain with the owner's own app (chat links)
 import usage_store   # đếm token/chi phí Thansa tự đo (đa nhà cung cấp)
 import usage_index   # dashboard token: index log thô Claude+Codex + query summary/insights
 import usage_parsers as up_parsers   # bảng giá + khớp model, dùng chung với indexer
@@ -206,6 +207,7 @@ import brain_ident       # one brain, many spellings ("brain", absolute path), #
 import channels          # sổ đăng ký kênh của Hộp thư hội thoại (0.61.0)
 import conversations     # Hộp thư hội thoại khách: kho khách -> hội thoại -> tin (Chatbot V2)
 import zalo_personal_channel   # Hộp thư hội thoại: đọc tin Zalo cá nhân từ MCP theo cursor
+import zalo_push               # thansa-zalo wakes the read loop when a message arrives (no timer)
 import deploy_info              # Thansa đang đứng ở đâu (docker/native) - xem _deploy_mode
 import node_security            # News item when this machine's Node.js misses a security release
 import ollama_catalog           # danh mục model để gợi ý + tìm kiếm
@@ -332,6 +334,10 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/log
                       # /zalo-oa/webhook (0.412.0): Zalo calls it with no cookie; the route checks
                       # X-ZEvent-Signature under the OA secret keys of the Zalo OA accounts.
                       "/zalo-oa/webhook",
+                      # /zalo/push (2026-11-10): thansa-zalo on this machine calls it with no cookie when a personal
+                      # Zalo message arrives. The route takes direct local requests only and checks this server
+                      # process's own bearer (zalo_push.token_ok).
+                      "/zalo/push",
                       # /zalo-oa/oauth/callback: Zalo sends the browser back here after the OA admin allows the
                       # app (OAuth v4); the unguessable `state` from an authenticated /zalo-oa/oauth/start is the check.
                       "/zalo-oa/oauth/callback",
@@ -408,6 +414,7 @@ async def _auth_guard(request: Request, call_next):
     """Chặn endpoint khi CẦN đăng nhập (đã đặt mật khẩu HOẶC chạy public) mà chưa có session.
     Khi chạy public (0.0.0.0) lần đầu chưa có mật khẩu → vẫn chặn để ÉP tạo tài khoản trước
     (setup_required), tránh hở dashboard điều khiển Claude full quyền ra Internet."""
+    renewed = ""
     if cfgmod.gate_active():
         path = duong_dan_router(request)   # KHÔNG phải request.url.path - xem duong_dan_router
         public = (path in _AUTH_PUBLIC_EXACT
@@ -432,9 +439,17 @@ async def _auth_guard(request: Request, call_next):
             try:
                 # "last active" in the device list of Account > Security
                 cfgmod.touch_session(request.cookies.get("thansa_session", ""), security_log.client_ip(request))
+                # Sliding expiry: a session in use stays alive (see renew_session in config.py).
+                if cfgmod.renew_session(request.cookies.get("thansa_session", "")):
+                    renewed = request.cookies.get("thansa_session", "")
             except Exception:  # noqa: BLE001
                 pass
-    return await call_next(request)
+    resp = await call_next(request)
+    # Re-issue the 30-day cookie for a renewed session. Checked after call_next: this request may be /auth/logout,
+    # which ends the session, and the cookie must not come back then.
+    if renewed and cfgmod.valid_session(renewed):
+        _session_cookie(resp, renewed, request)
+    return resp
 
 
 def _bearer(request) -> str:
@@ -5202,14 +5217,48 @@ def _reasoning_level(mcfg):
 
 
 # 0.193.0 (owner, 16/10/2026: "agent hiện tại không lựa chọn được mức suy luận, cần bổ sung ngay và mặc định là trung
-# bình"): each assistant keeps its own reasoning level in its frontmatter (`reasoning`), used by its chat, its team turns
-# and nothing else. An assistant that never set one thinks at "medium", not at the main chat's level.
+# bình"): each assistant keeps its own reasoning level in its frontmatter (`reasoning`), used by its chat and its team
+# turns. An assistant that never set one thinks at "medium" there, not at the main chat's level. A workflow step uses
+# the level only when the assistant set one (#1302, see _agent_own_reasoning).
 AGENT_REASONING_DEFAULT = "medium"
 
 
 def _agent_reasoning(meta) -> str:
     r = str((meta or {}).get("reasoning") or "").strip()
     return r if r in engine.REASONING_LEVELS else AGENT_REASONING_DEFAULT
+
+
+def _agent_own_reasoning(meta) -> str:
+    """The level an assistant set for ITSELF in its frontmatter, "" when it set none (or "off"). A workflow step uses
+    this one (#1302), not `_agent_reasoning`: a step whose assistant never picked a level keeps the engine's own
+    default as before, instead of every existing workflow dropping to "medium" overnight."""
+    r = str((meta or {}).get("reasoning") or "").strip()
+    return r if r in engine.REASONING_LEVELS and r != "off" else ""
+
+
+def _apply_step_reasoning(eng, reasoning, codex=False) -> None:
+    """Set a workflow step engine's thinking depth from its assistant's own level (#1302). The step's prompt is never
+    touched: an engine that cannot take the level as a real setting just runs at its default."""
+    if not reasoning:
+        return
+    try:
+        if codex:
+            muc = _codex_effort(getattr(eng, "model", "") or "", reasoning)
+            if muc:
+                eng.extra_config[:] = [x for x in eng.extra_config if not str(x).startswith("model_reasoning_effort=")]
+                eng.extra_config.append(f"model_reasoning_effort={muc}")
+        elif _CLI_EFFORT.get(reasoning) and claude_cli.co_co("--effort"):
+            eng.effort = _CLI_EFFORT[reasoning]
+    except Exception as e:  # noqa: BLE001 - the depth setting must never cost the step
+        print(f"[workflow] step reasoning {reasoning}: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def _step_reasoning_kw(agent_sysprompt, slug) -> dict:
+    """Keyword arguments for a step's `mk(...)`: `reasoning` when the assistant set a level, nothing otherwise, so a
+    caller that passes its own plain `mk` (tests, older runners) is called exactly as before."""
+    read = getattr(agent_sysprompt, "own_reasoning", None)
+    r = read(slug) if callable(read) else ""
+    return {"reasoning": r} if r else {}
 
 
 def _core_reasoning(mcfg) -> str:
@@ -5371,18 +5420,40 @@ def _codex_fast(cli):
         pass
 
 
+# The three levels every Codex model with reasoning accepts. The `model/list` ladder lives in RAM only, so after each
+# restart, until someone opens the Models page, a background bot fell back to the config.toml default (measured
+# 10/11/2026: a bot set to medium ran at high). With no ladder known yet, these three are still passed as they are;
+# the rarer levels (minimal, xhigh, ultra) keep waiting for the real ladder. Reported and first fixed in #1291.
+_CODEX_COMMON_EFFORTS = ("low", "medium", "high")
+
+
+def _codex_effort(model, reasoning) -> str:
+    """Thansa level -> the Codex effort to pass for this model, "" = pass nothing. From the model's own ladder when it
+    is known; one of the three common levels when no ladder has been read yet."""
+    model, reasoning = str(model or ""), str(reasoning or "")
+    try:
+        level = codex_models.muc_cho(model, reasoning)
+    except Exception:  # noqa: BLE001 - a failed lookup must not break the turn
+        return ""
+    if level or reasoning not in _CODEX_COMMON_EFFORTS:
+        return level
+    try:
+        ladder_unknown = not codex_models.efforts_for(model)
+    except Exception:  # noqa: BLE001
+        ladder_unknown = False
+    return reasoning if ladder_unknown else ""
+
+
 def _codex_do_sau(cli, reasoning, message):
     """Độ sâu suy nghĩ cho Codex CLI: `-c model_reasoning_effort=<mức>`.
 
     Mức KHÔNG do Thansa chọn theo một bảng chép tay mà lấy từ thang chính Codex khai cho đúng
     model đang chạy (`model/list` -> `supported_reasoning_efforts`), nên không bao giờ gửi một
-    giá trị model không hiểu. Chưa hỏi được danh sách model lần nào thì `muc_cho` trả rỗng và
-    lượt chạy bằng mặc định của Codex, y như trước - kèm câu nhắc trong prompt cho đỡ phí.
+    giá trị model không hiểu. Chưa hỏi được danh sách model lần nào thì ba nấc phổ thông vẫn
+    được truyền (`_codex_effort`); nấc khác thì lượt chạy bằng mặc định của Codex, kèm câu nhắc
+    trong prompt cho đỡ phí.
     """
-    try:
-        muc = codex_models.muc_cho(getattr(cli, "model", "") or "", reasoning or "")
-    except Exception:  # noqa: BLE001 - tra cứu hỏng không được phá lượt chat
-        muc = ""
+    muc = _codex_effort(getattr(cli, "model", "") or "", reasoning)
     if not muc:
         return _nhac_suy_nghi(reasoning, message)
     override = f"model_reasoning_effort={muc}"
@@ -6718,6 +6789,12 @@ async def connect_default(request: Request):
 @app.get("/connect/audit")
 async def connect_audit(limit: int = Query(80), id: str = Query("")):
     return {"entries": mcp_hub.audit_tail(limit=min(int(limit or 80), 500), conn_id=(id or None))}
+
+
+@app.get("/connect/result-stats")
+async def connect_result_stats(days: int = Query(7)):
+    """How large tool results were and how much of them the model was handed (tool_result_shaper)."""
+    return await asyncio.to_thread(mcp_hub.result_size_stats, days)
 
 
 # ---- Zalo: đăng nhập QR ngay trong UI ----
@@ -10632,6 +10709,58 @@ async def files_raw(brain: str = Query("brain"), path: str = Query(...), dl: int
     return raw_file_response(brain, path, dl=bool(dl))
 
 
+_LOCAL_OPEN_MSG = {
+    "not_absolute": ("Đây không phải đường dẫn đầy đủ tới một file trên máy.", "This is not a full path to a file on this computer."),
+    "outside": ("Chỉ mở được file trong thư mục người dùng của máy này.", "Only files inside this computer's home folder can be opened."),
+    "missing": ("Không tìm thấy file. Có thể nó đã bị đổi tên, chuyển chỗ hoặc xoá.", "File not found. It may have been renamed, moved or deleted."),
+}
+
+
+def _local_open_here(request: Request) -> bool:
+    """The browser sits on the machine that runs Thansa: no tunnel, no proxy, not inside Docker."""
+    return _direct_local_request(request) and not os.path.exists("/.dockerenv")
+
+
+@app.get("/files/open-local")
+async def files_open_local_available(request: Request):
+    """Whether a click on a file outside the brain can open it for THIS browser. The chat asks once per page and
+    draws such links only on a yes: on a VPS, through a tunnel or in Docker the path stays the plain text it was,
+    instead of a link that can only answer "not on this computer"."""
+    return {"available": _local_open_here(request) and local_open.can_launch()}
+
+
+@app.post("/files/open-local")
+async def files_open_local(request: Request, path: str = Form(...), brain: str = Form("brain")):
+    """Open a file OUTSIDE the brain (a full path Thansa wrote in chat) with the owner's own app.
+
+    Asks the OS to open it, like a double click in Finder; nothing is served over HTTP, so it is
+    only offered to a browser on this very machine: through a tunnel or proxy, or inside Docker, the
+    file would open on a screen nobody is looking at. Rules on what a click may open or only reveal
+    live in local_open.py."""
+    if not _local_open_here(request):
+        return JSONResponse({"error": localefmt.chu(
+            "Link này chỉ mở được khi bạn dùng Thansa ngay trên máy đang chạy nó.",
+            "This link only opens when you use Thansa on the computer that runs it.")}, status_code=403)
+    roots = [Path.home()]
+    try:
+        roots.append(Path(_brain_root(brain)))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        target = local_open.resolve_target(path, roots)
+    except local_open.LocalOpenError as e:
+        vi, en = _LOCAL_OPEN_MSG.get(e.code, _LOCAL_OPEN_MSG["missing"])
+        return JSONResponse({"error": localefmt.chu(vi, en), "code": e.code},
+                            status_code=404 if e.code == "missing" else 400)
+    action = local_open.plan(target)
+    try:
+        local_open.launch(action, target)
+    except Exception as e:  # noqa: BLE001
+        return JSONResponse({"error": localefmt.chu("Không mở được file: ", "Could not open the file: ") + str(e)},
+                            status_code=500)
+    return {"ok": True, "action": action, "path": str(target)}
+
+
 # ---- CHIA SẺ CÔNG KHAI một file (nút Chia sẻ trong trình sửa) ----
 # Người cầm link KHÔNG đăng nhập, nên đây là mặt tiền công khai duy nhất chạm vào file trong
 # brain. Ba điều giữ nó lành:
@@ -11839,9 +11968,52 @@ async def usage_insights(period: str = "this_month", refresh: int = 0):
     if refresh:
         await _usage_refresh_once()
     try:
-        return {"items": await asyncio.to_thread(usage_index.insights, period=period)}
+        items = await asyncio.to_thread(usage_index.insights, period=period)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
+    try:
+        extra = await asyncio.to_thread(_tool_result_insight)
+        if extra:
+            items = list(items or []) + [extra]
+    except Exception:  # noqa: BLE001 - one extra line must never take the whole list down
+        pass
+    return {"items": items}
+
+
+def _tool_result_insight():
+    """One line for the Usage page from the hub's own meter (mcp_hub.result_size_stats): how much of what the
+    connected sources returned in the last 7 days a model actually had to read. None when there is nothing to say."""
+    st = mcp_hub.result_size_stats(7)
+    if not st.get("calls") or int(st.get("raw_chars") or 0) < 50_000:
+        return None
+    raw, sent = int(st["raw_chars"]), int(st["sent_chars"])
+    vi = localefmt.ngon_ngu_giao_dien() == "vi"
+
+    def num(n):
+        text = f"{int(n):,}"
+        return text.replace(",", ".") if vi else text
+    heavy = (st.get("by_tool") or [{}])[0]
+    name = " ".join(x for x in (str(heavy.get("source") or ""), str(heavy.get("tool") or "")) if x)
+    if not st.get("shaping_on"):
+        if not st.get("over_cap"):
+            return None
+        return {"level": "warn",
+                "title": localefmt.chu("Làm gọn kết quả tool đang tắt", "Tool result shaping is off"),
+                "detail": localefmt.chu(
+                    f"7 ngày qua có {num(st['over_cap'])} kết quả tool vượt 8.000 ký tự, model phải nhận nguyên "
+                    f"hoặc bị cắt. Nặng nhất: {name}.",
+                    f"In the last 7 days {num(st['over_cap'])} tool results were over 8,000 characters; the model "
+                    f"got them whole or cut. Heaviest: {name}.")}
+    if st.get("saved_pct", 0) < 5:
+        return None
+    return {"level": "info",
+            "title": localefmt.chu(f"Kết quả tool: giữ {st['saved_pct']}% ngoài hội thoại",
+                                   f"Tool results: {st['saved_pct']}% kept out of the conversation"),
+            "detail": localefmt.chu(
+                f"7 ngày qua các nguồn trả về {num(raw)} ký tự, model chỉ phải đọc {num(sent)} (ước khoảng "
+                f"{num(st['saved_tokens_est'])} token). Bản đầy đủ vẫn được cất để tra lại. Nặng nhất: {name}.",
+                f"In the last 7 days the sources returned {num(raw)} characters and the model read {num(sent)} "
+                f"(about {num(st['saved_tokens_est'])} tokens saved). Full copies stay stored. Heaviest: {name}.")}
 
 
 @app.post("/usage/refresh")
@@ -12429,7 +12601,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
     reason = ""
     step_extra = tuple((node.metadata or {}).get("tools") or ())
     while True:
-        gcli = mk(sysprompt, agent_model, agent_prov, step_extra)
+        gcli = mk(sysprompt, agent_model, agent_prov, step_extra, **_step_reasoning_kw(agent_sysprompt, node.agent))
         out = ""
         loi_engine = ""
         async for ev in gcli.query(cur_prompt):
@@ -12472,7 +12644,7 @@ async def _run_workflow_step(node, prompt, mk, agent_sysprompt, sink, router=Non
             f"KẾT QUẢ CẦN KIỂM CHỨNG:\n{out}\n\n"
             "Đánh giá kết quả có ĐẠT nhiệm vụ không. Trả JSON như hướng dẫn."
         )
-        vcli = mk(v_sys, v_model, v_prov)
+        vcli = mk(v_sys, v_model, v_prov, **_step_reasoning_kw(agent_sysprompt, node.verify_agent))
         v_out = ""
         v_err = ""
         async for ev in vcli.query(v_prompt):
@@ -12550,7 +12722,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
     if ungated_mode not in ("suggest", "auto", "full"):
         ungated_mode = "suggest"
 
-    def _mk(sysprompt, model=None, provider="", extra_tools=()):
+    def _mk(sysprompt, model=None, provider="", extra_tools=(), reasoning=""):
         # An interactive step whose agent pins no model runs on the owner's MAIN model, like a chat turn
         # (owner report 2026-11-06, PR #1125): before this it always fell back to Claude, whatever brain was picked
         # on the Models page. A pinned agent keeps its pin; the gated background run (tools is not None) stays on
@@ -12570,6 +12742,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             # Fast mode (0.164.0): workflow steps run in the background, so force the normal tier.
             cc.extra_config[:] = [x for x in cc.extra_config if not str(x).startswith("service_tier=")]
             cc.extra_config.append('service_tier="default"')
+            _apply_step_reasoning(cc, reasoning, codex=True)
             return _step_engine(cc, "openai-oauth")   # the ChatGPT account with quota, the next one when it runs out
         allowed, natives = (_step_grant(extra_tools) if tools is not None else ([], []))
         gated_tools = (list(tools) + allowed) if tools is not None else None
@@ -12579,6 +12752,7 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         # khác mà nhét vào đây là Claude nhận một tên nó không hiểu (bug tới 0.47.8: agent
         # chọn Gemini/OpenRouter vẫn chạy Claude, im lặng, không ai biết).
         c.model = ((model if prov == "anthropic-cli" else "") or _aux_model() or None)
+        _apply_step_reasoning(c, reasoning)
         if tools is not None:
             _mcpf = _empty_mcp_file()
             if _mcpf:
@@ -12658,6 +12832,15 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         return (ameta.get("name", aslug), sysprompt,
                 (ameta.get("model") or "").strip() or None,
                 (ameta.get("model_provider") or "").strip())
+
+    def _own_reasoning(aslug):
+        try:
+            return _agent_own_reasoning(_read_md(_agents_dir(brain) / f"{aslug}.md")[0])
+        except Exception:  # noqa: BLE001 - an unreadable assistant file means "no level set"
+            return ""
+    # Read by _step_reasoning_kw at the step call sites. An attribute, not a fifth return value: the 4-tuple of
+    # _agent_sysprompt is unpacked in a dozen places (chat, team, Kanban) that have their own reasoning rule.
+    _agent_sysprompt.own_reasoning = _own_reasoning
 
     def _log_run(aslug, task, out):
         _log_agent_run(brain, aslug, task, out)
@@ -13248,7 +13431,8 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
         reason = ""
         loi_buoc = ""      # bước này HỎNG vì sao. "" = bước chạy được.
         while True:
-            gcli = _mk(sysprompt, agent_model, agent_prov, step_extra)   # áp model agent đã chọn
+            gcli = _mk(sysprompt, agent_model, agent_prov, step_extra,   # áp model agent đã chọn
+                       **_step_reasoning_kw(_agent_sysprompt, agent_slug))
             out = ""
             loi_engine = ""
             async for ev in gcli.query(cur_prompt):
@@ -13288,7 +13472,8 @@ async def _execute_workflow_raw(brain, slug, input="", tools=None, session_id=""
                 f"KẾT QUẢ CẦN KIỂM CHỨNG:\n{out}\n\n"
                 "Đánh giá kết quả có ĐẠT nhiệm vụ không. Trả JSON như hướng dẫn."
             )
-            vcli = _mk(v_sys, v_model, v_prov)   # agent kiểm chứng cũng dùng model của nó
+            vcli = _mk(v_sys, v_model, v_prov,   # agent kiểm chứng cũng dùng model của nó
+                       **_step_reasoning_kw(_agent_sysprompt, verify_slug))
             v_out = ""
             v_err = ""
             async for ev in vcli.query(v_prompt):
@@ -14505,12 +14690,30 @@ async def _send_voice_file(chat_id, path, brain) -> tuple:
     """The voice note as an audio message where the channel needs the file itself. Telegram: the asking chat, or the
     owner's own chat when the reminder has none (same rule as _report_route). The web chat plays the link already."""
     cid = str(chat_id or "").strip()
-    if cid.startswith(("web:", "zalo:")) or _TG_BOT is None:
+    if cid.startswith("zalo:"):
+        return await _zalo_send_file_to(cid[len("zalo:"):], path)
+    if cid.startswith("web:") or _TG_BOT is None:
         return False, "no file channel"
     cid = cid or _owner_telegram_id()
     if not cid:
         return False, "no Telegram chat"
     return await _TG_BOT.send_file(path, chat=cid)
+
+
+async def _zalo_send_file_to(chat_id, path) -> tuple:
+    """One image to ONE chat of the owner's Zalo bot (#1285: a scheduled report that comes as a picture). Same gate as
+    `_zalo_send_to`: bot on, and only a chat on its allow-list. Zalo Bot has `sendPhoto` and nothing else, so a
+    file that is not an image comes back as (False, reason) from `ZaloBot.send_file`, never silently dropped."""
+    z = cfgmod.read_settings().get("zalo_bot", {})
+    ids = tg_parse_ids(z.get("chat_id"))
+    cid = str(chat_id or "").strip()
+    if not (z.get("enabled") and z.get("token")):
+        return False, localefmt.chu("Bot Zalo chưa bật", "The Zalo bot is off")
+    if not cid or (ids and cid not in ids):
+        return False, localefmt.chu("Chat Zalo này không nằm trong danh sách được phép",
+                                    "This Zalo chat is not on the allow-list")
+    bot = _ZALO_BOT or zalo_bot.ZaloBot(z["token"], "", None)
+    return await bot.send_file(path, chat=cid)
 
 
 import my_tasks as my_tasks_mod
@@ -14547,6 +14750,47 @@ my_tasks_feature = my_tasks_mod.register(app, my_tasks_mod.MyTasksDeps(
     tz=reminders_mod.VN_TZ,
     # 0.427.0: habit lines written by Core, and read-only Google Calendar events.
     ask=_habit_coach_ask, calendar=gcal_read.events))
+async def _scout_run(vault_root: str, prompt: str, tag: str, wall_s: int) -> dict:
+    """Run ONE read-only scout on the background model (scout.py) and return its report.
+
+    Built exactly like a reminder at the `suggest` level, the one background path that is already read-only by
+    construction: an allowlist of read tools plus the Thansa hub, the hub enforcing `suggest` (no write, no outside
+    action, whatever the prompt says), then the engine the owner chose for background work. The scout gets its own
+    short system prompt instead of the brain's full one: it needs to know how to read, not who Thansa is."""
+    import scout as scout_mod
+    tools = list(READONLY_TOOLS)
+    try:
+        tools += list(_loop_mcp_allow() or [])
+    except Exception:  # noqa: BLE001 - no connection yet: the scout can still read files
+        pass
+    root = vault_root if vault_root and os.path.isdir(vault_root) else _brain_root("brain")
+    cli = claude_engine(system_prompt=scout_mod.SYSTEM_PROMPT, cwd=root, tag=tag, allowed_tools=tools)
+    _apply_mcp(cli, mode="suggest", brain=root)
+    cli = _aux_swap(cli, mode="suggest", tag=tag)
+    cli.max_wall_s = int(wall_s)
+    if not cli.is_available():
+        return {"text": "", "error": "the background engine is not ready (Models page)"}
+    spec = aux_engine.read_spec(tag=tag)
+    out, err, usage = "", "", {"input": 0, "output": 0}
+    async for ev in cli.query(prompt):
+        kind = ev.get("type")
+        if kind == "final":
+            out = ev.get("content", "") or out
+            usage["input"] += int(ev.get("tokens_in") or 0)
+            usage["output"] += int(ev.get("tokens_out") or 0)
+        elif kind == "usage":
+            usage["input"] += int(ev.get("input") or 0)
+            usage["output"] += int(ev.get("output") or 0)
+        elif kind == "error":
+            err = str(ev.get("content") or "") or err
+    label = " ".join(x for x in (str(spec.get("provider") or ""), str(spec.get("model") or "")) if x)
+    return {"text": out, "error": err, "model": label, "usage": usage}
+
+
+import scout as _scout_mod   # noqa: E402 - the hub lists thansa_scout only once a runner exists
+_scout_mod.configure(_scout_run)
+
+
 reminders_feature = reminders_mod.register(app, reminders_mod.RemindersDeps(
     brain_root=_brain_root,
     atomic_write_text=_atomic_write_text,
@@ -27083,6 +27327,30 @@ def restart_zalo_bot():
     return False
 
 
+ZALO_PUSH_MAX_BODY = 4096
+
+
+@app.post(zalo_push.PATH)
+async def zalo_push_wake(request: Request, conn: str = Query("")):
+    """A wake-up from a thansa-zalo process this server started: "something landed in my live buffer" or "my Zalo
+    connection went up or down" (zalo_push.py). It carries no message; the read loop fetches those through the MCP
+    tool as always. Refused unless it comes straight from this machine (no tunnel, no proxy) with this server
+    process's bearer, so a page on the Internet or a thansa-zalo of an earlier lifetime cannot make Thansa do anything,
+    and all a valid call can do is make the loop read one account now."""
+    if not _direct_local_request(request):
+        return JSONResponse({"ok": False}, status_code=403)
+    if not zalo_push.token_ok(request.headers.get("authorization", "")):
+        return JSONResponse({"ok": False}, status_code=401)
+    raw = await request.body()
+    if len(raw) > ZALO_PUSH_MAX_BODY:
+        return JSONResponse({"ok": False}, status_code=413)
+    try:
+        body = json.loads(raw.decode("utf-8") or "{}")
+    except (ValueError, UnicodeDecodeError):
+        body = {}
+    return zalo_personal_channel.on_push(conn, body if isinstance(body, dict) else {})
+
+
 @app.get("/zalo-bot/status")
 async def zalo_bot_status():
     z = cfgmod.read_settings().get("zalo_bot", {})
@@ -29513,6 +29781,10 @@ async def _warm_mcp_hub():
     async def _w():
         try:
             await asyncio.to_thread(_EVIDENCE_STORE.cleanup)
+            # Stored tool results (tool_result_store) expire on their own clock; drop the ones that died while
+            # the server was down. During the day the store sweeps itself as it is written to.
+            import tool_result_store
+            await asyncio.to_thread(tool_result_store.sweep)
             # Phase 9 restart reconciliation: write còn RUNNING sau khi tiến trình chết
             # KHÔNG được chạy lại; chuyển UNKNOWN và giữ resource lock cho tới khi có
             # kết luận. Chạy trước khi nhận lượt chat đầu tiên.
