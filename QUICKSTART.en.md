@@ -8,7 +8,7 @@ Get Thansa OS running in a few minutes. Full guides: [docs/en/](docs/en/README.m
 
 Install Thansa like any other app: download one file, open it, and you get a THANSA OS icon to click every day. The installer checks what the computer is missing (Git, Python, Node, the AI brains) and installs only that.
 
-- **Windows 10/11:** download [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe), double-click it and press Next to the end. A black window shows the install progress (a few minutes). When it is done there is a THANSA OS icon on the Desktop and in the Start menu.
+- **Windows 10/11:** download [ThansaOS-Setup.exe](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-Setup.exe), double-click it and press Next to the end. The install progress shows inside the Setup window itself, step by step (a few minutes), with no separate black window. When it is done there is a THANSA OS icon on the Desktop and in the Start menu.
 - **macOS 11 or newer:** download [ThansaOS-macOS.dmg](https://github.com/xahoapro/thansa-os/releases/download/desktop/ThansaOS-macOS.dmg), open it, drag **THANSA OS** into **Applications**, then open it from Launchpad. The first time, Terminal opens to install (it may ask you to set a Thansa admin account and for your Mac password once).
 
 Clicking the icon opens Thansa in its own window (no address bar), Thansa starts with the computer, and the in-app **Update** button works as usual. Your data lives in the `ThansaOS` folder in your user folder; uninstalling the app keeps that folder.
