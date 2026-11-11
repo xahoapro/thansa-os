@@ -8,6 +8,24 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.538.0] - 2026-11-11
+### Improved
+- **Welcome screen: the password is typed twice.** When the two boxes differ Thansa says so at once and takes you to the box to fix, before any account is created. One mistyped character no longer locks you out of a fresh install.
+- **An eye button shows the password.** One tap shows both boxes so they are easy to compare, another tap hides them again.
+
+## [0.537.0] - 2026-11-11
+### Improved
+- **A tidier composer on a phone.** The plan usage ring, the model name and the effort level are now one pill (for example "Opus 5.5 Medium"), and the model name is no longer cut down to "Op...".
+- **Tapping the pill opens one sheet from the bottom** with all three: plan usage (one line per window), the effort slider with Fast mode, and the model list with its search box. Picking a model closes the sheet; so do X, the dimmed area and pulling it down.
+- A computer keeps its three buttons and three small popovers as before.
+
+## [0.536.0] - 2026-11-11
+### Added
+- **A "Same assistants, confirm all" button per pack** on the Collaborators page. When Thansa still has to ask about several assistants of one pack, one click answers for all of them.
+### Fixed
+- **Reinstalling a Store pack no longer asks to confirm Auto for each assistant.** Uninstall a pack and install it again (for example ECC: Engineering team) and Thansa takes its assistants back as the same ones: Auto switch, goals and conversations stay. A file you wrote yourself under an old assistant's name is still asked about, as before.
+- **An assistant with Auto off and no open goal no longer shows "Needs confirmation"** when its file goes missing and comes back.
+
 ## [0.535.0] - 2026-11-11
 ### Added
 - **Click a file Thansa made outside the brain to open it.** For example, a deck in ~/Documents. The chat used to show the file name as plain text. Now the full path is a link that opens the file in its default app on the computer, like a double click in Finder.
