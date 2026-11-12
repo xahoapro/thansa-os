@@ -8,6 +8,46 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.551.1] - 2026-11-12
+### Fixed
+- **When ChatGPT (or Claude, Grok) loses its sign-in, Thansa moves to another connected model by itself.** Before, only running out of quota moved a turn on; a lost sign-in failed every turn until you signed in again.
+- **Customer bots and assistants with their own model are covered too.** A bot or an assistant set to ChatGPT answers on the main model while ChatGPT is signed out, so customers no longer hit failed turns.
+- **You are told clearly.** The chat shows "Using ... because ChatGPT lost its sign-in", the model picker tags the card "Signed out", and the bell gets one reminder to sign in again on the Models page. After signing in, the old model is used again at once.
+
+## [0.551.0] - 2026-11-12
+### Improved
+- **The Team settings tab is simpler.** What is in view is only what you decide for a team: its members, its goal, how far the coordinator decides alone, whether outside actions need approval, its name and status.
+- **Acceptance and the usage figures moved into Advanced**, next to the limit numbers and the detailed rights. Nothing was removed: open Advanced and it is all there as before.
+- **The team's goal now sits right under the member list.**
+### Added
+- **A new team runs a job to its end.** Teams created from this version on have no cap on the replies and steps of one job, so a job no longer stops halfway to wait for "Give more turns". In exchange a hard job can use more tokens. The team's daily reply cap stays, and a job still stops by itself at two identical results.
+- Teams created before keep their limits. To change them, open Advanced, Team limits, and tick "Unlimited" or type a number.
+
+## [0.550.0] - 2026-11-12
+### Added
+- **One team can run several jobs at once.** A team used to run one job at a time, so one assistant's job waited for another assistant's job to end. Now up to 3 jobs run side by side when they belong to different assistants.
+- **Jobs of the same assistant still run one after the other**, in the order of the queue. So do the jobs the coordinator plans.
+- **To make a job wait for an earlier result, say so in the request.** A job with words such as "after ... is done", "one after another" or "in sequence" waits for every job before it, and no later job starts ahead of it.
+### Improved
+- **The job strip on top of the chat shows every running job**, not only one.
+- To go back to one job at a time, set the environment variable `THANSA_TEAM_JOBS=1`.
+
+## [0.549.1] - 2026-11-12
+### Fixed
+- **A team no longer stops taking pictures after a while.** A team holds at most 50 documents, and every picture sent in a team takes two places (the picture and the description written for the assistants). The list was full after about 25 picture messages, and from then on files were dropped without a word. Now, when the list is full, the oldest picture and its description leave the list to let the new one in. The file stays on disk and the message stays in the chat.
+- **Documents you attached yourself never leave by themselves.** A price list, a contract, a PDF and its text copy stay.
+- **A file that cannot get into the team is said.** When the list is full of documents you attached, Thansa gives the reason and where to remove some, instead of dropping the file in silence.
+### Improved
+- **The first open of a long team after Thansa restarts no longer makes everything else wait.** While Thansa reads the history again to build the Documents list, loading messages stays as fast as usual.
+
+## [0.549.0] - 2026-11-12
+### Improved
+- **Facebook monitor (Apify) no longer ships inside Thansa; it comes with its pack in the Store.** Scanning through Apify is an add-on that not everyone uses. If you use it, open the Store and update the "Facebook monitor (Apify)" pack to get the `fb_monitor` tool back; the Apify token you pasted stays as it is.
+
+## [0.548.1] - 2026-11-12
+### Fixed
+- **Background fallback runs the model you picked on the card.** That choice was ignored before: when the background model ran out and the work moved to Claude Code, it ran the CLI's own default model, usually the one that uses the plan up fastest. A card with no model picked runs as before.
+
 ## [0.548.0] - 2026-11-12
 ### Added
 - **Create a team with its documents from the start.** The Create team box has a new "Add documents for the team (files, links)" block: find a file already in the brain by name, upload one from the device, or paste a link. Team members can read them from the first message.

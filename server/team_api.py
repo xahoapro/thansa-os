@@ -39,6 +39,7 @@ RECONCILE_EVERY_S = 60.0    # nhịp đối soát sổ lượt chung với team_
 FINISHED_SHOWN = 30          # việc đã xong hiện ở tab Việc của nhóm (0.193.0)
 PINNED_SHOWN = 20            # tin đã ghim hiện ở dải trên khung chat (0.192.0), như Sổ quyết định của lượt
 CREATE_DOCS_MAX = 10         # files, and links, a team may be given in its create box (team_docs.MAX_PER_SEND)
+NEW_TEAM_UNCAPPED = ("task_turns", "task_steps")   # caps a new team starts without (TeamOps.create)
 
 
 # Performance (2026-11-05): the usage block of GET /teams/{id} reads the usage index, its events log and two more
@@ -564,6 +565,15 @@ class TeamOps:
             # Hai yêu cầu cùng mã chạy song song: yêu cầu kia thắng, phiên vừa mở không gắn nhóm nào thì bỏ.
             self._drop_session(sid)
             return {"team": team, "duplicate": True}
+        # 2026-11-12 (owner, after a customer: "tốn token xíu cũng ok, mục tiêu đã ghép team là phải giải quyết được
+        # việc"): a NEW team has no cap on the replies and steps of one job, so a job runs to its end instead of
+        # stopping at 12 replies or 8 steps to wait for "Cho thêm lượt". The daily cap of the team, the stop at two
+        # identical results and the engine limits still hold. Teams made before keep what they had; the owner sets
+        # a number again under Advanced.
+        try:
+            team = teams.set_caps(tid, {k: None for k in NEW_TEAM_UNCAPPED}, by="host")
+        except Exception as ex:  # noqa: BLE001 - the team exists; it only keeps the default caps
+            print(f"[team] new team {tid}: per-job caps kept at their defaults ({type(ex).__name__}: {ex})", file=sys.stderr)
         return {"team": team, "duplicate": False}
 
     def update(self, root: str, team_id: str, **fields) -> dict:
@@ -747,6 +757,21 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
                 out["documents"] = _add_documents(got["team"], body.get("attachments"), body.get("links"))
             return out
         return await api.io(_do)
+
+    def _left_out_note(team: dict, n: int) -> tuple:
+        """(vi, en) for `n` attached files the team did not keep: the list is full, or the file did not arrive."""
+        import sessions as _sessions
+        cap = _sessions.SESSION_ASSETS_MAX
+        try:
+            full = len(deps.session_store().list_session_files(team.get("session_id") or "")) >= cap
+        except Exception:  # noqa: BLE001 - the note must never fail the send
+            full = False
+        if full:
+            return (f"{n} file chưa vào được team: team đã đủ {cap} tài liệu. Gỡ bớt tài liệu ở tab Thông tin rồi gửi lại.",
+                    f"{n} file(s) did not get into the team: it already holds {cap} documents. Remove some in the Info "
+                    "tab, then send again.")
+        return (f"{n} file chưa vào được team (file không còn ở chỗ tải lên). Chọn lại file rồi gửi lại.",
+                f"{n} file(s) did not get into the team (the upload is no longer there). Pick the file again and resend.")
 
     def _add_files(team: dict, attachments: Any) -> list:
         """Files (uploaded, or already in the brain) become documents of the team; pictures get described."""
@@ -1125,13 +1150,18 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             # 0.195.0: the owner works here now; the Teams page opens this team next time, on any device.
             api.teams().mark_owner(team_id)
             text = str(body.get("text") or "").strip()
-            files = []
+            files, left_out = [], 0
             if body.get("attachments") and api.deps.attach is not None:
                 # 0.191.0: the files become the team's documents (text ones are read by every member turn); the
                 # message keeps their names so everyone in the chat sees what was sent.
-                files = api.deps.attach(team, list(body.get("attachments") or []))
+                asked = [a for a in list(body.get("attachments") or []) if isinstance(a, dict)]
+                files = api.deps.attach(team, asked)
+                left_out = max(0, len(asked) - len(files))
                 if files:
                     text = (text + "\n\n" if text else "") + "📎 " + ", ".join(f["name"] for f in files)
+                elif left_out and not text:
+                    # Nothing to send at all: say why instead of "the message is empty".
+                    return _err(400, _left_out_note(team, left_out)[0], _left_out_note(team, left_out)[1])
             try:
                 sub = runner.submit(team_id, text, mentions=list(body.get("mentions") or []),
                                     as_job=bool(body.get("as_job")),
@@ -1152,7 +1182,13 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
                 runner._on_loop(lambda: api._spawn(_described_then(api, team, pics, text, None)))
             if sub.get("task_id") and sub["created"]:
                 api.kick()
-            return dict(sub, ok=True)
+            out = dict(sub, ok=True)
+            if left_out:
+                # 2026-11-12: a file the team could not keep used to vanish without a word (a customer: "up hình tới
+                # một lúc nó không cho up nữa"). The page shows a note that is not a bare code.
+                vi, en = _left_out_note(team, left_out)
+                out["notes"] = list(out.get("notes") or []) + [localefmt.chu(vi, en)]
+            return out
         return await api.io(_do)
 
     @app.post("/teams/{team_id}/files")
