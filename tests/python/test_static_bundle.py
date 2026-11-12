@@ -162,7 +162,7 @@ def test_minified_output_survives_a_restart_and_unused_entries_are_pruned(tmp_pa
 
 def test_main_wires_the_bundle_the_warm_up_and_the_precompressed_files():
     src = (SERVER / "main.py").read_text(encoding="utf-8")
-    root = src.split("async def root()", 1)[1].split("\n@app.", 1)[0]
+    root = src.split("async def root(", 1)[1].split("\n@app.", 1)[0]
     assert "to_thread(static_bundle.apply, html, DASHBOARD_PATH)" in root
     assert root.index("static_bundle.apply") < root.index('id="thansa-fresh"')
     assert "tinh_gon.set_cache_dir(" in src and "static_bundle.warm" in src

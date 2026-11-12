@@ -26,7 +26,7 @@ def test_splash_is_in_the_page_from_the_first_paint_and_hides_after_the_first_pa
     assert html.index("/static/i18n/index.js") < html.index("/static/boot-splash.js")
     con = _read("console.js")
     assert re.search(r"khoiPhucTrang\(\);\s*\n\s*//[^\n]*\n\s*try \{ if \(window\.ThansaBoot\) window\.ThansaBoot\.pageStarted\(\); \}", con)
-    root = (SERVER / "main.py").read_text(encoding="utf-8").split("async def root()", 1)[1].split("\n@app.", 1)[0]
+    root = (SERVER / "main.py").read_text(encoding="utf-8").split("async def root(", 1)[1].split("\n@app.", 1)[0]
     assert '"up": int(time.time() - _PROCESS_STARTED)' in root
 
 
