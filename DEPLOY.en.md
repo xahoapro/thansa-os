@@ -306,6 +306,15 @@ claude auth login --claudeai
 ```
 Managing the service: `journalctl -u thansa -f` · `sudo systemctl restart thansa`
 
+**Installing as root on Linux:** a fresh install no longer runs Thansa as root. The script creates a
+regular account `thansa` and runs the service under it, because Claude Code refuses Full access under
+root. A clone inside `/root` (no other account can enter it) is moved to `/opt/<folder name>`. Sign in
+to Claude on the Models page, or with `su - thansa -c 'claude auth login --claudeai'`. Updating is still
+`./update.sh` run as root. A machine installed earlier keeps the account it has. Options:
+`THANSA_USER=<name>` picks the account name, `THANSA_INSTALL_DIR=<folder>` picks where the clone moves,
+`THANSA_RUN_AS_ROOT=1` keeps the old behaviour (it then needs `IS_SANDBOX=1` in `.env`, only on a
+machine dedicated to Thansa, since the AI gets the whole machine).
+
 ---
 
 ## Way 3 - Windows (a personal machine)

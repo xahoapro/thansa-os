@@ -179,6 +179,7 @@ import messenger_setup  # Messenger connect wizard and health check (0.311.0)
 import messenger_oauth  # Log in with Facebook for the Messenger card (0.434.0)
 import zalo_oa_bot      # Zalo OA transport + webhook router (0.412.0)
 import zalo_oa_oauth    # Grant access with Zalo: OAuth v4 + PKCE for the Zalo OA form
+import wechat_bot       # WeChat Official Account transport + webhook router
 import channel_context   # metadata kênh + gom file trả về kênh chat (port gateway hermes-agent)
 import lang as lang_mod   # chốt ngôn ngữ trả lời cho một lượt
 import lang_registry      # sổ đăng ký: mọi thứ về một ngôn ngữ nằm đúng một chỗ
@@ -208,6 +209,7 @@ import channel_accounts  # tài khoản kênh dạng token (0.61.0), bot chỉ t
 import brain_ident       # one brain, many spellings ("brain", absolute path), #716
 import channels          # sổ đăng ký kênh của Hộp thư hội thoại (0.61.0)
 import conversations     # Hộp thư hội thoại khách: kho khách -> hội thoại -> tin (Chatbot V2)
+import customer_profile  # what a bot remembers about one customer, written by the background model (2026-11-12)
 import zalo_personal_channel   # Hộp thư hội thoại: đọc tin Zalo cá nhân từ MCP theo cursor
 import zalo_push               # thansa-zalo wakes the read loop when a message arrives (no timer)
 import deploy_info              # Thansa đang đứng ở đâu (docker/native) - xem _deploy_mode
@@ -343,6 +345,9 @@ _AUTH_PUBLIC_EXACT = ("/", "/favicon.ico", "/health", "/auth/status", "/auth/log
                       # /zalo-oa/oauth/callback: Zalo sends the browser back here after the OA admin allows the
                       # app (OAuth v4); the unguessable `state` from an authenticated /zalo-oa/oauth/start is the check.
                       "/zalo-oa/oauth/callback",
+                      # /wechat/webhook: WeChat calls it with no cookie. GET is the URL check, POST a follower's
+                      # message; both are checked in the route against the signature made with Thansa's own token.
+                      "/wechat/webhook",
                       # /chatbot-api/v1/turn (0.459.0): a server of the owner asks one Chatbot. No cookie; the route
                       # checks the source address and the key of an internal API channel account itself
                       # (channels/api.py). That key opens this path only, and an API token does not open it.
@@ -493,6 +498,7 @@ for _mt, _ext in (("application/vnd.openxmlformats-officedocument.spreadsheetml.
     mimetypes.add_type(_mt, _ext)
 import tinh_gon  # noqa: E402
 import static_bundle  # noqa: E402
+import session_assets_scan  # noqa: E402
 
 # Minified scripts and styles survive a restart (tinh_gon.set_cache_dir, 2026-11-09): outside the code tree, so an update
 # never ships a stale copy, and keyed by each file's bytes, so an update re-minifies only what it changed.
@@ -1015,8 +1021,27 @@ def _thansa_core_block(session_id: str) -> str:
 
 
 # Stable prompt (0.445.0, #975): the clock line points at the per-message header instead of holding the time.
-_STABLE_CLOCK_NOTE = ("Giờ hiện tại ghi ở dòng `[Giờ gửi tin này: ...]` đầu tin nhắn mới nhất của user; "
-                      "dùng đúng giờ đó cho \"bây giờ\", \"hôm nay\", \"hôm qua\".")
+# The text lives in context_compiler since #1329, so the token-saving path writes the very same line.
+_STABLE_CLOCK_NOTE = context_compiler.STABLE_CLOCK_NOTE
+
+
+def _with_turn_context(cli, plan, prompt, sysprompt):
+    """(prompt, system prompt) of a Claude Code turn, with the plan's per-turn context where the model reads it (#1329).
+
+    What the token-saving path used to append to the system prompt (conversation state, retrieved memory, the selected
+    skill) changes with every message, so it made every new chat rewrite the whole cached block. It now opens the
+    FIRST message of a thread instead. A resumed thread keeps the system prompt of its first turn, so later turns never
+    saw this context before either; leaving it out there keeps the thread from growing by it every turn.
+    A prompt that is not plain text cannot carry it: the context then stays in the system prompt for that turn, as
+    before, rather than get lost."""
+    ctx = getattr(plan, "turn_context", "") if not getattr(cli, "session_id", None) else ""
+    if not ctx:
+        return prompt, sysprompt
+    if isinstance(prompt, str):
+        return ctx + "\n\n" + prompt, sysprompt
+    sysprompt = sysprompt + "\n\n" + ctx
+    cli.system_prompt = sysprompt
+    return prompt, sysprompt
 
 
 def _turn_facts_header(brain: str, session_id: str, lang: str = "", first: bool = True) -> str:
@@ -1081,9 +1106,12 @@ def build_system_prompt(brain: str = "brain", include_memory: bool = True,
             mem = idx.read_text(encoding="utf-8")
     except Exception:
         mem = ""
-    if include_memory:
-        # 0.188.0: the person's own profile (every brain) BEFORE the brain's memory, which wins where they differ.
-        base += memory_control.profile_block()
+    # 0.188.0: the person's own profile (every brain) BEFORE the brain's memory, which wins where they differ.
+    # #1349: NOT tied to `include_memory`. The token-saving levels build this prompt without the memory index to
+    # load memories selectively, and the profile went with it, so a rule written once on the Profile page reached
+    # the model only with saving switched off. It is a behaviour contract (at most 4,000 characters), like the
+    # project instructions, not a memory to retrieve.
+    base += memory_control.profile_block()
     if include_memory and mem.strip():
         base += main_prompt_rendering.render_memory_block(mem, memory_cap=MEMORY_INDEX_MAX)
     if not memory_control.learning_enabled(_brain_memory_dir(brain)):
@@ -1254,6 +1282,9 @@ def build_adaptive_source_prompt(brain: str = "brain", include_memory: bool = Fa
         f"Agent files: {ag}/<slug>.md; workflow files: {wf}/<slug>.md; "
         f"loop files: {loops}/<slug>.md; skill files: {skills}/<slug>/SKILL.md.",
     ]
+    # #1349: the person's profile rides along on the small base too, whatever `include_memory` says (see
+    # build_system_prompt). Before the memory fallback, which wins where they differ.
+    parts.append(memory_control.profile_block().strip())
     if include_memory:
         try:
             idx = _brain_memory_dir(brain) / "MEMORY.md"
@@ -10257,6 +10288,15 @@ async def files_search(brain: str = Query("brain"), q: str = Query(""), limit: i
     except (TypeError, ValueError):
         limit = 50
     SKIP_DIRS = {".git", "node_modules", "__pycache__", ".obsidian", ".trash", ".venv", ".pytest_cache"}
+    # 2026-11-12: several words match a name that holds all of them, in any order and with anything between: typing
+    # "bảng giá" finds `bang-gia-dich-vu.md`. One word, or the words as typed, match as before.
+    words = qf.split()
+
+    def _name_hit(name: str) -> bool:
+        if ql in name.lower():
+            return True
+        folded = _fold_accents(name)
+        return qf in folded or (len(words) > 1 and all(w in folded for w in words))
 
     def _walk():
         out = []
@@ -10266,7 +10306,7 @@ async def files_search(brain: str = Query("brain"), q: str = Query(""), limit: i
                 for dn in sorted(dirnames):
                     if len(out) >= limit:
                         return out
-                    if ql not in dn.lower() and qf not in _fold_accents(dn):
+                    if not _name_hit(dn):
                         continue
                     try:
                         rel = _files_rel(root, Path(dirpath) / dn)
@@ -10281,7 +10321,7 @@ async def files_search(brain: str = Query("brain"), q: str = Query(""), limit: i
                     return out
                 p = Path(dirpath) / fn
                 ext = p.suffix.lower()
-                name_hit = mode in ("name", "all") and (ql in fn.lower() or qf in _fold_accents(fn))
+                name_hit = mode in ("name", "all") and _name_hit(fn)
                 content_hit = False
                 snippet, line_no = "", 0
                 if mode in ("content", "all") and ext in _TEXT_EXTS:
@@ -12782,7 +12822,8 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         # An interactive step whose agent pins no model runs on the owner's MAIN model, like a chat turn
         # (owner report 2026-11-06, PR #1125): before this it always fell back to Claude, whatever brain was picked
         # on the Models page. A pinned agent keeps its pin; the gated background run (tools is not None) stays on
-        # Claude Code by design, see the comment further down.
+        # Claude Code by design, see the comment further down, with one exception since 2026-11-12: an agent set to
+        # ChatGPT runs on Codex under the step's own tool list (the branch right below).
         from_main = False
         if tools is None and not str(model or "").strip() and not str(provider or "").strip():
             main_spec = _effective_main(cfgmod.read_settings())
@@ -12790,6 +12831,28 @@ def _workflow_agent_helpers(brain, tools, mode=None):
             provider = str(main_spec.get("provider") or "")
             from_main = True
         prov = _agent_model_provider(model, provider)
+        if prov == "openai-oauth" and tools is not None:
+            # Gated background step of an agent set to ChatGPT (owner decision 2026-11-12, from PR #1333): run it on
+            # Codex instead of silently on Claude Code. The safety rail moves with it: read-only sandbox, no native
+            # shell, web, sub-agent or app tools, and the Thansa hub answers only the step's own tool list at the
+            # run's level (`workflow_codex`). Checked on Codex CLI 0.167.2: with these overrides the request carries
+            # no exec, web or multi-agent tool.
+            # When that environment cannot be built (no Codex CLI, no hub profile, a tool the list cannot express)
+            # the step falls back to the gated Claude Code path below, which is what every such step ran on before,
+            # so a workflow that works today keeps working.
+            try:
+                import workflow_codex
+                allowed, _ = _step_grant(extra_tools)
+                cc = workflow_codex.build(
+                    cwd=vault_root, model=_codex_safe_model(model) if model else None,
+                    instructions=sysprompt, allowed=list(tools) + allowed, mode=gated_mode,
+                    apply_hub=_apply_codex_hub, extra_servers=_codex_user_mcp_servers())
+            except ValueError as e:
+                print(f"[workflow] restricted ChatGPT step runs on Claude Code instead: {e}", file=sys.stderr)
+            else:
+                openai_oauth.write_codex_auth()
+                _apply_step_reasoning(cc, reasoning, codex=True)
+                return _step_engine(cc, "openai-oauth")   # the ChatGPT account with quota, the next one when it runs out
         if prov == "openai-oauth" and (model or from_main) and tools is None and find_codex_cli():
             openai_oauth.write_codex_auth()
             cc = CodexCLI(cwd=vault_root, tag="workflow", model=_codex_safe_model(model),
@@ -12837,6 +12900,8 @@ def _workflow_agent_helpers(brain, tools, mode=None):
         # allowed_tools + disallowed_tools của chính CLI đó, engine nhà khác lấy tool từ hub
         # nên không mang theo được rào ấy. Đây là hành vi đã hứa trong docs/07, không phải
         # bỏ sót - đổi nó là nới quyền cho việc chạy nền mà không ai yêu cầu.
+        # Since 2026-11-12 ChatGPT is the one exception (branch at the top of this function): its rail is the hub
+        # allowlist plus the read-only Codex sandbox. Every other provider still runs gated steps on Claude Code.
         if tools is None and prov not in ("anthropic-cli", "openai-oauth"):
             # Nhà khác Claude/Codex: mượn ĐÚNG bộ dựng engine của việc nền thay vì viết bản
             # thứ hai - aux_engine.swap lo cả key, khả dụng, tool qua hub và chuỗi dự phòng
@@ -14959,6 +15024,27 @@ async def _watch_summarize(prompt: str) -> str:
     return final
 
 
+async def _customer_profile_ask(prompt: str) -> str:
+    """One turn of the BACKGROUND model for a customer profile (`customer_profile.py`): text only, empty folder, no
+    MCP. The prompt holds a stranger's chat messages, so the engine is the judge's sandbox: whatever a message says,
+    the model has nothing to act with."""
+    if os.environ.get("THANSA_NO_REAL_JUDGE_ENGINE") == "1":
+        raise RuntimeError("THANSA_NO_REAL_JUDGE_ENGINE")
+    cli = _reply_policy_sandbox_engine(customer_profile.SYSTEM_PROMPT, "customer-profile",
+                                       cwd_name="customer_profile_cwd")
+    base = cli
+    cli = aux_engine.strip_tools(_aux_swap(cli, mode="suggest", tag="customer-profile"), base)
+    if not cli.is_available():
+        raise RuntimeError("background engine not ready")
+    final = ""
+    async for ev in cli.query(prompt):
+        if ev.get("type") == "final":
+            final = ev.get("content", "") or ""
+        elif ev.get("type") == "error":
+            raise RuntimeError(str(ev.get("content") or "engine error")[:200])
+    return final
+
+
 watch_feature = web_watch.register(app, web_watch.WebWatchDeps(
     state_dir=lambda: cfgmod.STATE_DIR,
     brain_root=lambda b: str(Path(_brain_root(b)).resolve()),
@@ -16450,6 +16536,11 @@ async def _start_scheduler():
         chatbot_reply_policy.wire(ask=_reply_policy_ask)
         chatbot_reply_policy_review.wire(ask=_reply_policy_review_ask, notify=_reply_policy_notify,
                                          write_feedback=_reply_policy_write_feedback, get_bot=chatbot_store.get_bot)
+        # 2026-11-12: after a private chat goes quiet, the background model writes down what the bot should remember
+        # about that customer (the note of the Info panel), and the bot reads it on later turns.
+        customer_profile.wire(ask=_customer_profile_ask, get_bot=chatbot_store.get_bot,
+                              is_notice=chatbot_runtime.engine_notice)
+        customer_profile.start()
         kq = chatbot_runtime.sync_all()
         if kq.get("errors"):
             print(f"[chatbot] bật lỗi: {kq['errors']}", file=__import__('sys').stderr)
@@ -19721,6 +19812,7 @@ async def _chat_socket(ws):
                         runtime_trace, user_message, _brain_root(brain), conv_sid,
                         store.get_messages(conv_sid), "dashboard", route_provider,
                         route_model, route_kind, _base,
+                        stable_system=stable,   # #1329: the compiled prompt stays the same between new chats too
                     )
                 except Exception as _exc:   # noqa: BLE001 - không được phá lượt chat
                     _CONTEXT_RUNTIME.record_runtime_event(
@@ -20596,6 +20688,7 @@ async def _chat_socket(ws):
                 if _stable_sp:
                     _cli_prompt = _cli_do_sau(cli, reasoning, user_message)
                     _hdr = _turn_facts_header(brain, conv_sid or "", _lang_qd.lang, first=not cli.session_id)
+                    _cli_prompt, sysprompt = _with_turn_context(cli, _sub_plan, _cli_prompt, sysprompt)   # #1329
                     if _hdr and isinstance(_cli_prompt, str):
                         _cli_prompt = _hdr + "\n" + _cli_prompt
                 else:
@@ -22355,55 +22448,45 @@ def sessions_assets(session_id: str, brain: str = Query("")):
     broot = Path(_brain_root(b)).resolve()
     ceil = _files_root(b)
 
-    files, links = {}, {}
-    for m in store.get_messages(session_id):
-        noi_dung = m.get("content") or ""
-        if not noi_dung:
-            continue
-        ts = m.get("ts") or 0
-        for tg in channel_context.markdown_targets(noi_dung):
-            raw = tg["raw"]
-            if "://" in raw or raw.startswith(("#", "mailto:", "data:", "tel:")):
-                continue
-            cand = channel_context._vault_markdown_candidate(raw, str(broot))
-            rp = _ts_trong_brain(broot, cand) if cand else None
-            if not rp:
-                continue
-            files.setdefault(os.path.normcase(str(rp)),
-                             {"p": rp, "nhan": tg["nhan"], "hinh": tg["hinh"], "ts": ts})["ts"] = ts
-        for raw in channel_context.extract_paths(noi_dung):
-            rp = _ts_trong_brain(broot, Path(raw))
-            if not rp or not rp.is_file():
-                continue
-            files.setdefault(os.path.normcase(str(rp)),
-                             {"p": rp, "nhan": "", "hinh": False, "ts": ts})["ts"] = ts
-        for u in channel_context.extract_urls(noi_dung):
-            links.setdefault(u, {"url": u, "ts": ts, "vai": m.get("role") or ""})
+    # What the messages mention is kept between calls and only new messages are read (session_assets_scan.py,
+    # 2026-11-12): the Info tab of a team asks this on every open, and reading a long team again each time took
+    # seconds of pure Python that slowed every other request. Whether a file exists is still asked here, every call.
+    seen = session_assets_scan.mentions(store, session_id, broot, _ts_trong_brain)
 
     ra_file = []
-    for v in files.values():
-        rp = v["p"]
+    for k in set(seen.linked) | set(seen.bare):
+        lk, br = seen.linked.get(k), seen.bare.get(k)
+        rp = (lk or br)["p"]
         co = rp.is_file()
+        if not co:
+            br = None             # a bare path counts only while its file exists
+        if not lk and not br:
+            continue
         try:
             st = rp.stat() if co else None
         except OSError:
             co, st = False, None
+        # The label is the one of the FIRST mention, as when the messages were read in order: a bare path named
+        # before the link leaves the row without a label.
+        first_is_link = bool(lk) and (not br or lk["first"] < br["first"])
         ra_file.append({
             "path": _files_rel(ceil, rp),                 # theo TRẦN: đúng khuôn ThansaOpenNoteAt nhận
             "brain_path": _files_rel(broot, rp),          # theo GỐC BRAIN: để hiện cho người đọc
             "name": rp.name,
-            "label": v["nhan"],
-            "image": v["hinh"],
+            "label": lk["label"] if first_is_link else "",
+            "image": lk["image"] if first_is_link else False,
             "exists": co,
             "size": st.st_size if st else 0,
-            "ts": v["ts"],
+            "ts": max(x["last"] for x in (lk, br) if x)[0],
             "manual": False,
             "_that": str(rp),
+            "_first": min(x["first"] for x in (lk, br) if x),
         })
-    ra_file.sort(key=lambda x: x["ts"], reverse=True)
-    ra_link = sorted(links.values(), key=lambda x: x["ts"], reverse=True)
-    for l in ra_link:
-        l["manual"] = False
+    ra_file.sort(key=lambda x: (-(x["ts"] or 0), x["_first"]))
+    for f in ra_file:
+        f.pop("_first", None)
+    ra_link = [{"url": l["url"], "ts": l["ts"], "vai": l["role"], "manual": False}
+               for l in sorted(seen.links.values(), key=lambda x: (-(x["ts"] or 0), x["first"]))]
 
     # ── Phần NGƯỜI DÙNG tự gắn ────────────────────────────────────────────────
     # Trộn lúc ĐỌC chứ không ghi đè: máy vẫn đoán như cũ, người vẫn thêm được thứ máy không
@@ -24896,9 +24979,10 @@ def _tg_conv_sid(store, sess, brain, engine_label, model, channel="telegram"):
     return sess["sid"]
 
 
-# Số TIN (không phải lượt) mồi lại tối đa khi dựng lịch sử từ transcript. Bằng
-# BOT_LICH_SU_MAX bên dưới cho dễ nhớ: ~10 lượt hỏi-đáp, đủ để "cái đó", "như lần trước" còn
-# nghĩa, mà không thổi phồng lượt đầu sau mỗi lần restart.
+# Số TIN (không phải lượt) mồi lại tối đa khi dựng lịch sử từ transcript: ~10 lượt hỏi-đáp, đủ
+# để "cái đó", "như lần trước" còn nghĩa, mà không thổi phồng lượt đầu sau mỗi lần restart. Phần
+# cũ hơn đi theo bản tóm tắt nén của phiên. (Bot chuyên trách không có bản tóm tắt nên có trần
+# riêng, rộng hơn: BOT_HISTORY_MAX_MESSAGES bên dưới.)
 _TG_MOI_LAI_MAX = 20
 
 
@@ -25216,6 +25300,11 @@ def _manual_session_undo(key: str, keep: int) -> None:
     lich = s.get("bot")
     if isinstance(lich, list) and len(lich) > keep:
         del lich[keep:]
+    if not keep:
+        # Nothing was in RAM before the draft, so the draft turn itself read the history back from the inbox
+        # (`chatbot_runtime.private_history`). Back to "not loaded": the next real turn reads it again, instead of
+        # starting from the empty list this cut would leave.
+        s["bot"] = None
     _tg_ngat_mach(s)
 
 
@@ -25240,10 +25329,17 @@ def _tg_ket(clean_out, files, canh_bao="", loi=(), khach=False):
     return {"text": txt, "files": files or []}
 
 
-# Số lượt hội thoại (user+assistant) giữ lại cho một người nói chuyện với bot. Cắt cứng thay
-# vì nén như đường chat của chủ: nén là thêm một lượt gọi model nữa, mà bot trả lời người lạ
-# thì cần nhanh và rẻ hơn là cần nhớ dai.
-BOT_LICH_SU_MAX = 20
+# How many MESSAGES (customer and bot counted separately) a bot keeps of its chat with one person. A hard cut, not
+# a summary as on the owner's chat: a summary is one more model call, and a bot answering strangers has to stay
+# fast and cheap.
+#
+# 20 until 2026-11-12. The owner then found the bot answering customers on too little and settled on 30, the same
+# number a group gets (`chatbot_runtime.NGU_CANH_TIN`). Not more on purpose: older messages are mostly small talk,
+# and what is worth keeping from them belongs in a per-customer profile, not in a longer transcript.
+# BOT_HISTORY_MAX_CHARS is the ceiling for the chat that is not short (pasted documents, 8,000-character messages),
+# where even 30 messages could outgrow a model's context and every turn would fail.
+BOT_HISTORY_MAX_MESSAGES = 30
+BOT_HISTORY_MAX_CHARS = 60_000
 
 # Danh sách tool cho phép của bot khi phải chạy qua CLI: một chuỗi KHÔNG khớp tool nào.
 #
@@ -25261,15 +25357,22 @@ BOT_KHONG_TOOL = ["__thansa_bot_khong_tool__"]
 # ghim đường đo, đọc stream, tính usage, cắt lịch sử) phải giống hệt nhau, nên chúng nằm ở đây
 # chứ không chép hai bản. Chép hai bản là cách chắc chắn để một hôm nào đó `usage_store.record`
 # có ở đường này mà thiếu ở đường kia - hoá đơn thiếu, và không ai nhìn ra được từ bên ngoài.
-def _bot_lich_su(sess):
+def _bot_history(sess):
     if sess.get("bot") is None:
         sess["bot"] = []
     return sess["bot"]
 
 
-def _bot_cat_lich_su(lich_su):
-    if len(lich_su) > BOT_LICH_SU_MAX:
-        del lich_su[:len(lich_su) - BOT_LICH_SU_MAX]
+def _trim_bot_history(history):
+    """Cut `history` in place to both ceilings, oldest first. The newest message always stays, and the list never
+    opens with an assistant message (some providers refuse a conversation that does)."""
+    if len(history) > BOT_HISTORY_MAX_MESSAGES:
+        del history[:len(history) - BOT_HISTORY_MAX_MESSAGES]
+    total = sum(len(str(m.get("content") or "")) for m in history)
+    while len(history) > 1 and total > BOT_HISTORY_MAX_CHARS:
+        total -= len(str(history.pop(0).get("content") or ""))
+    while len(history) > 1 and history[0].get("role") == "assistant":
+        history.pop(0)
 
 
 def _bot_ghim_duong(runtime_trace, prov, api_model, messages, tools=()):
@@ -25321,7 +25424,7 @@ async def _bot_doc_stream(stream, *, progress, runtime_trace, prov, api_model):
 def _bot_ket(out, lich_su):
     """Đóng gói câu trả lời của một lượt bot đã chạy được."""
     lich_su.append({"role": "assistant", "content": out})
-    _bot_cat_lich_su(lich_su)   # cắt SAU khi thêm, không thì trần bị vượt đúng một lượt mỗi vòng
+    _trim_bot_history(lich_su)   # cắt SAU khi thêm, không thì trần bị vượt đúng một lượt mỗi vòng
     return {"text": channel_context.strip_control_blocks(out), "files": []}
 
 
@@ -25474,9 +25577,9 @@ async def _bot_tra_loi(text, *, sess, sysprompt, prov, api_key, api_model, reaso
     `_bot_tra_loi_co_tool`. Hai đường tách hẳn nhau CÓ CHỦ Ý: đường này phải soi được bằng mắt
     là không có tool nào, và một test canh đúng thân hàm này (test_chatbot_cach_ly.py mục B2).
     """
-    lich_su = _bot_lich_su(sess)
+    lich_su = _bot_history(sess)
     lich_su.append({"role": "user", "content": _bot_lich_su_chu(text, images)})
-    _bot_cat_lich_su(lich_su)
+    _trim_bot_history(lich_su)
 
     # System dựng LẠI mỗi lượt: tài liệu tra được đổi theo từng câu hỏi. Giữ system cũ là bot
     # trả lời câu này bằng tài liệu của câu trước.
@@ -25639,9 +25742,9 @@ async def _bot_tra_loi_co_tool(text, *, sess, sysprompt, prov, api_key, api_mode
     rò tài liệu: hỏi một câu vu vơ đúng lúc có file khác vừa sinh ra là nhận được nó. Bot muốn
     đưa file cho khách thì nói đường dẫn trong câu trả lời.
     """
-    lich_su = _bot_lich_su(sess)
+    lich_su = _bot_history(sess)
     lich_su.append({"role": "user", "content": _bot_lich_su_chu(text, images)})
-    _bot_cat_lich_su(lich_su)
+    _trim_bot_history(lich_su)
     messages = [{"role": "system", "content": sysprompt}] + lich_su
     gui, co_anh = _bot_gan_anh(messages, prov, text, images)
     canh_bao_anh = ""
@@ -25833,6 +25936,11 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
         # gốc, MCP hub, kết nối của tài khoản Claude/ChatGPT, kỹ năng), chỉ khác hai chỗ: prompt mang
         # VAI của Agent, và brain là brain của bot. Đường tắt, nguồn chọn lọc và gateway huỷ lịch của
         # chủ bị bỏ qua vì chúng thay prompt bằng giọng Thansa.
+        if _muc != "full" and sess.get("bot") is None:
+            # First turn of this chat since the server started: the history lived in RAM only, so read a private
+            # chat back from the inbox instead of meeting a returning customer as a stranger. Full-access bots
+            # take the owner's engine branches below, which rebuild their own history from the session store.
+            sess["bot"] = chatbot_runtime.private_history(bot, meta, BOT_HISTORY_MAX_MESSAGES)
         if _muc == "full":
             _bot_full = True
             _sys_bot_full = _sys_bot
@@ -27347,6 +27455,12 @@ def _zalo_precheck(text, meta):
     return {"reply": _zalo_ghi_cho(meta)}
 
 
+def _zalo_download_ok(chat) -> bool:
+    """Only an allowed chat has its photos, voice messages and files downloaded by the owner's Zalo bot."""
+    ids = tg_parse_ids(cfgmod.read_settings().get("zalo_bot", {}).get("chat_id"))
+    return str(chat or "").strip() in ids
+
+
 def _admin_bot_tokens() -> dict:
     """{chatbot channel: token} of the owner's admin bots that are switched on (Telegram, Zalo Bot). A dedicated bot on
     the Chatbot page never polls one of these (`chatbot_runtime.start_bot`): two pollers on one token split the
@@ -27373,7 +27487,8 @@ def restart_zalo_bot():
         # về mã ghép nối. Truyền cả hai là người lạ ăn hai câu từ chối cho một tin.
         _ZALO_BOT = zalo_bot.ZaloBot(z["token"], "", _zalo_answer, _zalo_command,
                                      download_dir=_zalo_inbox_dir,
-                                     precheck_fn=_zalo_precheck, stt_fn=_stt_nghe)
+                                     precheck_fn=_zalo_precheck, stt_fn=_stt_nghe,
+                                     download_ok_fn=_zalo_download_ok)
         _ZALO_BOT.start()
         try:
             chatbot_runtime.release_admin_token("zalo")   # a dedicated bot still polling this token lets go of it
@@ -27647,13 +27762,22 @@ def _ms_account_secrets() -> list:
 @app.get("/channels/webhook-info")
 async def channels_webhook_info(request: Request, channel: str = ""):
     """Address and verify token to paste into the platform for a channel that receives messages
-    by webhook (Messenger, Zalo OA). Shown on the Add account form; the verify token is not a secret."""
+    by webhook (Messenger, Zalo OA, WeChat). Shown on the Add account form to the signed-in owner."""
     kenh = str(channel or "").strip().lower()
     if kenh == "zalo_oa":
         url = _zo_webhook_url(request)
         return {"ok": True, "webhook_url": url, "verify_token": "", "https": url.startswith("https://"),
                 "site_verify": True, "site_codes": _zo_site_codes(),
                 "oauth_redirect": url[: -len("/zalo-oa/webhook")] + zalo_oa_oauth.CALLBACK_PATH}
+    if kenh == "wechat":
+        url = _wc_webhook_url(request)
+        # WeChat takes http on port 80 as well as https, so plain http is a warning in words, not a refusal.
+        return {"ok": True, "webhook_url": url, "verify_token": _wc_webhook_token(), "https": True,
+                "warning": "" if url.startswith("https://") else localefmt.chu(
+                    "WeChat chỉ gọi được địa chỉ công khai ở cổng 443 (https) hoặc 80. Mở Thansa bằng tên miền "
+                    "HTTPS rồi mở lại form này để lấy đúng địa chỉ.",
+                    "WeChat can only call a public address on port 443 (https) or 80. Open Thansa through its "
+                    "HTTPS domain, then reopen this form to get the right address.")}
     if kenh != "messenger":
         return JSONResponse({"ok": False, "error": localefmt.chu("Kênh này không dùng webhook",
                                                                  "This channel does not use a webhook")},
@@ -28437,6 +28561,50 @@ async def zalo_oa_verifier_file(code: str):
     if code not in _zo_site_codes():
         return PlainTextResponse("not found", status_code=404)
     return HTMLResponse(zalo_oa_bot.verifier_html(code))
+
+
+# ============================================================
+# WeChat Official Account: customer bots on a WeChat Official Account. WeChat calls one URL for every
+# account; `wechat_bot.handle_webhook` routes by account. No owner control channel here.
+# ============================================================
+def _wc_webhook_url(request: Request) -> str:
+    base = web_security.external_base(
+        request.url.scheme, request.url.netloc,
+        request.headers.get("x-forwarded-proto", ""), request.headers.get("x-forwarded-host", ""))
+    return base + "/wechat/webhook"
+
+
+def _wc_webhook_token() -> str:
+    """The `Token` the owner pastes into WeChat's server configuration. Generated once for the machine, because
+    WeChat checks the URL before any account exists here. Every webhook signature is made with it, so it is kept
+    encrypted (config._SECRET_PATHS). Letters and digits only, 32 long: what WeChat's Token field accepts."""
+    w = cfgmod.read_settings().get("wechat", {}) or {}
+    tok = str(w.get("webhook_token") or "").strip()
+    if not tok:
+        tok = secrets.token_hex(16)
+        cfgmod.update_settings({"wechat": {"webhook_token": tok}})
+    return tok
+
+
+@app.get("/wechat/webhook")
+async def wechat_webhook_verify(request: Request):
+    """WeChat's URL check when the server configuration is saved: echo `echostr` only when the signature matches."""
+    q = request.query_params
+    if wechat_bot.fresh_timestamp(q.get("timestamp")) and wechat_bot.check_signature(
+            _wc_webhook_token(), q.get("signature", ""), q.get("timestamp", ""), q.get("nonce", "")):
+        return PlainTextResponse(str(q.get("echostr") or ""))
+    return PlainTextResponse("forbidden", status_code=403)
+
+
+@app.post("/wechat/webhook")
+async def wechat_webhook(request: Request):
+    """Inbound WeChat messages. Public URL, so nothing is trusted before the signature check. WeChat wants an
+    answer within 5 seconds and retries otherwise: the route answers "success" at once and the turn runs as a task."""
+    raw = await _read_capped_body(request, wechat_bot.MAX_BODY)
+    if raw is None:
+        return PlainTextResponse("too large", status_code=413)
+    status, body = await wechat_bot.handle_webhook(raw, dict(request.query_params), _wc_webhook_token())
+    return PlainTextResponse(body, status_code=status)
 
 
 def restart_telegram():
@@ -30888,6 +31056,17 @@ def _team_attach(team, attachments):
     store, sid = get_store(), team.get("session_id") or ""
     if not sid:
         return []
+    # 2026-11-12: a file picked from the brain (the create-team box, the Info tab's search) comes as `brain_path`, the
+    # path /files/search returns. It is resolved here, inside the brain's own fence; a path that escapes it is dropped.
+    picked = []
+    for a in list(attachments or []):
+        if isinstance(a, dict) and a.get("brain_path") and not a.get("path"):
+            try:
+                a = dict(a, path=str(_safe_path(brain, str(a.get("brain_path") or ""))))
+            except ValueError:
+                continue
+        picked.append(a)
+    attachments = picked
     return team_docs.save(attachments, staging=STAGING, brain_root=broot,
                           dest_dir=broot / "attachments" / "teams" / str(team.get("team_id") or "team"),
                           to_rel=lambda p: _files_rel(root, Path(p)),
