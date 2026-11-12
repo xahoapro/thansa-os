@@ -980,3 +980,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: dashboard/i18n/de.json.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 8c48477/0.510.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-09** khi chủ bấm duyệt trên Telegram (origin/main 7502a26, tag + Release thansa-v2.10.0; backup me-backup-2.10.0).
+
+## Vòng TỰ ĐỘNG 2026-11-12 (goc 8c48477 → 9b85da5, nền 0.510.1 → 0.552.0, thansa 2.10.0→2.11.0)
+- 197 commit upstream: 0.552.0: New Claude models show up on their own, from the catalog Claude Code downloads (#1397); > Việc chạy nền đã xong sau 5 giờ 50 phút. (#1397); 0.551.3: The reply judge menu item shows on every bot card (#1394); Show the reply judge menu item on every bot card (#1394); 0.551.2: The Profile page reaches the model on shortcut answers too (#1393); Carry the user profile on shortcut and read-only answers (#1393); 0.551.1: A model that lost its sign-in hands the turn to the next connected model (#1382); Move a turn on when a plan card lost its sign-in (#1382); 0.551.0: A simpler Team settings 
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/app.js, dashboard/i18n/en.json, dashboard/i18n/vi.json, dashboard/index.html, install.sh, server/config.py, server/improvement_trial_plugins.py, server/main.py, tests/python/info_tip_allow.json, update.sh. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 9b85da5/0.552.0/so_patch 72.
