@@ -127,8 +127,28 @@ def tu_codex(snap: dict) -> dict:
     return out
 
 
+def _usable_again(snap: dict, merged: dict, now: float) -> bool:
+    """Does this report say the plan takes requests again? Claude Code states it in `status`.
+
+    Codex sends no status, so its numbers decide: every window still running must read below the red mark (SAT).
+    Usage inside a window only grows, so a low number after a refusal means the plan was reset. Merely "below
+    100%" is not enough: the last report before the refusal reads just under it, and a rollout file can carry
+    that report with a later timestamp."""
+    status = str(snap.get("status") or "")
+    if status:
+        return status in ("allowed", "allowed_warning")
+    live = [w for w in (merged.get(k) for k in (NAM_GIO, TUAN))
+            if isinstance(w, dict) and not (w.get("resets_at") and w["resets_at"] <= now)]
+    return bool(live) and all(float(w.get("pct") or 0) < SAT for w in live)
+
+
 def ghi(brain: str, snap: dict, now: float = None):
-    """Store one brain's snapshot. A window the report leaves out keeps its last value."""
+    """Store one brain's snapshot. A window the report leaves out keeps its last value.
+
+    A report measured AFTER a refusal that shows the plan usable again lifts that refusal (`het`): the owner
+    reset the plan on the provider's site, or the window reopened early. Otherwise the ring stayed red and
+    Thansa's own work stayed paused until the reset time the old refusal named. A report measured before the
+    refusal, or in the same second, never lifts it."""
     if not any(k in snap for k in (NAM_GIO, TUAN)):
         return
     now = time.time() if now is None else now
@@ -138,6 +158,9 @@ def ghi(brain: str, snap: dict, now: float = None):
         moi = dict(cu)
         moi.update({k: v for k, v in snap.items() if v not in (None, "")})
         moi["at"] = int(now)
+        h = moi.get("het")
+        if isinstance(h, dict) and int(now) > int(h.get("at") or 0) and _usable_again(snap, moi, now):
+            moi.pop("het", None)
         d[brain] = moi
         _ghi_file(d)
 
@@ -274,6 +297,28 @@ def quet_codex(now: float = None) -> Optional[dict]:
 
 def muc(pct: float) -> str:
     return "bad" if pct >= SAT else ("warn" if pct >= CANH_BAO else "ok")
+
+
+# Provider ids of the Models page -> brain keys here.
+BRAIN_THEO_PROVIDER = {"anthropic-cli": "claude", "openai-oauth": "codex", "grok-cli": "grok",
+                       "antigravity-cli": "agy"}
+
+
+def side_pause(provider: str, now: float = None) -> dict:
+    """Should the work Thansa starts on its own (self-learning, suggestions, judges) wait on this plan?
+
+    {"paused": bool, "pct": int, "resets_at": epoch or 0}. Paused while the 5-hour window is at SAT percent or
+    more, or while the plan has refused a turn; it lifts by itself when the window resets. That work is the
+    first thing to give up when the allowance runs low: the owner's own chat needs what is left (10/11/2026).
+    A provider with no meter (an API key, a plan that reports none) is never paused here.
+    """
+    brain = BRAIN_THEO_PROVIDER.get(str(provider or ""))
+    r = (doc(now).get(brain) if brain else None) or {}
+    w = r.get(NAM_GIO) or {}
+    pct = int(w.get("pct") or 0)
+    if "het" in r:
+        return {"paused": True, "pct": 100, "resets_at": int((r["het"] or {}).get("reset") or 0)}
+    return {"paused": pct >= SAT, "pct": pct, "resets_at": int(w.get("resets_at") or 0)}
 
 
 def doc(now: float = None) -> dict:

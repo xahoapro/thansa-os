@@ -15,8 +15,9 @@ Fix, for the scheduled background lanes only (reminder, loop, Kanban dispatch):
     engine, which would reach the same hub and run blind;
   - claude_cli.codex_error_text puts the reason first: Codex's stderr starts with long rmcp log
     lines, and the chat card keeps 300 characters, reminders.json 400.
-Chat never goes through `_build_codex`; workflow Codex agents are built by
-main._workflow_agent_helpers. Both must stay unchanged.
+Chat never goes through `_build_codex`; unrestricted workflow Codex agents are built by
+main._workflow_agent_helpers. Restricted workflow steps use workflow_codex with a required
+scoped hub and native tools disabled; unrestricted workflow behavior stays unchanged.
 Since 0.117.0 every `_build_codex` lane also pins the job's own permission level
 (`mcp_hub.dat_codex_mode`), so the mode checks expect the job's level.
 
@@ -158,7 +159,8 @@ for tag in BG_TAGS:
         j = hub_entry(cfg)
         h = j.get("http_headers") or {}
         check(f"{tag} {m}: hub entry is required", j.get("required") is True, sorted(j))
-        check(f"{tag} {m}: startup_timeout_sec still 20 from the profile", j.get("startup_timeout_sec") == 20)
+        check(f"{tag} {m}: a required hub waits 45 s, longer than the profile's 20 (#1306)",
+              j.get("startup_timeout_sec") == 45)
         check(f"{tag} {m}: ChatGPT apps switched off", (cfg.get("features") or {}).get("apps") is False)
         check(f"{tag} {m}: hub receives X-Thansa-Mode={want_mode(m)} (the job's level)",
               h.get("X-Thansa-Mode") == want_mode(m))
@@ -246,6 +248,7 @@ async def collect(engine, fresh=True):
 
 FB = aux_engine._FallbackChain
 FINAL = lambda s: {"type": "final", "content": s}
+aux_engine.HUB_RETRY_WAIT_S = 0   # the retry of #1306 is exercised below; no real 30 s pause in a test
 # The exact stderr codex-cli 0.161.0 printed in the isolated probe of the 0.86.103 preflight (hub
 # never answered initialize, startup_timeout_sec = 20), through Thansa's own error formatter, as
 # CodexCLI.query does when Codex exits non-zero. The rmcp log line comes first.
@@ -289,6 +292,34 @@ check("required hub failed: the reason is in the first 300 characters (what the 
       bool(evs) and REQ_FAIL in str(evs[-1].get("content", ""))[:300], str(evs[-1].get("content", ""))[:300] if evs else "")
 check("required hub failed: Codex's own line is kept (thansa + timed out after 20s)",
       bool(evs) and "thansa: timed out handshaking with MCP server after 20s" in str(evs[-1].get("content", "")))
+
+# ---- #1306: a late required hub gets ONE more try before the run is given up ----------------------
+check("a required hub that fails twice ran that link exactly twice (one retry, not a loop)", codex.ran == 2, codex.ran)
+
+
+class LateHubEngine(FakeEngine):
+    """Fails with the required-hub error on the first run, then answers `events`."""
+
+    async def query(self, prompt):
+        self.ran += 1
+        for ev in ([{"type": "error", "content": REQ_ERR}] if self.ran == 1 else self.events):
+            yield ev
+
+
+late = LateHubEngine([{"type": "text", "content": "xong"}, FINAL("xong")], provider="openai-oauth")
+claude = FakeEngine([FINAL(BLIND)])
+evs = asyncio.run(collect(FB([late, claude])))
+check("hub late once: the same link runs again and its answer comes out", late.ran == 2
+      and bool(evs) and evs[-1].get("type") == "final" and evs[-1].get("content") == "xong", evs)
+check("hub late once: no error reaches the caller and the next engine never runs",
+      all(e.get("type") != "error" for e in evs) and claude.ran == 0, evs)
+acted = FakeEngine([{"type": "tool_call", "name": "zalo_send_message"}, {"type": "error", "content": REQ_ERR}],
+                   provider="openai-oauth")
+evs = asyncio.run(collect(FB([acted])))
+check("the hub error AFTER a tool call is never retried (the action could run twice)", acted.ran == 1, acted.ran)
+check("required timeout override replaces an earlier one instead of stacking",
+      HUB_REQ(["mcp_servers.thansa.startup_timeout_sec=20", "x=1"]).count("mcp_servers.thansa.startup_timeout_sec=45") == 1
+      and "mcp_servers.thansa.startup_timeout_sec=20" not in HUB_REQ(["mcp_servers.thansa.startup_timeout_sec=20"]))
 
 LIMIT = "You've hit your session limit · resets 4:40am (UTC)"
 claude_het = FakeEngine([{"type": "error", "content": LIMIT}], provider="claude")
@@ -392,8 +423,8 @@ check("reminder healthy run: result kept, no error, card done",
 # ---- 10. Scope: only the background router sets these overrides --------------------------------
 SRC = {p.name: p.read_text(encoding="utf-8") for p in SERVER.glob("*.py")}
 users = sorted(n for n, s in SRC.items() if "dat_codex_hub_bat_buoc(" in s or "dat_codex_tat_app(" in s)
-check("only mcp_hub (definition) and aux_engine (_build_codex) use the overrides",
-      users == ["aux_engine.py", "mcp_hub.py"], users)
+check("only hub helpers, background router and restricted workflow builder use the overrides",
+      users == ["aux_engine.py", "mcp_hub.py", "workflow_codex.py"], users)
 callers = sorted(n for n, s in SRC.items() if re.search(r"\b_build_codex\(", s))
 # 0.194.0: team Work/Help turns build Codex through the same builder (team_engine.build_tools). Their tag
 # ("team-<id>-<turn>") is not a scheduled background lane, so the hub-required and no-app overrides stay off for them.
@@ -408,7 +439,7 @@ check('reminders still route with tag="reminder"', 'aux_engine.apply(self.deps, 
 check("Kanban runs still route with tag dispatch:<id>:<suffix>",
       "tag=f\"dispatch:{task['id']}:" in TASK_SRC and "aux_engine.apply(self.deps, cli, mode=mode, tag=cli.tag)" in TASK_SRC)
 check('loops still route with tag="loop"', 'tag="loop")' in LOOP_SRC and "aux_engine.apply(self.deps, cli" in LOOP_SRC)
-check("workflow Codex agents still built directly, without the background overrides",
+check("unrestricted workflow Codex agents still built directly, without the background overrides",
       "CodexCLI(cwd=vault_root, tag=\"workflow\"" in SRC.get("main.py", "")
       and "CODEX_REQUIRED_KEY" not in SRC.get("main.py", "") and "dat_codex_tat_app" not in SRC.get("main.py", ""))
 

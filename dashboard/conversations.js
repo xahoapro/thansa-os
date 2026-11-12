@@ -313,7 +313,7 @@
   // The "needs you" counts without drawing the list (Channels tab badges, after a change there).
   async function whoCounts() {
     try {
-      var d = await api("/conversations?limit=1");
+      var d = await api("/conversations?limit=1" + brainParam());
       if (d.who_counts) _whoCounts = d.who_counts;
     } catch (e) { /* keep the last counts */ }
   }
@@ -436,9 +436,13 @@
   function saveFilters() { if (window.ThansaConvFilters) window.ThansaConvFilters.save(filterState()); }
   function onFilterChange() { saveFilters(); paintHead(); tai(); }
 
+  // #1243: the list is the open brain's, like the Channels tab: chats of a Page moved to another brain leave it. The
+  // Channels tab's "every brain" switch shows them all again.
+  function brainParam() { return _tkMoiBrain ? "" : "&brain=" + encodeURIComponent(brain()); }
   function urlDanhSach(limit, offset) {
     return "/conversations?limit=" + limit + (offset ? "&offset=" + offset : "") +
-      "&q=" + encodeURIComponent(_q) + (window.ThansaConvFilters ? window.ThansaConvFilters.query(filterState()) : "");
+      "&q=" + encodeURIComponent(_q) + brainParam() +
+      (window.ThansaConvFilters ? window.ThansaConvFilters.query(filterState()) : "");
   }
 
   // The channel accounts the picker offers: the ones of the open brain (`/channels/accounts`), each with its key.
@@ -1277,7 +1281,7 @@
       veThread();
     } else {
       var th = _host.querySelector(".ht-thread");
-      if (th) th.innerHTML = '<div class="ht-empty ht-thread-empty">' + esc(window.t("common.loading")) + '</div>';
+      if (th) th.innerHTML = '<div class="ht-empty ht-thread-empty pg-loading">' + esc(window.t("common.loading")) + '</div>';
     }
     // `read=1`: the same request marks it read first, so an opened chat leaves "Needs you" (owner, 2026-10-28) and the bar
     // above it does not still say it, without a round trip of its own.
@@ -1346,6 +1350,30 @@
         var cuoi = _msgs.length ? _msgs[_msgs.length - 1].id : 0;
         moi = (d.messages || []).filter(function (m) { return m.id > cuoi; });
         _msgs = _msgs.concat(moi);
+        // Metadata on an existing AI message changes after the Zalo send.
+        // An "after=id" poll returns no such edits; refresh only while pending,
+        // and repaint once the transport has reported an outcome. Only the last 30 are asked for, so an older one
+        // must not keep this second request going on every beat.
+        if (_msgs.slice(-30).some(function (m) {
+          return m.metadata && m.metadata.zalo_delivery && m.metadata.zalo_delivery.state === "sending";
+        })) {
+          var receiptData = await api("/conversations/" + id + "/messages?limit=30");
+          if (_chon !== id) return;
+          var byId = {};
+          (receiptData.messages || []).forEach(function (m) { byId[m.id] = m; });
+          var updatedReceipt = false;
+          _msgs = _msgs.map(function (m) {
+            var fresh = byId[m.id];
+            var oldState = m.metadata && m.metadata.zalo_delivery && m.metadata.zalo_delivery.state;
+            var newState = fresh && fresh.metadata && fresh.metadata.zalo_delivery && fresh.metadata.zalo_delivery.state;
+            if (oldState === "sending" && newState && newState !== oldState) {
+              updatedReceipt = true;
+              return fresh;
+            }
+            return m;
+          });
+          if (updatedReceipt) _dauVetTin = "";
+        }
       }
     } catch (e) {
       // A chat shown from the cache that no longer answers (deleted elsewhere): forget it, so the next open asks afresh.
@@ -1368,7 +1396,7 @@
   function metaSig() {
     var c = _conv || {}, u = _msgs[_msgs.length - 1] || {};
     return JSON.stringify([c.id, c.mode, c.bot_id, c.bot_name, c.title, c.customer_name, c.channel, c.chat_type, c.account_name,
-      c.tags || [], c.contact || "", c.note || "", c.who, c.who_code, c.ai_allowed, c.ai_pending, c.draft || null, c.reply_when,
+      c.tags || [], c.contact || "", c.note || "", c.profile_at || 0, c.who, c.who_code, c.ai_allowed, c.ai_pending, c.draft || null, c.reply_when,
       c.yield_min, _silence, _running, u.sender_type]);
   }
 
@@ -1633,6 +1661,15 @@
         '<button type="button" class="s-btn ib-make-bot">' + ic("plus") + ' ' + esc(t("ib.make_bot")) + '</button></div>';
     }
     var mail = c.contact && String(c.contact).indexOf("@") > 0;
+    // A private chat: the note box IS the customer profile (owner, 2026-11-12: nobody types notes by hand). The background
+    // model rewrites it after the chat goes quiet and the bot reads it on later turns; the owner can still fix or empty
+    // it here. A group has no one customer, so it keeps the plain note.
+    var prof = c.chat_type !== "group", JI = window.ThansaInfo;
+    var noteBox = '<textarea class="ib-notebox"' + (prof ? ' data-profile="1" rows="8"' : ' rows="3"') + ' maxlength="4000" placeholder="' +
+      esc(t(prof ? "ib.i_profile_ph" : "ib.i_note_ph")) + '" aria-label="' + esc(t(prof ? "ib.i_profile" : "ib.i_note")) + '"></textarea>';
+    var profSec = !prof ? "" : '<div class="ib-sec ib-prof"><h4>' + ic("brain") + ' <span>' + esc(t("ib.i_profile")) + '</span>' +
+      (JI ? JI.btn(t("info.more")) : "") + '</h4>' + (JI ? JI.body(esc(t("ib.i_profile_info"))) : "") + noteBox +
+      (c.profile_at ? '<p class="ib-hint ib-prof-at">' + esc(t("ib.i_profile_at", { time: gio(c.profile_at) })) + '</p>' : "") + '</div>';
     p.innerHTML =
       '<div class="ib-ih">' + ic("user-round") + ' <span>' + esc(t("ib.info")) + '</span>' +
         '<button type="button" class="s-btn-ghost ib-x" aria-label="' + esc(t("common.close")) + '">' + ic("x") + '</button></div>' +
@@ -1641,10 +1678,8 @@
         // A group has no one customer to call back: the contact line is for private chats (or a group that left one).
         (c.chat_type !== "group" || c.contact ? '<div class="ib-line">' + ic(mail ? "mail" : "phone") + (c.contact ? '<span>' + esc(c.contact) + '</span>'
           : '<span class="ib-muted">' + esc(t("ib.i_no_contact")) + '</span>') + '</div>' : "") +
-        '<div class="ht-tagrow"></div>' +
-        '<textarea class="ib-notebox" rows="3" maxlength="4000" placeholder="' + esc(t("ib.i_note_ph")) + '" aria-label="' +
-          esc(t("ib.i_note")) + '"></textarea></div>' +
-      ai +
+        '<div class="ht-tagrow"></div>' + (prof ? "" : noteBox) + '</div>' +
+      profSec + ai +
       '<div class="ib-sec"><h4>' + ic("plug") + ' ' + esc(t("ib.i_channel")) + '</h4><div class="ib-line">' + logoKenh(c.channel) + ' <span>' +
         esc(k.nhan) + (accLabel(c) ? ' · ' + esc(accLabel(c)) : "") + '</span></div></div>';
     veTagRow();
@@ -1675,7 +1710,7 @@
       if (_noteEdit && _noteEdit.id === id && _noteEdit.text === text) _noteEdit = null;
       if (_conv && _conv.id === id && d.conversation) _conv.note = d.conversation.note;
       _vetMeta = metaSig();
-      toast(window.t("ib.t_note"));
+      toast(window.t(_conv && _conv.id === id && _conv.chat_type !== "group" ? "ib.t_profile" : "ib.t_note"));
     } catch (e) { toast(window.t("ht.act_fail", { err: e.message })); }
   }
 
@@ -2291,6 +2326,14 @@
     if (ta2) ta2.focus();
   }
 
+  // Zalo send receipt of a bot reply (`conversations.set_zalo_delivery`). "accepted" is absent on purpose: a sent
+  // reply shows no line. The reasons are the codes of `conversations.ZALO_DELIVERY_REASONS`, plus "stale".
+  var ZALO_RECEIPT = { sending: "ht.zalo_sending", failed: "ht.zalo_failed", unknown: "ht.zalo_unknown",
+    cancelled: "ht.zalo_cancelled" };
+  var ZALO_WHY = { superseded: "ht.zalo_why.superseded", silent: "ht.zalo_why.silent",
+    image_unconfirmed: "ht.zalo_why.image_unconfirmed", bot_stopped: "ht.zalo_why.bot_stopped",
+    interrupted: "ht.zalo_why.interrupted", stale: "ht.zalo_why.stale" };
+
   function veTin(t) {
     var lop = t.sender_type === "customer" ? "khach" : t.sender_type === "ai" ? "bot"
             : t.sender_type === "human" ? "nguoi" : "hethong";
@@ -2318,6 +2361,17 @@
         ' ' + esc(t.message_type) + '</span>' : "";
     var loi = t.metadata && t.metadata.loi
       ? '<div class="ht-msg-loi">' + ic("triangle-alert") + ' ' + esc(t.metadata.loi) + '</div>' : "";
+    // A bot answer in the inbox is not proof of successful Zalo transmission: the receipt comes from the transport's
+    // result, not the model output. A reply that went out shows nothing (the normal case needs no line); only one
+    // still going out, not sent, or of unknown outcome says so, with the reason.
+    var dl = t.sender_type === "ai" && t.metadata && t.metadata.zalo_delivery;
+    var deliveryHtml = "";
+    if (dl && ZALO_RECEIPT[dl.state]) {
+      var why = ZALO_WHY[dl.reason] ? window.t(ZALO_WHY[dl.reason]) : (dl.error || "");
+      var bad = dl.state === "failed" || dl.state === "unknown";
+      deliveryHtml = '<div class="' + (bad ? "ht-msg-loi" : "ht-msg-h") + '">' + (bad ? ic("triangle-alert") + ' ' : '') +
+        esc(window.t(ZALO_RECEIPT[dl.state])) + (why ? ' · ' + esc(why) : '') + '</div>';
+    }
     if (t.metadata && t.metadata.private_reply_to) {
       var ig = isInstagram(_conv);
       loai = '<span class="ht-loai ht-priv-tag">' + (ig ? badgeOf({ channel: "messenger", external_chat_id: "ig:" }, "13px") :
@@ -2327,7 +2381,7 @@
     // group shows who wrote each message.
     if (lop === "khach" && _conv && _conv.chat_type !== "group") ai = "";
     return '<div class="ht-msg ' + lop + '">' +
-      '<div class="ht-bubble">' + loai + than + '</div>' + loi +
+      '<div class="ht-bubble">' + loai + than + '</div>' + loi + deliveryHtml +
       '<div class="ht-msg-h">' + esc(ai) + (ai ? ' · ' : '') + esc(gio(t.created_at)) + '</div>' +
     '</div>';
   }
@@ -2616,6 +2670,8 @@
         o.innerHTML = '<b>' + esc(window.t("ht.wh_url")) + '</b> <code>' + esc(r.webhook_url || "") + '</code>' +
           (r.verify_token ? '<br><b>' + esc(window.t("ht.wh_token")) + '</b> <code>' + esc(r.verify_token) + '</code>' : "") +
           (r.https ? "" : '<br><span class="cb-warn">' + esc(window.t(r.site_verify ? "ht.zo_can_https" : "ht.wh_can_https")) + '</span>') +
+          // A warning the server words itself, for a channel whose rule is not "HTTPS only" (WeChat: port 443 or 80).
+          (r.warning ? '<br><span class="cb-warn">' + esc(r.warning) + '</span>' : "") +
           (r.site_verify ? veMaXacThuc(r.site_codes || []) : "") +
           (r.oauth_redirect ? veCapQuyen(r.oauth_redirect) : "");
         o.hidden = false;

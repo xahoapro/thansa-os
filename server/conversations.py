@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from config import STATE_DIR
+import sqlite_tune
 
 DB_PATH = STATE_DIR / "customer_conversations.sqlite3"
 
@@ -177,6 +178,7 @@ def _conn() -> sqlite3.Connection:
         db = sqlite3.connect(str(path), timeout=10, check_same_thread=False)
         db.row_factory = sqlite3.Row
         db.execute("PRAGMA journal_mode=WAL")
+        sqlite_tune.normal_if_wal(db)   # 2026-11-10: no fsync per commit, see sqlite_tune.py
         db.execute("PRAGMA busy_timeout=5000")
         db.executescript(_SCHEMA)
         _nang_cap(db)
@@ -724,6 +726,72 @@ def set_message_id(row_id: int, external_message_id: str) -> bool:
         return False
 
 
+
+# Why a reply is not shown as sent, as a short code the inbox translates (never a sentence: the screen has two
+# languages). `stale` is never stored: `_zalo_delivery_view` gives it to a reply left on "sending" for too long.
+ZALO_DELIVERY_REASONS = ("superseded", "silent", "image_unconfirmed", "bot_stopped", "interrupted")
+# A send takes seconds. A reply still "sending" after this long was never settled (the server stopped mid-send, or
+# the transport never ran): the inbox then says the outcome is unknown instead of "sending" for ever.
+ZALO_SENDING_STALE = 300.0
+
+
+def _zalo_delivery_view(md, created_at, now: float):
+    """The receipt as the inbox should show it: a "sending" older than ZALO_SENDING_STALE reads as unknown. The
+    stored row is left alone, so a transport that does settle late still wins on the next read."""
+    dl = md.get("zalo_delivery") if isinstance(md, dict) else None
+    if not isinstance(dl, dict) or dl.get("state") != "sending":
+        return
+    try:
+        old = float(now) - float(created_at or 0) > ZALO_SENDING_STALE
+    except (TypeError, ValueError):
+        old = False
+    if old:
+        md["zalo_delivery"] = {"state": "unknown", "error": "", "reason": "stale"}
+
+
+def set_zalo_delivery(message_id: int, state: str, error: str = "", reason: str = "") -> bool:
+    """Set the send outcome for exactly one pending Zalo AI reply.
+
+    The inbox initially records a bot answer BEFORE transport runs. That is
+    *not* a delivered message. Only the transport may advance it from
+    'sending' to 'accepted', 'failed' or 'unknown' (e.g. CLI timeout).
+    'accepted' means the channel reported success, NOT that a recipient read it.
+    Idempotent: no later call can overwrite a settled receipt.
+
+    `error` is what the gateway said, word for word. `reason` is one of ZALO_DELIVERY_REASONS, for an outcome Thansa
+    itself decided; anything else is dropped.
+    """
+    if state not in ("accepted", "failed", "unknown", "cancelled"):
+        return False
+    try:
+        with _lock:
+            db = _conn()
+            row = db.execute(
+                "SELECT m.metadata_json FROM messages m "
+                "JOIN conversations c ON c.id=m.conversation_id "
+                "WHERE m.id=? AND m.sender_type='ai' "
+                "AND c.channel_account_id LIKE 'zalo_personal:%'",
+                (int(message_id),)).fetchone()
+            if not row:
+                return False
+            md = _loads(row["metadata_json"], {})
+            delivery = md.get("zalo_delivery") if isinstance(md, dict) else None
+            if not isinstance(delivery, dict) or delivery.get("state") != "sending":
+                return False
+            md["zalo_delivery"] = {
+                "state": state,
+                "error": str(error or "")[:300] if state != "accepted" else "",
+                "reason": reason if state != "accepted" and reason in ZALO_DELIVERY_REASONS else "",
+            }
+            db.execute("UPDATE messages SET metadata_json=? WHERE id=?",
+                       (_json(md), int(message_id)))
+            db.commit()
+        return True
+    except Exception as ex:  # noqa: BLE001 - failed receipt never interrupts sending
+        print(f"[conversations] set_zalo_delivery failed: {type(ex).__name__}: {ex}", file=sys.stderr)
+        return False
+
+
 # ============================================================
 # Đọc
 # ============================================================
@@ -809,7 +877,7 @@ def danh_sach(channel: str = "", bot_id: str = "", account_id: str = "", q: str 
               hesitant=None, tag: int = 0, has_contact: bool = False, sort: str = "",
               hidden: str = "", account_ids=None, ids=None, tags_any=None, tags_none=None,
               since: float = 0, until: float = 0, last_by: str = "", pinned: bool = False,
-              _light: bool = False) -> List[dict]:
+              _light: bool = False, exclude_account_ids=None) -> List[dict]:
     """Danh sách hội thoại, ĐÃ GHIM rồi tới MỚI NHẤT TRƯỚC, kèm tên khách và kênh.
 
     `q` tìm theo tên khách, tiêu đề, id chat, tin cuối (LIKE, không phân biệt hoa thường).
@@ -831,7 +899,8 @@ def danh_sach(channel: str = "", bot_id: str = "", account_id: str = "", q: str 
     """
     n = max(1, min(int(limit or 50), MAX_STATE_ROWS if _light else MAX_DANH_SACH))
     o = max(0, int(offset or 0))
-    where, args = _base_where(account_ids, ids, tags_any, tags_none, since, until, last_by, pinned)
+    where, args = _base_where(account_ids, ids, tags_any, tags_none, since, until, last_by, pinned,
+                              exclude_account_ids)
     if channel:
         where.append("a.channel=?"); args.append(str(channel))
     if bot_id == BOT_KHONG_CO:
@@ -904,7 +973,7 @@ _SORT_WAITING = (f"CASE WHEN {_KHACH_CHUA_DAP} THEN 0 ELSE 1 END,"
                  " COALESCE(c.last_message_at, c.updated_at) DESC, c.id DESC")
 
 
-def dem_bo_loc(hesitant=None) -> dict:
+def dem_bo_loc(hesitant=None, exclude_account_ids=None) -> dict:
     """Số hội thoại cho từng lựa chọn của bộ lọc hòm thư, tính trên TOÀN hòm thư và không phụ thuộc bộ lọc đang
     chọn: con số ở dropdown không nhảy mỗi lần lọc, và biết bot nào còn việc mà không phải mở ra xem.
 
@@ -916,6 +985,8 @@ def dem_bo_loc(hesitant=None) -> dict:
     `status.hidden`, for the "Hidden" filter option.
     """
     sql_nr, args_nr = _sql_can_tra_loi(hesitant)
+    where_x, args_x = _exclude_accounts_sql(exclude_account_ids)
+    and_x = "".join(" AND " + w for w in where_x)
     with _lock:
         rows = _conn().execute(
             "SELECT c.bot_id AS bot_id, COUNT(*) AS tong,"
@@ -924,8 +995,8 @@ def dem_bo_loc(hesitant=None) -> dict:
             " SUM(CASE WHEN c.mode='human' THEN 1 ELSE 0 END) AS human,"
             " SUM(CASE WHEN c.chat_type='group' THEN 1 ELSE 0 END) AS grp,"
             " SUM(CASE WHEN c.contact!='' THEN 1 ELSE 0 END) AS contact"
-            " FROM conversations c WHERE c.hidden=0 GROUP BY c.bot_id", args_nr).fetchall()
-        n_hidden = _conn().execute("SELECT COUNT(*) FROM conversations WHERE hidden=1").fetchone()[0]
+            " FROM conversations c WHERE c.hidden=0" + and_x + " GROUP BY c.bot_id", args_nr + args_x).fetchall()
+        n_hidden = _conn().execute("SELECT COUNT(*) FROM conversations c WHERE c.hidden=1" + and_x, args_x).fetchone()[0]
     out = {"tong": 0, "bots": {}, "status": {"unread": 0, "need_reply": 0, "human": 0, "hidden": int(n_hidden or 0)},
            "type": {"group": 0, "private": 0}, "has_contact": 0}
     for r in rows:
@@ -945,8 +1016,16 @@ def dem_bo_loc(hesitant=None) -> dict:
 LAST_BY = ("customer", "ai", "human")
 
 
+def _exclude_accounts_sql(exclude_account_ids) -> tuple:
+    """WHERE part leaving out conversations of these account keys (#1243, the accounts of other brains)."""
+    keys = [str(a) for a in (exclude_account_ids or []) if str(a).strip()][:500]
+    if not keys:
+        return [], []
+    return ["c.channel_account_id NOT IN (" + ",".join("?" * len(keys)) + ")"], keys
+
+
 def _base_where(account_ids=None, ids=None, tags_any=None, tags_none=None, since: float = 0, until: float = 0,
-                last_by: str = "", pinned: bool = False) -> tuple:
+                last_by: str = "", pinned: bool = False, exclude_account_ids=None) -> tuple:
     """WHERE parts shared by `danh_sach` and `state_rows` for the Chatbot v5 filters: picked accounts, ids, tags
     any/none, the last message between `since` and `until` (timestamps, 0 = open), who sent the last message
     (customer | ai | human, anything else ignored) and pinned chats only."""
@@ -962,6 +1041,9 @@ def _base_where(account_ids=None, ids=None, tags_any=None, tags_none=None, since
     accs = [str(a) for a in (account_ids or []) if str(a).strip()][:200]
     if accs:
         where.append("c.channel_account_id IN (" + ",".join("?" * len(accs)) + ")"); args += accs
+    where_x, args_x = _exclude_accounts_sql(exclude_account_ids)
+    where += where_x
+    args += args_x
     if ids is not None:
         keep = [int(i) for i in ids][:MAX_STATE_ROWS]
         if not keep:
@@ -985,14 +1067,14 @@ MAX_STATE_ROWS = 5000     # most conversations the "who is handling it" filter l
 def state_rows(channel: str = "", bot_id: str = "", q: str = "", status: str = "", chat_type: str = "",
                hesitant=None, tag: int = 0, has_contact: bool = False, hidden: str = "", account_ids=None,
                tags_any=None, tags_none=None, sort: str = "", since: float = 0, until: float = 0, last_by: str = "",
-               pinned: bool = False) -> List[dict]:
+               pinned: bool = False, exclude_account_ids=None) -> List[dict]:
     """Every conversation matching the inbox filters (newest first, at most MAX_STATE_ROWS), with only the columns the
     "who is handling it" state needs: id, bot_id, chat_type, external_chat_id, channel_account_id, channel, mode,
     last_sender_type, unread_count, last_message, metadata. Same filters as `danh_sach`, no paging."""
     rows = danh_sach(channel=channel, bot_id=bot_id, q=q, status=status, chat_type=chat_type, hesitant=hesitant,
                      tag=tag, has_contact=has_contact, hidden=hidden, account_ids=account_ids, tags_any=tags_any,
                      tags_none=tags_none, sort=sort, since=since, until=until, last_by=last_by, pinned=pinned,
-                     limit=MAX_STATE_ROWS, _light=True)
+                     limit=MAX_STATE_ROWS, _light=True, exclude_account_ids=exclude_account_ids)
     return rows
 
 
@@ -1037,6 +1119,8 @@ def chi_tiet(conversation_id: int) -> Optional[dict]:
     d["tags"] = conversation_tags([d["id"]]).get(int(d["id"]), [])
     meta = d.get("metadata") if isinstance(d.get("metadata"), dict) else {}
     d["note"] = str(d.get("customer_note") or "") if d.get("customer_id") else str(meta.get("note") or "")
+    # When the A.I. last rewrote the customer profile (the note), 0 when it never has: the Info panel says so.
+    d["profile_at"] = float(_profile_mark(meta).get("at") or 0)
     return d
 
 
@@ -1070,9 +1154,11 @@ def tin_nhan(conversation_id: int, limit: int = 100, before_id: int = 0, after_i
     with _lock:
         rows = _conn().execute(sql, args).fetchall()
     out = []
+    now = time.time()
     for r in (rows if moi else reversed(rows)):
         d = _row(r)
         d["metadata"] = _loads(d.pop("metadata_json", "{}"), {})
+        _zalo_delivery_view(d["metadata"], d.get("created_at"), now)
         out.append(d)
     return out
 
@@ -1412,7 +1498,7 @@ def _dau_ngay() -> float:
                             seconds=now.second, microseconds=now.microsecond)).timestamp()
 
 
-def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "") -> dict:
+def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "", exclude_account_ids=None) -> dict:
     """Vài con số cho thẻ bot và đầu trang Hộp thư: tổng, hôm nay, chưa đọc, cần người.
 
     `chua_doc` (the inbox tab badge) and `theo_kenh` (channel filter counts) leave hidden conversations out, like the
@@ -1424,6 +1510,9 @@ def thong_ke(bot_id: str = "", channel: str = "", account_id: str = "") -> dict:
         where.append("a.channel=?"); args.append(str(channel))
     if account_id:
         where.append("c.channel_account_id=?"); args.append(str(account_id))
+    where_x, args_x = _exclude_accounts_sql(exclude_account_ids)
+    where += where_x
+    args += args_x
     w = " AND ".join(where)
     dau = _dau_ngay()
     with _lock:
@@ -1968,6 +2057,128 @@ def dat_ghi_chu_khach(customer_id: int, note: str) -> bool:
                          (_s(note, MAX_GHI_CHU), int(customer_id)))
         db.commit()
     return cur.rowcount > 0
+
+
+# ============================================================
+# Customer profile (2026-11-12): what a bot remembers about one person
+# ============================================================
+# The profile text IS the customer's note (`customers.note`): the owner asked for the note box of the Info panel to
+# become the profile, since nobody types notes by hand. `customer_profile.py` rewrites it in the background from the
+# messages it has not read yet; how far it has read is kept on the conversation (`metadata.profile.upto`, a message
+# row id), because messages belong to a conversation and a private chat has exactly one.
+def _profile_mark(meta) -> dict:
+    m = (meta or {}).get("profile") if isinstance(meta, dict) else None
+    return m if isinstance(m, dict) else {}
+
+
+def profile_of_chat(channel: str, account_id: str, external_chat_id: str) -> str:
+    """The customer profile of a PRIVATE chat by its channel key, "" when there is none (a group, an unknown chat, a
+    store error). Read on every bot turn of a private chat, so it never raises."""
+    try:
+        with _lock:
+            r = _conn().execute(
+                "SELECT k.note FROM conversations c JOIN customers k ON k.id=c.customer_id"
+                " WHERE c.channel_account_id=? AND c.external_chat_id=? AND c.chat_type='private'",
+                (_tai_khoan_id(channel, account_id), str(external_chat_id))).fetchone()
+        return str(r["note"] or "").strip() if r else ""
+    except Exception as ex:      # noqa: BLE001
+        print(f"[conversations] profile read failed: {type(ex).__name__}: {ex}", file=sys.stderr)
+        return ""
+
+
+def profile_read(conversation_id: int) -> Optional[dict]:
+    """What the profile writer needs to know about one conversation, None when it is not a private chat with a known
+    customer: `{conversation_id, customer_id, bot_id, name, note, upto, last_id, has_ai}`. `upto` is the row id of the
+    last message already read into the profile (0 = never), `last_id` the newest message, `has_ai` whether a bot has
+    ever answered in this chat."""
+    with _lock:
+        db = _conn()
+        r = db.execute(
+            "SELECT c.id, c.customer_id, c.bot_id, c.metadata_json, k.note, k.name FROM conversations c"
+            " JOIN customers k ON k.id=c.customer_id WHERE c.id=? AND c.chat_type='private'",
+            (int(conversation_id),)).fetchone()
+        if r is None:
+            return None
+        last = db.execute("SELECT MAX(id) FROM messages WHERE conversation_id=?", (int(conversation_id),)).fetchone()[0]
+        ai = db.execute("SELECT 1 FROM messages WHERE conversation_id=? AND sender_type='ai' LIMIT 1",
+                        (int(conversation_id),)).fetchone()
+    mark = _profile_mark(_loads(r["metadata_json"], {}))
+    return {"conversation_id": int(r["id"]), "customer_id": int(r["customer_id"]), "bot_id": str(r["bot_id"] or ""),
+            "name": str(r["name"] or ""), "note": str(r["note"] or ""), "upto": int(mark.get("upto") or 0),
+            "last_id": int(last or 0), "has_ai": bool(ai)}
+
+
+def profile_candidates(since: float, limit: int = 5000) -> List[dict]:
+    """Private chats a bot has answered in, active since `since`, that hold messages the profile has not read yet,
+    least recently active first: `[{conversation_id, bot_id, last_message_at, upto, last_id}]`. A chat where no bot
+    ever spoke is left out here already: a watched personal account holds hundreds of them (family, friends)."""
+    n = max(1, min(int(limit or 5000), 20000))
+    with _lock:
+        rows = _conn().execute(
+            "SELECT c.id, c.bot_id, c.last_message_at, c.metadata_json,"
+            " (SELECT MAX(m.id) FROM messages m WHERE m.conversation_id=c.id) AS last_id"
+            " FROM conversations c WHERE c.chat_type='private' AND c.bot_id != '' AND c.customer_id IS NOT NULL"
+            " AND c.last_message_at >= ?"
+            " AND EXISTS(SELECT 1 FROM messages a WHERE a.conversation_id=c.id AND a.sender_type='ai')"
+            " ORDER BY c.last_message_at ASC LIMIT ?", (float(since or 0), n)).fetchall()
+    out = []
+    for r in rows:
+        upto = int(_profile_mark(_loads(r["metadata_json"], {})).get("upto") or 0)
+        last = int(r["last_id"] or 0)
+        if last > upto:
+            out.append({"conversation_id": int(r["id"]), "bot_id": str(r["bot_id"] or ""),
+                        "last_message_at": float(r["last_message_at"] or 0), "upto": upto, "last_id": last})
+    return out
+
+
+def profile_pending(conversation_id: int, after_id: int) -> int:
+    """How many messages of a conversation the profile has not read yet (row id above `after_id`)."""
+    with _lock:
+        return int(_conn().execute("SELECT COUNT(*) FROM messages WHERE conversation_id=? AND id>?",
+                                   (int(conversation_id), int(after_id or 0))).fetchone()[0])
+
+
+def profile_messages(conversation_id: int, after_id: int = 0, limit: int = 80, newest: bool = False) -> List[dict]:
+    """Messages of a conversation with a row id above `after_id`, oldest first, at most `limit`:
+    `[{id, sender_type, message_type, text, created_at}]`. `newest=True` takes the LAST `limit` of them instead of the
+    first (the first profile of a long chat starts from its recent end, not from years ago)."""
+    n = max(1, min(int(limit or 80), MAX_TIN_MOT_LAN))
+    sql = ("SELECT id, sender_type, message_type, text, created_at FROM messages WHERE conversation_id=? AND id>?"
+           f" ORDER BY id {'DESC' if newest else 'ASC'} LIMIT ?")
+    with _lock:
+        rows = _conn().execute(sql, (int(conversation_id), int(after_id or 0), n)).fetchall()
+    out = [dict(r) for r in rows]
+    return list(reversed(out)) if newest else out
+
+
+def profile_save(conversation_id: int, upto: int, text: Optional[str] = None, expect_note: Optional[str] = None) -> bool:
+    """Record that the profile has read this conversation up to message `upto`, and with `text` replace the profile.
+
+    `expect_note`: the note the writer started from. When the note is no longer that (the owner edited it while the
+    model was writing), nothing is saved and False comes back: the owner's words win, the writer tries again later
+    from what they wrote. `text=None` only moves the mark (nothing in those messages was worth keeping). Neither
+    write touches `updated_at`: a profile refresh is not activity, and must not reorder the inbox or the customer list."""
+    with _lock:
+        db = _conn()
+        r = db.execute("SELECT c.customer_id, c.metadata_json, k.note FROM conversations c"
+                       " JOIN customers k ON k.id=c.customer_id WHERE c.id=?", (int(conversation_id),)).fetchone()
+        if r is None:
+            return False
+        if text is not None:
+            if expect_note is not None and str(r["note"] or "") != str(expect_note):
+                return False
+            db.execute("UPDATE customers SET note=? WHERE id=?", (_s(str(text).strip(), MAX_GHI_CHU), int(r["customer_id"])))
+        meta = _loads(r["metadata_json"], {})
+        if not isinstance(meta, dict):
+            meta = {}
+        mark = dict(_profile_mark(meta))
+        mark["upto"] = max(int(mark.get("upto") or 0), int(upto or 0))
+        if text is not None:
+            mark["at"] = _now()
+        meta["profile"] = mark
+        db.execute("UPDATE conversations SET metadata_json=? WHERE id=?", (_json(meta), int(conversation_id)))
+        db.commit()
+    return True
 
 
 def tim_tin(q: str, channel: str = "", limit: int = 50) -> List[dict]:

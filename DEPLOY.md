@@ -301,6 +301,15 @@ claude auth login --claudeai
 ```
 Quản lý dịch vụ: `journalctl -u thansa -f` · `sudo systemctl restart thansa` (máy cài trước 1.19: dịch vụ tên `thansa`)
 
+**Cài bằng root trên Linux:** bản cài mới không chạy Thansa bằng root nữa. Script tự tạo tài khoản
+thường `thansa` và cho dịch vụ chạy dưới tài khoản đó, vì Claude Code từ chối mức Toàn quyền dưới
+root. Bản clone nằm trong `/root` (tài khoản khác không vào được) sẽ được chuyển sang `/opt/<tên thư mục>`.
+Đăng nhập Claude ở trang Models, hoặc `su - thansa -c 'claude auth login --claudeai'`. Cập nhật vẫn là
+`./update.sh` chạy bằng root. Máy đã cài từ trước giữ nguyên tài khoản cũ. Tuỳ chọn:
+`THANSA_USER=<tên>` đổi tên tài khoản, `THANSA_INSTALL_DIR=<thư mục>` đổi nơi chuyển tới,
+`THANSA_RUN_AS_ROOT=1` giữ cách cũ (khi đó cần `IS_SANDBOX=1` trong `.env`, chỉ nên dùng trên máy
+dành riêng cho Thansa vì AI sẽ có quyền trên cả máy).
+
 ---
 
 ## Cách 3 - Windows (máy cá nhân)
