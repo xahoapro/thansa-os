@@ -35,7 +35,9 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import brain_ident
 import coding_store
+import git_setup
 import localefmt
 import winproc
 from config import STATE_DIR
@@ -244,7 +246,8 @@ def status() -> Dict[str, Any]:
         # Never for an app sign-in: it has no scopes, and a stale flag stored by 0.430.0 to 0.432.1 is dropped here.
         "missing": [] if conn.get("source") == "app" else list(conn.get("missing") or []),
         "backup_token": bool(backup_token()),
-        "has_git": shutil.which("git") is not None,
+        # git_setup also finds a git installed after this server started (PATH of a running process never updates).
+        "has_git": git_setup.available(),
         # "Sign in with GitHub": where to pick repos, and how many accounts the app is on (-1 unknown).
         "install_url": _oauth_install_url(),
         "installs": _installs(tok) if (tok and conn.get("source") == "app") else -1,
@@ -380,14 +383,27 @@ def clone_path(brain_root: str, full_name: str) -> Path:
     return REPOS_DIR / _brain_slug(brain_root) / owner / name
 
 
+def _same_brain(stored: Any, brain: str) -> bool:
+    """A record belongs to `brain` whichever spelling either side uses (#1109). A chat turn passes the alias "brain"
+    for the default brain while the dashboard saved the record with its folder ("/brains/Brain Default"); comparing
+    the strings hid the record, so the gate ran CI's commands instead of the saved ones and the GitHub card listed
+    nothing. brain_ident never folds an unknown folder into the default brain."""
+    return stored == brain or brain_ident.same_brain(stored, brain)
+
+
 def list_local(brain: str = "") -> List[Dict[str, Any]]:
-    return [dict(r) for r in _load()["repos"] if not brain or r.get("brain") == brain]
+    return [dict(r) for r in _load()["repos"] if not brain or _same_brain(r.get("brain"), brain)]
 
 
 def find(brain: str, full_name: str) -> Optional[Dict[str, Any]]:
     fn = norm_full_name(full_name).lower()
-    for r in _load()["repos"]:
-        if r.get("brain") == brain and str(r.get("full_name") or "").lower() == fn:
+    same_name = [r for r in _load()["repos"] if str(r.get("full_name") or "").lower() == fn]
+    # The exact spelling first: an older install may hold one record per spelling of the same brain.
+    for r in same_name:
+        if r.get("brain") == brain:
+            return dict(r)
+    for r in same_name:
+        if _same_brain(r.get("brain"), brain):
             return dict(r)
     return None
 

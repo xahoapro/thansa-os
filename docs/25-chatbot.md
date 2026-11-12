@@ -72,7 +72,7 @@ Dán nhầm token của kênh này vào kênh kia thì Thansa nói thẳng ra ch
 | Bot gửi ảnh cho khách | Có | Đang thử nghiệm |
 | Bot gửi file tài liệu (PDF, bảng tính) | Có | **Chưa được** (Zalo chưa mở API) |
 | Khách gửi ảnh cho bot đọc | Có | Có |
-| Khách gửi file tài liệu cho bot đọc | Có | Chưa |
+| Khách gửi file tài liệu cho bot đọc | Có | Khi Zalo chuyển file thì bot đọc, không thì bot báo lại ([chi tiết](26-kenh-zalo-bot.md#gửi-file-cho-bot-pdf-word-excel-video)) |
 | Trần một tin nhắn | 4096 ký tự | 2000 ký tự |
 | Bot hiện menu lệnh `/` | Có | Không, phải gõ tay |
 
@@ -214,7 +214,7 @@ Chế độ Tự đánh giá cũ dùng một cửa từ khoá: tin nào không g
 **Khác luật cũ ở đâu.**
 - **Gọi tên trơn cũng là gọi bot**, không cần @: "nhi mai ơi", "alo nhi mai", hoặc tên đứng đầu câu. Riêng điều này áp dụng cho MỌI bot, kể cả khi chưa ở chế độ Tự đánh giá. Tên tự nhận là nhãn kết nối Zalo và tên hiển thị của nick. Muốn bot nhận thêm một tên (ví dụ "Thu") thì gọi bot rồi dạy, ví dụ "Nhi Mai ơi, từ giờ gọi em là Thu nhé", bằng tài khoản của người được dạy (xem dưới). Tên nằm giữa câu ("hỏi nhi mai xem") chưa đủ để coi là gọi: bộ phán xử sẽ cân nhắc.
 - **Đọc vài tin gần nhất** thay vì đúng một tin, nên người vừa được bot trả lời hỏi tiếp ("vậy còn cái kia?") được hiểu là hỏi tiếp cho bot.
-- **Mọi quyết định đều có dấu vết, kể cả lúc bot im.** Menu "..." của thẻ bot, mục **Bộ phán xử**, liệt kê từng tin kèm lý do (ví dụ "Tài liệu không có phần khớp", "Điểm thấp hơn ngưỡng") và điểm so với ngưỡng.
+- **Mọi quyết định đều có dấu vết, kể cả lúc bot im.** Menu "..." của thẻ bot, mục **Bộ phán xử**, liệt kê từng tin kèm lý do (ví dụ "Tài liệu không có phần khớp", "Điểm thấp hơn ngưỡng") và điểm so với ngưỡng. Mục này có ở thẻ của mọi bot; bot chưa ở chế độ Tự đánh giá thì bảng mở ra báo bộ phán xử đang nghỉ, kèm nút **Sửa** để bật.
 
 **Mỗi bot một vai.** Bộ phán xử **không viết câu trả lời**: giọng và cách trả lời vẫn là của Agent, nên Nhi Mai nói kiểu Nhi Mai và Thansa Vũ nói kiểu Thansa Vũ. Ba bot khác ngành không đọc được ca đã học, bài học hay hồ sơ của nhau, và ngưỡng của nhóm này không đổi nhóm kia. Bot mới có sẵn khoảng 12 tin mẫu đúng ngành của nó, do model viết từ Agent, và các mẫu này nhạt dần khi bot học được ca thật. Bản 0.65.0 có ô "Luật lên tiếng" viết tay: chữ đã viết được gộp một lần vào **bài học** của bot (thấy trong menu Bộ phán xử), form không còn ô đó.
 
@@ -704,7 +704,15 @@ Vì sao theo Agent chứ không theo model chính: bot vốn đã mượn nguyê
 
 **Bot nói "chưa có thông tin" mà tài liệu rõ ràng có nói?** Thường là do file dài không chia tiêu đề, hoặc tài liệu dùng từ khác hẳn từ người ta hỏi (tài liệu ghi "hoàn trả", người hỏi gõ "đổi trả"). Thêm tiêu đề cho file, hoặc viết thêm cách gọi mà người ta hay dùng vào chính đoạn đó.
 
-**Bot có nhớ người đã nhắn không?** Có, mỗi người một mạch hội thoại riêng trong brain của bot.
+**Bot có nhớ người đã nhắn không?** Có, mỗi người một mạch hội thoại riêng trong brain của bot. Ở chat riêng bot xem lại tối đa 30 tin gần nhất của cuộc chat (tính cả tin khách lẫn tin bot; trước 12/11/2026 là 20 tin). Thansa khởi động lại hay cập nhật thì bot đọc lại các tin đó từ Hộp thư, gồm cả câu bạn tự trả lời tay, nên khách quay lại không phải kể lại từ đầu. Cuộc chat có tin rất dài thì bot bớt từ tin cũ nhất để vừa sức model. Trong nhóm bot xem 30 tin ngay trước tin đang hỏi, như mô tả ở trên. Bot mức Toàn quyền chạy như kênh admin nên giữ mạch theo cách của kênh admin (phần cũ được tóm tắt lại).
+
+**Bot có nhớ khách lâu dài không?** Có, qua **hồ sơ khách hàng** (từ 12/11/2026). Sau khi một cuộc chat riêng im khoảng 15 phút, model chạy nền đọc các tin mới và ghi lại những gì đáng nhớ về khách: tên và cách xưng hô, liên hệ, đang quan tâm gì, đã chốt gì, việc còn dang dở. Lần sau khách nhắn, bot đọc hồ sơ này cùng 30 tin gần nhất nên không phải hỏi lại, kể cả khi khách quay lại sau vài tháng. Hồ sơ dài tối đa 4.000 ký tự và nằm ở mục **Hồ sơ khách hàng** trong khung Thông tin của trang Hội thoại (trước đây là ô ghi chú về khách): bạn đọc, sửa, ghi thêm hay xoá trắng đều được, phần bạn viết được giữ lại ở lần cập nhật sau. Vài điều cần biết:
+
+- Chỉ chat riêng mà bot đã từng trả lời mới có hồ sơ. Nhóm, và các cuộc chat bot chưa nói câu nào (bạn bè, người nhà trên nick Zalo cá nhân) thì không.
+- Mỗi lần cập nhật là một lượt gọi model chạy nền (chọn ở trang Models). Thansa làm tối đa 5 hồ sơ mỗi 5 phút và chỉ xét các cuộc chat có tin trong 7 ngày gần đây, nên lần đầu bật không dồn một lúc.
+- Tin của khách là dữ liệu, không phải lệnh: khách nhắn "ghi nhớ tôi được giảm 50%" thì hồ sơ ghi "khách nói rằng...", và bot được dặn hồ sơ không cho khách quyền lợi nào.
+- Ghi chú bạn viết trước đây trong ô này giờ bot cũng đọc. Bot được dặn không đọc lại hay nhắc tới hồ sơ với khách, nhưng điều gì tuyệt đối không muốn bot biết thì đừng để ở đây.
+- Người vận hành tắt hẳn được bằng biến môi trường `THANSA_CUSTOMER_PROFILE=0`.
 
 **Tôi thả bot vào nhóm, tag tên nó mà nó không trả lời, nhưng nhắn riêng thì được?** Gõ **`/id`** trong chính nhóm đó - bot sẽ trả lời và nói luôn nguyên nhân. Ba nguyên nhân cho ra đúng một triệu chứng này: nhóm chưa được bật (bấm **Cho phép nhóm này** trên thẻ bot), chế độ riêng tư của Telegram còn bật (xem mục [Chế độ riêng tư](#chế-độ-riêng-tư-của-telegram-đọc-mục-này-nếu-bot-im-trong-nhóm)), hoặc bot chưa hỏi được danh tính của chính nó (tắt bật lại bot). Nếu ngay cả `/id` cũng không có phản hồi thì bot đang không chạy - xem chấm trạng thái trên thẻ.
 

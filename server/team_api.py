@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import sys
 import threading
 import time
@@ -37,6 +38,8 @@ REMIND_EVERY_S = 3600.0     # nhịp nhắc việc bị chặn quá 24 giờ
 RECONCILE_EVERY_S = 60.0    # nhịp đối soát sổ lượt chung với team_turns (T2, thiết kế 9.1)
 FINISHED_SHOWN = 30          # việc đã xong hiện ở tab Việc của nhóm (0.193.0)
 PINNED_SHOWN = 20            # tin đã ghim hiện ở dải trên khung chat (0.192.0), như Sổ quyết định của lượt
+CREATE_DOCS_MAX = 10         # files, and links, a team may be given in its create box (team_docs.MAX_PER_SEND)
+NEW_TEAM_UNCAPPED = ("task_turns", "task_steps")   # caps a new team starts without (TeamOps.create)
 
 
 # Performance (2026-11-05): the usage block of GET /teams/{id} reads the usage index, its events log and two more
@@ -117,6 +120,15 @@ def _err(code: int, vi: str, en: str, **extra) -> JSONResponse:
 
 def _team_err(ex: Exception, code: int = 400) -> JSONResponse:
     return JSONResponse({"ok": False, "error": str(ex)}, status_code=code)
+
+
+def _regs_of(rs, root: str, members) -> dict:
+    """Registry rows of `members` by agent_key, read in one query when the store can (agents_by_keys), else one by one."""
+    keys = [m["agent_key"] for m in members or []]
+    batch = getattr(rs, "agents_by_keys", None)
+    if callable(batch):
+        return batch(root, keys)
+    return {k: rs.agent_by_key(root, k) for k in keys}
 
 
 class TeamApi:
@@ -262,7 +274,8 @@ class TeamApi:
             return dict(m["identity"])
         return {"slug": slug, "name": m["slug_at_join"] or slug, "avatar": None, "avatar_seed": m["agent_key"]}
 
-    def member_views(self, team: dict, meta: Optional[list] = None) -> list:
+    def member_views(self, team: dict, meta: Optional[list] = None, members: Optional[list] = None,
+                     regs: Optional[dict] = None) -> list:
         """Thành viên đang hoạt động của nhóm kèm tên và ảnh đại diện ĐÚNG ảnh trợ lý đang dùng (`avatar` của file trợ lý;
         trợ lý chưa chọn ảnh thì dashboard tự suy từ slug như trang Cộng sự). Nhân dạng giữ theo agent_key (`_identity`)."""
         root = team["brain_id"]
@@ -270,8 +283,11 @@ class TeamApi:
         by_slug = {m["slug"]: m for m in (meta or [])}
         rs = self.deps.resonance_store()
         out = []
-        for m in self.teams().members(team["team_id"]):
-            reg = rs.agent_by_key(root, m["agent_key"]) or {}
+        # `members`/`regs`: already read by the caller for many teams at once (the Teams list, see teams_list).
+        members = self.teams().members(team["team_id"]) if members is None else members
+        regs = _regs_of(rs, root, members) if regs is None else regs
+        for m in members:
+            reg = regs.get(m["agent_key"]) or {}
             ident = self._identity(team, m, reg, by_slug)
             out.append(dict(ident, agent_key=m["agent_key"], title=str((by_slug.get(ident.get("slug")) or {}).get("title") or "")
                             if reg.get("status") == "active" else "",
@@ -288,12 +304,13 @@ class TeamApi:
         meta = self.deps.agents_meta(root) if meta is None else meta
         by_slug = {m["slug"]: m for m in (meta or [])}
         rs = self.deps.resonance_store()
-        return {m["agent_key"]: self._identity(team, m, rs.agent_by_key(root, m["agent_key"]) or {}, by_slug)
-                for m in self.teams().members(team["team_id"], include_removed=True)}
+        members = self.teams().members(team["team_id"], include_removed=True)
+        regs = _regs_of(rs, root, members)
+        return {m["agent_key"]: self._identity(team, m, regs.get(m["agent_key"]) or {}, by_slug) for m in members}
 
-    def faces(self, team: dict, meta: list) -> dict:
+    def faces(self, team: dict, meta: list, members: Optional[list] = None, regs: Optional[dict] = None) -> dict:
         """Ảnh nhóm ở danh sách: tối đa 4 gương mặt thành viên đang hoạt động (trưởng nhóm trước) và tổng số người."""
-        active = [m for m in self.member_views(team, meta) if m["status"] == "active"]
+        active = [m for m in self.member_views(team, meta, members, regs) if m["status"] == "active"]
         active.sort(key=lambda m: (m["agent_key"] != team.get("leader_key"), m["joined_at"]))
         return {"faces": [{"slug": m["slug"], "name": m["name"], "avatar": m["avatar"]} for m in active[:4]],
                 "member_count": len(active)}
@@ -548,6 +565,15 @@ class TeamOps:
             # Hai yêu cầu cùng mã chạy song song: yêu cầu kia thắng, phiên vừa mở không gắn nhóm nào thì bỏ.
             self._drop_session(sid)
             return {"team": team, "duplicate": True}
+        # 2026-11-12 (owner, after a customer: "tốn token xíu cũng ok, mục tiêu đã ghép team là phải giải quyết được
+        # việc"): a NEW team has no cap on the replies and steps of one job, so a job runs to its end instead of
+        # stopping at 12 replies or 8 steps to wait for "Cho thêm lượt". The daily cap of the team, the stop at two
+        # identical results and the engine limits still hold. Teams made before keep what they had; the owner sets
+        # a number again under Advanced.
+        try:
+            team = teams.set_caps(tid, {k: None for k in NEW_TEAM_UNCAPPED}, by="host")
+        except Exception as ex:  # noqa: BLE001 - the team exists; it only keeps the default caps
+            print(f"[team] new team {tid}: per-job caps kept at their defaults ({type(ex).__name__}: {ex})", file=sys.stderr)
         return {"team": team, "duplicate": False}
 
     def update(self, root: str, team_id: str, **fields) -> dict:
@@ -695,9 +721,14 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             if not api.exists():
                 return {"ok": True, "teams": [], "next": None}
             meta = deps.agents_meta(root) or []
+            teams = api.teams().list_teams(root, limit=limit, before=before)
+            # 2026-11-09: the members of every listed team, and their registry rows in ONE query, instead of one
+            # connection per member (225 for 15 teams, most of the list's time).
+            mems = {t["team_id"]: api.teams().members(t["team_id"]) for t in teams}
+            regs = _regs_of(deps.resonance_store(), root, [m for ms in mems.values() for m in ms])
             rows = [dict(t, counts=api.counts(t["team_id"]), last=api.last_message(t), unread=api.unread(t),
-                         **api.faces(t, meta))
-                    for t in api.teams().list_teams(root, limit=limit, before=before)]
+                         **api.faces(t, meta, mems[t["team_id"]], regs))
+                    for t in teams]
             # Con trỏ trang sau chỉ tính nhóm không ghim (nhóm ghim luôn nằm ở trang đầu).
             plain = [t for t in rows if not t.get("pinned_at")]
             nxt = plain[-1]["updated_at"] if len(plain) >= max(1, min(int(limit), 200)) else None
@@ -719,8 +750,50 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             out = {"ok": True, "team": api.view(got["team"])}
             if got["duplicate"]:
                 out["duplicate"] = True
+            elif body.get("attachments") or body.get("links"):
+                # 2026-11-12 (owner): documents and links picked in the create box. A resend of the same request finds
+                # the team already made (duplicate) and adds nothing twice. A document that cannot be added never
+                # undoes the team: the answer says how many were asked and how many went in.
+                out["documents"] = _add_documents(got["team"], body.get("attachments"), body.get("links"))
             return out
         return await api.io(_do)
+
+    def _left_out_note(team: dict, n: int) -> tuple:
+        """(vi, en) for `n` attached files the team did not keep: the list is full, or the file did not arrive."""
+        import sessions as _sessions
+        cap = _sessions.SESSION_ASSETS_MAX
+        try:
+            full = len(deps.session_store().list_session_files(team.get("session_id") or "")) >= cap
+        except Exception:  # noqa: BLE001 - the note must never fail the send
+            full = False
+        if full:
+            return (f"{n} file chưa vào được team: team đã đủ {cap} tài liệu. Gỡ bớt tài liệu ở tab Thông tin rồi gửi lại.",
+                    f"{n} file(s) did not get into the team: it already holds {cap} documents. Remove some in the Info "
+                    "tab, then send again.")
+        return (f"{n} file chưa vào được team (file không còn ở chỗ tải lên). Chọn lại file rồi gửi lại.",
+                f"{n} file(s) did not get into the team (the upload is no longer there). Pick the file again and resend.")
+
+    def _add_files(team: dict, attachments: Any) -> list:
+        """Files (uploaded, or already in the brain) become documents of the team; pictures get described."""
+        if api.deps.attach is None:
+            return []
+        files = api.deps.attach(team, [a for a in list(attachments or []) if isinstance(a, dict)])
+        pics = [f for f in files if f.get("image")] if api.deps.describe is not None else []
+        if pics:
+            api.runner()._on_loop(lambda: api._spawn(_described_then(api, team, pics, "", None)))
+        return files
+
+    def _add_documents(team: dict, attachments: Any, links: Any) -> dict:
+        asked_files = [a for a in list(attachments or []) if isinstance(a, dict)][:CREATE_DOCS_MAX]
+        asked_links = [str(u or "").strip() for u in list(links or []) if str(u or "").strip()][:CREATE_DOCS_MAX]
+        files = _add_files(team, asked_files) if asked_files else []
+        added_links, sid = 0, team.get("session_id") or ""
+        for u in dict.fromkeys(asked_links):
+            # http and https only, the rule of POST /sessions/{id}/assets/links: nothing else may become a link to click.
+            if sid and re.match(r"^https?://", u, re.I) and deps.session_store().add_session_link(sid, u, ""):
+                added_links += 1
+        return {"files": files, "links": added_links,
+                "failed": (len(asked_files) - len(files)) + (len(dict.fromkeys(asked_links)) - added_links)}
 
     @app.get("/teams/{team_id}")
     async def teams_get(team_id: str, brain: str = "brain"):
@@ -1077,13 +1150,18 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
             # 0.195.0: the owner works here now; the Teams page opens this team next time, on any device.
             api.teams().mark_owner(team_id)
             text = str(body.get("text") or "").strip()
-            files = []
+            files, left_out = [], 0
             if body.get("attachments") and api.deps.attach is not None:
                 # 0.191.0: the files become the team's documents (text ones are read by every member turn); the
                 # message keeps their names so everyone in the chat sees what was sent.
-                files = api.deps.attach(team, list(body.get("attachments") or []))
+                asked = [a for a in list(body.get("attachments") or []) if isinstance(a, dict)]
+                files = api.deps.attach(team, asked)
+                left_out = max(0, len(asked) - len(files))
                 if files:
                     text = (text + "\n\n" if text else "") + "📎 " + ", ".join(f["name"] for f in files)
+                elif left_out and not text:
+                    # Nothing to send at all: say why instead of "the message is empty".
+                    return _err(400, _left_out_note(team, left_out)[0], _left_out_note(team, left_out)[1])
             try:
                 sub = runner.submit(team_id, text, mentions=list(body.get("mentions") or []),
                                     as_job=bool(body.get("as_job")),
@@ -1104,7 +1182,13 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
                 runner._on_loop(lambda: api._spawn(_described_then(api, team, pics, text, None)))
             if sub.get("task_id") and sub["created"]:
                 api.kick()
-            return dict(sub, ok=True)
+            out = dict(sub, ok=True)
+            if left_out:
+                # 2026-11-12: a file the team could not keep used to vanish without a word (a customer: "up hình tới
+                # một lúc nó không cho up nữa"). The page shows a note that is not a bare code.
+                vi, en = _left_out_note(team, left_out)
+                out["notes"] = list(out.get("notes") or []) + [localefmt.chu(vi, en)]
+            return out
         return await api.io(_do)
 
     @app.post("/teams/{team_id}/files")
@@ -1118,12 +1202,9 @@ def register(app, deps: TeamApiDeps) -> TeamApi:
                 return err
             if api.deps.attach is None:
                 return _err(501, "Máy chủ chưa hỗ trợ tài liệu nhóm", "Team documents are not supported here")
-            files = api.deps.attach(team, list(body.get("attachments") or []))
+            files = _add_files(team, body.get("attachments"))
             if not files:
                 return _err(400, "Không thêm được file nào", "No file could be added")
-            pics = [f for f in files if f.get("image")] if api.deps.describe is not None else []
-            if pics:
-                api.runner()._on_loop(lambda: api._spawn(_described_then(api, team, pics, "", None)))
             return {"ok": True, "files": files, "session_id": team["session_id"]}
         return await api.io(_do)
 
