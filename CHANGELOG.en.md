@@ -8,6 +8,37 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.553.4] - 2026-11-13
+### Fixed
+- **The conflict fix round works on a machine where git has no name and email.** On a fresh server or in Docker, the AI's merge command stopped at once with `empty ident name`. Each repo attached to a chat now has an identity of its own, the GitHub account you connected.
+- **Commits the AI makes itself in that repo now carry the same author as Thansa's commits.** A name and email you set for the repo yourself are kept.
+
+## [0.553.3] - 2026-11-13
+### Fixed
+- **The automated tests pass again.** Two GitHub updates landed at the same moment and made one test fail for the wrong reason; that test is rewritten. Nothing changes in how Thansa runs.
+
+## [0.553.2] - 2026-11-12
+### Security
+- **Hooks and git config inside a repo can no longer read the GitHub token.** A hook sitting in the clone (installed husky-style by `npm install`, or written by the model) used to run while Thansa fetched or pushed, and could see the token. Thansa's git calls that carry the token now ignore every hook of the repo.
+- **The token only goes to the repo on GitHub.** If the clone's git config was changed to steer the connection elsewhere (a different `origin`, `insteadOf`, a proxy), Thansa stops and names the setting to remove instead of sending the token.
+- **Worth knowing:** a repo's `pre-push` hook no longer runs when Thansa pushes (Thansa's own checks and CI run as before). Repos using Git LFS: new LFS files made in a chat are not uploaded by the push yet.
+
+## [0.553.1] - 2026-11-12
+### Fixed
+- **A conflicting PR on a private repo is merged back by Thansa again.** The conflict fix round used to stop at downloading the main branch, because the AI's shell has no access to GitHub. Thansa now downloads the main branch first, and the AI only merges and resolves the conflict.
+- **If GitHub is unreachable at that moment, Thansa waits and tries again.** A fix round is no longer spent on a merge that cannot work; the repo card says why it is waiting.
+
+## [0.553.0] - 2026-11-12
+### Added
+- **A whole folder can be a document.** The search box under Add file for a project, a partner, a chat and a team (the create box and the Info tab) now lists folders whose name matches, with their own folder icon. Press Add to attach the whole folder instead of picking files one by one.
+- **Thansa knows what the folder holds.** An unpinned folder gives Thansa its path, and it opens the files inside when it needs them. A pinned folder has its file list loaded into every turn. A folder added to a team is pinned at once.
+- **Safer rows for folders.** A folder row has no delete-from-brain button, only remove from the list. Tapping the folder's name opens it on the Files page.
+
+## [0.552.1] - 2026-11-12
+### Fixed
+- **Attaching a private repo to a chat no longer fails once its main branch has new files.** A private repo used to attach only the first time; as soon as the main branch gained or changed a file, a new chat stopped with `could not fetch ... from promisor remote`.
+- **Changing a chat's base branch works on private repos too.** The same fault broke Change branch and the fresh branch Thansa starts after a merge; both are fixed.
+
 ## [0.552.0] - 2026-11-12
 ### Added
 - **New Claude models show up in the model picker on their own.** Thansa also reads the model catalog Claude Code downloads from Anthropic, so a model released after the installed CLI was built appears right away instead of waiting for a Thansa release to add its name.

@@ -6,6 +6,37 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.553.4] - 2026-11-13
+### Sửa lỗi
+- **Vòng sửa xung đột chạy được trên máy chưa khai tên và email cho git.** Trên máy chủ mới hoặc trong Docker, lệnh gộp nhánh của AI dừng ngay với lỗi `empty ident name`. Giờ mỗi repo gắn vào chat có sẵn danh tính, là tài khoản GitHub anh đã kết nối.
+- **Commit do AI tự tạo trong repo đó giờ đứng tên giống commit của Thansa.** Nếu anh đã tự khai tên và email riêng cho repo thì Thansa giữ nguyên.
+
+## [0.553.3] - 2026-11-13
+### Sửa lỗi
+- **Bộ kiểm tra tự động xanh trở lại.** Hai bản cập nhật GitHub vừa rồi vào cùng lúc làm một bài kiểm tra báo đỏ sai; bài đó đã được viết lại. Cách Thansa chạy không đổi gì.
+
+## [0.553.2] - 2026-11-12
+### Bảo mật
+- **Hook và cấu hình git trong repo không còn đọc được token GitHub.** Trước đây một hook nằm trong bản clone (ví dụ do `npm install` kiểu husky cài, hoặc do model tạo) chạy đúng lúc Thansa tải về hay đẩy code và thấy được token. Giờ các lệnh git có mang token của Thansa bỏ qua mọi hook của repo.
+- **Token chỉ đi tới đúng repo trên GitHub.** Nếu cấu hình git của bản clone bị sửa để lái kết nối sang nơi khác (đổi `origin`, `insteadOf`, proxy), Thansa dừng lại và nói rõ dòng nào cần gỡ, thay vì gửi token đi.
+- **Thay đổi cần biết:** hook `pre-push` của repo không còn chạy khi Thansa đẩy code (bộ kiểm tra của Thansa và CI vẫn chạy như cũ). Repo dùng Git LFS: file LFS mới tạo trong chat chưa được tải lên theo lần đẩy.
+
+## [0.553.1] - 2026-11-12
+### Sửa lỗi
+- **PR của repo riêng tư bị xung đột giờ được Thansa tự gộp lại.** Trước đây vòng sửa xung đột dừng ngay ở bước tải nhánh chính, vì phần chạy lệnh của AI không có quyền vào GitHub. Giờ Thansa tự tải nhánh chính về trước, AI chỉ còn việc gộp và giải quyết xung đột.
+- **Mất mạng lúc đó thì Thansa chờ rồi thử lại.** Vòng sửa không còn bị tiêu mất vào một lần gộp chắc chắn hỏng; thẻ repo ghi rõ lý do đang chờ.
+
+## [0.553.0] - 2026-11-12
+### Thêm mới
+- **Chọn được cả thư mục làm tài liệu.** Ô tìm ở phần Thêm file của dự án, cộng sự, cuộc trò chuyện và nhóm (lúc tạo nhóm lẫn tab Thông tin) giờ hiện cả thư mục khớp tên, có icon thư mục riêng. Bấm Thêm là gắn cả thư mục, không phải chọn từng file.
+- **Thansa biết trong thư mục có gì.** Thư mục chưa ghim thì Thansa thấy đường dẫn và tự mở file bên trong khi cần. Ghim thì danh sách file trong thư mục được nạp sẵn vào mỗi lượt. Thư mục thêm vào nhóm được ghim sẵn.
+- **An toàn hơn cho thư mục.** Hàng thư mục không có nút xoá khỏi brain, chỉ có gỡ khỏi danh sách. Bấm vào tên thư mục là mở nó ở trang Tệp tin.
+
+## [0.552.1] - 2026-11-12
+### Sửa lỗi
+- **Gắn repo riêng tư vào chat không còn hỏng khi nhánh chính có file mới.** Trước đây repo riêng tư chỉ gắn được lần đầu; hễ nhánh chính có thêm hoặc đổi file là chat mới báo `could not fetch ... from promisor remote`.
+- **Đổi nhánh gốc của chat cũng chạy với repo riêng tư.** Cùng lỗi đó làm nút Đổi nhánh và việc tạo lại nhánh sau khi merge thất bại; cả hai đã được sửa.
+
 ## [0.552.0] - 2026-11-12
 ### Thêm mới
 - **Model Claude mới tự hiện trong trình chọn model.** Thansa đọc thêm danh mục model mà Claude Code tải về từ Anthropic, nên model vừa ra (bản CLI đang cài chưa ghi sẵn tên) cũng hiện ngay, không phải chờ bản Thansa mới ghi thêm tên.

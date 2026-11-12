@@ -16,8 +16,29 @@ What lives here:
      (the local clone and its worktrees are deleted, GitHub is never touched). Removal refuses while work could be lost.
 
 Git authentication never goes through argv or the remote URL: the token rides in `GIT_CONFIG_*` environment variables
-as an HTTP header, only for Thansa's own git calls. The clone's `origin` stays the clean https URL, and a model running
-shell commands in the worktree has no credential to push with (section 4.1: the model never pushes, Thansa does).
+as an HTTP header, only for Thansa's own git calls (`auth=True`). The clone's `origin` stays the clean https URL, so a
+model running shell commands in the worktree finds no credential on disk to push with (section 4.1: the model never
+pushes, Thansa does).
+
+Threat model of those authenticated calls (decided 12/11/2026). A chat's worktree shares the clone's `.git`, and the
+model has a shell there, so everything under `.git` is written by code Thansa did not choose: the model, and whatever it
+runs (an `npm install` that sets `core.hooksPath`, husky style, is the everyday case). git hands its whole
+environment, token included, to every program it starts, and applies an unscoped header to every URL. So a call that
+carries the token treats the repo's hooks and its repo-level config (`.git/config`, `config.worktree`, whatever they
+include) as UNTRUSTED, and `auth_env` isolates the call from them:
+  - Hooks never run in it: `core.hooksPath` points at an empty folder of Thansa's own (`NO_HOOKS_DIR`).
+  - The header is scoped to one URL (`http.<url>.extraheader`): the origin GitHub's API named, read from Thansa's
+    registry and never from the clone's config. A redirected `origin` gets no token.
+  - Settings that start a program are switched off for the call (`ISOLATION`), repo-level filter drivers are replaced
+    by the machine's own or emptied, and only the origin's protocol is allowed (no `ext::`, no helper of the repo's).
+  - Repo-level settings that steer the connection and cannot be overridden (`url.*.insteadOf`, `http.proxy`,
+    `include.path`, a changed `remote.origin.url`...) make the call refuse, naming them, instead of running.
+Trusted: the machine's own git config (system and global), PATH and the environment of the Thansa process.
+NOT a boundary: a program running as Thansa's OS user that goes after the token on purpose. It can read STATE_DIR
+(settings plus `.secret_key`) or the environment of a running git. This isolation stops the token leaking THROUGH git;
+it does not sandbox the model. git itself has no supported way to hold a secret inside a repository it does not trust,
+so the lists below are the known routes, not a proof; the stronger design runs the token-bearing calls from a git dir
+of Thansa's own that a worktree cannot write to.
 
 Stdlib plus httpx (through github_api), no FastAPI, no main import.
 """
@@ -270,18 +291,200 @@ def client() -> GitHub:
 # ============================================================
 # Git helpers (token in the environment, never in argv)
 # ============================================================
-def git_env(tok: Optional[str] = None) -> Dict[str, str]:
+def git_env() -> Dict[str, str]:
+    """Environment of a git call that carries NO credential."""
     env = dict(os.environ)
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["LC_ALL"] = "C"
     env.pop("GIT_ASKPASS", None)
+    return env
+
+
+# ---- isolation of the calls that carry the token (threat model in the module docstring) ----
+# An empty folder that `core.hooksPath` points at, so no hook of the repo runs while the token is in the environment.
+# A folder rather than the null device: it behaves the same on Linux, macOS and Windows.
+NO_HOOKS_DIR = STATE_DIR / "git-no-hooks"
+# Set on every authenticated call. Environment config is read last, so each line beats the repo's own value.
+ISOLATION = (
+    ("core.fsmonitor", "false"),      # a repo can name a program here; checkout and worktree add would start it
+    ("core.askPass", ""),             # the program git starts to ask for a password when GitHub answers 401
+    ("credential.helper", ""),        # an empty value drops every helper listed before it, same reason
+    ("gc.auto", "0"),                 # no background maintenance: it outlives the call holding the same environment,
+    ("maintenance.auto", "false"),    # and `gc.recentObjectsHook` is one more program of the repo's choosing
+    ("push.gpgSign", "false"),        # a signed push would start `gpg.program`
+    # A submodule the chat initialised is a second repo with a config of its own, which nothing here vets. git walks
+    # into it by default on fetch, and on checkout and push when told to. Thansa never manages submodules itself.
+    ("fetch.recurseSubmodules", "false"),
+    ("submodule.recurse", "false"),
+    ("push.recurseSubmodules", "no"),
+)
+# Programs that convert file contents, run by checkout. A value set at repo level is replaced by the machine's own
+# value (Git LFS is installed there) or by the neutral one, so a repo cannot swap the driver for the call.
+_DRIVER_NEUTRAL = {"smudge": "", "clean": "", "process": "", "required": "false"}
+# http.* settings a repo may keep: none of them moves the connection or what it trusts. Every other http.* key
+# (proxy, sslVerify, sslCAInfo, curloptResolve, cookieFile...) refuses the call, and so does one git adds later.
+_HTTP_HARMLESS = frozenset({"postbuffer", "lowspeedlimit", "lowspeedtime", "version", "maxrequests", "minsessions",
+                            "useragent"})
+_REMOTE_STEERING = frozenset({"pushurl", "proxy", "proxyauthmethod", "vcs", "uploadpack", "receivepack"})
+_CORE_PROGRAMS = frozenset({"sshcommand", "gitproxy", "alternaterefscommand"})
+_MACHINE_SCOPES = frozenset({"system", "global", "command"})
+
+
+def _split_key(key: str) -> tuple:
+    """`section.subsection.variable` as git prints it: (section, subsection, variable), subsection may hold dots."""
+    section, _, rest = str(key or "").partition(".")
+    sub, _, var = rest.rpartition(".")
+    return section.lower(), sub, var.lower()
+
+
+def _config_entries(cwd: str) -> List[tuple]:
+    """Every git config entry in effect in `cwd`, in git's own order: (scope, key, value). No token in this call."""
+    try:
+        p = subprocess.run(["git", "config", "--list", "--show-scope", "-z"], cwd=cwd, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=GIT_TIMEOUT, env=git_env(),
+                           creationflags=winproc.no_window())
+    except FileNotFoundError:
+        raise RepoError(_c("Máy này chưa cài git.", "git is not installed on this machine."))
+    except subprocess.TimeoutExpired:
+        p = None
+    if p is None or p.returncode != 0:
+        # Unreadable config: nothing proves the call is safe, so the token stays home.
+        why = ((p.stderr if p else "") or "").strip().splitlines()[-1:] or ["?"]
+        raise RepoError(_c(f"Không đọc được cấu hình git của repo nên Thansa không dùng token ở đây: {why[0]}",
+                           f"Could not read this repo's git config, so Thansa will not use the token here: {why[0]}"))
+    parts = (p.stdout or "").split("\0")
+    out = []
+    for i in range(0, len(parts) - 1, 2):
+        key, _, value = parts[i + 1].partition("\n")
+        out.append((parts[i], key, value))
+    return out
+
+
+def _protocol(url: str) -> str:
+    """The git transport a URL uses: its scheme, `ssh` for the scp form (git@host:path), `file` for a path."""
+    if "://" in url:
+        return url.split("://", 1)[0].lower()
+    return "ssh" if ":" in url.split("/", 1)[0] and not re.match(r"^[A-Za-z]:", url) else "file"
+
+
+def _vet_config(entries: List[tuple], origin: str) -> List[tuple]:
+    """Overrides that neutralise this repo's own config for one authenticated call. Raises RepoError, naming the
+    settings, when the repo-level config holds one that could move the token and that no override can beat."""
+    machine: Dict[str, str] = {}
+    repo = []
+    for scope, key, value in entries:
+        if scope in _MACHINE_SCOPES:
+            machine[key] = value
+        else:
+            repo.append((key, value))        # local, worktree, and any scope a later git invents
+    refused: List[str] = []
+    overrides: List[tuple] = []
+    for key, value in repo:
+        section, sub, var = _split_key(key)
+        steers = (
+            section in ("include", "includeif", "url")
+            or (section == "http" and var not in _HTTP_HARMLESS)
+            or (section == "remote" and sub == "origin" and var in _REMOTE_STEERING)
+            or (section == "core" and var in _CORE_PROGRAMS)
+            or (section == "lfs" and (var == "standalonetransferagent"
+                                      or sub.lower().startswith(("customtransfer.", "extension."))))
+        )
+        if steers:
+            refused.append(key)
+        elif (section == "filter" and var in _DRIVER_NEUTRAL) or key == "diff.external":
+            overrides.append((key, machine.get(key, _DRIVER_NEUTRAL.get(var, ""))))
+    # `origin` must still be the one remote GitHub's API named. A `git clone` is vetted without repo entries.
+    urls = [value for key, value in repo if key == "remote.origin.url"]
+    if repo and urls != [origin]:
+        refused.append("remote.origin.url")
+    if refused:
+        names = ", ".join(sorted(set(refused)))
+        raise RepoError(_c(f"Thansa không dùng token GitHub trong repo này: cấu hình git của bản clone ({names}) có thể "
+                           "đưa token đi nơi khác. Gỡ các dòng đó (git config --unset-all <tên>), hoặc gỡ repo khỏi "
+                           "brain rồi thêm lại.",
+                           f"Thansa will not use the GitHub token in this repo: the clone's git config ({names}) could "
+                           "send the token somewhere else. Remove those settings (git config --unset-all <name>), or "
+                           "remove the repo from the brain and add it again."))
+    return overrides
+
+
+def _allowed_protocols(entries: List[tuple], origin: str) -> str:
+    """The origin's own protocol, plus the one a machine-wide `insteadOf` moves it to (people who reach GitHub over
+    SSH set that in their global config). Nothing else: no `ext::`, no remote helper, no local path."""
+    allowed = [_protocol(origin)]
+    for scope, key, value in entries:
+        section, sub, var = _split_key(key)
+        if (scope in _MACHINE_SCOPES and section == "url" and var in ("insteadof", "pushinsteadof") and value
+                and origin.startswith(value) and _protocol(sub) in ("https", "http", "ssh", "git")):
+            allowed.append(_protocol(sub))
+    return ":".join(dict.fromkeys(allowed))
+
+
+def _no_hooks_dir() -> str:
+    """The empty folder hooks are looked up in during an authenticated call, emptied again if anything landed there."""
+    d = NO_HOOKS_DIR
+    if d.is_symlink() or (d.exists() and not d.is_dir()):
+        d.unlink()
+    d.mkdir(parents=True, exist_ok=True)
+    for child in list(d.iterdir()):
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child, ignore_errors=True)
+        else:
+            child.unlink()
+    if any(d.iterdir()):
+        raise RepoError(_c(f"Không dọn trống được {d}, Thansa không dùng token khi thư mục đó còn file.",
+                           f"Could not empty {d}; Thansa will not use the token while files remain there."))
+    return d.as_posix()
+
+
+def _real(path: Any) -> str:
+    return os.path.normcase(os.path.realpath(str(path)))
+
+
+def trusted_origin(cwd: str) -> str:
+    """The origin URL GitHub's API gave for the clone `cwd` belongs to, from Thansa's registry; "" when `cwd` is not
+    inside one of Thansa's clones. Never read from the clone's own config: that is the part a model can rewrite."""
+    try:
+        p = git(["rev-parse", "--git-common-dir"], cwd, check=False)
+    except (RepoError, OSError):
+        return ""
+    common = (p.stdout or "").strip()
+    if p.returncode != 0 or not common:
+        return ""
+    root = _real((Path(cwd) / common).parent)       # the common dir of a clone and of all its worktrees is <clone>/.git
+    for r in _load()["repos"]:
+        if r.get("path") and _real(r["path"]) == root:
+            return str(r.get("clone_url") or "")
+    return ""
+
+
+def auth_env(cwd: str, origin: str, tok: Optional[str] = None, in_repo: bool = True) -> Dict[str, str]:
+    """Environment of a git call that carries the token, for `origin` only, isolated from the repo in `cwd`.
+
+    `origin` is the URL the token may go to and must come from GitHub's API (the registry), never from the clone.
+    Raises RepoError when the repo's config could still move the token (see `_vet_config`).
+    `in_repo=False` is for `git clone`: it makes a repo and reads the config of none, not even of a repo that
+    happens to enclose `cwd` (a default install keeps STATE_DIR inside the Thansa checkout), so only the machine's
+    config counts there."""
+    env = git_env()
     tok = token() if tok is None else tok
-    if tok:
+    if not tok:
+        return env
+    if not origin:
+        raise RepoError(_c(f"Thansa chỉ dùng token GitHub trong repo do chính nó clone, {cwd} không phải repo như vậy.",
+                           f"Thansa only uses the GitHub token inside a repo it cloned itself; {cwd} is not one."))
+    entries = [e for e in _config_entries(cwd) if in_repo or e[0] in _MACHINE_SCOPES]
+    pairs = [("core.hooksPath", _no_hooks_dir())] + list(ISOLATION) + _vet_config(entries, origin)
+    if origin.lower().startswith(("https://", "http://")):
         basic = base64.b64encode(f"x-access-token:{tok}".encode()).decode()
-        n = int(env.get("GIT_CONFIG_COUNT") or 0)
-        env["GIT_CONFIG_COUNT"] = str(n + 1)
-        env[f"GIT_CONFIG_KEY_{n}"] = "http.extraheader"
-        env[f"GIT_CONFIG_VALUE_{n}"] = f"AUTHORIZATION: basic {basic}"
+        pairs.append((f"http.{origin}.extraheader", f"AUTHORIZATION: basic {basic}"))
+    n = int(env.get("GIT_CONFIG_COUNT") or 0)
+    for i, (key, value) in enumerate(pairs, start=n):
+        env[f"GIT_CONFIG_KEY_{i}"] = key
+        env[f"GIT_CONFIG_VALUE_{i}"] = value
+    env["GIT_CONFIG_COUNT"] = str(n + len(pairs))
+    env["GIT_ALLOW_PROTOCOL"] = _allowed_protocols(entries, origin)     # beats every protocol.*.allow of the repo
+    env.pop("SSH_ASKPASS", None)
     return env
 
 
@@ -295,11 +498,18 @@ def _redact(text: str) -> str:
 
 
 def git(args: List[str], cwd: str, *, timeout: int = GIT_TIMEOUT, auth: bool = False,
-        check: bool = True) -> subprocess.CompletedProcess:
+        check: bool = True, origin: str = "") -> subprocess.CompletedProcess:
+    """Run git in `cwd`. `auth=True` puts the token in the call's environment, for the clone's registered origin
+    only and isolated from the repo's hooks and config (`auth_env`); it raises RepoError, even with `check=False`,
+    when that isolation cannot be had. `origin` names the URL when the registry cannot (a clone being made)."""
+    tok = token() if auth else ""
+    env = git_env()
+    if tok:
+        cloning = list(args[:1]) == ["clone"]       # no repo yet: the caller names the origin, the registry cannot
+        env = auth_env(cwd, origin or ("" if cloning else trusted_origin(cwd)), tok, in_repo=not cloning)
     try:
         p = subprocess.run(["git"] + list(args), cwd=cwd, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=timeout, env=git_env() if auth else git_env(""),
-                           creationflags=winproc.no_window())
+                           errors="replace", timeout=timeout, env=env, creationflags=winproc.no_window())
     except FileNotFoundError:
         raise RepoError(_c("Máy này chưa cài git.", "git is not installed on this machine."))
     except subprocess.TimeoutExpired:
@@ -312,8 +522,43 @@ def git(args: List[str], cwd: str, *, timeout: int = GIT_TIMEOUT, auth: bool = F
     return p
 
 
+# Keyword arguments for every git call of Thansa that puts files of ANOTHER commit on disk (worktree add, checkout).
+# The clone is a partial one (`--filter=blob:none`): a fetch brings commits and trees, never file contents, so the
+# first checkout of a commit that arrived later makes git download the missing contents from origin by itself, in the
+# middle of the command. That hidden fetch needs the token like any other, and its size follows the repo, not
+# GIT_TIMEOUT. Without the token a private repo answered "could not fetch <sha> from promisor remote" and attaching the
+# repo to a chat failed as soon as the base branch had moved (owner, 12/11/2026). The checkout is where the repo's
+# post-checkout hook and filter drivers would run: `auth_env` keeps both out of a call that holds the token.
+CHECKOUT: Dict[str, Any] = {"auth": True, "timeout": 300}
+
+
 def git_out(args: List[str], cwd: str, **kw) -> str:
     return (git(args, cwd, **kw).stdout or "").strip()
+
+
+def identity() -> Dict[str, str]:
+    """Who Thansa commits as: the connected GitHub account, with its noreply address."""
+    login = str(_read_conn().get("login") or "") or "thansa"
+    uid = user_id()
+    email = f"{uid}+{login}@users.noreply.github.com" if uid else f"{login}@users.noreply.github.com"
+    return {"name": login, "email": email}
+
+
+def ensure_identity(cwd: str) -> None:
+    """Give the clone `cwd` belongs to a commit identity of its own, when it has none: the one Thansa commits with.
+
+    Thansa names itself through the environment of its own commits, so the clone never needed `user.name`. The chat's
+    engine runs git in the worktree too (`git merge` in a conflict fix round, `git stash`, a commit of its own), and
+    there git falls back on the machine: with no global identity, as in a container or on a fresh server, it stops
+    with "empty ident name" or "unable to auto-detect email address" before doing anything. A value the clone already
+    holds is kept. Best effort: a failure here must not stop the caller.
+    """
+    try:
+        for key, value in (("user.name", identity()["name"]), ("user.email", identity()["email"])):
+            if not git_out(["config", "--local", "--get", key], cwd, check=False):
+                git(["config", "--local", key, value], cwd, check=False)
+    except (RepoError, OSError):
+        pass
 
 
 def is_dirty(path: str) -> bool:
@@ -535,13 +780,16 @@ def ensure_clone(brain: str, brain_root: str, full_name: str) -> Dict[str, Any]:
     with _repo_lock(str(dest)):
         rec = find(brain, full_name)
         if dest.is_dir() and (dest / ".git").exists():
-            git(["fetch", "--prune", "origin"], str(dest), auth=True, timeout=CLONE_TIMEOUT)
+            # `origin` follows GitHub's own answer: a URL that drifted, or that a chat's shell rewrote, is put back
+            # before the token goes anywhere (auth_env refuses a clone whose origin is not this URL).
+            git(["remote", "set-url", "origin", clone_url], str(dest), check=False)
+            git(["fetch", "--prune", "origin"], str(dest), auth=True, timeout=CLONE_TIMEOUT, origin=clone_url)
         else:
             if dest.exists():
                 shutil.rmtree(dest, ignore_errors=True)   # a half-finished clone from a crash, never user work
             dest.parent.mkdir(parents=True, exist_ok=True)
             git(["clone", "--filter=blob:none", "--no-tags", clone_url, str(dest)], str(dest.parent),
-                auth=True, timeout=CLONE_TIMEOUT)
+                auth=True, timeout=CLONE_TIMEOUT, origin=clone_url)
         if not rec:
             rec = {"id": uuid.uuid4().hex[:12], "brain": brain, "added_at": _now()}
         # Merge methods the repo allows, in Thansa's order of preference (spec 11.1: follow the repo's settings).
@@ -574,6 +822,7 @@ def _worktree_dir(rec: Dict[str, Any], sid: str) -> Path:
 
 def ensure_worktree(sid: str, rec: Dict[str, Any]) -> Dict[str, str]:
     """This conversation's worktree of the repo, created on `thansa/<session>` from origin's default branch."""
+    ensure_identity(rec["path"])       # the engine runs git in the worktree: merge and stash need a committer
     existing = coding_store.worktree_thu_muc(sid, rec["folder_id"])
     if existing and Path(existing).is_dir():
         return {"worktree": existing, "branch": coding_store.nhanh_hien_tai(existing)}
@@ -593,7 +842,7 @@ def ensure_worktree(sid: str, rec: Dict[str, Any]) -> Dict[str, str]:
                     timeout=300)
             base = f"origin/{base_name}"
             args = ["worktree", "add", str(dest), branch] if have else ["worktree", "add", "-b", branch, str(dest), base]
-            git(args, clone)
+            git(args, clone, **CHECKOUT)
             # The branch tracks nothing yet; the first push sets its upstream.
             git(["config", f"branch.{branch}.thansaBase", base_name], clone, check=False)
     coding_store.dat_worktree_thu_muc(sid, rec["folder_id"], str(dest))
@@ -781,7 +1030,7 @@ def set_base(sid: str, brain: str, full_name: str, base: str) -> Dict[str, Any]:
                                "(or start a new chat) before changing branch."))
         git(["fetch", "origin", f"+refs/heads/{base}:refs/remotes/origin/{base}"], wt, auth=True, timeout=300)
         cur = coding_store.nhanh_hien_tai(wt) or session_branch(sid)
-        git(["checkout", "-q", "-B", cur, f"origin/{base}"], wt)
+        git(["checkout", "-q", "-B", cur, f"origin/{base}"], wt, **CHECKOUT)
         git(["config", f"branch.{cur}.thansaBase", base], wt, check=False)
     _set_session_base(sid, fn, "" if base == (repo.get("default_branch") or "main") else base)
     return session_view(sid, brain)
