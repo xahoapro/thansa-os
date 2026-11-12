@@ -90,7 +90,7 @@ watchfiles.watch = fake_watch
 # The watcher is shared and lingers after its last socket (test_graph_shared_watch.py); 0 here so closing the
 # screen still stops it, as checked below.
 graph_routes._WATCH_LINGER_S = 0
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app)
 
 

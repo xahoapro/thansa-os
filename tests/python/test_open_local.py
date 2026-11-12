@@ -61,7 +61,7 @@ check("plain folder opens", local_open.plan(home / "Documents") == "open")
 launched = []
 local_open.launch = lambda action, target: launched.append((action, target))
 main.Path.home = staticmethod(lambda: home)
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 main.cfgmod.auth_enabled = lambda: False
 main.cfgmod.require_login = lambda: False
 

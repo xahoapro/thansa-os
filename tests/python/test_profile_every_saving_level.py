@@ -58,7 +58,7 @@ HEADER = "HỒ SƠ NGƯỜI DÙNG (chung mọi brain"
 CLOCK = {"now": "Bây giờ là 09:01 Thứ Hai 02/11/2026."}
 context_compiler.dong_ho = lambda now=None, lang="": CLOCK["now"]
 
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 
 BRAIN = Path(tempfile.mkdtemp(prefix="thansa-profile-brain-"))

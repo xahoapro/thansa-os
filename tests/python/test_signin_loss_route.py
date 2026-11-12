@@ -137,7 +137,7 @@ def _run_turn(mp, tmpdir, script, sid):
     mcfg = _two_accounts()
     mp.setattr(main, "_CHAT_RUNTIME", runtime)
     mp.setattr(main, "get_store", lambda: store)
-    mp.setattr(main.cfgmod, "gate_active", lambda: False)
+    mp.setattr(main.cfgmod, "gate_active", lambda *a, **k: False)
     mp.setattr(main.cfgmod, "read_settings", lambda: {"model": mcfg})
     mp.setattr(main, "_chat_provider", lambda _cfg: (CHATGPT, "oauth", "", "gpt-5.6-luna"))
     mp.setattr(main, "_routing_connected_ids", lambda _s: [CHATGPT])

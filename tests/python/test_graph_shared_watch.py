@@ -70,7 +70,7 @@ def fake_watch(*paths, stop_event=None, watch_filter=None, **kw):
 
 
 watchfiles.watch = fake_watch
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app)
 
 
