@@ -46,7 +46,7 @@ os.environ["THANSA_FILES_ROOT"] = str(brain)          # the browse ceiling is th
 (brain / "trong").mkdir()
 BRAIN = str(brain)
 
-M.cfgmod.gate_active = lambda: False
+M.cfgmod.gate_active = lambda *a, **k: False
 M._TEAM_API.deps.spawn = lambda coro: coro.close() if hasattr(coro, "close") else None
 c = TestClient(M.app, base_url="http://127.0.0.1")
 store = M.get_store()
