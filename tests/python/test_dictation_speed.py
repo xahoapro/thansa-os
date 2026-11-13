@@ -78,8 +78,9 @@ KEEP = [
 ]
 for t in KEEP:
     check(f"everyday words stay: {t!r}", nghe_sua.sua(t, TV) == t)
-check("a misheard name is still fixed: David ơi", nghe_sua.sua("David ơi, mở lịch", TV) == "Thansa ơi, mở lịch")
-check("a name split in two is still fixed: Gia vít ơi", nghe_sua.sua("Gia vít ơi, tóm tắt email", TV).startswith("Thansa ơi"))
+# Thansa: the misheard forms of the name are "Thần sa" / "Than sa" (the source tested its own name's mishearings).
+check("a misheard name is still fixed: Thần sa ơi", nghe_sua.sua("Thần sa ơi, mở lịch", TV) == "Thansa ơi, mở lịch")
+check("a name split in two is still fixed: Than sa ơi", nghe_sua.sua("Than sa ơi, tóm tắt email", TV).startswith("Thansa ơi"))
 check("an everyday group spelled like the term is still the term", nghe_sua.sua("mở Thansa OS giúp anh", TV) == "mở Thansa OS giúp anh")
 
 # ---- the MCP names go to the prompt, not to the rules ----
