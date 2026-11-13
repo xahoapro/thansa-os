@@ -8,6 +8,51 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.555.1] - 2026-11-13
+### Fixed
+- **Thansa no longer freezes when the server's disk answers slowly.** On a VPS, every few seconds of slow disk froze all pages, bots and connections together, and the server could be reported as down. It was worst right after an update. The work that runs all the time (the sign-in check, the MCP hub, bots, shared links) no longer waits for the disk.
+- **After a Docker update, MCP sources no longer download and install themselves again.** What they installed is kept on the data volume, so the server is not flooded while it starts. The update to this version still reinstalls them one last time.
+- **At start-up, Thansa opens MCP sources a few at a time** instead of all at once, so a small server is not overloaded.
+
+## [0.555.0] - 2026-11-13
+### Added
+- **The Windows installer announces every change it makes.** A page before the install lists what will be downloaded and installed (Thansa, Git, Python, Node.js, the AI tools), with the privacy statement and how to uninstall.
+- **Two new choices in the installer.** "Start when I sign in to Windows" and "install the AI command-line tools" can be unticked. Left alone, the installer does what it did before.
+- **A code signing policy and a privacy policy.** They state that Thansa has no tracking, sends no usage statistics, and on its own only downloads public files to check for updates.
+- **Ready for free code signing through SignPath Foundation.** The signing step in the installer build is wired and switched off; it turns on once SignPath accepts the project. The installer is still unsigned today.
+
+## [0.554.0] - 2026-11-13
+### Improved
+- **The suggestion no longer vanishes at the first key you type.** Type along the suggestion and the rest stays in grey right after your text, even without accents or halfway through a word. Press **Tab** to take the rest, or **Right Arrow** to take one word. On a phone the Tab button is gone from the button row: a small **>** stands right after the last word of the suggestion, and a tap on it takes the suggestion.
+- **Type something else and Thansa finishes the sentence.** Pause for a moment and Thansa writes the rest of what you are typing, following your new direction, like the predictive text on an iPhone. With an API key on the machine (Groq, OpenAI...) it is almost instant. On a subscription plan alone it takes a few seconds and runs at most 5 times per turn, so it does not eat the allowance.
+- **A long suggestion shows in full.** The chat box grows to show the whole sentence, so a phone no longer cuts it mid line. Works in the main chat and on the Teams page.
+
+## [0.553.8] - 2026-11-13
+### Improved
+- **The Tasks page opens much more smoothly.** It used to draw the whole list twice on every opening and build both the wide and the phone layout. Now it draws once, and only the layout on screen. With 170 tasks on a slow machine: the freeze went from 0.45 seconds to about 0.1, and is all but gone on a phone.
+- **The Partners page opens faster.** The list of assistants used to be drawn five times on each opening, now once, so hovering and scrolling no longer stutter right after the page appears.
+- **Typing in the task search no longer lags.** The list follows a short moment after you stop typing instead of being redrawn after every letter.
+### Fixed
+- **The Tasks page no longer hitches every so often while you look at it.** Every 30 seconds (5 while a task was running) it redrew the whole list even when nothing was new, freezing the screen for a beat and dropping the row under the pointer. Now nothing is redrawn when nothing changed.
+
+## [0.553.7] - 2026-11-13
+### Fixed
+- **Heavy Team use no longer drops the connection to the server.** The more turns a team had run, the longer Thansa took to add up its usage every time the team was opened: a team of a few thousand turns took a minute, the page gave up after 30 seconds and asked again, and the whole server stalled. It is now about 100 times faster and never runs twice at once.
+- **A model call no longer makes the server pause.** The usage ledger kept one line for every Team model call for 30 days and was rewritten in full after each call, so the file grew to tens of megabytes and ordinary chat slowed down too. Thansa cleans the file when it starts; your usage figures stay the same.
+
+## [0.553.6] - 2026-11-13
+### Fixed
+- **The Windows installer is no longer replaced for no reason.** `ThansaOS-Setup.exe` is not code-signed yet, so browsers and antivirus engines know it by its file hash alone. Any change to an install script (even the Linux one) used to replace the file, and each new file made Edge say "isn't commonly downloaded" from scratch. The file now changes only when the installer itself does.
+- **The quick start explains what to do when the download is blocked.** It adds the **Keep anyway** step for when Edge or Chrome will not save the file, and a one-line install without the .exe for PCs where an antivirus or Smart App Control blocks it.
+
+## [0.553.5] - 2026-11-13
+### Improved
+- **Thansa opens much faster.** The "Starting Thansa…" screen used to stay for a full 4 seconds on any machine with more than one page of chats, although the data was there after about 1 second. Now the app shows as soon as the data arrives. The brain graph is also no longer built in the background when you open straight into Chat or Partners.
+- **Left alone, Thansa costs almost nothing.** The mascot's ring, the starfield and the graph no longer make the browser work 60 times a second when nothing changes, so scrolling and typing are smoother and the device runs cooler.
+### Fixed
+- **No more slowing down over a long session.** Every visit to the Chat page left the whole previous page in memory, so the more you switched pages the heavier it got. The old page is now released.
+- **The Graph screen no longer stutters.** The graph remembers where its dots came to rest, so the next opening shows at once instead of working it all out again (a brain of 2,600 notes: the longest freeze went from over 1 second to about 0.2). A dot you pointed at also no longer stays lit and keeps the graph drawing after the pointer has left.
+
 ## [0.553.4] - 2026-11-13
 ### Fixed
 - **The conflict fix round works on a machine where git has no name and email.** On a fresh server or in Docker, the AI's merge command stopped at once with `empty ident name`. Each repo attached to a chat now has an identity of its own, the GitHub account you connected.

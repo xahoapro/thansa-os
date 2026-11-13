@@ -23,8 +23,15 @@ Clicking the icon opens Thansa in its own window (no address bar), Thansa starts
   curl -fsSL https://raw.githubusercontent.com/xahoapro/thansa-os/main/packaging/macos/get-thansa.sh | bash
   ```
 
+What the installers change on your computer, who signs them and what Thansa sends where: [Code signing policy](docs/code-signing-policy.md) · [Privacy policy](PRIVACY.md).
+
 If you already downloaded the file with the browser and it was blocked:
+- Edge or Chrome says "ThansaOS-Setup.exe isn't commonly downloaded" and does not save the file: in the Downloads box, hover over that line, click the three dots, choose **Keep**, then **Show more** and **Keep anyway**.
 - Windows shows "Windows protected your PC": click **More info**, then **Run anyway**.
+- Your antivirus deletes the file, or Windows blocks it with no **Run anyway** button (Smart App Control is on): install without the .exe. Install [Git](https://git-scm.com/download/win), open PowerShell, paste this line and press Enter. When it ends, Thansa opens at http://localhost:7777 and starts with the computer:
+  ```
+  git clone https://github.com/xahoapro/thansa-os.git "$env:USERPROFILE\ThansaOS"; cd "$env:USERPROFILE\ThansaOS"; powershell -ExecutionPolicy Bypass -File install.ps1
+  ```
 - macOS says it cannot open the app: go to **System Settings → Privacy & Security**, scroll down, click **Open Anyway**, then open THANSA OS again.
 
 ## Option 1 - Hostinger VPS (Docker Manager, one click)
