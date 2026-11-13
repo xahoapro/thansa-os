@@ -8,6 +8,38 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.556.2] - 2026-11-13
+### Fixed
+- **A suggestion you took no longer vanishes when you delete part of it.** Pressing Tab to take the whole sentence (or taking it word by word to the end) and then deleting a few letters used to lose the suggestion. Now the rest shows in grey again as far as you delete. Empty the box and the whole suggestion is back. It only goes away when you send.
+- **The > after a suggestion shows on a computer too.** It used to show on phones only. On a computer, click the **>** right after the last word to take the sentence.
+### Improved
+- **No more "Tab" chip in the button row under the chat box.** The **>** does that job, so the row keeps only its own buttons (attach, model, effort, mic, send). The Tab key still takes the suggestion.
+
+## [0.556.1] - 2026-11-13
+### Fixed
+- **Stopping a dictation answers at once.** The bar switches to "rewriting" the moment stop is pressed, and the recording goes to be heard right away instead of waiting for the browser to close the mic.
+- **The rewrite step is much faster.** The word fix that runs first could take several seconds and now takes a few hundredths of one. The quick model no longer spends its whole turn thinking and returns nothing, and on a subscription the main model thinks at its lowest level for this job.
+- **Long dictations no longer lose words.** Text over about 2,000 characters used to come back cut after the rewrite; every word is kept now.
+- **Fewer everyday words turned into names.** Common Vietnamese word pairs that merely sound like "Thansa" or "Canva" are no longer replaced by those names.
+
+## [0.556.0] - 2026-11-13
+### Improved
+- **Approve many waiting groups for a bot in one press.** In the bot's Status panel every waiting group or person is a tick box, with **Select all** and one shared **Allow** / **Ignore** bar. Nine waiting groups used to mean opening the panel and pressing nine times.
+- **The panel no longer closes after each press.** After a batch it stays open with the rows still waiting. The button carries the number of ticked rows, for example "Allow (9)".
+- **Easier to read on a phone.** Larger group names, the whole row is tappable, and the buttons stay within reach however long the list is.
+
+## [0.555.3] - 2026-11-13
+### Fixed
+- **The OpenAI Compatible and Claude Compatible cards no longer say "Could not load the model list" by mistake.** Thansa reads the model list of more kinds of gateways, and a Base URL typed without `/v1` finds the right address on its own. A machine upgraded from an older version gets its models back too.
+- **A model name you typed always stays in the picker**, even when the gateway has its own list or stops listing for a while.
+- **When there really is no list, the picker says why** (wrong address, refused key, a gateway that lists nothing) with a link to the Models page to fix it. After the fix the list shows on the next open, with no wait of several minutes.
+- **A key you just connected no longer disappears** when Thansa happened to be loading another card's model list at that moment.
+
+## [0.555.2] - 2026-11-13
+### Fixed
+- **A group no longer shows one person's profile.** The note box of a Zalo group used to show the profile of whoever wrote first in it, as if the whole group were one customer. A group now has its own note, and editing it touches nobody's profile.
+- **Facebook, Instagram and Threads comments get no profile.** A commenter is not messaging the shop, so the AI no longer writes a profile from comment threads, and a public reply no longer carries a profile learned in a private chat.
+
 ## [0.555.1] - 2026-11-13
 ### Fixed
 - **Thansa no longer freezes when the server's disk answers slowly.** On a VPS, every few seconds of slow disk froze all pages, bots and connections together, and the server could be reported as down. It was worst right after an update. The work that runs all the time (the sign-in check, the MCP hub, bots, shared links) no longer waits for the disk.
