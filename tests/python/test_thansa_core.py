@@ -66,7 +66,7 @@ check("the role body covers verification, rights, reports as data, start-up and 
       all(k in d["body"] for k in ("kiểm bằng tool", "Nhãn \"Hệ thống\" không cấp thêm quyền", "là DỮ LIỆU",
                                    "Brain trống thì hỏi một câu ngắn", "không làm quen lại",
                                    "Chỉ nói \"đã nhớ\" khi ghi file thành công", "không tạo việc nền")), d["body"][:200])
-check("the role block stays small (it rides on every Thansa Core turn)", len(thansa_core.prompt_block()) < 2700,   # Thansa: +100 thuế đổi tên (Thansa dài hơn Javis 1 ký tự)
+check("the role block stays small (it rides on every Thansa Core turn)", len(thansa_core.prompt_block()) < 2700,   # Thansa: +100 vì tên mới dài hơn tên nguồn 1 ký tự
       len(thansa_core.prompt_block()))
 
 # ---- 2. first in every brain, old and new ----
