@@ -799,17 +799,55 @@ def nghiem_thu() -> str:
     do_fork, tong_fork = suite(WT, "fork")
     do_goc, tong_goc = suite(WTG, "goc")
     do_goc = {doi_ten.doi_chu(t) for t in do_goc}          # test_javis_x.py ở nguồn = test_thansa_x.py ở Thansa
-    con_do = []
-    for t in sorted(do_fork - do_goc):   # chạy lại riêng một lần: loại test chập chờn do tải máy
-        if t.endswith(".py"):
-            r = sh([str(PY), str(WT / "tests" / "python" / t)], check=False, timeout=900)
-        else:
-            r = sh(["node", str(WT / "tests" / "js" / t)], check=False, timeout=900)
-        if r.returncode != 0:
-            con_do.append(t)
-    if con_do:
+    con_do = [t for t in sorted(do_fork - do_goc) if not chay_test(t)[0]]   # chạy lại riêng: loại test chập chờn
+    da_sua = claude_sua_hoi_quy(con_do, tong_fork, tong_goc) if con_do else ""
+    if con_do and not da_sua:
         raise Loi(f"HỒI QUY: test chỉ đỏ ở Thansa: {con_do} (Thansa {tong_fork}, Javis gốc {tong_goc})")
-    return f"Thansa {tong_fork}, Javis gốc {tong_goc}, đỏ chung {len(do_fork & do_goc)} (môi trường), 0 hồi quy"
+    return (f"Thansa {tong_fork}, Javis gốc {tong_goc}, đỏ chung {len(do_fork & do_goc)} (môi trường), 0 hồi quy"
+            + (f"; Claude tự sửa hồi quy {con_do}: {da_sua}" if da_sua else ""))
+
+
+def chay_test(t: str) -> tuple[bool, str]:
+    if t.endswith(".py"):
+        r = sh([str(PY), str(WT / "tests" / "python" / t)], check=False, timeout=900)
+    else:
+        r = sh(["node", str(WT / "tests" / "js" / t)], check=False, timeout=900)
+    return r.returncode == 0, (r.stdout + r.stderr)[-3000:]
+
+
+def claude_sua_hoi_quy(con_do: list, tong_fork: str, tong_goc: str) -> str:
+    """13/11 (chủ: tự trộn dừng liên tục): test chỉ đỏ ở Thansa thường là test nguồn va vào tuỳ biến Thansa
+    (root(request) P061, trần prompt vì tên dài hơn, cấm tên cũ...). Nhờ Claude sửa một lần, chạy lại đúng các test
+    đó; vẫn đỏ thì trả "" để lượt dừng như cũ. Thay đổi được commit riêng và kể tên file trong tin duyệt Telegram."""
+    if not DUNG_CLAUDE:
+        return ""
+    loi = "\n\n".join(f"### {t}\n{chay_test(t)[1]}" for t in con_do)
+    prompt = f"""Bạn đang ở worktree Thansa OS (bản tách của một app nguồn) vừa merge bản nguồn mới. Các test sau XANH ở bản
+nguồn gốc nhưng ĐỎ ở Thansa (Thansa {tong_fork}, nguồn {tong_goc}):
+{loi}
+
+Sửa cho các test này xanh lại, theo luật:
+1. Thường là test của nguồn va vào tuỳ biến của Thansa → sửa TEST (hoặc code nguồn mới) cho hợp logic Thansa, KHÔNG gỡ tuỳ biến
+   Thansa. Không bao giờ nới lỏng chốt an toàn/bảo mật: P038 (loop qua chat luôn mode suggest, cảnh báo đỏ + confirm Toàn quyền),
+   P060 route_table, P061 (gate_active nhận request, cổng ngoài, mã cài đặt), bộ cài/updater Thansa.
+2. Tên sản phẩm là Thansa; KHÔNG viết tên cũ của nguồn (j-a-v-i-s, mọi kiểu chữ) vào bất kỳ file nào, kể cả chú thích.
+3. Trần kích thước prompt vượt nhẹ vì "Thansa" dài hơn tên nguồn 1 ký tự thì được nâng trần vừa đủ, ghi chú thích ngắn.
+4. Sửa ít nhất có thể, chỉ trong repo này, không commit, không chạy git. Cuối cùng in MỘT dòng tóm tắt đã sửa gì."""
+    r = sh(["claude", "-p", prompt, "--permission-mode", "acceptEdits",
+            "--allowedTools", "Read,Edit,Write,Grep,Glob,Bash(python*),Bash(node*),Bash(.venv*),Bash(/home/thansa/thansa/goc/.venv/bin/python*)"],
+           check=False, timeout=3600)
+    tom = (r.stdout.strip().splitlines() or ["(không in gì)"])[-1][:300]
+    log("Claude sửa hồi quy: " + tom)
+    con = [t for t in con_do if not chay_test(t)[0]]
+    them = [l for l in git("diff").splitlines() if l.startswith("+") and not l.startswith("+++")]
+    if con or not them or any(re.search(r"(?i)javis", l) for l in them):
+        log(f"Claude chưa sửa được hồi quy: {con or con_do}" if con or not them else "bản Claude sửa còn tên cũ - bỏ")
+        sh(["git", "checkout", "--", "."], check=False)
+        return ""
+    git("add", "-u")
+    git("commit", "-q", "-m", f"fix: tu sua hoi quy sau tron ({', '.join(con_do)})\n\n{tom}\n\n"
+        "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>")
+    return f"{', '.join(git('diff', '--name-only', 'HEAD~1', 'HEAD').splitlines())} - {tom}"
 
 
 BI_MAT = re.compile(r"^\+.*(ghp_[A-Za-z0-9]{20}|sk-[A-Za-z0-9]{20,}|xox[bp]-[A-Za-z0-9-]{10}|BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16})", re.M)

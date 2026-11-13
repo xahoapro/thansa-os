@@ -171,6 +171,8 @@ Từ 0.55.56 Watchtower **đi kèm sẵn** trong cả compose VPS lẫn compose 
 
 **Stack báo "Partially running" sau khi cập nhật compose**: gần như luôn là container `<tên>-watchtower` không đụng được Docker socket của host (Hostinger từng dính đúng lỗi này). App Thansa KHÔNG bị ảnh hưởng - nó là container riêng, vẫn chạy bình thường; chỉ là nút "Cập nhật ngay" không dùng được và bạn quay lại cách Redeploy. Xem lý do thật trong log: `docker logs thansa-watchtower`.
 
+**Cập nhật xong thì tên miền báo 404 và container Thansa biến mất khỏi Docker**: Watchtower dừng Thansa, xoá container cũ, rồi mới dựng bản mới. Trên VPS ổ đĩa chậm, bước xoá có thể chạy quá hạn giờ của Watchtower (log `thansa-watchtower` có dòng `Failed to remove container ... context deadline exceeded`): Watchtower bỏ dở, không dựng bản mới, còn Docker vẫn xoá xong container cũ. Từ bản có container `thansa-guard`, chuyện này tự lành: thấy Thansa biến mất hay bị dừng giữa chừng quá 2 phút là `thansa-guard` dựng lại (lên đúng bản mới) hoặc bật lại, xem nó làm gì bằng `docker logs thansa-guard`. Máy chưa có `thansa-guard` thì bấm **Redeploy** (VPS: lấy compose mới như trên rồi `docker compose up -d --pull always`) một lần là Thansa lên lại, kèm luôn `thansa-guard` cho các lần sau. Dữ liệu nằm trong volume nên không mất.
+
 **Gõ lệnh compose mà báo `not found`** - ba kiểu, ba nguyên nhân khác hẳn:
 
 | Báo lỗi | Nguyên nhân | Cách xử lý |

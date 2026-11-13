@@ -209,12 +209,9 @@ def _slug(text: str) -> str:
 
 
 def _identity_env() -> Dict[str, str]:
-    conn = github_repos.status()
-    login = conn.get("login") or "thansa"
-    uid = github_repos.user_id()
-    email = f"{uid}+{login}@users.noreply.github.com" if uid else f"{login}@users.noreply.github.com"
-    return {"GIT_AUTHOR_NAME": login, "GIT_AUTHOR_EMAIL": email, "GIT_COMMITTER_NAME": login,
-            "GIT_COMMITTER_EMAIL": email}
+    who = github_repos.identity()
+    return {"GIT_AUTHOR_NAME": who["name"], "GIT_AUTHOR_EMAIL": who["email"], "GIT_COMMITTER_NAME": who["name"],
+            "GIT_COMMITTER_EMAIL": who["email"]}
 
 
 def commit_all(worktree: str, message: str) -> str:
@@ -223,7 +220,7 @@ def commit_all(worktree: str, message: str) -> str:
     import winproc
     github_repos.git(["add", "-A"], worktree)
     if github_repos.git_out(["diff", "--cached", "--name-only"], worktree):
-        env = dict(github_repos.git_env(""), **_identity_env())
+        env = dict(github_repos.git_env(), **_identity_env())
         p = subprocess.run(["git", "commit", "-q", "-F", "-"], cwd=worktree, input=message, text=True,
                            capture_output=True, env=env, encoding="utf-8", errors="replace",
                            creationflags=winproc.no_window())
@@ -233,17 +230,70 @@ def commit_all(worktree: str, message: str) -> str:
     return github_repos.git_out(["rev-parse", "HEAD"], worktree)
 
 
+def _task_title(task: str) -> str:
+    """The person's own first line of a request, without the bracketed blocks the dashboard puts in front of it.
+
+    A turn arrives as "[NGỮ CẢNH GIAO DIỆN: trang=workspace]", "[File đính kèm để ĐỌC ...: - /path ...]", "[Giờ gửi
+    tin này: ...]" and then the request. Taking the very first line named every job of a chat the same ("ngu-canh-giao-
+    dien-trang-workspace"), so the second job's branch name was already taken (13/11/2026).
+    """
+    inside = False
+    for raw in str(task or "").splitlines():
+        line = raw.strip()
+        if inside:
+            inside = not line.endswith("]")
+            continue
+        if not line:
+            continue
+        if line.startswith("["):
+            inside = not line.endswith("]")
+            continue
+        if line.startswith("\U0001f4ce"):           # an attached file line ("📎 /path")
+            continue
+        return line
+    return ""
+
+
+def _branch_taken(wt: str, name: str, cur: str) -> bool:
+    """True when pushing HEAD to `name` would clash: another local branch has the name, or origin holds that branch
+    with commits HEAD does not contain (an older job's branch whose PR was squashed, for one)."""
+    if name != cur and github_repos.git(["rev-parse", "--verify", "--quiet", f"refs/heads/{name}"], wt,
+                                        check=False).returncode == 0:
+        return True
+    try:
+        r = github_repos.git(["ls-remote", "origin", f"refs/heads/{name}"], wt, auth=True, check=False, timeout=60)
+    except github_repos.RepoError:
+        return False                                  # cannot ask: the push itself reports the real problem
+    if r.returncode != 0:
+        return False
+    remote = (r.stdout or "").split()
+    if not remote:
+        return False
+    # Ours only when HEAD already contains it (a fast-forward). A sha this machine never fetched fails too: taken.
+    return github_repos.git(["merge-base", "--is-ancestor", remote[0], "HEAD"], wt, check=False).returncode != 0
+
+
 def _final_branch(sid: str, repo: Dict[str, Any], title: str) -> str:
-    """`thansa/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes."""
+    """`thansa/<slug>-<id6>` decided at the first push (spec 6); after that the branch never changes.
+
+    The name is always one Thansa can push to without overwriting anything: when the chosen name is taken locally or
+    on GitHub by other history, `-2`, `-3`... is added. Thansa never force-pushes, so a clash used to stop the job with
+    "has commits this machine lacks" until someone renamed the branch by hand.
+    """
     wt = repo["worktree"]
     cur = github_repos.git_out(["rev-parse", "--abbrev-ref", "HEAD"], wt)
     short = github_repos.session_branch(sid)
     slug = _slug(title)
-    if cur != short or not slug:
+    want = f"thansa/{slug}-{short.split('/', 1)[1][:6]}" if (cur == short and slug) else cur
+    name = want
+    for n in range(2, 60):
+        if not _branch_taken(wt, name, cur):
+            break
+        name = f"{want}-{n}"
+    if name == cur:
         return cur
-    new = f"thansa/{slug}-{short.split('/', 1)[1][:6]}"
-    r = github_repos.git(["branch", "-m", new], wt, check=False)
-    return new if r.returncode == 0 else cur
+    r = github_repos.git(["branch", "-m", name], wt, check=False)
+    return name if r.returncode == 0 else cur
 
 
 class PushError(github_repos.RepoError):
@@ -369,7 +419,7 @@ def ship(sid: str, brain: str, repo: Dict[str, Any], report: Dict[str, Any]) -> 
     fn = repo["full_name"]
     info = _session(sid)
     # The job's own request names the PR; the chat title only describes the chat's FIRST job.
-    task_line = (str(info.get("task") or "").strip().splitlines() or [""])[0]
+    task_line = _task_title(str(info.get("task") or ""))
     title = (task_line[:100] or (info.get("title") or "").strip() or _c("Thay đổi từ Thansa", "Changes from Thansa"))
     row = st().ensure(sid, fn, brain=brain, worktree=repo["worktree"], base_branch=_base_name(repo),
                       engine=str(info.get("engine") or ""), model=str(info.get("model") or ""))
@@ -965,16 +1015,62 @@ async def merge_now(row: Dict[str, Any], pr: Dict[str, Any], by_person: bool = F
         return st().get(sid, fn) or row
 
 
+def _download_base_for_merge(row: Dict[str, Any]) -> str:
+    """Make `git merge origin/<base>` runnable in the worktree WITHOUT a credential. "" when ready, else the reason.
+
+    The engine that resolves the conflict has no token in its shell (github_repos docstring), and the clone is a
+    partial one, so on a private repo it can neither fetch the base nor let git download, in the middle of the merge,
+    the file contents that merge reads. Thansa does both here, with its token:
+      1. fetch the base branch;
+      2. download every file content that differs between each merge base and either side. `git diff --shortstat`
+         reads both versions of every changed path, and git batches the download of the missing ones. That covers
+         what the merge reads (base, ours, theirs, rename candidates) and what it writes into the worktree.
+    Nothing in the worktree or the index changes: only objects arrive.
+    """
+    wt = row.get("worktree") or ""
+    if not wt:
+        return ""
+    name = row.get("base_branch") or "main"
+    base = f"origin/{name}"
+    # `git merge` asks who the committer is before it does anything. A worktree made before clones got an identity
+    # of their own would stop the engine right there on a machine that has none.
+    github_repos.ensure_identity(wt)
+    try:
+        github_repos.git(["fetch", "origin", f"+refs/heads/{name}:refs/remotes/{base}"], wt, auth=True, timeout=300)
+        # Usually one merge base; none (unrelated histories) leaves nothing to download.
+        for merge_base in github_repos.git(["merge-base", "--all", "HEAD", base], wt, check=False).stdout.split():
+            for side in ("HEAD", base):
+                github_repos.git(["diff", "--shortstat", "--no-renames", "--no-ext-diff", "--no-textconv",
+                                  merge_base, side], wt, **github_repos.CHECKOUT)
+    except github_repos.RepoError as e:
+        return str(e)
+    return ""
+
+
 async def _conflict(row: Dict[str, Any]) -> Dict[str, Any]:
     sid, fn = row["sid"], row["full_name"]
+    key = f"{sid}:{fn}:conflict:{row['head_sha']}"
     reason = _c("PR bị xung đột với nhánh chính, cần làm lại.", "The PR conflicts with the base branch.")
+    if not st().step_done("fix:" + key):
+        failed = await asyncio.to_thread(_download_base_for_merge, row)
+        if failed:
+            # No fix round: the merge could not work. `integ` is left alone, so the watcher keeps this row and the
+            # next tick downloads again ("conflict" would take the row off its list).
+            reason += " " + _c(f"Thansa chưa tải được nhánh chính về để gộp ({failed}), sẽ tự thử lại.",
+                               f"Thansa could not download the base branch to merge it ({failed}) and will try again.")
+            st().update(sid, fn, stuck_reason=reason)
+            await _say(sid, f"**{fn}**: {reason}{_pr_tail(row)}", False,
+                       once=f"conflict-wait:{sid}:{fn}:{row['head_sha']}")
+            return st().get(sid, fn) or row
     st().update(sid, fn, integ="conflict", stuck_reason=reason)
     await _say(sid, f"**{fn}**: {reason}{_pr_tail(row)}", False, once=f"conflict:{sid}:{fn}:{row['head_sha']}")
-    # A conflict is work for the chat: one fix round to merge the base branch in and resolve it.
+    # A conflict is work for the chat: one fix round to merge the base branch in and resolve it. The engine only
+    # merges; it is never asked to fetch, its shell has no GitHub credential.
     await request_fix(st().get(sid, fn) or row, _c("PR xung đột với nhánh chính", "The PR conflicts with the base"),
-                      f"Trong thư mục làm việc của {fn}: `git fetch origin` rồi `git merge origin/{row.get('base_branch')}`, "
+                      f"Thansa đã tải sẵn bản mới nhất của nhánh {row.get('base_branch')} về máy, không cần tải lại. "
+                      f"Trong thư mục làm việc của {fn}: `git merge origin/{row.get('base_branch')}`, "
                       "giải quyết xung đột giữ đúng ý của cả hai bên, chạy lại test. Không rebase, không force push.",
-                      f"{sid}:{fn}:conflict:{row['head_sha']}")
+                      key)
     return st().get(sid, fn) or row
 
 
@@ -996,7 +1092,7 @@ def _restart_branch(row: Dict[str, Any]) -> None:
         while github_repos.git(["rev-parse", "--verify", "--quiet", f"refs/heads/{stem}-r{n}"], wt,
                                check=False).returncode == 0:
             n += 1
-        github_repos.git(["checkout", "-q", "-b", f"{stem}-r{n}", base], wt)
+        github_repos.git(["checkout", "-q", "-b", f"{stem}-r{n}", base], wt, **github_repos.CHECKOUT)
     except github_repos.RepoError:
         pass
 

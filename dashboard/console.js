@@ -3930,6 +3930,7 @@
         }
         return;
       }
+      forgetModelLists();
       await freshSettings();
       renderModelsCloudTab(el);
     };
@@ -3957,6 +3958,7 @@
         }
         return;
       }
+      forgetModelLists();
       await freshSettings();
       renderModelsCloudTab(el);
     };
@@ -4413,6 +4415,7 @@
         if (r && r.need_models) box("models").focus();
         return (r && r.error) || t("app.err_cap");
       }
+      forgetModelLists();
       setTimeout(c.again, 0);
     }, t(GW_TEXT[ADV].add));
     el.querySelectorAll('.ord-acct[data-dnd^="adv:"]').forEach(li => {
@@ -4825,6 +4828,7 @@
         if (o.cho.length) Promise.all(o.cho).then(() => { if (openPop && openPop.el === pop) draw(); });
       };
       sh.body.onclick = (e) => {
+        if (e.target.closest("[data-goto]")) { closePop(); return; }   // "fix it on the Models page": this IS that page
         if (e.target.closest("[data-bgauto]")) { closePop(); save({ auxiliary: { auto: true } }); return; }
         const it = e.target.closest(".mb-item[data-model]");
         if (it) { closePop(); save({ auxiliary: { provider: it.dataset.prov, model: it.dataset.model } }); return; }
@@ -7692,8 +7696,15 @@
     // Đổi model ở trang Models mà thanh model trong chat không đổi theo: hai chỗ đó đọc
     // /settings ở hai thời điểm khác nhau và không ai báo cho ai. Làm mới ngay tại đây để
     // mọi đường đổi model đều đồng bộ, thay vì nhớ gọi ở từng nút.
-    if (section === "model") refreshModelUi();
+    if (section === "model") { forgetModelLists(); refreshModelUi(); }
     return res;
+  }
+
+  // The model lists the pickers keep (model-list.js) belong to the keys and gateways as they WERE. After the Models
+  // page changes one (a gateway connected, edited, switched off, removed) the next open of a picker must ask again,
+  // or it shows the old list, or the old "no model list", for minutes after the fix (2026-11-13).
+  function forgetModelLists() {
+    try { if (window.ThansaModelList) window.ThansaModelList.clearCache(); } catch (e) {}
   }
 
   // Đồng bộ mọi chỗ hiển thị model: thanh chọn model dưới khung chat và badge engine trên
@@ -9175,6 +9186,24 @@
   //
   // Trả về hàm `bat()` để nút bật/tắt của trang gọi: màn hẹp thì mở/đóng ngăn kéo, máy tính
   // thì thu/mở cột và nhớ lựa chọn.
+  // Xoay ngang / đổi cỡ cửa sổ: ngăn kéo đang mở mà nhảy sang bố cục máy tính thì lớp
+  // `side-open` treo lại vô nghĩa. Dọn luôn cho sạch.
+  //
+  // ONE listener for every page built on `.chatpage` (2026-11-12), looking the open drawers up when the width changes.
+  // It used to be added on every render, and the browser keeps a MediaQueryList that has a listener for as long as the
+  // document lives, so each closure held that render's whole page: every visit to Chat leaked its DOM (measured after a
+  // forced garbage collection: 1,461 nodes and 167 listeners per visit, 336 nodes per visit to Coding).
+  let _narrowWatchOn = false;
+  function _watchNarrowOnce() {
+    if (_narrowWatchOn) return;
+    _narrowWatchOn = true;
+    try {
+      window.matchMedia("(max-width: 860px)").addEventListener("change", (e) => {
+        if (e.matches) return;
+        document.querySelectorAll('[data-cot-trai-da-neo="1"].side-open').forEach((p) => p.classList.remove("side-open"));
+      });
+    } catch (e) {}
+  }
   function _neoCotTrai(page, sideEl, slot) {
     if (!page || page.dataset.cotTraiDaNeo === "1") return function () {};
     page.dataset.cotTraiDaNeo = "1";
@@ -9186,13 +9215,7 @@
     if (slot) slot.addEventListener("click", dong);
     page.addEventListener("click", (e) => { if (e.target === page) dong(); });
     if (sideEl) sideEl.addEventListener("click", (e) => { if (e.target.closest(".cside-item")) dong(); });
-    // Xoay ngang / đổi cỡ cửa sổ: ngăn kéo đang mở mà nhảy sang bố cục máy tính thì lớp
-    // `side-open` treo lại vô nghĩa. Dọn luôn cho sạch.
-    try {
-      window.matchMedia("(max-width: 860px)").addEventListener("change", (e) => {
-        if (!e.matches) page.classList.remove("side-open");
-      });
-    } catch (e) {}
+    _watchNarrowOnce();
     return function bat() {
       if (hep()) { page.classList.toggle("side-open"); return; }
       const thu = !page.classList.contains("side-thu");
@@ -10851,6 +10874,9 @@
     khoiPhucTrang();
     // 2026-11-09: the start-up screen waits from here for the first page's own "Loading..." lines to go (boot-splash.js).
     try { if (window.ThansaBoot) window.ThansaBoot.pageStarted(); } catch (e) {}
+    // 2026-11-12: the brain graph is built only once the home screen is in view (app.js ensureGraph). Opening on Chat
+    // or Partners no longer downloads the graph and runs its physics behind that page.
+    try { if (window.ThansaCockpit && window.ThansaCockpit.firstPage) window.ThansaCockpit.firstPage(Alpine.store("nav").active); } catch (e) {}
 
     freshSettings().then(async s => {
       // Máy này CHƯA chọn ngôn ngữ (i18n đang đoán theo trình duyệt): ngôn ngữ đã lưu trên
