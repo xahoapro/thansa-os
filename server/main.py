@@ -11,6 +11,7 @@ import brain_export   # xuất/nhập cả bộ não thành một file .zip (202
 import brain_order   # thứ tự brain trong bảng chọn: chủ tự sắp, còn lại theo tên hiển thị (0.431.0)
 import vault_tree_prefs   # pinned folders and folders open by default in the Vault tree (2026-11-11)
 import default_brain   # which brain is the default: a choice since 2026-11-09, `Brain Default` until one is made
+import kept            # values the event loop reads from memory instead of waiting for the disk (2026-11-13)
 import localefmt   # múi giờ theo cấu hình, thay UTC+7 nhúng cứng
 import html as html_mod   # escape lời báo lỗi OAuth trên trang callback (biến cục bộ `html` che tên module)
 import posixpath
@@ -33,6 +34,7 @@ import binascii
 import re
 import urllib.parse
 import secrets
+import filecmp
 import shutil
 import time
 import types as _types   # object tạm cho _apply_antigravity_hub ở endpoint kiểm tra
@@ -200,6 +202,7 @@ import main_prompt_rendering  # pure shared prompt blocks; no live reads
 import main_attachment_rendering  # pure shared attachment templates; no live reads
 import memory_control    # 0.188.0: list/edit/forget memories, learning switch, person profile
 import memory_chat       # 0.190.0: the same, plus agent lessons, from chat (tool thansa_memory)
+import project_context   # 2026-11-13: what Thansa learnt about a project, and tool thansa_project
 import memory_receipt    # 0.190.0: the "Đã nhớ · Hoàn tác" line under an answer, and no empty "đã quên"
 import chatbot_cuoc_chat  # danh sách cuộc chat cho ô chọn người/nhóm của form bot
 import chatbot_reply_policy        # bộ phán xử hội thoại nhóm (0.65.0): bot tự quyết nói hay im
@@ -938,6 +941,150 @@ def _project_has_rules(project_id: str) -> bool:
         return False
 
 
+def _project_learned_block(project_id: str) -> str:
+    """What Thansa learnt about the project of this chat (notes, and what each attached document holds), plus the
+    short invitation to keep learning. "" outside a project.
+
+    NOT part of `build_system_prompt` on purpose: the qualified native trial rebuilds that function's output from its
+    own pinned readers (improvement_trial_dashboard.py), which know nothing of the two tables behind this block. It is
+    appended at the call sites instead, next to `_khoi_coding`, the way the GitHub block is.
+
+    The invitation follows the brain's "remember new things" switch: off means Thansa learns nothing new here either.
+    """
+    if not project_id:
+        return ""
+    try:
+        p = get_store().get_project_full(project_id)
+        if not p:
+            return ""
+        learning = memory_control.learning_enabled(_brain_memory_dir(p.get("brain") or "brain"))
+        return project_context.render_learned_block(p, learning=learning)
+    except Exception as e:  # noqa: BLE001 - learnt context is an extra, never a broken turn
+        print(f"[project learned] {type(e).__name__}: {e}", file=sys.stderr)
+        return ""
+
+
+def _project_brain_root(brain: str) -> str:
+    """Canonical root of the brain a project (or a tool call) names, for telling whose project it is. Raises when the
+    folder is gone: `_brain_root` then falls back to the default brain, which is right for reading a file and wrong
+    for ownership, since a project of a deleted brain would pass as the default brain's own."""
+    name = (brain or "").strip()
+    if name and name != "brain" and not os.path.isdir(name):
+        raise ValueError("brain folder is gone")
+    return str(Path(_brain_root(name)).resolve())
+
+
+def _project_agent_find(root: str, ref: str):
+    """(slug, name) of an assistant of this brain named by slug or by name, or None."""
+    ref = (ref or "").strip()
+    if not ref:
+        return None
+    path = _agent_md_path(root, ref)
+    if path is not None:
+        return path.stem, (_read_md(path)[0] or {}).get("name") or path.stem
+    hits = [a for a in agents_index(root, kem_prompt=False) if str(a.get("name") or "").strip().lower() == ref.lower()]
+    return (hits[0]["slug"], hits[0].get("name") or hits[0]["slug"]) if len(hits) == 1 else None
+
+
+def _project_agent_docs(root: str, slug: str) -> dict:
+    path = _agent_md_path(root, slug)
+    return agent_assets.doc(_read_md(path)[0]) if path is not None else {"files": [], "links": []}
+
+
+def _project_agent_edit(root: str, slug: str, change):
+    """Run `change(meta) -> (new meta, result)` on an assistant's file under the agent write lock; the file is written
+    only when the meta changed. A ValueError of `change` (the list is full) reaches the caller."""
+    with _AGENT_META_LOCK:
+        path = _agent_md_path(root, slug)
+        if path is None:
+            raise ValueError("trợ lý không còn trong brain")
+        meta, body = _read_md(path)
+        new_meta, result = change(meta)
+        if new_meta is not meta:
+            _write_md(path, new_meta, body)
+        return result
+
+
+def _project_team_find(root: str, ref: str):
+    """A team of this brain named by id or by name (case does not matter), or None."""
+    ref = (ref or "").strip()
+    if not ref or not _TEAM_API.exists():
+        return None
+    key = _brain_key(root)
+    team = _TEAM_API.teams().get(ref)
+    if team and team.get("brain_id") == key:
+        return team
+    hits = [t for t in _TEAM_API.teams().list_teams(key, limit=200)
+            if str(t.get("name") or "").strip().lower() == ref.lower()]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _project_team_attach(team, raw: str) -> list:
+    """Attach one file or folder to a team the way the team's own panel does (`_team_attach`): a file just dropped into
+    a chat is copied into the team folder, a file of the brain stays where it is. Raises ValueError outside the brain."""
+    text = (raw or "").strip().replace("\\", "/")
+    if not text:
+        return []
+    brain = team.get("brain_id") or "brain"
+    candidate = Path(text)
+    staging = Path(STAGING).resolve()
+    if candidate.is_absolute() and staging in candidate.resolve().parents:
+        target = candidate.resolve()
+    else:
+        target = candidate.resolve() if candidate.is_absolute() else _safe_serve_path(brain, text)
+        broot = Path(_brain_root(brain)).resolve()
+        if broot not in target.parents:
+            raise ValueError(localefmt.chu("Chỉ gắn được file hay thư mục nằm trong brain của nhóm",
+                                           "Only a file or folder inside the team's brain can be attached"))
+    if not target.exists():
+        return []
+    return _team_attach(team, [{"path": str(target), "name": target.name}])
+
+
+def _project_attach_target(brain: str, raw: str):
+    """(stored path, name, is_dir) for a path the MODEL gave to `thansa_project op=add_file`, or None when nothing is
+    there. Raises ValueError outside the allowed area.
+
+    Three spellings arrive: a path from the browse ceiling (what the drawer stores), a path from the brain root (what
+    the model reads in chat), and the absolute path of a file the owner just dropped into the chat box. A dropped
+    file sits in the staging folder, which is swept after a few days, so it is COPIED into the brain's sources folder
+    first, the same place the drawer's own upload puts a file. Everything is stored from the browse ceiling.
+
+    Narrower than the drawer on purpose: the drawer lets the OWNER attach anything under the browse ceiling (a whole
+    drive on localhost), while this is the model's hand, steered by whatever it just read. It attaches only what
+    lives inside the project's own brain.
+    """
+    text = (raw or "").strip().replace("\\", "/")
+    if not text:
+        return None
+    ceiling = _files_root(brain)
+    staging = Path(STAGING).resolve()
+    candidate = Path(text)
+    if candidate.is_absolute():
+        target = candidate.resolve()
+        if staging in target.parents:
+            if not target.is_file():
+                return None
+            folder = Path(_resolve_subfolder(_brain_root(brain), *_THU_MUC_LOGIC["sources"]))
+            same = folder / _sanitize_filename(target.name)
+            # Asked twice for the same dropped file (a retry, a second turn): reuse the copy, do not pile up name_1.
+            if same.is_file() and filecmp.cmp(str(target), str(same), shallow=False):
+                copied = same
+            else:
+                copied = Path(_unique_path(str(folder), _sanitize_filename(target.name)))
+                shutil.copy2(str(target), str(copied))
+            target = copied.resolve()
+    else:
+        target = _safe_serve_path(brain, text)
+        if not target.exists():
+            return None
+    brain_root = Path(_brain_root(brain)).resolve()
+    if (brain_root not in target.parents) or (target != ceiling and ceiling not in target.parents):
+        raise ValueError(localefmt.chu("Chỉ gắn được file hay thư mục nằm trong brain của project",
+                                       "Only a file or folder inside the project's brain can be attached"))
+    return _asset_target(brain, _files_rel(ceiling, target))
+
+
 def _liet_ke_tai_lieu(brain: str, files: list, links: list):
     """Observe ordinary pinned file rows; the shared pure renderer owns templates.
 
@@ -949,7 +1096,9 @@ def _liet_ke_tai_lieu(brain: str, files: list, links: list):
     for item in files[:PROJECT_FILES_LIET_KE]:
         prepared = None
         path = item.get("path") or ""
-        if item.get("pinned") and os.path.splitext(path)[1].lower() in PROJECT_GHIM_DUOI:
+        if item.get("pinned") and path.endswith("/"):
+            prepared = _folder_asset_text(brain, path)
+        elif item.get("pinned") and os.path.splitext(path)[1].lower() in PROJECT_GHIM_DUOI:
             try:
                 # Read policy includes the serving ceiling, as in the legacy path.
                 text = _safe_serve_path(brain, path).read_text(encoding="utf-8", errors="replace")
@@ -961,6 +1110,44 @@ def _liet_ke_tai_lieu(brain: str, files: list, links: list):
     return main_attachment_rendering.render_attachment_lists(
         files, links, loaded, list_max=PROJECT_FILES_LIET_KE, allowed_suffixes=PROJECT_GHIM_DUOI,
         file_max=PROJECT_GHIM_FILE_MAX, total_max=PROJECT_GHIM_TONG_MAX)
+
+
+def _folder_asset_text(brain: str, path: str):
+    """What a PINNED folder loads into the prompt (2026-11-12): a short tree of what it holds, so the model knows which
+    files are there without listing the folder first. None when the folder is gone (the row then says it cannot be
+    read). The tree is the one a team's working folder shows (team_docs.tree: two levels, capped)."""
+    import team_docs
+    try:
+        folder = _safe_serve_path(brain, path)
+        if not folder.is_dir():
+            return None
+        lines = team_docs.tree(str(folder))
+    except Exception:  # noqa: BLE001 - an unreadable folder is a row that says so, never a broken turn
+        return None
+    text = ("Thư mục này gồm (hai tầng đầu; mở file bên trong bằng tool đọc file khi cần):\n" + "\n".join(lines)
+            if lines else "(thư mục đang trống)")
+    return main_attachment_rendering.PreparedAttachmentText(text[:PROJECT_GHIM_FILE_MAX], len(text))
+
+
+def _asset_target(brain: str, path: str):
+    """(stored path, name, is_dir) of a brain file or folder about to be attached to a project, a chat or an agent, or
+    None when nothing is there. Raises ValueError when the path leaves the allowed area (`_safe_path`).
+
+    A folder is stored with ONE trailing "/" (2026-11-12, owner: "chọn được cả thư mục"): that slash is the whole
+    marker, read by the prompt renderer and by the dashboard, so no table and no frontmatter key had to change. The
+    empty path is refused: it resolves to the browse ceiling itself, which is not something to attach."""
+    target = _safe_path(brain, path)
+    rel = (path or "").strip().replace("\\", "/").strip("/")
+    if rel and target.is_dir():
+        return rel + "/", target.name, True
+    if target.is_file():
+        return path, target.name, False
+    return None
+
+
+def _asset_missing():
+    return JSONResponse({"error": localefmt.chu("Không tìm thấy file hay thư mục này trong brain",
+                                                "No such file or folder in this brain")}, status_code=404)
 
 
 def _session_block(session_id: str) -> str:
@@ -1018,6 +1205,11 @@ def _agent_assets_block(brain: str, meta: dict) -> str:
     if da_nap:
         ra += ("\n# === NỘI DUNG FILE ĐÃ GHIM (nạp sẵn, không cần mở lại) ===" + "".join(da_nap)
                + "\n")
+    # 2026-11-13: one line per document saying what it holds, so the right one is opened without opening each.
+    desc, hidden = project_context.asset_lines(files, links)
+    if desc:
+        ra += ("\nTài liệu nào chứa gì (mở ra khi cần chi tiết):\n" + "\n".join(desc) + "\n"
+               + (f"(còn {hidden} mô tả nữa: thansa_project op=get)\n" if hidden else ""))
     return ra
 
 
@@ -2834,9 +3026,18 @@ async def _transcript_rewrite_ask(prompt: str) -> str:
     sounds like an order is only rewritten, never carried out."""
     base = _reply_policy_sandbox_engine(transcript_fix.REWRITE_SYSTEM, "transcript-rewrite",
                                         cwd_name="transcript_rewrite_cwd")
+    # 2026-11-13: lowest thinking level for Claude Code. Fixing a dictated sentence needs no plan, and at the CLI's
+    # own default the owner waited through seconds of thinking on every recording. The main_spec below carries no
+    # level, so swap() leaves this one in place. An older `claude` without the flag runs as before.
+    if claude_cli.co_co("--effort"):
+        try:
+            base.effort = "low"
+        except Exception:  # noqa: BLE001 - an engine without the field keeps its default
+            pass
     cli = aux_engine.swap(base, mode="suggest", tag="transcript-rewrite", spec=aux_engine.main_spec(),
                           codex_profile=_write_codex_profile)
     cli = aux_engine.strip_tools(cli, base)
+    _rewrite_low_effort_codex(cli)
     if not cli.is_available():
         raise RuntimeError("main brain not ready")
     final = ""
@@ -2848,6 +3049,27 @@ async def _transcript_rewrite_ask(prompt: str) -> str:
     if aux_engine.final_loi_dang_nhap(final):
         raise RuntimeError("main brain signed out")
     return final
+
+
+def _rewrite_low_effort_codex(cli) -> None:
+    """Codex links of the dictation rewrite think at "low" (2026-11-13), the same reason as Claude Code's flag above.
+
+    Only when Codex lists "low" for that model (or no ladder has been read yet): a value the model does not know would
+    fail the run, and a run at the default is still a rewrite."""
+    try:
+        links = list(cli._all()) if isinstance(cli, aux_engine._FallbackChain) else [cli]
+    except Exception:  # noqa: BLE001
+        return
+    for e in links:
+        if type(e).__name__ != "CodexCLI":
+            continue
+        try:
+            muc = _codex_effort(getattr(e, "model", "") or "", "low")
+            if muc:
+                e.extra_config[:] = [x for x in e.extra_config if not str(x).startswith("model_reasoning_effort=")]
+                e.extra_config.append(f"model_reasoning_effort={muc}")
+        except Exception as ex:  # noqa: BLE001 - the depth setting must never cost the rewrite
+            print(f"[transcript_fix] codex effort: {type(ex).__name__}", file=sys.stderr)
 
 
 transcript_fix.wire(ask=_transcript_rewrite_ask)
@@ -5990,10 +6212,46 @@ async def _widen_io_pool():
 
 
 @app.on_event("startup")
+async def _prime_kept_values():
+    """Read once, on a worker thread, what the event loop asks for from its first request on (kept.py): the settings
+    signature, the default brain folder, the pack and plugin signatures, the MCP catalog, the hub token, the bot and
+    channel stores, the `claude` path of GET /health. Without it the first request after a restart reads each of them
+    on the event loop, and right after an update is exactly when the disk is slowest. Waits ten seconds at most; a
+    slower disk finishes the reads behind the server's back."""
+    def run():
+        for read in (cfgmod.read_settings, _default_brain_dir, packs.signature, mcp_catalog.load, mcp_hub.hub_token,
+                     mcp_hub._store_mtime, lambda: plugins_host.shared_signature(), channel_accounts._load,
+                     chatbot_store._load, _HEALTH_CLI.get):
+            try:
+                read()
+            except Exception as e:  # noqa: BLE001 - the first caller reads it instead
+                print(f"[kept] prime: {type(e).__name__}: {e}", file=sys.stderr)
+    try:
+        await asyncio.wait_for(asyncio.to_thread(run), timeout=10)
+    except Exception as e:  # noqa: BLE001 - a timeout: the thread goes on, the server starts
+        print(f"[kept] prime not finished at start-up: {type(e).__name__}", file=sys.stderr)
+
+
+@app.on_event("startup")
 async def _warm_shared_ssl():
     """Build the one SSL context every httpx client shares (ssl_shared.py) on a worker thread, so not even the first
     client loads the certificate bundle on the event loop."""
     await asyncio.to_thread(ssl_shared.warm)
+
+
+@app.on_event("startup")
+async def _usage_ledger_compact_on_start():
+    """2026-11-13: drop the Team replay snapshots earlier versions kept in usage.json (usage_store._TEAM_SNAPSHOTS).
+
+    A Team that worked a lot left tens of thousands of them, and every model call re-read and rewrote that file on the
+    event loop: open pages lost their connection while a Team was busy. On a worker thread, so a file of many megabytes
+    is small again before the first turn reads it."""
+    try:
+        dropped = await asyncio.to_thread(usage_store.compact)
+        if dropped:
+            print(f"[usage] usage.json: removed {dropped} team snapshots kept by an earlier version", file=sys.stderr)
+    except Exception as e:  # noqa: BLE001 - the first record() does the same clean-up
+        print(f"[usage] compact failed: {type(e).__name__}: {e}", file=sys.stderr)
 
 
 @app.on_event("startup")
@@ -6618,11 +6876,14 @@ async def hub_mcp(request: Request):
 
 
 @app.get("/connect/catalog")
-async def connect_catalog():
+def connect_catalog():
     """Kho kết nối cho giao diện, kèm phần người dùng đã GỠ và kết nối đã mồ côi.
 
     `catalog` đã TRỪ cái đã gỡ (lọc trong `mcp_catalog.load`), còn `removed` là danh sách để vẽ
-    khu "Đã gỡ" có nút Cài lại - nên nó phải đọc từ `tat_ca()` chứ không phải `load()`."""
+    khu "Đã gỡ" có nút Cài lại - nên nó phải đọc từ `tat_ca()` chứ không phải `load()`.
+
+    A plain `def` since 2026-11-13: it reads the catalog file twice, the connection store three times and the pack
+    ledger, which as `async def` all ran on the event loop each time the Connections page opened."""
     tat_ca = mcp_catalog.tat_ca()
     da_go = core_off.da_go("connectors")
     return {"catalog": mcp_catalog.public_catalog(), "connections": mcp_store.list_connections(),
@@ -7875,6 +8136,113 @@ def _loc_model_chat(ids, cam):
     return [i for i in ids if i and not any(k in i.lower() for k in cam)]
 
 
+def _model_ids(body) -> list:
+    """Model ids out of a gateway's model-list reply, in the order given.
+
+    Sellers do not agree on the envelope: OpenAI wraps the rows in {"data": [...]}, some proxies answer the bare
+    list, others {"models": [...]}, and a row is {"id": ...}, {"name": ...} or a plain string. Reading only the
+    first shape left the picker empty for a gateway that had just answered with its whole list."""
+    rows = body
+    if isinstance(body, dict):
+        rows = body.get("data")
+        if not isinstance(rows, list):
+            rows = body.get("models")
+    out = []
+    for x in rows if isinstance(rows, list) else []:
+        if isinstance(x, dict):
+            x = x.get("id") or x.get("name") or x.get("model")
+        x = str(x or "").strip()
+        if x.startswith("models/"):   # Google's OpenAI-format endpoint names rows "models/gemini-..."
+            x = x[len("models/"):]
+        if x and x not in out:
+            out.append(x)
+    return out
+
+
+_VERSIONED_BASE = re.compile(r"/v\d+[a-z0-9]*$", re.I)
+
+
+def _openai_list_urls(base: str) -> list:
+    """Where an OpenAI-format gateway may keep its model list: (list URL, base it implies).
+
+    {base}/models first. A base typed without its version ("https://api.example.com") is the most common slip, so
+    {base}/v1/models is tried next; a list found there means the API lives under /v1."""
+    base = (base or "").rstrip("/")
+    urls = [(base + "/models", base)]
+    if base and not _VERSIONED_BASE.search(base):
+        urls.append((base + "/v1/models", base + "/v1"))
+    return urls
+
+
+async def _openai_list_models(base: str, key: str, timeout: float = 20) -> dict:
+    """Ask an OpenAI-format gateway for its models.
+
+    Returns {"ids", "base", "status", "why"}: `base` is the address the list was found under (it differs from the
+    one passed in when only {base}/v1/models answered), `status` the HTTP status of the first try that reached the
+    server (0 = none did), `why` a short cause for the owner when `ids` is empty."""
+    import httpx
+    headers = {"Authorization": f"Bearer {key or 'none'}"}
+    out = {"ids": [], "base": base, "status": 0, "why": ""}
+    async with httpx.AsyncClient(timeout=timeout) as c:
+        for url, at in _openai_list_urls(base):
+            try:
+                r = await c.get(url, headers=headers)
+            except Exception as e:
+                out["why"] = out["why"] or type(e).__name__
+                break   # the host itself did not answer: another path on it will not either
+            out["status"] = out["status"] or r.status_code
+            if r.status_code in (401, 403):
+                out["status"] = r.status_code
+                out["why"] = f"HTTP {r.status_code}"
+                break   # the key was refused: do not send it to a second path
+            if r.status_code != 200:
+                out["why"] = out["why"] or f"HTTP {r.status_code}"
+                continue
+            try:
+                ids = _model_ids(r.json())
+            except Exception:
+                ids = []
+            if ids:
+                out.update(ids=ids, base=at, why="")
+                break
+            out["why"] = out["why"] or localefmt.chu("không có danh sách model", "no model list")
+    return out
+
+
+def _adopt_listed_base(prov: str, old_base: str, new_base: str) -> None:
+    """A gateway saved before Thansa checked addresses, with its version left off: keep the address its list was
+    found under, so the model the owner picks next can actually chat. Only a gateway with no model saved gets here
+    (one that passed the connect check keeps its address untouched)."""
+    with cfgmod._SETTINGS_LOCK:
+        cfg = cfgmod.read_settings()
+        m = cfg.setdefault("model", {})
+        gws = adv_keys.gateways(m, prov)
+        g = next((x for x in gws if x["base"] == old_base and not x["models"]), None)
+        if not g:
+            return
+        if isinstance(m.get(adv_keys.field(prov)), list) and m[adv_keys.field(prov)]:
+            adv_keys.update(m, prov, g["id"], base=new_base, key=g["key"])
+        else:   # one gateway in the three old fields, never turned into a list
+            m[adv_keys._SPEC[prov]["legacy"] + "_base"] = new_base
+        cfgmod.write_settings(cfg)
+
+
+async def _openai_compat_models(m):
+    """Models of the OpenAI-format gateway in use: the names saved with it first (typed by the owner, or listed
+    when it was connected), then whatever the gateway lists now. A gateway that lists nothing is not an error when
+    names were saved. Returns (ids or None, why)."""
+    base = engine.openai_compat_base()
+    if not base:
+        return None, ""
+    g = next((x for x in adv_keys.gateways(m, adv_keys.OPENAI) if x["base"] == base), None)
+    saved = list(g["models"]) if g else []
+    key = (m.get("openai_compat_key") or "").strip() or "none"
+    got = await _openai_list_models(base, key)
+    if got["ids"] and got["base"] != base and not saved:
+        _adopt_listed_base(adv_keys.OPENAI, base, got["base"])
+    return (_gop_giu_thu_tu(saved, sorted(got["ids"])) or None), got["why"]
+
+
 def _anthropic_compat_typed(m) -> list:
     """Model names the owner typed for the Anthropic-compatible gateway (0.254.0)."""
     return [str(x).strip() for x in (m.get("anthropic_compat_models") or []) if str(x).strip()]
@@ -7896,14 +8264,30 @@ async def _anthropic_compat_models(m, base=None, key=None):
         async with httpx.AsyncClient(timeout=20) as c:
             r = await c.get(base + "/v1/models", headers=engine.anthropic_headers(key, compat=True))
         if r.status_code == 200:
-            data = r.json().get("data") or []
-            live = [x.get("id") for x in data if isinstance(x, dict) and x.get("id")]
+            try:
+                live = _model_ids(r.json())
+            except Exception:
+                live = []   # a web page instead of a list: same as no list
         elif not typed:
             r.raise_for_status()
     except Exception:
         if not typed:
             raise
     return _gop_giu_thu_tu(typed, live) or None
+
+
+def _is_web_page(r) -> bool:
+    """True when an HTTP reply is a web page (the gateway's own site), not its API."""
+    try:
+        if "html" in str((getattr(r, "headers", None) or {}).get("content-type") or "").lower():
+            return True
+        return str(getattr(r, "text", "") or "").lstrip()[:1] == "<"
+    except Exception:
+        return False   # cannot tell: keep the old rule, a 200 is accepted
+
+
+class _NoModelList(Exception):
+    """A gateway was asked and gave no list; the text is the short cause shown to the owner."""
 
 
 async def _fetch_provider_models(provider, m):
@@ -7976,15 +8360,10 @@ async def _fetch_provider_models(provider, m):
             data = r.json().get("data") or []
         return sorted(x.get("id") for x in data if isinstance(x, dict) and x.get("id")) or None
     if provider == "openai-compat":
-        base = engine.openai_compat_base()
-        if not base:
-            return None
-        key = (m.get("openai_compat_key") or "").strip() or "none"
-        async with httpx.AsyncClient(timeout=20) as c:
-            r = await c.get(base + "/models", headers={"Authorization": f"Bearer {key}"})
-            r.raise_for_status()
-            data = r.json().get("data") or []
-        return sorted(x.get("id") for x in data if isinstance(x, dict) and x.get("id")) or None
+        ids, why = await _openai_compat_models(m)
+        if not ids and why:
+            raise _NoModelList(why)
+        return ids
     if provider == "anthropic-compat":
         return await _anthropic_compat_models(m)
     if provider == "ollama":
@@ -8080,18 +8459,24 @@ def _remember_catalog(cfg, d, ids):
     # Chặn phình settings.json (OpenRouter vài trăm model). Endpoint tự khai thì giữ đủ: cắt ở 50
     # là thẻ báo "50 model" sai sự thật với proxy có nhiều hơn.
     keep = list(ids if key in ("openai-compat", "anthropic-compat") else ids[:50])
-    cat = cfg.setdefault("model", {}).setdefault("catalog", {})
-    if cat.get(key) == keep:
+    if ((cfg.get("model") or {}).get("catalog") or {}).get(key) == keep:
         return
-    cat[key] = keep
+    # 2026-11-13: `cfg` was read BEFORE the provider was asked, and that call can take 20 seconds. Writing that
+    # copy back whole undid whatever was saved meanwhile: a key connected while a model list was still loading
+    # vanished again. Only the one catalog entry goes into the settings as they are NOW.
     try:
-        cfgmod.write_settings(cfg)
+        with cfgmod._SETTINGS_LOCK:
+            now_cfg = cfgmod.read_settings()
+            cat = now_cfg.setdefault("model", {}).setdefault("catalog", {})
+            if cat.get(key) != keep:
+                cat[key] = keep
+                cfgmod.write_settings(now_cfg)
     except Exception as e:
         import sys
         print(f"[models] không ghi được catalog {key}: {e}", file=sys.stderr)
 
 
-def _vi_sao_khong_co_model(provider: str, m: dict) -> str:
+def _vi_sao_khong_co_model(provider: str, m: dict, cause: str = "") -> str:
     """Vì sao provider này không trả về model nào - viết cho NGƯỜI ĐỌC, không phải log.
 
     Hầu hết đường lấy model hỏng theo kiểu IM LẶNG: hàm trả None chứ không ném lỗi, nên phía
@@ -8133,22 +8518,26 @@ def _vi_sao_khong_co_model(provider: str, m: dict) -> str:
                              "xem lỗi cụ thể.",
                              "Could not reach Ollama at the saved address. Open the Models page, Local Model "
                              "tab, to see the exact error.")
-    if provider == "openai-compat":
-        if not (m.get("openai_compat_base") or "").strip():
-            return localefmt.chu("Chưa đặt Base URL cho OpenAI Compatible.",
-                                 "No Base URL set for OpenAI Compatible.")
-        return localefmt.chu("Không đọc được danh sách model từ {base}/models. Kiểm tra Base URL (tính tới /v1) "
-                             "và key, hoặc gõ tên model bằng tay.",
-                             "Could not read the model list from {base}/models. Check the Base URL (up to /v1) "
-                             "and the key, or type the model name by hand.")
-    if provider == "anthropic-compat":
-        if not (m.get("anthropic_compat_base") or "").strip():
-            return localefmt.chu("Chưa đặt Base URL cho Anthropic Compatible.",
-                                 "No Base URL set for Anthropic Compatible.")
-        return localefmt.chu("Cổng này không trả danh sách model. Vào trang Models, thẻ Anthropic Compatible, "
-                             "gõ tên model bên bán đưa rồi bấm Lưu.",
-                             "This gateway does not list its models. On the Models page, Anthropic Compatible "
-                             "card, type the model name the seller gave you and press Save.")
+    if provider in adv_keys.PROVIDERS:
+        card = _card_label(d)
+        base = (m.get(adv_keys._SPEC[provider]["legacy"] + "_base") or "").strip()
+        if not base:
+            return localefmt.chu(f"Chưa đặt Base URL cho {card}.", f"No Base URL set for {card}.")
+        host, why = adv_keys.host(base), (f" ({cause})" if cause else "")
+        where = localefmt.chu(f"Mở trang Models, thẻ {card}, bấm dấu ba chấm cạnh key rồi chọn Sửa",
+                              f"Open the Models page, {card} card, press the three dots next to the key and choose Edit")
+        if cause in ("HTTP 401", "HTTP 403"):
+            return localefmt.chu(f"{host} từ chối API key{why}. {where}, dán lại key.",
+                                 f"{host} refused the API key{why}. {where}, then paste the key again.")
+        if provider == adv_keys.OPENAI:
+            return localefmt.chu(
+                f"{host} không trả danh sách model{why}. {where}: kiểm tra Base URL đã tính tới /v1 chưa, hoặc gõ "
+                "tên model bên bán đưa.",
+                f"{host} did not return a model list{why}. {where}: check that the Base URL goes up to /v1, or "
+                "type the model name the seller gave you.")
+        return localefmt.chu(
+            f"{host} không trả danh sách model{why}. {where}, gõ tên model bên bán đưa.",
+            f"{host} did not return a model list{why}. {where}, then type the model name the seller gave you.")
     if d.get("key_field") and not m.get(d["key_field"]):
         return localefmt.chu("Chưa có API key cho nhà cung cấp này.", "No API key for this provider yet.")
     return ""
@@ -8172,13 +8561,33 @@ async def provider_models_index(provider: str, refresh: bool = False) -> dict:
     c = _PROV_MODELS_CACHE.get(provider)
     if not refresh and c and (now - c["ts"]) < 600 and c.get("ids"):
         return {"models": c["ids"], "live": True, "cached": True}
+    is_gateway = provider in adv_keys.PROVIDERS
+    asked_base = (m.get(adv_keys._SPEC[provider]["legacy"] + "_base") or "") if is_gateway else ""
+    cause = ""
     try:
         ids = await _fetch_provider_models(provider, m)
+    except _NoModelList as e:
+        ids, last_err, cause = None, None, str(e)
     except Exception as e:
         ids = None
         last_err = f"{type(e).__name__}: {e}"
+        code = getattr(getattr(e, "response", None), "status_code", 0)
+        cause = f"HTTP {code}" if code else type(e).__name__
     else:
         last_err = None
+    if is_gateway:
+        # A gateway card: the raw exception text means nothing to the person choosing a model, so the reason is
+        # always the sentence that says what to do. And the card may have moved to another gateway while this one
+        # was being asked (a key added, removed, rotated): its list must not be kept under the new gateway's name.
+        m_now = cfgmod.read_settings().get("model", {})
+        moved = (m_now.get(adv_keys._SPEC[provider]["legacy"] + "_base") or "") not in (
+            asked_base, *[u[1] for u in _openai_list_urls(asked_base)])
+        if ids and not moved:
+            _PROV_MODELS_CACHE[provider] = {"ids": ids, "ts": now}
+            _remember_catalog(cfg, d, ids)
+        if ids:
+            return {"models": ids, "live": True}
+        return {"models": fallback, "live": False, "error": _vi_sao_khong_co_model(provider, m_now, cause)}
     if ids:
         _PROV_MODELS_CACHE[provider] = {"ids": ids, "ts": now}
         _remember_catalog(cfg, d, ids)
@@ -8285,9 +8694,16 @@ async def reflect(brain: str = Form("brain")):
             "status": res.get("status", ""), "report": rep, "git": g}
 
 
+# 2026-11-13: Docker's health check and every uptime probe call GET /health, and each call looked the `claude` binary
+# up by walking the folders of PATH on the disk, on the event loop. When the disk stalled, the probe that was meant to
+# tell whether Thansa is alive timed out with it: the container was marked unhealthy and taken out of service while
+# Thansa itself was fine. The answer now comes from memory (kept.py).
+_HEALTH_CLI = kept.Value(lambda: find_claude_cli(), name="claude cli path")
+
+
 @app.get("/health")
 async def health(request: Request):
-    cli = find_claude_cli()
+    cli = _HEALTH_CLI.get()
     out = {"status": "ok", "claude_cli_available": cli is not None}
     # 2026-11-10: the probe is public (watchdog, uptime checks, the CLI). The two absolute paths, which usually give
     # away the OS user and the install folder, go only to a signed-in session or to this machine itself.
@@ -8338,7 +8754,14 @@ def _default_brain_dir() -> Path:
     sách hoặc folder ngoài bất kỳ qua 'path:<thư mục>'. KHÔNG hardcode vault cá nhân nào.
 
     Since 2026-11-09 the owner can make another brain the default (POST /brains/default, server/default_brain.py);
-    `Brain Default` is only the folder used until they do."""
+    `Brain Default` is only the folder used until they do.
+
+    2026-11-13: nearly every request asks for this, and each call cost one stat of the pointer file plus a mkdir
+    on the event loop. The loop now gets the folder from memory (kept.py); `_brain_paths_changed()` drops it."""
+    return _DEFAULT_BRAIN_DIR.get()
+
+
+def _default_brain_dir_now() -> Path:
     p = default_brain.path(BRAINS_DIR)
     try:
         p.mkdir(parents=True, exist_ok=True)
@@ -8346,13 +8769,28 @@ def _default_brain_dir() -> Path:
         pass
     return p
 
+
+_DEFAULT_BRAIN_DIR = kept.Value(lambda: _default_brain_dir_now(), key=lambda: str(BRAINS_DIR), name="default brain")
+# "is this brain a folder" and "its resolved path", per brain path. Same reason: both ran on the event loop for
+# almost every request that names a brain.
+_BRAIN_IS_DIR = kept.Keyed(lambda b: os.path.isdir(b), name="brain folder")
+
+
+def _brain_paths_changed() -> None:
+    """A brain was created, deleted or made the default through Thansa: read the folders again now. A folder changed
+    any other way (a restore, an import, by hand) is seen within kept.RECHECK_S."""
+    _DEFAULT_BRAIN_DIR.drop()
+    _BRAIN_IS_DIR.drop()
+    kept.forget_resolved()
+
+
 brain_ident.set_default_dir(_default_brain_dir)
 
 
 def _brain_root(brain: str) -> str:
     if not brain or brain == "brain":
         return str(_default_brain_dir())
-    return brain if os.path.isdir(brain) else str(_default_brain_dir())
+    return brain if _BRAIN_IS_DIR.get(brain) else str(_default_brain_dir())
 
 
 def _cwd_luot_chat(row, brain: str) -> str:
@@ -8436,7 +8874,7 @@ def _brain_key(brain) -> str:
     """
     root = _brain_root(str(brain or ""))
     try:
-        return str(Path(root).resolve())
+        return kept.resolved(root)
     except OSError:
         return str(root)
 
@@ -9087,6 +9525,8 @@ async def new_brain(name: str = Form(...)):
         _ensure_brain_scaffold(root)
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    finally:
+        _brain_paths_changed()
     git_brain.clear_tombstone(BRAINS_DIR, safe)   # dựng lại não cùng tên -> gỡ giấy báo tử để không bị xoá oan
     return {"ok": True, "name": safe, "path": str(root)}
 
@@ -9165,6 +9605,8 @@ async def delete_brain(name: str = Form(...), confirm: str = Form("")):
     except Exception as e:
         return JSONResponse({"ok": False, "error": localefmt.chu(f"Không xoá được (brain đang bận?): {e}", f"Could not delete (is the brain busy?): {e}")},
                             status_code=500)
+    finally:
+        _brain_paths_changed()
 
     _eager_brain_sync()   # đẩy lệnh xoá + tombstone lên remote NGAY thay vì chờ chu kỳ 6h
     return {"ok": True, "name": safe, "trashed": bool(dest)}
@@ -9219,6 +9661,7 @@ async def brain_set_default(brain: str = Form(...)):
     if old is not None and root == old:
         return {"ok": True, "name": root.name, "label": brain_label.display(root), "unchanged": True}
     ok, why = await asyncio.to_thread(default_brain.set_folder, BRAINS_DIR, root.name)
+    _brain_paths_changed()
     if not ok:
         return JSONResponse({"ok": False, "error": localefmt.chu("Không đặt được brain này làm mặc định",
                                                                  "Could not make this brain the default")},
@@ -10004,16 +10447,17 @@ async def agent_assets_add_file(slug: str, path: str = Form(...), name: str = Fo
     try:
         # Kiểm đường dẫn TRƯỚC khi ghi vào frontmatter: không có bước này thì lưu được một
         # path trèo ra ngoài brain rồi mới vỡ lúc nạp nội dung vào prompt.
-        alo = _safe_path(brain, path)
+        # 2026-11-12: a folder is accepted too (`_asset_target`), stored with a trailing "/". The empty path, which
+        # resolves to the browse ceiling itself, is still refused there.
+        found = _asset_target(brain, path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    # `is_file` chứ không phải `exists`: một đường dẫn rỗng giải ra chính thư mục trần, mà
-    # thư mục thì "có tồn tại" - gắn được một hàng trỏ vào thư mục, ghim vào là đọc lỗi.
-    if not alo.is_file():
-        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này", "File not found in this brain")}, status_code=404)
+    if not found:
+        return _asset_missing()
+    stored, real_name, is_dir = found
     fid, loi = await asyncio.to_thread(
-        _agent_assets_sua, brain, slug, lambda m: agent_assets.them_file(m, path, name or alo.name))
-    return loi or {"ok": True, "id": fid}
+        _agent_assets_sua, brain, slug, lambda m: agent_assets.them_file(m, stored, name or real_name))
+    return loi or {"ok": True, "id": fid, "dir": is_dir}
 
 
 @app.post("/agents/{slug}/assets/files/{file_id}/delete")
@@ -10042,6 +10486,21 @@ async def agent_assets_add_link(slug: str, url: str = Form(...), label: str = Fo
                             status_code=400)
     lid, loi = await asyncio.to_thread(_agent_assets_sua, brain, slug, lambda m: agent_assets.them_link(m, u, label))
     return loi or {"ok": True, "id": lid}
+
+
+@app.post("/agents/{slug}/assets/describe")
+async def agent_assets_describe(slug: str, kind: str = Form(...), ref: str = Form(...), description: str = Form(""),
+                                brain: str = Form("brain")):
+    """One line saying what an attached file (`ref` its stored path) or link (`ref` its URL) holds (2026-11-13).
+    Stored in the assistant's file, next to the document, so it travels with the assistant."""
+    refused = _project_text_refused(description)
+    if refused:
+        return refused
+    ok, loi = await asyncio.to_thread(
+        _agent_assets_sua, brain, slug, lambda m: agent_assets.describe(m, kind, ref, description))
+    if loi:
+        return loi
+    return {"ok": True} if ok else JSONResponse({"error": "not found"}, status_code=404)
 
 
 @app.post("/agents/{slug}/assets/links/{link_id}/delete")
@@ -11322,8 +11781,11 @@ async def share_list(brain: str = Query("")):
                                   for b, t in zip(ds, ten)]}
 
 
+# 2026-11-13: the four public routes below are plain `def`, so FastAPI runs them on a worker thread. Each one looks
+# the link up, checks the file and reads or serves it; as `async def` all of that ran on the event loop, and readers
+# of a shared page froze the whole server whenever the disk stalled (GET /health/loop on the owner's VPS).
 @app.get("/s/{token}")
-async def share_xem(token: str, request: Request):
+def share_xem(token: str, request: Request):
     """TRANG XEM công khai. Không cần đăng nhập - xem chú thích đầu khối. `token` may be the link's custom address."""
     ban = share_store.get(token)
     if not ban:
@@ -11331,7 +11793,7 @@ async def share_xem(token: str, request: Request):
                             status_code=404)
     addr = _share_addr(token, ban)
     if share_store.is_conversation(ban):
-        resp = await asyncio.to_thread(_share_trang_hoi_thoai, ban, addr)
+        resp = _share_trang_hoi_thoai(ban, addr)
         if resp.status_code == 200:
             _share_count_view(request, ban)
         return resp
@@ -11372,7 +11834,7 @@ async def share_xem(token: str, request: Request):
 
 
 @app.get("/s/{token}/raw")
-async def share_raw(token: str, dl: int = Query(0)):
+def share_raw(token: str, dl: int = Query(0)):
     """File gốc, để tải về hoặc để trang .html nhúng thẳng."""
     ban = share_store.get(token)
     if not ban:
@@ -11390,7 +11852,7 @@ async def share_raw(token: str, dl: int = Query(0)):
 
 
 @app.get("/s/{token}/asset")
-async def share_asset(token: str, p: str = Query(...)):
+def share_asset(token: str, p: str = Query(...)):
     """Ảnh và tài nguyên kèm theo. Phạm vi bó hẹp, xem _share_asset."""
     ban = share_store.get(token)
     if not ban:
@@ -11494,7 +11956,7 @@ def share_xem_html(token: str, request: Request):
 
 
 @app.get("/s/{token}/{p:path}")
-async def share_sibling(token: str, p: str):
+def share_sibling(token: str, p: str):
     """File cạnh trang .html chia sẻ, theo đường dẫn tương đối app đó xin. Phạm vi: _share_sibling.
 
     Header `Access-Control-Allow-Origin: *` là BẮT BUỘC chứ không phải cho rộng rãi: trang chạy
@@ -13495,7 +13957,11 @@ def _dm_lessons_prompt(brain, slug, conv_sid) -> str:
     except Exception as _e:   # noqa: BLE001
         print(f"[dm lessons block] {type(_e).__name__}: {_e}", file=sys.stderr)
         block = ""
-    return agent_lessons.DM_LESSON_RULE + (("\n" + block + "\n") if block else "")
+    # 2026-11-13: in a private chat the assistant also keeps its own documents in order (tool thansa_project
+    # agent=<slug>). Here, in the block both compositions share (`_agent_turn_system_prompt` and the dashboard turn),
+    # so the dashboard, the CLI and Telegram turns stay identical.
+    return (agent_lessons.DM_LESSON_RULE + (("\n" + block + "\n") if block else "")
+            + project_context.AGENT_GUIDE.format(slug=slug))
 
 
 def _dm_agent_key(brain, slug, conv_sid="", register=False):
@@ -18757,7 +19223,10 @@ async def stt_fix_route(request: Request):
         body = await request.json()
     except Exception:
         return {"ok": False, "text": "", "ly_do": "json_hong"}
-    text = str((body or {}).get("text") or "")[:2000]
+    # 2026-11-13: never cut here. The text used to be cut at 2000 characters and the answer replaced the whole
+    # dictation in the browser, so everything after about two and a half minutes of speech was lost. transcript_fix
+    # keeps every word of a long text and only decides whether a model reads it.
+    text = str((body or {}).get("text") or "")
     cfg = cfgmod.read_settings()
     # `final`: the recording ended, the main brain rewrites the whole sentence with the chat as context.
     if (body or {}).get("final"):
@@ -18769,8 +19238,10 @@ async def stt_fix_route(request: Request):
 
 @app.get("/chat/suggest")
 def chat_suggest_state():
-    """Whether the suggested next message is on (the "+" menu of the composer shows the switch)."""
-    return {"enabled": next_prompt.enabled(cfgmod.read_settings())}
+    """Whether the suggested next message is on (the "+" menu of the composer shows the switch), and `live`: how
+    patiently the box may ask for the rest of a draft while the owner types (None: it does not ask)."""
+    cfg = cfgmod.read_settings()
+    return {"enabled": next_prompt.enabled(cfg), "live": next_prompt.live_policy(cfg)}
 
 
 @app.get("/chat/plan")
@@ -18785,13 +19256,19 @@ async def chat_suggest(request: Request):
     """The owner's likely next message once Thansa has answered (2026-11-07), see next_prompt.py.
 
     Body {"context": [{"role": "user"|"assistant", "text": "..."}, ...]}, the last messages on screen, oldest first.
-    Never an error: any trouble gives an empty suggestion, and the chat box keeps its usual placeholder."""
+    With "draft" (what the owner has typed so far, 2026-11-13) the answer is only the REST of that sentence, and
+    "hint" carries the suggestion that was showing. Never an error: any trouble gives an empty suggestion, and the
+    chat box keeps its usual placeholder."""
     try:
         body = await request.json()
     except Exception:
         return {"ok": False, "text": ""}
-    ctx = (body or {}).get("context") if isinstance(body, dict) else None
-    return {"ok": True, **await next_prompt.suggest(cfgmod.read_settings(), ctx)}
+    body = body if isinstance(body, dict) else {}
+    cfg = cfgmod.read_settings()
+    ctx = body.get("context")
+    if isinstance(body.get("draft"), str) and body["draft"]:
+        return {"ok": True, **await next_prompt.complete(cfg, ctx, body["draft"], body.get("hint") or "")}
+    return {"ok": True, **await next_prompt.suggest(cfg, ctx), "live": next_prompt.live_policy(cfg)}
 
 
 @app.get("/voice/call")
@@ -20185,7 +20662,7 @@ async def _chat_socket(ws):
                         ) + channel_context.build_channel_block(
                             "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
                             port=_thansa_port(), brain_root=_brain_root(brain), session_in_turn=stable,
-                        ) + _khoi_coding(_row0, brain)
+                        ) + _khoi_coding(_row0, brain) + _project_learned_block(_row0.get("project_id") or "")
                 return _legacy_prompts[_key]
 
             async def _subscription_system_prompt(route_provider, route_model, route_kind, stable=False):
@@ -20214,7 +20691,7 @@ async def _chat_socket(ws):
                     ) + channel_context.build_channel_block(
                         "dashboard", {"session_id": conv_sid}, telegram_running=bool(_TG_BOT),
                         port=_thansa_port(), brain_root=_brain_root(brain), session_in_turn=stable,
-                    ) + _khoi_coding(_row0, brain)
+                    ) + _khoi_coding(_row0, brain) + _project_learned_block(_row0.get("project_id") or "")
 
                 try:
                     plan = await asyncio.to_thread(
@@ -20877,7 +21354,10 @@ async def _chat_socket(ws):
                             "dashboard", {"session_id": conv_sid},
                             telegram_running=bool(_TG_BOT), port=_thansa_port(),
                             brain_root=_brain_root(brain),
-                        ) + _khoi_coding(_row0, brain)   # 0.362.0: pinned folder and GitHub repos reach API brains too
+                        ) + _khoi_coding(_row0, brain) + (   # 0.362.0: pinned folder and GitHub repos reach API brains too
+                            # 2026-11-13: what Thansa learnt about the project rides the saving path too. It is the
+                            # distilled context (a few short lines), exactly what a tight budget should keep.
+                            _project_learned_block(_row0.get("project_id") or ""))
 
                     if _persona:
                         # Phiên cộng sự: prompt luôn là _agent_chat_prompt, không cần tốn công
@@ -22939,39 +23419,45 @@ def _cuoc_tai_lieu_tay(session_id: str, sess: dict):
     gắn tay là một cử chỉ cố ý, im lặng bỏ đi thì người dùng tưởng thao tác của mình bị nuốt.
     """
     store = get_store()
+    notes = store.session_asset_notes(session_id)   # 2026-11-13: one-line descriptions
     brain = (sess.get("brain") or "brain").strip() or "brain"
     broot = Path(_brain_root(brain)).resolve()
     ra_f = []
     for f in store.list_session_files(session_id):
         duong = f.get("path") or ""
+        is_dir = duong.endswith("/")           # 2026-11-12: a whole folder, stored with a trailing "/"
         rp, co = None, False
         try:
             # `_safe_serve_path` (không phải `_safe_path`): đây là đường ĐỌC, và trần duyệt có
             # thể cao hơn gốc brain nên đường dẫn lưu theo trần lẫn theo gốc đều phải giải
             # được. Cùng lý do như chỗ nạp file ghim của project.
             rp = Path(_safe_serve_path(brain, duong))
-            co = rp.is_file()
+            co = rp.is_dir() if is_dir else rp.is_file()
         except Exception:
             rp = None
-        ten = f.get("name") or duong.replace("\\", "/").split("/")[-1]
+        ten = f.get("name") or duong.replace("\\", "/").rstrip("/").split("/")[-1]
         # Trần duyệt có thể CAO hơn gốc brain, nên file gắn tay chưa chắc nằm trong gốc brain.
         # `_files_rel` ném ValueError ở đúng ca đó; rơi về đường dẫn đã lưu là đủ để hiện.
         try:
             hien = _files_rel(broot, rp) if rp else duong
         except ValueError:
             hien = duong
+        if is_dir and hien and not hien.endswith("/"):
+            hien += "/"                        # the slash is what tells a folder from a file with no extension
         ra_f.append({
             "id": f.get("id"),
             "path": duong,
             "brain_path": hien,
             "name": rp.name if rp else ten,
             "label": ten,
-            "image": os.path.splitext(duong)[1].lower() in IMG_EXTS,
+            "image": not is_dir and os.path.splitext(duong)[1].lower() in IMG_EXTS,
+            "dir": is_dir,
             "exists": co,
             "size": 0,
             "ts": f.get("added_at") or 0,
             "pinned": bool(f.get("pinned")),
             "manual": True,
+            "description": (notes.get(("file", duong)) or {}).get("description", ""),
             "_that": str(rp) if rp else duong,
         })
     ra_l = [{
@@ -22982,6 +23468,7 @@ def _cuoc_tai_lieu_tay(session_id: str, sess: dict):
         "vai": "",
         "pinned": bool(l.get("pinned")),
         "manual": True,
+        "description": (notes.get(("link", l.get("url") or "")) or {}).get("description", ""),
     } for l in store.list_session_links(session_id)]
     return ra_f, ra_l
 
@@ -23003,22 +23490,36 @@ def sessions_add_file(session_id: str, path: str = Form(...), name: str = Form("
         return err
     b = (sess.get("brain") or "brain").strip() or "brain"
     try:
-        alo = _safe_path(b, path)
+        # 2026-11-12: a file or a whole folder (`_asset_target`; a folder is stored with a trailing "/"). The EMPTY
+        # path, which resolves to the browse ceiling itself, is still refused there.
+        found = _asset_target(b, path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    # `is_file()` chứ không phải `exists()`: đường dẫn RỖNG giải ra chính thư mục trần, mà thư
-    # mục thì "có tồn tại" - thế là gắn được một hàng trỏ vào một cái thư mục, ghim vào thì
-    # đọc lỗi. Ở đây chỉ nhận đúng file.
-    if not alo.is_file():
-        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này",
-                                                    "File not found in this brain")}, status_code=404)
-    fid = get_store().add_session_file(session_id, path, name or alo.name)
+    if not found:
+        return _asset_missing()
+    stored, real_name, is_dir = found
+    fid = get_store().add_session_file(session_id, stored, name or real_name)
     if not fid:
         return JSONResponse(
             {"error": localefmt.chu(f"Cuộc này đã gắn đủ {sessions.SESSION_ASSETS_MAX} tài liệu",
                                     f"This chat already has the maximum of {sessions.SESSION_ASSETS_MAX} documents")},
             status_code=400)
-    return {"ok": True, "id": fid}
+    return {"ok": True, "id": fid, "dir": is_dir}
+
+
+@app.post("/sessions/{session_id}/assets/describe")
+def sessions_describe_asset(session_id: str, kind: str = Form(...), ref: str = Form(...), description: str = Form("")):
+    """One line saying what a document attached to this chat holds (2026-11-13). A team keeps its documents in its chat,
+    so this is also where a team document gets its description. Only a document attached by hand has a row to describe."""
+    sess, err = _cuoc_or_404(session_id)
+    if err:
+        return err
+    refused = _project_text_refused(description)
+    if refused:
+        return refused
+    if not get_store().set_session_asset_note(session_id, kind, ref, description, source="owner"):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True}
 
 
 @app.post("/sessions/{session_id}/assets/files/{file_id}/delete")
@@ -23357,16 +23858,17 @@ def projects_add_file(project_id: str, path: str = Form(...), name: str = Form("
     try:
         # Kiểm đường dẫn TRƯỚC khi ghi DB. Kho không biết brain nào nên không tự kiểm được;
         # bỏ bước này là lưu được một path trèo ra ngoài brain rồi mới vỡ lúc đọc.
-        alo = _safe_path(p.get("brain") or "brain", path)
+        # 2026-11-12: a file or a whole folder (`_asset_target`; a folder is stored with a trailing "/").
+        found = _asset_target(p.get("brain") or "brain", path)
     except ValueError as e:
         return JSONResponse({"error": str(e)}, status_code=400)
-    if not alo.exists():
-        return JSONResponse({"error": localefmt.chu("Không tìm thấy file trong brain này",
-                                                    "File not found in this brain")}, status_code=404)
-    fid = get_store().add_project_file(project_id, path, name or alo.name)
+    if not found:
+        return _asset_missing()
+    stored, real_name, is_dir = found
+    fid = get_store().add_project_file(project_id, stored, name or real_name)
     if not fid:
         return JSONResponse({"error": localefmt.chu("thiếu đường dẫn", "missing path")}, status_code=400)
-    return {"ok": True, "id": fid}
+    return {"ok": True, "id": fid, "dir": is_dir}
 
 
 @app.post("/projects/{project_id}/files/{file_id}/delete")
@@ -23409,6 +23911,73 @@ def projects_del_link(project_id: str, link_id: str):
     if err:
         return err
     return {"ok": get_store().remove_project_link(project_id, link_id)}
+
+
+# ── What Thansa learnt about a project (2026-11-13) ────────────────────────────
+#
+# The same rows the tool `thansa_project` writes while Thansa works. Here the OWNER is the one typing, so a note saved
+# or edited through these routes is theirs (`source="owner"`): it is listed first and never dropped to make room.
+# The two scans of `project_context.blocked_reason` still run: a pasted key must not ride on every turn of a project.
+
+def _project_text_refused(text: str):
+    why = project_context.blocked_reason(text) if (text or "").strip() else ""
+    if not why:
+        return None
+    return JSONResponse({"error": localefmt.chu("Không lưu, vì nội dung " + why,
+                                                "Not saved: the text looks like a secret or an injected command")},
+                        status_code=400)
+
+
+@app.post("/projects/{project_id}/notes")
+def projects_add_note(project_id: str, text: str = Form(...), kind: str = Form("fact")):
+    p, err = _proj_or_404(project_id)
+    if err:
+        return err
+    refused = _project_text_refused(text)
+    if refused:
+        return refused
+    res = get_store().add_project_note(project_id, text, kind=kind, source="owner")
+    if not res["id"]:
+        return JSONResponse({"error": localefmt.chu(
+            f"Chưa lưu được: ghi chú trống, hoặc project đã đủ {sessions.PROJECT_NOTES_CAP} ghi chú của bạn",
+            f"Not saved: the note is empty, or the project already holds {sessions.PROJECT_NOTES_CAP} of your notes")},
+            status_code=400)
+    return {"ok": True, "id": res["id"], "created": res["created"]}
+
+
+@app.post("/projects/{project_id}/notes/{note_id}/update")
+def projects_update_note(project_id: str, note_id: str, text: str = Form(None), kind: str = Form(None)):
+    p, err = _proj_or_404(project_id)
+    if err:
+        return err
+    refused = _project_text_refused(text or "")
+    if refused:
+        return refused
+    return {"ok": get_store().update_project_note(project_id, note_id, text=text, kind=kind, source="owner")}
+
+
+@app.post("/projects/{project_id}/notes/{note_id}/delete")
+def projects_del_note(project_id: str, note_id: str):
+    p, err = _proj_or_404(project_id)
+    if err:
+        return err
+    return {"ok": get_store().remove_project_note(project_id, note_id)}
+
+
+@app.post("/projects/{project_id}/describe")
+def projects_describe_asset(project_id: str, kind: str = Form(...), ref: str = Form(...),
+                            description: str = Form("")):
+    """One line saying what an attached file (`kind=file`, `ref` its stored path) or link (`kind=link`, `ref` its URL)
+    holds. An empty description removes it."""
+    p, err = _proj_or_404(project_id)
+    if err:
+        return err
+    refused = _project_text_refused(description)
+    if refused:
+        return refused
+    if not get_store().set_project_asset_note(project_id, kind, ref, description, source="owner"):
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return {"ok": True}
 
 
 @app.post("/projects/{project_id}/links/{link_id}/pin")
@@ -23593,27 +24162,16 @@ async def openai_compat_connect(request: Request):
     if not key and old and base == old["base"]:
         key = old["key"]
     headers = {"Authorization": f"Bearer {key or 'none'}"}
-    live, why = [], ""
-    try:
-        async with httpx.AsyncClient(timeout=20) as c:
-            r = await c.get(base + "/models", headers=headers)
-        if r.status_code in (401, 403):
-            return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì.",
-                                                        f"Invalid API key (HTTP {r.status_code}). Nothing was saved.")}
-        if r.status_code == 200:
-            try:
-                body = r.json()
-                rows = body.get("data") if isinstance(body, dict) else body
-                live = sorted({x.get("id") for x in (rows or []) if isinstance(x, dict) and x.get("id")})
-            except Exception:
-                live = []
-        else:
-            why = f"HTTP {r.status_code}"
-    except Exception as e:
-        why = type(e).__name__
+    got = await _openai_list_models(base, key)
+    if got["status"] in (401, 403):
+        return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {got['status']}). Chưa lưu gì.",
+                                                    f"Invalid API key (HTTP {got['status']}). Nothing was saved.")}
+    live, why = sorted(got["ids"]), got["why"]
+    if live:
+        base = got["base"]   # the list was under {base}/v1: that is the address chat needs too
     if not live:
         if not typed:
-            if why and not why.startswith("HTTP"):
+            if not got["status"]:
                 return {"ok": False, "error": localefmt.chu(f"Không gọi được {base}/models ({why}). Kiểm tra lại Base URL.",
                                                             f"Could not reach {base}/models ({why}). Check the Base URL.")}
             # The box for model names stays hidden until a seller turns out to list none (same rule as Claude
@@ -23637,10 +24195,12 @@ async def openai_compat_connect(request: Request):
         if r.status_code in (401, 403):
             return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì.",
                                                         f"Invalid API key (HTTP {r.status_code}). Nothing was saved.")}
-        if r.status_code == 404:
-            return {"ok": False, "error": localefmt.chu(f"Không thấy {url} (HTTP 404). Base URL phải tính tới /v1, "
+        # A gateway whose website answers every unknown path with a page says 200 here too: only a JSON reply is
+        # the API. Saving on that page made the card "Connected" with an address no chat turn could use.
+        if r.status_code == 404 or (r.status_code == 200 and _is_web_page(r)):
+            return {"ok": False, "error": localefmt.chu(f"Không thấy API ở {url}. Base URL phải tính tới /v1, "
                                                         "ví dụ https://api.example.com/v1.",
-                                                        f"{url} not found (HTTP 404). The Base URL must include /v1, "
+                                                        f"No API found at {url}. The Base URL must include /v1, "
                                                         "for example https://api.example.com/v1.")}
         if r.status_code not in (200, 429, 529):   # 429/529: key and model accepted, the gateway is only busy
             return {"ok": False, "error": localefmt.chu(f"Cổng trả HTTP {r.status_code} khi thử model {typed[0]}: {r.text[:160]}",
@@ -23709,7 +24269,7 @@ async def anthropic_compat_connect(request: Request):
             return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì.",
                                                         f"Invalid API key (HTTP {r.status_code}). Nothing was saved.")}
         if r.status_code == 200:
-            live = [x.get("id") for x in (r.json().get("data") or []) if isinstance(x, dict) and x.get("id")]
+            live = _model_ids(r.json())
     except Exception:
         live = []   # no list is normal here; the message check below decides
     if not live:
@@ -23733,10 +24293,10 @@ async def anthropic_compat_connect(request: Request):
         if r.status_code in (401, 403):
             return {"ok": False, "error": localefmt.chu(f"API key không hợp lệ (HTTP {r.status_code}). Chưa lưu gì.",
                                                         f"Invalid API key (HTTP {r.status_code}). Nothing was saved.")}
-        if r.status_code == 404:
-            return {"ok": False, "error": localefmt.chu(f"Không thấy {url} (HTTP 404). Kiểm tra Base URL bên bán đưa, "
+        if r.status_code == 404 or (r.status_code == 200 and _is_web_page(r)):   # a web page is not the API
+            return {"ok": False, "error": localefmt.chu(f"Không thấy API ở {url}. Kiểm tra Base URL bên bán đưa, "
                                                         "thường có dạng https://ten-mien.com hoặc https://ten-mien.com/anthropic.",
-                                                        f"{url} not found (HTTP 404). Check the Base URL the seller gave you, "
+                                                        f"No API found at {url}. Check the Base URL the seller gave you, "
                                                         "usually https://domain.com or https://domain.com/anthropic.")}
         # 429/529: the key and the model were accepted, the gateway is only busy right now.
         if r.status_code not in (200, 429, 529):
@@ -26449,6 +27009,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
                 _n += _project_block(_pid, chi_huong_dan=True)
             except Exception:
                 pass
+            _n += _project_learned_block(_pid)   # 2026-11-13: short and distilled, so it rides the saving path too
         return _n
 
     if _bot_full:
@@ -26478,7 +27039,7 @@ async def _tg_answer_engine(text, meta, progress, *, chat_id, sess, brain, mcfg,
     # có đường nào khác để đi, nên cứ chạy tiếp và để nhà cung cấp nói nếu thật sự quá hạn mức.
     if not sysprompt:
         sysprompt = build_system_prompt(brain, lang=_lang_qd, project_id=_pid,
-                                        session_id=conv_sid or "")
+                                        session_id=conv_sid or "") + _project_learned_block(_pid)
     if not _bot_full:
         # Khối kênh dạy cách tự gửi file qua Telegram của CHỦ và cách báo kết quả việc nền về chủ:
         # với bot thì người nhắn là người khác, nên bỏ.
@@ -29257,30 +29818,34 @@ async def chatbots_zalo_labels(account_ids: str = "", bot_id: str = ""):
     return {"ok": True, "labels": names, "supported": supported}
 
 
-@app.post("/chatbots/{bot_id}/people")
-async def chatbots_people(bot_id: str, chat_id: str = Form(...), on: str = Form("1")):
-    """Cho phép (hoặc gỡ) MỘT người nhắn riêng cho bot, bằng đúng một cú bấm. Đôi của
-    `/chatbots/{bot_id}/groups` cho audience `chon`. Không khởi động lại poller: `_answer` đọc lại
-    bản ghi bot MỖI LƯỢT, nên người vừa cho phép ăn ngay từ tin kế tiếp."""
+def _chatbots_set_listed(bot_id: str, key: str, chat_id: str, chat_ids: str, on: str):
+    """Shared body of `/chatbots/{bot_id}/groups` and `/people`: allow (or remove) ONE chat (`chat_id`) or MANY at once
+    (`chat_ids`, a JSON list, from the ticked rows of the waiting list on the bot card). One write for the whole batch,
+    then every id leaves the approval queue. The poller is not restarted: `_answer` re-reads the bot record every turn,
+    so a chat allowed here is answered from its next message."""
     bot = chatbot_store.get_bot(bot_id)
     if not bot:
         return JSONResponse({"ok": False, "error": localefmt.chu("Không có bot nào id đó", "No bot with that id")},
                             status_code=404)
-    cid = str(chat_id or "").strip()
-    if not cid:
-        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu id người", "Missing person id")}, status_code=400)
+    ids, err = chatbot_store.parse_chat_ids(chat_id, chat_ids)
+    if err:
+        return JSONResponse({"ok": False, "error": err}, status_code=400)
     bat = str(on).strip() not in ("0", "false", "")
-    ds = [str(x) for x in (bot.get("people") or [])]
-    if bat:
-        if cid not in ds:
-            ds.append(cid)
-    else:
-        ds = [x for x in ds if x != cid]
-    ok, err = chatbot_store.update_bot(bot_id, {"people": ds})
+    ok, err = chatbot_store.set_listed(bot_id, key, ids, bat)
     if not ok:
         return JSONResponse({"ok": False, "error": err}, status_code=400)
-    chatbot_runtime.bo_nhom_cho(bot_id, cid)
-    return {"ok": True, "people": (chatbot_store.get_bot(bot_id) or {}).get("people") or []}
+    # Off the queue whatever the owner chose: allowed means no longer waiting, and ignoring is a decision too. A chat
+    # that was ignored comes back to the queue by itself the next time someone calls the bot there.
+    for cid in ids:
+        chatbot_runtime.bo_nhom_cho(bot_id, cid)
+    return {"ok": True, key: (chatbot_store.get_bot(bot_id) or {}).get(key) or [], "done": len(ids)}
+
+
+@app.post("/chatbots/{bot_id}/people")
+async def chatbots_people(bot_id: str, chat_id: str = Form(""), chat_ids: str = Form(""), on: str = Form("1")):
+    """Cho phép (hoặc gỡ) người nhắn riêng cho bot: một người (`chat_id`) hoặc nhiều người một lần (`chat_ids`, danh
+    sách JSON). Đôi của `/chatbots/{bot_id}/groups` cho audience `chon`."""
+    return _chatbots_set_listed(bot_id, "people", chat_id, chat_ids, on)
 
 
 @app.post("/chatbots")
@@ -29410,37 +29975,15 @@ async def chatbots_enable(bot_id: str, on: str = Form("1")):
 
 
 @app.post("/chatbots/{bot_id}/groups")
-async def chatbots_groups(bot_id: str, chat_id: str = Form(...), on: str = Form("1")):
-    """Cho phép (hoặc gỡ) MỘT nhóm cho bot, bằng đúng một cú bấm trên thẻ.
+async def chatbots_groups(bot_id: str, chat_id: str = Form(""), chat_ids: str = Form(""), on: str = Form("1")):
+    """Cho phép (hoặc gỡ) nhóm cho bot ngay trên thẻ: một nhóm (`chat_id`) hoặc nhiều nhóm một lần (`chat_ids`, danh
+    sách JSON, từ các dòng đã tích trong danh sách chờ).
 
     Đường này tồn tại vì đường cũ dài tới mức không ai đi hết: thả bot vào nhóm, gõ /id, chép
     id, mở dashboard, bấm Sửa, kéo xuống cuối form, dán vào ô textarea, Lưu. Bỏ sót một bước
     là bot im, và không có gì nói cho biết đã sót ở đâu.
-
-    Không khởi động lại poller: `_answer` đọc lại bản ghi bot MỖI LƯỢT, nên nhóm vừa cho phép
-    ăn ngay từ câu tiếp theo.
     """
-    bot = chatbot_store.get_bot(bot_id)
-    if not bot:
-        return JSONResponse({"ok": False, "error": localefmt.chu("Không có bot nào id đó", "No bot with that id")},
-                            status_code=404)
-    cid = str(chat_id or "").strip()
-    if not cid:
-        return JSONResponse({"ok": False, "error": localefmt.chu("Thiếu id nhóm", "Missing group id")}, status_code=400)
-    bat = str(on).strip() not in ("0", "false", "")
-    ds = [str(x) for x in (bot.get("groups") or [])]
-    if bat:
-        if cid not in ds:
-            ds.append(cid)
-    else:
-        ds = [x for x in ds if x != cid]
-    ok, err = chatbot_store.update_bot(bot_id, {"groups": ds})
-    if not ok:
-        return JSONResponse({"ok": False, "error": err}, status_code=400)
-    # Ra khỏi hàng đợi dù chủ chọn gì: cho phép rồi thì hết chờ, mà bấm bỏ qua cũng là đã
-    # quyết. Nhóm nào bị gỡ mà sau này lại có người gọi bot thì nó tự quay lại hàng đợi.
-    chatbot_runtime.bo_nhom_cho(bot_id, cid)
-    return {"ok": True, "groups": (chatbot_store.get_bot(bot_id) or {}).get("groups") or []}
+    return _chatbots_set_listed(bot_id, "groups", chat_id, chat_ids, on)
 
 
 @app.get("/chatbots/{bot_id}/log")
@@ -31698,6 +32241,16 @@ def _team_docs_block(team, tools=False):
         files, links = store.list_session_files(sid), store.list_session_links(sid)
         listed, loaded = _liet_ke_tai_lieu(team.get("brain_id") or "brain", files, links) if (files or links) else ([], [])
         block = team_docs.block(listed, loaded, coding_store.cwd_cua_phien(sid), tools=bool(tools))
+        # 2026-11-13: what each team document holds, one line each (written by Thansa or the owner).
+        notes = store.session_asset_notes(sid) if (files or links) else {}
+        if notes:
+            desc, hidden = project_context.asset_lines(
+                [dict(f, description=(notes.get(("file", f.get("path") or "")) or {}).get("description", "")) for f in files],
+                [dict(link, description=(notes.get(("link", link.get("url") or "")) or {}).get("description", ""))
+                 for link in links])
+            if desc:
+                block += ("\n\nTài liệu nào chứa gì:\n" + "\n".join(desc)
+                          + (f"\n(còn {hidden} mô tả nữa)" if hidden else ""))
     except Exception as e:  # noqa: BLE001 - a broken document must not stop the team from answering
         print(f"[team docs] {type(e).__name__}: {e}", file=sys.stderr)
         block = ""
@@ -33100,6 +33653,18 @@ memory_chat.wire(memory_chat.Deps(
     agent_key=lambda root, slug, reg: _agent_jobs_key(_brain_key(root), slug, register=reg),
     lesson_store=lambda: _pulse_store() or _resonance_store(),
     agent_memory_file=lambda root, slug: _brain_memory_dir(root) / "agents" / slug / "MEMORY.md"))
+project_context.wire(project_context.Deps(
+    store=lambda: get_store(),
+    brain_root=_project_brain_root,
+    attach_target=_project_attach_target,
+    turn_session=lambda: str((turn_context.current() or {}).get("session_id") or ""),
+    note_change=lambda root: memory_control.note_change(_brain_memory_dir(root)),
+    agent_find=_project_agent_find, agent_docs=_project_agent_docs, agent_edit=_project_agent_edit,
+    # The assistant of a private chat on the Partners page, set by the host on the dashboard turn.
+    turn_agent=lambda: str((turn_context.current() or {}).get("assistant") or ""),
+    team_find=_project_team_find, team_attach=_project_team_attach,
+    turn_team=lambda: (str((turn_context.current() or {}).get("chat_id") or "")
+                       if (turn_context.current() or {}).get("kenh") == "team" else "")))
 
 
 def _learn_register_sender():
@@ -33288,8 +33853,10 @@ async def _close_warm_engines():
 
 @app.get("/health/loop")
 async def health_loop():
-    """Recent event-loop freezes with the stack where the loop was stuck (loop_watch). Read only."""
-    return loop_watch.report()
+    """Recent event-loop freezes with the stack where the loop was stuck (loop_watch). Read only.
+
+    `disk` (2026-11-13): the disk reads the event loop no longer waits for (kept.py), with the ones that were slow."""
+    return {**loop_watch.report(), "disk": kept.report()}
 
 
 @app.post("/diag/ws-drops")

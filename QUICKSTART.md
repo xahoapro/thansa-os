@@ -23,8 +23,15 @@ Bấm vào biểu tượng là Thansa mở thành cửa sổ riêng (không than
   curl -fsSL https://raw.githubusercontent.com/xahoapro/thansa-os/main/packaging/macos/get-thansa.sh | bash
   ```
 
+Bộ cài thay đổi gì trên máy, ai ký số, Thansa gửi gì đi đâu: [Code signing policy](docs/code-signing-policy.md) · [Privacy policy](PRIVACY.md) (tiếng Anh).
+
 Nếu đã tải file bằng trình duyệt và bị chặn:
+- Edge hoặc Chrome báo "ThansaOS-Setup.exe isn't commonly downloaded" và không lưu file: trong ô Downloads, rê chuột vào dòng đó, bấm dấu ba chấm, chọn **Keep**, rồi **Show more** và **Keep anyway**.
 - Windows hiện "Windows protected your PC": bấm **More info** rồi **Run anyway**.
+- Trình diệt virus xoá mất file, hoặc Windows chặn mà không có nút **Run anyway** (máy bật Smart App Control): cài không qua file exe. Cài [Git](https://git-scm.com/download/win), mở PowerShell, dán dòng này rồi Enter. Xong thì Thansa tự mở ở http://localhost:7777 và tự chạy cùng máy:
+  ```
+  git clone https://github.com/xahoapro/thansa-os.git "$env:USERPROFILE\ThansaOS"; cd "$env:USERPROFILE\ThansaOS"; powershell -ExecutionPolicy Bypass -File install.ps1
+  ```
 - macOS báo không mở được: vào **System Settings → Privacy & Security**, kéo xuống bấm **Open Anyway**, rồi mở lại THANSA OS.
 
 ## Cách 1 - Hostinger VPS (Docker Manager, 1-click)
