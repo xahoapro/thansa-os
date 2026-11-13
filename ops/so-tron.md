@@ -986,3 +986,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/app.js, dashboard/i18n/en.json, dashboard/i18n/vi.json, dashboard/index.html, install.sh, server/config.py, server/improvement_trial_plugins.py, server/main.py, tests/python/info_tip_allow.json, update.sh. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 9b85da5/0.552.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-12** khi chủ bấm duyệt trên Telegram (origin/main e3b850c, tag + Release thansa-v2.11.0; backup me-backup-2.11.0).
+
+## Vòng TỰ ĐỘNG 2026-11-13 (goc 9b85da5 → e5ba45d, nền 0.552.0 → 0.557.0, thansa 2.11.0→2.12.0)
+- 38 commit upstream: 0.557.0: Projects learn their own context while Thansa works (#1435); Projects learn their own context while Thansa works (#1435); 0.556.2: A taken suggestion comes back when you delete part of it, and the > replaces the Tab chip (#1434); Bring a taken suggestion back when part of it is deleted, and replace the Tab chip with the > (#1434); 0.556.1: Dictation stops at once and the rewrite is much faster (#1436); Make the end of a dictation fast and keep every word (#1436); 0.556.0: Approve many waiting groups for a bot in one press (#1430); Approve many waiting groups for a bot in one press (#1
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc e5ba45d/0.557.0/so_patch 72.
