@@ -235,7 +235,7 @@ def _task_title(task: str) -> str:
 
     A turn arrives as "[NGỮ CẢNH GIAO DIỆN: trang=workspace]", "[File đính kèm để ĐỌC ...: - /path ...]", "[Giờ gửi
     tin này: ...]" and then the request. Taking the very first line named every job of a chat the same ("ngu-canh-giao-
-    dien-trang-workspace"), so the second job's branch name was already taken (blogminhquy/thansaos-blog, 13/11/2026).
+    dien-trang-workspace"), so the second job's branch name was already taken (13/11/2026).
     """
     inside = False
     for raw in str(task or "").splitlines():

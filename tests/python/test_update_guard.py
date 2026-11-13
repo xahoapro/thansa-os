@@ -282,7 +282,7 @@ g.check()
 clock.t += 121
 check("image missing: pulled, then created", g.check() == "recreated" and d.made("/images/create"))
 check("pull asks for the repository and the tag separately",
-      d.made("/images/create")[0][1] == "/images/create?fromImage=ghcr.io%2Fblogminhquy%2Fthansa-os&tag=latest")
+      d.made("/images/create")[0][1] == "/images/create?fromImage=ghcr.io%2Fxahoapro%2Fthansa-os&tag=latest")
 
 del d.containers["thansa"]
 g.check()
