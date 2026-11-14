@@ -997,3 +997,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: docker-compose.yml. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc abe6f73/0.557.2/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-13** khi chủ bấm duyệt trên Telegram (origin/main e9af7b7, tag + Release thansa-v2.12.0; backup me-backup-2.12.0).
+
+## Vòng TỰ ĐỘNG 2026-11-14 (goc abe6f73 → 2f3d769, nền 0.557.2 → 0.558.0, thansa 2.12.0→2.13.0)
+- 4 commit upstream: 0.558.0: Choose whether to stay signed in on the sign-in screen (#1446); Add a "Keep me signed in" box to the sign-in screen (#1446); 0.557.3: Push again works on a GitHub job stuck on a taken branch name (#1447); Phần này đẩy được rồi nhưng mà vẫn hiện nút chấm than ở cái phần GitHub. (#1447)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 2f3d769/0.558.0/so_patch 72.
