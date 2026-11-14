@@ -1102,6 +1102,9 @@ function _ghiDut(code, clean, moLuc) {
 // tới máy chủ" and retried every 3 seconds forever, every list read 0, and restarting the server changed nothing.
 // Ask /auth/status (public, cheap) at most every 15 s; signed out means the sign-in screen, not "reconnecting".
 let _loginCheckAt = 0;
+// True once this page has seen a valid session. A browser that was never signed in (first visit, someone else's device)
+// also gets its socket refused, and must see a plain sign-in screen, not "your sign-in has expired" (2026-11-14).
+let _authedThisPage = false;
 async function _checkLoginAfterRefusal() {
   if (Date.now() - _loginCheckAt < 15000) return;
   _loginCheckAt = Date.now();
@@ -1110,7 +1113,7 @@ async function _checkLoginAfterRefusal() {
   baoDutMang(false);
   await initAuthGate();
   const err = document.getElementById("authErr");
-  if (err && authOverlay && authOverlay.classList.contains("open")) err.textContent = window.t("app.ws_login_lost");
+  if (_authedThisPage && err && authOverlay && authOverlay.classList.contains("open")) err.textContent = window.t("app.ws_login_lost");
 }
 // The same check when an HTTP call gets 401 while the socket is still open (fetch-gop.js raises the event): the
 // session expired mid-use, so chat still answered but images and lists failed silently (2026-11-10).
@@ -3443,14 +3446,50 @@ chatArea.addEventListener("click", (e) => {
   const t = e.target;
   const actBtn = t.closest && t.closest(".msg-act");
   if (actBtn) { runMsgAct(actBtn); return; }
+  const quoted = t.closest && t.closest(".msg-user .uquote");
+  if (quoted) { jumpToQuoted(quoted); return; }
   // The code block Copy button (chat-render.js) and "Show more" on a long message (chat-acts.js) are handled on the
   // document, so they work in every chat container.
+});
+// Owner, 2026-11-14: a tap on the quote at the top of a sent message scrolls back to the exact words it quotes in the
+// answer above and marks them for a moment (quote-jump.js). Not on screen any more: older pages load until it is.
+function jumpToQuoted(qEl) {
+  const J = window.ThansaQuoteJump;
+  const msgEl = qEl.closest(".msg");
+  if (!J || !msgEl || J.selecting(qEl)) return;
+  const quote = window.ThansaQuote ? window.ThansaQuote.tach(msgEl.dataset.text || "").quote : "";
+  J.go({
+    quote: quote || qEl.textContent,
+    candidates: () => J.before(chatArea.querySelectorAll(".msg"), msgEl),
+    skip: ".uquote",
+    scroller: chatArea,
+    beforeScroll: () => chatScroll.setStuck(false),
+    loadOlder: async () => {
+      const st = _tinCu;
+      if (!st || !st.con || st.sid !== savedSessionId) return false;
+      // A page already on its way (the list reached the top by itself): give it a moment, then look again.
+      if (st.dangTai) { await new Promise(r => setTimeout(r, 500)); return true; }
+      const n = chatArea.querySelectorAll(".msg").length;
+      await taiTinCu();
+      return chatArea.querySelectorAll(".msg").length > n;
+    },
+    flashClass: "quote-flash",
+  });
+}
+// The quote is a span with role="button": Enter and Space work on it like on a real button.
+chatArea.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const quoted = e.target.closest && e.target.closest(".msg-user .uquote");
+  if (!quoted) return;
+  e.preventDefault();
+  jumpToQuoted(quoted);
 });
 // Điện thoại không có hover: chạm vào tin để bật/tắt hàng nút của đúng tin đó.
 chatArea.addEventListener("click", (e) => {
   try { if (!window.matchMedia("(hover: none)").matches) return; } catch (err) { return; }
   if (!e.target.closest) return;
   if (e.target.closest(".msg-acts")) return;   // bấm chính nút thì đừng đóng hàng nút
+  if (e.target.closest(".uquote")) return;     // a tap on the quote scrolls back to its source, it is not this toggle
   if (e.target.closest(".jr-chat")) return;    // hàng reaction (T2) tự lo nút của nó
   const msgEl = e.target.closest(".msg");
   chatArea.querySelectorAll(".msg.acts-on").forEach(m => { if (m !== msgEl) m.classList.remove("acts-on"); });
@@ -5251,7 +5290,7 @@ async function initAuthGate() {
   // cookie phiên rất có thể vẫn còn hợp lệ, chỉ là chưa hỏi được. Cứ để nguyên UI, mọi lệnh
   // gọi API thật sự (chat, file...) tự lộ ra nếu phiên đã hết hạn thật.
   if (!s) return;
-  if (s.authed) { initSetup(); return; }
+  if (s.authed) { _authedThisPage = true; initSetup(); return; }
   if (s.needs_setup) {
     _wizardMandatory = !!s.require_login;
     const wz = document.getElementById("setupWizard");
@@ -5293,6 +5332,8 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
   fd.append("username", document.getElementById("authUser").value.trim());
   fd.append("password", document.getElementById("authPass").value);
   if (codeInp && codeInp.value.trim()) fd.append("code", codeInp.value.trim());
+  const keep = document.getElementById("authRemember");
+  fd.append("remember", keep && !keep.checked ? "0" : "1");
   const err = document.getElementById("authErr"); err.textContent = "";
   try {
     const r = await fetch("/auth/login", { method: "POST", body: fd });
@@ -5314,6 +5355,16 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
     err.textContent = d.error || window.t("app.login_failed");
   } catch (e) { err.textContent = window.t("app.err_net"); }
 });
+// "Keep me signed in" box: this device remembers the last choice, so a borrowed device someone unticked once stays
+// unticked next time. Only the tick is stored, never a name or password.
+(() => {
+  const box = document.getElementById("authRemember");
+  if (!box) return;
+  try { if (localStorage.getItem("thansa.rememberLogin") === "0") box.checked = false; } catch (e) {}
+  box.addEventListener("change", () => {
+    try { localStorage.setItem("thansa.rememberLogin", box.checked ? "1" : "0"); } catch (e) {}
+  });
+})();
 // Eye button: lets the user check what they typed (a Hostinger customer could not tell a typo
 // from a wrong env password, 2026-10-05). Focus stays in the field so Enter still signs in.
 (() => {

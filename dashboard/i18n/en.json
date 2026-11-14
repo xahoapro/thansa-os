@@ -432,6 +432,8 @@
   "auth.submit": "Sign in",
   "auth.show_pw": "Show/hide password",
   "auth.forgot": "Forgot password?",
+  "auth.remember": "Keep me signed in on this device",
+  "auth.remember_info": "Untick this on someone else's device: the session ends when the browser closes. Thansa also signs you out after 4 hours unused, or 24 hours at most. If the browser offers to save the password, choose Never.",
   "auth.reset1": "Open the file",
   "auth.reset2": ", delete the block",
   "auth.reset3": "(or set it empty), then run",
@@ -7431,6 +7433,7 @@
   "sec.revoke_others_confirm": "Sign out every other device and keep only this one?",
   "sec.revoked_n": "Signed out {n} devices.",
   "sec.this_device": "This device",
+  "sec.not_remembered": "Not remembered",
   "sec.last_active": "active",
   "sec.signed_in": "signed in",
   "sec.end_one": "Sign out",
@@ -7514,5 +7517,9 @@
   "ib.i_note_group": "Note about the group",
   "ib.i_note_group_ph": "Note about the group (only you see it)",
   "teams.info_desc": "Description: what this document holds",
-  "teams.info_desc_q": "One line: what does this document hold? Leave empty to remove the description."
+  "teams.info_desc_q": "One line: what does this document hold? Leave empty to remove the description.",
+  "cact.quote_jump": "Go back to the original",
+  "cact.quote_missing": "Couldn't find the original above",
+  "msc.insights_tick": "Read post insights (reach, saves)",
+  "msc.insights_tick_how": "Asks for the read_insights permission so Thansa can read the reach, saves and clicks of posts and of the Page. Optional: the Meta app must add read_insights first, otherwise Facebook refuses the whole login. If Facebook reports invalid permissions, untick this and log in again. For a Page already connected: click New token, tick this and log in with Facebook again; the checklist has a Reads post insights row."
 }

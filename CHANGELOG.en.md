@@ -8,6 +8,64 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.561.1] - 2026-11-14
+### Fixed
+- **Hanging up while Thansa is still working on something asked for in the call no longer drops it.** Thansa finishes and posts the result to the call's chat, with a notification.
+- **The Automatic call path no longer switches to ChatGPT Live just because the machine has a Codex sign-in.** ChatGPT Live is picked only when ChatGPT is the main model or connected on the Models page.
+### Improved
+- **System lines Thansa adds under answers no longer hardcode a Vietnamese first-person pronoun.** Background job tracking, empty-promise and memory notes and missing-file links are written without a pronoun, so they match the chosen form of address.
+
+## [0.561.0] - 2026-11-14
+### Added
+- **Links that open a dashboard page directly.** A link like `#p=tasks` (or another page name) opens that page, even in a Thansa tab that is already open.
+### Fixed
+- **Background commands Thansa starts in an API-key chat report when they finish.** They used to stay "running" until the server restarted.
+- **A chat pinned to a model keeps that model.** While the pinned model is out of quota or signed out, turns run on the main model for the moment, then go back to the pinned model once it works again.
+- **File links with line numbers (like `agents/x.md#L66-L75`) open the file.** Answers no longer get a false "file not found in the brain" warning.
+
+## [0.560.0] - 2026-11-14
+### Added
+- **Cancel background jobs right in chat.** Ask Thansa to cancel a job and it leaves the queue, a running job stops at once, and the reason goes into the job's log. When sending a job back to be redone, an extra note on how to fix it now reaches the redo.
+- **Connecting a Facebook Page has a "Read post insights" tick.** This optional tick asks for reach and saves of posts. The Messenger checklist shows whether the Page has that permission.
+### Fixed
+- **Messenger conversations show the customer's name instead of a bare ID.** When Meta refuses the profile, Thansa takes the name from the Page conversation, and tries again after 10 minutes if it could not get it.
+
+## [0.559.3] - 2026-11-14
+### Fixed
+- **Read-only reminders can see My Tasks.** A reminder that checks progress used to say it could not check; it now reads the list, while adding, editing, deleting and ticking still need write access.
+
+## [0.559.2] - 2026-11-14
+### Fixed
+- **The model picker opens right above the model chip.** A tall composer (a file attached, a few lines typed) used to push it far above the chip, and a long list lost its first rows off the top. The model list, Effort, plan usage and the "+" menu now open just above the row of chips and always stay on screen.
+- **The Team chat's "+" menu does the same**, along with the folder and GitHub panels it opens.
+
+## [0.559.1] - 2026-11-14
+### Fixed
+- **The Google Workspace connection does real work on Forms, Drive and Sheets.** The card only turned on a reduced tool set, so Thansa could not edit Form questions, read responses, browse a Drive folder, rename or copy a file, add a tab or append rows to Sheets. All of that works now, with no new Google sign-in.
+- Connections made earlier move to the full tool set after the update.
+### Security
+- **Sharing a file or calendar with someone needs Full access.** So do deleting a whole tab, task list or contact group, creating Gmail filters and publishing Apps Script. At Read only, Thansa cannot copy a Drive file or append rows to Sheets.
+
+## [0.559.0] - 2026-11-14
+### Added
+- **Tap a quote to scroll back to the original sentence.** Quote a sentence from a long answer to ask more, then later tap that quote in your message: the chat scrolls up to that exact sentence and highlights it for a few seconds.
+- When the original sits in older messages not loaded yet, Thansa loads them to find it. Works in the main chat and on the Teams page.
+
+## [0.558.1] - 2026-11-14
+### Fixed
+- **Editing the compose in hPanel and pressing Deploy works again.** Version 0.557.1 made the Hostinger file 33,167 characters, over hPanel's 32,768 limit. It is now about 28,400 characters, and the update guard runs exactly as before.
+
+## [0.558.0] - 2026-11-14
+### Added
+- **A "Keep me signed in on this device" box on the sign-in screen.** Ticked, as before, the device stays signed in for 30 days. Untick it on someone else's device: closing the browser signs you out, and Thansa also signs you out after 4 hours unused or 24 hours at most.
+- The Security page marks devices signed in without being remembered.
+### Fixed
+- Opening Thansa for the first time in a new browser no longer shows a wrong red "Your sign-in has expired" line.
+
+## [0.557.3] - 2026-11-14
+### Fixed
+- **"Push again" and the warning mark on the GitHub card no longer stay stuck.** A job that had stored a branch name already taken on GitHub (from before the previous fix) kept pushing to that same name, so every retry said "has commits this machine lacks". Now, while nothing has been pushed yet, Thansa picks a free branch name again (or follows the branch checked out on this machine), pushes, opens the PR, and the warning clears.
+
 ## [0.557.2] - 2026-11-14
 ### Fixed
 - **The second GitHub job in a chat no longer gets stuck at the push.** The PR title and branch name now come from the request itself, skipping the dashboard's bracketed context lines, so every job gets its own name. When the name is already used on this machine or on GitHub, Thansa adds -2, -3 and pushes, instead of stopping with "has commits this machine lacks, Thansa does not overwrite them".

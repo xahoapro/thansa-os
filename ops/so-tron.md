@@ -996,3 +996,14 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 43 commit upstream: 0.557.2: GitHub jobs no longer get stuck pushing to a branch name already taken (#1444); [NGỮ CẢNH GIAO DIỆN: trang=workspace] (#1444); Docs: use the THANSAOS Hostinger partner referral link (#1443); 0.557.1: Thansa no longer vanishes when an update stops halfway (#1440); Bring Thansa back when an update leaves it gone or stopped (#1440); 0.557.0: Projects learn their own context while Thansa works (#1435); Projects learn their own context while Thansa works (#1435); 0.556.2: A taken suggestion comes back when you delete part of it, and the > replaces the Tab chip (#1434); Bring a taken sugges
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: docker-compose.yml. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc abe6f73/0.557.2/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-13** khi chủ bấm duyệt trên Telegram (origin/main e9af7b7, tag + Release thansa-v2.12.0; backup me-backup-2.12.0).
+
+## Vòng TỰ ĐỘNG 2026-11-14 (goc abe6f73 → 2f3d769, nền 0.557.2 → 0.558.0, thansa 2.12.0→2.13.0)
+- 4 commit upstream: 0.558.0: Choose whether to stay signed in on the sign-in screen (#1446); Add a "Keep me signed in" box to the sign-in screen (#1446); 0.557.3: Push again works on a GitHub job stuck on a taken branch name (#1447); Phần này đẩy được rồi nhưng mà vẫn hiện nút chấm than ở cái phần GitHub. (#1447)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 2f3d769/0.558.0/so_patch 72.
+
+## Vòng TỰ ĐỘNG 2026-11-14 (goc abe6f73 → 99d7e02, nền 0.557.2 → 0.561.1, thansa 2.12.0→2.13.0)
+- 20 commit upstream: 0.561.1: Hanging up keeps the work running, system lines drop the fixed pronoun (#1467); Hanging up keeps the work running, system lines drop the fixed pronoun (#1467); 0.561.0: Background jobs report on finish, pins survive a fallback, file links with line numbers open (#1465); Background jobs report on finish, pins survive a fallback, file links with line numbers open (#1465); 0.560.0: Cancel background jobs from chat, optional Page insights, Messenger names (#1463); Cancel background jobs from chat, optional Page insights, Messenger names (#1463); 0.559.3: Read-only reminders can list My Ta
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: docs/20-plugins.md. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 99d7e02/0.561.1/so_patch 72.

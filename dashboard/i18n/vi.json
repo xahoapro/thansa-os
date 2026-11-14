@@ -432,6 +432,8 @@
   "auth.submit": "Đăng nhập",
   "auth.show_pw": "Hiện/ẩn mật khẩu",
   "auth.forgot": "Quên mật khẩu?",
+  "auth.remember": "Ghi nhớ đăng nhập trên máy này",
+  "auth.remember_info": "Bỏ tích khi đăng nhập trên máy của người khác: đóng trình duyệt là phiên kết thúc. Để yên 4 giờ không dùng, hoặc quá 24 giờ, Thansa cũng tự đăng xuất. Nếu trình duyệt hỏi lưu mật khẩu, chọn Không bao giờ.",
   "auth.reset1": "Mở file",
   "auth.reset2": ", xóa khối",
   "auth.reset3": "(hoặc đặt rỗng), rồi chạy",
@@ -7431,6 +7433,7 @@
   "sec.revoke_others_confirm": "Đăng xuất mọi thiết bị khác, chỉ giữ thiết bị này?",
   "sec.revoked_n": "Đã đăng xuất {n} thiết bị.",
   "sec.this_device": "Thiết bị này",
+  "sec.not_remembered": "Không ghi nhớ",
   "sec.last_active": "hoạt động",
   "sec.signed_in": "đăng nhập",
   "sec.end_one": "Đăng xuất",
@@ -7514,5 +7517,9 @@
   "ib.i_note_group": "Ghi chú về nhóm",
   "ib.i_note_group_ph": "Ghi chú về nhóm (chỉ bạn thấy)",
   "teams.info_desc": "Mô tả: tài liệu này chứa gì",
-  "teams.info_desc_q": "Một dòng: tài liệu này chứa gì? Để trống là xoá mô tả."
+  "teams.info_desc_q": "Một dòng: tài liệu này chứa gì? Để trống là xoá mô tả.",
+  "cact.quote_jump": "Xem lại đoạn gốc",
+  "cact.quote_missing": "Không tìm thấy đoạn gốc ở phía trên",
+  "msc.insights_tick": "Đọc số liệu bài viết (lượt tiếp cận, lượt lưu)",
+  "msc.insights_tick_how": "Xin thêm quyền read_insights để Thansa đọc lượt tiếp cận, lượt lưu, lượt bấm của bài viết và của Trang. Không bắt buộc: app Meta phải thêm quyền read_insights trước, nếu chưa thì Facebook từ chối cả lần đăng nhập. Nếu Facebook báo quyền không hợp lệ, bỏ tick này và đăng nhập lại. Trang đã nối: bấm Đổi token, tick ô này và đăng nhập Facebook lại; bảng kiểm tra có dòng Đọc số liệu bài viết."
 }
