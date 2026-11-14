@@ -8,6 +8,17 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.558.0] - 2026-11-14
+### Added
+- **A "Keep me signed in on this device" box on the sign-in screen.** Ticked, as before, the device stays signed in for 30 days. Untick it on someone else's device: closing the browser signs you out, and Thansa also signs you out after 4 hours unused or 24 hours at most.
+- The Security page marks devices signed in without being remembered.
+### Fixed
+- Opening Thansa for the first time in a new browser no longer shows a wrong red "Your sign-in has expired" line.
+
+## [0.557.3] - 2026-11-14
+### Fixed
+- **"Push again" and the warning mark on the GitHub card no longer stay stuck.** A job that had stored a branch name already taken on GitHub (from before the previous fix) kept pushing to that same name, so every retry said "has commits this machine lacks". Now, while nothing has been pushed yet, Thansa picks a free branch name again (or follows the branch checked out on this machine), pushes, opens the PR, and the warning clears.
+
 ## [0.557.2] - 2026-11-14
 ### Fixed
 - **The second GitHub job in a chat no longer gets stuck at the push.** The PR title and branch name now come from the request itself, skipping the dashboard's bracketed context lines, so every job gets its own name. When the name is already used on this machine or on GitHub, Thansa adds -2, -3 and pushes, instead of stopping with "has commits this machine lacks, Thansa does not overwrite them".
