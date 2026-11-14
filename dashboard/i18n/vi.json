@@ -7517,5 +7517,9 @@
   "ib.i_note_group": "Ghi chú về nhóm",
   "ib.i_note_group_ph": "Ghi chú về nhóm (chỉ bạn thấy)",
   "teams.info_desc": "Mô tả: tài liệu này chứa gì",
-  "teams.info_desc_q": "Một dòng: tài liệu này chứa gì? Để trống là xoá mô tả."
+  "teams.info_desc_q": "Một dòng: tài liệu này chứa gì? Để trống là xoá mô tả.",
+  "cact.quote_jump": "Xem lại đoạn gốc",
+  "cact.quote_missing": "Không tìm thấy đoạn gốc ở phía trên",
+  "msc.insights_tick": "Đọc số liệu bài viết (lượt tiếp cận, lượt lưu)",
+  "msc.insights_tick_how": "Xin thêm quyền read_insights để Thansa đọc lượt tiếp cận, lượt lưu, lượt bấm của bài viết và của Trang. Không bắt buộc: app Meta phải thêm quyền read_insights trước, nếu chưa thì Facebook từ chối cả lần đăng nhập. Nếu Facebook báo quyền không hợp lệ, bỏ tick này và đăng nhập lại. Trang đã nối: bấm Đổi token, tick ô này và đăng nhập Facebook lại; bảng kiểm tra có dòng Đọc số liệu bài viết."
 }

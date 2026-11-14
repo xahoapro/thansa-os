@@ -179,11 +179,20 @@
     try { return require("./chat-quote.js"); } catch (e) { return null; }
   }
 
+  // A reply quote is "Name: words" (replyTarget). Returns {who, words}; who is "" when there is no name in front.
+  var QUOTE_WHO = /^([^:\n]{1,60}):\s+([\s\S]*)$/;
+  function quoteParts(q) {
+    var mm = QUOTE_WHO.exec(String(q == null ? "" : q));
+    return mm ? { who: mm[1], words: mm[2] } : { who: "", words: String(q == null ? "" : q) };
+  }
+
   function quoteHtml(q) {
-    var mm = /^([^:\n]{1,60}):\s+([\s\S]*)$/.exec(q);
+    var p = quoteParts(q);
     // 0.192.0: the quote carries the same quote mark as the main chat's quote chip.
-    return '<div class="tm-quote"><span class="tm-quote-ico" aria-hidden="true">' + ic("quote") + "</span><span class=\"tm-quote-body\">" +
-      (mm ? "<b>" + esc(mm[1]) + "</b>" + esc(mm[2]) : esc(q)).replace(/\n/g, "<br>") + "</span></div>";
+    // 2026-11-14: it is a button. A tap scrolls back to the words it quotes, like the main chat (jumpToQuoted).
+    return '<button type="button" class="tm-quote tm-quote-src" data-quote-src="1" title="' + esc(tw("cact.quote_jump")) + '">' +
+      '<span class="tm-quote-ico" aria-hidden="true">' + ic("quote") + "</span><span class=\"tm-quote-body\">" +
+      (p.who ? "<b>" + esc(p.who) + "</b>" + esc(p.words) : esc(p.words)).replace(/\n/g, "<br>") + "</span></button>";
   }
 
   // 0.192.0 (owner, 16/10/2026: "agent phản hồi ai thì phải tag vào hoặc quote lại"): an assistant's message that answers
@@ -2339,6 +2348,7 @@
     grow(box.querySelector(".tm-input"));
     drawHint();
     drawTyping();
+    if (S.plusOpen) placePlusMenu(box);
     if (teamSuggest) teamSuggest.refresh();
     if (S.focusComposer && !off) {
       S.focusComposer = false;
@@ -2372,6 +2382,21 @@
   function ghLogo() {
     var G = typeof window !== "undefined" && window.ThansaGithubRepos;
     return G && G.logo ? G.logo : ic("git-branch");
+  }
+
+  // The + menu and the panels it opens (folder, GitHub) sit just above the + button, not above the whole composer: with a
+  // reply bar, files attached or a few lines typed, the composer's top is far from the button (owner, 14/11/2026, the
+  // same fix as the main chat's popovers in model-picker.js).
+  function placePlusMenu(box) {
+    var menu = box.querySelector(".tm-plus-menu"), pb = box.querySelector(".tm-plus");
+    if (!menu || !pb || pb.offsetParent !== box) return;
+    menu.style.bottom = Math.max(0, box.clientHeight - pb.offsetTop + 6) + "px";
+  }
+  function placeAbovePlus(pop, comp) {
+    var r = comp.getBoundingClientRect(), pb = comp.querySelector(".tm-plus");
+    var top = pb && pb.offsetParent ? pb.getBoundingClientRect().top : r.top;
+    pop.style.left = Math.max(8, r.left + 8) + "px";
+    pop.style.bottom = Math.max(8, window.innerHeight - top + 6) + "px";
   }
 
   function plusMenuHtml(off) {
@@ -2526,6 +2551,40 @@
     if (!S.scroll || S.scroll.stuck()) toLatest(false);
     var inp = S.el.querySelector(".tm-input");
     if (inp) { try { inp.focus(); } catch (e) {} }
+  }
+
+  // Owner, 2026-11-14: a tap on the quote on top of the owner's message scrolls back to the exact words it quotes and
+  // marks them for a moment, like the main chat (quote-jump.js). Only the words after "Name: " are looked for. Not on
+  // screen any more: older pages load until it is. The message is found again by id after each load redraws the list.
+  function jumpToQuoted(btn) {
+    var J = typeof window !== "undefined" && window.ThansaQuoteJump;
+    var host = btn && btn.closest && btn.closest(".tm-msg");
+    if (!J || !host || !S) return;
+    var mid = host.getAttribute("data-mid"), cid = host.getAttribute("data-cid");
+    var m = mid ? msgById(Number(mid)) : null;
+    var p = !m && cid ? S.outbox.filter(function (x) { return x.cid === cid; })[0] : null;
+    var Q = quoteApi();
+    var text = m ? String(m.content == null ? "" : m.content) : p ? String(p.text || "") : "";
+    var quote = Q ? Q.tach(skillSplit(text).rest).quote : "";
+    var self = function () {
+      return S.el.querySelector(mid ? '.tm-msgs [data-mid="' + Number(mid) + '"]' : '.tm-msgs [data-cid="' + String(cid).replace(/"/g, "") + '"]');
+    };
+    J.go({
+      quote: quoteParts(quote).words,
+      candidates: function () {
+        var box = S.el.querySelector(".tm-msgs");
+        return box ? J.before(box.querySelectorAll(".tm-msg[data-mid]"), self()) : [];
+      },
+      roots: function (el) { return Array.prototype.slice.call(el.querySelectorAll(".tm-text")); },
+      scroller: function () { return S.el.querySelector(".tm-msgs"); },
+      beforeScroll: function () { if (S.scroll) S.scroll.setStuck(false); },
+      loadOlder: function () {
+        if (!S.hasMore || S.filterTask) return false;
+        var n = S.msgs.length;
+        return loadMsgs(true).then(function () { return S.msgs.length > n; });
+      },
+      flashClass: "tm-msg-flash"
+    });
   }
 
   // What Copy puts on the clipboard, the same as the main chat: an assistant's answer as its visible markdown (headings,
@@ -3413,11 +3472,9 @@
     if (!G || !comp || !S.team || !sessionId()) return;
     closeGithubPanel();
     closeFolderPanel();
-    var r = comp.getBoundingClientRect();
     var pop = document.createElement("div");
     pop.className = "cp-menu tm-folder-pop tm-gh-pop";
-    pop.style.left = Math.max(8, r.left + 8) + "px";
-    pop.style.bottom = Math.max(8, window.innerHeight - r.top + 6) + "px";
+    placeAbovePlus(pop, comp);
     pop.innerHTML = '<div class="cp-mi cp-back">' + esc(tw("gh.menu")) + infoBtn() + "</div>" +
       infoBody(esc(tw("teams.gh_how"))) + '<div class="cp-sep"></div><div class="tm-gh-body"></div>';
     document.body.appendChild(pop);
@@ -3427,7 +3484,7 @@
       current: function () { return S.repos.map(function (x) { return x.full_name; }); },
       changed: function (d) { if (sessionId() === sid) setRepos(d); },
       close: closeGithubPanel,
-      connections: function () { try { window.Alpine.store("nav").go("mcp"); } catch (e) { location.hash = "#mcp"; } } });
+      connections: function () { try { window.Alpine.store("nav").go("mcp"); } catch (e) { location.hash = "#p=mcp"; } } });
     setTimeout(function () {
       document.addEventListener("mousedown", githubOutside, true);
       document.addEventListener("keydown", githubEsc, true);
@@ -3461,11 +3518,9 @@
     var comp = S.el.querySelector(".tm-composer");
     if (!P || !comp || !S.team) return;
     closeFolderPanel();
-    var r = comp.getBoundingClientRect();
     var pop = document.createElement("div");
     pop.className = "cp-menu tm-folder-pop";
-    pop.style.left = Math.max(8, r.left + 8) + "px";
-    pop.style.bottom = Math.max(8, window.innerHeight - r.top + 6) + "px";
+    placeAbovePlus(pop, comp);
     pop.innerHTML = '<div class="cp-mi cp-back">' + esc(tw("cp.pin_folder")) + '</div><div class="cp-sep"></div><div class="tm-folder-body"></div>';
     document.body.appendChild(pop);
     P({ brain: brain, current: function () { return S.folder; }, pin: pinTeamFolder,
@@ -4562,6 +4617,7 @@
       return;
     }
     if (t.classList.contains("tm-search-go")) return runSearch();
+    if (d.quoteSrc) return jumpToQuoted(t);
     if (d.jump) {
       var here = S.el.querySelector('.tm-msgs [data-mid="' + Number(d.jump) + '"]');
       if (here && here.scrollIntoView) {
