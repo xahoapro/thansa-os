@@ -4073,6 +4073,36 @@ def _chat_selected(mcfg, row) -> dict:
     return {"provider": em["provider"], "model": em.get("model") or ""}
 
 
+def _card_broken(mcfg, prov: str) -> bool:
+    """`prov` cannot run at all (card gone, API key removed, card disconnected), as opposed to resting out of quota or
+    signed out for a while (`_pin_health` does not see a sign-out, so a signed-out card counts as resting)."""
+    usable, resting_until = _pin_health(mcfg, prov)
+    return not usable and not resting_until
+
+
+def _pin_to_stamp(mcfg, row, prov: str, model: str):
+    """(provider, model) a dashboard chat turn stamps as the chat's pin, or None to leave the pin as it is.
+
+    The stamp anchors a chat on its model from the first turn (owner, 16/08): a new or unpinned chat gets the model it
+    runs on, and a broken pin (card gone, key removed, card disconnected) is replaced by the main model it falls back
+    to. A FALLBACK while a card only rests (out of quota, signed out) is never stamped (issue 1336): it replaced the
+    owner's pin, so the chat stayed on the fallback model after the quota came back. The pin stays as it is, and an
+    unpinned chat is stamped on its first turn back on the card it really belongs to."""
+    prov, model = str(prov or ""), str(model or "")
+    row = row or {}
+    if (str(row.get("pinned_provider") or "").strip() == prov
+            and str(row.get("pinned_model") or "") == model):
+        return None
+    sel = _chat_selected(mcfg, row)["provider"]
+    if prov != sel:
+        if not _card_broken(mcfg, sel):
+            return None     # the chosen card (the pin, or MAIN for an unpinned chat) only rests
+        main_prov = _effective_main({"model": mcfg or {}})["provider"]
+        if prov != main_prov and not _card_broken(mcfg, main_prov):
+            return None     # a broken pin falls back to the main model, which rests too
+    return prov, model
+
+
 def _route_rest_until(mcfg, prov: str, now: float = None) -> float:
     """Epoch at which an out-of-quota card can run again, 0 when nothing is resting or the time is unknown. A plan
     marked out of quota gives its reset time; otherwise the earliest account or key of the card to come back."""
@@ -5069,11 +5099,11 @@ async def _execute_write_confirmation(plan, ws, session_id: str, runtime_trace,
                     "lệnh đọc: hành động ĐÃ được thực hiện. Thansa không chạy lại.")
         elif reconciled.get("status") == "FAILED_FINAL":
             text = ("Kết nối bị gián đoạn, Thansa kiểm chứng lại bằng lệnh đọc và thấy hành "
-                    "động CHƯA được thực hiện. Bạn nhắn lại nếu muốn Thansa làm lại.")
+                    "động CHƯA được thực hiện. Nhắn lại nếu muốn Thansa làm lại.")
         else:
             text = ("Kết nối bị gián đoạn và Thansa KHÔNG kiểm chứng được là hành động đã "
                     "chạy hay chưa. Thansa tuyệt đối không chạy lại để tránh làm hai lần. "
-                    "Bạn kiểm tra trực tiếp bên hệ thống đích rồi báo lại giúp mình.")
+                    "Hãy kiểm tra trực tiếp bên hệ thống đích rồi báo lại.")
     elif status == "SUCCEEDED":
         evidence = outcome.get("evidence")
         text = "Đã thực hiện xong hành động ghi."
@@ -5593,8 +5623,8 @@ def _schedule_cancel_reply(action: dict) -> str:
         return str(action.get("list_result") or "Không có lịch đang chạy để xoá.")
     if action.get("needs_choice"):
         return (
-            "Mình đã đọc danh sách lịch thật nhưng có nhiều mục gần giống nhau nên chưa xoá để tránh nhầm. "
-            "Bạn nói đúng tên hoặc ID cần xoá:\n\n" + str(action.get("list_result") or "")
+            "Đã đọc danh sách lịch thật nhưng có nhiều mục gần giống nhau nên chưa xoá để tránh nhầm. "
+            "Cho biết đúng tên hoặc ID cần xoá:\n\n" + str(action.get("list_result") or "")
         )
     return "⚠ " + str(action.get("error") or "Không thể thao tác lịch.")
 
@@ -14839,6 +14869,8 @@ def huy_viec_nen_giong(conv_sid: str) -> int:
 
     Đường huỷ trong `_voice_bg_task` lo phần còn lại: gạch tên khỏi sổ, đóng thẻ Việc sang
     CHẶN kèm lý do, và đẩy một câu về khung chat. Nên ở đây chỉ cần cancel.
+    Live handoffs left running after their call ended (issue 1315) are in the same registry; their own cancel path
+    (`voice_live_ws._ask_brain`) posts the "stopped" line.
     """
     tasks = list(_VOICE_BG_TASKS.get(str(conv_sid)) or [])
     n = 0
@@ -16048,18 +16080,18 @@ async def _nhan_nuoi_tien_trinh(tag: str, brain: str, owner_chat: str, final_tex
         return ""
     if not ds:
         return ""
-    # Giọng "mình" như các dòng hệ thống khác (promise_note): dòng này không biết người dùng
-    # xưng hô thế nào, "mình" là cách trung tính nhất.
-    dong = ["Mình đang theo dõi việc chạy nền của lượt này:"]
+    # No personal pronoun (issue 1391): this line does not know how the user and Thansa address
+    # each other, and a fixed "mình" reads as Thansa forgetting the user's own choice.
+    dong = ["Đang theo dõi việc chạy nền của lượt này:"]
     for v in ds:
         dong.append(f"- `{v['mo_ta']}`")
     tiep = next((v.get("sau_khi_xong") for v in ds if v.get("sau_khi_xong")), "")
     if tu_lam_tiep and tiep:
-        dong.append(f"\nXong là mình tự báo về đây rồi làm tiếp: {tiep}")
+        dong.append(f"\nXong sẽ tự báo về đây rồi làm tiếp: {tiep}")
     elif tu_lam_tiep and any(v.get("noi_tiep") for v in ds):
-        dong.append("\nXong là mình tự báo về đây rồi làm nốt phần đã hẹn, không cần hỏi lại.")
+        dong.append("\nXong sẽ tự báo về đây rồi làm nốt phần đã hẹn, không cần hỏi lại.")
     else:
-        dong.append("\nXong là mình tự báo về đây, không cần hỏi lại.")
+        dong.append("\nXong sẽ tự báo về đây, không cần hỏi lại.")
     return "\n".join(dong)
 
 
@@ -16089,9 +16121,9 @@ async def _khi_tien_trinh_xong(v: dict) -> None:
     se_tiep = muon_tiep and runner is not None and do_sau < tien_trinh_nen.TRAN_NOI_TIEP
     loi_dan = str(v.get("sau_khi_xong") or "")
     if se_tiep:
-        than.append("Mình làm tiếp phần còn lại ngay bây giờ.")
+        than.append("Sẽ làm tiếp phần còn lại ngay bây giờ.")
     elif muon_tiep:
-        than.append("Nhắn \"làm tiếp\" để mình làm nốt" + (f": {loi_dan}" if loi_dan else " phần đã hẹn."))
+        than.append("Nhắn \"làm tiếp\" để làm nốt" + (f": {loi_dan}" if loi_dan else " phần đã hẹn."))
     text = "\n\n".join(than)
     try:
         await _notify_owner(owner, text, kind="answer", label="Việc chạy nền", source="job",
@@ -16188,6 +16220,10 @@ async def _canh_bao_hua_suong(brain: str, chat_id: str, final_text: str,
 # Nguyên tắc: chỉ ĐỔI CÁCH VIẾT của link, không đổi câu chữ; và KHÔNG BỊA - link nào không thấy
 # file thì nói ra trong một dòng riêng, thà thừa một dòng còn hơn một cái link câm.
 _LINK_BO_QUA = ("#", "mailto:", "data:", "tel:", "blob:", "/files/raw", "/files/download")
+# `agents/x.md#L66-L75`: an IDE-style line suffix CLI engines put on file links (issue 1390). The file is
+# `agents/x.md`; checked with the suffix on, a real file was reported missing. `#L66`, `#L66-L75`, `#L66-75` and a
+# column (`#L66C3`) count, in any case; a heading anchor such as `#lien-he` does not.
+_LINE_SUFFIX_RE = re.compile(r"#L\d+(?:C\d+)?(?:-L?\d+(?:C\d+)?)?$", re.IGNORECASE)
 _BACKTICK_RE = re.compile(r"`([^`\n]+)`")
 # `file:///brains/Brain%20Default/wiki/x.md`, `file://localhost/...`, `file:/C:/...`. Harness của
 # Antigravity dặn model "dùng link markdown kiểu GitHub với giao thức file://" (bug 2026-09-09:
@@ -16390,11 +16426,12 @@ def _link_file_khong_thay(brain_root: str, text: str) -> list:
             raw = file_uri
         elif not raw or "://" in raw or raw.lower().startswith(_LINK_BO_QUA):
             continue
+        path_only = _LINE_SUFFIX_RE.sub("", raw)
         # Chỉ xét thứ TRÔNG NHƯ đường dẫn file (có thư mục hoặc có đuôi). `[Models](models)` hay
         # `[xem](muc-2)` là chữ, không phải file - báo "không thấy" cho chúng là báo động giả.
-        if "/" not in raw and "\\" not in raw and not re.search(r"\.[A-Za-z0-9]{1,6}$", raw):
+        if "/" not in path_only and "\\" not in path_only and not re.search(r"\.[A-Za-z0-9]{1,6}$", path_only):
             continue
-        t = raw
+        t = path_only
         if re.search(r"%[0-9a-fA-F]{2}", t):
             try:
                 t = urllib.parse.unquote(t)
@@ -16422,7 +16459,7 @@ def _cau_link_khong_thay(thieu: list) -> str:
     """Dòng sự thật khi câu trả lời dẫn link tới file không có trong brain. Không đổ lỗi, không
     đoán nguyên nhân; chỉ nói mình không thấy và chỉ chỗ tự kiểm."""
     ds = ", ".join(f"`{x}`" for x in thieu[:5])
-    return ("⚠ Câu trả lời có dẫn link tới file mà mình không tìm thấy trong brain: " + ds +
+    return ("⚠ Câu trả lời có dẫn link tới file không tìm thấy trong brain: " + ds +
             ". Có thể file được ghi ở chỗ khác hoặc chưa được ghi thật. Kiểm tra ở trang Tệp tin "
             "trước khi tin vào link đó.")
 
@@ -19305,6 +19342,10 @@ def _voice_brain_conf(conf: dict, conv_sid: str, brain: str) -> dict:
     return {**conf, "system": voice_persona.apply(voice_brain.SYSTEM_PROMPT, persona[0], persona[1])}
 
 
+# Runs on each chat's shared voice circuit (`voice:<sid>`) right now, by chat id. See `_voice_ask_thansa`.
+_VOICE_SHARED_RUNS: dict = {}
+
+
 async def _voice_ask_thansa(request: str, conv_sid: str, brain: str, key: str = "", progress=None,
                            call_lang: str = "") -> str:
     """Tool `ask_thansa` của phiên Live, và việc nền của làn nhanh (V3): chạy MỘT lượt bộ não
@@ -19327,28 +19368,75 @@ async def _voice_ask_thansa(request: str, conv_sid: str, brain: str, key: str = 
     hội thoại Live lo - vỏ chen tin vào nữa là ghi đôi.
     """
     own_key = bool(key)   # khoá riêng dùng một lần: phiên RAM của nó phải chết theo, xem finally
+    shared_id = str(conv_sid or "")
+    if not key and _VOICE_SHARED_RUNS.get(shared_id):
+        # The chat's shared circuit is still busy, e.g. with a handoff left running after the previous call ended
+        # (issue 1315): a one-shot circuit, so this run does not queue behind it.
+        key, own_key = f"voice:{conv_sid}:{uuid.uuid4().hex[:8]}", True
     key = key or f"voice:{conv_sid}"
-    # A call in a partner's chat hands its work to that partner (prompt, model, memory), not to plain Thansa.
-    agent = _voice_agent(conv_sid, brain)
-    sess = _tg_session(_agent_sess_key(key, agent))
+    if not own_key:
+        _VOICE_SHARED_RUNS[shared_id] = _VOICE_SHARED_RUNS.get(shared_id, 0) + 1
     try:
-        root = _brain_root(brain)
-        if os.path.isdir(root):
-            sess["brain"] = root
-    except Exception:
-        pass
-    try:
-        out = await _tg_answer(request, meta={"chat_id": key, "call_lang": call_lang},
-                               progress=progress, channel="cli",
-                               phien_kho=str(conv_sid or ""), ghi_kho=False, agent=agent)
-    except Exception as e:
-        return f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+        # A call in a partner's chat hands its work to that partner (prompt, model, memory), not to plain Thansa.
+        agent = _voice_agent(conv_sid, brain)
+        sess = _tg_session(_agent_sess_key(key, agent))
+        try:
+            root = _brain_root(brain)
+            if os.path.isdir(root):
+                sess["brain"] = root
+        except Exception:
+            pass
+        try:
+            out = await _tg_answer(request, meta={"chat_id": key, "call_lang": call_lang},
+                                   progress=progress, channel="cli",
+                                   phien_kho=str(conv_sid or ""), ghi_kho=False, agent=agent)
+        except Exception as e:
+            return f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+        finally:
+            if own_key:
+                _TG_SESS.pop(_agent_sess_key(key, agent), None)
     finally:
-        if own_key:
-            _TG_SESS.pop(_agent_sess_key(key, agent), None)
+        if not own_key:
+            left = _VOICE_SHARED_RUNS.get(shared_id, 0) - 1
+            if left > 0:
+                _VOICE_SHARED_RUNS[shared_id] = left
+            else:
+                _VOICE_SHARED_RUNS.pop(shared_id, None)
     if isinstance(out, dict):
         return channel_context.strip_control_blocks(str(out.get("text") or ""))[:6000] or "(không có nội dung)"
     return str(out or "")[:6000]
+
+
+async def _voice_after_call(conv_sid: str, brain: str, request: str, result: str, status: str = "done") -> bool:
+    """Deliver a Live handoff that outlived its call (GitHub issue 1315, point 3).
+
+    A user asked Thansa to keep checking, hung up, and the answer never came: closing the call cancelled the running
+    handoff. Now the handoff finishes on its own and its answer lands in the call's chat the way any background
+    result does (`_notify_owner` with `web:<sid>`: stored in the chat, the bell, a push notification), as a job card
+    titled with the request. `status` is done | failed | timeout | cancelled; the last two carry no answer, so a short
+    line says the work stopped. Returns True when it reached the owner."""
+    sid = str(conv_sid or "").strip()
+    text = str(result or "").strip()
+    if status == "timeout":
+        mins = int(VOICE_BG_TIMEOUT // 60)
+        text = localefmt.chu(
+            f"Việc giao trong cuộc gọi vẫn chưa xong sau {mins} phút kể từ lúc cúp máy nên đã dừng, chưa có kết quả. "
+            "Giao lại, hoặc hỏi thẳng ở khung chat để chạy trực tiếp.",
+            f"The job handed over during the call was still not done {mins} minutes after the call ended, so it was "
+            "stopped without a result. Hand it over again, or ask in the chat to run it directly.")
+    elif status == "cancelled":
+        text = localefmt.chu("Việc giao trong cuộc gọi đã dừng giữa chừng, chưa có kết quả.",
+                             "The job handed over during the call was stopped before it finished, there is no result.")
+    if not sid or not text:
+        return False
+    try:
+        ok, _err = await _notify_owner(f"{WEB_CHAT_PREFIX}{sid}", text, kind="answer",
+                                       label=localefmt.chu("Cuộc gọi", "Call"), source="voice", brain=brain,
+                                       viec={"kind": "job", "status": status, "title": str(request or "")[:160]})
+        return bool(ok)
+    except Exception as e:  # noqa: BLE001 - the call is over, nothing else can report this
+        print(f"[voice live] after-call delivery failed: {type(e).__name__}: {e}", file=sys.stderr)
+        return False
 
 
 def _live_call_lang(said: str, recognition_lang: str = "") -> str:
@@ -19388,13 +19476,20 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     Khung JSON từ trình duyệt: {"type":"text","text":...} | {"type":"ask","text":...,"display":...,"files":[...]}
     | {"type":"stop"}. Byte = audio. "ask" (0.236.0) là tin có file đính kèm gõ trong lúc gọi: chạy MỘT lượt bộ não
     chính ngay tại đây rồi model chỉ đọc lại, không mở lượt chat thường song song.
+    When the call ends (the browser sends "stop" on every hang-up, silence and path change, so it is not a cancel), a
+    handoff the main brain is still working on keeps running and posts its answer to the chat (issue 1315).
     """
     if cfgmod.gate_active() and not cfgmod.valid_session(ws.cookies.get("thansa_session", "")):
         await ws.close(code=1008)
         return
     await ws.accept()
+    # False once the call has ended (hang-up, silence, a dropped line). From then on nothing is sent on the socket:
+    # a handoff still running finishes on its own and posts its answer to the chat (issue 1315, `_voice_after_call`).
+    call = {"open": True}
 
     async def _j(obj):
+        if not call["open"]:
+            return
         try:
             await ws.send_text(json.dumps(obj, ensure_ascii=False))
         except Exception:
@@ -19479,6 +19574,10 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
     ui_ctx = {"text": ""}          # khối [NGỮ CẢNH GIAO DIỆN: ...] mới nhất từ trình duyệt
     spoken = {"text": ""}          # câu người dùng vừa NÓI (không phải câu model diễn đạt lại)
     tool_tasks: set = set()
+    # Handoffs to the main brain from the moment one is taken until the brain answers. Hanging up does not cancel
+    # these (issue 1315: work asked for just before hanging up never got its answer); see the `finally` at the end.
+    brain_work: set = set()
+    expired: set = set()           # handoffs stopped by the time limit after the call (VOICE_BG_TIMEOUT)
     # Không lặp câu trả lời (0.65.21, chủ dự án báo 01/10). Lần giao việc tới khi bộ não chính còn đang
     # làm có thể là LỜI NÓI THÊM ("Ok, xong thì báo anh nhé": bỏ), CÂU HỎI TIẾN ĐỘ ("xong chưa": trả lời
     # ngay từ `jobs`) hoặc việc mới thật (chạy SONG SONG, voice_live.parallel_request). Trước 0.71.2 cả
@@ -19649,17 +19748,44 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             return False
 
     def _ensure_heartbeat():
+        if not call["open"]:
+            return   # a handoff kept after the call: nobody is listening for progress lines
         task = heartbeat["task"]
         if task is None or task.done():
             heartbeat["task"] = asyncio.create_task(_heartbeat())
             tool_tasks.add(heartbeat["task"])
             heartbeat["task"].add_done_callback(tool_tasks.discard)
 
+    def _expire(task):
+        """VOICE_BG_TIMEOUT after the call ended: stop a handoff whose brain is still working."""
+        if task in brain_work and not task.done():
+            expired.add(task)
+            task.cancel()
+
+    async def _ask_brain(request: str, sent: str, key: str, progress, said: str):
+        """One main-brain run of a handoff: (answer, failed). Stopped after the call ended (the time limit, or the
+        owner stopping the background work), it still says so in the chat, like the fast lane's background work."""
+        try:
+            return await _voice_ask_thansa(sent, conv_sid, brain, key=key, progress=progress,
+                                          call_lang=_live_call_lang(said, lang)), False
+        except asyncio.CancelledError:
+            if not call["open"]:
+                await _voice_after_call(conv_sid, brain, request, "",
+                                        status="timeout" if asyncio.current_task() in expired else "cancelled")
+            raise
+        except Exception as e:
+            return f"Bộ não chính lỗi: {type(e).__name__}: {e}", True
+
     async def _run_one(name: str, cid: str, req: str, running: list):
+        me = asyncio.current_task()
+        if name == "ask_thansa":
+            brain_work.add(me)   # taken: from here on hanging up no longer drops it
         await _j({"type": "tool", "name": name, "status": "running"})
         deferred = _deferred(name)
         try:
-            if deferred:
+            if not call["open"]:
+                pass   # hung up while the line above was sending: the provider is closed
+            elif deferred:
                 # Close the call now so the model keeps listening and talking; the result follows.
                 await prov.send_tool_result(cid, name, voice_live.DEFERRED_ACK)
             else:
@@ -19680,19 +19806,26 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         async def _note_step(step):
             job["step"] = str(step or "")
 
+        failed = False
         try:
             if name == "ask_thansa":
                 # Đang có việc khác chạy thì việc này cần MẠCH ENGINE riêng: dùng chung khoá phiên là nó
                 # xếp hàng trong engine sau việc kia, đúng cái chờ mà 0.71.2 bỏ khoá chung để tránh.
                 key = f"voice:{conv_sid}:p{job_id}" if running else ""
-                result = await _voice_ask_thansa(sent, conv_sid, brain, key=key, progress=_note_step,
-                                                call_lang=_live_call_lang(spoken["text"], lang))
+                result, failed = await _ask_brain(req, sent, key, _note_step, spoken["text"])
             else:
                 result = f"Tool {name} không có."
         except Exception as e:
-            result = f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+            result, failed = f"Bộ não chính lỗi: {type(e).__name__}: {e}", True
         finally:
             jobs.pop(job_id, None)
+            brain_work.discard(me)
+        if not call["open"]:
+            # The call ended while the brain worked (issue 1315): the answer goes to the chat like any background
+            # result. The socket and the provider are closed, so neither is touched.
+            if name == "ask_thansa" and not (running and voice_live.is_noop_result(result)):
+                await _voice_after_call(conv_sid, brain, req, result, status="failed" if failed else "done")
+            return
         if running and voice_live.is_noop_result(result):
             # Bộ não thấy câu nói thêm không có việc mới: không bong bóng, không đọc ra loa.
             print(f"[voice live] lời nói thêm không có việc mới: {str(running[0])[:60]!r}", file=sys.stderr)
@@ -19735,6 +19868,8 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         Same bookkeeping as an ask_thansa job (status frames, `jobs` for progress questions, the result bubble), but
         nobody asked through a tool call, so the answer reaches the model with `read_result`. The dashboard does not
         open an ordinary chat turn for this message, so this is the only voice that speaks the answer."""
+        me = asyncio.current_task()
+        brain_work.add(me)   # like an ask_thansa job, it outlives a hang-up (issue 1315)
         await _j({"type": "tool", "name": "ask_thansa", "status": "running"})
         loop = asyncio.get_running_loop()
         running = [j["request"] for j in jobs.values()]
@@ -19747,15 +19882,21 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         async def _note_step(step):
             job["step"] = str(step or "")
 
+        title = said or localefmt.chu("File đính kèm", "Attached file")
+        failed = False
         try:
             key = f"voice:{conv_sid}:p{job_id}" if running else ""
-            result = await _voice_ask_thansa(full, conv_sid, brain, key=key, progress=_note_step,
-                                            call_lang=_live_call_lang(said or spoken["text"], lang))
+            result, failed = await _ask_brain(title, full, key, _note_step, said or spoken["text"])
         except Exception as e:
-            result = f"Bộ não chính lỗi: {type(e).__name__}: {e}"
+            result, failed = f"Bộ não chính lỗi: {type(e).__name__}: {e}", True
         finally:
             jobs.pop(job_id, None)
+            brain_work.discard(me)
         try:
+            if not call["open"]:
+                # The call ended while the brain read the file: the answer goes to the chat, as in `_run_one`.
+                await _voice_after_call(conv_sid, brain, title, result, status="failed" if failed else "done")
+                return
             if str(result or "").strip():
                 try:
                     store.append_message(conv_sid, "assistant", str(result))
@@ -19863,6 +20004,7 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
         for t in pending:
             t.cancel()
     finally:
+        call["open"] = False
         t1.cancel()
         t2.cancel()
         await asyncio.gather(t1, t2, return_exceptions=True)
@@ -19874,8 +20016,17 @@ async def voice_live_ws(ws: WebSocket, session_id: str = Query(""), brain: str =
             except Exception:
                 pass
             asst_buf["text"] = ""
+        loop = asyncio.get_running_loop()
         for task in list(tool_tasks):
-            task.cancel()
+            if task in brain_work and not task.done():
+                # Issue 1315: hanging up (or a silence or a dropped line closing the socket) no longer drops work the
+                # owner asked for. The handoff finishes and posts its answer to this chat. It joins the chat's voice
+                # background work (a strong reference; "stop the background work" cancels it) and its time limit.
+                _nho_viec_nen_giong(conv_sid, task)
+                limit = loop.call_later(VOICE_BG_TIMEOUT, _expire, task)
+                task.add_done_callback(lambda _t, h=limit: h.cancel())
+            else:
+                task.cancel()
         await prov.close()
         try:
             await ws.close()
@@ -20723,14 +20874,21 @@ async def _chat_socket(ws):
                 if api_model and actual_model != api_model:
                     # Tự chữa: model đã lưu không hợp lệ cho Codex → ghi lại model đúng (converge sau 1 lượt)
                     try:
-                        if (_row0.get("pinned_model") or "").strip():
+                        if ((_row0.get("pinned_provider") or "").strip() == "openai-oauth"
+                                and (_row0.get("pinned_model") or "").strip()):
                             # Phiên ghim một model đã bị gỡ khỏi catalog: sửa luôn cái ghim, nếu
                             # không lượt nào cũng đọc lại ghim cũ và nhắc câu này lần nữa.
                             # The stale model came from this session's pin (an agent chat pins its agent's model),
                             # so only the pin is fixed: rewriting the owner's main model here changed every other chat.
+                            # Issue 1336: only a ChatGPT pin; a pin to a card that rests stays the owner's choice.
                             await asyncio.to_thread(store.set_pinned_model, conv_sid, "openai-oauth", actual_model)
                         else:
-                            _fix = cfgmod.read_settings(); _set_main_model(_fix, "openai-oauth", actual_model); cfgmod.write_settings(_fix)
+                            _fix = cfgmod.read_settings()
+                            if _effective_main(_fix)["provider"] == "openai-oauth":
+                                _set_main_model(_fix, "openai-oauth", actual_model)
+                            else:   # ChatGPT only stands in for a resting card: fix its own card, never make it MAIN
+                                model_routing.set_profile(_fix.setdefault("model", {}), "openai-oauth", model=actual_model)
+                            cfgmod.write_settings(_fix)
                         await ws.send_text(json.dumps({"type": "system", "content": localefmt.chu(
                             f"⚠ Model '{api_model}' không chạy được qua Codex (tài khoản ChatGPT) - đã tự đổi sang '{actual_model}'. Đổi model khác ở trang Models nếu muốn.",
                             f"⚠ Model '{api_model}' does not run through Codex (ChatGPT account) - switched to "
@@ -22242,8 +22400,8 @@ async def _chat_socket(ws):
                     break
                 await asyncio.sleep(5)
             else:
-                await push_to_chat(conv_sid, "Việc chạy nền đã xong nhưng hội thoại đang bận quá "
-                                   "lâu, mình chưa làm tiếp được. Nhắn \"làm tiếp\" để mình làm nốt.")
+                await push_to_chat(conv_sid, "Việc chạy nền đã xong nhưng hội thoại bận quá lâu "
+                                   "nên chưa làm tiếp được. Nhắn \"làm tiếp\" để làm nốt.")
                 return
             store.append_message(conv_sid, "user", text)
             turn_tag = f"chat:{conv_sid[:12]}:{uuid.uuid4().hex[:8]}"
@@ -22489,12 +22647,14 @@ async def _chat_socket(ws):
                 #   - ghim hỏng (provider mất key, đã rơi về mặc định chung) → thay bằng
                 #     model đang chạy thật, thanh model thôi khoe ghim chết;
                 #   - ghim lành → resolved == ghim, không có gì để ghi (no-op).
-                if ((_prow.get("pinned_provider") or "").strip() != prov
-                        or (_prow.get("pinned_model") or "") != (api_model or "")):
-                    try:
-                        store.set_pinned_model(conv_sid, prov, api_model or "")
-                    except Exception:
-                        pass
+                # Issue 1336: a turn that runs on a fallback because a card only RESTS (out of quota, signed out) must
+                # not replace the owner's pin with the fallback model; `_pin_to_stamp` keeps the pin in that case.
+                try:
+                    _stamp = _pin_to_stamp(mcfg, _prow, prov, api_model)
+                    if _stamp:
+                        store.set_pinned_model(conv_sid, *_stamp)
+                except Exception:
+                    pass
                 # Đổi bộ não giữa chừng: mạch native của MỌI engine khác engine đang chạy lượt
                 # này lập tức thành stale, vì nó không chứa lượt sắp diễn ra. Quay lại engine đó
                 # mà cứ nối tiếp mạch cũ là nó mù đúng đoạn ở giữa, rồi trả lời lạc đề - đúng
@@ -28681,7 +28841,7 @@ async def messenger_oauth_start(request: Request):
     res = await messenger_oauth.start(body.get("app_id"), body.get("app_secret"),
                                       _ms_base(request) + messenger_oauth.CALLBACK_PATH,
                                       str(body.get("brain") or ""), str(body.get("label") or ""),
-                                      instagram=bool(body.get("instagram")))
+                                      instagram=bool(body.get("instagram")), insights=bool(body.get("insights")))
     if not res.get("ok"):
         return JSONResponse(res, status_code=400)
     return res
@@ -31728,8 +31888,8 @@ def _judge_send(decision, payload, mode):
 
 def _judge_clarify_template():
     """Câu cố định của host khi một tin chủ động ở chat riêng chờ quá 30 phút mà vẫn thiếu thông tin."""
-    return localefmt.chu("Mình có một tin định gửi nhưng còn thiếu thông tin nên đã chờ và chưa gửi. Khi bạn tiện, cứ "
-                         "nhắn mình để làm rõ.",
+    return localefmt.chu("Có một tin định gửi nhưng còn thiếu thông tin nên đã chờ và chưa gửi. Khi tiện, cứ nhắn "
+                         "để làm rõ.",
                          "I had a message ready but some information was missing, so I waited and did not send it. "
                          "Message me whenever you want to clarify.")
 
