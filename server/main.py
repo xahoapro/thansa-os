@@ -697,7 +697,8 @@ SYSTEM_PROMPT = CLAUDE_MD_PATH.read_text(encoding="utf-8") if CLAUDE_MD_PATH.exi
 # P040 dài hơn bản gốc vài trăm ký tự. QUY TẮC (từ vòng 0.64.74): trần fork = trần upstream + 300.
 # Vòng 0.369.0: upstream 0.345.0 rút CLAUDE.md và hạ trần 33_600 -> 29_200, nên trần fork 29_500.
 # Chỉ đổi số này khi upstream tự đổi trần của họ.
-PROMPT_KERNEL_MAX_CHARS = 29_500
+# Vòng 0.563.1: CLAUDE.md fork vượt 51 ký tự (tên Thansa dài hơn 1 ký tự), nâng vừa đủ lên 29_600.
+PROMPT_KERNEL_MAX_CHARS = 29_600
 
 # Bộ nhớ dài hạn - lưu TRONG vault đang chọn để đi theo vault
 MEMORY_SEED = (
