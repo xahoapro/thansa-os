@@ -1007,3 +1007,14 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 20 commit upstream: 0.561.1: Hanging up keeps the work running, system lines drop the fixed pronoun (#1467); Hanging up keeps the work running, system lines drop the fixed pronoun (#1467); 0.561.0: Background jobs report on finish, pins survive a fallback, file links with line numbers open (#1465); Background jobs report on finish, pins survive a fallback, file links with line numbers open (#1465); 0.560.0: Cancel background jobs from chat, optional Page insights, Messenger names (#1463); Cancel background jobs from chat, optional Page insights, Messenger names (#1463); 0.559.3: Read-only reminders can list My Ta
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: docs/20-plugins.md. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 99d7e02/0.561.1/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-14** khi chủ bấm duyệt trên Telegram (origin/main 70043d5, tag + Release thansa-v2.13.0; backup me-backup-2.13.0).
+
+## Vòng TỰ ĐỘNG 2026-11-15 (goc 99d7e02 → 5320d34, nền 0.561.1 → 0.563.1, thansa 2.13.0→2.14.0)
+- 6 commit upstream: 0.563.1: File links in team chats open the file (#1477); Open files from team chat links (#1477); 0.563.0: On your request, Thansa and its assistants improve themselves, the brain and Thansa's own code, with undo (#1475); On your request, Thansa and its assistants improve themselves, the brain and Thansa's own code, with undo (#1475); 0.562.0: Auto gives assistants full access to check your tools, set their own check-backs and message suggestions and reminders (#1473); Auto gives assistants full access to look around, set their own check-backs and send suggestions and reminders (#1473)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 5320d34/0.563.1/so_patch 72.
+
+## Vòng TỰ ĐỘNG 2026-11-15 (goc 99d7e02 → 53f46bb, nền 0.561.1 → 0.566.0, thansa 2.13.0→2.14.0)
+- 16 commit upstream: Design style guide: pack pages now follow the dashboard theme (#1491); 0.566.0: Thansa replies in the language you write, and the language setting only changes the interface (#1486); Thansa replies in the language you write; the language setting only changes the interface (#1486); Design style guide from every design correction the owner has made (#1490); 0.565.1: Several photos attach in a team chat on iPhone (#1488); Team chat: several photos picked on iPhone attach again (#1488); 0.565.0: Thansa Gate picks the model and effort, and rings the owner when sent work finishes (#1472); 0.564.0: A
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 53f46bb/0.566.0/so_patch 72.

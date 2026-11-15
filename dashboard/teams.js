@@ -1901,6 +1901,14 @@
 
   // ───────────── phần chạy trong trình duyệt ─────────────
 
+  // A file opened from the chat covers the whole chat column (.tm-edit). Opening another team closes it first, so the
+  // team just picked shows instead of the last team's file. closeNote writes what is still unsaved, nothing typed is lost.
+  function closeDockedFile() {
+    var ed = typeof document !== "undefined" ? document.getElementById("noteEditor") : null;
+    if (!ed || !S || !S.el || !S.el.contains(ed)) return;
+    if (typeof window.ThansaCloseNote === "function") { try { window.ThansaCloseNote(); } catch (e) {} }
+  }
+
   function brain() {
     try {
       if (window.ThansaSessions && window.ThansaSessions.brain) return window.ThansaSessions.brain();
@@ -1982,7 +1990,12 @@
       '<div class="tm-teams"></div><button type="button" class="ws-btn tm-more-teams" hidden>' + esc(tw("teams.next_page")) + "</button></aside>" +
       '<section class="tm-chat"><div class="tm-bar tm-chat-head"></div><div class="tm-search" hidden></div>' +
       '<div class="tm-banners"></div><div class="tm-jobs" hidden></div>' +
-      '<div class="tm-filterbar" hidden></div><div class="tm-pinbar" hidden></div><div class="tm-msgs" aria-live="polite"></div><div class="tm-composer"></div></section>' +
+      '<div class="tm-filterbar" hidden></div><div class="tm-pinbar" hidden></div><div class="tm-msgs" aria-live="polite"></div><div class="tm-composer"></div>' +
+      // 2026-11-15 (owner: files the team writes could not be clicked open): the frame the file editor docks into when a
+      // file link in the chat is clicked, like the Partners page's #wsEdit. It takes the whole chat column while open
+      // (console.css .tm-chat.edit-on); closing the file brings the chat back as it was. `data-ne-host` is how
+      // console.js finds it; without it the editor opened behind this page and nothing showed.
+      '<div class="tm-edit" data-ne-host></div></section>' +
       // Vùng thông báo chung NGOÀI khung chat: trên điện thoại khung chat bị ẩn khi đang ở danh sách, thông báo (vd. ghim
       // lỗi) vẫn phải nhìn thấy (review 4f6268bd #2).
       '<aside class="tm-side" hidden></aside><div class="tm-scrim" hidden></div><div class="tm-note" role="status" aria-live="polite" hidden></div></div>';
@@ -3121,6 +3134,7 @@
   function openTeam(id, taskId) {
     keepTeam();
     dropNextSug();
+    closeDockedFile();
     S.jumped = null; S.searchResults = null; S.searchQuery = ""; S.searchOpen = false;
     S.activeId = id; S.view = "chat"; S.asJob = false; S.pending = null; S.filterTask = String(taskId || "");
     S.team = null; S.queue = null; S.msgs = []; S.msgsFor = ""; S.taskTitles = {}; S.openMember = null; S.turns = [];
@@ -3309,11 +3323,33 @@
     }).catch(function (e) { a.busy = false; a.err = uploadError(e); drawComposer(); });
   }
 
-  function pickFiles(onDone) {
+  // The file picker input lives IN the page until the pick is done (2026-11-15). Owner, on an iPhone: "chọn được nhưng
+  // gửi không được, không đính kèm được" when several photos were picked. The input used to be created and clicked
+  // without ever joining the page, so nothing held it while iOS Safari prepared the photos (several take seconds); it
+  // was dropped and its change event never came, so no chip appeared. One photo was quick enough to slip through. The
+  // main chat never had this: its #fileInput is in index.html. One picker at a time; the next pick replaces it.
+  var pickerEl = null;
+  function dropPicker() {
+    if (pickerEl && pickerEl.parentNode) pickerEl.parentNode.removeChild(pickerEl);
+    pickerEl = null;
+  }
+  function pickFiles(onDone, accept) {
+    dropPicker();
     var inp = document.createElement("input");
-    inp.type = "file"; inp.multiple = true;
-    inp.addEventListener("change", function () { onDone(Array.prototype.slice.call(inp.files || [])); });
+    inp.type = "file";
+    if (accept) inp.accept = accept; else inp.multiple = true;
+    inp.className = "tm-picker";
+    inp.style.display = "none";
+    inp.addEventListener("change", function () {
+      var files = Array.prototype.slice.call(inp.files || []);
+      if (files.length) onDone(files);
+    });
+    // Closed without a pick: nothing to keep (browsers without this event drop it at the next pick).
+    inp.addEventListener("cancel", function () { if (pickerEl === inp) dropPicker(); });
+    document.body.appendChild(inp);
+    pickerEl = inp;
     inp.click();
+    return inp;
   }
 
   function attachFiles(files) {
@@ -4134,11 +4170,9 @@
 
   // 0.200.0: add a team file. A preview first (who comes in, how many skills), then one confirm.
   function importTeam() {
-    var inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = ".zip,application/zip";
-    inp.onchange = function () {
-      var f = inp.files && inp.files[0];
+    // The same in-page picker as attaching (pickFiles), so iOS keeps it while the file is chosen.
+    pickFiles(function (files) {
+      var f = files[0];
       if (!f) return;
       var send = function (preview) {
         var fd = new FormData();
@@ -4158,8 +4192,7 @@
           loadTeams(false);
         });
       });
-    };
-    inp.click();
+    }, ".zip,application/zip");
   }
 
   function muteTeam(id, on, btn) {
@@ -4191,6 +4224,8 @@
       desc: "", descOpen: false, exclude: exclude, saving: false, error: "", rosterState: (S.roster || []).length ? "ok" : "loading",
       // 2026-11-12: documents picked in the create box (team-picker.js: docs, links and the brain file search).
       docs: [], links: [], docQuery: "", docResults: [], docState: "idle", docsOpen: false, linkDraft: "", linkBad: false,
+      // 2026-11-15: GitHub repos picked in the create box, attached to the team's chat once it exists.
+      repos: [], repoOpen: false,
       reqId: newClientId() };
     S.pickOpener = opener || null;
     document.removeEventListener("keydown", pickEsc, true);
@@ -4235,6 +4270,7 @@
       host.innerHTML = P.html(st, roster);
       var first = host.querySelector(st.mode === "create" ? ".tmp-name-input" : ".tmp-search-input");
       if (first && !(typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches)) first.focus();
+      pickMountRepos();       // the repo picker is live DOM: a whole redraw drops it, so it is put back
       return;
     }
     var put = function (sel, h) { var box = host.querySelector(sel); if (box) box.innerHTML = h; };
@@ -4277,13 +4313,59 @@
     var P = TP(), st = S.pickSt, host = S.pickHost;
     if (!P || !st || !host) return;
     var put = function (sel, h) { var box = host.querySelector(sel); if (box) box.innerHTML = h; };
-    if (whole) put(".tmp-docs-box", P.docsHtml(st));
+    if (whole) { put(".tmp-docs-box", P.docsHtml(st)); pickMountRepos(); }
     else {
       put(".tmp-docs-chips", P.docChipsHtml(st));
       put(".tmp-doc-results", P.docResultsHtml(st));
       put(".tmp-docs-sum", P.docsSummaryHtml(st));
     }
     put(".tmp-foot-box", P.footerHtml(st));
+  }
+
+  // 2026-11-15: GitHub repos in the create box. The same picker as the team's Info tab (team-github.js), but nothing
+  // is attached while the box is open: ticks only change S.pickSt.repos, and submitPicker attaches them to the new
+  // team's chat. Put back after every whole redraw of the documents block (drawPickDocs(true), drawPicker("all")).
+  function pickToggleRepos() {
+    var st = S.pickSt;
+    if (!st) return;
+    st.repoOpen = !st.repoOpen;
+    var host = S.pickHost, box = host && host.querySelector(".tmp-repo-box"), btn = host && host.querySelector(".tmp-repo-open");
+    if (btn) btn.setAttribute("aria-expanded", st.repoOpen ? "true" : "false");
+    if (box) { box.hidden = !st.repoOpen; if (!st.repoOpen) box.innerHTML = ""; }
+    pickMountRepos();
+  }
+  function pickMountRepos() {
+    var st = S.pickSt, host = S.pickHost, G = window.ThansaTeamGithub;
+    var box = host && host.querySelector(".tmp-repo-box");
+    if (!st || !st.repoOpen || !box || !G || st.mode !== "create") return;
+    box.hidden = false;
+    G.panel(box, {
+      brain: brain,
+      current: function () { return (S.pickSt && S.pickSt.repos) || []; },
+      save: function (names) {
+        if (!S.pickSt) return { ok: false };
+        S.pickSt = TP().setRepos(S.pickSt, names);
+        return { ok: true, repos: S.pickSt.repos.map(function (n) { return { full_name: n }; }) };
+      },
+      changed: function () { drawPickDocs(); },
+      close: function () { if (S.pickSt) { S.pickSt.repoOpen = false; drawPickDocs(true); } },
+      connections: function () { closePicker(); try { window.Alpine.store("nav").go("mcp"); } catch (e) { location.hash = "#p=mcp"; } } });
+  }
+  // After POST /teams: attach the picked repos to the new team's chat (cloning can take a while, so the team opens
+  // first and the chip appears when the repos are in). A failure is said on the team, where the Info tab can retry.
+  function attachNewTeamRepos(team, names, quiet) {
+    var sid = team && team.session_id;
+    if (!sid || !(names || []).length) return;
+    var b = new FormData();
+    b.append("brain", brain()); b.append("repos", names.join(","));
+    if (!quiet) setNote(tw("gh.cloning"));      // `quiet`: a note about documents is already on screen
+    fetch("/github/session/" + q(sid) + "/repos", { method: "POST", body: b, credentials: "same-origin" })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) {
+        if (!d || d.ok === false) { setNote((d && d.error) || tw("gh.err_net")); return; }
+        if (S.note === tw("gh.cloning")) setNote("");
+        if (sessionId() === sid) setRepos(d);
+      }, function () { setNote(tw("gh.err_net")); });
   }
 
   var pickDocTimer = null;
@@ -4365,10 +4447,12 @@
           closePicker();
           // The team exists either way; a document the server could not take is said once, with where to add it.
           var missed = (r.j.documents && r.j.documents.failed) || 0;
+          var repos = (st.repos || []).slice();
           S.focusComposer = true;
           loadTeams(false).then(function () {
             openTeam(r.j.team.team_id);
             if (missed) setNote(tw("teams.pick.docs_partial", { n: missed }));
+            attachNewTeamRepos(r.j.team, repos, missed > 0);
           });
         }, function () { pickFail(tw("teams.pick.err_network")); });
       return;
@@ -4567,6 +4651,8 @@
     if (d.docAdd !== undefined) return pickAddDoc(Number(d.docAdd));
     if (d.docDel !== undefined) { if (S.pickSt) { S.pickSt = TP().removeDoc(S.pickSt, d.docDel); drawPickDocs(); } return; }
     if (d.linkDel !== undefined) { if (S.pickSt) { S.pickSt = TP().removeLink(S.pickSt, d.linkDel); drawPickDocs(); } return; }
+    if (t.classList.contains("tmp-repo-open")) return pickToggleRepos();
+    if (d.repoDel !== undefined) { if (S.pickSt) { S.pickSt = TP().removeRepo(S.pickSt, d.repoDel); drawPickDocs(); pickMountRepos(); } return; }
     if (t.classList.contains("tmp-cancel")) return closePicker();
     if (t.classList.contains("tmp-submit")) return submitPicker();
     if (t.classList.contains("tm-more-teams")) return loadTeams(true);
@@ -5400,7 +5486,7 @@
     membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, capsFormHtml: capsFormHtml, capsPayload: capsPayload, saveCapsFlow: saveCapsFlow, teamTabHtml: teamTabHtml, limitsHtml: limitsHtml,
     levelOf: levelOf, grantFor: grantFor, teamAvatarHtml: teamAvatarHtml, savePin: savePin, pinTeamWith: pinTeamWith, noteHtml: noteHtml, levelsHtml: levelsHtml, turnsHtml: turnsHtml,
     bannersHtml: bannersHtml, reactCornerHtml: reactCornerHtml, reactBarHtml: reactBarHtml, sheetHtml: sheetHtml,
-    hoverActsHtml: hoverActsHtml, bodyHtml: bodyHtml, skillSplit: skillSplit, skillCall: skillCall, listSync: listSync, pendingHtml: pendingHtml, copyTextOf: copyTextOf, fileChipHtml: fileChipHtml, uploadError: uploadError, plainPreview: plainPreview, previewText: previewText,
+    hoverActsHtml: hoverActsHtml, bodyHtml: bodyHtml, skillSplit: skillSplit, skillCall: skillCall, listSync: listSync, pendingHtml: pendingHtml, copyTextOf: copyTextOf, fileChipHtml: fileChipHtml, uploadError: uploadError, pickFiles: pickFiles, plainPreview: plainPreview, previewText: previewText,
     nextReaction: nextReaction, REACTIONS: REACTIONS, authorityHtml: authorityHtml, readGrant: readGrant,
     searchResultsHtml: searchResultsHtml, replyStatusHtml: replyStatusHtml, headLine: headLine,
     typingHtml: typingHtml, pinsHtml: pinsHtml, markMentions: markMentions, replyRefHtml: replyRefHtml,

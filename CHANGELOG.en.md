@@ -8,6 +8,52 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.566.0] - 2026-11-15
+### Improved
+- **Thansa replies in the language you write in, any language, like Claude or ChatGPT.** The language box in Settings now only changes the interface, and chatbots always answer customers in the customer's language. To always get one language, tell Thansa once; a reply language pinned before becomes a sentence in your profile, so it is not lost.
+### Fixed
+- **Thansa no longer answers in Vietnamese while you chat in English.** The language rule is now written in English, says a language you stated wins, and that the Vietnamese around it is no hint.
+- **Background work (Kanban, reminders, loops) no longer always reports in Vietnamese.** It follows the task's own language.
+- **Replies in Japanese, Korean, Chinese and Thai are read aloud by a native voice**, and an English message with an attached file is no longer read as Vietnamese.
+
+## [0.565.1] - 2026-11-15
+### Fixed
+- **Picking several photos at once in a team chat on iPhone now attaches and sends them.** Before, a multi-photo pick put nothing in the composer and only a single photo got through. Adding team documents and importing a team file share the fixed picker.
+
+## [0.565.0] - 2026-11-15
+### Added
+- **ChatGPT and Claude can set the model and effort inside the command they send through Thansa Gate.** Tell ChatGPT "have Thansa do this on Opus at high effort": the model is pinned on that chat as if you picked it in the model bar (the chip shows it, change it back any time), and the effort counts for that one message only, nothing in your settings changes. A new `thansa_chat_models` tool lets the outside AI see which models Thansa has.
+- **When work ChatGPT sent finishes after it stopped waiting, the Thansa bell rings your phone**, with the answer and the sentence to send ChatGPT ("check Thansa results"). ChatGPT and Claude do not let outside servers wake a chat yet, so this is the shortest path: one message, and the new `thansa_chat_updates` tool hands over every unread result, even in a new ChatGPT chat.
+### Improved
+- **ChatGPT waits longer for Thansa within the same reply** (up to about 10 minutes) instead of giving up after half a minute, and knows how long Thansa has been working.
+
+## [0.564.0] - 2026-11-15
+### Added
+- **Add GitHub repositories to a Project.** Open the project panel, Documents tab, Add document, then GitHub repository. Every chat in the project gets the repository from its first message, each on its own branch.
+- **Add repositories to an Assistant's documents.** Every private chat with that assistant gets them too, and Thansa still commits, pushes and opens the PR as usual.
+- **Pick repositories while creating a Team.** The documents part of the Create team box has an Attach a GitHub repository button, so the new team starts with its repositories.
+
+## [0.563.1] - 2026-11-15
+### Fixed
+- **Files the team writes open with a click.** A file link in a team chat used to do nothing visible. The file now opens right in the team's chat column; press X to get back to the conversation, with anything you were typing still there.
+- **Pages with no room for the editor open the file in a popup**, such as a file link on the Tasks page, so no click on a file link goes nowhere any more.
+
+## [0.563.0] - 2026-11-15
+### Added
+- **Ask for an improvement and it happens, with undo.** Say "improve yourself" or "rework this skill": the assistant changes its own role, instructions, skills and model, other assistants, skills, workflows, loops and memory. Every change gets an id and a backup; "undo #12" puts it back.
+- **Thansa can change its own source code.** With GitHub connected to the thansa-os repo, the assistant attaches the repo to the chat and works on its own branch; Thansa checks, opens a PR and merges on green CI.
+- **It updates itself to the release.** Say "update now": Thansa waits for the chat turn to end, runs exactly what the Update button runs, and rolls back if the new version breaks.
+### Improved
+- **Only you can order it.** Auto's own wake-ups and customer-facing bots may only suggest. Old prompt lines that contradicted this now match.
+
+## [0.562.0] - 2026-11-15
+### Added
+- **With Auto on, an assistant looks around with full access.** In its private chat, each time it wakes on its own it uses every connected tool (email, calendar, sales, web search...) and may take real actions within its role. Whatever it does is always reported to you.
+- **Assistants set their own times to check back.** When something has a date (a race, a meeting, a deadline) the assistant sets a check-back, such as the morning or the evening before. At that time it wakes, checks the sources again, then decides whether to message you.
+- **Suggestions and reminders, not notifications.** An assistant only messages you when something is new, timely and actionable: at most two short paragraphs, one concrete piece of advice, with real source links. Reminders go to the Reminders group, suggestions to the new "Assistant suggestions" group (it still reaches you by default; lower or turn it off on the Notifications page).
+### Improved
+- **Turning Auto on asks once** and says plainly that it gives full access. The old line "Auto is not Full access" now matches how Auto works.
+
 ## [0.561.1] - 2026-11-14
 ### Fixed
 - **Hanging up while Thansa is still working on something asked for in the call no longer drops it.** Thansa finishes and posts the result to the call's chat, with a notification.
