@@ -1019,3 +1019,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 53f46bb/0.566.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-15** khi chủ bấm duyệt trên Telegram (origin/main fd9514c, tag + Release thansa-v2.14.0; backup me-backup-2.14.0).
+
+## Vòng TỰ ĐỘNG 2026-11-15 (goc 53f46bb → 2a6c02d, nền 0.566.0 → 0.569.0, thansa 2.14.0→2.15.0)
+- 10 commit upstream: 0.569.0: Webhooks can be edited after they are made (#1502); Webhooks can be edited after they are made (#1502); 0.568.1: The repo picker of a project, an assistant and a new team gets the + row to add repositories (#1500); Add the + row to the repo picker of projects, assistants and new teams (#1500); 0.568.0: Connect any REST API with an API key (#1497); Connect any REST API with an API key (#1497); 0.567.0: Thansa's core instructions are now English, so it keeps to your language (#1494); Write Thansa's core instructions in English, one copy for every language (#1494); 0.566.1: Gemini 4 take
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: tests/python/test_thansa_core.py. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 2a6c02d/0.569.0/so_patch 72.
