@@ -8,6 +8,27 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.563.1] - 2026-11-15
+### Fixed
+- **Files the team writes open with a click.** A file link in a team chat used to do nothing visible. The file now opens right in the team's chat column; press X to get back to the conversation, with anything you were typing still there.
+- **Pages with no room for the editor open the file in a popup**, such as a file link on the Tasks page, so no click on a file link goes nowhere any more.
+
+## [0.563.0] - 2026-11-15
+### Added
+- **Ask for an improvement and it happens, with undo.** Say "improve yourself" or "rework this skill": the assistant changes its own role, instructions, skills and model, other assistants, skills, workflows, loops and memory. Every change gets an id and a backup; "undo #12" puts it back.
+- **Thansa can change its own source code.** With GitHub connected to the thansa-os repo, the assistant attaches the repo to the chat and works on its own branch; Thansa checks, opens a PR and merges on green CI.
+- **It updates itself to the release.** Say "update now": Thansa waits for the chat turn to end, runs exactly what the Update button runs, and rolls back if the new version breaks.
+### Improved
+- **Only you can order it.** Auto's own wake-ups and customer-facing bots may only suggest. Old prompt lines that contradicted this now match.
+
+## [0.562.0] - 2026-11-15
+### Added
+- **With Auto on, an assistant looks around with full access.** In its private chat, each time it wakes on its own it uses every connected tool (email, calendar, sales, web search...) and may take real actions within its role. Whatever it does is always reported to you.
+- **Assistants set their own times to check back.** When something has a date (a race, a meeting, a deadline) the assistant sets a check-back, such as the morning or the evening before. At that time it wakes, checks the sources again, then decides whether to message you.
+- **Suggestions and reminders, not notifications.** An assistant only messages you when something is new, timely and actionable: at most two short paragraphs, one concrete piece of advice, with real source links. Reminders go to the Reminders group, suggestions to the new "Assistant suggestions" group (it still reaches you by default; lower or turn it off on the Notifications page).
+### Improved
+- **Turning Auto on asks once** and says plainly that it gives full access. The old line "Auto is not Full access" now matches how Auto works.
+
 ## [0.561.1] - 2026-11-14
 ### Fixed
 - **Hanging up while Thansa is still working on something asked for in the call no longer drops it.** Thansa finishes and posts the result to the call's chat, with a notification.
