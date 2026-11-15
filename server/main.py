@@ -129,6 +129,7 @@ import job_scorecard    # each background job finds the lightest model that gets
 import core_loop        # Thansa Core's improvement loop: one loop, many knobs
 import tool_pins        # the tools a brain calls most are shown directly (one knob of that loop)
 import job_tune         # the owner's side of that loop, from chat (tool thansa_tune)
+import self_upgrade     # improvement on the owner's request: backup, undo, own code, update (tool thansa_improve)
 import phien_am       # từ tiếng Anh -> cách đọc kiểu Việt (đọc loa + so âm câu nghe được)
 import voice_privacy
 voice_privacy.install()
@@ -13570,7 +13571,8 @@ def _workflow_agent_helpers(brain, tools, mode=None):
               "bằng tối đa 2 dòng riêng, mỗi dòng đúng dạng `THANSA_LESSON: <bài học một câu>`. "
               "Thansa tự ghi vào mục `## Bài học (tự học)` của file bộ nhớ trên (tự loại trùng, giữ "
               f"{_BAI_HOC_TRAN} dòng mới nhất). KHÔNG tự sửa file bộ nhớ trực tiếp - phần ngoài mục "
-              "đó là của chủ. Lượt chạy không có gì đáng nhớ thì ĐỪNG phát THANSA_LESSON, và đừng "
+              "đó là của chủ (chủ bảo sửa thì dùng `thansa_improve` op=save). "
+              "Lượt chạy không có gì đáng nhớ thì ĐỪNG phát THANSA_LESSON, và đừng "
               "lặp lại bài học đã có trong bộ nhớ.\n"
             + "\n# Luật chủ dặn: khi CHỦ nói rõ một luật lâu dài cho vai này (\"từ giờ\", \"luôn\", "
               "\"đừng bao giờ\", vd \"nhắn Zalo thì không dùng markdown\"), làm theo ngay VÀ kết thúc "
@@ -13643,6 +13645,11 @@ _AGENT_TOOLKIT_BLOCK = (
     "\"có kết quả em báo lại\", \"sếp chờ em chút\". " + "Chỉ hai lối đúng: làm xong ngay trong lượt và "
     "trả kết quả thật, hoặc giao việc nền / nhắc hẹn rồi nói rõ đã giao gì, kết quả về đâu. "
     "Không làm được cả hai thì nói thẳng là chưa làm.\n"
+    # 2026-11-15 (owner): asked to improve, an assistant may change itself and the whole system, with undo.
+    "- CHỦ bảo cải tiến (chính bạn, trợ lý khác, skill, quy trình, cả Thansa): làm luôn bằng `thansa_improve` "
+    "(op=save có sao lưu cho file của bạn agents/<slug>.md, skill, workflow, bộ nhớ; op=source để sửa mã nguồn "
+    "Thansa qua GitHub; op=update để máy lên bản mới), rồi báo đổi gì và mã hoàn tác. Không ai yêu cầu thì "
+    "không tự sửa, chỉ đề xuất.\n"
 )
 # Câu "chỉ hai lối" ở trên ĐÚNG khi trợ lý chưa bật Cộng hưởng. Bật rồi thì có lối thứ ba (thansa_goal); để nguyên câu
 # cũ là bảo model rằng lối đó không tồn tại (review A1 tích hợp, P1-1). Thay đúng câu đó, chỉ trong phiên trò chuyện.
@@ -17690,6 +17697,12 @@ async def _watchtower_update(token: str, started_at: str):
 async def do_update():
     """Cập nhật lên bản mới nhất. Git checkout (windows/native) → spawn updater.py TÁCH RỜI
     (stop/pull/pip/start/health/rollback). Docker → Watchtower nếu có, không thì hướng dẫn Redeploy."""
+    return await _update_core()
+
+
+async def _update_core():
+    """The body of POST /update, shared with `thansa_improve op=update` (a route handler is never called as a plain
+    function, test_handler_khong_goi_truc_tiep). Returns a dict, or a JSONResponse when it refuses."""
     import sys as _sys
     import subprocess
     import datetime as _dt
@@ -17793,6 +17806,26 @@ async def do_update():
     except Exception as e:
         _write_update_state({"phase": "error", "result": "error", "error": str(e), "finished_at": now()})
         return JSONResponse({"ok": False, "error": str(e), "manual": "./update.sh"}, status_code=500)
+
+
+async def _self_upgrade_start() -> dict:
+    """`thansa_improve op=update` (2026-11-15): the very same path as the Update button, its answer as a dict."""
+    res = await _update_core()
+    if isinstance(res, dict):
+        return res
+    try:
+        return json.loads(bytes(res.body).decode("utf-8"))
+    except Exception:  # noqa: BLE001
+        return {"ok": False, "error": localefmt.chu("Cập nhật không bắt đầu được.", "The update did not start.")}
+
+
+async def _self_upgrade_versions() -> tuple:
+    cur = _read_version()
+    latest, _err = await _latest_remote_version(cur)
+    return cur, latest
+
+
+self_upgrade.wire(start=_self_upgrade_start, versions=_self_upgrade_versions, turn_busy=luot_dang_chay.has_turn)
 
 
 # ============================================================
@@ -33075,7 +33108,20 @@ def _pulse_engine_for(key, ctx, purpose):
     provider, model, execute = _team_engine_for({"brain_id": _pulse_brain_of(key), "team_id": team_id}, key, purpose)
 
     async def run(req):
-        return await execute({**req, "team_id": team_id, "task_id": None, "purpose": purpose})
+        body = {**req, "team_id": team_id, "task_id": None, "purpose": purpose}
+        if not req.get("tool_turn"):
+            return await execute(body)
+        # Lượt có công cụ của Auto toàn quyền (2026-11-14): lượt nền chủ đã cho phép khi bật Auto, như nhắc hẹn hay việc
+        # Kanban. Việc nền nó tạo (thansa_task, thansa_schedule) báo về chat riêng của trợ lý; `job` cho sổ "làm đúng một lần"
+        # (once_ledger) để lần thử lại của cùng lượt không gửi, đăng hay đặt hàng lần hai.
+        sid, _slug = await asyncio.to_thread(_pulse_dm_session, key)
+        tok = turn_context.bind(turn_context.make(
+            "pulse", chat_id=f"{WEB_CHAT_PREFIX}{sid}" if sid else "", session_id=sid or "",
+            job=f"pulse:{req.get('turn_id') or ''}"))
+        try:
+            return await execute(body)
+        finally:
+            turn_context.reset(tok)
 
     run.marks_engine = True
     return provider, model, run
@@ -33149,9 +33195,116 @@ def _pulse_post(key, ctx, text, meta):
         if not sid:
             return None
         mid = ss.append_message(sid, "assistant", text)
-        _pulse_on_loop(_bo_vao_hom_thu(f"{WEB_CHAT_PREFIX}{sid}", text, kind="report", label=slug, source="pulse"))
+        kind = str((meta or {}).get("kind") or "")
+        if kind:
+            # Tin của lượt quét có công cụ (Auto toàn quyền) mang loại: giữ trên tin để lượt sau biết mình đã nói gì.
+            try:
+                ss.update_team_message_meta(sid, mid, {k: v for k, v in (meta or {}).items()
+                                                       if k in ("proactive", "pulse_source", "decision_id", "kind", "did")})
+            except Exception as _e:  # noqa: BLE001 - nhãn tin không được làm hỏng việc gửi
+                print(f"[pulse meta] {type(_e).__name__}: {_e}", file=sys.stderr)
+        group, level = _PULSE_KIND_GROUP.get(kind, ("", ""))
+        _pulse_on_loop(_bo_vao_hom_thu(f"{WEB_CHAT_PREFIX}{sid}", text, kind="report", label=slug, source="pulse",
+                                       group=group, level=level))
         return {"session_id": sid, "message_id": mid}
     return None
+
+
+# Auto toàn quyền (chủ repo 14/11/2026): "cái đó không phải là thông báo nữa, mà kiểu như gợi ý và nhắc nhở". Lời nhắc có giờ
+# giấc đi nhóm Nhắc lịch (khẩn, luôn rung như nhắc hẹn chủ tự đặt); gợi ý đi nhóm riêng "Gợi ý của trợ lý", mặc định rung từ
+# mức đáng chú ý (notify_policy.GROUP_DEFAULT_MODE). Chủ hạ hay tắt từng nhóm ở trang Thông báo.
+_PULSE_KIND_GROUP = {"reminder": ("reminder", "urgent"), "suggestion": ("suggest", "important")}
+
+
+def _pulse_tool_scan(key, ctx):
+    """Lượt quét của ngữ cảnh này chạy CÓ CÔNG CỤ, toàn quyền (MCP, web, file, tạo việc): chat riêng của trợ lý khi Auto
+    bật (nhịp chỉ chạy cho trợ lý đang bật Auto). Nhóm giữ lượt quét chỉ chữ: quyền trong nhóm do Toàn quyền của nhóm quyết.
+    THANSA_PULSE_TOOLS=0 quay về lượt quét chỉ chữ cho mọi nơi."""
+    if os.getenv("THANSA_PULSE_TOOLS", "1").strip() == "0":
+        return False
+    return str(ctx) == f"dm:{key}"
+
+
+_PULSE_WEEKDAYS = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")
+PULSE_CTX_MEMORY_MAX = 6000      # chỉ mục bộ nhớ của chủ trong lượt quét (lượt chat thường: 20.000)
+PULSE_CTX_TALK_MAX = 5000        # nhật ký hội thoại hôm nay và hôm qua, lấy phần cuối
+PULSE_CTX_DM_N = 12              # số tin gần nhất của chat riêng với trợ lý
+
+
+def _pulse_scan_context(key, ctx, now):
+    """Khối NGỮ CẢNH của lượt quét có công cụ: giờ của chủ, hồ sơ, bộ nhớ, chuyện chủ vừa kể (nhật ký hội thoại), các tin
+    gần đây của chat riêng (đánh dấu tin chủ động và phản hồi của chủ) và mốc trợ lý đã hẹn. Mọi phần có trần; phần nào
+    lỗi thì bỏ phần đó. Dữ liệu, không phải lệnh."""
+    from datetime import datetime, timedelta
+    brain = _pulse_brain_of(key)
+    tzinfo = localefmt.tz()
+    now_dt = datetime.fromtimestamp(float(now), tz=tzinfo)
+    parts = ["## Giờ hiện tại của chủ\n"
+             f"{_PULSE_WEEKDAYS[now_dt.weekday()]}, {now_dt.strftime('%d/%m/%Y %H:%M')} ({localefmt.ten_tz()})"]
+    try:
+        prof = memory_control.profile_block().strip()
+        if prof:
+            parts.append(prof)
+    except Exception as _e:  # noqa: BLE001
+        print(f"[pulse ctx profile] {type(_e).__name__}: {_e}", file=sys.stderr)
+    mem_dir = None
+    if brain:
+        try:
+            mem_dir = _brain_memory_dir(brain)
+            idx = mem_dir / "MEMORY.md"
+            mem = idx.read_text(encoding="utf-8") if idx.exists() else ""
+            if mem.strip():
+                parts.append("## Bộ nhớ về chủ (chỉ mục)\n" + _fit_memory_index(mem, PULSE_CTX_MEMORY_MAX))
+        except Exception as _e:  # noqa: BLE001
+            print(f"[pulse ctx memory] {type(_e).__name__}: {_e}", file=sys.stderr)
+    if mem_dir is not None:
+        try:
+            talk = ""
+            for d in (now_dt - timedelta(days=1), now_dt):
+                f = mem_dir / "conversations" / f"{d.strftime('%Y-%m-%d')}.md"
+                if f.exists():
+                    talk += f"\n# {d.strftime('%d/%m')}\n" + f.read_text(encoding="utf-8", errors="replace")
+            talk = talk.strip()
+            if talk:
+                parts.append("## Chủ vừa trao đổi với Thansa (hôm qua và hôm nay, phần cuối)\n<chat_data>\n"
+                             + talk[-PULSE_CTX_TALK_MAX:] + "\n</chat_data>")
+        except Exception as _e:  # noqa: BLE001
+            print(f"[pulse ctx talk] {type(_e).__name__}: {_e}", file=sys.stderr)
+    try:
+        sid, _slug = _pulse_dm_session(key)
+        if sid:
+            ss = get_store()
+            msgs = (ss.get_messages_page(sid, PULSE_CTX_DM_N, with_tools=False) or {}).get("messages") or []
+            said = set()
+            st = _pulse_store()
+            if st is not None:
+                said = {int(r["message_id"]) for r in _pulse_sql(
+                    "SELECT message_id FROM pulse_proactive WHERE agent_key=? AND session_id=? ORDER BY id DESC LIMIT 50",
+                    (key, sid))}
+            reacts = ss.dm_reactions_for(sid, [int(m["id"]) for m in msgs]) if msgs else {}
+            lines = []
+            for m in msgs:
+                mid = int(m["id"])
+                when = localefmt.format_ts(float(m.get("ts") or 0), "%d/%m %H:%M") if m.get("ts") else ""
+                who = "Chủ" if m.get("role") == "user" else ("Bạn (tin chủ động)" if mid in said else "Bạn")
+                body = " ".join(str(m.get("content") or "").split())[:500]
+                r = reacts.get(mid) or {}
+                tail = f" [chủ phản hồi: {r.get('value')}]" if r.get("value") else ""
+                lines.append(f"[{when}] {who}: {body}{tail}")
+            if lines:
+                parts.append("## Chat riêng gần đây giữa bạn và chủ\n<chat_data>\n" + "\n".join(lines) + "\n</chat_data>")
+    except Exception as _e:  # noqa: BLE001
+        print(f"[pulse ctx dm] {type(_e).__name__}: {_e}", file=sys.stderr)
+    try:
+        st = _pulse_store()
+        rows = agent_pulse.pending_followups(st, key, ctx) if st is not None else []
+        if rows:
+            parts.append("## Mốc bạn đã hẹn (đang chờ)\n" + "\n".join(
+                f"- #{r['id']} {localefmt.format_ts(float(r['due_at']), '%d/%m %H:%M')}: {r.get('note') or ''}"
+                for r in rows))
+    except Exception as _e:  # noqa: BLE001
+        print(f"[pulse ctx followups] {type(_e).__name__}: {_e}", file=sys.stderr)
+    return "\n\n".join(parts)
 
 
 def _pulse_propose(key, ctx, item, src):
@@ -33208,8 +33361,12 @@ def _pulse_proposal_action(prop, decision):
 
 
 def _pulse_send(key, ctx, text, meta):
-    return _pulse_post(key, ctx, text, {"proactive": True, "pulse_source": meta.get("source_ref") or "",
-                                        "decision_id": meta.get("decision_id")})
+    out = {"proactive": True, "pulse_source": meta.get("source_ref") or "", "decision_id": meta.get("decision_id")}
+    if meta.get("kind"):
+        out["kind"] = meta["kind"]
+    if meta.get("did"):
+        out["did"] = list(meta["did"])
+    return _pulse_post(key, ctx, text, out)
 
 
 def _pulse_notify(key, ctx, text):
@@ -33241,7 +33398,8 @@ def _pulse_host():
             persona=_pulse_persona, engine_for=lambda k, c, p: _pulse_engine_for(k, c, p),
             can_enqueue=_pulse_can_enqueue, enqueue=_pulse_enqueue, propose=_pulse_propose, send=_pulse_send,
             notify=_pulse_notify, interacted=_pulse_interacted, project_pending=_feedback_pulse_tick,
-            brain_of=_pulse_brain_of, judge_payload=lambda c: _judge_team_payload(c)))
+            brain_of=_pulse_brain_of, judge_payload=lambda c: _judge_team_payload(c),
+            tool_scan=_pulse_tool_scan, scan_context=_pulse_scan_context, tz=localefmt.tz))
         # Dựng bộ phán xử cùng lúc (đăng ký hàm phục vụ lý do related_review/wait_unblocked và hàm gửi), để sau khởi động
         # lại các lý do còn chờ có người phục vụ ngay, không phải đợi tới tin nhóm đầu tiên.
         try:
