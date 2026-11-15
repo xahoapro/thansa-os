@@ -7524,5 +7524,7 @@
   "proj.repo_note": "Every chat in this project gets these repositories, each on its own branch.",
   "proj.err_repo": "Could not save the repository list",
   "ags.repo_remove": "Remove from the assistant (chats that have it keep it)",
-  "ags.repo_note": "Every private chat with this assistant gets these repositories, each on its own branch."
+  "ags.repo_note": "Every private chat with this assistant gets these repositories, each on its own branch.",
+  "wh.edit": "Edit",
+  "wh.edit_title": "Edit webhook"
 }

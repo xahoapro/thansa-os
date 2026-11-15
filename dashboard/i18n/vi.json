@@ -7524,5 +7524,7 @@
   "proj.repo_note": "Mỗi cuộc chat trong project tự có các repository này, mỗi cuộc một nhánh riêng.",
   "proj.err_repo": "Không lưu được danh sách repository",
   "ags.repo_remove": "Gỡ khỏi trợ lý (cuộc chat đã có repository vẫn giữ)",
-  "ags.repo_note": "Mỗi cuộc chat riêng với trợ lý này tự có các repository này, mỗi cuộc một nhánh riêng."
+  "ags.repo_note": "Mỗi cuộc chat riêng với trợ lý này tự có các repository này, mỗi cuộc một nhánh riêng.",
+  "wh.edit": "Sửa",
+  "wh.edit_title": "Sửa webhook"
 }
