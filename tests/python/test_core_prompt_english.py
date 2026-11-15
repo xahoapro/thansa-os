@@ -142,7 +142,8 @@ english("chat documents", A.render_session_assets(lines, sections))
 english("project lessons guide", project_context.LEARN_GUIDE + project_context.BLOCK_NOTE + project_context.AGENT_GUIDE)
 check("the project lessons guide stays short", len(project_context.LEARN_GUIDE) <= 650, len(project_context.LEARN_GUIDE))
 english("Thansa Core role", thansa_core.definition()["body"])
-check("the Thansa Core role stays small", len(thansa_core.prompt_block()) < 2600, len(thansa_core.prompt_block()))
+# Thansa: +3 over the source cap, the block names "Thansa" 3 times and the name is 1 character longer.
+check("the Thansa Core role stays small", len(thansa_core.prompt_block()) < 2603, len(thansa_core.prompt_block()))
 english("Thansa Core naming lines", thansa_core.identity_block(None))
 english("resume wrapper", compaction.bootstrap_prompt(
     [{"role": "user", "content": "hi"}, {"role": "assistant", "content": "hello"}] * 3, "next", max_chars=1000)
