@@ -1,8 +1,8 @@
 {
-  "thansa_version": "2.13.0",
-  "goc_commit": "99d7e02259b0d3c3b04bf722d4cc14b2b6221057",
-  "goc_version": "0.561.1",
-  "ngay_tron": "2026-11-14",
+  "thansa_version": "2.14.0",
+  "goc_commit": "5320d3435f704ad92f5c1c6c551a3f60f67d1684",
+  "goc_version": "0.563.1",
+  "ngay_tron": "2026-11-15",
   "so_patch": 72,
-  "dich_commit": "ce07af5470dc2515a9c79be83517151c35b67029"
+  "dich_commit": "0db95852e673a96d6085602e78f92e35b3666db3"
 }

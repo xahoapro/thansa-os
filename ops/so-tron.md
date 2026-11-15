@@ -1008,3 +1008,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: docs/20-plugins.md. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 99d7e02/0.561.1/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-14** khi chủ bấm duyệt trên Telegram (origin/main 70043d5, tag + Release thansa-v2.13.0; backup me-backup-2.13.0).
+
+## Vòng TỰ ĐỘNG 2026-11-15 (goc 99d7e02 → 5320d34, nền 0.561.1 → 0.563.1, thansa 2.13.0→2.14.0)
+- 6 commit upstream: 0.563.1: File links in team chats open the file (#1477); Open files from team chat links (#1477); 0.563.0: On your request, Thansa and its assistants improve themselves, the brain and Thansa's own code, with undo (#1475); On your request, Thansa and its assistants improve themselves, the brain and Thansa's own code, with undo (#1475); 0.562.0: Auto gives assistants full access to check your tools, set their own check-backs and message suggestions and reminders (#1473); Auto gives assistants full access to look around, set their own check-backs and send suggestions and reminders (#1473)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 5320d34/0.563.1/so_patch 72.
