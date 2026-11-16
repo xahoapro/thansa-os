@@ -8,6 +8,33 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.577.0] - 2026-11-17
+### Improved
+- **After an update, work in flight carries on by itself.** A team job cut in the middle continues with the step it was on, and a team reply that was being written is written again; no more pressing "Continue" or "Retry".
+- **A chat answer cut short is answered again** when the page comes back after the server restarts, in the main chat and in chats with an assistant.
+- **Background jobs go back to the queue at once** instead of waiting 90 seconds, and the cut no longer counts as a failed attempt.
+- **Nothing outside happens twice.** A step that had already sent a message, posted or created an order before the server stopped makes Thansa stop and tell you instead of doing it again. A workflow run cut short no longer says "running" for ever.
+
+## [0.576.0] - 2026-11-16
+### Improved
+- **The team Jobs tab now follows the Tasks page.** Each job is a card, and right under it you see what every member is doing: done, working or waiting its turn, with what they were asked to do. Jobs waiting for you come first.
+- **Icons replace text buttons.** Edit, acceptance, cancel, priority and move to Archive are icons; one text button is left, on a job that waits for you. The Info, Jobs and Team tabs have icons, and Jobs shows how many jobs are open.
+- **Press a finished job to read a summary:** when it ended, the result, who did what. Finished jobs and the Archive are paged, five jobs a page.
+- **The Archive is no longer cut at 30 jobs** and gets a search box once it is longer than one page. "Delete all" stands apart at the end.
+
+## [0.575.2] - 2026-11-16
+### Fixed
+- **Playwright no longer says "browser not installed" right after Thansa downloaded one.** Thansa now hands Playwright the exact browser file it downloaded, so the two can run on different versions. A browser you chose yourself is left alone.
+
+## [0.575.1] - 2026-11-16
+### Fixed
+- **Playwright screenshots show right in the chat.** When Thansa took a screenshot of a page with Playwright, the image reached the model as a long string of characters and nothing appeared in the chat. The image is now saved in the brain under `attachments/tool-images/` and Thansa embeds it in its reply so you can preview it. Images returned by other tools (charts, designs) are handled the same way.
+
+## [0.575.0] - 2026-11-16
+### Improved
+- The project selector and project list show a red dot when another project has unread replies. The selected project uses its chat dots without a duplicate folder alert.
+- Opening a project keeps chats unread until they are opened. Badges update for new replies and reads in another tab.
+
 ## [0.574.0] - 2026-11-16
 ### Improved
 - **Typing while a goal runs no longer pauses it.** Your message is added to the goal: the running round reads it at its next step and every later round carries it, so you can adjust or widen the goal while Thansa works. Each such message gives one more round (10 at most). If a round reports the goal met before it read your message, Thansa runs one more round for it. The Stop button still pauses the goal as before.
