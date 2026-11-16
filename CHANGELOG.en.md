@@ -8,6 +8,38 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.574.0] - 2026-11-16
+### Improved
+- **Typing while a goal runs no longer pauses it.** Your message is added to the goal: the running round reads it at its next step and every later round carries it, so you can adjust or widen the goal while Thansa works. Each such message gives one more round (10 at most). If a round reports the goal met before it read your message, Thansa runs one more round for it. The Stop button still pauses the goal as before.
+
+## [0.573.0] - 2026-11-16
+### Improved
+- **Reuse a Google key for every Google service.** The "Reuse this key" row now sits at the top of the form, shows on Google Ads, Analytics, Merchant Center and Search Console too, and borrows a key (service accounts included) saved for any other Google service. Google shows a client secret only once, when it is made, so the key kept in Thansa is often the only copy left.
+- **Change a key right on the connection.** "Reconnect (sign in / change key)" on Gmail, Calendar, Analytics, Ads and the rest now opens a change-key form: pick a key saved for another service, or paste a new one, then sign in again.
+- **A warning before a key is lost.** Deleting the last connection that holds a Google key says so in the confirmation, with how to keep it.
+### Added
+- The Google Tag Manager pack in Thansa Store signs in to Google right in the dashboard, like Analytics and Ads.
+
+## [0.572.0] - 2026-11-16
+### Added
+- **The Partners page has a Learned tab for each assistant.** The top bar button now reads "Documents & Learned". The new tab lists what the assistant worked out while working, exactly the lessons it uses, with where each applies (private chat, a team, everywhere). Edit, delete or add a lesson right there, like a project's Learned tab.
+- A lesson you add is used everywhere. A lesson you edit becomes yours and is never dropped when the list is full. Delete one and the assistant stops using it and does not learn those exact words again.
+### Improved
+- In the documents drawer of the Partners page the tabs sit above the "Of the assistant / Only this chat" switch, since that switch only belongs to the Documents tab.
+
+## [0.571.1] - 2026-11-16
+### Fixed
+- **An assistant's Jobs tab records each run it started on its own.** The Auto block could say "Worked on its own 1 times today" while the Jobs tab stayed empty, because the tab only read goals, team jobs, chat jobs and workflow runs. Each look around or self-review is now a card under the Auto source, with what it ended in: the work it did, a message to you, a job it proposed, or nothing that needed doing. Today's number and the cards always agree because both read the same ledger.
+
+## [0.571.0] - 2026-11-16
+### Added
+- **Thansa Store has an All tab.** It comes first, puts every assistant, skill, workflow, tool and connector in one grid, and the Store opens on it. Its search box covers the whole Store, and each card says which kind it is.
+- **A search that finds nothing in one tab offers to search All.** The button shows how many items match in the other tabs and keeps the words you typed.
+
+## [0.570.1] - 2026-11-16
+### Fixed
+- **The repository picker in a project and a team is no longer cut off.** The "Selected" section used to show as a thin strip, and the list under it could not scroll to the last repositories. Every row now shows in full and the list scrolls, in the documents of a project or an assistant, the create-team box and the team chat.
+
 ## [0.570.0] - 2026-11-16
 ### Fixed
 - **A Store pack can be installed in several brains.** A pack installed in one brain used to show "Installed" in another brain with only Turn off and Uninstall, so its assistants and skills could never reach that brain. The card now offers "Install in this brain". Updating the pack brings every brain that has it to the new version, keeping what you edited. Uninstalling removes it from every brain, and the confirmation names each one.
