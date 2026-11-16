@@ -1030,3 +1030,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7f85788/0.570.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-16** khi chủ bấm duyệt trên Telegram (origin/main 07accde, tag + Release thansa-v2.15.0; backup me-backup-2.15.0).
+
+## Vòng TỰ ĐỘNG 2026-11-16 (goc 7f85788 → 7910c3b, nền 0.570.0 → 0.574.0, thansa 2.15.0→2.16.0)
+- 12 commit upstream: 0.574.0: A goal keeps running when you type more, and folds your message into the goal (#1517); Keep a goal running when the owner types more, and fold the message into it (#1517); 0.573.0: Every Google service can reuse a Google key saved in Thansa, and Tag Manager can sign in (#1514); Reuse a saved Google key across every Google service; change it from the connection menu; oauth_env for stdio MCPs (#1514); 0.572.0: Add a Learned tab to each assistant on the Partners page (#1516); Add a Learned tab to each assistant on the Partners page (#1516); 0.571.1: An assistant's own Auto runs show in i
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 7910c3b/0.574.0/so_patch 72.
