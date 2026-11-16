@@ -202,6 +202,7 @@ import thansa_core        # Thansa Core (0.185.0): system assistant pinned in ev
 import main_prompt_rendering  # pure shared prompt blocks; no live reads
 import main_attachment_rendering  # pure shared attachment templates; no live reads
 import memory_control    # 0.188.0: list/edit/forget memories, learning switch, person profile
+import agent_learned     # 2026-11-16: the Learned tab of an assistant (Cộng sự page)
 import memory_chat       # 0.190.0: the same, plus agent lessons, from chat (tool thansa_memory)
 import project_context   # 2026-11-13: what Thansa learnt about a project, and tool thansa_project
 import memory_receipt    # 0.190.0: the "Đã nhớ · Hoàn tác" line under an answer, and no empty "đã quên"
@@ -7308,6 +7309,13 @@ async def connect_substack_resolve_uid(q: str = Query("")):
 @app.post("/connect/update")
 async def connect_update(request: Request):
     data = await request.json()
+    # "Change key" form of a Google connection: borrow the key of another connection of the same family, copied
+    # here on the server (reuse_client_fields checks the family). The browser only names the donor.
+    reuse_from = (data.get("reuse_from") or "").strip()
+    if reuse_from and data.get("id"):
+        own = mcp_store.get_connection(data.get("id")) or {}
+        data = dict(data, fields=mcp_store.reuse_client_fields(
+            mcp_catalog.get(own.get("connector_id")), data.get("fields") or {}, reuse_from))
     ok = mcp_store.update_connection(data.get("id"), data)
     mcp_hub.invalidate_cache()
     return {"ok": ok}
@@ -22986,13 +22994,18 @@ async def _chat_socket(ws):
                     _sid = str(payload.get("session_id") or "").strip()
                     _txt = str(payload.get("message") or "").strip()[:steer_inbox.MAX_CHARS]
                     _cid = str(payload.get("client_id") or "")[:40]
+                    # 2026-11-16: typed while a /goal runs. The goal goes on: the round reads it, or the dashboard folds
+                    # it into the next round. Never a turn of its own ("goal" mode): that would race the next round.
+                    _goal = bool(payload.get("goal"))
                     _row = store.get_session(_sid) if _sid else None
                     if not _row or not _txt:
                         continue
                     store.append_message(_sid, "user", _txt)
-                    _it = steer_inbox.INBOX.put(_sid, _txt)
+                    _it = steer_inbox.INBOX.put(_sid, _txt, goal=_goal)
                     if _it:
-                        _mode, _id = ("live" if steer_inbox.INBOX.live(_sid) else "after"), _it["id"]
+                        _mode, _id = ("live" if steer_inbox.INBOX.live(_sid) else ("goal" if _goal else "after")), _it["id"]
+                    elif _goal:
+                        _mode, _id = "goal", 0
                     else:
                         # The turn just ended (or too many are waiting): this message is its own next turn.
                         _mode, _id = "after", 0
@@ -31232,7 +31245,8 @@ async def slash_memory(brain: str = Query("brain")):
 
 @app.post("/slash/block")
 async def slash_block(kind: str = Form(...), dk: str = Form(""), vong: int = Form(1),
-                      toi_da: int = Form(lenh_he_thong.GOAL_MAX_ROUNDS), left: str = Form("")):
+                      toi_da: int = Form(lenh_he_thong.GOAL_MAX_ROUNDS), left: str = Form(""),
+                      them: str = Form("")):
     """Khối chỉ dẫn của `/plan` và `/goal` cho khung chat web.
 
     Máy chủ là nguồn DUY NHẤT của chữ trong khối (Telegram dùng chung `lenh_he_thong`): trình
@@ -31246,7 +31260,13 @@ async def slash_block(kind: str = Form(...), dk: str = Form(""), vong: int = For
                                 status_code=400)
         toi_da = max(1, min(int(toi_da), 20))
         vong = max(1, min(int(vong), toi_da))
-        return {"block": lenh_he_thong.khoi_muc_tieu(dk, vong, toi_da, left)}
+        # 2026-11-16: `them` = JSON list of what the owner typed while the goal ran (folded into the goal).
+        try:
+            _them = json.loads(them) if (them or "").strip() else []
+        except ValueError:
+            _them = []
+        _them = [str(x) for x in _them] if isinstance(_them, list) else []
+        return {"block": lenh_he_thong.khoi_muc_tieu(dk, vong, toi_da, left, _them)}
     return JSONResponse({"error": localefmt.chu("kind phải là plan hoặc goal", "kind must be plan or goal")},
                         status_code=400)
 
@@ -34317,6 +34337,13 @@ async def _learn_tick():
 agent_review.register_routes(app, agent_review.LearnRouteDeps(
     brain_key=lambda b: _brain_key(b), agent_exists=lambda root, slug: _agent_md_path(root, slug) is not None,
     agent_key=lambda root, slug: _agent_jobs_key(root, slug), store=_pulse_store))
+# 2026-11-16: the Learned tab of an assistant (Cộng sự page): what it learnt, from the same store the prompt reads.
+agent_learned.register_routes(app, agent_learned.Deps(
+    brain_key=lambda b: _brain_key(b), agent_exists=lambda root, slug: _agent_md_path(root, slug) is not None,
+    agent_key=lambda root, slug, reg: _agent_jobs_key(root, slug, register=reg),
+    store=lambda create: _pulse_store() or (_resonance_store() if create else None),
+    legacy_file=lambda root, slug: _brain_memory_dir(root) / "agents" / slug / "MEMORY.md",
+    refuse=lambda text: project_context.blocked_reason(text)))
 
 @app.get("/model/fast-state")
 async def model_fast_state():
