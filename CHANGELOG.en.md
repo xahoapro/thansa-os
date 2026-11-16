@@ -8,6 +8,42 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.570.0] - 2026-11-16
+### Fixed
+- **A Store pack can be installed in several brains.** A pack installed in one brain used to show "Installed" in another brain with only Turn off and Uninstall, so its assistants and skills could never reach that brain. The card now offers "Install in this brain". Updating the pack brings every brain that has it to the new version, keeping what you edited. Uninstalling removes it from every brain, and the confirmation names each one.
+
+## [0.569.1] - 2026-11-16
+### Fixed
+- **Text Thansa writes before and after each tool call no longer runs together** (as in "needs a sign-in.Done with item 3"). Each new stretch starts on a new line, on Claude Code, Codex, Grok Build and Antigravity.
+- **The notes Thansa writes while it works follow your language too**, instead of drifting into English halfway through code or logs.
+
+## [0.569.0] - 2026-11-16
+### Added
+- **Webhooks can be edited after they are made.** The Configuration part of each webhook has an Edit button: change its name, its workflow or written job, the note and the permission level right in that window. The link and its key stay the same, so whatever sends events there needs no change.
+
+## [0.568.1] - 2026-11-15
+### Improved
+- **Add new repos right from a project's documents.** The GitHub repo picker of a project, an assistant and the create-team box now has the "+ Add repositories on GitHub" row, as in the chat. Grant more repos on GitHub, come back, and the list shows them without a reload.
+
+## [0.568.0] - 2026-11-15
+### Added
+- **Custom API connection.** Any service with a REST API and an API key but no MCP (POS, CRM, shipping, e-invoices...) now connects on the Connections page: paste the base URL and the key, and every engine can call that API.
+- **The key never reaches the model.** It is encrypted, the server adds it to each call and only sends it to the host you entered; a key echoed in a result is masked.
+- **Read-only by default.** At Read-only Thansa only calls GET; to create, edit or delete on that service, raise the connection to Full access.
+
+## [0.567.0] - 2026-11-15
+### Improved
+- **The core rules Thansa sends to the model are now written in English, one copy for every language.** This covers the rules of each chat channel, token-saving mode, the Thansa Core role, and the agent and skill paths. About a quarter of the instructions used to be Vietnamese and pulled replies into Vietnamese; Thansa now keeps to the language you write in. Chatting in Vietnamese works as before, with Vietnamese replies.
+- **The instructions take fewer tokens**, so every chat turn is a little lighter.
+### Fixed
+- **Chatting with Thansa over Zalo no longer defaults to Vietnamese replies.** Thansa answers in whatever language you write.
+- **Reminders set over Telegram mention the time zone you chose in Settings**, instead of "Vietnam time" for everyone.
+
+## [0.566.1] - 2026-11-15
+### Fixed
+- **The Effort level now works on Gemini 4.** On a Gemini API key, Gemini 4 Hydrogen, Argon and Carbon ignored the Effort you picked and always ran at their own default. Your level is now sent, and later Gemini generations are recognised on their own.
+- **The Usage page prices the new Gemini models correctly.** Gemini 4 used the old Gemini price and showed several times cheaper than it is, while Gemini 3.5 Flash-Lite was priced as Pro. Each model now has its own price.
+
 ## [0.566.0] - 2026-11-15
 ### Improved
 - **Thansa replies in the language you write in, any language, like Claude or ChatGPT.** The language box in Settings now only changes the interface, and chatbots always answer customers in the customer's language. To always get one language, tell Thansa once; a reply language pinned before becomes a sentence in your profile, so it is not lost.

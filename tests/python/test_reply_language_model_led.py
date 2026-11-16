@@ -13,7 +13,8 @@ nothing on its own. What was fixed instead is everything that pushed Vietnamese 
 1. The language block was Vietnamese, said "follow the last message" and nothing about a language
    the person had STATED (profile, memory, earlier in the chat). It is English now and says so.
 2. ~10,000 characters of Vietnamese channel rules, with mình/bạn examples, came after it. One
-   constant English line now closes that block and points back to the language rule.
+   constant English line now closes that block and points back to the language rule (and the same
+   day the rules themselves became English: tests/python/test_core_prompt_english.py).
 3. The dashboard's Vietnamese context blocks ([FILE ĐANG MỞ ...]) made the detector call an English
    message Vietnamese. Detection reads the person's own words.
 4. The fast-path capsule named a GUESS (the interface language for "ok do 2"); it names only a pin.
@@ -82,8 +83,13 @@ pinned = lang.khoi_ngon_ngu(lang.resolve(turn_text="please answer in English", u
 check("a direct command is named, with why", "Reply language: English (en), asked for in this message." in pinned, pinned)
 check("...and the person can still switch", "If the user now asks for another language, use that one." in pinned)
 check("...ending with the nudge in that language", pinned.rstrip().endswith("Answer in English."))
+# 2026-11-16, owner's screenshot: a Vietnamese user's Claude Code turn wrote its notes between tool calls in English.
 for name, text in (("auto", auto), ("pinned", pinned)):
     check(f"{name} block has no em or en dash", "—" not in text and "–" not in text)
+    check(f"{name} block covers the notes written between tool calls",
+          "the notes you write between tool calls" in text and "Code, logs and tool results" in text, text)
+check("the closing line of the channel block says the same",
+      "your notes between tool calls included" in channel_context.LANGUAGE_LAST_WORD)
 
 # ---- 3. the Vietnamese tail ends with the language rule ----
 block = channel_context.build_channel_block("dashboard", {"session_id": "s"}, brain_root="/tmp/b", session_in_turn=True)

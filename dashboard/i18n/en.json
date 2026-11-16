@@ -7339,9 +7339,9 @@
   "cs.ne_save_err": "Not saved",
   "cs.ne_save_err_title": "Your text is kept in this browser and Thansa tries to save again in a few seconds.",
   "cs.ne_draft_restored": "Restored the unsaved text you were writing.",
-  "store.items_other_brain": "This pack's assistants and skills are in brain {brain}, not the one open now.",
+  "store.items_other_brain": "Installed in brain {brain}, not in this one yet.",
   "store.rm.vault_in": "{count} items in brain {brain}",
-  "store.rm.vault_other": "That is not the brain you have open.",
+  "store.rm.vault_other": "Uninstalling removes them from every brain above, including brains you do not have open.",
   "ws.loading_chat": "Loading the conversation…",
   "ws.loading_list": "Loading partners…",
   "rp.idle": "The reply judge is idle: this bot is not in Auto-judge mode.",
@@ -7524,5 +7524,9 @@
   "proj.repo_note": "Every chat in this project gets these repositories, each on its own branch.",
   "proj.err_repo": "Could not save the repository list",
   "ags.repo_remove": "Remove from the assistant (chats that have it keep it)",
-  "ags.repo_note": "Every private chat with this assistant gets these repositories, each on its own branch."
+  "ags.repo_note": "Every private chat with this assistant gets these repositories, each on its own branch.",
+  "wh.edit": "Edit",
+  "wh.edit_title": "Edit webhook",
+  "store.btn.add_to_brain": "Install in this brain",
+  "store.add_to_brain_failed": "Could not install it in this brain."
 }

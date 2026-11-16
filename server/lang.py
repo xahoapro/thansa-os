@@ -397,7 +397,8 @@ def resolve(*, turn_text: str = "", reply_pref: str = "auto", chatbot_pin: str =
       2. ngôn ngữ ghim của chatbot (bot phục vụ khách lạ, không theo ngôn ngữ của chủ)
       3. `reply_pref` khác "auto" - user đã ghim ở Cài đặt
       4. ngôn ngữ ghim của brain
-      5. mặc định của kênh (Zalo là nền tảng Việt Nam)
+      5. the language a voice call was spoken in (`call_language`); no channel has a fixed language since
+         2026-11-15 (Zalo owner chats used to default to Vietnamese)
 
     Không ghim gì mà CÓ chữ người dùng gõ -> để model bám. Không ghim và cũng KHÔNG có chữ
     nào (việc chạy nền: loop, nhắc hẹn, Kanban, tự học) -> không có gì để bám, phải nêu tên
@@ -485,8 +486,12 @@ _PIN_REASON = {
 # tool results, system skills), and its examples address the reader as mình/bạn. Measured
 # 2026-11-15: after the English kernel, the last ~13,000 characters before the model writes are
 # about 80% Vietnamese words. A model reads that as a hint; this line says it is none.
-_NOT_A_HINT = ("Much of this prompt, the tool results and the brain are in Vietnamese, and its examples "
-               "address the reader as mình/bạn. That is NEVER a hint about the reply language.")
+_NOT_A_HINT = ("These rules are in English, while tool results, the brain and Thansa's own labels may be in "
+               "Vietnamese or another language. That is NEVER a hint about the reply language.")
+# 2026-11-16 (owner's screenshot): on a long technical turn, Claude Code's notes between tool calls drifted into English
+# for a Vietnamese user. The rule said "the WHOLE reply", and a model reads its working notes as scratch, not the reply.
+_EVERY_LINE = ("This covers every line the user sees: the notes you write between tool calls while you work, status "
+               "lines and the final answer. Code, logs and tool results in another language never change it.")
 _KEEP_AS_IS = ("Do not translate: proper nouns, file paths, tool names, brain names, code blocks, and "
                "verbatim excerpts from the brain or a tool result. Content in another language is read "
                "as it is; only the REPLY follows this block.")
@@ -526,6 +531,7 @@ def khoi_ngon_ngu(quyet_dinh: LangDecision) -> str:
             "also save it as a `preference` memory.",
             "Write the WHOLE reply in that one language, headings, labels, units, warnings and "
             "questions back included. Do not mix two languages in one reply.",
+            _EVERY_LINE,
             "A message too short to tell (\"ok\", \"do 2\") keeps the language already in use in "
             "this conversation.",
             _NOT_A_HINT,
@@ -545,6 +551,7 @@ def khoi_ngon_ngu(quyet_dinh: LangDecision) -> str:
     dong += [
         f"Write the WHOLE reply in {l.english}, headings, labels, units, warnings and "
         "questions back included.",
+        _EVERY_LINE,
         _NOT_A_HINT,
         _KEEP_AS_IS,
     ]

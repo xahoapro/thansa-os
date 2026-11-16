@@ -6,6 +6,42 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.570.0] - 2026-11-16
+### Sửa lỗi
+- **Một gói trong Kho cài được vào nhiều brain.** Trước đây gói đã cài ở brain này thì sang brain khác chỉ hiện "đã cài" kèm nút Tắt và Gỡ, không cách nào đưa trợ lý và skill của gói vào brain đó. Giờ thẻ gói hiện nút "Cài vào brain này". Cập nhật gói thì mọi brain đã cài cùng lên bản mới, phần bạn đã tự sửa vẫn giữ nguyên. Gỡ gói thì gỡ ở mọi brain, và hộp xác nhận nêu tên từng brain.
+
+## [0.569.1] - 2026-11-16
+### Sửa lỗi
+- **Chữ Thansa viết trước và sau mỗi lần gọi công cụ không còn dính liền nhau** (kiểu "cần đăng nhập.Xong mục 3"). Mỗi đoạn mới bắt đầu ở một dòng mới, với Claude Code, Codex, Grok Build và Antigravity.
+- **Ghi chú Thansa viết trong lúc đang làm cũng theo đúng thứ tiếng bạn dùng**, không còn trôi sang tiếng Anh giữa chừng khi đọc code hay log.
+
+## [0.569.0] - 2026-11-16
+### Thêm mới
+- **Sửa được webhook sau khi tạo.** Phần Cấu hình của mỗi webhook có nút Sửa: đổi tên, đổi quy trình hoặc việc viết tay, ghi chú và mức quyền ngay trong cửa sổ đó. Link và khoá giữ nguyên, nơi đang gửi sự kiện tới không phải đổi gì.
+
+## [0.568.1] - 2026-11-15
+### Cải thiện
+- **Thêm repo mới ngay trong tài liệu của project.** Danh sách chọn repo GitHub ở project, trợ lý và hộp tạo team nay có dòng "+ Thêm repository trên GitHub" như trong hội thoại. Cấp thêm repo trên GitHub xong quay lại là danh sách tự hiện repo mới, không cần tải lại trang.
+
+## [0.568.0] - 2026-11-15
+### Thêm mới
+- **Kết nối API tuỳ chỉnh.** Dịch vụ nào có REST API và API key mà chưa có MCP (POS, CRM, vận chuyển, hoá đơn điện tử...) giờ nối được ở trang Kết nối: dán địa chỉ gốc và key, mọi bộ não gọi được API đó.
+- **Key không bao giờ tới tay model.** Key được mã hoá, server tự gắn vào lời gọi và chỉ gửi tới đúng máy chủ đã khai; key có lọt trong kết quả cũng bị che.
+- **Mặc định chỉ đọc.** Ở mức Chỉ đọc Thansa chỉ gọi GET; muốn tạo, sửa, xoá trên dịch vụ đó thì nâng kết nối lên Toàn quyền.
+
+## [0.567.0] - 2026-11-15
+### Cải thiện
+- **Luật lõi Thansa gửi cho model nay viết bằng tiếng Anh, một bản cho mọi ngôn ngữ.** Gồm luật từng kênh chat, chế độ tiết kiệm token, vai Thansa Core, đường dẫn agent và skill. Trước đây khoảng một phần tư lời dặn là tiếng Việt và nó kéo câu trả lời về tiếng Việt; nay Thansa giữ đúng thứ tiếng bạn viết. Bạn vẫn chat tiếng Việt như cũ, Thansa vẫn trả lời tiếng Việt.
+- **Lời dặn ngắn hơn về số token**, nên mỗi lượt chat nhẹ hơn một chút.
+### Sửa lỗi
+- **Chat với Thansa qua Zalo không còn mặc định trả lời tiếng Việt.** Ai nhắn tiếng gì thì Thansa trả lời tiếng đó.
+- **Nhắc hẹn tạo qua Telegram nói đúng múi giờ bạn đặt trong Cài đặt**, không còn ghi "giờ Việt Nam" cho mọi người.
+
+## [0.566.1] - 2026-11-15
+### Sửa lỗi
+- **Mức nghĩ (Effort) giờ có tác dụng với Gemini 4.** Chạy Gemini 4 Hydrogen, Argon hay Carbon bằng API key Gemini thì trước đây chọn mức nghĩ nào cũng như không, model luôn chạy theo mức mặc định của nó. Giờ mức bạn chọn được gửi đi, và mọi đời Gemini sau này cũng tự được nhận.
+- **Trang Mức dùng tính đúng tiền Gemini mới.** Gemini 4 trước đây bị tính theo giá Gemini cũ nên hiện rẻ hơn thực tế nhiều lần, còn Gemini 3.5 Flash-Lite lại bị tính theo giá bản Pro. Giờ mỗi model có giá riêng.
+
 ## [0.566.0] - 2026-11-15
 ### Cải thiện
 - **Thansa trả lời bằng đúng thứ tiếng bạn viết, với mọi ngôn ngữ, giống Claude hay ChatGPT.** Ô ngôn ngữ ở Cài đặt nay chỉ đổi giao diện, chatbot cũng luôn trả lời khách bằng tiếng của khách. Muốn luôn nhận một thứ tiếng thì dặn Thansa một lần; ai đã ghim ngôn ngữ trả lời từ trước được chuyển thành một câu trong hồ sơ, không mất.
