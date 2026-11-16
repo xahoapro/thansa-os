@@ -40,11 +40,13 @@ import mcp_catalog
 import mcp_client
 import mcp_store
 import once_ledger
+import turn_ledger
 import scout
 import secret_guard
 import skill_router
 import skill_usage
 import team_gate
+import tool_images
 import tool_pins
 import tool_result_shaper
 import tool_result_tools
@@ -452,8 +454,11 @@ def _shaped_call(call, ent, fn, scope):
     tool = ent["tool"]
 
     async def _call(args):
-        result = await call(args)
-        if tool_result_shaper.audience() == "":
+        audience = tool_result_shaper.audience()
+        # Inside a model's turn an image the tool returns is saved in this brain and shown in the chat (tool_images).
+        with tool_images.saving_to(scope if audience else "", tool):
+            result = await call(args)
+        if audience == "":
             return result                       # an internal caller: exactly as before, and not measured
         text = result if isinstance(result, str) else str(result)
         if len(text) < tool_result_shaper.MIN_SHAPE_CHARS:
@@ -516,6 +521,9 @@ def _guard(ent, fn, mode):
         if cls == "read":
             result = await mcp_client.call_route({fn: {"spec": ent["spec"], "tool": tool}}, fn, args)
         else:
+            # 16/11/2026: a chat turn that acts outside is marked, so a restart in the middle of it does not run the
+            # whole turn again by itself (turn_ledger.py). A turn that only read things is safe to run again.
+            turn_ledger.mark_acted(str((turn_context.current() or {}).get("session_id") or ""))
             # 0.238.0: a Kanban job that runs again must not send, post or order twice (once_ledger.py).
             # Outside a background job this calls straight through.
             result = await once_ledger.run(
@@ -548,6 +556,23 @@ def _guard(ent, fn, mode):
 # ============================================================
 _AMBIENT_TTL = 300          # giây - danh sách connector tài khoản ít đổi, cache rộng
 _ambient_cache = {"ts": 0.0, "servers": [], "refreshing": False}
+
+
+def _outside_plugin_call(fn, call):
+    """A plugin tool whose strongest level is `full` acts outside (sends, posts, orders), like a connector call that
+    is not a read. 16/11/2026, for work that runs again by itself after a restart:
+
+    - a chat turn that calls it is marked, so the turn is not run again as a whole (turn_ledger.py);
+    - a team step records it once per step chain, so the step that runs again does not do it twice (once_ledger.py,
+      the `team:` keys of team_runner.once_key). Kanban jobs keep calling plugin tools straight through, as before.
+
+    The turn is read at CALL time: routes are cached and shared by every turn."""
+    async def _run(args):
+        turn_ledger.mark_acted(str((turn_context.current() or {}).get("session_id") or ""))
+        if once_ledger.current_job().startswith("team:"):
+            return await once_ledger.run(fn, args, call)
+        return await call(args)
+    return _run
 
 
 def _ambient_enabled():
@@ -1995,6 +2020,8 @@ async def discover_all(mode="full", vault_root=None, include_plugins=True, inclu
                     continue
                 tools_spec.append(t)
                 route[fn] = p_route[fn]
+                if route[fn].get("effect") == "danger" and route[fn].get("call"):
+                    route[fn]["call"] = _outside_plugin_call(fn, route[fn]["call"])
         # HOOK pre/post_tool_call: bọc MỌI tool call (chỉ khi có plugin đăng ký hook → 0 overhead khi không).
         if plugins_host.has_tool_hooks(vault_root):
             for fn in list(route):
