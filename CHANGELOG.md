@@ -6,6 +6,38 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.574.0] - 2026-11-16
+### Cải thiện
+- **Gõ thêm lúc đang theo đuổi mục tiêu không còn làm mục tiêu tạm dừng.** Tin bạn gửi được gộp vào mục tiêu: vòng đang chạy đọc nó ở bước kế tiếp, các vòng sau đều mang theo, nên bạn chỉnh hay mở rộng mục tiêu ngay khi Thansa đang làm. Mỗi tin như vậy cho thêm một vòng (tối đa 10). Vòng nào báo đạt mà chưa kịp đọc tin của bạn thì Thansa vẫn làm thêm một vòng cho tin đó. Nút Dừng vẫn tạm dừng mục tiêu như trước.
+
+## [0.573.0] - 2026-11-16
+### Cải thiện
+- **Dùng lại key Google cho mọi dịch vụ Google.** Hàng "Dùng lại key này" giờ nằm ngay đầu form, có cả ở Google Ads, Analytics, Merchant Center, Search Console, và mượn được key (kể cả service account) đã lưu ở bất kỳ dịch vụ Google nào. Google chỉ cho xem Client Secret đúng một lần lúc tạo, nên key trong Thansa thường là bản duy nhất còn lại.
+- **Đổi key ngay trên kết nối.** Mục "Kết nối lại (đăng nhập / đổi key)" của Gmail, Lịch, Analytics, Ads... giờ mở form đổi key: chọn key đã lưu ở dịch vụ khác, hoặc dán key mới, rồi đăng nhập lại.
+- **Báo trước khi mất key.** Xoá kết nối cuối cùng còn giữ một key Google thì hộp xác nhận nói rõ, kèm cách giữ lại.
+### Thêm mới
+- Gói Google Tag Manager trong Thansa Store đăng nhập Google ngay trong dashboard, như Analytics và Ads.
+
+## [0.572.0] - 2026-11-16
+### Thêm mới
+- **Trang Cộng sự có tab Đã học cho từng trợ lý.** Nút trên thanh đầu đổi thành "Tài liệu & Đã học". Tab mới liệt kê những bài học trợ lý tự rút ra khi làm việc, đúng những bài nó đang dùng, kèm nơi áp dụng (chat riêng, trong nhóm, mọi nơi). Bạn sửa, xoá hay thêm bài học ngay ở đó, giống tab Đã học của project.
+- Bài học bạn thêm dùng ở mọi nơi. Bài học bạn sửa thành của bạn và không bị thay khi danh sách đầy. Xoá thì trợ lý thôi dùng và không tự học lại đúng câu đó.
+### Cải thiện
+- Trong ngăn tài liệu của trang Cộng sự, tab nằm trên công tắc "Của trợ lý / Chỉ cuộc này", vì công tắc chỉ là lựa chọn của tab Tài liệu.
+
+## [0.571.1] - 2026-11-16
+### Sửa lỗi
+- **Tab Công việc của cộng sự ghi lại từng lần cộng sự tự làm.** Trước đây phần Auto báo "Hôm nay đã tự làm 1 lần" mà tab Công việc vẫn trống, vì tab chỉ đọc mục tiêu, việc team, việc chat và quy trình. Giờ mỗi lần cộng sự tự nhìn quanh hay tự xem lại là một thẻ ở nguồn Auto, kèm kết quả: đã tự làm gì, đã nhắn bạn, đề xuất việc gì, hay không thấy việc gì cần làm. Số lần hôm nay và số thẻ luôn khớp nhau vì đọc cùng một sổ.
+
+## [0.571.0] - 2026-11-16
+### Thêm mới
+- **Thansa Store có tab Tất cả.** Tab đứng đầu hàng, gom mọi trợ lý, kỹ năng, quy trình, công cụ và kết nối vào một lưới, và kho mở ra ở tab này. Ô tìm ở đây tìm trên cả kho, mỗi thẻ ghi rõ nó thuộc loại nào.
+- **Tìm ở một tab mà không thấy thì có nút tìm trong Tất cả.** Nút ghi sẵn số mục khớp ở các tab khác và giữ nguyên chữ bạn đã gõ.
+
+## [0.570.1] - 2026-11-16
+### Sửa lỗi
+- **Bảng chọn repository trong dự án và trong team không còn bị cắt.** Mục "Đã chọn" trước đây chỉ hiện một dải mỏng, và danh sách bên dưới không cuộn được tới các repository ở cuối. Giờ từng dòng hiện đủ và danh sách cuộn bình thường, ở cả tài liệu của dự án, của cộng sự, ô tạo team và khung chat của team.
+
 ## [0.570.0] - 2026-11-16
 ### Sửa lỗi
 - **Một gói trong Kho cài được vào nhiều brain.** Trước đây gói đã cài ở brain này thì sang brain khác chỉ hiện "đã cài" kèm nút Tắt và Gỡ, không cách nào đưa trợ lý và skill của gói vào brain đó. Giờ thẻ gói hiện nút "Cài vào brain này". Cập nhật gói thì mọi brain đã cài cùng lên bản mới, phần bạn đã tự sửa vẫn giữ nguyên. Gỡ gói thì gỡ ở mọi brain, và hộp xác nhận nêu tên từng brain.
