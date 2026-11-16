@@ -6,6 +6,33 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.577.0] - 2026-11-17
+### Cải thiện
+- **Cập nhật xong, việc đang dở tự chạy tiếp.** Việc team bị cắt giữa chừng tự làm tiếp đúng bước đang dở, câu team đang trả lời tự trả lời lại; không còn phải bấm "Làm tiếp" hay "Thử lại".
+- **Câu chat đang trả lời dở cũng được trả lời lại** khi trang mở lại sau khi máy chủ khởi động, cho cả chat chính lẫn chat với cộng sự.
+- **Việc nền quay lại hàng đợi ngay** thay vì chờ 90 giây, và lần bị cắt không còn bị tính là một lần thử hỏng.
+- **Không làm trùng việc ra ngoài.** Bước nào đã kịp gửi tin, đăng bài hay tạo đơn trước khi máy chủ dừng thì Thansa dừng lại báo bạn, không tự làm lại. Lượt workflow bị cắt không còn treo "đang chạy" mãi.
+
+## [0.576.0] - 2026-11-16
+### Cải thiện
+- **Tab Việc của team làm lại theo kiểu trang Nhiệm vụ.** Mỗi việc là một thẻ, ngay dưới là từng thành viên đang làm gì: xong, đang làm hay chờ lượt, kèm lời giao. Việc đang chờ bạn đứng trên cùng.
+- **Nút chữ đổi thành icon.** Sửa yêu cầu, nghiệm thu, huỷ, ưu tiên và cất vào Lưu trữ đều là icon; chỉ còn một nút có chữ cho việc đang chờ bạn. Ba tab Thông tin, Việc, Team có icon, tab Việc kèm số việc đang mở.
+- **Bấm một việc đã hoàn thành để xem tóm tắt:** xong lúc nào, kết quả, ai đã làm gì. Việc đã hoàn thành và Lưu trữ đều lật trang, 5 việc một trang.
+- **Lưu trữ không còn bị cắt ở 30 việc** và có ô tìm khi dài hơn một trang. Nút "Xoá tất cả" đứng riêng ở cuối.
+
+## [0.575.2] - 2026-11-16
+### Sửa lỗi
+- **Playwright không còn báo "chưa cài trình duyệt" sau khi Thansa vừa tải xong.** Thansa giờ chỉ thẳng cho Playwright file trình duyệt nó đã tải, nên hai bên lệch phiên bản cũng chạy được. Ai đã tự chọn trình duyệt riêng thì Thansa giữ nguyên.
+
+## [0.575.1] - 2026-11-16
+### Sửa lỗi
+- **Ảnh chụp màn hình của Playwright hiện ngay trong khung chat.** Trước đây khi Thansa chụp màn hình một trang bằng Playwright, ảnh bị đổi thành một chuỗi ký tự dài gửi cho model, nên bạn không thấy gì trong khung chat. Giờ ảnh được lưu vào bộ não ở `attachments/tool-images/` và Thansa nhúng nó vào câu trả lời để bạn xem trước. Ảnh do công cụ khác trả về (biểu đồ, thiết kế) cũng được xử lý giống vậy.
+
+## [0.575.0] - 2026-11-16
+### Cải thiện
+- Thanh chọn dự án và danh sách dự án có chấm đỏ khi dự án khác có câu trả lời chưa đọc. Dự án đang xem chỉ báo trên từng cuộc chat, tránh báo trùng.
+- Mở dự án vẫn giữ dấu chưa đọc cho đến khi mở đúng cuộc chat. Dấu báo cập nhật khi có câu trả lời mới hoặc khi đọc ở tab khác.
+
 ## [0.574.0] - 2026-11-16
 ### Cải thiện
 - **Gõ thêm lúc đang theo đuổi mục tiêu không còn làm mục tiêu tạm dừng.** Tin bạn gửi được gộp vào mục tiêu: vòng đang chạy đọc nó ở bước kế tiếp, các vòng sau đều mang theo, nên bạn chỉnh hay mở rộng mục tiêu ngay khi Thansa đang làm. Mỗi tin như vậy cho thêm một vòng (tối đa 10). Vòng nào báo đạt mà chưa kịp đọc tin của bạn thì Thansa vẫn làm thêm một vòng cho tin đó. Nút Dừng vẫn tạm dừng mục tiêu như trước.
