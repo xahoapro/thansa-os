@@ -134,7 +134,7 @@ import main  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
 
 TL.configure(Path(os.environ["THANSA_STATE_DIR"]) / "turn_ledger.sqlite3")
-main.cfgmod.gate_active = lambda: False
+main.cfgmod.gate_active = lambda *a, **k: False
 client = TestClient(main.app, base_url="http://127.0.0.1")
 store = main.get_store()
 CALLS = []
