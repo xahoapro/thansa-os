@@ -7339,9 +7339,9 @@
   "cs.ne_save_err": "Chưa lưu được",
   "cs.ne_save_err_title": "Chữ vẫn được giữ trong trình duyệt này, Thansa tự thử lưu lại sau vài giây.",
   "cs.ne_draft_restored": "Đã khôi phục phần đang soạn dở chưa kịp lưu.",
-  "store.items_other_brain": "Cộng sự và skill của gói nằm ở brain {brain}, không phải brain đang mở.",
+  "store.items_other_brain": "Đã cài ở brain {brain}, chưa có trong brain này.",
   "store.rm.vault_in": "{count} mục trong brain {brain}",
-  "store.rm.vault_other": "Đây không phải brain bạn đang mở.",
+  "store.rm.vault_other": "Gỡ gói sẽ xoá ở mọi brain trên, kể cả brain bạn không mở.",
   "ws.loading_chat": "Đang tải cuộc trò chuyện…",
   "ws.loading_list": "Đang tải danh sách cộng sự…",
   "rp.idle": "Bộ phán xử đang nghỉ: bot này chưa bật Tự đánh giá.",
@@ -7526,5 +7526,7 @@
   "ags.repo_remove": "Gỡ khỏi trợ lý (cuộc chat đã có repository vẫn giữ)",
   "ags.repo_note": "Mỗi cuộc chat riêng với trợ lý này tự có các repository này, mỗi cuộc một nhánh riêng.",
   "wh.edit": "Sửa",
-  "wh.edit_title": "Sửa webhook"
+  "wh.edit_title": "Sửa webhook",
+  "store.btn.add_to_brain": "Cài vào brain này",
+  "store.add_to_brain_failed": "Chưa cài được vào brain này."
 }
