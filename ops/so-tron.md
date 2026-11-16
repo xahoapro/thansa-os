@@ -1036,3 +1036,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7910c3b/0.574.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-16** khi chủ bấm duyệt trên Telegram (origin/main 3e19652, tag + Release thansa-v2.16.0; backup me-backup-2.16.0).
+
+## Vòng TỰ ĐỘNG 2026-11-16 (goc 7910c3b → 7329699, nền 0.574.0 → 0.577.0, thansa 2.16.0→2.17.0)
+- 10 commit upstream: 0.577.0: Work in flight carries on by itself after an update or a restart (#1532); Work in flight carries on by itself after an update or a restart (#1532); 0.576.0: The team Jobs tab shows who is doing what, with icons instead of buttons (#1529); Team Jobs tab: who is doing what, icons instead of buttons (#1529); 0.575.2: The Playwright connection runs the browser Thansa downloaded, whatever its version (#1530); Em mở PR thansa-os sửa lỗi lệch bản trình duyệt Playwright đi (#1530); 0.575.1: Screenshots taken by a tool now show in the chat (#1527); với cả anh muốn fix luôn là khi chat mà có pl
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 7329699/0.577.0/so_patch 72.
