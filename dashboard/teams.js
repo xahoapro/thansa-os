@@ -63,9 +63,9 @@
   var TAB_KEY = { info: "teams.tab_info", jobs: "teams.tab_jobs", team: "teams.tab_team" };
   var LATE = ["late_cancelled", "late", "old_revision", "member_left", "leader_changed", "lease_lost"];
   // Trần chủ nhóm chỉnh được (team_store.OWNER_CAPS). Bốn trần đầu có "Không giới hạn" (lưu null, GOAL T1 mục 9).
-  var CAP_FIELDS = ["task_turns", "task_steps", "help_depth", "daily_turns", "mentions", "busy_wait_s", "judge_daily",
+  var CAP_FIELDS = ["task_turns", "task_steps", "help_depth", "mentions", "busy_wait_s", "judge_daily",
     "volunteer_k", "auto_jobs"];
-  var OWNER_UNL = ["task_turns", "task_steps", "help_depth", "daily_turns", "judge_daily"];
+  var OWNER_UNL = ["task_turns", "task_steps", "help_depth", "judge_daily"];
   // Ô chọn chế độ (T3 phần J): phán xử khi Cộng hưởng của trợ lý tắt, 1 = lọc code + lô, 0 = chỉ lọc code. Chỉ chủ chỉnh.
   // 0.260.0: reply_parallel, 1 = mọi người được @ trả lời cùng lúc, 0 = lần lượt theo thứ tự @.
   var CAP_MODES = ["judge_off_batch", "reply_parallel"];
@@ -89,7 +89,8 @@
     agent_daily_calls: "teams.limits.agent_daily_calls",
     provider_quota: "teams.limits.provider_quota", account: "teams.limits.account" };
   // Toàn quyền (T3, spec 13): trần trưởng nhóm đổi được trong trần trần của chủ.
-  var AUTH_CAPS = ["task_turns", "task_steps", "help_depth", "daily_turns"];
+  // 17/11/2026: no daily reply cap any more (team_store.FIXED_CAPS), so it is not a row to set.
+  var AUTH_CAPS = ["task_turns", "task_steps", "help_depth"];
   var AUTH_CAP_KEY = { task_turns: "teams.cap.task_turns", task_steps: "teams.cap.task_steps",
     help_depth: "teams.cap.help_depth", daily_turns: "teams.cap.daily_turns", judge_daily: "teams.cap.judge_daily",
     volunteer_k: "teams.cap.volunteer_k" };
@@ -105,7 +106,7 @@
   // Ba mức tự quyết của trưởng nhóm (T5), đặt lên Toàn quyền của T3. Mức 2: trần tối đa vừa phải, không ngắt việc.
   // Mức 3: trần tối đa không giới hạn và được ngắt việc; lượt model vẫn theo trần của nhóm vì không provider nào được
   // Không giới hạn (D6), nên vẫn trong hạn mức gói của chủ.
-  var LEVEL2_CEILINGS = { task_turns: 24, task_steps: 12, help_depth: 3, daily_turns: 200 };
+  var LEVEL2_CEILINGS = { task_turns: 24, task_steps: 12, help_depth: 3 };
   var LEVELS = [{ n: 1, key: "teams.level_1", desc: "teams.level_1_desc" },
     { n: 2, key: "teams.level_2", desc: "teams.level_2_desc" },
     { n: 3, key: "teams.level_3", desc: "teams.level_3_desc" }];
@@ -653,7 +654,7 @@
     if ((x.reason === "engine" || x.reason === "engine_unavailable" || x.reason === "timeout" || x.reason === "auth") && slug) {
       out.push({ act: "agent", key: "teams.reply.act.agent", slug: slug });
     }
-    if (x.reason === "cap") out.push({ act: "limits", key: "teams.reply.act.limits" });
+    // 17/11/2026: no limit numbers to open any more (Advanced is gone, the daily reply cap too): Try again is the way on.
     if (x.reason === "no_leader" || (x.reason === "member_left" && ctx.leaderKey === x.agent_key) ||
         x.reason === "leader_changed") {
       out.push({ act: "leader", key: "teams.reply.act.leader" });
@@ -1650,24 +1651,32 @@
       ? tw("teams.usage_today_unl", { n: u.today }) : tw("teams.usage_today", { n: u.today, cap: u.cap })) + "</div>";
   }
 
-  // Tên, mô tả, trạng thái của nhóm. Nút Lưu ở cuối.
+  // Tên, mô tả, ảnh và tạm dừng của nhóm. 17/11/2026 (chủ: "quá nhiều cài đặt ... các nút lưu bố trí cũng không hợp
+  // lý"): không còn nút Lưu, mỗi ô tự lưu khi đổi (tên, mô tả khi rời ô; công tắc tạm dừng ngay), như công tắc ghim.
   function settingsFormHtml(team) {
-    var st = ["active", "paused", "archived"].map(function (s) {
-      return '<label class="tm-radio"><input type="radio" name="tm-status" value="' + s + '"' + (team.status === s ? " checked" : "") +
-        "><span>" + esc(tw(TEAM_STATUS_KEY[s])) + "</span></label>";
-    }).join("");
-    // Ảnh nhóm (0.176.0): mặc định ghép từ gương mặt thành viên; "Tải ảnh lên" thay bằng ảnh riêng, lưu ngay không chờ nút Lưu.
+    // Ảnh nhóm (0.176.0): mặc định ghép từ gương mặt thành viên; "Tải ảnh lên" thay bằng ảnh riêng, lưu ngay.
     var A = typeof window !== "undefined" && window.ThansaAvatar;
     var ava = A && A.uploadRowHtml ? '<div class="tm-field tm-ava-set"><span>' + esc(tw("teams.avatar")) + '</span><div class="tm-ava-row">' +
       teamAvatarHtml(team, 56) + '<div class="tm-ava-acts">' + A.uploadRowHtml(!!team.avatar_image, tw("teams.avatar_use_faces")) +
       "</div></div></div>" : "";
+    var off = team.status === "archived" ? " disabled" : "";
     return '<form class="tm-form" onsubmit="return false">' + ava +
-      '<label class="tm-field"><span>' + esc(tw("teams.name")) + '</span><input name="tm-set-name" value="' + esc(team.name) + '"></label>' +
-      '<label class="tm-field"><span>' + esc(tw("teams.description")) + '</span><textarea name="tm-set-desc" rows="2">' + esc(team.description) + "</textarea></label>" +
-      '<div class="tm-field"><span>' + esc(tw("teams.status")) + '</span><div class="tm-radios">' + st + "</div></div>" +
-      '<div class="tm-actions"><button type="button" class="ws-btn tm-save">' + esc(tw("teams.save")) + "</button>" +
+      '<label class="tm-field"><span>' + esc(tw("teams.name")) + '</span><input name="tm-set-name" data-team-field="name" value="' +
+        esc(team.name) + '"' + off + "></label>" +
+      '<label class="tm-field"><span>' + esc(tw("teams.description")) + '</span><textarea name="tm-set-desc" data-team-field="description" rows="2"' +
+        off + ">" + esc(team.description) + "</textarea></label>" +
+      '<label class="tm-rs tm-pause-row"><input type="checkbox" class="tm-pause-toggle"' + (team.status === "paused" ? " checked" : "") +
+        off + "><span>" + esc(tw("teams.pause_team")) + "</span></label></form>";
+  }
+
+  // Vùng nguy hiểm ở cuối tab (design-style mục 9): Lưu trữ (hay Mở lại khi đã lưu trữ) và Xoá team, đứng riêng, màu đỏ.
+  function dangerZoneHtml(team) {
+    var arch = team.status === "archived";
+    return '<section class="tm-sec tm-danger-zone" aria-label="' + esc(tw("teams.danger_zone")) + '"><div class="tm-actions">' +
+      (arch ? '<button type="button" class="ws-btn" data-team-unarchive="1">' + ic("archive-restore") + esc(tw("teams.unarchive_team")) + "</button>"
+        : '<button type="button" class="ws-btn tm-danger" data-team-archive="1">' + ic("archive") + esc(tw("teams.archive_team")) + "</button>") +
       '<button type="button" class="ws-btn tm-danger" data-delete-team="' + esc(team.team_id) + '">' + ic("trash-2") +
-      esc(tw("teams.delete_team")) + "</button></div></form>";
+      esc(tw("teams.delete_team")) + "</button></div></section>";
   }
 
   // Các số giới hạn của nhóm (trong Nâng cao). Nút Lưu ở cuối.
@@ -2015,40 +2024,104 @@
       }).join("") + "</section>";
   }
 
-  // 0.207.0: an approval request card in the team chat. State comes from the server (never guessed): waiting with three
-  // buttons, approved / used / rejected / void with who and why.
-  function approvalCardHtml(m) {
-    var ap = (m.meta || {}).approval || {};
-    var st = ap.status || "pending";
+  // 0.207.0: an approval request card in the team chat. State comes from the server (never guessed).
+  // 17/11/2026 (owner: "cần phải trả lời được lại các yêu cầu này chứ không chỉ duyệt hoặc không duyệt ... rất nhiều lúc anh
+  // muốn hỏi rõ về phần yêu cầu duyệt và muốn chỉnh sửa"): two big buttons, Approve and Reply. Reply opens a box in the
+  // card with three kinds of answer: Ask (a chat message quoting the card, the card keeps waiting), Change (the old
+  // "changes" decision) and Reject. A quote button on each line asks about that exact line. Evidence and calls fold away.
+  // The reply box state lives in AP_REPLY (one card at a time); the browser part fills it.
+  var AP_REPLY = { id: "", mode: "ask", quote: -1, draft: "" };
+  var AP_MODES = [
+    { id: "ask", icon: "circle-help", key: "teams.ap.mode_ask", ph: "teams.ap.ph_ask", send: "teams.ap.send_ask",
+      sugs: ["teams.ap.sug_ask_why", "teams.ap.sug_ask_cost", "teams.ap.sug_ask_other"] },
+    { id: "changes", icon: "pencil", key: "teams.ap.mode_changes", ph: "teams.ap.changes_prompt", send: "teams.ap.send_changes",
+      sugs: ["teams.ap.sug_fix_smaller", "teams.ap.sug_fix_show", "teams.ap.sug_fix_later"] },
+    { id: "reject", icon: "ban", key: "teams.ap.mode_reject", ph: "teams.ap.reject_prompt", send: "teams.ap.send_reject",
+      sugs: ["teams.ap.sug_rej_notnow", "teams.ap.sug_rej_cost", "teams.ap.sug_rej_wrong"] }];
+
+  // The lines of a card the owner can quote: [label key, text].
+  function apRows(ap) {
     var rows = [];
     if (ap.action) rows.push(["teams.ap.action", ap.action]);
     if (ap.scope) rows.push(["teams.ap.scope", ap.scope]);
     if (ap.impact) rows.push(["teams.ap.impact", ap.impact]);
-    var body = rows.map(function (r) {
-      return '<div class="tm-ap-row"><span class="tm-ap-k">' + esc(tw(r[0])) + "</span><span>" +
-        esc(r[1]).replace(/\n/g, "<br>") + "</span></div>";
+    return rows;
+  }
+
+  // "còn 5 giờ" from the deadline (seconds). Past it: "hết hạn".
+  function apDueText(deadline, now) {
+    var left = Number(deadline) - (now === undefined ? Date.now() / 1000 : Number(now));
+    if (!(left > 0)) return tw("teams.ap.due_over");
+    if (left < 3600) return tw("teams.ap.due_min", { n: Math.max(1, Math.round(left / 60)) });
+    if (left < 48 * 3600) return tw("teams.ap.due_h", { n: Math.round(left / 3600) });
+    return tw("teams.ap.due_d", { n: Math.round(left / 86400) });
+  }
+
+  // A path shows as its file name; the whole path stays in the tooltip.
+  function apShortRef(e) {
+    var t = String(e == null ? "" : e).trim();
+    var m = /^(.*?)([^\/\\]+\.[A-Za-z0-9]{1,8})(\s.*)?$/.exec(t);
+    return m && /[\/\\]/.test(m[1]) ? m[2] + (m[3] || "") : t;
+  }
+
+  function apFoldHtml(icon, key, items) {
+    if (!items.length) return "";
+    return '<details class="tm-ap-more"><summary>' + ic(icon) + "<span>" + esc(tw(key)) + '</span><span class="tm-ap-n">' +
+      items.length + "</span>" + ic("chevron-down") + "</summary><ul>" + items.join("") + "</ul></details>";
+  }
+
+  // The reply box under the two buttons, for the card whose reply is open.
+  function apReplyHtml(ap, rows, ui) {
+    var mode = AP_MODES.filter(function (x) { return x.id === ui.mode; })[0] || AP_MODES[0];
+    var seg = AP_MODES.map(function (x) {
+      return '<button type="button" role="radio" class="tm-ap-seg-b' + (x.id === "reject" ? " tm-ap-seg-rej" : "") + '" aria-checked="' +
+        (x.id === mode.id ? "true" : "false") + '" data-ap-mode="' + x.id + '">' + ic(x.icon) + "<span>" + esc(tw(x.key)) + "</span></button>";
     }).join("");
-    var acts = (ap.actions || []).map(function (a) {
-      return '<li><code>' + esc(a.call || a.label) + "</code>" + (a.used ? " · " + esc(tw("teams.ap.used")) : "") + "</li>";
+    var q = rows[ui.quote];
+    var quote = q ? '<div class="tm-ap-qchip"><span class="tm-quote-ico" aria-hidden="true">' + ic("quote") + '</span><span class="tm-ap-qbody"><b>' +
+      esc(tw(q[0])) + "</b> " + esc(String(q[1]).replace(/\s+/g, " ").slice(0, 160)) + '</span><button type="button" class="tm-ap-qx" data-ap-unquote="1" aria-label="' +
+      esc(tw("teams.ap.unquote")) + '" title="' + esc(tw("teams.ap.unquote")) + '">' + ic("x") + "</button></div>" : "";
+    var sugs = mode.sugs.map(function (k) {
+      return '<button type="button" class="tm-ap-sug" data-ap-sug="' + esc(k) + '">' + esc(tw(k)) + "</button>";
     }).join("");
-    if (acts) body += '<div class="tm-ap-k">' + esc(tw("teams.ap.calls")) + '</div><ul class="tm-ap-calls">' + acts + "</ul>";
-    var ev = (ap.evidence || []).map(function (e) { return "<li>" + esc(e) + "</li>"; }).join("");
-    if (ev) body += '<div class="tm-ap-k">' + esc(tw("teams.ap.evidence")) + '</div><ul class="tm-ap-ev">' + ev + "</ul>";
-    if (ap.deadline_at) {
-      body += '<div class="tm-ap-row"><span class="tm-ap-k">' + esc(tw("teams.ap.deadline")) + "</span><span>" +
-        esc(new Date(Number(ap.deadline_at) * 1000).toLocaleString()) + "</span></div>";
-    }
+    return '<div class="tm-ap-rp" data-ap-rp="' + esc(ap.approval_id) + '"><div class="tm-ap-seg" role="radiogroup" aria-label="' +
+      esc(tw("teams.ap.reply")) + '">' + seg + "</div>" + quote +
+      '<textarea class="tm-ap-ta" rows="3" placeholder="' + esc(tw(mode.ph)) + '" aria-label="' + esc(tw(mode.ph)) + '"></textarea>' +
+      '<div class="tm-ap-sugs">' + sugs + '</div><div class="tm-ap-rp-foot"><button type="button" class="ws-btn tm-ap-cancel" data-ap-close="1">' +
+      esc(tw("teams.cancel")) + '</button><button type="button" class="ws-btn tm-ap-send' + (mode.id === "reject" ? " tm-ap-send-rej" : "") +
+      '" data-ap-send="' + mode.id + '" data-ap="' + esc(ap.approval_id) + '" data-ap-rev="' + esc(ap.team_rev) + '">' + ic("send") +
+      "<span>" + esc(tw(mode.send)) + "</span></button></div></div>";
+  }
+
+  function approvalCardHtml(m, ui) {
+    ui = ui || AP_REPLY;
+    var ap = (m.meta || {}).approval || {};
+    var st = ap.status || "pending";
+    var pending = st === "pending";
+    var open = pending && ui.id && ui.id === ap.approval_id;
+    var rows = apRows(ap);
+    var body = rows.length ? '<div class="tm-ap-rows">' + rows.map(function (r, i) {
+      return '<div class="tm-ap-row' + (open && ui.quote === i ? " tm-ap-row-sel" : "") + '"><div class="tm-ap-row-b"><span class="tm-ap-k">' +
+        esc(tw(r[0])) + '</span><span class="tm-ap-v">' + esc(r[1]).replace(/\n/g, "<br>") + "</span></div>" +
+        (pending ? '<button type="button" class="tm-ap-q" data-ap-quote="' + i + '" data-ap="' + esc(ap.approval_id) + '" aria-label="' +
+          esc(tw("teams.ap.quote_row")) + '" title="' + esc(tw("teams.ap.quote_row")) + '">' + ic("quote") + "</button>" : "") + "</div>";
+    }).join("") + "</div>" : "";
+    body += apFoldHtml("list-todo", "teams.ap.calls", (ap.actions || []).map(function (a) {
+      return "<li><code>" + esc(a.call || a.label) + "</code>" + (a.used ? " · " + esc(tw("teams.ap.used")) : "") + "</li>";
+    }));
+    body += apFoldHtml("file-text", "teams.ap.evidence", (ap.evidence || []).map(function (e) {
+      return '<li title="' + esc(e) + '">' + esc(apShortRef(e)) + "</li>";
+    }));
     // A prose question: what Approve means sits behind the (i) in the card head.
     var prose = ap.kind === "question";
     if (prose) body = infoBody(esc(tw("teams.ap.prose"))) + body;
     var foot;
-    if (st === "pending") {
-      var b = function (d, k, cls) {
-        return '<button type="button" class="ws-btn' + (cls || "") + '" data-ap-decide="' + d + '" data-ap="' +
-          esc(ap.approval_id) + '" data-ap-rev="' + esc(ap.team_rev) + '">' + esc(tw(k)) + "</button>";
-      };
-      foot = '<div class="tm-actions">' + b("approve", "teams.ap.approve", " tm-primary") + b("changes", "teams.ap.changes") +
-        b("reject", "teams.ap.reject") + "</div>";
+    if (pending) {
+      foot = '<div class="tm-ap-acts"><button type="button" class="ws-btn tm-ap-ok" data-ap-decide="approve" data-ap="' +
+        esc(ap.approval_id) + '" data-ap-rev="' + esc(ap.team_rev) + '">' + ic("check") + "<span>" + esc(tw("teams.ap.approve")) +
+        '</span></button><button type="button" class="ws-btn tm-ap-reply' + (open ? " tm-ap-reply-on" : "") + '" data-ap-reply="' +
+        esc(ap.approval_id) + '" aria-expanded="' + (open ? "true" : "false") + '">' + ic("reply") + "<span>" + esc(tw("teams.ap.reply")) +
+        "</span></button></div>" + (open ? apReplyHtml(ap, rows, ui) : "");
     } else {
       foot = '<div class="tm-ap-state tm-ap-' + esc(st) + '">' + esc(tw(AP_ST_KEY[st] || AP_ST_KEY.pending)) +
         (ap.decision_note ? " · " + esc(ap.decision_note) : "") + (ap.close_reason && st !== "consumed" ? " · " +
@@ -2056,9 +2129,14 @@
         (st === "approved" ? '<div class="tm-actions"><button type="button" class="ws-btn" data-ap-decide="revoke" data-ap="' +
           esc(ap.approval_id) + '">' + esc(tw("teams.ap.revoke")) + "</button></div>" : "");
     }
-    return '<div class="tm-ap tm-ap-' + esc(st) + '" data-mid="' + esc(m.id) + '" role="group" aria-label="' +
-      esc(tw("teams.ap.title")) + '"><div class="tm-ap-head">' + ic("shield") + "<b>" + esc(tw("teams.ap.title")) +
-      "</b> " + esc(ap.title || "") + (prose ? infoBtn() : "") + "</div>" + body + foot + "</div>";
+    var head = '<div class="tm-ap-head"><span class="tm-ap-ico" aria-hidden="true">' + ic("shield") + "</span><span>" +
+      esc(tw("teams.ap.title")) + "</span>" + (pending ? '<span class="tm-ap-pill">' + esc(tw("teams.ap.pill_wait")) + "</span>" : "") +
+      (pending && ap.deadline_at ? '<span class="tm-ap-due" title="' + esc(tw("teams.ap.deadline")) + ": " +
+        esc(new Date(Number(ap.deadline_at) * 1000).toLocaleString()) + '">' + ic("clock") + esc(apDueText(ap.deadline_at)) + "</span>" : "") +
+      (prose ? infoBtn() : "") + "</div>";
+    return '<div class="tm-ap tm-ap-' + esc(st) + '" data-mid="' + esc(m.id) + '" data-ap-card="' + esc(ap.approval_id) +
+      '" role="group" aria-label="' + esc(tw("teams.ap.title")) + '">' + head +
+      (ap.title ? '<p class="tm-ap-title">' + esc(ap.title) + "</p>" : "") + body + foot + "</div>";
   }
 
   // Tab Nhóm: thành viên, mức tự quyết, số lần đã dùng hôm nay, tên và trạng thái; mọi con số trong Nâng cao (đóng sẵn).
@@ -2075,18 +2153,15 @@
       esc(tw("teams.head_people", { n: nAct })) + "</div>" +
       membersHtml(team, agents, ui.openMember) + "</section>" +
       mandateHtml(team, ui.mandateEdit) +
-      '<section class="tm-sec">' + levelsHtml(team) + usageHtml(team) + "</section>" +
+      '<section class="tm-sec">' + levelsHtml(team) + "</section>" +
       workModeHtml(team) +
       '<section class="tm-sec"><div class="tm-qhead">' + esc(tw("teams.tab_team")) + "</div>" +
       '<label class="tm-rs tm-pin-row"><input type="checkbox" class="tm-pin-toggle"' + (team.pinned_at ? " checked" : "") +
       "><span>" + esc(tw("teams.pin_top")) + "</span></label>" + settingsFormHtml(team) + "</section>" +
-      '<details class="tm-adv"' + (ui.advOpen ? " open" : "") + '><summary class="tm-adv-sum">' + esc(tw("teams.advanced")) +
-      // The (i) may sit inside <summary>: info-tip.js cancels the click's default action, so it opens the note without
-      // folding or unfolding the section.
-      infoBtn() + "</summary>" + infoBody(esc(tw("teams.advanced_note"))) +
-      qualityPolicyHtml(team) + qualityUsageHtml(team.quality_usage, (team.quality_policy || {}).reference_usd) +
-      capsFormHtml(team) + authorityHtml(team) +
-      limitsHtml(team) + turnsHtml(ui.turns || [], team) + "</details>";
+      // 17/11/2026 (owner: "quá nhiều cài đặt ... anh muốn lược bỏ hết để tự động thôi, không ai động vào đâu"): the
+      // Advanced section (acceptance policy, usage, limit numbers, the deputy's detailed rights, limits table, reply log)
+      // is gone from the tab. The server keeps its automatic defaults; the three levels above set the deputy's rights.
+      dangerZoneHtml(team);
   }
 
   // Băng báo gọn, kèm nút giải quyết khi có: tạm dừng thì Bật lại, chưa có trưởng nhóm thì Chọn.
@@ -2553,6 +2628,8 @@
       if (stick) toLatest(true);
       else if (!S.scroll || S.scroll.stuck()) toLatest(false);
     }
+    // The reply box of an approval card keeps what was typed if the card was drawn again (17/11/2026).
+    if (AP_REPLY.id) apRestore(false);
     if (S.focusPicker) {
       // Mở bộ chọn: focus vào nút đầu của bảng (bàn phím và trình đọc màn hình vào được bảng, Escape đóng được).
       S.focusPicker = false;
@@ -3247,8 +3324,6 @@
       return;
     }
     if (kind === "resume") return call("PATCH", teamUrl(), { status: "active" }).then(function (r) { act(r, drawAll); });
-    // Giới hạn nằm ở Nâng cao của ngăn Nhóm; điều phối chọn trong danh sách thành viên của cùng ngăn.
-    if (kind === "limits") S.advOpen = true;
     openSide("team", btn);
   }
 
@@ -4063,6 +4138,92 @@
       }).join("") + "</ul>" : '<p class="tm-sub">' + esc(tw("teams.info_no_links")) + "</p>") + "</section>";
     if (I.err) h += '<p class="tm-sub">' + esc(I.err) + "</p>";
     return h;
+  }
+
+  // ───────────── reply box of an approval card (17/11/2026) ─────────────
+
+  // Open the reply box of card `id` (""/falsy closes it), optionally quoting line `quote` and in `mode`.
+  function apOpen(id, quote, mode) {
+    if (id !== AP_REPLY.id) AP_REPLY.draft = "";
+    else apKeepDraft();
+    AP_REPLY.id = id || "";
+    AP_REPLY.quote = quote === undefined ? -1 : quote;
+    if (mode) AP_REPLY.mode = mode;
+    else if (!id) AP_REPLY.mode = "ask";
+    drawMsgs(false);
+    apRestore(!!id);
+  }
+
+  function apBox() {
+    return AP_REPLY.id && S.el ? S.el.querySelector('.tm-ap-rp[data-ap-rp="' + AP_REPLY.id + '"]') : null;
+  }
+  function apKeepDraft() {
+    var box = apBox(), ta = box && box.querySelector(".tm-ap-ta");
+    if (ta) AP_REPLY.draft = ta.value;
+  }
+  // After a redraw: the words typed so far come back, and the cursor too when the owner was in the box.
+  function apRestore(focus) {
+    var box = apBox(), ta = box && box.querySelector(".tm-ap-ta");
+    if (!ta) return;
+    if (!ta.value && AP_REPLY.draft) ta.value = AP_REPLY.draft;
+    if (focus && !(typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches && !ta.value)) {
+      try { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {}
+    }
+  }
+
+  // Approve, Change or Reject: the server decides (POST .../approvals/{id}/decide). One key per decision of this card in
+  // this tab: pressing again after a lost connection replays the same answer (no second action, no error), another tab
+  // has its own key and is told the request is already decided.
+  function apDecide(btn, apId, rev, dec, note) {
+    S.apKeys = S.apKeys || {};
+    var kk = apId + "|" + dec;
+    var dkey = S.apKeys[kk] || (S.apKeys[kk] = "ap-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
+    btn.disabled = true;
+    return call("POST", teamUrl("/approvals/" + q(apId) + "/decide"), { decision: dec, note: (note || "").trim(),
+      decision_key: dkey, expected_rev: rev ? Number(rev) : null }).then(function (r) {
+      btn.disabled = false;
+      if (r.code !== 200) { fail(r); return; }
+      if (AP_REPLY.id === apId) { AP_REPLY.id = ""; AP_REPLY.draft = ""; AP_REPLY.quote = -1; AP_REPLY.mode = "ask"; }
+      loadMsgs(false); loadQueue();
+    }).catch(function () { btn.disabled = false; setNote(tw("teams.err_network")); });
+  }
+
+  // The card a reply box belongs to, from the loaded messages.
+  function apOf(apId) {
+    for (var i = (S.msgs || []).length - 1; i >= 0; i--) {
+      var a = ((S.msgs[i].meta || {}).approval) || null;
+      if (a && a.approval_id === apId) return a;
+    }
+    return null;
+  }
+
+  // Send of the reply box. Ask: a chat message that quotes the card (or the line picked) and calls the member who asked,
+  // the card keeps waiting. Change / Reject: the decision with the words as its note.
+  function apSend(btn, d) {
+    var box = btn.closest(".tm-ap-rp"), ta = box && box.querySelector(".tm-ap-ta");
+    var words = ta ? ta.value.trim() : "";
+    if (!words) { if (ta) ta.focus(); setNote(tw("teams.ap.need_words")); return; }
+    if (d.apSend !== "ask") return apDecide(btn, d.ap, d.apRev, d.apSend, words);
+    var ap = apOf(d.ap);
+    if (!ap || !S.team) return;
+    var row = apRows(ap)[AP_REPLY.quote];
+    var quote = row ? tw("teams.ap.title") + " · " + tw(row[0]) + ": " + String(row[1]).replace(/\s+/g, " ").slice(0, 280)
+      : tw("teams.ap.title") + ": " + (ap.title || "");
+    var Q = quoteApi();
+    var who = String(ap.requested_by || "");
+    var mem = who && who.indexOf("mandate:") !== 0 ? memberOf(S.team.members, who) : null;
+    var body = { text: Q ? Q.ghep(quote, words) : quote + "\n\n" + words, mentions: mem && (!mem.status || mem.status === "active") ? [who] : [],
+      as_job: false, client_msg_id: AP_REPLY.cid || (AP_REPLY.cid = newClientId()) };
+    var forTeam = S.activeId;
+    btn.disabled = true;
+    return call("POST", teamUrl("/messages"), body).then(function (r) {
+      btn.disabled = false;
+      if (S.activeId !== forTeam) return;
+      if (r.code !== 200) { fail(r); return; }
+      AP_REPLY.id = ""; AP_REPLY.draft = ""; AP_REPLY.quote = -1; AP_REPLY.mode = "ask"; AP_REPLY.cid = "";
+      loadMsgs(false).then(function () { drawMsgs(true); });
+      loadQueue();
+    }).catch(function () { btn.disabled = false; setNote(tw("teams.err_network")); });   // retry sends the same client id
   }
 
   function send() {
@@ -5094,25 +5255,20 @@
       if (typeof confirm === "function" && !confirm(tw("teams.cancel_confirm", { title: ct }))) return;
       return call("POST", teamUrl("/tasks/" + q(d.cancel) + "/cancel")).then(function (r) { act(r); });
     }
+    if (d.apReply) { apOpen(AP_REPLY.id === d.apReply ? "" : d.apReply, -1); return; }
+    if (d.apQuote !== undefined && d.ap) { apOpen(d.ap, Number(d.apQuote), "ask"); return; }
+    if (d.apClose) { apOpen("", -1); return; }
+    if (d.apUnquote) { apKeepDraft(); AP_REPLY.quote = -1; drawMsgs(false); apRestore(true); return; }
+    if (d.apMode) { apKeepDraft(); AP_REPLY.mode = d.apMode; drawMsgs(false); apRestore(true); return; }
+    if (d.apSug) {
+      var ta = t.closest(".tm-ap-rp") && t.closest(".tm-ap-rp").querySelector(".tm-ap-ta");
+      if (ta) { ta.value = (ta.value.trim() ? ta.value.trim() + " " : "") + tw(d.apSug); AP_REPLY.draft = ta.value; ta.focus(); }
+      return;
+    }
+    if (d.apSend) return apSend(t, d);
     if (d.apDecide) {
-      var dec = d.apDecide, note = "";
-      if (dec === "reject" || dec === "changes") {
-        note = typeof prompt === "function" ? prompt(tw(dec === "reject" ? "teams.ap.reject_prompt" : "teams.ap.changes_prompt")) : "";
-        if (!note || !note.trim()) return;
-      } else if (dec === "revoke" && typeof confirm === "function" && !confirm(tw("teams.ap.revoke_confirm"))) {
-        return;
-      }
-      // One key per decision of this card in this tab: pressing again after a lost connection replays the same answer
-      // (no second action, no error), another tab has its own key and is told the request is already decided.
-      S.apKeys = S.apKeys || {};
-      var kk = d.ap + "|" + dec;
-      var dkey = S.apKeys[kk] || (S.apKeys[kk] = "ap-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10));
-      t.disabled = true;
-      return call("POST", teamUrl("/approvals/" + q(d.ap) + "/decide"), { decision: dec, note: (note || "").trim(),
-        decision_key: dkey, expected_rev: d.apRev ? Number(d.apRev) : null }).then(function (r) {
-        if (r.code !== 200) { t.disabled = false; fail(r); }
-        loadMsgs(false); loadQueue();
-      }).catch(function () { t.disabled = false; setNote(tw("teams.err_network")); });
+      if (d.apDecide === "revoke" && typeof confirm === "function" && !confirm(tw("teams.ap.revoke_confirm"))) return;
+      return apDecide(t, d.ap, d.apRev, d.apDecide, "");
     }
     if (d.mandateEdit !== undefined) { S.mandateEdit = d.mandateEdit === "1"; drawSide(); return; }
     if (d.accEdit !== undefined) { S.accEdit = d.accEdit || null; drawSide(); return; }
@@ -5223,7 +5379,8 @@
         return call("PATCH", teamUrl(), { avatar_image: "" }).then(function (r) { act(r, drawAll); });
       }
     }
-    if (t.classList.contains("tm-save")) return saveSettings();
+    if (d.teamArchive) return setTeamStatus("archived", t);
+    if (d.teamUnarchive) return setTeamStatus("active", t);
     if (t.classList.contains("tm-caps-save")) return saveCaps();
     if (t.classList.contains("tm-auth-save")) {
       var sec = S.el.querySelector(".tm-auth");
@@ -5271,14 +5428,34 @@
     return x ? x.value : "";
   }
 
-  function saveSettings() {
-    var status = (S.el.querySelector('input[name="tm-status"]:checked') || {}).value || S.team.status;
-    if (status === "archived" && S.team.status !== "archived" && typeof confirm === "function" &&
-        !confirm(tw("teams.archive_confirm"))) return;
-    call("PATCH", teamUrl(), { name: val("tm-set-name"), description: val("tm-set-desc"), status: status }).then(function (r) {
+  // One change of the Team tab saved on its own (17/11/2026: no Save button). `patch` is part of PATCH /teams/{id}.
+  // Refused or offline: the tab is drawn again from what is saved and the note says why, nothing changes silently.
+  function saveTeamPatch(patch, input) {
+    if (input) input.disabled = true;
+    return call("PATCH", teamUrl(), patch).then(function (r) {
+      if (input) input.disabled = false;
       if (r.code === 200) setNote(tw("teams.saved"));
       act(r, drawAll);
+    }).catch(function () {
+      if (input) input.disabled = false;
+      setNote(tw("teams.err_network"));
+      drawAll();
     });
+  }
+
+  function saveTeamField(input) {
+    var key = input.getAttribute("data-team-field");
+    var v = String(input.value || "").trim();
+    if (key === "name" && !v) { input.value = S.team.name || ""; return; }   // a team always has a name
+    if (v === String(S.team[key] || "").trim()) return;
+    var patch = {};
+    patch[key] = v;
+    saveTeamPatch(patch, input);
+  }
+
+  function setTeamStatus(status, input) {
+    if (status === "archived" && typeof confirm === "function" && !confirm(tw("teams.archive_confirm"))) return;
+    saveTeamPatch({ status: status }, input);
   }
 
   // Dựng thân POST /caps từ form (hàm thuần, test được dưới node). `read(k)` trả {checked: bool|null, value: chuỗi};
@@ -5379,6 +5556,8 @@
       return;
     }
     if (e.target.name === "tm-level") { setLevel(Number(e.target.value), e.target); return; }
+    if (e.target.getAttribute && e.target.getAttribute("data-team-field")) { saveTeamField(e.target); return; }
+    if (e.target.classList.contains("tm-pause-toggle")) { setTeamStatus(e.target.checked ? "paused" : "active", e.target); return; }
     if (e.target.classList.contains("tm-pin-toggle")) {
       // Ghim nhóm lên đầu danh sách: lưu được thì act() tải lại nhóm và danh sách; lỗi thì công tắc về trạng thái đã lưu,
       // bật lại để thử lại, và báo lỗi (review b93c46bd #1).
@@ -5458,6 +5637,17 @@
   }
 
   function onKey(e) {
+    // Reply box of an approval card: Ctrl/Cmd+Enter sends, Escape closes (17/11/2026).
+    if (e.target.classList && e.target.classList.contains("tm-ap-ta")) {
+      if (e.key === "Escape") { e.preventDefault(); apOpen("", -1); return; }
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        var sb = e.target.closest(".tm-ap-rp") && e.target.closest(".tm-ap-rp").querySelector("[data-ap-send]");
+        if (sb && !sb.disabled) sb.click();
+        return;
+      }
+      return;
+    }
     if (e.key === "Escape" && S.stripOpen) {
       setStrip(false);
       var pill = S.el.querySelector(".tm-jobs .bg-pill");
@@ -5513,6 +5703,7 @@
   }
 
   function onInput(e) {
+    if (e.target.classList.contains("tm-ap-ta")) { AP_REPLY.draft = e.target.value; return; }
     if (e.target.classList.contains("tm-jb-q")) { S.archQuery = e.target.value; S.archPage = 0; drawArchive(); return; }
     if (S.pickSt && e.target.classList.contains("tmp-search-input")) {
       S.pickSt.query = e.target.value;
@@ -5811,7 +6002,7 @@
   }
 
   var api = { render: render, leave: leave, open: open, teamListHtml: teamListHtml, messageHtml: messageHtml, queueHtml: queueHtml,
-    jobStripHtml: jobStripHtml, filterbarHtml: filterbarHtml, stripState: stripState, defaultTab: defaultTab, ownerSaidAt: ownerSaidAt, sideTabsHtml: sideTabsHtml, blockedAction: blockedAction, approvalCardHtml: approvalCardHtml, workModeHtml: workModeHtml,
+    jobStripHtml: jobStripHtml, filterbarHtml: filterbarHtml, stripState: stripState, defaultTab: defaultTab, ownerSaidAt: ownerSaidAt, sideTabsHtml: sideTabsHtml, blockedAction: blockedAction, approvalCardHtml: approvalCardHtml, apDueText: apDueText, apShortRef: apShortRef, workModeHtml: workModeHtml,
     mandateHtml: mandateHtml, opportunityCardHtml: opportunityCardHtml, readMandateForm: readMandateForm,
     parseCriteria: parseCriteria, acceptanceCardHtml: acceptanceCardHtml, acceptanceDecisionPayload: acceptanceDecisionPayload,
     qualityPolicyHtml: qualityPolicyHtml, qualityPolicyPayload: qualityPolicyPayload, qualityTemplatePayload: qualityTemplatePayload,
@@ -5820,7 +6011,7 @@
     jobsChip: jobsChip, jobsChipHtml: jobsChipHtml, timeShort: timeShort,
     mentionMatches: mentionMatches, mentionsFromText: mentionsFromText, mentionScan: mentionScan, removeMention: removeMention,
     callsHtml: callsHtml, foldName: foldName, emailBefore: emailBefore, composerHint: composerHint, newClientId: newClientId,
-    membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, capsFormHtml: capsFormHtml, capsPayload: capsPayload, saveCapsFlow: saveCapsFlow, teamTabHtml: teamTabHtml, limitsHtml: limitsHtml,
+    membersHtml: membersHtml, settingsFormHtml: settingsFormHtml, dangerZoneHtml: dangerZoneHtml, capsFormHtml: capsFormHtml, capsPayload: capsPayload, saveCapsFlow: saveCapsFlow, teamTabHtml: teamTabHtml, limitsHtml: limitsHtml,
     levelOf: levelOf, grantFor: grantFor, teamAvatarHtml: teamAvatarHtml, savePin: savePin, pinTeamWith: pinTeamWith, noteHtml: noteHtml, levelsHtml: levelsHtml, turnsHtml: turnsHtml,
     bannersHtml: bannersHtml, reactCornerHtml: reactCornerHtml, reactBarHtml: reactBarHtml, sheetHtml: sheetHtml,
     hoverActsHtml: hoverActsHtml, bodyHtml: bodyHtml, skillSplit: skillSplit, skillCall: skillCall, listSync: listSync, pendingHtml: pendingHtml, copyTextOf: copyTextOf, fileChipHtml: fileChipHtml, uploadError: uploadError, pickFiles: pickFiles, plainPreview: plainPreview, previewText: previewText,
