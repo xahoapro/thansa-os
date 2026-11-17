@@ -1053,3 +1053,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 6de0c1b/0.579.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-17** khi chủ bấm duyệt trên Telegram (origin/main bbf0956, tag + Release thansa-v2.18.0; backup me-backup-2.18.0).
+
+## Vòng TỰ ĐỘNG 2026-11-17 (goc 6de0c1b → 7e9c2ec, nền 0.579.0 → 0.584.0, thansa 2.18.0→2.19.0)
+- 14 commit upstream: 0.584.0: Quiet background jobs, fixed done-criteria, honest schedule edits and short wikilinks that open; Quiet [SILENT] jobs, fixed done-criteria, honest schedule edits, short wikilinks; 0.583.0: Phone notification for every answer while you are away from that chat; Notify every dashboard answer when the owner is not viewing that chat; 0.582.1: The team chat's / skill list no longer overlaps (#1553); fix lỗi này ở trong chức năng team giúp anh (#1553); 0.582.0: Answer an approval card, not only approve or reject it (#1547); 0.581.1: The add to Home Screen prompt waits until you have used Than
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 7e9c2ec/0.584.0/so_patch 72.
