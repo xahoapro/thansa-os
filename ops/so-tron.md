@@ -1042,3 +1042,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7329699/0.577.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-16** khi chủ bấm duyệt trên Telegram (origin/main 3453388, tag + Release thansa-v2.17.0; backup me-backup-2.17.0).
+
+## Vòng TỰ ĐỘNG 2026-11-17 (goc 7329699 → b374f34, nền 0.577.0 → 0.578.0, thansa 2.17.0→2.18.0)
+- 2 commit upstream: 0.578.0: Team jobs fold into one pill above the composer, and the team roles are now team lead and deputy lead (#1537); Team page: jobs fold into one pill above the composer; roles are team lead and deputy lead (#1537)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc b374f34/0.578.0/so_patch 72.
