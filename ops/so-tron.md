@@ -1041,3 +1041,14 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 10 commit upstream: 0.577.0: Work in flight carries on by itself after an update or a restart (#1532); Work in flight carries on by itself after an update or a restart (#1532); 0.576.0: The team Jobs tab shows who is doing what, with icons instead of buttons (#1529); Team Jobs tab: who is doing what, icons instead of buttons (#1529); 0.575.2: The Playwright connection runs the browser Thansa downloaded, whatever its version (#1530); Em mở PR thansa-os sửa lỗi lệch bản trình duyệt Playwright đi (#1530); 0.575.1: Screenshots taken by a tool now show in the chat (#1527); với cả anh muốn fix luôn là khi chat mà có pl
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7329699/0.577.0/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-16** khi chủ bấm duyệt trên Telegram (origin/main 3453388, tag + Release thansa-v2.17.0; backup me-backup-2.17.0).
+
+## Vòng TỰ ĐỘNG 2026-11-17 (goc 7329699 → b374f34, nền 0.577.0 → 0.578.0, thansa 2.17.0→2.18.0)
+- 2 commit upstream: 0.578.0: Team jobs fold into one pill above the composer, and the team roles are now team lead and deputy lead (#1537); Team page: jobs fold into one pill above the composer; roles are team lead and deputy lead (#1537)
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc b374f34/0.578.0/so_patch 72.
+
+## Vòng TỰ ĐỘNG 2026-11-17 (goc 7329699 → 6de0c1b, nền 0.577.0 → 0.579.0, thansa 2.17.0→2.18.0)
+- 6 commit upstream: 0.579.0: Team jobs run side by side and wait only for a result they need; no cap on teams at work (#1542); Team jobs run side by side and wait only for a result they need; no cap on teams at work (#1542); 0.578.1: Team chat on a phone: the job filter is one line, and the job pill's details open what you press (#1540); Team chat on a phone: one-line job filter bar; the pill's details open what is pressed (#1540); 0.578.0: Team jobs fold into one pill above the composer, and the team roles are now team lead and deputy lead (#1537); Team page: jobs fold into one pill above the composer; roles are
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: dashboard/i18n/en.json, dashboard/i18n/vi.json. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 6de0c1b/0.579.0/so_patch 72.

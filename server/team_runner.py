@@ -134,7 +134,10 @@ LEASE_RENEW_S = 30.0
 CLI_PROVIDERS = ("anthropic-cli", "openai-oauth", "grok-cli", "antigravity-cli")
 ENGINE_SLOTS_CLI = 3
 ENGINE_SLOTS_API = 6
-MAX_PARALLEL_TEAMS = 4
+# 17/11/2026 (owner: "anh không muốn giới hạn team làm việc luôn"): no cap on the teams at work nor on the jobs one team
+# runs at once. 0 means no cap; THANSA_TEAM_PARALLEL / THANSA_TEAM_JOBS still set one on a small machine. Model calls at
+# the same time stay bounded by the engine slots below, and tool turns by the slots of their working folder.
+MAX_PARALLEL_TEAMS = 0
 # 0.260.0: bước Làm/Hỗ trợ đang chờ của MỘT việc chạy cùng lúc theo đợt, tối đa JOB_PARALLEL bước (THANSA_TEAM_JOB_PARALLEL;
 # 1 = lần lượt như trước). Lượt có công cụ giữ chỗ theo THƯ MỤC làm việc của nhóm (thư mục đã ghim, không có thì cả brain),
 # tối đa TOOL_SLOTS lượt mỗi thư mục (THANSA_TEAM_TOOL_SLOTS; 1 = khoá chặt như 0.194.0).
@@ -524,14 +527,15 @@ class TeamRunner:
         self._notify_fn = notify
         self.worker_id = worker_id
         if max_parallel_teams is None:
-            max_parallel_teams = env_int("THANSA_TEAM_PARALLEL", MAX_PARALLEL_TEAMS)
-        self.max_parallel_teams = max(1, int(max_parallel_teams))
+            max_parallel_teams = env_int("THANSA_TEAM_PARALLEL", MAX_PARALLEL_TEAMS, lo=0)
+        # None = no cap (owner, 17/11/2026), shown as "Không giới hạn" in the limits table.
+        self.max_parallel_teams = int(max_parallel_teams) if int(max_parallel_teams or 0) > 0 else None
         # 0.257.0: số lượt nhóm gọi model cùng lúc theo engine (xem CLI_PROVIDERS). Đặt lại được sau khi dựng (test).
         self.engine_slots_cli = env_int("THANSA_TEAM_CLI_SLOTS", ENGINE_SLOTS_CLI)
         self.engine_slots_api = env_int("THANSA_TEAM_API_SLOTS", ENGINE_SLOTS_API)
         self.job_parallel = env_int("THANSA_TEAM_JOB_PARALLEL", JOB_PARALLEL)
-        # Jobs ONE team runs at once (2026-11-12, team_store.FIXED_CAPS): 1 = one after the other, as before.
-        self.team_jobs = max(1, env_int("THANSA_TEAM_JOBS", FIXED_CAPS["running_jobs"]))
+        # Jobs ONE team runs at once: no cap by default (owner, 17/11/2026), THANSA_TEAM_JOBS=1 = one after the other.
+        self.team_jobs = env_int("THANSA_TEAM_JOBS", FIXED_CAPS["running_jobs"] or 0, lo=0) or None
         self.tool_slots = env_int("THANSA_TEAM_TOOL_SLOTS", TOOL_SLOTS)
         self._slots: dict = {}
         self._slots_loop: Any = None
@@ -1111,7 +1115,7 @@ class TeamRunner:
             # Dòng "chưa có điều phối": thử lại là giao tin cho điều phối HIỆN TẠI (đúng một lượt), dòng chỗ trống khép lại.
             leader = team.get("leader_key")
             if not leader:
-                raise TeamError("nhóm chưa có người điều phối")
+                raise TeamError("nhóm chưa có phó nhóm")
             row = self.teams.retry_reply(team_id, int(message_id), LEADER_SLOT)
             if row is None:
                 return None
@@ -1724,7 +1728,7 @@ class TeamRunner:
         with self.accept_lock:
             row = self.teams.grant_authority(team_id, clean, by=by)
         team = self._team(team_id)
-        self._post(team, f"Chủ nhóm đã cho người điều phối {self._name(team, row['leader_key'])} tự quyết trong nhóm.",
+        self._post(team, f"Chủ nhóm đã cho phó nhóm {self._name(team, row['leader_key'])} tự quyết trong nhóm.",
                    author_kind="system", meta={"kind": "authority_granted"})
         self._state(team_id)
         return row
@@ -2017,7 +2021,7 @@ class TeamRunner:
                 if not task or task.get("team_id") != team_id or task["status"] != "team_running":
                     raise TeamError("không có việc đang chạy này trong nhóm")
                 reason = str(op.get("reason") or "").strip()[:300] or "không nêu lý do"
-                self.cancel_job(task["id"], f"người điều phối ngắt: {reason}")
+                self.cancel_job(task["id"], f"phó nhóm ngắt: {reason}")
                 self.teams.log_event(team_id, "job_interrupted", by, None, {"task_id": task["id"], "reason": reason})
                 self._system(team, f"Trưởng nhóm {lead} đã ngắt việc \"{task['title']}\": {reason}.", "job_interrupted")
             else:
@@ -2470,10 +2474,12 @@ class TeamRunner:
                 await on_wait(holder or {})
             except Exception:  # noqa: BLE001 - trạng thái hiển thị không được làm hỏng lượt
                 pass
-        try:
-            await asyncio.wait_for(lock.acquire(), timeout=wait)
-        except (asyncio.TimeoutError, TimeoutError):
-            return False
+        # 17/11/2026: this lock is held only by another turn of the same member IN THIS TEAM (jobs now run side by side).
+        # The step waits for them, however long, instead of stopping the job after `busy_wait_s`: the member is busy
+        # with another job of the same team and comes to this one next, like a person working through their list. The
+        # turn holding it ends within its own time limit. `busy_wait_s` still bounds the wait below, for a hold on the
+        # whole member from outside the team (pulse, review, another team's proactive turn).
+        await lock.acquire()
         deadline = time.monotonic() + wait
         try:
             # Bị huỷ khi luồng phụ đang lấy dòng khoá: run_io chờ nó xong rồi nhả đúng dòng vừa lấy (undo).
@@ -3183,7 +3189,7 @@ class TeamRunner:
             return None if self._add_steps(team, task, specs) else "team_blocked"
         team = self._team(team["team_id"])
         if not team["leader_key"]:
-            return self._block(task["id"], "no_leader", "Nhóm chưa có người điều phối")
+            return self._block(task["id"], "no_leader", "Nhóm chưa có phó nhóm")
         ok = self._add_steps(team, task, [{"kind": "plan", "agent": team["leader_key"],
                                            "brief": f"Lập lại kế hoạch ({reason}). {task['intent']}",
                                            "inputs": self._done_results(task) or self._source_id(task)}])
@@ -3871,9 +3877,9 @@ class TeamRunner:
             res = self._after_steps(team, task)
             return ("return", res) if res else ("continue",)
         if step["kind"] in ("plan", "synthesize") and step["agent_key"] != team["leader_key"]:
-            self.teams.set_step_status(step["step_id"], "cancelled", "người điều phối đã đổi")
+            self.teams.set_step_status(step["step_id"], "cancelled", "phó nhóm đã đổi")
             if not team["leader_key"]:
-                return ("return", self._block(task_id, "no_leader", "Nhóm chưa có người điều phối"))
+                return ("return", self._block(task_id, "no_leader", "Nhóm chưa có phó nhóm"))
             self._coordinator_changed(team, task, team["leader_key"])
             if not self._add_steps(team, task, [{"kind": step["kind"], "agent": team["leader_key"],
                                                  "brief": step["brief"], "inputs": step["input_refs"]}]):
@@ -4022,7 +4028,7 @@ class TeamRunner:
                                 int(results[0]["job_revision"]))
         if len(results) > 1:
             if not team["leader_key"]:
-                return self._block(task["id"], "no_leader", "Nhóm chưa có người điều phối để tổng hợp")
+                return self._block(task["id"], "no_leader", "Nhóm chưa có phó nhóm để tổng hợp")
             ok = self._add_steps(team, task, [{"kind": "synthesize", "agent": team["leader_key"], "brief": "",
                                                "inputs": [s["result_msg_id"] for s in results]}])
             return None if ok else "team_blocked"
@@ -4115,10 +4121,10 @@ class TeamRunner:
             self.teams.finish_step(sid, "cancelled", mid, False, "theo yêu cầu cũ")
             return self._recoordinate(team, task, step, "yêu cầu đã sửa")
         if st == "leader_changed":
-            self.teams.finish_step(sid, "cancelled", mid, False, "người điều phối đã đổi")
+            self.teams.finish_step(sid, "cancelled", mid, False, "phó nhóm đã đổi")
             team = self._team(team["team_id"])
             if not team["leader_key"]:
-                return self._block(task["id"], "no_leader", "Nhóm chưa có người điều phối")
+                return self._block(task["id"], "no_leader", "Nhóm chưa có phó nhóm")
             self._coordinator_changed(team, task, team["leader_key"])
             ok = self._add_steps(team, task, [{"kind": step["kind"], "agent": team["leader_key"],
                                                "brief": step["brief"], "inputs": step["input_refs"]}])
@@ -4569,36 +4575,26 @@ class TeamRunner:
             await self.wait_jobs()
         return [tid for tid, _ in claimed]
 
-    def _job_owners(self, team: dict, task: dict) -> set:
-        """Who a job belongs to: the assistants it was given to, else the one who coordinates it (the leader plans it)."""
-        owners = {str(a) for a in self._assignees(task) if a}
-        return owners or {str(task.get("coordinator_key") or team.get("leader_key") or "")}
-
     def _next_job(self, team: dict) -> Optional[str]:
-        """The waiting job of `team` that may start now, or None (2026-11-12).
+        """The waiting job of `team` that may start now, or None.
 
-        Nothing running: the head of the queue, as always. Something running: the first waiting job whose assistants
-        are all free of the running jobs, so two assistants with two different jobs work at the same time while two
-        jobs of the same assistant keep their order. A job worded as an order ("sau khi ... xong", "lần lượt", "only
-        after ...": `asks_sequential`, the rule parts of one job already follow) waits for everything before it, and
-        no later job starts ahead of it."""
+        17/11/2026 (owner: "anh muốn chạy song song và chỉ đợi nhau khi việc của người này cần đợi kết quả của người
+        kia ... giống như mỗi người đi làm việc của họ khi được giao"): every waiting job starts at once, in queue order.
+        Before, a job only started when none of its assistants was in a running job, and a job given to the whole team
+        counted as the deputy lead's, so two such jobs ran one after the other although their work went to different
+        members. Now each member works through their own steps in the order they were asked (one turn at a time per
+        member in a team, `_acquire`, first come first served), and waiting happens only where a result is needed:
+        - inside a job, the parts of a plan that need another part's result are held until it is done (STEP_HELD);
+        - a job worded as an order ("sau khi ... xong", "lần lượt", "only after ...": `asks_sequential`) waits for every
+          job before it, and no later job starts ahead of it."""
         q = self.tasks.team_queue(team["team_id"])
         waiting = list(q.get("waiting") or [])
         if not waiting:
             return None
-        running = list(q.get("running") or [])
-        if not running:
-            return str(waiting[0]["id"])
-        busy: set = set()
-        for t in running:
-            busy |= self._job_owners(team, t)
-        for t in waiting:
-            if asks_sequential(t.get("intent")):
-                return None
-            if self._job_owners(team, t) & busy:
-                continue
-            return str(t["id"])
-        return None
+        head = waiting[0]
+        if q.get("running") and asks_sequential(head.get("intent")):
+            return None
+        return str(head["id"])
 
     def _claim_batch(self) -> list:
         with self._pool_lock:
@@ -4608,18 +4604,19 @@ class TeamRunner:
             per_team: dict[str, int] = {}
             for team_of in self._pool.values():
                 per_team[team_of] = per_team.get(team_of, 0) + 1
-            team_slots = self.max_parallel_teams - len(per_team)
+            team_slots = None if self.max_parallel_teams is None else self.max_parallel_teams - len(per_team)
             out: list = []
             current: Optional[str] = None   # việc đã nhận nhưng chưa xong bước đầu (lỗi ở đây cũng phải trả về hàng)
             try:
                 for team_id in self.tasks.teams_with_waiting():
                     have = per_team.get(team_id, 0)
-                    if have >= self.team_jobs or (not have and team_slots <= 0):
+                    if (self.team_jobs is not None and have >= self.team_jobs) or (
+                            not have and team_slots is not None and team_slots <= 0):
                         continue
                     team = self.teams.get(team_id)
                     if not team or team["status"] != "active":
                         continue
-                    while have < self.team_jobs:
+                    while self.team_jobs is None or have < self.team_jobs:
                         pick = self._next_job(team)
                         if not pick:
                             break
@@ -4634,13 +4631,13 @@ class TeamRunner:
                         first = self.start_job_steps(task["id"])
                         current = None
                         if first == "no_leader":
-                            self._block(task["id"], "no_leader", "Nhóm chưa có người điều phối")
+                            self._block(task["id"], "no_leader", "Nhóm chưa có phó nhóm")
                             continue
                         if first == "assignee_removed":
                             self._block(task["id"], "assignee_removed", "Người được giao đã rời nhóm")
                             continue
                         self._pool[task["id"]] = team_id
-                        if not have:
+                        if not have and team_slots is not None:
                             team_slots -= 1
                         have += 1
                         per_team[team_id] = have
