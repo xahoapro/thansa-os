@@ -8,6 +8,43 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.584.0] - 2026-11-17
+### Added
+- **Background jobs can carry fixed done-criteria.** A job a script or workflow hands out every day keeps its wording and is checked against exactly those criteria, so it no longer passes one day and sticks the next.
+### Fixed
+- **A background job that answers `[SILENT]` finishes quietly**, like reminders: no more "nothing to report" messages on every run, and the automatic check no longer fails it.
+- **Editing a schedule changes its permission level, who gets the result and the spoken note.** Thansa used to say "updated" while the old level stayed.
+- **Short wikilinks like `[[log]]` open** even when many files mention the word. When an approval team refuses ChatGPT on Docker, the message now says how to turn the sandbox back on.
+
+## [0.583.0] - 2026-11-17
+### Added
+- **Notify every answer when you are not viewing that chat.** Turn on the new box under Push notifications in the bell: when Thansa finishes an answer the phone rings if you switched to another app or opened another chat. Viewing that chat keeps it quiet. Tapping the notice opens the chat.
+### Improved
+- **The long-turn notice is no longer swallowed while you are in another chat.** It used to stay quiet whenever Thansa was open; now only when the screen shows that very chat.
+
+## [0.582.1] - 2026-11-17
+### Fixed
+- **The / skill list in a team chat no longer overlaps.** Each skill shows one line of name and one of description, a long name ends in "...", and the list scrolls when long.
+
+## [0.582.0] - 2026-11-17
+### Added
+- **Answer an approval card in the team chat.** The card has two big buttons with icons: Approve and Reply. Reply opens
+### Improved
+- **A tidier approval card.** The deadline reads "5 h left" at the top next to "Waiting for you"; evidence and calls fold
+
+## [0.581.1] - 2026-11-17
+### Improved
+- **The "Add Thansa to your Home Screen" prompt no longer pops up right after you sign in.** It used to show 12 seconds
+
+## [0.581.0] - 2026-11-17
+### Improved
+- **The team's settings tab is much shorter and saves itself.** Advanced is gone (acceptance, usage, limit numbers, the
+- **A reply stopped by a limit no longer offers "Open the team limits"**, since there are no numbers to open; Try again
+
+## [0.580.0] - 2026-11-17
+### Improved
+- **A team no longer has a daily reply cap.** A team that used its 100 replies of the day used to stop every member
+
 ## [0.579.0] - 2026-11-17
 ### Improved
 - **Team jobs run side by side.** Every job given to a team starts at once, jobs given to the whole team too (they used to wait for each other because they all counted as the deputy lead's).

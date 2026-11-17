@@ -6,6 +6,43 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.584.0] - 2026-11-17
+### Thêm mới
+- **Giao việc nền kèm điều kiện hoàn thành cố định.** Việc do script hay quy trình giao mỗi ngày giữ nguyên lời giao và được chấm đúng theo các điều kiện đó, không còn hôm đạt hôm kẹt.
+### Sửa lỗi
+- **Việc nền trả lời `[SILENT]` thì xong lặng lẽ**, như nhắc hẹn: không còn tin "không có gì" mỗi lần chạy, cũng không bị máy tự kiểm chấm trượt.
+- **Sửa lịch đổi được mức quyền, nơi nhận kết quả và giọng đọc.** Trước đây Thansa báo "Đã sửa" mà lịch vẫn giữ mức cũ.
+- **Wikilink tên ngắn như `[[log]]` mở được** cả khi brain có nhiều file nhắc tới chữ đó. Team cần duyệt chạy ChatGPT trên Docker bị từ chối thì câu báo chỉ luôn cách bật sandbox.
+
+## [0.583.0] - 2026-11-17
+### Thêm mới
+- **Báo mỗi câu trả lời khi bạn không xem hội thoại đó.** Bật ô mới trong phần Thông báo đẩy của chuông: Thansa trả lời xong là điện thoại kêu, nếu bạn đã chuyển sang app khác hoặc đang mở một hội thoại khác. Đang xem đúng hội thoại đó thì im. Bấm thông báo là mở thẳng hội thoại.
+### Cải thiện
+- **Thông báo lượt chạy lâu không còn bị nuốt khi bạn đang ở hội thoại khác.** Trước đây cứ mở Thansa là im, nay chỉ im khi màn hình đang hiện đúng hội thoại đó.
+
+## [0.582.1] - 2026-11-17
+### Sửa lỗi
+- **Danh sách skill khi gõ / trong Team không còn chồng chữ.** Mỗi skill một dòng tên, một dòng mô tả, tên dài được cắt bằng dấu ba chấm, danh sách cuộn khi dài.
+
+## [0.582.0] - 2026-11-17
+### Thêm mới
+- **Trả lời được thẻ Xin duyệt trong chat team.** Thẻ còn hai nút lớn có icon: Duyệt và Trả lời. Trả lời mở một khung ngay
+### Cải thiện
+- **Thẻ Xin duyệt gọn hơn.** Hạn duyệt hiện "còn 5 giờ" ở đầu thẻ cạnh nhãn "Chờ bạn"; bằng chứng và lời gọi thu vào một
+
+## [0.581.1] - 2026-11-17
+### Cải thiện
+- **Lời nhắc "Thêm Thansa vào Màn hình chính" không bung ngay lúc vừa đăng nhập nữa.** Trước đây nó hiện 12 giây sau khi
+
+## [0.581.0] - 2026-11-17
+### Cải thiện
+- **Tab cài đặt của team gọn hẳn và tự lưu.** Bỏ mục Nâng cao (nghiệm thu, mức dùng, các con số giới hạn, quyền chi tiết
+- **Tin hết lượt không còn nút "Mở giới hạn của team"**, vì không còn con số nào để mở; nút Thử lại vẫn còn.
+
+## [0.580.0] - 2026-11-17
+### Cải thiện
+- **Team không còn giới hạn số lần trả lời mỗi ngày.** Trước đây một team dùng hết 100 lần trả lời trong ngày thì mọi
+
 ## [0.579.0] - 2026-11-17
 ### Cải thiện
 - **Việc của team chạy song song.** Mọi việc giao cho team bắt đầu ngay, kể cả việc giao chung cho cả team (trước đây việc chung phải chờ nhau vì cùng tính là của phó nhóm).
