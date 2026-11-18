@@ -1059,3 +1059,8 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7e9c2ec/0.584.0/so_patch 72.
 - **ĐÃ PHÁT HÀNH 2026-11-17** khi chủ bấm duyệt trên Telegram (origin/main 3313c45, tag + Release thansa-v2.19.0; backup me-backup-2.19.0).
+
+## Vòng TỰ ĐỘNG 2026-11-18 (goc 7e9c2ec → b36b550, nền 0.584.0 → 0.587.0, thansa 2.19.0→2.20.0)
+- 12 commit upstream: 0.587.0: Leaner tool results in long turns, plus token and quality meters (#1569); Hand repeated tool results over as references and compact JSON on every brain, add token and quality meters (#1569); 0.586.1: The team chat's @ button sits at the top with an up arrow (#1575); Move the team chat's @ button to the top with an up arrow (#1575); 0.586.0: A round @ button jumps to team messages that call you (#1573); Add a round @ button that jumps to team messages calling the owner (#1573); 0.585.0: See each member's model in the team's Team tab (#1570); Show each member's model in the team's Team 
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc b36b550/0.587.0/so_patch 72.
