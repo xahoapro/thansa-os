@@ -1058,3 +1058,14 @@ so_patch 38. Bài học: chuỗi hiện-tiếng-Việt-ở-EN có 3 tầng - nat
 - 14 commit upstream: 0.584.0: Quiet background jobs, fixed done-criteria, honest schedule edits and short wikilinks that open; Quiet [SILENT] jobs, fixed done-criteria, honest schedule edits, short wikilinks; 0.583.0: Phone notification for every answer while you are away from that chat; Notify every dashboard answer when the owner is not viewing that chat; 0.582.1: The team chat's / skill list no longer overlaps (#1553); fix lỗi này ở trong chức năng team giúp anh (#1553); 0.582.0: Answer an approval card, not only approve or reject it (#1547); 0.581.1: The add to Home Screen prompt waits until you have used Than
 - Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
 - Rebrand: không cần (0 chỗ / 0 file). moc-goc 7e9c2ec/0.584.0/so_patch 72.
+- **ĐÃ PHÁT HÀNH 2026-11-17** khi chủ bấm duyệt trên Telegram (origin/main 3313c45, tag + Release thansa-v2.19.0; backup me-backup-2.19.0).
+
+## Vòng TỰ ĐỘNG 2026-11-18 (goc 7e9c2ec → b36b550, nền 0.584.0 → 0.587.0, thansa 2.19.0→2.20.0)
+- 12 commit upstream: 0.587.0: Leaner tool results in long turns, plus token and quality meters (#1569); Hand repeated tool results over as references and compact JSON on every brain, add token and quality meters (#1569); 0.586.1: The team chat's @ button sits at the top with an up arrow (#1575); Move the team chat's @ button to the top with an up arrow (#1575); 0.586.0: A round @ button jumps to team messages that call you (#1573); Add a round @ button that jumps to team messages calling the owner (#1573); 0.585.0: See each member's model in the team's Team tab (#1570); Show each member's model in the team's Team 
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc b36b550/0.587.0/so_patch 72.
+
+## Vòng TỰ ĐỘNG 2026-11-18 (goc 7e9c2ec → 5f9ff90, nền 0.584.0 → 0.591.0, thansa 2.19.0→2.20.0)
+- 24 commit upstream: 0.591.0: A team chat opens at once and loads older messages as you scroll up (#1588); Open a team chat at once and load older messages on scroll up (#1588); 0.590.0: Background jobs on an API key carry a short rule set (#1587); Background jobs on an API key carry a short rule set instead of CLAUDE.md (#1587); 0.589.2: The Usage page no longer overstates what the saving levels save (#1585); Usage page: count what the saving levels really send (#1585); 0.589.1: A full local test run no longer leaves the turn ledger untracked (#1583); Ignore the turn ledger that tests write into server/ (#1583); 
+- Merge Javis vào Thansa trong worktree riêng (kiểu mới 01/11). Tự gỡ: không. Claude gỡ: không. Xoá: không.
+- Rebrand: không cần (0 chỗ / 0 file). moc-goc 5f9ff90/0.591.0/so_patch 72.
