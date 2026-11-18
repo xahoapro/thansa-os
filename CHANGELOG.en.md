@@ -8,6 +8,35 @@ English entries start at 0.66.0. Every earlier release is described in the Vietn
 
 Format: each release is a `## [x.y.z] - date` block, with changes grouped under `### Added / Fixed / Improved / Security`.
 
+## [0.587.0] - 2026-11-18
+### Improved
+- **Long turns cost fewer tokens, on every brain.** When the model calls the same tool with the same arguments and the result is identical, it gets a one-line reference instead of the whole text again. The tool still runs every time, so changed data always reaches the model in full. For Claude Code and Codex this happens at the hub, and Thansa forgets the turn's record whenever they compact their conversation.
+- **Leaner JSON.** Indented or escaped JSON results are written compactly with the same content. Files, terminal output, web pages and skills stay exactly as they are.
+- Choosing **Off** on the Usage page turns both savings off. What they save shows in the tool results line of that page.
+### Added
+- **Before-and-after meters** for developers: `tools/token_bench.py` measures the characters a turn sends to the model, and `tools/quality_eval.py` runs a set of questions through a real Thansa and compares how complete the answers are between two runs.
+
+## [0.586.1] - 2026-11-18
+### Improved
+- **The button to tagged messages now sits at the top.** A round button with an up arrow and "@" plus the count under it, like Zalo, since the tagged messages are usually above. Showing or hiding it never moves the messages you are reading.
+
+## [0.586.0] - 2026-11-18
+### Added
+- **An @ button in team chats.** When an assistant tags you and the message has scrolled out of view, a round @ button with the number of waiting messages shows at the bottom right. Tap it to jump to that message, tap again for the next; it hides once you have read them or replied.
+
+## [0.585.0] - 2026-11-18
+### Added
+- **The Team tab shows each member's model.** Under each assistant's name is the engine and model it runs on, marked "Main model" when it has no model of its own, so the whole team is easy to keep an eye on.
+
+## [0.584.2] - 2026-11-18
+### Fixed
+- **The team Info tab no longer stays on "Loading...".** A team that opened on Jobs now shows its images, files and links as soon as you switch to Info.
+
+## [0.584.1] - 2026-11-18
+### Fixed
+- **Locking the phone no longer hides the answer.** Ask on the phone, lock it, and when you come back Thansa pulls in the answer that finished while you were away, no need to ask again or keep the screen on.
+- **A home-screen app that was closed shows the full answer when reopened.** The chat used to show only the old copy kept on the phone until you opened it again from History.
+
 ## [0.584.0] - 2026-11-17
 ### Added
 - **Background jobs can carry fixed done-criteria.** A job a script or workflow hands out every day keeps its wording and is checked against exactly those criteria, so it no longer passes one day and sticks the next.
