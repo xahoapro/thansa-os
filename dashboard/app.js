@@ -1447,7 +1447,8 @@ function handleMessage(data) {
         else window.ThansaInbox.refresh();
       }
     } catch (e) {}
-    try { if (window.ThansaStar) window.ThansaStar.moment("work"); } catch (e) {}   // việc nền vừa trả kết quả
+    // `cleared`: a notice turned read (approval answered), not new work.
+    if (!data.cleared) { try { if (window.ThansaStar) window.ThansaStar.moment("work"); } catch (e) {} }
     return;
   }
   if (data.type === "status") {
