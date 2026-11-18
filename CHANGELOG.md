@@ -6,6 +6,35 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.587.0] - 2026-11-18
+### Cải thiện
+- **Lượt dài tốn ít token hơn, với mọi bộ não.** Model gọi lại đúng công cụ với đúng tham số mà kết quả y hệt lần trước thì nhận một dòng tham chiếu thay vì cả khối chữ lần nữa. Công cụ vẫn chạy lại thật, nên dữ liệu đổi là model nhận bản mới đầy đủ. Với Claude Code và Codex, việc này làm ở cổng hub, và Thansa quên sổ của lượt đó mỗi khi chúng nén hội thoại.
+- **JSON gọn hơn.** Kết quả JSON thụt lề hay có chữ Việt bị mã hoá được viết gọn lại, cùng nội dung. Tệp, terminal, trang web và skill thì giữ nguyên từng ký tự.
+- Chọn mức **Tắt** trên trang Mức dùng là tắt luôn hai cách tiết kiệm này. Số ký tự bớt được hiện chung ở dòng kết quả tool trên trang đó.
+### Thêm mới
+- **Bộ đo trước và sau** cho người phát triển: `tools/token_bench.py` đo số ký tự mỗi lượt gửi cho model, `tools/quality_eval.py` chạy một bộ câu hỏi qua Thansa thật rồi so độ đủ ý của câu trả lời giữa hai lần chạy.
+
+## [0.586.1] - 2026-11-18
+### Cải thiện
+- **Nút tới tin được tag giờ nằm ở góc trên.** Nút tròn có mũi tên hướng lên, dưới là @ kèm số tin đang chờ, giống Zalo, vì tin được tag thường nằm phía trên. Nút hiện hay ẩn không làm xô lệch tin đang đọc.
+
+## [0.586.0] - 2026-11-18
+### Thêm mới
+- **Nút @ trong khung chat nhóm.** Khi trợ lý tag bạn mà tin đã trôi khỏi màn hình, góc dưới bên phải hiện nút tròn có chữ @ và số tin đang chờ. Bấm là cuộn tới đúng tin đó, bấm tiếp tới tin sau; đọc hết hay bạn đã trả lời thì nút tự ẩn.
+
+## [0.585.0] - 2026-11-18
+### Thêm mới
+- **Tab Team hiện model của từng thành viên.** Dưới tên mỗi trợ lý có dòng engine và model nó đang chạy, ghi rõ "Model chính" khi trợ lý chưa chọn model riêng, để dễ kiểm soát cả nhóm.
+
+## [0.584.2] - 2026-11-18
+### Sửa lỗi
+- **Tab Thông tin của team không còn "Đang tải..." mãi.** Team mở ở tab Việc rồi bấm sang Thông tin thì giờ hiện ngay ảnh, tài liệu và link của team.
+
+## [0.584.1] - 2026-11-18
+### Sửa lỗi
+- **Khoá màn hình rồi mở lại vẫn thấy câu trả lời.** Hỏi trên điện thoại, khoá máy, lúc mở lại Thansa tự kéo câu trả lời đã xong trong lúc vắng mặt, không phải hỏi lại hay treo màn hình chờ.
+- **App trên màn hình chính bị tắt hẳn rồi mở lại cũng đủ câu trả lời.** Trước đây khung chat chỉ hiện bản lưu cũ trên máy, phải vào Lịch sử bấm lại mới thấy.
+
 ## [0.584.0] - 2026-11-17
 ### Thêm mới
 - **Giao việc nền kèm điều kiện hoàn thành cố định.** Việc do script hay quy trình giao mỗi ngày giữ nguyên lời giao và được chấm đúng theo các điều kiện đó, không còn hôm đạt hôm kẹt.
