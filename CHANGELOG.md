@@ -6,6 +6,39 @@ Lịch sử phiên bản Thansa OS. Bản mới nhất ở trên cùng. Xem ngay
 
 Định dạng: mỗi phiên bản là một khối `## [x.y.z] - ngày`, bên dưới nhóm thay đổi theo `### Thêm mới / Sửa lỗi / Cải thiện / Bảo mật`.
 
+## [0.591.0] - 2026-11-18
+### Sửa lỗi
+- **Mở một team không còn kẹt lâu ở "Đang tải tin nhắn của nhóm".** Mỗi lần mở, máy chủ từng cộng lại chi phí model của cả team từ trước tới nay, team càng lâu càng chậm, trong khi màn hình không còn hiện con số đó. Giờ bỏ hẳn bước này khi mở team.
+### Cải thiện
+- **Team chỉ tải các tin gần nhất, cuộn lên mới tải tiếp tin cũ.** Gần tới đầu khung chat là tự tải thêm một trang, giữ nguyên chỗ đang đọc, giống khung chat chính và trang Chatbot. Lúc đang tải hiện dòng "Đang tải tin cũ...".
+
+## [0.590.0] - 2026-11-18
+### Cải thiện
+- **Việc chạy nền trên bộ não dùng khóa API gửi ít token hơn khoảng 60%.** Việc Kanban, việc lặp và nhắc hẹn có làm việc mang bộ luật việc nền ngắn thay cho toàn bộ bộ luật chat, ở mỗi lần gọi công cụ. Mọi luật về hành động được giữ nguyên: làm đúng việc trong mức quyền, không bịa số, báo kết quả về đúng người giao, không hứa suông, không tự tạo thêm việc, plugin mới luôn tắt. Thử bằng model thật trên 7 loại việc nền mẫu, kết quả ngang bản đầy đủ.
+- **Gói thuê bao không đổi.** Claude Code, ChatGPT, Grok, Antigravity vẫn mang bộ luật đầy đủ. Bật thử cho khoảng 10% việc chạy nền, tắt theo mức Tắt.
+
+## [0.589.2] - 2026-11-18
+### Sửa lỗi
+- **Số tiết kiệm ước tính trên trang Mức dùng nay đúng với thứ thật sự được gửi.** Mức Tối ưu trước đây chỉ tính bản luật rút gọn và quên phần nền vẫn gửi kèm (có khối luật kênh chat), nên trang báo bớt 84% cho mọi bộ não. Nay: bộ não dùng API key thấy con số thật, còn gói thuê bao (Claude Code, ChatGPT...) thấy rõ là bộ luật được giữ nguyên, chỉ bộ nhớ và skill nạp phần liên quan.
+- **Số token đã tiết kiệm cộng dồn không còn tính mọi lượt ở mức Siêu tiết kiệm như lượt đi đường tắt.** Chỉ câu hỏi đơn giản đi đường tắt, nên phần cộng dồn tính theo giá mức Tối ưu; phần "đo được" của trang vẫn cho thấy đường tắt bớt thật bao nhiêu.
+
+## [0.589.1] - 2026-11-18
+### Sửa lỗi
+- **Chạy đủ bộ test trên máy không còn tự báo đỏ ở lần sau.** Tệp sổ lượt chat (`turn_ledger.sqlite3`) mà test tạo ra trong `server/` nay được git bỏ qua như các kho dữ liệu chạy khác.
+
+## [0.589.0] - 2026-11-18
+### Cải thiện
+- **Skill dài nạp có chọn lọc, Thansa chọn trước khi nạp.** Với skill kiểu thực đơn như trình tạo agent/loop/plugin, Thansa chỉ nạp phần yêu cầu cần cùng mọi mục luật (và phần nó dặn tạo trước, như workflow kéo theo mẫu agent), nhẹ hơn khoảng 47-63%. Đo bằng model thật trên 7 loại yêu cầu, câu trả lời đủ ý như khi nạp cả skill.
+- **Mọi ngôn ngữ như nhau.** Cách chọn không dựa vào tiếng Việt hay tiếng Anh: tách chữ được mọi hệ chữ (kể cả Trung, Nhật, Hàn, Thái), nhận cả từ có đuôi biến đổi (tiếng Nga, Đức, Thổ, Hàn), và tự tìm từ thừa ngay trong skill. Người hỏi bằng ngôn ngữ khác skill thì model tóm việc bằng ngôn ngữ của skill để Thansa chọn đúng phần. Không chắc là nạp cả skill như cũ, và skill dạng quy trình liền mạch luôn nạp đủ.
+- **Học từ cách dùng.** Phần nào model hay phải lấy thêm thì lần sau Thansa nạp sẵn. Bật thử cho khoảng 10% phiên chat trước, tắt theo mức Tắt.
+
+## [0.588.0] - 2026-11-18
+### Cải thiện
+- **Nhắn thêm trong team là cộng sự đọc ngay.** Cộng sự đang soạn câu trả lời cho tin trước thì dừng lại và trả lời gộp cả hai tin, tin mới nhất được ưu tiên. Không còn cảnh phải chờ trả lời xong câu trên mới đọc câu dưới.
+- **Phó nhóm đang làm một bước việc cũng đọc tin mới ở bước kế tiếp,** nên đổi được cách làm ngay giữa chừng. Dòng trạng thái ghi rõ "Đã đọc giữa chừng".
+- **Thẻ xin duyệt đã trả lời thì thông báo tự tắt.** Bấm Duyệt, Sửa, Từ chối, hay Trả lời hỏi lại trên thẻ, thông báo của nó trong chuông chuyển thành đã đọc. Yêu cầu hết hạn hay bị huỷ cũng vậy.
+- **Phó nhóm nổi bật trong cài đặt team:** đứng ngay dưới chủ nhóm, có nền màu, viền nhấn và huy hiệu ngôi sao.
+
 ## [0.587.0] - 2026-11-18
 ### Cải thiện
 - **Lượt dài tốn ít token hơn, với mọi bộ não.** Model gọi lại đúng công cụ với đúng tham số mà kết quả y hệt lần trước thì nhận một dòng tham chiếu thay vì cả khối chữ lần nữa. Công cụ vẫn chạy lại thật, nên dữ liệu đổi là model nhận bản mới đầy đủ. Với Claude Code và Codex, việc này làm ở cổng hub, và Thansa quên sổ của lượt đó mỗi khi chúng nén hội thoại.
