@@ -35,7 +35,7 @@ CLAUDE_MD_PATH = Path(__file__).resolve().parent.parent / "CLAUDE.md"
 # sha256 of the CLAUDE.md this contract was checked against. Changing CLAUDE.md fails
 # tests/python/test_background_prompt.py until someone reads the new rule, carries it into CONTRACT when a background
 # job needs it, and updates this hash.
-REVIEWED_CLAUDE_MD_SHA256 = "cb55fec81f30c5625f23122d3ea64d7f01278eae3c1d86ae734edcb04f4681aa"
+REVIEWED_CLAUDE_MD_SHA256 = "c989901efd92ebfba97758900bcb3df9afb817af5e27531a0feaecb21a4d6a97"  # Thansa CLAUDE.md (P038 rules carried into CONTRACT)
 DEFAULT_BASIS_POINTS = 1000   # 10% of background jobs
 SALT = "background-prompt-v1"
 
@@ -56,9 +56,10 @@ the job.
 
 ## Doing the job
 - Do exactly the job written in the task, nothing beside it. Its permission level decides what you may do:
-  - `full` (default): REAL outside actions through MCP (create orders, run ads, send messages, publish posts) \
+  - `full`: REAL outside actions through MCP (create orders, run ads, send messages, publish posts) \
 without asking. They cannot be undone, so stay strictly inside the stated task.
-  - `auto`: read MCP and write draft files; the hub blocks outside actions.
+  - `auto`: read MCP and write draft files; no orders, spending, ads, publishing or messages (only drafts for the \
+owner to approve).
   - `suggest`: read only (MCP reads included) and suggest; no file writes.
 - Read the brain first when the job needs context: MEMORY.md is preloaded below; read the matching \
 `memory/facts/` file or the Wiki index when needed.
@@ -105,12 +106,14 @@ sees them there). Loops: `Thansa/loops/<slug>.md`. `description` at most 150 cha
 `tags` empty; slug lowercase ASCII with hyphens. A workflow needing a missing agent: create the agent first.
 - Loops and reminders: prefer `thansa_schedule` op=create. Schedule only when its preconditions hold (the data \
 sources it needs are connected, there is a channel to report to); if not, say what is missing. A new loop gets \
-`mode: full` and `enabled: false` (the owner switches it on); a reminder defaults to `muc_quyen: full`. Results go \
+`mode: suggest` and `enabled: false` (the owner switches it on); never set `mode: full` on your own. A reminder \
+defaults to `muc_quyen: full`; repeat the warning `thansa_schedule` returns for it VERBATIM in the result. Results go \
 back to whoever asked: `owner_chat` on a loop, `chat_id` in `thansa_task`, copied from this job's own recipient; \
 `notify: false` stops a loop reporting every iteration.
 - Plugins: only through `thansa_plugin` (never files by hand, never a zip). ALWAYS `enabled: false`, and you never \
 enable one: it runs real Python in the server. Set `min_mode` to what it really does (`readonly`, `safe` for file \
-writes, `full` for outside actions).
+writes, `full` for outside actions). Never build a plugin or capability that performs money/order/messaging/publishing \
+actions on its own.
 - Never recreate or clone the SYSTEM skills (`thansa-builder`, `ingest-source`, `query-wiki`, `lint-wiki`, `notes`, \
 `html-to-webcake`, `security-audit`) or system plugins (`system/plugins/`).
 - Improve a skill or workflow only during the run that uses it, when a specific flaw just surfaced (add to \
